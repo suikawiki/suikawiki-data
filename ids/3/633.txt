@@ -1,0 +1,128 @@
+* 仕様書から
+
+
+** RFC 2068 (HTTP/1.1) 14.25; RFC 2616 (HTTP/1.1) 14.24 If-Match
+
+> The If-Match request-header field is used with a method to make it
+conditional. A client that has one or more entities previously
+obtained from the resource can verify that one of those entities is
+current by including a list of their associated entity tags in the If-Match header field. [INS[Entity tags are defined in section 3.11.]]
+The purpose of this feature is to allow efficient updates of cached
+information with a minimum amount of transaction overhead.
+It is also used, on updating requests, to prevent inadvertent modification of
+the wrong version of a resource. As a special case, the value "*"
+matches any current entity of the resource.
+
+[CODE(HTTP)[If-Match]] 要求頭欄は、それを[[条件付]]とする[[方式]]と共に使います。
+以前に[[資源]]から得た1個か複数個の[[実体]]を持っている[[クライアント]]は、
+その実体群の1つが現行のものであることを、
+[CODE(HTTP)[If-Match]] 頭欄にそれらの実体と関連付けられた[[実体札]]の並びを含めることで検証できます。[INS[実体札は3.11節で定義しています。]]
+この機能の目的は、キャッシュした情報の効果的な更新最小限のやり取り overhead
+で実現することです。この機能は、資源の誤った版を不注意に修正してしまうことを防ぐためにも使えます。
+特別な場合として、値 [CODE(HTTP)[*]] は資源の現在の実体に一致します。
+
+>
+- If-Match = "If-Match" ":" ( "*" | 1#entity-tag )
+
+> If any of the entity tags match the entity tag of the entity that
+would have been returned in the response to a similar GET request
+(without the If-Match header) on that resource, or if "*" is given
+and any current entity exists for that resource, then the server MAY
+perform the requested method as if the If-Match header field did not exist.
+
+実体札のいずれかが同様の ([CODE(HTTP)[If-Match]] 頭なしの) [CODE(HTTP)[[[GET]]]] 
+要求への応答で返されるであろう実体の実体札と一致するか、
+または [CODE(HTTP)[*]] が与えられ、その資源に現在の実体が存在するなら、
+[[サーバー]]は [CODE(HTTP)[If-Match]] 頭欄が存在しないかのように要求された方式を処理して'''構いません'''。
+
+> A server MUST use the strong comparison function (see section [DEL[3.11]] [INS[13.3.3]])
+to compare the entity tags in If-Match.
+
+サーバーは、 [CODE(HTTP)[If-Match]] 中の実体札を比較するのに[[強い比較]]関数を使わなければ'''なりません'''。
+
+> If none of the entity tags match, or if "*" is given and no current
+entity exists, the server MUST NOT perform the requested method, and
+MUST return a 412 (Precondition Failed) response. This behavior is
+most useful when the client wants to prevent an updating method, such
+as PUT, from modifying a resource that has changed since the client
+last retrieved it.
+
+実体札のどれもが一致しなかったか、または [CODE(HTTP)[*]]
+が与えられたものの現在実体が存在しない場合は、サーバーは要求された方式を実行しては'''ならず'''、
+[CODE(HTTP)[[[412]]]] (前条件失敗) 応答を返さなければ'''なりません'''。
+この振る舞いは、 [CODE(HTTP)[[[PUT]]]] のような更新する方式で、
+クライアントが最後にそれを取り出してから変更されている資源を修正してしまうことを防ぎたい時に有用です。
+
+> If the request would, without the If-Match header field, result in
+anything other than a 2xx [INS[or 412]] status, then the If-Match header
+MUST be ignored.
+
+[CODE(HTTP)[If-Match]] 頭欄がなければ要求の結果が [CODE(HTTP)[[[2xx]]]] 状態または
+[CODE(HTTP)[[[412]]]] 状態以外のものになるとしたら、
+[CODE(HTTP)[If-Match]] 頭は無視しなければ'''なりません'''。
+
+> The meaning of "If-Match: *" is that the method SHOULD be performed
+if the representation selected by the origin server (or by a cache,
+possibly using the Vary mechanism, see section [DEL[14.43]] [INS[14.44]]) exists, and
+MUST NOT be performed if the representation does not exist.
+
+[CODE(HTTP)[If-Match: *]] の意味は、その方式は[[起源サーバー]]によって
+(または[[キャッシュ]]によって、もしかすると [CODE(HTTP)[[[Vary]]]] 機構を使って)
+選択された表現が存在するときに実行される'''べき'''であり、
+表現が存在しないときには実行しては'''ならない'''ということです。
+
+> A request intended to update a resource (e.g., a PUT) MAY include an
+If-Match header field to signal that the request method MUST NOT be
+applied if the entity corresponding to the If-Match value (a single
+entity tag) is no longer a representation of that resource. This
+allows the user to indicate that they do not wish the request to be
+successful if the resource has been changed without their knowledge.
+
+資源を更新する意図の要求 (例えば [CODE(HTTP)[PUT]])
+は、 [CODE(HTTP)[If-Match]] 値 (1つの実体札) の対応する実体がもはやその資源の表現ではないときにその要求方式を適用しては'''ならない'''ことを通知するために
+[CODE(HTTP)[If-Match]] 頭欄を含めても'''構いません'''。
+これにより、利用者が、彼らの知識なしに資源が変更されているとしたら要求が成功することを望まないことを示すことができます。
+
+> Examples:
+- If-Match: "xyzzy"
+- If-Match: "xyzzy", "r2d2xxxx", "c3piozzzz"
+- If-Match: *
+
+[INS[
+
+> The result of a request having both an If-Match header field and
+either an If-None-Match or an If-Modified-Since header fields is
+undefined by this specification.
+
+[CODE(HTTP)[If-Match]] 頭欄と [CODE(HTTP)[[[If-None-Match]]]]
+頭欄または [CODE(HTTP)[[[If-Modified-Since]]]] 頭欄のいずれかを持っている要求の結果は子の仕様書では未定義とします。
+]INS]
+
+
+** RFC 2326 12.22 If-Match
+
+> See [H14.25].
+
+> This field is especially useful for ensuring the integrity of the
+presentation description, in both the case where it is fetched via
+means external to RTSP (such as HTTP), or in the case where the
+server implementation is guaranteeing the integrity of the
+description between the time of the DESCRIBE message and the SETUP
+message.
+
+[1] この欄は、表現記述の完全性を確認するのに、これが RTSP
+以外の手段 (例えば HTTP) 
+で入手した場合においても或いはサーバー実装が
+DESCRIBE メッセージの時刻及び SETUP
+メッセージ間の記述の正当性を保証する場合においても、特に有用です。
+
+> The identifier is an opaque identifier, and thus is not specific to
+any particular session description language.
+
+[2] 識別子は[RUBY[不透明] [opaque]]識別子で、従ってどの特定の
+session 記述言語にも依存しません。
+
+
+** RFC の部分の License
+
+[[RFCのライセンス]]

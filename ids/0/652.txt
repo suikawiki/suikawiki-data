@@ -1,0 +1,451 @@
+[1] [[CGI]] の[DFN[[RUBYB[メタ変数]@en[meta-variable]]]]は、
+[[要求]]についての情報を[[鯖]]から[[CGIスクリプト]]に提供するものです。
+一般的には[[オペレーティング・システム]]の[[環境変数]]として実装されています。
+
+* 仕様書
+
+[REFS[
+- [37] [CITE@en[RFC 3875 - The Common Gateway Interface (CGI) Version 1.1]] 
+-- [35] <http://tools.ietf.org/html/rfc3875#section-1.4>
+-- [38] '''<http://tools.ietf.org/html/rfc3875#section-4.1>'''
+-- [60] <http://tools.ietf.org/html/rfc3875#section-4.1.18>
+-- [63] <http://tools.ietf.org/html/rfc3875#section-7>
+]REFS]
+
+* 定義
+
+[FIG(quotation)[
+[36] 
+>[[鯖]]から[[スクリプト]]に情報を伝達する名前付き[[引数]]。
+[[オペレーティング・システム]]の[[環境変数]]として実装するのが最も一般的ですが、
+必ずしもそうである必要はありません。
+[FIGCAPTION[
+[SRC[>>35]]
+]FIGCAPTION]
+]FIG]
+
+* 名前
+
+[22] [[メタ変数]]には[[名前]]があります。変数名は[[大文字・小文字不区別]]です。
+[[CGI]] 仕様においては[[大文字]]と [CODE(char)[[[_]]]] の正準形で表されていますが、
+実際の名前は[[システム定義]]となっています。 [SRC[>>38]]
+
+;; [40] [[大文字]]と[[小文字]]以外の変形について仕様上は明確に述べられているわけではありませんが、
+[CODE(CGI)@en[[[SERVER_NAME]]]] を [CODE[server-name]], [CODE[serverName]], 
+[CODE[SERVER.NAME]], [CODE(CGI)[SERVER NAME]] など一定の規則で変形させたものもシステムごとの表現の範囲内として認められるものと思われます。
+
+[42] 構文上は[[プロトコル]]や [[URL scheme]] 依存、あるいは [[CGI]] 本体仕様に含まれない拡張された[[メタ変数]]の名前として
+[CODE(ABNF)@en[[[token]]]] で使えるすべての[[文字]]が使えることになっています。また、
+長さ制限もありません。 [SRC[>>38]]
+
+;; [43] しかし実際には[[英数字]]と [CODE(char)[[[_]]]] 以外が含まれる[[メタ変数]]は使われていなそうです。
+
+[48] [[鯖]]は[[実装定義]]の[[メタ変数]]を設定して構いません。その名前は [CODE(CGI)@en[[[X_]]]]
+で始まる[['''べきです''']]。 [SRC[>>38]]
+
+* 値
+
+** 値の構文
+
+[53] [[メタ変数]]の値は一般に
+[PRE(ABNF code)[
+      meta-variable-value = "" | 1*<[[TEXT]], [[CHAR]] or [[token]]s of value>
+]PRE]
+... と定義されています [SRC[>>38]]。更に個別の[[メタ変数]]ごとに更に詳細な構文が定義されています。
+
+;; [54] 実質的に [CODE(ABNF)@en[*[[OCTET]]]] と同じですが、そうなっていないのは、
+[[オクテット列]]でなく[[文字]]の列であ (り[[オクテット]]表現は[[システム定義]]であ) ることや、
+[[メタ変数]]によっては単純な[[オクテット列]]ではなく構造を持った列であることを意識しているのでしょう。
+
+[52] [[大文字]]と[[小文字]]は一般に区別されます。
+
+** 値の授受
+
+[39] [[鯖]]から[[CGIスクリプト]]へどのように[[CGIメタ変数]]を引き渡すかは[[システム定義]]です
+[SRC[>>38]]。
+
+[51] [[メタ変数]]の値の[[文字]]をどのように表現するかは[[システム定義]]です。
+[[鯖]]はその表現に変換しなければ[['''なりません''']]。 [SRC[>>38]]
+
+[21] サーバーはスクリプトにメタ変数を渡す方法を用意し''なければなりません''。
+多くの実装では[[環境変数]]として渡されます。
+
+[18] [[WinCGI]] では[[INIファイル]]を使ってメタ変数を渡していたそうです。 (INI のファイル名は CGI スクリプトの第1引数となります。) (WinCGI が他の点でちゃんと CGI に適合するのかは知りませんが。)
+
+;; [41] 一般的には予め[[環境変数]]として設定した後に[[CGIスクリプト]]を起動するため、
+[[CGIスクリプト]]ではすべての[[メタ変数]]の値が (利用するかどうかに関わらず) 取得可能なように実装されていますが、
+[[メタ変数]]が[[メソッド]]呼び出しの形で実装されている場合など、
+[[CGI]] の実装方法次第では値の決定が遅延されて必要に応じて行われることもあり得ます。
+
+** 空の値
+
+[50] [[CGI]] では[[空文字列]]のことを [DFN[[[NULL]]]] といいます。更に、[[空文字列]]と値が無い、
+値が設定されていないことを区別しません。
+
+[4] HTTP CGI では歴史的に両者を基本的には区別しませんが、
+SIP CGI ではその区別を要求しています。
+
+[58] [CODE(CGI)@en[[[QUERY_STRING]]]], [CODE(CGI)@en[[[SCRIPT_NAME]]]] 
+に関しては例外 (かもしれない) 規定があります。
+
+** 非妥当な値
+
+[56] [[メタ変数]]はそれぞれの構文と意味が規定されていますが、[[クライアント]]からの[[要求]]によってそれが定まる場合、
+[[クライアント]]が[[プロトコル]]の仕様に従っていない場合には[[メタ変数]]も同様に仕様に従っていないこともあります。
+
+;; [57] [[RFC]] にはそのような場合にどうするべきか明記されていませんが、
+わざわざ [[HTTP]] への適合性を細かく検査してから[[CGIスクリプト]]を呼び出したりは (特に[[鯖]]側の処理で必要がない限り)
+しないでしょうから、そのような値がそのまま[[CGIスクリプト]]に渡ってくることはよくあります。
+
+* プロトコル非依存のメタ変数
+
+[44] [CODE(CGI)@en[[[GATEWAY_INTERFACE]]]], [CODE(CGI)@en[[[REMOTE_ADDR]]]],
+[CODE(CGI)@en[[[SERVER_NAME]]]] など、 [[CGI]] や[[鯖]]、あるいは[[クライアント]]の情報を提供する[[メタ変数]]や、
+[CODE(CGI)@en[[[CONTENT_TYPE]]]] など[[要求]]についての情報を提供する[[メタ変数]]があります。
+
+;; [55] [[RFC 3875]] としてはプロトコル非依存のつもりで書いているのでしょうが、実際には [[HTTP]]
+の強く依存しており、 [[SIP CGI]] とは矛盾した要件も存在しています。 ([[SIP CGI]] の方が追い越して先に [[RFC]]
+になっているにも関わらず、整合性はありません。)
+
+* プロトコル依存のメタ変数
+
+[45] [[URL scheme]] と同名の[[メタ変数]]や、[[URL scheme]] または[[プロトコル]]の名前から始まる[[メタ変数]]も存在します。
+[SRC[>>38]] そのような[[メタ変数]]は、当該[[プロトコル]]特有の情報を提供します。
+
+[59] [[鯖]]は[[プロトコル]]と [[URL scheme]] に依存した[[メタ変数]]を設定する[['''べきです''']]。
+その解釈は [CODE(CGI)@en[[[SERVER_PROTOCOL]]]] に示された[[プロトコル]]の版に拠ります。 [SRC[>>60]]
+
+[61] [[鯖]]は [[URL scheme]] と[[プロトコル]]が異なるときに [[URL scheme]] と同名の[[メタ変数]]を非
+[[NULL]] 値に設定して[['''構いません''']]。 [SRC[>>60]]
+
+[EG[
+[46] 例えば [[HTTP]] というプロトコルにおいては、 [CODE(CGI)@en[[[HTTP_USER_AGENT]]]] という名前の[[メタ変数]]が
+[[HTTP]] [[要求メッセージ]]の [CODE(HTTP)@en[[[User-Agent:]]]] [[欄]]の値を提供することになっています。
+]EG]
+
+[EG[
+[47] また、 [CODE(URI)@en[[[https:]]]] という [[URL scheme]] (で表現される [[HTTP]]/[[TLS]])
+が使われている時には [CODE(CGI)@en[[[HTTPS]]]] という名前の[[メタ変数]]が定義されることになっています。
+]EG]
+
+[66] [[WSGI]] とその派生仕様は、 [CODE[[[wsgi.url_scheme]]]] のような [[URL scheme]]
+を直接提供する変数を ([[CGI]] 由来の変数とは別に) 提供しています。
+
+* 実装
+
+[REFS[
+- [17] Apache の環境変数 <http://httpd.apache.org/docs/env.html>。 Apache では挙動の制御に環境変数が使われますが、 CGI の環境変数群が CGI 以外の場面でもしばしば使用出来ます。
+- [19] [[Wyvern]] : ''環境変数設定モジュール'' <http://www.mysticwall.com/software/wyvern/manual-2.1/mod_env.html>
+- [20] ''mod_ssl - Apache HTTP Server'' <http://httpd.apache.org/docs-2.0/ja/mod/mod_ssl.html>
+- [32] [CITE@en[mod_ssl - Apache HTTP Server]]
+([TIME[2009-10-15 04:32:44 +09:00]] 版)
+<http://httpd.apache.org/docs/2.2/mod/mod_ssl.html#envvars>
+- [33] [CITE@en[mod_rewrite - Apache HTTP Server]]
+([TIME[2009-10-04 03:10:27 +09:00]] 版)
+<http://httpd.apache.org/docs/2.2/mod/mod_rewrite.html#RewriteCond>
+- [34] [CITE@ja[mod_cgi - Apache HTTP サーバ]]
+( ([TIME[2011-01-03 22:02:54 +09:00]] 版))
+<http://httpd.apache.org/docs/2.0/ja/mod/mod_cgi.html#env>
+]REFS]
+
+** AmigaDOS
+
+[62] [[AmigaDOS]] では[[メタ変数]]は同名の[[環境変数]]として[[CGIスクリプト]]に渡されます。
+[[CGIスクリプト]]からは [[DOS]] [[ライブラリー]]の [CODE[[[GetVar()]]]] 
+によりアクセスできます。 [[flags]] [[引数]]は [[0]] とする[['''べきです''']]。
+[[大文字・小文字不区別]]ですが、区別する[[システム]]との互換性ために[[大文字]]を使うべきです。
+[SRC[>>63]]
+
+** Unix, EBCDIC/POSIX
+
+[64] [[Unix]] や [[POSIX]] 互換の[[システム]]では[[メタ変数]]は同名の[[環境変数]]として
+[[CGIスクリプト]]に渡されます。
+[[CGIスクリプト]]からは [[C]] [[ライブラリー]]の [CODE[[[getenv()]]]]
+や[[変数]] [[environ]] によりアクセスできます。 [SRC[>>63]]
+[[大文字]]と[[小文字]]は区別されます。
+
+** Windows
+
+[65] [[Windows]] では[[メタ変数]]は同名の[[環境変数]]として[[CGIスクリプト]]に渡されます。
+[[大文字・小文字不区別]]ですが、区別する[[システム]]との互換性のために[[大文字]]を使うべきです。
+
+* メタ変数の一覧
+
+[7]
+- ●・・・サーバーは必ず提供''しなければならない''。 (場合によってはしなければならない、を含む。)
+- ◎・・・サーバーは提供する''べき''である。
+- ○・・・定義されている。(提供しても''よい''。)
+
+,1.1	,SIP	,名前	,実装
+,	,	,[[ALL_HTTP]]
+,	,	,[CODE(CGI)[[[ALL_RAW]]]]
+,	,	,[[API_VERSION]]	,[Apache]?
+,	,	,[[AUTH_PASS]]
+,	,	,[CODE(CGI)[[[AUTH_PASSWORD]]]]
+,◎	,●	,[[AUTH_TYPE]]	,
+,	,	,[[AUTH_USER]]
+,	,	,[CODE(CGI)[[[CERT_COOKIE]]]]
+,	,	,[CODE(CGI)[[[CERT_FLAGS]]]]
+,	,	,[CODE(CGI)[[[CERT_ISSUER]]]]
+,	,	,[CODE(CGI)[[[CERT_KEYSIZE]]]]
+,	,	,[CODE(CGI)[[[CERT_SECRETKEYSIZE]]]]
+,	,	,[CODE(CGI)[[[CERT_SERIALNUMBER]]]]
+,	,	,[CODE(CGI)[[[CERT_SERVER_ISSUER]]]]
+,	,	,[CODE(CGI)[[[CERT_SERVER_SUBJECT]]]]
+,	,	,[CODE(CGI)[[[CERT_SUBJECT]]]]
+,	,	,[CODE(CGI)[[[CHARSET]]]]	,[Russian Apache]
+,	,	,[CODE(CGI)[[[CHARSET_DETERMINED_BY]]]]	,[Russian Apache]
+,	,	,[CODE(CGI)[[[CHARSET_HTTP_METHOD]]]]	,[Russian Apache]
+,	,	,[CODE(CGI)[[[CHARSET_NOREDIRECT]]]]	,[Russian Apache]
+,	,	,[CODE(CGI)[[[CHARSET_SERVER_NAME]]]]	,[Russian Apache]
+,	,	,[CODE(CGI)[[[CHARSET_SERVER_PORT]]]]	,[Russian Apache]
+,	,	,[CODE(CGI)[[[CLIENT_CERT_ENCODING]]]]
+,●	,●	,[CODE(CGI)[[[CONTENT_LENGTH]]]]
+,●	,●	,[CODE(CGI)[[[CONTENT_TYPE]]]]
+,	,	,[CODE(CGI)[[[DATE_GMT]]]]	,[SSI]
+,	,	,[CODE(CGI)[[[DATE_LOCAL]]]]	,[SSI]
+,	,	,[CODE(CGI)[[[DOCUMENT_NAME]]]]	,[SSI]
+,	,	,[CODE(CGI)[[[DOCUMENT_PATH_INFO]]]]	,[SSI]
+,	,	,[CODE(CGI)[[[DOCUMENT_ROOT]]]]	,[Apache]
+,	,	,[CODE(CGI)[[[DOCUMENT_URI]]]]	,[SSI]
+,	,	,[CODE(CGI)[[[DOCUMENT_URL]]]]	,
+,	,	,[CODE(CGI)[[[FCGI_DATA_LENGTH]]]]	,[FastCGI]
+,	,	,[[FCGI_LISTEN_QUEUE]]	,[FastCGI]
+,	,	,[[FCGI_PROCESS_ID]]	,[FastCGI]
+,	,	,[CODE(CGI)[[[FCGI_ROLE]]]]	,[FastCGI]
+,	,	,[CODE(CGI)[[[FCGI_SOCKET_PATH]]]]	,[FastCGI]
+,	,	,[CODE(CGI)[[[FILE_LAST_MOD]]]]	,[FastCGI]
+,	,	,[CODE(CGI)[[[FORCE_CHARSET]]]]	,[Russian Apache]
+,	,	,[CODE(CGI)[[[FORCE_SOURCE_CHARSET]]]]	,[Russian Apache]
+,●	,●	,[CODE(CGI)[[[GATEWAY_INTERFACE]]]]
+,◎	,	,[CODE(CGI)[[[HTTP_*]]]]
+,	,	,[[HTTPS]]	,[Apache]
+,◎	,	,[CODE(CGI)[[[HTTPS_*]]]]
+,	,	,[CODE(CGI)[[[HTTPS_KEYSIZE]]]]
+,	,	,[CODE(CGI)[[[HTTPS_SECRETKEYSIZE]]]]
+,	,	,[CODE(CGI)[[[HTTPS_SERVER_ISSUER]]]]
+,	,	,[CODE(CGI)[[[HTTPS_SERVER_SUBJECT]]]]
+,	,	,[CODE(CGI)[[[INSTANCE_ID]]]]
+,	,	,[CODE(CGI)[[[IS_SUBREQ]]]]	,[Apache]?
+,	,	,[CODE(CGI)[[[LAST_MODIFIED]]]]	,[SSI]
+,	,	,[CODE(CGI)[[[LOCAL_ADDR]]]]
+,	,	,[CODE(CGI)[[[LOCAL_COOKIE]]]]	,[w3m] 廃止
+,	,	,[CODE(CGI)[[[LOCAL_COOKIE_FILE]]]]	,[w3m]
+,	,	,[CODE(CGI)[[[MOD_PERL]]]]	,[mod_perl]
+,●	,	,[CODE(CGI)[[[PATH_INFO]]]]
+,○	,	,[[PATH_TRANSLATED]]
+,	,	,[[PERL_SEND_HEADER]]	,[mod_perl]
+,●	,	,[[QUERY_STRING]]
+,	,	,[[QUERY_STRING_UNESCAPED]]	,[SSI]
+,	,	,[CODE(CGI)[[[REDIRECT_ERROR_NOTES]]]]	,[Apache]
+,	,	,[CODE(CGI)[[[REDIRECT_FORCE_CHARSET]]]]	,[Russian Apache]
+,	,	,[CODE(CGI)[[[REDIRECT_FORCE_CHARSET_CHARSET]]]]	,[Russian Apache]
+,	,	,[[REDIRECT_PATH]]	,*
+,	,	,[CODE(CGI)[[[REDIRECT_REQUEST_METHOD]]]]	,[Apache]
+,	,	,[[REDIRECT_QUERY_STRING]]	,*
+,	,	,[CODE(CGI)[[[REDIRECT_SCRIPT_URI]]]]	,[Apache]
+,	,	,[CODE(CGI)[[[REDIRECT_SCRIPT_URL]]]]	,[Apache]
+,	,	,[[REDIRECT_STATUS]]	,[Apache]*
+,	,	,[[REDIRECT_URL]]	,[Apache]*
+,	,??	,[[REGISTRATIONS]]
+,●	,●	,[[REMOTE_ADDR]]
+,◎	,◎	,[[REMOTE_HOST]]
+,○	,○	,[[REMOTE_IDENT]]
+,	,	,[[REMOTE_PASSWORD]]
+,	,	,[[REMOTE_PORT]]	,[Apache]
+,○	,◎	,[[REMOTE_USER]]
+,	,	,[[REQUEST_FILENAME]]	,[Apache]?
+,●	,●	,[[REQUEST_METHOD]]
+,	,	,[[REQUEST_SCHEME]]	,[Apache]?
+,	,??	,[[REQUEST_TOKEN]]
+,	,●	,[[REQUEST_URI]]	,[Apache] など
+,	,●	,[[RESPONSE_REASON]]
+,	,??	,[[RESPONSE_STATUS]]
+,	,??	,[[RESPONSE_TOKEN]]
+,	,	,[CODE(CGI)[[[ROOT]]]]
+,       ,       ,[CODE(CGI)@en[[[SCGI]]]]
+,	,??	,[[SCRIPT_COOKIE]]
+,	,	,[CODE(CGI)[[[SCRIPT_DIRECTORY]]]]	,[Protozilla]
+,	,	,[[SCRIPT_FILENAME]]	,[Apache] など
+,●	,	,[[SCRIPT_NAME]]
+,	,	,[CODE(CGI)[[[SCRIPT_URI]]]]	,[Apache]
+,	,	,[CODE(CGI)[[[SCRIPT_URL]]]]	,[Apache]
+,	,	,[[SERVER_ADDR]]
+,	,	,[[SERVER_ADMIN]]	,[Apache]
+,●	,●	,[[SERVER_NAME]]
+,●	,●	,[[SERVER_PORT]]
+,	,	,[[SERVER_PORT_SECURE]]
+,●	,●	,[[SERVER_PROTOCOL]]
+,	,	,[[SERVER_SIGNATURE]]	,[Apache]
+,●	,●	,[[SERVER_SOFTWARE]]
+,	,	,[CODE(CGI)[[[SERVER_URL]]]]	,[Netscape]
+,	,◎	,[[SIP_*]]
+,	,	,[CODE(CGI)[[[SOURCE_CHARSET]]]]	,[Russian Apache]
+,	,	,[[SSL_CIPHER]]	,[Apache]
+,	,	,[[SSL_CIPHER_ALGKEYSIZE]]	,[Apache]
+,	,	,[[SSL_CIPHER_EXPORT]]	,[Apache]
+,	,	,[[SSL_CIPHER_USEKEYSIZE]]	,[Apache]
+,	,	,[[SSL_CLIENT_A_KEY]]	,[Apache]
+,	,	,[[SSL_CLIENT_A_SIG]]	,[Apache]
+,	,	,[[SSL_CLIENT_CERT]]	,[Apache]
+,	,	,[[SSL_CLIENT_CERT_CHAINn]]	,[Apache]
+,	,	,[[SSL_CLIENT_I_DN]]	,[Apache]
+,	,	,[[SSL_CLIENT_I_DN_C]]	,[Apache]
+,	,	,[[SSL_CLIENT_I_DN_CN]]	,[Apache]
+,	,	,[[SSL_CLIENT_I_DN_D]]	,[Apache]
+,	,	,[[SSL_CLIENT_I_DN_Email]]	,[Apache]
+,	,	,[[SSL_CLIENT_I_DN_G]]	,[Apache]
+,	,	,[[SSL_CLIENT_I_DN_I]]	,[Apache]
+,	,	,[[SSL_CLIENT_I_DN_L]]	,[Apache]
+,	,	,[[SSL_CLIENT_I_DN_O]]	,[Apache]
+,	,	,[[SSL_CLIENT_I_DN_OU]]	,[Apache]
+,	,	,[[SSL_CLIENT_I_DN_S]]	,[Apache]
+,	,	,[[SSL_CLIENT_I_DN_ST]]	,[Apache]
+,	,	,[[SSL_CLIENT_I_DN_T]]	,[Apache]
+,	,	,[[SSL_CLIENT_I_DN_UID]]	,[Apache]
+,	,	,[[SSL_CLIENT_M_SERIAL]]	,[Apache]
+,	,	,[[SSL_CLIENT_M_VERSION]]	,[Apache]
+,	,	,[[SSL_CLIENT_S_DN]]	,[Apache]
+,	,	,[[SSL_CLIENT_S_DN_C]]	,[Apache]
+,	,	,[[SSL_CLIENT_S_DN_CN]]	,[Apache]
+,	,	,[[SSL_CLIENT_S_DN_D]]	,[Apache]
+,	,	,[[SSL_CLIENT_S_DN_Email]]	,[Apache]
+,	,	,[[SSL_CLIENT_S_DN_G]]	,[Apache]
+,	,	,[[SSL_CLIENT_S_DN_I]]	,[Apache]
+,	,	,[[SSL_CLIENT_S_DN_L]]	,[Apache]
+,	,	,[[SSL_CLIENT_S_DN_O]]	,[Apache]
+,	,	,[[SSL_CLIENT_S_DN_OU]]	,[Apache]
+,	,	,[[SSL_CLIENT_S_DN_S]]	,[Apache]
+,	,	,[[SSL_CLIENT_S_DN_ST]]	,[Apache]
+,	,	,[[SSL_CLIENT_S_DN_T]]	,[Apache]
+,	,	,[[SSL_CLIENT_S_DN_UID]]	,[Apache]
+,	,	,[[SSL_CLIENT_V_END]]	,[Apache]
+,	,	,[[SSL_CLIENT_V_START]]	,[Apache]
+,	,	,[[SSL_CLIENT_VERIFY]]	,[Apache]
+,	,	,[[SSL_PROTOCOL]]	,[Apache]
+,	,	,[[SSL_SERVER_A_KEY]]	,[Apache]
+,	,	,[[SSL_SERVER_A_SIG]]	,[Apache]
+,	,	,[[SSL_SERVER_CERT]]	,[Apache]
+,	,	,[[SSL_SERVER_I_DN]]	,[Apache]
+,	,	,[[SSL_SERVER_I_DN_C]]	,[Apache]
+,	,	,[[SSL_SERVER_I_DN_CN]]	,[Apache]
+,	,	,[[SSL_SERVER_I_DN_D]]	,[Apache]
+,	,	,[[SSL_SERVER_I_DN_Email]]	,[Apache]
+,	,	,[[SSL_SERVER_I_DN_G]]	,[Apache]
+,	,	,[[SSL_SERVER_I_DN_I]]	,[Apache]
+,	,	,[[SSL_SERVER_I_DN_L]]	,[Apache]
+,	,	,[[SSL_SERVER_I_DN_O]]	,[Apache]
+,	,	,[[SSL_SERVER_I_DN_OU]]	,[Apache]
+,	,	,[[SSL_SERVER_I_DN_S]]	,[Apache]
+,	,	,[[SSL_SERVER_I_DN_ST]]	,[Apache]
+,	,	,[[SSL_SERVER_I_DN_T]]	,[Apache]
+,	,	,[[SSL_SERVER_I_DN_UID]]	,[Apache]
+,	,	,[[SSL_SERVER_M_SERIAL]]	,[Apache]
+,	,	,[[SSL_SERVER_M_VERSION]]	,[Apache]
+,	,	,[[SSL_SERVER_S_DN]]	,[Apache]
+,	,	,[[SSL_SERVER_S_DN_C]]	,[Apache]
+,	,	,[[SSL_SERVER_S_DN_CN]]	,[Apache]
+,	,	,[[SSL_SERVER_S_DN_D]]	,[Apache]
+,	,	,[[SSL_SERVER_S_DN_Email]]	,[Apache]
+,	,	,[[SSL_SERVER_S_DN_G]]	,[Apache]
+,	,	,[[SSL_SERVER_S_DN_I]]	,[Apache]
+,	,	,[[SSL_SERVER_S_DN_L]]	,[Apache]
+,	,	,[[SSL_SERVER_S_DN_O]]	,[Apache]
+,	,	,[[SSL_SERVER_S_DN_OU]]	,[Apache]
+,	,	,[[SSL_SERVER_S_DN_S]]	,[Apache]
+,	,	,[[SSL_SERVER_S_DN_ST]]	,[Apache]
+,	,	,[[SSL_SERVER_S_DN_T]]	,[Apache]
+,	,	,[[SSL_SERVER_S_DN_UID]]	,[Apache]
+,	,	,[[SSL_SERVER_V_END]]	,[Apache]
+,	,	,[[SSL_SERVER_V_START]]	,[Apache]
+,	,	,[[SSL_SESSION_ID]]	,[Apache]
+,	,	,[[SSL_VERSION]]
+,	,	,[[SSL_VERSION_INTERFACE]]	,[Apache]?
+,	,	,[[SSL_VERSION_LIBRARY]]	,[Apache]
+,	,	,[[THE_REQUEST]]	,[Apache]?
+,	,	,[[TIME]]	,[Apache]?
+,	,	,[[TIME_DAY]]	,[Apache]?
+,	,	,[[TIME_HOUR]]	,[Apache]?
+,	,	,[[TIME_MIN]]	,[Apache]?
+,	,	,[[TIME_MON]]	,[Apache]?
+,	,	,[[TIME_SEC]]	,[Apache]?
+,	,	,[[TIME_YEAR]]	,[Apache]?
+,	,	,[CODE(CGI)[[[URI_DATA]]]]	,[Protozilla]
+,	,	,[CODE(CGI)[[[URI_HOST]]]]	,[Protozilla]
+,	,	,[CODE(CGI)[[[URI_POST]]]]	,[Protozilla]
+,	,	,[CODE(CGI)[[[URI_SPEC]]]]	,[Protozilla]
+,	,	,[[URL]]
+,	,	,[[USER_NAME]]	,[Apache]*
+,	,	,[[W3M_*]]	,[w3m]*
+,○	,	,[[X_*]]
+,	,	,[[X_IS_PRIVATE_ADDR]]	,[Apache]
+
+- 1.1 == HTTP CGI/1.1
+- SIP == SIP-CGI/1.1
+- [SSI] == SSI (参考)
+- [Apache]* == Apache (CGI とは直接関係ない機能)
+- [Apache]? == CGI スクリプトや SSI で利用可能であることが確認できないもの (設定ファイルなどの処理中のみ使用可能??)
+- [mod_perl] == [[mod_perl]] で CGI を使ったときに得られるもの (参考までに)
+- [Protozilla] == [[Protozilla]] の [CODE(URI)[[[cgi+]]:]] scheme を使った CGI スクリプト呼び出し
+- [Russian Apache] == 露西亜語版 Apache <http://apache.lexa.ru/configure.html#env-vars>。表には、 CGI 専用でない変数を含む。
+- ''Servertec - Common Gateway Interface (CGI)'' <http://www.servertec.com/products/iws/docs/cgi.html>
+- [w3m] == w3m [[LocalCGI]]
+
+* これは CGI メタ変数ではない!
+
+[14] よく [CODE[CGI 環境変数]]として取り上げられるが CGI とは関係のない (たまたま設定されているだけの) 変数: 
+- [CODE[[[COMSPEC]]]]
+- [CODE[[[HOME]]]]
+- [CODE[[[PATH]]]]
+- [CODE[[[PWD]]]]
+- [CODE[[[TZ]]]]
+- [CODE[[[USER]]]]
+
+[15] こういうのを CGI 環境変数として挙げているような解説は参考にしない方が身のためです。
+
+- [23] しかし、 >>14 のような、 HTTP 鯖とまったく関係ない変数は別として、実際問題、 HTTP 鯖ソフトウェアが設定する環境変数が CGI メタ変数 (独自拡張を含む。) の実装なのか、鯖の別の機能の実装 (がたまたま CGI スクリプトから利用できるだけ) なのか、区別がつきませんよね。 CGI と関係のない鯖の機能で実装されているなら CGI メタ変数ではないと言うこともできるし、 CGI スクリプトから利用できる (している) 以上 CGI メタ変数だとも言える。その辺は結局言葉遊びというか、定義の問題になってしまうのか。。。 どうしようもないので >>7 の表ではかなり定義を曖昧に、広い範囲の環境変数を広義の CGI メタ変数として含めています。 SSI の変数なんて CGI とは関係ないとはいえ、 SSI からの CGI スクリプト呼出しでは現実に同じ名前空間に存在しているわけですし、別の鯖の実装では普通に (SSI 経由でなくても) CGI スクリプトから利用できたりするから、 CGI メタ変数であるかどうかの判断なんてもうどうでもよくなってしまう。
+
+* CGI の肝はメタ変数。メタ変数の説明次第で CGI 解説文がトンデモかどうか判断できる。
+
+- [6] よく、「CGI 環境変数の説明」などと称して、色々な[[環境変数]]の一覧を示している文書があります。そしてそのような文書にはたいてい、 [CODE[TZ]] のように''たまたまそのサーバーで設定されていた''だけの環境変数が載っていたりします。筆者がちゃんとわかっているかを判断する一つの材料となります。
+- [7] また、 >>6 ほどではありませんが重要なポイントとして、一般的な CGI のめた変数と、 HTTP_[CODE[*]] のめた変数をきちんと区別して扱っているかも要注意でしょう。厳しいことを言えば、このメタ変数群と [[HTTP]] 頭欄の関係に全く触れていなければその時点で HTTP CGI の説明として失格です。
+- [11] [CODE[環境変数はブラウザが送る]]と思っている人がいます。仕組みを知らない証拠です。
+
+* memo
+
+[2]
+[NCSA] では[[環境変数]]とされていましたが、
+[COAR] では CGI の普及を反映して、
+より汎用的にメタ変数と呼んでいます。
+[[Un|x]] や [[Windoze]]
+のような環境で、 [[Apache]]
+や [[IIS]] などを使っている場合など、
+ほとんどの場合においてはメタ変数の手段として環境変数が使われますから、
+現在でも環境変数で情報を伝えていると表現することは間違いではありませんが、
+特に実装に依存した話をする場合以外は
+[COAR] を尊重してメタ変数と呼ぶのがよいとおもいます。
+[[RFC3050]] もメタ変数と呼んでいます。
+
+[3] メタ変数は、サーバーから CGI
+スクリプトへの情報伝達にのみ使われます。
+変数の値を変更しても、サーバーの動作などに影響は出ません。
+(メタ変数の手段によっては変更すること自体できないかもしれません。)
+
+[49] HTTP CGI であっても、 
+[CODE(CGI)[NULL]] と値なしは
+「実装依存」であって、
+適当でよいわけではありません。
+例えばサーバーはある時
+[CODE(CGI)[QUERY_STRING]]
+が
+
+[31] [CITE[mod_rewrite - shima111の日記]] ([TIME[2009-01-27 18:16:17 +09:00]] 版) <http://d.hatena.ne.jp/shima111/20070125/p1>
+
+
+[67] [CITE@en[ESI Language Specification 1.0]]
+( ([TIME[2001-08-03 20:25:52 +09:00]] 版))
+<http://www.w3.org/TR/esi-lang>
+
+[68] [CITE@EN[XQuery 3.0: An XML Query Language]]
+( ([TIME[2014-04-08 08:26:21 +09:00]] 版))
+<http://www.w3.org/TR/xquery-30/#dt-environment-variables>

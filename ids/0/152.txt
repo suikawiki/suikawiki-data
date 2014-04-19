@@ -1,0 +1,151 @@
+
+[8] [[CGI]] の[[メタ変数]] [DFN[[CODE(CGI)@en[[[REMOTE_HOST]]]]]]
+は、[[要求]]している[[クライアント]]の[[完全修飾ドメイン名]]
+([ABBR[[[FQDN]]]]) を値として持ちます。
+
+* 仕様書
+
+[REFS[
+- [30] [CITE@en[RFC 3875 - The Common Gateway Interface (CGI) Version 1.1]]
+-- [9] '''<http://tools.ietf.org/html/rfc3875#section-4.1.9>'''
+-- [29] <http://tools.ietf.org/html/rfc3875#section-8.2>
+]REFS]
+
+* 構文
+
+[10] RFC 3875 によれば、 [CODE(CGI)[REMOTE_HOST]]
+の値は次の構文によります。
+
+- [11] [CODE(ABNF)[[DFN[REMOTE_HOST]] := [[NULL]] / hostname / hostnumber]]
+-- [12] [CODE(CGI)[NULL]] は、 FQDN 情報が利用できないことを表します。
+[SRC[RFC 3875 4.1.9]]
+-- [19] 効率その他の理由で [CODE(CGI)[[[REMOTE_ADDR]]]]
+と同じ [CODE(ABNF)[[[hostnumber]]]] を使っても'''構いません'''。
+[SRC[RFC 3875 4.1.9]]
+- [13] [CODE(ABNF)[[DFN[hostname]] := *(domainlabel ".") toplabel ["."] ]]
+-- [14] RFC 1034 3.5節および RFC 1123 3.1節に基づく FQDN です。
+-- [15] 大文字・小文字を区別''しません''。
+- [16] [CODE(ABNF)[[DFN[domainlabel]] := ([[ALPHA]] / [[DIGIT]]) [*(ALPHA / DIGIT / "-") (ALPHA / DIGIT)] ]]
+- [17] [CODE(ABNF)[[DFN[toplabel]] := [[ALPHA]] [*(ALPHA / DIGIT / "-") (ALPHA / DIGIT)] ]]
+
+[18] 鯖はこの変数を設定する'''べきです''' [SRC[RFC 3875 4.1.9]]。
+FQDN が利用できない場合には、 [CODE(CGI)[NULL]] 値
+[WEAK[([[空文字列]]または [[null]] 値)]] を設定します
+(>>12)。あるいは、 [CODE(CGI)[REMOTE_ADDR]] と同じ値にしても'''構いません'''
+(>>19)。
+
+;; [25] >>18 の規定 (前半) は無視され、設定によって無効になっているとき値を設定しないのが普通であるように思えます。
+
+[20] [CODE(CGI)[REMOTE_HOST]] の値が IP 番地かホスト名かは、
+[CODE(CGI)[[[REMOTE_ADDR]]]] の値と比較すればわかります。
+[WEAK[(IP 番地が設定される [CODE(CGI)[REMOTE_ADDR]] は鯖が必ず設定しなければ'''なりません'''から、必ず比較ができます。)]]
+両者が等しければ [CODE(CGI)[REMOTE_HOST]] は IP 番地です。
+[WEAK[(厳密には、大文字・小文字を区別しないで比較しなければなりません。)]]
+
+;; [24] [CODE(CGI)@en[[[REMOTE_HOST]]]] が [CODE(CGI)@en[[[REMOTE_ADDR]]]] とは別の
+[[IPアドレス]]になることは無いはずです。
+
+[31] この値は[[串]]を挟む場合などに最終的な受信者と異なることがあります。 [SRC[>>30]]
+
+** ドメイン名
+
+[26] [[ドメイン名]]に[[LDHラベル]]で無いものが含まれている場合、例えば [CODE[[[_]]]]
+が含まれる場合も存在し得ると考えられ、その場合前述の構文には適合しませんが、
+[[鯖]]があえてそれをチェックしているとは思えませんから、おそらくそのまま [[CGIスクリプト]]に渡ることになるでしょう。
+
+[27] [[CGI]] の仕様は[[IDN]]以前のものであり、また構文的にも[[IDN未対応ドメイン名スロット]]であると考えられます。
+つまり [[Punycode]] はそのまま返され、 [[IDN]] が返されることは無いはずです。
+
+;; [28] [[IDNA]] 以外の方法、例えば生の [[UTF-8]] で[[ラベル]]が登録されている場合はこの限りではありません。
+[[システム定義]]の[[charset]]によって[[符号化]]された[[非ASCII文字]]を含む値が返されることになるかもしれません。
+
+* 歴史
+
+[REFS[
+-[23]  [CGP#515] [CITE[CGP/1.0 specification]] (CGI/1.0 の最初の仕様書案)
+-- <mid:9311180039.AA06991@void.ncsa.uiuc.edu>
+-- <http://ksi.cpsc.ucalgary.ca/archives/WWW-TALK/www-talk-1993q4.messages/515.html>
+]REFS]
+
+** NCSA CGI/1.1
+
+[2]
+
+> The hostname making the request. If the server does not have this information, it should set REMOTE_ADDR and leave this unset.
+
+[[要求]]を作成した[[ホスト名]]。鯖がこの情報を持ち合わせていなければ変数
+[CODE(CGI)[[[REMOTE_ADDR]]]] を設定し、こちらは設定しないでおくべきです。
+
+** CGI/1.1 I-D 03 版
+
+[3]
+
+> The fully qualified domain name of the client sending the request to the server, if available, otherwise NULL. (See section 6.1.9.) Fully qualified domain names take the form as described in section 3.5 of RFC 1034 [10] and section 2.1 of RFC 1123 [5]. Domain names are not case sensitive. 
+> Servers SHOULD provide this information to scripts. 
+
+要求を鯖に送信したクライアントの[[完全修飾ドメイン名]]か、
+それが利用できなければ [CODE(CGI)[[[NULL]]]] です。
+完全修飾ドメイン名は [[RFC 1034]] の3.5節と [[RFC 1123]]
+の2.1節で説明されている形式を取ります。
+ドメイン名は大文字・小文字を区別しません。
+
+鯖はこの情報をスクリプトに提供する'''べきです'''。
+
+** RFC 3875 (CGI/1.1)
+
+→ [[RFC 3875]] 4.1.9
+
+** メモ
+
+[21] [CODE(CGI)[REMOTE_HOST]] は [[CGI/1.0]] の最初の原案
+[SRC[CGP#515]] で既に CGI の環境変数として用意されていました。
+CGI/1.0 の正式版仕様書は現時点で未発見ですが、
+おそらくそのまま残ったのでしょう。
+
+その後、 CGI/1.1 [SRC[NCSA]] にも [CODE(CGI)[REMOTE_HOST]]
+は引き継がれました。
+
+[4] 当初の仕様書 [SRC[NCSA]] は値が FQDN であることは要求せず、
+単に[Q[ホスト名]]としか述べていませんでした。新しい仕様書
+[SRC[RFC 3875]] は明確に FQDN であることを要求していますが、
+現在に至るまで、実装が必ずしも FQDN を返すわけではありません。
+(何も考えずに実装すると [CODE[[[gethostbyaddr]]]]
+を使って [[IP番地]]から変換することになるのでしょうから、
+FQDN であることは保証されません。)
+
+[1] また、古い仕様書 [SRC[NCSA]] ではホスト名情報が利用できない時にこの変数を設定するべきではないと述べているのに対し、
+現在の仕様書 [SRC[RFC 3875]] は [CODE(CGI)[[[NULL]]]] 値を設定''する''べきであるとしています。
+加えて、新しい仕様書 [SRC[RFC 3875]] は [[IP番地]]を値として設定することも認めています。
+
+後者については、新しい仕様書 [SRC[RFC 3875]] が出版されるかなり以前から
+[[IPv4番地]]を値として設定する[[鯖]]があることが知られています。
+
+[7] >>1 ところが IPv4 番地を [CODE(CGI)[REMOTE_HOST]]
+に設定するのは実は [[NCSA]] の鯖だったりします。
+手元の雑誌 (1997) の画面写真によれば、 [CODE[NCSA/1.5.2]] です。
+
+[5] 以前はほとんどの鯖で [CODE(CGI)[REMOTE_HOST]]
+に適当なホスト名が入れられていたようですが、
+1990年代の後半にこの状況は激変しました。 
+IP 番地からホスト名を引くのにはそれなりの時間がかかるので、
+[[Apache]] の設定の既定値がこの機能を[Q[切]]とするようになったためです。
+これにより [CODE(CGI)[REMOTE_HOST]] が存在することを当てにしていた少なからぬ
+[[CGIスクリプト]]が影響を受けました。
+
+* 実装
+
+[6] Apache では、 [CODE[[[HostnameLookups]]]] 指令の値によりこのメタ変数が設定されるかが決まります。
+
+* メモ
+
+[22] [CODE(CGI)[REMOTE_HOST]] の値としてホスト名が得られない場合は、
+[CODE(CGI)[REMOTE_ADDR]] の値を使って変換するのがよいでしょう
+[WEAK[(というか普通はそれしか方法がないでしょう)]]。
+[[TCP/IP]] が使える環境なら、ほぼ間違いなく [CODE[[[gethostbyaddr]]]]
+が存在するはずです。 ([[C]] や [[Perl]] や [[PHP]]
+などではこの名前の[[関数]]があります。)
+
+;; 注意: 古い環境では [CODE[gethostbyaddr]] が [[IPv6]]
+番地に対応していないかもしれません。新しい環境であっても
+IPv6 が有効でなければ意味がありません。もっとも、
+そのような場合に鯖から IPv6 番地が渡されることはありえないはずです。

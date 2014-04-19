@@ -1,0 +1,61 @@
+*領域の折畳み folding
+
+認めているもの
+
+-RFC 822 メッセージ
+-ニュース記事 RFC 850, RFC 1036, son-of-RFC1036, usefor-article
+-[[HTTP/1.0]] メッセージ 「推奨されない」
+-[[HTTP/1.1]] メッセージ 「『共通形』にするのを推奨」(つまりあまり推奨しないと。)
+
+認めていないもの
+
+-[[CGI/1.1]]
+
+*領域名・コロン直後での折畳み
+
+RFC 2822 によると
+
+=obs-optional    =       field-name *WSP ":" unstructured CRLF
+=unstructured    =       *([FWS] utext) [FWS]
+
+ですから、 「(1)Hoge(2):(3)foobar(4)hogehoge(5)」(数字は説明用)
+の中で、折畳み出来るのは (3) と (4) と (5) です。
+
+RFC 822 BNF の要素間にはどこでも linear-white-space が挿入
+できるんじゃ? ってのが頭をよぎりますが、 RFC 822 3.1.1 曰く
+「For convenience, the ''field-body''  portion  of  this  conceptual
+entity  can be split into a multiple-line representation; this
+is called "folding".」 (強調引用者) ですから、そこでは折畳めません。
+
+(3) は、 usenet news format では伝統的に、 1SP が最低必要
+とされてます。 draft-usefor-article でもこれは同じで、
+この部分は ... ":" SP [CFWS] ... という定義になります。
+
+しかし、現実の実装、たとえばニュース・サーバーの [[INN]]
+は、「Message-ID: (CRLF SP)<foo@bar.example>(CRLF)」
+を持つ記事を正しく扱えません。 Message-ID を持つ記事と
+認識して受け取ってはくれますが、 newsgroup には配置されません。
+折畳みのせいで Message-ID の取得に失敗するのでしょう。
+(ニュースはメイルと違って Message-ID に強く依存してます。)
+
+MID: 以外の領域に就いても似たような扱いになります。
+このようなソフトウェアはおそらく他にもあるでしょう。
+
+ですから、 ":" の後(かつ (WSP / CRLF) 以外が登場する前)では
+折畳まないのが賢明です。 ([[わかば]]はこれにかなりはまりました。)
+
+*折畳みを正しく扱えないソフトウェア
+
+昔はめいるでも結構ありました。 ML にメイルを送ったら、
+折畳みを認識しないせいで、(ML server が領域の追加変更削除とか
+した時に) 関係ない領域につながったりしたことがあったみたいです。
+
+[[MIME]] header ([[encoded-word]]) 普及で長い頭領域が
+多くなったとかの理由で、最近ではそういうイかれたのは
+少ないと思われます。
+
+一方で、仕様を調べようともしない素人技術者が増殖している昨今ですから、
+逆にそういうソフトウェアは(影響力的には減少しても、
+絶対数としては)増加している可能性もあります。
+けど、さすがにそんな糞ソフトウェアに配慮して折畳まない、
+ってのは愚策でしょう。

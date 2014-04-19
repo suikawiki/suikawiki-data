@@ -1,0 +1,412 @@
+[1] [[manakai DOM Extensions]] > Extensions to
+existing interfaces > Extensions to the
+[CODE(DOMi)@en[[[Node]]]] interface
+
+
+[31] The description for the 
+[CODE(DOMi)@en[[[ElementTypeDefinition]]]] and
+[CODE(DOMi)@en[[[AttributeDefinition]]]] interfaces
+includes the interaction of existing attributes
+and methods of [CODE(DOMi)@en[[[Node]]]] interface
+and these new node types.
+
+
+** New node types
+
+[23] Two constants are added to the
+definition group [CODE(DOM)@en[[[NodeType]]]]:
+- [10] 
+The constant [CODE(DOMc)@en[[[ELEMENT_TYPE_DEFINITION_NODE]]]],
+[CODE(IDL)[[[81001]]]] in [CODE(IDL)@en[[[unsigned short]]]],
+represents that the [CODE(DOMi)@en[[[Node]]]]
+is an [CODE(DOMi)@en[[[ElementTypeDefinition]]]].
+- [11] 
+The constant [CODE(DOMc)@en[[[ATTRIBUTE_DEFINITION_NODE]]]],
+[CODE(IDL)[[[81002]]]] in [CODE(IDL)@en[[[unsigned short]]]],
+represents that the [CODE(DOMi)@en[[[Node]]]]
+is an [CODE(DOMi)@en[[[AttributeDefinition]]]].
+
+
+** New element type accessors
+
+[9] The [DFN@en[[CODE(DOMa)@en[[[manakaiLocalName]]]] attribute]]
+contains the [Q@en[real]] local name of the
+[CODE(DOMi)@en[[[Node]]]].
+
+The type of this attribute is [CODE(DOMi)@en[[[DOMString]]]].
+This attribute is read-only.
+
+The getter of this attribute [['''MUST''']]
+return the same value as the [CODE(DOMa)@en[[[localName]]]]
+on the same [CODE(DOMi)@en[[[Node]]]],
+except when the [CODE(DOMa)@en[[[localName]]]] getter
+is so defined that it must return the canonicalized
+version of [Q@en[real]] local name, in that case
+the [Q@en[real]] local name [['''MUST''']] be returned.
+
+;; [81005] Since it has clarified that [CODE(DOMa)@en[[[localName]]]] always returns the original local name
+of the element, use of the [CODE(DOMa)@en[[[manakaiLocalName]]]] attribute is discouraged.
+
+[5] The [DFN@en[[CODE(DOMa)@en[[[manakaiExpandedURI]]]] attribute]]
+contans the expanded URI, i.e. the concatenation
+of the namespace URI and the local name of the 
+[CODE(DOMi)@en[[[Node]]]].
+
+The type of this attribute is [CODE(DOMi)@en[[[DOMString]]]].
+This attribute is read-only.
+
+= If the [CODE(DOMa)@en[[[manakaiLocalName]]]] of the
+[CODE(DOMi)@en[[[Node]]]] is [CODE(IDL)@en[[[null]]]],
+then the getter [['''MUST''']] return [CODE(IDL)@en[[[null]]]].
+= Otherwise, if the [CODE(DOMa)@en[[[namespaceURI]]]]
+of the [CODE(DOMi)@en[[[Node]]]] is [CODE(IDL)@en[[[null]]]],
+then the getter [['''MUST''']] return the
+[CODE(DOMa)@en[[[manakaiLocalName]]]] of the 
+[CODE(DOMi)@en[[[Node]]]].
+= Otherwise, the getter [['''MUST''']] return the 
+concatenation of the [CODE(DOMa)@en[[[namespaceURI]]]]
+and then [CODE(DOMa)@en[[[manakaiLocalName]]]].
+
+
+** New tree accessor and mutator
+
+[4] The 
+[DFN@en[[CODE(DOMa)@en[[[manakaiParentElement]]]] attribute]]
+contains the parent element of the [CODE(DOMi)@en[[[Node]]]],
+if any.
+
+The type of this attribute is [CODE(DOMi)@en[[[Element]]]].
+This attribute is read-only.
+
+= If the [CODE(DOMa)@en[[[parentNode]]]] of
+the [CODE(DOMi)@en[[[Node]]]] is [CODE(IDL)@en[[[null]]]],
+then the getter [['''MUST''']] return [CODE(IDL)@en[[[null]]]].
+= Otherwise, if the [CODE(DOMa)@en[[[parentNode]]]]
+of the [CODE(DOMi)@en[[[Node]]]] is an [CODE(DOMi)@en[[[Element]]]],
+then the getter [['''MUST''']] return that 
+[CODE(DOMi)@en[[[Element]]]].
+= Otherwise, the getter [['''MUST''']] return
+the [CODE(DOMa)@en[[[manakaiParentElement]]]]
+of the [CODE(DOMa)@en[[[parentNode]]]] of the
+[CODE(DOMi)@en[[[Node]]]].  It might be [CODE(IDL)@en[[[null]]]].
+
+@@ ISSUE: Should the owner element be returned for
+an [CODE(DOMi)@en[[[Attr]]]]?
+
+[3] The [DFN@en[[CODE(DOMm)@en[[[manakaiAppendText]]]] method]]
+appends a string at the end of the [CODE(DOMi)@en[[[Node]]]].
+
+[FIG[
+[PRE(IDL code)[
+[[partial]] [[interface]] [[Node]] {
+  [[Node]] [[manakaiAppendText]]([[DOMString]] [VAR[s]]);
+  void [[manakaiAppendContent]](([[Node]] or [[DOMString]]) [VAR@en[node]]);
+};
+]PRE]
+]FIG]
+
+;; [81011] In [[DOM Perl Binding]], [VAR@en[s]] can be a reference to the string.
+
+;; It was the original intention that for the DOM Perl binding
+the [CODE(perl)[[[.=]]]] operator is to be overloaded
+by this method.  However, since overloading that
+operator by this method makes the [[Perl]]
+implementation (at least Perl 5.8.1 and 5.8.7
+on GNU/Linux system) unstable, that feature is
+temporarily disabled.
+
+[81012] When invoked, the method [['''MUST''']] run the following steps with the argument [VAR@en[s]]:
+[FIG[
+= If setting the [CODE(DOMa)@en[[[textContent]]]] attribute of the [[context object]] has no effect,
+return the [[context object]] and abort these steps.
+= If setting the [CODE(DOMa)@en[[[textContent]]]] attribute would append a [CODE(DOMi)@en[[[Text]]]] node
+as the children of the [[context object]], 
+== If the last child of the [[context object]], if any, is a [CODE(DOMi)@en[[[Text]]]] node,
+[[replace data]] with [VAR[node]] the [CODE(DOMi)@en[[[Text]]]] node, [VAR[offset]] [CODE(DOMa)@en[[[length]]]] attribute value
+of the [CODE(DOMi)@en[[[Text]]]] node, [VAR@en[count]] 0, and [VAR@en[data]] [VAR@en[s]].
+== Otherwise, if the length of [VAR@en[s]] is greater than zero (0), create a [CODE(DOMi)@en[[[Text]]]] node whose [[data]]
+is [VAR@en[s]] and [[insert]] the node into the [[context object]] before [[null]].
+= Otherwise, if the [[context object]] is an instance of the [CODE(DOMi)@en[[[CharacterData]]]] interface,
+[[replace data]] with [VAR[node]] the [[context object]], [VAR[offset]] [CODE(DOMa)@en[[[length]]]] attribute value
+of the [[context object]], [VAR@en[count]] 0, and [VAR@en[data]] [VAR@en[s]].
+= Otherwise, set the [CODE(DOMa)@en[[[textContent]]]] attribute value to the [CODE(DOMa)@en[[[textContent]]]]
+attribute value immediately followed by [VAR@en[s]].
+= Return the [[context object]].
+]FIG]
+
+[81013] The [DFN[[CODE(DOMm)@en[[[manakaiAppendContent]]]]]] method [['''MUST''']] run the following steps:
+[FIG[
+= Let [VAR@en[node]] be the argument.
+= Let [VAR@en[context]] be the [[template content]] of the [[context object]] if the [[context object]] is an HTML [CODE(HTMLe)@en[[[template]]]] element, or the [[context object]] otherwise.
+= If [VAR@en[node]] is a [CODE(DOMi)en[[[Node]]]], act as if the [CODE(DOMm)@en[[[appendChild]]]] method of the [CODE(DOMi)@en[[[Node]]]] interface is invoked with the [[context object]] [VAR@en[context]] and the argument [VAR@en[node]].
+= Otherwise, act as if the [CODE(DOMm)@en[[[manakaiAppendText]]]] method of the [CODE(DOMi)@en[[[Node]]]] interface is invoked with the [[context object]] [VAR@en[context]] and the argument [VAR@en[node]].
+]FIG]
+
+;; [81014] The method returns nothing.
+
+** Read-only flag accessors
+
+[1] The [DFN@en[[CODE(DOMa)@en[[[manakaiReadOnly]]]] attribute]]
+represents whether the [CODE(DOMi)@en[[[Node]]]]
+is read-only or not.
+This is a [CODE(IDL)@en[[[boolean]]]] attribute.
+This attribute is [[read-only]].
+
+The getter [['''MUST''']] return [CODE(IDL)@en[[[true]]]]
+if the [CODE(DOMi)@en[[[Node]]]] is read-only.
+Otherwise, it [['''MUST''']] return [CODE(IDL)@en[[[false]]]].
+
+[2] The [DFN@en[[CODE(DOMm)@en[[[manakaiSetReadOnly]]]] method]]
+is used to set the [CODE(DOMa)@en[[[manakaiReadOnly]]]]
+attribute.
+This method has two parameters: [CODE(DOMp)@en[[[newValue]]]]
+and [CODE(DOMp)@en[[[deep]]]].
+This method returns nothing.
+
+[CODE(DOMp)@en[[[newValue]]]], type [CODE(IDL)@en[[[boolean]]]], 
+represents the new value of the [CODE(DOMa)@en[[[manakaiReadOnly]]]]
+attribute.
+
+[CODE(DOMp)@en[[[deep]]]], type [CODE(IDL)@en[[[boolean]]]].
+represents whether the descendants' 
+[CODE(DOMa)@en[[[manakaiReadOnly]]]] attributes
+should also be set or not.
+
+When invoked, the method [['''MUST''']] set the
+[CODE(DOMa)@en[[[manakaiReadOnly]]]] attribute,
+i.e. the read-only flag, of the [CODE(DOMi)@en[[[Node]]]]
+to [CODE(DOMp)@en[[[newValue]]]].
+
+If the [CODE(DOMp)@en[[[deep]]]] parameter is set to
+[CODE(IDL)@en[[[true]]]], then the method [['''MUST''']]
+act as if the method is also invoked to
+any of the following [CODE(DOMi)@en[[[Node]]]]s with same
+[CODE(DOMp)@en[[[newValue]]]] and [CODE(DOMp)@en[[[deep]]]]
+parameters:
+- [CODE(DOMi)@en[[[Node]]]]s contained in
+[CODE(DOMa)@en[[[childNodes]]]] of the [CODE(DOMi)@en[[[Node]]]]
+- [CODE(DOMi)@en[[[Node]]]]s contained in
+[CODE(DOMa)@en[[[attributes]]]] of the [CODE(DOMi)@en[[[Node]]]]
+(if it is an [CODE(DOMi)@en[[[Element]]]])
+- [CODE(DOMi)@en[[[Node]]]]s contained in
+[CODE(DOMa)@en[[[elementTypes]]]] of the [CODE(DOMi)@en[[[Node]]]]
+(if it is a [CODE(DOMi)@en[[[DocumentTypeDefinition]]]])
+- [CODE(DOMi)@en[[[Node]]]]s contained in
+[CODE(DOMa)@en[[[generalEntities]]]] of the 
+[CODE(DOMi)@en[[[Node]]]]
+(if it is a [CODE(DOMi)@en[[[DocumentTypeDefinition]]]])
+- [CODE(DOMi)@en[[[Node]]]]s contained in
+[CODE(DOMa)@en[[[notations]]]] of the [CODE(DOMi)@en[[[Node]]]]
+(if it is a [CODE(DOMi)@en[[[DocumentTypeDefinition]]]])
+- [CODE(DOMi)@en[[[Node]]]]s contained in
+[CODE(DOMa)@en[[[attributeDefinitions]]]] of the 
+[CODE(DOMi)@en[[[Node]]]]
+(if it is a [CODE(DOMi)@en[[[ElementTypeDefinition]]]])
+
+
+** Metadata accessor
+
+[FIG[
+[81008] 
+[PRE(IDL code)[
+[[partial]] [[interface]] [[Node]] {
+  [[attribute]] [[DOMString]] [[manakaiLanguage]];
+  [[attribute]] [[DOMString]] [[manakaiHTMLLanguage]];
+};
+]PRE]
+]FIG]
+
+[6]
+The [DFN@en[[CODE(DOMa)@en[[[manakaiLanguage]]]] attribute]]
+contans the language information of the [CODE(DOMi)@en[[[Node]]]],
+if available.
+
+The type of this attribute is [CODE(DOMi)@en[[[DOMString]]]].
+This attribute is read-write.
+
+This getter [['''MUST''']] act as if the following
+algorithm is performed:
+= If the [CODE(DOMi)@en[[[Node]]]] is an
+[CODE(DOMi)@en[[[Element]]]]:
+== If there is an [CODE(DOMi)@en[[[Attr]]]], in
+the [CODE(DOMa)@en[[[attributes]]]] list of
+the [CODE(DOMi)@en[[[Element]]]],
+whose [CODE(DOMa)@en[[[namespaceURI]]]] is 
+[CODE(URI)@en[[[http://www.w3.org/XML/1998/namespace]]]]
+and [CODE(DOMa)@en[[[localName]]]] is 
+[CODE(XMLa)@en[[[lang]]]], then the getter
+returns the [CODE(DOMa)@en[[[value]]]]
+of the [CODE(DOMi)@en[[[Attr]]]].
+== Otherwise, if there is an [CODE(DOMi)@en[[[Attr]]]], in
+the [CODE(DOMa)@en[[[attributes]]]] list of
+the [CODE(DOMi)@en[[[Element]]]],
+whose [CODE(DOMa)@en[[[namespaceURI]]]] is 
+[CODE(IDL)@en[[[null]]]]
+and [CODE(DOMa)@en[[[localName]]]] is 
+[CODE(XMLa)@en[[[xml]]:[[lang]]]], then the getter
+returns the [CODE(DOMa)@en[[[value]]]]
+of the [CODE(DOMi)@en[[[Attr]]]].
+= If the [CODE(DOMi)@en[[[Node]]]] has a 
+non-[CODE(IDL)@en[[[null]]]] [CODE(DOMi)@en[[[parentNode]]]],
+then the getter returns the 
+[CODE(DOMa)@en[[[manakaiLanguage]]]] of that 
+[CODE(DOMi)@en[[[Node]]]].
+= Otherwise, if the [CODE(DOMi)@en[[[Node]]]] has a
+non-[CODE(IDL)@en[[[null]]]] [CODE(DOMa)@en[[[ownerDocument]]]],
+then the getter returns the 
+[CODE(DOMa)@en[[[manakaiLanguage]]]] of that 
+[CODE(DOMi)@en[[[Node]]]].
+= Otherwise, if the [CODE(DOMi)@en[[[Node]]]] is a 
+[CODE(DOMi)@en[[[Document]]]] and any natural
+language information is attached to the 
+[CODE(DOMi)@en[[[Document]]]],
+for example by [CODE(HTTP)@en[[[Content-Language]]]]
+[[HTTP]] header field, then the getter returns it.
+-- If such information has different syntax and / or
+semantics than one for the [CODE(XMLa)@en[[[xml]]:[[lang]]]]
+attributes as defined in XML 1.0 and 1.1 specifications,
+then the getter [['''MUST''']] return an XML-compatible
+string that is considered as equivalent to that information.
+-- If such convertion if not possible, then
+the getter [['''MUST NOT''']] return any string in this step.
+-- If more than one languages are specified, then
+the string [CODE(lang)@en[[[mul]]]] [['''MAY''']] be used.
+= Otherwise, return an empty string.
+
+@@ TODO: Maybe we should clarify what convertion
+must be done for [CODE(DOMi)@en[[[Document]]]]s.
+
+The setter [['''MUST''']] act as if the following algorithm
+is performed:
+= Let [VAR@en[s]] as the new value given to the attribute.
+= If the [CODE(DOMi)@en[[[Node]]]] is an
+[CODE(DOMi)@en[[[Element]]]]:
+== If the [CODE(DOMi)@en[[[Node]]]] has one or two
+[CODE(DOMi)@en[[[Attr]]]]s whose [CODE(DOMa)@en[[[namespaceURI]]]]
+is [CODE(URI)@en[[[http://www.w3.org/XML/1998/namespace]]]]
+and [CODE(DOMa)@en[[[localName]]]] is [CODE(XMLa)@en[[[lang]]]]
+or whose [CODE(DOMa)@en[[[namespaceURI]]]] is
+[CODE@en[[[null]]]] and [CODE(DOMa)@en[[[localName]]]] is
+[CODE(XMLa)@en[[[xml]]:[[lang]]]], then:
+=== If the [CODE(DOMi)@en[[[Element]]]] is read-only,
+then throw a [CODE(DOM)@en[[[NO_MODIFICATION_ALLOWED_ERR]]]]
+exceoption and abort the algorithm.
+=== Otherwise, any such [CODE(DOMi)@en[[[Attr]]]]
+[['''MUST''']] be removed from the [CODE(DOMi)@en[[[Element]]]]
+as if [CODE(DOMm)@en[[[removeAttributeNode]]]] is invoked
+with appropriate parameter.
+---- Note that a default attribute might appear after
+the remove operation.
+== Otherwise, if the element has an [CODE(DOMi)@en[[[Attr]]]]
+whose [CODE(DOMa)@en[[[namespaceURI]]]]
+is [CODE(URI)@en[[[http://www.w3.org/XML/1998/namespace]]]]
+and [CODE(DOMa)@en[[[localName]]]] is [CODE(XMLa)@en[[[lang]]]]:
+=== If the [CODE(DOMi)@en[[[Attr]]]] is read-only,
+then throw a [CODE(DOM)@en[[[NO_MODIFICATION_ALLOWED_ERR]]]]
+exceoption and abort the algorithm.
+=== Otherwise, set its [CODE(DOMa)@en[[[value]]]] to 
+[VAR@en[s]] and set its [CODE(DOMa)@en[[[specified]]]]
+to [CODE(IDL)@en[[[true]]]].
+== Otherwise, if the element has an [CODE(DOMi)@en[[[Attr]]]]
+whose [CODE(DOMa)@en[[[namespaceURI]]]]
+is [CODE(IDL)@en[[[null]]]] and [CODE(DOMa)@en[[[localName]]]] is 
+[CODE(XMLa)@en[[[xml]]:[[lang]]]]:
+=== If the [CODE(DOMi)@en[[[Attr]]]] is read-only,
+then throw a [CODE(DOM)@en[[[NO_MODIFICATION_ALLOWED_ERR]]]]
+exceoption and abort the algorithm.
+=== Otherwise, set its [CODE(DOMa)@en[[[value]]]] to 
+[VAR@en[s]] and set its [CODE(DOMa)@en[[[specified]]]]
+to [CODE(IDL)@en[[[true]]]].
+== Otherwise, invoke the [CODE(DOMm)@en[[[setAttributeNS]]]]
+method on the [CODE(DOMi)@en[[[Element]]]] with
+parameters [CODE(URI)@en[[[http://www.w3.org/XML/1998/namespace]]]],
+[CODE(XMLa)@en[[[xml]]:[[lang]]]], and [VAR@en[s]].
+--- Note that this might cause an exception is thrown.
+= Otherwise, setter do nothing.
+
+@@ TODO: Setter for [CODE(DOMi)@en[[[Document]]]].
+
+@@ TODO: mutation event consideration
+
+[81009] On getting, the [DFN[[CODE(DOMa)@en[[[manakaiHTMLLanguage]]]]]] attribute of the
+[CODE(DOMi)@en[[[Node]]]] object [['''MUST''']] return the [[language]] of the node [SRC[HTML]].
+
+[81010] On setting, the attribute [['''MUST''']] run the following steps:
+[FIG[
+= If the [[context object]] is not an element, abort these steps.
+= If the [[element]] has the [CODE(XMLa)@en[[[lang]]]] attribute in the [[XML namespace]],
+set its value to the new value and abort these steps.
+= If the [[element]] is in the [[HTML namespace]], set the [CODE(XMLa)@en[[[lang]]]] attribute in no namespace
+to the new value and abort these steps.
+= Set the [CODE(XMLa)@en[[[lang]]]] attribute in the [[XML namespace]],
+set its value to the new value and abort these steps.
+]FIG]
+
+* Interfaces
+
+[32] [CODE(DOMi)@en[[[Node]]]] objects [['''MAY''']]
+implement the [CODE(DOMi)@en[[[NSResolver]]]] interface
+[SelectorsAPI].
+
+* Parsing
+
+[81004] 
+[PRE(code IDL)[
+partial interface Node {
+  DOMString? manakaiGetChildNamespaceURI(DOMString? tagName);
+};
+]PRE]
+
+[81003] The [DFN[[CODE(DOMm)@en[[[manakaiGetChildNamespaceURI]]]]]] method [['''MUST''']]
+run the following steps:
+= If the [[node document]] of the [CODE(DOMi)@en[[[Node]]]] is an [[HTML document]]:
+== Let [VAR@en[tagName]] be [VAR@en[tagName]] [[converted to ASCII lowercase]].
+== If the [CODE(DOMi)@en[[[Node]]]] is a [[MathML text integration point]]:
+=== If [VAR@en[tagName]] is [CODE(XMLe)@en[[[mglyph]]]] or [CODE(XMLe)@en[[[malignmark]]]],
+return the [[MathML namespace]] and abort these steps.
+=== Otherwise, jump to the step named '''HTML'''.
+== Otherwise, if the [CODE(DOMi)@en[[[Node]]]] is an [CODE(XMLe)@en[[[annotation-xml]]]] element in the 
+[[MathML namespace]] and [VAR@en[tagName]] is [CODE(XMLe)@en[[[svg]]]], return the
+[[SVG namespace]] and abort these steps.
+== Otherwise, if the [CODE(DOMi)@en[[[Node]]]] is an [[HTML integration point]], jump to the step named '''HTML'''.
+== Otherwise, if the [CODE(DOMa)@en[[[namespaceURI]]]] of the [CODE(DOMi)@en[[[Node]]]] is 
+the [[SVG namespace]] or the [[MathML namespace]], return the [CODE(DOMa)@en[[[namespaceURI]]]] and
+abort these steps.
+== '''HTML''': If [VAR@en[tagName]] is [CODE(XMLe)@en[[[svg]]]], return the [[SVG namespace]] and
+abort these steps.
+== Otherwise, if [VAR@en[tagName]] is [CODE(XMLe)@en[[[math]]]], return the [[MathML namespace]] and
+abort these steps.
+== Otherwise, return the [[HTML namespace]] and abort these steps.
+= Otherwise:
+== If [VAR@en[tagName]] contains a [CODE(char)[[[U+003A]]]] [CODE(charname)@en[[[COLON]]]]
+character ([CODE(char)[[[:]]]]):
+=== Let [VAR@en[prefix]] be [VAR@en[tagName]].
+=== Delete the [CODE(char)[[[U+003A]]]] [CODE(charname)@en[[[COLON]]]]
+character ([CODE(char)[[[:]]]]) character and any folloing characters from [VAR@en[prefix]].
+=== Return the result of running [[locate a namespace]]
+<http://dvcs.w3.org/hg/domcore/raw-file/tip/Overview.html#locate-a-namespace>
+for the [CODE(DOMi)@en[[[Node]]]] using [VAR[prefix]] and abort these steps.
+[SPAN(comment)[Please note that [VAR@en[prefix]] could be the empty string, which is different from [[null]].]]
+== Otherise, return the result of running [[locate a namespace]]
+<http://dvcs.w3.org/hg/domcore/raw-file/tip/Overview.html#locate-a-namespace>
+for the [CODE(DOMi)@en[[[Node]]]] using [[null]] as [VAR[prefix]] and abort these steps.
+
+* [CODE(DOMi)@en[RootNode]]
+
+[FIG[
+[81006] 
+[PRE(IDL code)[
+partial interface DocumentFragment {
+  HTMLCollection getElementsByTagName(DOMString localName);
+  HTMLCollection getElementsByTagNameNS(DOMString? namespace, DOMString localName);
+  HTMLCollection getElementsByClassName(DOMString classNames);
+};
+]PRE]
+]FIG]
+
+[81007] Methods [CODE(DOMm)@en[[[getElementsByTagName]]]],
+[CODE(DOMm)@en[[[getElementsByTagNameNS]]]], and
+[CODE(DOMm)@en[[[getElementsByClassName]]]]
+of the [CODE(DOMi)@en[[[DocumentFragment]]]] interface
+[['''MUST'''']] behave in the same way as the methods with same names
+on the [CODE(DOMi)@en[[[Document]]]] interface, respectively.

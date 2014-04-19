@@ -1,0 +1,71 @@
+#?SuikaWiki/0.9
+[1]  なんとなく、
+[PRE[
+<!ENTITY % ent SYSTEM "data:,%22EntityValue%22">
+<!ENTITY entity %ent;>
+]PRE]
+みたいのはありかなあ? って気がしますが、 XML 仕様書にはダメとは書いてないので、いいんでしょう。
+
+[2] 試しに [[WinIE6]] で
+[PRE[
+<!ENTITY  % external-text SYSTEM "c.dtd">
+<!ENTITY %external-text;>
+ [INS[<!-- b.dtd -->]]
+]PRE]
+[PRE[
+an-external-entity "This is an external entity."
+ [INS[<!-- c.dtd -->]]
+]PRE]
+を試してみると、「スペースが必要です」と言われます。
+[SAMP(file)[b.dtd]] の2つめの[[実体宣言]]を
+[SAMP(XML)[<!ENTITY %external-text; >]]
+に変えると、文句言われずに意図したように解釈されました。
+
+;; この両者の違いはないはずですから、 M$XML のバグでしょう。
+なお、内部実体の場合でも同じエラーが出ます。
+外部引数実体の扱いとは無関係のようです。
+
+- [3] >>2 の [SAMP(file)[c.dtd]] の前に[[文宣言]]を入れたら、「無効な文字で名前が始まりました」と言われました。これは間違いなくバグですね。
+- [4] でも >>3 の動作は [[SGML]] 的には適当だと思われる。やっぱり、文宣言は SGML 的には[[処理指令]]ではなくシステム依存の [WEAK[(SGML の外の世界の)]] データである説は正しいのだろうか?
+
+[5] で、
+[PRE[
+<!ENTITY % external-text SYSTEM "c.dtd">
+<!ENTITY % xent2 "%external-text; >">
+%xent2;
+ [INS[<!-- b.dtd -->]]
+]PRE]
+[PRE[
+<!ENTITY an-external-entity "This is an external entity."
+ [INS[<!-- c.dtd -->]]
+]PRE]
+ってのはどうでしょう?
+
+WinIE 6.0 も [[W3CのValidator]] も、問題ないと言ってくれます。
+[WEAK[それに自分で処理系書いてみると、問題ないことにしたい気持ちはよくわかります。]]
+本当に問題ないんでしょうか? ないといいんですが。
+
+[6] というわけで[[XML//妥当性制約]]
+「PE とマーク宣言が適当に入れ子になっていること」
+<http://www.w3.org/TR/REC-xml#vc-PEinMarkupDecl> であります。
+> Parameter-entity replacement text must be properly nested with markup declarations. That is to say, if either the first character or the last character of a markup declaration (markupdecl above) is contained in the replacement text for a parameter-entity reference, both must be contained in the same replacement text.
+
+外部実体 [SAMP(file)[c.dtd]] で、
+実体宣言 [WEAK[(の一部となるもの)]] の先頭の文字があって、
+最後の文字はありません。どう見ても、同じ[[置換文]]中にマーク宣言が完全に含まれてはいません。
+
+でもちょっと待ってください。この実体、つまり
+[SAMP(XML)[external-text]] が展開されるのは、
+別の引数実体 [SAMP(XML)[xent2]] の宣言時です。
+そのときにその[[実体値]], というか置換文の一部となるのです。
+で、この時点に於いてその中身はマーク宣言ではありません。
+単なる文字列です。
+
+で、 [SAMP(XML)[xent2]] が参照された時に初めて、
+この文字列がマーク宣言として解釈されるのです。
+そしてその時、マーク宣言の最初と最後の文字は確かに、
+同じ実体の中にあるのです。
+
+・・・と、解釈してもいいんでしょうか? いいですよね?
+[WEAK[いや、そう解釈しないと、面倒なことになるのでどうか一つ是非・・・]]
+- [7] >>3-4 [[W3CのValidator]] でも駄目だや。 >>5 の例 + 文宣言なら M$XML でも W3C のでも OK みたいだけど。

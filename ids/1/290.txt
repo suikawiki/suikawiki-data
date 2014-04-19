@@ -1,0 +1,426 @@
+
+[26] 「予約」と言う時に、すべての[[予約文字]]のこと ([[ABNF]] における [CODE(ABNF)@en[[[reserved]]]]
+のこと) を指していることもあれば、特定の文脈において[[予約]]されている[[文字]]だけを指していることもあり、
+注意が必要です。
+
+[1] 
+- rfc1630.body.reserved = <[%/#?*]>
+- rfc1630.reserved = <[=;/#?:]> / [[SP]]
+- rfc1738.reserved = <[;/?:@&=]>
+- rfc1808.reserved = rfc1738.reserved
+- rfc2068.reserved = <[;/?:@&=+]>
+- rfc2396.reserved = <[;/?:@&=+$,]>
+- rfc2732.reserved = <[;/?:@&=+$,]> / "[" / "]"
+- rfc3986.reserved = rfc3987.reserved = [[gen-delims]] / [[sub-delims]] = <[;/?:@&=+$,!'()*#]> / "[" / "]"
+
+[22]
+1630 -> 1738 では
+[CODE(URI)[[['''#''']]]] と
+[CODE(URI)[[[%]]]]
+と [CODE(char)[SP]]
+が消えました。
+そして
+[CODE(URI)[[[@]]]] が新たに追加されました。
+URI の範囲 [WEAK[([[素片識別子]]及びその前の [CODE(URI)[#]] は URI に含まない。)]]
+及び予約集合の意味
+[WEAK[(方式によっては特別な意味を持ち得る文字種。)]]
+を明確化した結果でしょう。
+
+[CODE(URI)[[[&]]]] も新たに追加されましたが、
+こちらは [[HTML]]
+の [CODE(HTML)[[[form]]]]
+機能の追加を受けたものです。
+
+1738 -> 2396 で追加された
+[CODE(URI)[[[+]]]]
+は従来[[問合せ文字列]]で間隔の代替とされていたもので、
+区切り文字としての役割を明確化したと言えるでしょう。
+([[RFC 2068]] は先取りしています。)
+
+[CODE(URI)[[[,]]]] と
+[CODE(URI)[[[$]]]]
+も区切りとして使われることがあるので取り上げて明確化したのでしょう。
+
+- [11] 2396 G.2 の説明で余計わかりにくくなっている気がしますが、 reserved 集合に含まれている文字は方式やその示す資源によって特別な意味を持つ可能性がありますが、それ以外の文字についてはその可能性はありません。 (ないはずです。というのは、 [[unreserved]] の説明で unreserved 文字は escape してもしなくても等価であることが述べられているからです。)
+
+[14] [[RFC 2732]] は、
+[[IPv6]] アドレスを表現するために
+[[unwise]] だった
+[CODE(URI)['''[''']] 及び
+[CODE(URI)[''']''']] を reserved
+に追加しました。
+
+このことをどう解釈したらいいか微妙です。
+- [15] 追加の目的は [[host]] 部分での
+IPv6 adderess の表現を認めることだ。
+2732 が改訂した生成規則 host 
+以外での両括弧の使用は認められない。
+- [16] IPv6 アドレスを表現するという予約目的で両括弧の使用を認めると
+2732 は言っている。 IPv6 アドレスを表現する限りは自由に使って良い。
+- [17] reserved に両括弧は追加されたのだ。それ以上でもそれ以下でもない。
+両括弧は今後 URI で自由に使える。
+
+例で示すなら、
+- [18] [SAMP(URI)[http://[0:2:3::5:5]/foo.example]]
+- [19] [SAMP(URI)[x-some-scheme:foo:[0::1:2:3]:bar]]
+- [20] [SAMP(URI)[x-some-scheme:foo[bar];]]
+- [21] [SAMP(URI)[x-some-scheme:foo]bar]]
+
+の >>18 例が 2732 の主目的なわけです。
+>>15 は >>18 しか認めない意見。
+>>16 は>>18 と >>19
+はみとめる。 >>17 は >>20
+も >>21 も OK という意見。
+
+どれが正しいのでしょう?
+
+[13] [[RFC 3986]]・[[RFC 3987]] では
+[CODE(char)[!]], [CODE(char)[']], [CODE(char)[(]],
+[CODE(char)[)]], [CODE(char)[*]], [CODE(char)[#]]
+が追加されました。 [CODE(char)[#]] は[[素片識別子]]が URI
+の一部であることに定義が改められたことによるものでしょう。
+
+[CODE(char)[*]] が予約文字になってしまうと、
+この文字を[[ワイルド・カード]]として使い、
+本来の星印を[[百分率符号化]]オクテット表現にしていた
+[[URIパターン]]は汎用性を失ってしまいます。。。
+
+
+[24]
+[[RFC 3986]]によると[CODE(char)['''[''']]と[CODE(char)[''']''']]が使えるのは[[命名権者]]部の[[IP番地]]としてだけです。
+
+ということは、[[URI]] [WEAK[([[素片識別子]]を除く。)]] を直接含む[[URI]]が一般には作れないことになります。。。
+
+* CGI における定義
+
+[27] 
+[PRE(ABNF code)[
+      reserved = ";" | "/" | "?" | ":" | "@" | "&" | "=" | "+" | "$" |
+                 "," | "[" | "]"
+]PRE]
+
+[28] [[CGI]] における [CODE(ABNF)@en[[[reserved]]]] は [[RFC 2732]] の定義と一致しています。
+
+[REFS[
+- [29] [CITE@en[RFC 3875 - The Common Gateway Interface (CGI) Version 1.1]] ([TIME[2011-11-20 06:09:05 +09:00]] 版) <http://tools.ietf.org/html/rfc3875#section-2.3>
+]REFS]
+
+* 仕様書から
+
+
+** RFC 1630
+
+
+*** Reserved characters
+
+> The path in the URI has a significance defined by the particular
+scheme.  Typically, it is used to encode a name in a given name
+space, or an algorithm for accessing an object.  In either case, the
+encoding may use those characters allowed by the BNF syntax, or
+hexadecimal encoding of other characters.
+
+URI 中の経路 [INS[(訳注: 方式名の後の [CODE(URI)[:]] の更に後の部分。)]]
+はその特定の方式で規定された意味を持ちます。
+典型的には、当該名前空間中の名前や物体に接続する算法を符号化するのに使います。
+いずれの場合でも、符号化は BNF
+構文で認められている文字又はそれ以外の文字の16進数符号化を使って構いません。
+
+> Some of the reserved characters have special uses as defined here.
+
+幾つかの予約文字はここで定義する特別な用法を持ちます。
+
+
+**** THE PERCENT SIGN
+
+> The percent sign ("%", ASCII 25 hex) is used as the escape
+character in the encoding scheme and is never allowed for anything
+else.
+
+百分率記号 ([CODE(char)[%]],
+[[ASCII]] 16進 [CODE(char)[25]])
+は符号化方式の [[escape]]
+文字として使用し、
+それ以外では決して認められません。
+
+
+**** HIERARCHICAL FORMS
+
+> The slash ("/", ASCII 2F hex) character is reserved for the
+delimiting of substrings whose relationship is hierarchical.  This
+enables partial forms of the URI.  Substrings consisting of single
+or double dots ("." or "..") are similarly reserved.
+
+斜線 ([CODE(char)[[[/]]]], ASCII
+16進 [CODE(char)[2F]])
+文字はその関係が階層的である部分文字列を区切るのに予約します。
+これは URI の部分形式 [INS[(訳注: 相対 URI のこと。)]] を可能にします。
+1つ又は2つの点 ([CODE(URI)[.]]
+又は [CODE(URI)[..]])
+を含む部分文字列も同様に予約します。
+
+> The significance of the slash between two segments is that the
+segment of the path to the left is more significant than the
+segment of the path to the right. ("Significance" in this case
+refers solely to closeness to the root of the hierarchical
+structure and makes no value judgement!)
+
+2つの部分の間の斜線の意味は、
+経路の左側の部分が経路の右側の部分よりも重要であるということです。
+(ここで''重要''とは単に階層構造の根に近いことを指すだけで何の価値判断もしていません!)
+
+> Note
+> The similarity to unix and other disk operating system filename
+conventions should be taken as purely coincidental, and should
+not be taken to indicate that URIs should be interpreted as
+file names.
+
+Unix や他のディスク・オペレーティング・システムのファイル名の表記法との類似性は純粋に偶然と取るべきで、
+URI がファイル名として解釈されるべきであると取るべきではありません。
+
+
+**** HASH FOR FRAGMENT IDENTIFIERS
+
+> The hash ("#", ASCII 23 hex) character is reserved as a delimiter
+to separate the URI of an object from a fragment identifier .
+
+Hash ([CODE(char)[#]], ASCII
+16進 [CODE(char)[23]])
+文字は物体の URI と[[素片識別子]]を分離する区切子として予約します。
+
+
+**** QUERY STRINGS
+
+> The question mark ("?", ASCII 3F hex) is used to delimit the
+boundary between the URI of a queryable object, and a set of words
+used to express a query on that object.  When this form is used,
+the combined URI stands for the object which results from the
+query being applied to the original object.
+
+疑問符 ([CODE(char)[?]], ASCII
+16進 [CODE(char)[3F]])
+は問合せ可能な物体の URI
+とその物体への問合せを表現するのに使用する語の集合の間の境界を区切るのに使います。
+この形式を使用する時には、
+結合した URI
+は元の物体に問合せを適用した結果の物体を意味します。
+
+> Within the query string, the plus sign is reserved as shorthand
+notation for a space.  Therefore, real plus signs must be encoded.
+This method was used to make query URIs easier to pass in systems
+which did not allow spaces.
+
+[[問合せ文字列]]の中では、
+正符号を間隔の簡略記法として予約します。
+従って、真の正符号は符号化しなければなりません。
+この方式は、問合せ URI を間隔を認めないシステムでより簡単に渡せるように使われていました。
+
+> The query string represents some operation applied to the object,
+but this specification gives no common syntax or semantics for it.
+In practice the syntax and sematics may depend on the scheme and
+may even on the base URI.
+
+問合せ文字列は物体に適用する幾らかの操作を表現しますが、
+この仕様書はその共通の構文や意味を与えません。
+実際上は構文と意味は方式に依存するかもしれませんし、また基底
+URI にも依存するかもしれません。
+
+[INS[
+
+訳注: ここで[[基底URI]]とは相対 URI
+に対する基底ではなくて、問合せ文字列を除いた部分と理解すれば良いのでしょうか?
+]INS]
+
+
+**** OTHER RESERVED CHARACTERS
+
+> The astersik ("*", ASCII 2A hex) and exclamation mark ("!" , ASCII
+21 hex) are reserved for use as having special signifiance within
+specific schemes.
+
+星印 ([CODE(char)[*]], ASCII
+16進 [CODE(char)[2A]])
+及び感嘆符
+([CODE(char)[!]], ASCII 16進
+[CODE(char)[21]])
+は特定の方式中で特別な意味を持って使用するのに予約します。
+
+
+*** BNF
+
+- [2] [CODE(BNF)[reserved               =  |  ;  |  /  |  #  | ? |  : | space]]
+- [3] 本文中の [CODE[Reserved characters]] と BNF の [CODE[reserved]] は何やら意味が違うみたいです。なお、 [CODE(URI)[!]] 及び [CODE(URI)[*]] は BNF では [CODE[[[extra]]]] に分類されています。
+- [4] >>2 ではちょっとわかりにくいかもしれませんが、 [CODE[=]] も [CODE[reserved]] の一選択肢です (BNF の代入(というか定義)記号ではありません)。
+- [12] つまりですよ。 <http://foo.example/foo:bar> と <http://foo.example/foo%3Abar> は同じかどうか一意には定まらないということですな。そらー厄介だ。
+[[#comment]]
+
+
+** RFC 1738
+
+> Reserved:
+> Many URL schemes reserve certain characters for a special meaning:
+their appearance in the scheme-specific part of the URL has a
+designated semantics. If the character corresponding to an octet is
+reserved in a scheme, the octet must be encoded.  The characters ";",
+"/", "?", ":", "@", "=" and "&" are the characters which may be
+reserved for special meaning within a scheme. No other characters may
+be reserved within a scheme.
+
+多くの URL 方式が、
+特定の文字群を特別な意味に予約しています。
+これらの文字が URL
+中の方式指定 ([[scheme-specific]])
+部分に出現することには指示された意味があります。
+あるオクテットに対応する文字が方式中で予約されている場合、
+そのオクテットは符号化しなければなりません。
+文字
+[CODE(URI)[;]], [CODE(URI)[/]], [CODE(URI)[?]], [CODE(URI)[:]], [CODE(URI)[@]], [CODE(URI)[=]], [CODE(URI)[&]]
+は方式中で特別な意味に予約されているかもしれない文字です。
+他の文字は方式中で予約されることはありません。
+
+> Usually a URL has the same interpretation when an octet is
+represented by a character and when it encoded. However, this is not
+true for reserved characters: encoding a character reserved for a
+particular scheme may change the semantics of a URL.
+
+通常、 URL はあるオクテットが文字で表現されていた場合と符号化されていた場合とで同じ解釈を持ちます。
+しかし、これは予約文字に対しては真ではありませ。
+特定の方式で予約されている文字を符号化することは、
+URL の意味を変更し得ます。
+
+> Thus, only alphanumerics, the special characters "$-_.+!*'(),", and
+reserved characters used for their reserved purposes may be used
+unencoded within a URL.
+
+従って、英数字, 特殊文字
+[CODE[$-_.+!*'(),]],
+その予約目的に使われている予約文字だけが
+URL 中で符号化せずに使えます。
+
+> On the other hand, characters that are not required to be encoded
+(including alphanumerics) may be encoded within the scheme-specific
+part of a URL, as long as they are not being used for a reserved
+purpose.
+
+他方、符号化される必要のない文字
+(英数字を含む。)
+は、それが予約目的で使われていない限り、
+URL の方式指定部分中で符号化しても構いません。
+
+
+*** BNF
+
+[10] [[BNF]] では
+- [CODE(ABNF)[[DFN[reserved]]       = ";" | "/" | "?" | ":" | "@" | "&" | "="]] 
+
+と定義されています。
+
+
+** RFC 2396
+
+
+*** 2.2. Reserved Characters
+
+> Many URI include components consisting of or delimited by, certain
+special characters.  These characters are called "reserved", since
+their usage within the URI component is limited to their reserved
+purpose.  If the data for a URI component would conflict with the
+reserved purpose, then the conflicting data must be escaped before
+forming the URI.
+
+多くの URI は特定の特別な文字群で構成されたり区切られたりした部品群を復位増す。
+そうした文字群を、
+その URI 部品中での用途が予約された目的に限定されることから、
+「予約(済み)」と呼びます。
+URI 部品のデータが予約目的と衝突する時には、
+衝突するデータは URI
+を形成する前に符号化しなければなりません。
+
+>
+- reserved    = ";" | "/" | "?" | ":" | "@" | "&" | "=" | "+" | "$" | ","
+> The "reserved" syntax class above refers to those characters that are
+allowed within a URI, but which may not be allowed within a
+particular component of the generic URI syntax; they are used as
+delimiters of the components described in Section 3.
+
+上記の
+[CODE(ABNF)[reserved]] (予約済み)
+構文種別は、 URI 中で許されてはいるが、
+一般 URI 構文の特定の部品の中では許されないかもしれない文字を示しています。
+これらの文字は3章で説明する部品群の区切りに使います。
+
+> Characters in the "reserved" set are not reserved in all contexts.
+The set of characters actually reserved within any given URI
+component is defined by that component. In general, a character is
+reserved if the semantics of the URI changes if the character is
+replaced with its escaped US-ASCII encoding.
+
+「予約」集合中の文字は全ての文脈で予約されているわけではありません。
+ある URI 部品の中で通常予約されている文字の集合はその部品により定義されてます。
+通常、ある文字はその文字を符号化した
+[[US-ASCII]] 符号化に置換した時に
+URI の意味が変わるなら、予約とします。
+
+
+*** G.2 (抜粋)
+
+> Both RFC 1738 and RFC 1808 refer to the "reserved" set of characters
+as if URI-interpreting software were limited to a single set of
+characters with a reserved purpose (i.e., as meaning something other
+than the data to which the characters correspond), and that this set
+was fixed by the URI scheme.  However, this has not been true in
+practice; any character that is interpreted differently when it is
+escaped is, in effect, reserved.  Furthermore, the interpreting
+engine on a HTTP server is often dependent on the resource, not just
+the URI scheme.  The description of reserved characters has been
+changed accordingly.
+
+RFC 1738 も RFC 1808 も、
+「予約」文字集合を URI
+を解釈するソフトウェアは単一の予約目的の文字集合に限られている
+(つまり、文字が対応するデータ以外の何かを意味するものである)
+のであって、この集合は URI
+方式で固定されているかのように言及していました。
+しかし、これは実際には真ではありません。
+Escape された時に違って解釈されるどんな文字も実質的に予約されているのです。
+更に、 HTTP サーバー上の解釈原動機はしばしば、
+URI 方式だけにではなく資源にも依存します。
+これにしたがって予約文字の説明は改められました。
+
+> The plus "+", dollar "$", and comma "," characters have been added to
+those in the "reserved" set, since they are treated as reserved
+within the query component.
+
+正 [CODE(URI)[[[+]]]],
+弗 [CODE(URI)[[[$]]]],
+読点 [CODE(URI)[[[,]]]]
+各文字を「予約」集合に加えました。
+これらの文字は問合せ部品中で予約済みとして扱われます。
+
+
+** RFC 2732
+
+→[[RFC 2732]]
+
+
+** RFC 3986 (URI 4[SUP[th]]), RFC 3987 (IRI)
+
+→[[RFC 3986//2]]
+
+
+* RFC の部分の License
+
+[[RFCのライセンス]]
+
+* 関連
+
+- [[非予約文字]]
+- [[非安全文字]]
+- [[百分率符号化]]
+
+* メモ
+
+[23]
+誤って URI 参照で使うことがみとめられていない文字のことを [Q[reserved]] とか[Q[予約]]とかいうことがあります。
+
+URI で使えない文字とは異なり、
+予約文字は URI では使えます。

@@ -1,0 +1,466 @@
+[38] [[HTML]] の [DFN[[CODE(HTMLe)[style]] 要素型]]の要素を使うと、
+文書の頭部 ([CODE(HTMLe)[[[head]]]]) に[[スタイル・シート]]規則を入れることができます。
+
+[39] 仕様書:
+- [[HTML 4]] 
+-- [CITE[14.2.3 Header style information: the [CODE(HTMLe)[STYLE]] element]]
+<IW:HTML4:"present/styles.html#style-group">
+-- [CITE[14.5 Hiding style data from user agents]]
+<IW:HTML4:"present/styles.html#hiding">
+-- [CITE[Element content]]
+<IW:HTML4:"appendix/notes.html#h-B.3.2.1">
+- [[XHTML 1.0]]
+-- [CSECTION[4.8. Script and Style elements]]
+(参考) <IW:XHTML10:"h-4.8">
+-- [CSECTION[C.14. Referencing Style Elements when serving as XML]]
+(参考) <IW:XHTML10:"C_14">
+
+[3]
+:[[局所名]]:[CODE(HTMLe)[style]]
+:[[名前空間名]]:[CODE(URI)[[[http://www.w3.org/1999/xhtml]]]]
+:[[開始タグ]]:必須
+:[[終了タグ]]:必須
+:[[内容模型]] ([[HTML 4]]):[CODE(SGML)[[[CDATA]]]]
+:内容模型 ([[XHTML 1]]):[CODE(SGML)[[[PCDATA]]]]
+:出現できる文脈:[CODE(HTMLe)[[[head]]]] の子供として任意個
+:[[属性]]:
+,属性名	,属性値	,既定値	,説明	,状態	,出典
+,[CODE(HTMLa)[[[class]]]]	,	,(なし)	,[[級]]	,
+,[CODE(HTMLa)[[[dir]]]]	,	,(継承)	,[CODE(HTMLa)[title]] [[書字方向]]	,[HTML 4]
+,[CODE(HTMLa)[[[disabled]]]]	,	,	,無効化	,非標準
+,[CODE(HTMLa)[[[id]]]]	,[[ID]]	,(なし)	,唯一識別子	,
+,[CODE(HTMLa)[[[lang]]]]	,	,(継承)	,[CODE(HTMLa)[title]] [[自然言語]]	,[HTML 4]
+,[CODE(HTMLa)[[[xml]]:lang]]	,	,(継承)	,自然言語	,[XHTML 1]
+,[CODE(HTMLa)[[[media]]]]	,[CODE(SGML)[%[[MediaDesc]]]]	,	,適用媒体	,[HTML 4]
+,[CODE(HTMLa)[[[notation]]]]	,[CODE(SGML)[[[NOTATION]]]]	,	,スタイル言語	,[[HTML 3.0]]
+,[CODE(HTMLa)[xml:[[space]]]]	,	,[CODE(XML)[[[preserve]]]]	,[[空白]]の扱い	,[XHTML 1.0]
+,[CODE(HTMLa)[[[style]]]]	,	,(なし)	,スタイル指定	,
+,[CODE(HTMLa)[[[title]]]]	,[CODE(SGML)[%[[Text]]]]	,(なし)	,注釈的題	,[HTML 4]
+,[CODE(HTMLa)[[[type]]]]	,[CODE(SGML)[%[[ContentType]]]]	,(必須)	,[[スタイル言語]]	,[HTML 4]
+,[CODE(XMLa)[[[xmlns]]]]	,[CODE(URI)[[[http://www.w3.org/1999/xhtml]]]] 固定	,==	,[[名前空間名]]	,W3C 勧告	,[[XHTML m12n]]
+
+
+[[#comment]]
+
+
+** 内容
+
+
+*** 構文
+
+[4] [[XHTML]] になる前の HTML では、 [CODE(HTMLe)[style]]
+の[[内容]]は [CODE(SGML)[[[CDATA]]]] と宣言されていました。
+これは、 [CODE(SGML)[[[STAGO]]]] ([CODE(char)[<]]) や
+[CODE(SGML)[[[ERO]]]] ([CODE(char)[&]]) も含めて[[終了タグ]]までの文字列をすべて
+[CODE(HTMLe)[style]] 要素の内容として扱うことを意味します。
+
+ですから、例えば
+[PRE(HTML)[
+<[CODE(HTMLe)[style]] [CODE(HTMLa)[type]]="[CODE(MIME)[text/css]]">
+'''<!--'''
+   [CODE(HTMLe)[p]] {color: red; background-color: white}
+'''-->'''
+</[CODE(HTMLe)[style]]>
+]PRE]
+
+と記述したとしても、強調した部分は SGML の[[マーク]]ではなく、
+単なる[[文字データ]]扱いになり、 SGML の[[注釈宣言]]とは見なされません。
+(その一方で、 [CODE(HTMLe)[style]] が [CODE(SGML)[CDATA]]
+と知らない古い UA からは注釈宣言に見えるので、中身を隠すことができるのです。)
+
+[5] ところが、 [[XML]] では内容を [CODE(SGML)[CDATA]]
+にすることができません。そこで、 [[XHTML 1]] では [CODE(HTMLe)[style]]
+の内容は [CODE(XML)[(#[[PCDATA]])*]] と宣言されています。
+これは、通常の内容の扱いと同じになる、つまり
+[CODE(char)[<]] や [CODE(char)[&]] は [CODE(SGML)[[[stago]]]] などや
+[CODE(SGML)[[[ero]]]] などと見なされ得ることを意味します。
+
+この場合、 >>4 の注釈宣言に見える部分は本当に注釈宣言として扱われます。
+このままだと [CODE(HTMLe)[style]] は実質空になってしまいます。
+
+意図した通りに解釈させるためには
+[PRE(HTML)[
+<[CODE(HTMLe)[style]] [CODE(HTMLa)[type]]="[CODE(MIME)[text/css]]">
+   [CODE(HTMLe)[p]] {color: red; background-color: white}
+</[CODE(HTMLe)[style]]>
+]PRE]
+
+としなければなりません。 (当然、古い UA から隠すという機能は失われます。)
+
+[6] スタイル・シートの一部として [CODE(char)[<]] や
+[CODE(char)[&]] を書きたいとき、 >>4 では (終了タグと見なされてしまう場合を除き)
+そのまま書くことができましたが、 >>5 では非[[整形式]]になってしまいます。
+
+しかし、いちいち escape するのが面倒な場合には、
+[[[CODE(XML)[CDATA]]区間]]を使って、
+[PRE(HTML)[
+<[CODE(HTMLe)[style]] [CODE(HTMLa)[type]]="[CODE(MIME)[text/css]]">
+ [CODE(XML)['''<!''''''[''''''CDATA''''''[''']]
+   /* -- Question of Q & A -- */
+   [CODE(HTMLe)[p]] {color: red; background-color: white}
+ [CODE(XML)[''']'''''']''''''>''']]
+</[CODE(HTMLe)[style]]>
+]PRE]
+
+のように書くことができます。 [CODE(XML)[CDATA]] 区間の中では
+[CODE(SGML)[[[MSE]]]] ([CODE(XML)[''']''']>]]) 
+を除いてそのままの文字データと解釈されます。
+
+[7] なお、 SGML 注釈宣言風の[Q[隠し方]]は HTML の一部ではなく、
+スタイル言語の一部です。スタイル言語によっては使えないこともありますから、
+注意してください。
+
+[[#comment]]
+
+
+*** 意味
+
+[42] [CODE(HTMLe)[style]] の内容は、 [CODE(HTMLa)[type]] 
+で識別される[[スタイル言語]]によって解釈されます。
+構文等もスタイル言語によります。
+
+[[#comment]]
+
+
+*** CSS
+
+[44] [[CSS]] の仕様書は、 SGML 
+の注釈宣言のはじめと終わりのようなものについて次のように述べています。
+
+> CSS style sheets are often embedded in HTML documents, and to be able to 
+hide style sheets from older UAs, it is convenient put the style sheets 
+inside HTML comments. The HTML comment tokens "<!--" and "-->" may occur 
+before, after, and in between the statements. They may have whitespace 
+around them. [INS[CSS1 7.1    Forward-compatible parsing <http://www.w3.org/TR/REC-CSS1#forward-compatible-parsing>]]
+
+> [INS[和訳 (参考):]] CSS スタイル・シートはしばしば HTML 文書に埋込まれまして、
+古めの UA からスタイル・シートを隠すことができるように、
+スタイル・シートを HTML 注釈の中に入れるのが便利です。
+HTML 注釈字句 [CODE[<!--]] と [CODE[-->]] は文の前・後・間に出現できます。
+そのまわりに空白を入れても構いません。
+
+> CSS also allows the SGML comment delimiters ("<!--" and "-->") in certain 
+places, but they do not delimit CSS comments. They are permitted so that 
+style rules appearing in an HTML source document (in the STYLE element) may 
+be hidden from pre-HTML 3.2 user agents. See the HTML 4.0 specification 
+([HTML40]) for more information. [INS[CSS2 4.1.9 Comments <http://www.w3.org/TR/REC-CSS2/syndata.html#comments>]]
+
+> [INS[和訳 (参考):]] CSS はある場所で SGML 注釈区切子
+([CODE(SGML)[<!--]] および [CODE(SGML)[-->]])
+をも認めていますが、この両者は CSS 注釈を区切るものではありません。
+両者を認めることによって、 HTML 原始文書 (の [CODE(HTMLe)[style]] 要素) 
+に出現するスタイル規則を HTML 3.2 以前の利用者エージェントから隠すことができます。
+詳しくは HTML 4.0 仕様書をご覧ください。
+
+更に、 CSS2 附属書 D の文法規則でも規則など ([[選択子]]等 + 
+[CODE(CSS)[{]] 〜 [CODE(CSS)[}]]) 
+の部分の外側ならどこにでも書けるように書かれています。
+
+[45] 仕様書の規定を読む限りでは [CODE(HTMLe)[style]] 要素以外の場所で使う時にも
+[Q[SGML 注釈区切子]]を書けるように思えますが、
+試しに外部スタイル・シートなどで使ってみると正しく処理できない UA
+も少なくないようです。
+
+[47]
+CSS2 は HTML 4.0 を見よと言っていますが、 HTML 4 には CSS を注釈宣言のようなもので囲んだ例が挙げられているだけです。一体何を見せたかったのでしょうかね?
+([[名無しさん]])
+
+[[#comment]]
+
+
+*** メモ
+
+[46] XHTML では XSL のような XML base のスタイル言語も使えます。
+但し、その場合にはもちろん [CODE(XML)[CDATA]] 
+マーク区間で包むのは使えませんし、
+注釈宣言での隠蔽などもってのほかです。
+更に、陽に文書型宣言を行っている場合には適当に [[DTD]]
+を書き換える必要があるでしょう。
+
+[21] >>46 もっとも、 XSL は XML 対象のスタイル言語ですから、
+たとえ書けたとしても意味がありませんね。で、実質 XML base 
+のスタイル言語は他にないですから、どうでも良い問題といえばそれまでではあります。
+
+[[#comment]]
+
+
+** 応用
+
+[40] [[スタイル・シート]]に対応しないか、または [CODE(HTMLa)[type]]
+で指定されたスタイル言語に対応しない UA は、
+[CODE(HTMLe)[style]] の内容を隠さなければなりません。
+文章の一部としてレンダリングするのは[RUBY[誤り] [エラー]]です。 [SUP[ [HTML 4] ]]
+
+対応していたらレンダリングしても良いようにも読める書き方ですが、
+そういう意図ではないはずです。
+
+[41] スタイル言語によっては、 ([[SGML]] の注釈風に記述することで)
+HTML 4 非適合 UA で内容がレンダリングされないようにする機能を持つものもあります。
+
+[[#comment]]
+
+
+** 歴史
+
+[8] 1995/05/06 の [[HTML 3.0]] draft [[DTD]]
+では [CODE(HTMLe)[style]] 要素は次のように定義されています。
+[PRE(SGML)[
+ <!ENTITY % style-notations "dsssl-lite | w3c-style">
+ <!NOTATION dsssl-lite PUBLIC
+       "ISO/IEC 10179:1995//NOTATION DSSSL Style Language//EN">
+      
+ <!NOTATION w3c-style PUBLIC 
+ --"IETF/RFC nnn//NOTATION W3C Style Language//EN"--
+ "ISO/IEC 10179:1995//NOTATION DSSSL Style Language//EN">
+ 
+ <!ELEMENT [CODE(HTMLe)[STYLE]] - O (#PCDATA)>
+ <!ATTLIST [CODE(HTMLe)[STYLE]]
+     [CODE(HTMLa)[notation]] NOTATION (%style-notations;) #REQUIRED
+ >
+]PRE]
+
+これを次のようにして使うつもりでした。
+[PRE(HTML)[
+ <[CODE(HTMLe)[style]] [CODE(HTMLa)[notation]]=dsssl-lite>
+   [INS[(DSSSL)]]
+ </[CODE(HTMLe)[style]]>
+]PRE]
+
+[CODE(HTML)[w3c-style]] はおそらく [[DSSSL]] の subset でしょう。
+
+[1] 1997年1月に勧告された [[HTML 3.2]] 
+は将来の版で使用するとして予約だけしています。属性はありませんでした。
+
+HTML 3.2 DTD より:
+
+> [CODE(SGML)[<!ELEMENT [CODE(HTMLe)[STYLE]]  - - CDATA -- placeholder for style info -->]]
+
+[18] その後に発表された ''HTML DTD with support for Style Sheets'' <http://www.w3.org/TR/NOTE-html-970421.html> (HTML 3.2 + StyleSheet) は 
+[CODE(HTMLe)[style]] 要素に [CODE(HTMLa)[type]] 属性 (省略可能), 
+[CODE(HTMLa)[media]] 属性 (列挙値 
+[CODE(SGML)[(print | screen | projection | braille | aural | all)]], 
+既定値 [CODE(HTML)[all]]), [CODE(HTMLa)[title]] 属性 (省略可能)
+を規定していました。 
+
+[20] 次の ''HTML DTD with support for Style Sheets'' 
+<http://www.w3.org/TR/NOTE-html-970531.html> で、
+[CODE(HTMLa)[media]] 属性は読点区切りの複数指定が出来るように 
+[CODE(SGML)[CDATA]] に改められました。
+
+[49]
+[CITE@en[draft-ietf-html-style-01]] ([CODE[2007-01-28 00:07:26 +09:00]] 版) <http://tools.ietf.org/html/draft-ietf-html-style-01>
+([[名無しさん]])
+
+[[#comment]]
+
+
+** 例
+
+[43] CSS を使った例
+[PRE(HTML)[
+<HEAD>
+ <TITLE>Example of STYLE</TITLE>
+ <STYLE type="text/css">
+   H1.myclass {border-width: 1px; border: solid; text-align: center}
+ </STYLE>
+</HEAD>
+<BODY>
+ <H1 class="myclass"> This H1 is affected by our style </H1>
+ <H1> This one is not affected by our style </H1>
+</BODY>
+]PRE]
+
+[WEAK[(HTML 4 仕様書より、改)]]
+
+[75]
+[CITE[菜の花は野沢菜? - 楽天トラベルブログ - 楽天ブログ(Blog)]] ([CODE[2008-06-07 17:21:07 +09:00]] 版) <http://plaza.rakuten.co.jp/travelblog/diary/200604280000/>
+
+The only [CODE(HTMLe)@en[[[style]]]] element has the [CODE(HTMLa)@en[[[title]]]]
+attribute specified:
+[PRE(HTML example code)[
+<style type=text/css title="plaza" media="screen,print">
+]PRE]
+
+([[名無しさん]])
+
+[[#comment]]
+
+
+** 他との関係
+
+[48]
+[[XHTML]] では、 [[XML]] [[応用]]との互換性のため
+[CODE(HTMLe)[style]] 要素に [CODE(HTMLa)[[[id]]]]
+属性を指定し、 [CODE(XML)[[[xml-stylesheet]]]]
+[[処理指令]]からこれを参照するべきです。
+[SRC[XHTML 1.0 C.14]]
+
+[[#comment]]
+
+
+** メモ
+
+[52]
+[CITE[Kid Language Specification]] ([CODE[2007-01-27 21:50:41 +09:00]] 版) <http://www.kid-templating.org/language.html#xml-comments>
+([[名無しさん]])
+
+[63]
+[[XBL 1]] には [CODE(XMLe)@en[[[stylesheet]]]] [[要素]]がありますが、
+[[外部スタイル・シート]]のためのもので、
+[[HTML]] の [CODE(HTMLe)@en[[[style]]]] [[要素]]とは異なります。
+
+([[名無しさん]])
+
+[64]
+[[XBL 2.0]] の [CODE(XMLe)@en[[[style]]]] [[要素]]は、
+細部や適用対象が異なりますが、大まかにいえば [[HTML]]
+の [CODE(HTMLe)@en[[[style]]]] [[要素]]と同じものです。
+([[名無しさん]])
+
+[65]
+[[SVG]] の [CODE(XMLe)@en[[[style]]]] [[要素]]は、細部が異なりますが、
+[[HTML]] の [CODE(HTMLe)@en[[[style]]]] [[要素]]と同じものです。
+([[名無しさん]])
+
+[66]
+[[SMIL]] の [CODE(XMLe)@en[[[layout]]]] [[要素]]は、色々違いはありますが
+[[HTML]] の [CODE(HTMLe)@en[[[style]]]] [[要素]]と同じ用途のものです。
+([[名無しさん]])
+
+[67]
+[[SVG]] の [CODE(XMLe)@en[[[style]]]] [[要素]]で
+[CODE(XMLa)@en[[[type]]]] [[属性]]が指定されなかった場合、
+- [[Firefox]] 2 は[[要素]]自体 (だけ) を[[レンダリング]]上無視します。
+[CODE(DOMa)@en[[[sheet]]]] [[属性]]は [CODE(DOM)@en[[[null]]]]
+となります。
+- [[Opera]] 9 は [CODE(MIME)@en[[[text/css]]]] と指定されたかのように[[レンダリング]]します。
+[CODE(DOMa)@en[[[sheet]]]] [[属性]]も値を持ちます。
+
+([[名無しさん]])
+
+[68]
+>>67 テスト <http://suika.fam.cx/~wakaba/-temp/test/svg/style/no-type-css-1.xml>
+([[名無しさん]])
+
+[69]
+[[DOM]] から [[SVG]] の [CODE(XMLe)@en[[[style]]]] [[要素]]の[[内容]]を変更しても、
+[[Opera]] 9 では反映されません。
+
+;; テスト:
+<http://suika.fam.cx/~wakaba/-temp/test/svg/style/dynamic-1.xml>
+
+([[名無しさん]])
+
+[70]
+[[WinIE 6]] では、 [CODE(HTMLa)@en[[[type]]]] [[属性]]の値は[[大文字]]または[[小文字]]の
+[CODE(MIME)@en[[[text/css]]]] でなければならず、その他の値が指定された場合、その[[スタイル・シート]]は適用されません。
+[[引数]]や[[空白]]も一切含められません。
+
+;; [[空文字列]]であってもいけません。
+
+([[名無しさん]])
+
+[71]
+[[Firefox]] 2 では、[CODE(HTMLa)@en[[[type]]]] [[属性]]で
+= [CODE(MIME)[[[;]]]] があれば、それ以降はすべて無視されます。
+= [[空白]] (少なくても [CODE(char)[[[U+000A]]]],
+[CODE(char)[[[U+000D]]]], [CODE(char)[[[U+0009]]]],
+[CODE(char)[[[U+0020]]]]。 [CODE(char)[[[U+000B]]]]
+や [CODE(char)[[[U+000C]]]] は不可。) は一切無視されます。
+= 残った文字列が[[大文字]]または[[小文字]]で
+[CODE(MIME)@en[[[text/css]]]] または[[空文字列]]なら、[[CSS]]
+[[スタイル・シート]]として使われます。
+そうでなければ、その[[スタイル・シート]]は適用されません。
+
+([[名無しさん]])
+
+[72]
+[[Opera]] 9 は [CODE(HTMLa)@en[[[type]]]]
+[[属性]]の値に関わらず [[CSS]] [[スタイル・シート]]として処理するようです。
+([[名無しさん]])
+
+[73]
+[CITE[Google Scholar]] ([CODE[2008-03-22 11:26:31 +09:00]] 版) <http://scholar.google.com/intl/ja/>
+
+>
+[PRE(HTML invalid example code)[
+<style><!--
+body,td,a,p,.h{font-family:arial,sans-serif}
+.h{color:#224499}
+.q{color:#0000cc}
+//-->
+</style><script><!--
+function sf(){document.f.q.focus();}
+// -->
+</script>
+]PRE]
+
+* [CODE(XMLe)@en[style]] 要素 (XFrames)
+
+[76] [CITE@en[XFrames]] ([TIME[2010-12-17 00:45:08 +09:00]] 版) <http://www.w3.org/TR/2010/NOTE-xframes-20101216/#s_style-element>
+
+[77] [[XHTML1]] を引き継いで [CODE(XMLa)@en[[[type]]]] [[属性]]が必須になっています。
+
+[78] [[XHTML1]] の [CODE(HTMLe)@en[[[link]]]] [[要素]]による[[外部スタイル・シート]]の参照を統合し
+[CODE(XMLa)@en[[[source]]]] [[属性]]が追加されています。なぜか [CODE(XMLa)@en[[[src]]]]
+ではなく [CODE(XMLa)@en[[[source]]]] になっています。
+
+[79] [CITE['''['''whatwg''']''' Why is @scoped required for <style> as flow content?]]
+([TIME[2011-06-15 09:29:28 +09:00]] 版)
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2011-June/032053.html>
+
+[80] [CITE[Styling – SVG 1.1 (Second Edition)]]
+( ([TIME[2011-08-10 12:35:27 +09:00]] 版))
+<http://www.w3.org/TR/2011/REC-SVG11-20110816/styling.html#StyleElement>
+
+[81] [CITE[Styling – SVG 1.1 (Second Edition)]]
+( ([TIME[2011-08-10 12:35:27 +09:00]] 版))
+<http://www.w3.org/TR/2011/REC-SVG11-20110816/styling.html#StyleAttribute>
+
+[82] [CITE[Styling – SVG 1.1 (Second Edition)]]
+( ([TIME[2011-08-10 12:35:27 +09:00]] 版))
+<http://www.w3.org/TR/2011/REC-SVG11-20110816/styling.html#InterfaceSVGStyleElement>
+
+[83] [CITE@en-GB-x-Hixie[Hixie's Natural Log: And on the Eighth Day, He brought forth Progress. And it was good.]]
+( ([TIME[2012-04-21 18:52:12 +09:00]] 版))
+<http://ln.hixie.ch/?start=1042630901&count=1>
+
+[84] [CITE@en[Web Applications 1.0 r7620     Make the 'style' IDL attribute settable for authoring convenience.]]
+( ([TIME[2012-12-31 05:27:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=7619&to=7620>
+
+[85] [CITE@en-US[XBL 2.0]]
+( ([TIME[2012-05-03 02:23:03 +09:00]] 版))
+<http://dev.w3.org/2006/xbl2/Overview.html#style-blocks>
+
+[86] [CITE[IRC logs: freenode / #whatwg / 20130426]]
+( ([TIME[2013-05-06 17:03:20 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20130426#l-1012>
+
+[87] [CITE@en[Web Applications 1.0 r7915 Move .style to CSSOM]]
+( ([TIME[2013-06-06 08:31:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=7914&to=7915>
+
+[88] [CITE[IRC logs: freenode / #whatwg / 20130712]]
+( ([TIME[2013-07-15 23:20:16 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20130712#l-619>
+
+[89] [CITE@en[CSS Style Attributes]]
+( ([TIME[2013-10-04 04:08:59 +09:00]] 版))
+<http://www.w3.org/TR/2013/PR-css-style-attr-20131003/>
+
+[90] [CITE@en-US[XML Binding Language (XBL) 2.0]]
+( ([TIME[2007-03-16 22:20:16 +09:00]] 版))
+<http://www.w3.org/TR/2007/CR-xbl-20070316/#the-style>
+
+[91] [CITE@en[Web Applications 1.0 r8390     Update how the interaction with CSS style sheets and CSSOM is defined.]]
+( ([TIME[2014-01-14 07:45:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=8389&to=8390>
+
+[92] [CITE@en[Web Applications 1.0 r8390     Update how the interaction with CSS style sheets and CSSOM is defined.]]
+( ([TIME[2014-01-14 07:45:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=8389&to=8390>
+
+[93] [CITE@en-US[XML Binding Language (XBL) 2.0]]
+( ([TIME[2007-03-16 22:20:16 +09:00]] 版))
+<http://www.w3.org/TR/2007/CR-xbl-20070316/#loading1>

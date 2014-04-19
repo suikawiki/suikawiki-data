@@ -1,0 +1,168 @@
+#?SuikaWiki/0.9
+
+[1] [[SuikaWiki3]] に付属する Namazu WikiPlugin module
+(<IW:SuikaCVS:"suikawiki/script/misc/plugins/link/namazu.wp2">)
+を使うと、 SuikaWiki から [[Namazu]] の索引に access
+できます。
+
+[[#comment]]
+
+
+* 準備
+
+[2]
+- SuikaWiki 3: 当たり前ですが、 SuikaWiki 3 が必要です。
+[[SuikaWiki3//Setup]] を読んで準備してください。
+- [[Namazu]]: これも当たり前ですが必要です。
+Namazu は <http://www.namazu.org/> から入手できます。
+- [CODE(perl)[[[Search::Namazu]]]] (Perl モジュール):
+SuikaWiki から Namazu で検索するために必要です。
+導入方法などについては [[Search::Namazu]] をご覧下さい。
+
+
+* Namazu の索引
+
+[3] SuikaWiki Namazu WikiPlugin は Namazu
+を使って検索できますが、そのための索引はあらかじめ作成しておく必要があります。
+索引の作り方は通常と同じです。
+
+
+* suikawiki-config.ph
+
+[4] まず、 Namazu の索引の path を指定します。
+[CODE(file)[wikidata/suikawiki-config.ph]]
+の最初の方に、 [Q(perl)[## -- Filesystem path mapping]]
+で始まる部分がありますから、次のように Namazu
+の索引のディレクトリを書き加えてください。
+
+[PRE(perl)[
+  for (
+     [VAR[...]]
+     [db__log__dir            => q"./wikidata/log/"],
+     [db__temp__dir           => q"./wikidata/lock/"],
+[INS[     [namazu__index_dir       => q"[VAR(file)[/var/namazu/index/index-name]]"],]]
+  ) {
+  [VAR[...]]
+  };
+]PRE]
+
+(現在のところ、複数の索引を使うことはできませんが、
+もし要望があれば実装するかもしれません。)
+
+次に、 Namazu 索引内の URI 参照を外部から利用可能な
+URI 参照に置換するための関数を用意します。
+([CODE(file)[namazurc]] の [CODE[Replace]]
+指定に相当します。)
+
+どこか適当な箇所 (前述の索引の指定のブロックの後で、
+[Q[## -- WikiPlugin]] の前のあたりがいいかもしれません。) 
+に、次のように記述します。
+
+[PRE(perl)[
+  $WIKI->{config}->{nmz__uri_to_uri} = sub {
+    my ($nmzuri, %opt) = @_;
+    if ($nmzuri =~ s!^\Q$opt{o}->{wiki}->{config}->{path_to}->{db__content__dir}\E/*!!o) {
+      $nmzuri =~ s/\.txt$//;
+      return $opt{o}->{wiki}->uri_reference
+                      (page => $opt{o}->{wiki}->name ([
+        map {s/([0-9A-F][0-9A-F])/pack 'C', hex $1/ge; $_}
+        split m!\.ns/!, $nmzuri
+      ]), base => 1);
+    } else {
+      return ($nmzuri, $nmzuri);
+    }
+  };
+]PRE]
+
+この例では、既定の設定のままで wiki を運用していて、
+wiki page の主内容を索引付けしている場合を想定しています。
+Wiki 内の全文検索のために Namazu を使用するなら、
+多くの場合はこのままで使えるでしょう。
+
+Wiki とはまったく関係のない索引の場合は、
+[PRE(perl)[
+  $WIKI->{config}->{nmz__uri_to_uri} = sub {
+    my ($nmzuri, %opt) = @_;
+    for (
+    ## ここで置換の指定を行う
+      [qr</home/([^/]+)/public_html/>
+        => q<http://foo.example/~$1/>],
+                          ## 参照には $[VAR[数字]]を使う
+      [VAR[...]]
+    ) {
+      if ($nmzuri =~ s/^$_->[0]/qq(qq($_->[1]))/ee) {
+        return ($nmzuri, $nmzuri);
+      }  
+    }
+    return ($nmzuri, $nmzuri);
+  };
+]PRE]
+
+を使うと幸せになれるかもしれません。
+
+[8] この関数では URI 参照を二つ返していますが、
+正確には、 scalar 文脈では [VAR[URI 参照]]をひとつ、
+list 文脈では [CODE(perl)[([VAR[URI 参照]], [VAR[絶対 URI 参照]])]]
+を返す必要があります。一つ目は相対 URI でも絶対 URI
+でも構いませんが、二つ目は絶対 URI でなければなりません。
+この関数から受け取った URI 参照は、通常一つ目が使われますが、
+絶対 URI が必要な場面では後者が使われます。
+
+(この関数例で文脈を判断していないのは、どちらも絶対 URI
+参照と仮定しているからです。相対 URI 参照を使用するときには
+[CODE(perl)[[[wantarray]]]] で場合分けする必要があります。)
+
+
+* search-result を乗っ取る
+
+[5] SuikaWiki 3 の Search WikiPlugin module
+(<IW:SuikaCVS:"suikawiki/script/misc/plugins/link/search.wp2">)
+は [CODE[%search-result]] という[[整形規則]]を提供しています。
+この整形規則を使うと wiki 内の主内容の全文検索を行うことができ、
+この WikiPlugin module が有効なときには、 (既定の設定では)
+全 WikiPage の主内容の後に「参考」という章で、
+その WikiPage の名前で検索した結果が自動的に取込まれます。
+
+この整形規則の提供する全文検索は、単純な文字列の一致だけの低機能なものである上に、
+(簡単なキャッシュはあるものの) 毎回全 WikiPage
+の主内容を一々照合しているので、ある程度の量のある wiki
+では遅くて使い物になりません。
+
+Namazu WikiPlugin module は、 [CODE[%search-result]]
+と上位互換な界面を持つ [CODE[%namazu-search]]
+という整形規則を提供しています。
+この規則で低機能な [CODE[%search-result]]
+を「乗っ取る」ことができます。
+
+[6]
+[CODE(file)[wikidata/config.wp2]] の適当な場所
+(一番最後とか) に、次のように記述します。
+
+[PRE[
+FormattingRuleAlias:
+  @Category[list]:
+    view
+    view-resource
+    form-input
+  @Name: search-result
+  @Reference:
+    @@Category: view
+    @@Name: namazu-search
+]PRE]
+
+その後、 [CODE(file)[config.wp2]] のディレクトリで、
+[KBD[[[make]] config.ph]] してください。
+これで [CODE[%search-result]] は [CODE[%namazu-search]] 
+の別名になります。
+
+
+* メモ
+
+[7]
+SuikaWiki の全文検索に使用するためには、
+[[SuikaWiki/0.9]] 形式に対応した Namazu の filter があったほうがよい結果が期待できます。 Namazu 用 filter は現在開発中です。
+([[名無しさん]] [WEAK[2004-03-19 04:25:51 +00:00]])
+
+[9]
+>>4 の関数の仕様を微妙に修正しました (>>8)。
+([[名無しさん]] [WEAK[2004-03-20 03:47:39 +00:00]])

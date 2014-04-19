@@ -1,0 +1,106 @@
+[2] [[Atom]] の [DFN[[CODE(XMLe)@en[[[at:deleted-entry]]]]]] [[要素]]
+([CODE(URI)@en[[[http://purl.org/atompub/tombstones/1.0]]]] [[名前空間]]の
+[CODE(XMLe)@en[[[deleted-entry]]]] [[要素]]) は、削除された[[エントリー]]を表します。
+
+* 仕様書
+
+[REFS[
+- [1] [CITE@en[RFC 6721 - The Atom "deleted-entry" Element]] ([TIME[2012-12-31 01:08:20 +09:00]] 版) <http://tools.ietf.org/html/rfc6721>
+]REFS]
+
+* 用法
+
+[3] [[フィード]]から削除された[[エントリー]]は通常[[フィード]]に含まれませんが、
+そうすると[[キャッシュ]]その他で既に以前の[[フィード]]から保存してある[[エントリー]]が削除されたことを知る術がありません。
+そのため削除された[[エントリー]]を把握できるよう [CODE(XMLe)@en[[[at:deleted-entry]]]] [[要素]]が追加されました。 [SRC[>>1]]
+
+[20] とはいえ [[Atom処理器]]がこの[[要素]]に従い処理する保証はなく、
+削除されたエントリーであっても処理を続ける可能性があることに注意が必要です。 [SRC[>>1]]
+
+
+* 文脈
+
+[13] [[Atomフィード]]は任意の個数の [CODE(XMLe)@en[[[at:deleted-entry]]]] [[要素]]を含むことができますが、
+[CODE(XMLa)@en[[[ref]]]] と [CODE(XMLa)@en[[[when]]]] の組み合わせが同じ物が複数あっては[['''なりません''']] [SRC[>>1]]。
+
+* 属性
+
+[5] この[[要素]]には次の[[属性]]があります。
+
+[FIG[
+- [4] [CODE(XMLa)@en[[[ref]]]] ([['''必須''']]) [SRC[>>1]]
+- [6] [CODE(XMLa)@en[[[when]]]] ([['''必須''']]) [SRC[>>1]]
+- [7] [[Atom共通属性]]
+]FIG]
+
+* 内容
+
+[8] この[[要素]]の[[内容]]は次の通りです。
+
+[FIG[
+- [9] [CODE(XMLe)@en[[[at:by]]]] (0-1) [SRC[>>1]]
+- [10] [CODE(XMLe)@en[[[at:comment]]]] (0-1) [SRC[>>1]]
+- [11] [CODE(XMLe)@en[[[atom:link]]]] (0-∞) [SRC[>>1]]
+- [12] [CODE(XMLe)@en[[[atom:source]]]] (0-1) [SRC[>>1]]
+- [15] [CODE@en[[[anyElement]]]] (0-∞) [SRC[>>1]]
+]FIG]
+
+[14] [[子要素]]の順序は任意です [SRC[>>1 [[RELAX NG]] [[スキーマ]]]]。
+
+;; [16] [[RFC 6721]] では [[RELAX NG]] [[スキーマ]]が[[参考]]とは書かれていません。
+
+;; [17] [[要素間空白]]等については明記されていません。
+
+[22] [CODE@en[[[anyElement]]]] が [[RELAX NG]] [[スキーマ]]上認められていますが、その意味は明記されていません。
+任意の[[要素]]、あるいは[[拡張要素]]を認めることを意図しているのかもしれませんが、不明です。
+
+[23] [CODE(XMLe)@en[[[atom:entry]]]] の[[子要素]]として使える各種[[要素]]を使いたいという需要はありそうなものですが、
+それについて何も言及がなく、排除することを意図しているのか認めているのか不明です。例えば
+[CODE(XMLe)@en[[[atom:published]]]] や [CODE(XMLe)@en[[[atom:author]]]] を含めたいこともありそうですが。
+
+* エントリーと削除済みエントリー
+
+[19] [CODE(XMLe)@en[[[atom:entry]]]] [[要素]]によって表される[[エントリー]]と
+[CODE(XMLe)@en[[[at:deleted-entry]]]] [[要素]]によって表される[[削除済みエントリー]]で
+[CODE(XMLe)@en[[[atom:id]]]] や [CODE(XMLa)@en[[[ref]]]] が重複していても[['''構いません''']]。
+その場合 [CODE(XMLe)@en[[[atom:updated]]]] と [CODE(XMLa)@en[[[when]]]] の[[日時]]を比較した上で、
+- [CODE(XMLa)@en[[[when]]]] の方が新しいか等しければ、削除済みとみなします。[[エントリー]]は無視する[['''べきです''']]。
+- [CODE(XMLa)@en[[[when]]]] の方が古ければ、再出版されたものとみなします。削除の方を無視する[['''べきです''']]。
+
+... と解釈します。 [SRC[>>1]]
+
+* 保安性
+
+[21] [CODE(XMLe)@en[[[atom:entry]]]] や [CODE(XMLe)@en[[[at:deleted-entry]]]] を不正に注入する手段があると、
+本当は削除されていないエントリーを削除したように扱わせたり、その逆のように扱わせたりできるかもしれず、
+注意が必要です。 [SRC[>>1]]
+
+* 例
+
+[FIG[
+[FIGCAPTION[
+[18] [CODE(XMLe)@en[[[at:deleted-entry]]]] [[要素]]を持つ[[フィード文書]]の例 [SRC[>>1]]
+]FIGCAPTION]
+[PRE(XML example code)[
+     <feed xmlns="http://www.w3.org/2005/Atom"
+           xmlns:at="http://purl.org/atompub/tombstones/1.0">
+        ...
+        <!-- Minimal deleted-entry -->
+        <at:deleted-entry
+          ref="tag:example.org,2005:/entries/1"
+          when="2005-11-29T12:11:12Z"/>
+
+        <!-- Extended deleted-entry -->
+        <at:deleted-entry
+          ref="tag:example.org,2005:/entries/2"
+          when="2005-11-29T12:11:12Z">
+          <at:by>
+            <name>John Doe</name>
+            <email>jdoe@example.org</email>
+          </at:by>
+          <at:comment>Removed comment spam</at:comment>
+        </at:deleted-entry>
+        ...
+     </feed>
+]PRE]
+]FIG]

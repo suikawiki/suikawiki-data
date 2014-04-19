@@ -1,0 +1,81 @@
+#?SuikaWiki/0.9
+[[MacMIME]] (RFC 1740 <urn:ietf:rfc:1740>) で定義されてます。
+
+AppleSingle 第2版 [APPL90] は、そのものを
+application/applefile (最初の4オクテットは 00, 05, 16, 00
+になる。) にします。
+
+AppleDouble 第2版 [APPL90]
+では、データは頭 header とデータ・フォーク data fork の2つで
+構成されてます。このうち頭を application/applefile
+(最初の4オクテットは 00, 05, 16, 07 になる。),
+データ・フォークをその実媒体型にします。
+で、その2つを multipart/appledouble で包みます。
+
+:[APPL90]:AppleSingle/AppleDouble Formats for Foreign Files Developer's Note, Apple Computer, Inc., 1990
+
+形式については RFC 1740 に説明があります。
+
+*パラメーター
+
+,name,mime.value,ファイル名。
+,type,mime.value,内容の型の説明。 (人間可読文)
+,x-mac-creator,8HEXDIGIT,creator
+,x-mac-type,8HEXDIGIT,型
+
+AppleSingle にはファイル名も型も含まれていますが、
+受信者の便宜のためにパラメーターで指定できます。
+RFC 1740 で定義しているのは name のみですが、
+その原案では type も定義されていました。
+現在の IANA 登録簿は未だにその原案を参照しています。
+
+*x-mac-type, x-mac-creator 両パラメーター
+
+便宜上、 Macintosh file type と creator を取り出して、
+それぞれ各オクテットを大文字16進数にしてそのままの順で
+並べているようです。 x-mac-type="54455854" みたいに。
+
+multipart/appledouble では、 appledouble とその内部の
+application/applefile の双方にこれらのパラメーターを
+つけるよーです。
+
+上手く取得できなかったときに "00000000" にする UA 
+があるみたい。
+
+これは意外と結構使われているらしい。
+-[1] apple* 媒体型でなくても、どんなんにでも [[Macintosh]] の [[MUA]] から送ったらつく (というかつける MUA がある) みたいです。
+- [2] 2002-10-26 (土) 18:39 ''[[名無しさん]]'': [[Eudora]] だと [[Windoze]] 版でもつけるみたいです
+- [3] >>2 ってことはきっと、[[拡張子]]と Macintosh での型の対応表を持ってるんでしょうね。
+[[#comment]]
+*例
+
+ Content-Type: multipart/appledouble; boundary=mac-part
+ 
+ --mac-part
+ Content-Type: application/applefile; name="My-new-car"
+ 
+ [The AppleDouble header goes here]
+ 
+ --mac-part
+ Content-Type: image/png;
+ 
+ [The data fork goes here]
+ 
+ --mac-part--
+
+*See also
+-[[媒体型]]
+--[[multipart/*媒体型]]
+--[[application/*媒体型]]
+-[[MIME]]
+-[[MacMIME]]
+--[[multipart/appledouble媒体型]]
+--[[BinHex]]
+-MacMIME - How to send Macintosh files with MIME, Sun Mar 14 22:07 1993 <http://www.iana.org/assignments/media-types/application/applefile>
+
+*License
+
+[[RFCのライセンス]]
+- [4] [WEAK[2002-12-25 16:55]] ''[[名無しさん]]'': [CODE[application/applefile]] って使われてるのは全く見かけませんね。まあ確かに、一般の情報交換では決して使用するべき型ではないですね
+- [5] [CODE[application/x-macbinary]] って媒体型を使う人がいるらしいけど、これの中身は [CODE[application/applefile]] と同じと考えていいんだろうか?
+- [6] [[MacOSX]] の時代になって、この媒体型も消える運命ですかね?

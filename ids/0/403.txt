@@ -1,0 +1,21 @@
+
+[1] 誤りを投げた [CODE(perl)[[[try]]]] 塊やそれよりも内側の塊を[[字句適用範囲]]とする変数が消滅するのに伴って [CODE(perl)[[[DESTROY]]]]
+が自動的に呼出され、その中でも誤りが投げられることがあると、
+誤りが乗っ取られて何が起きているのか分かりにくくなってしまうので注意が必要です。
+
+例えば、単純化した次の code をみてください。
+[PRE[
+try {
+  my $test = bless {}, 'test';
+  throw Error::Simple 'try';
+} catch Error::Simple with {
+  die shift->stringify;
+};
+
+sub test::DESTROY {
+  throw Error::Simple 'DESTROY';
+}
+]PRE]
+これを実行すると [SAMP[DESTROY]] とだけ出て死にます。
+
+[2] この動作は仕様だと思います。

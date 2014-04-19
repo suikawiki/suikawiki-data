@@ -1,0 +1,201 @@
+
+
+* [CODE(822)@en[Date:]] 頭欄 (822, HTTP, RTSP, SIP)
+
+@@ 
+[5] 
+
+[6] 仕様書:
+- [[RFC 4409]] ([[IETF]] [[提案標準]])
+<urn:ietf:rfc:4409>
+-- [CSECTION@en[8.2.  Add 'Date']]
+
+** MSA との関係
+
+[3] [[MSA]] は、[[メッセージ]]に
+[CODE(822)@[[[Date]]:]] [[欄]]が欠けている場合、
+これを追加[['''して構いません''']]。
+また、 [CODE(822)@en[[[Date]]:]] [[欄]]の書式が
+[[RFC 2822]] に[[適合]]しない場合、これを修正[['''して構いません''']]。
+[SRC@en[[[RFC 4409]] 8.2]]
+
+[[#comment]]
+
+
+* 仕様書から
+
+
+** RFC 1945 (HTTP/1.0) 10.6; RFC 2068 (HTTP/1.1) 14.19; RFC 2616 (HTTP/1.1) 14.18 Date
+
+> The Date general-header field represents the date and time at which
+the message was originated, having the same semantics as orig-date in
+RFC 822. The field value is an HTTP-date, as described in [DEL[[INS[{1945}]] Section 3.3]] [INS[[INS[{2068}]] section 3.3.1]][INS[; it MUST be sent in RFC 1123 [8]-date format [INS[{2616}]]]].
+
+[CODE(HTTP)[Date]] 一般頭欄は、メッセージが起源された日時を表現します。
+これは [[RFC822]] の [CODE(ABNF)[orig-date]] と同じ意味を持ちます。
+欄値は [CODE(ABNF)[[[HTTP-date]]]] です。
+欄値は RFC 1123 日付書式で送信しなければ'''なりません'''。
+
+>
+- Date  = "Date" ":" HTTP-date
+[PRE[
+ 
+> An example is
+>
+- Date: Tue, 15 Nov 1994 08:12:31 GMT
+]PRE]
+
+[INS[
+
+> [INS[{2616}]] Origin servers MUST include a Date header field in all responses,
+except in these cases:
+
+起源サーバーは、次の場合を除いて全ての応答に [CODE(HTTP)[Date]]
+頭欄を含めなければ'''なりません'''。
+
+>
+= 1. If the response status code is 100 (Continue) or 101 (Switching
+Protocols), the response MAY include a Date header field, at
+the server's option.
+= 2. If the response status code conveys a server error, e.g. 500
+(Internal Server Error) or 503 (Service Unavailable), and it is
+inconvenient or impossible to generate a valid Date.
+= 3. If the server does not have a clock that can provide a
+reasonable approximation of the current time, its responses
+MUST NOT include a Date header field. In this case, the rules
+in section 14.18.1 MUST be followed.
+
+= 応答状態符号が [CODE(HTTP)[[100]]]] (継続) 又は
+[CODE(HTTP)[[[101]]]] (プロトコル切り替え) であれば、応答はサーバーの任意選択によって、
+[CODE(HTTP)[Date]] 頭欄を含んでも'''かまいません'''。
+= 応答状態符号がサーバー誤りを伝達する場合、例えば [CODE(HTTP)[[[500]]]]
+(サーバー内部誤り) や [CODE(HTTP)[[[503]]]] (サービス利用不可能)
+の場合で、妥当な [CODE(HTTP)[Date]] を生成するのか不便又は不可能な場合。
+= サーバーが現在時刻の適当な近似値を提供する時計を持たない場合、
+その応答は [CODE(HTTP)[Date]] 頭欄を含んでいては'''なりません'''。
+この場合、 14.18.1 節の規則に従わなければ'''なりません'''。
+]INS]
+
+[DEL[
+
+> [INS[{1945,2068}]] If a message is received via direct connection with the user agent
+(in the case of requests) or the origin server (in the case of
+responses), then the date can be assumed to be the current date at
+the receiving end. However, since the date--as it is believed by the
+origin--is important for evaluating cached responses, 
+origin servers [DEL[[INS[{1945}]] should always]] [INS[[INS[{2068}]] MUST]]
+include a Date header [INS[[INS[{2068}]] field in all responses. Clients [DEL[[INS[{1945}]] should]] [INS[[INS[{2068}]] SHOULD]]]]
+only send a Date header field in messages that include an [DEL[[INS[{1945}]] entity body]] [INS[[INS[{2068}]] entity-body]],
+as in the case of the [INS[[INS[{2068}]] PUT and]] POST request[INS[s [INS[{2068}]]]], and even then it
+is optional. A received message which does not have a Date header
+field [DEL[[INS[{1945}]] should]] [INS[[INS[{2068}]] SHOULD]] be assigned one by the recipient if the message will be
+cached by that recipient or gatewayed via a protocol which requires a Date.
+
+メッセージが (要求の場合) 利用者エージェント又は起源サーバー (応答の場合)
+との直接接続により受信したものであれば、日付は受信末端の現在日付と仮定できます。
+しかし、日付 —であると起源が信じているもの—はキャッシュ応答の評価に重要ですから、
+起源サーバーは全ての応答中に [CODE(HTTP)[Date]] 頭を含め[DEL[るべきです]][INS[なければ'''なりません''']]。
+クライアントは、 [CODE(HTTP)[[[PUT]]]] 要求及び [CODE(HTTP)[[[POST]]]] 要求で 
+[CODE(ABNF)[[[entity-body]]]] を含んでいるメッセージにのみ
+[CODE(HTTP)[Date]] 頭欄を送る'''べきです'''。もっとも省略可能ではありますが。
+受信したメッセージが [CODE(HTTP)[Date]] 頭欄を持たなければ、
+メッセージがその受信者にキャッシュされるか又は [CODE(HTTP)[Date]]
+を必須とするプロトコルに関門されるときには、受信者がこれを割当てる'''べきです'''。
+]DEL]
+
+[INS[
+
+> [INS[{2616}]] A received message that does not have a Date header field MUST be
+assigned one by the recipient if the message will be cached by that
+recipient or gatewayed via a protocol which requires a Date. An HTTP
+implementation without a clock MUST NOT cache responses without
+revalidating them on every use. An HTTP cache, especially a shared
+cache, SHOULD use a mechanism, such as NTP [28], to synchronize its
+clock with a reliable external standard.
+
+受信したメッセージが [CODE(HTTP)[Date]] 頭欄を持たないとき、
+そのメッセージが受信者の一人によりキャッシュされるか又は [CODE(HTTP)[Date]]
+を必須とするプロトコルに関門するなら、
+その受信者は日付を割り当てなければ'''なりません'''。
+時計を持たない HTTP 実装は、使用時毎に再検証することなしに応答をキャッシュしては'''なりません'''。
+HTTP キャッシュ, 特に共有キャッシュは、 [[NTP]] のような時計を信頼できる外部規格により同期する機構を使用する'''べきです'''。
+
+> Clients SHOULD only send a Date header field in messages that include
+an entity-body, as in the case of the PUT and POST requests, and even
+then it is optional. A client without a clock MUST NOT send a Date
+header field in a request.
+
+クライアントは、 [CODE(HTTP)[PUT]] 要求や [CODE(HTTP)[POST]] 要求の場合で
+[CODE(ABNF)[entity-body]] を含んでいるメッセージにのみ
+[CODE(HTTP)[Date]] 頭欄を送る'''べきです'''。もっとも、その場合でも省略可能ではあります。
+時計を持たないクライアントは [CODE(HTTP)[Date]] 頭欄を要求で送っては'''なりません'''。
+]INS]
+
+> [INS[[INS[{2616}]] The HTTP-date sent in a Date header SHOULD NOT represent a date and time subsequent to the generation of the message. It SHOULD represent the best available approximation of the date and time of message generation, unless the implementation has no means of generating a reasonably accurate date and time.]] 
+In theory, the date [DEL[[DEL[[INS[{1945}]] should]] [INS[[INS[{2068}]] SHOULD]]]] [INS[[INS[{2616}]] ought to]]
+represent the moment just before the entity is generated. In
+practice, the date can be generated at any time during the message
+origination without affecting its semantic value.
+
+[CODE(HTTP)[Date]] 頭で送信される [CODE(ABNF)[HTTP-Date]]
+はメッセージの生成の後の日時を表現する'''べきではありません'''。
+[CODE(ABNF)[HTTP-Date]] は、その実装に適度に正確な日時を生成する手段がない場合を除いて、
+メッセージ生成日時の最善の近似を表現する'''べきです'''。
+理論上は、日付は実体が生成される直前の瞬間を表現するべきです。
+実際上は、その意味的値に影響しない範囲でメッセージ生成中の何時でも生成できます。
+
+[DEL[
+
+[DEL[
+
+> [INS[{1945}]] Note: An earlier version of this document incorrectly specified
+that this field should contain the creation date of the enclosed
+Entity-Body. This has been changed to reflect actual (and proper) usage.
+
+注意 : この文書の初期の版では、この欄は囲まれた実体本体の生成日付を含めるべきであると間違って規定していました。
+これは実際の (適切な) 用法を反映するように改めました。
+]DEL]
+
+[INS[
+
+> [INS[{2068}]] The format of the Date is an absolute date and time as defined by
+HTTP-date in section 3.3; it MUST be sent in RFC1123 [8]-date format.
+
+[CODE(HTTP)[Date]] の書式は絶対日時です。 RFC 1123 の日付書式で送らなければ'''なりません'''。
+]INS]
+]DEL]
+
+
+*** 14.18.1 Clockless Origin Server Operation [INS[無時計起源サーバー処理]]
+
+> Some origin server implementations might not have a clock available.
+An origin server without a clock MUST NOT assign Expires or 
+Last-Modified values to a response, unless these values were associated
+with the resource by a system or user with a reliable clock. It MAY
+assign an Expires value that is known, at or before server
+configuration time, to be in the past (this allows "pre-expiration"
+of responses without storing separate Expires values for each resource).
+
+利用出来る時計を持たない起源サーバー実装もあります。
+時計のない起源サーバーは、信頼できる時計のシステム又は利用者によりその資源に関連付けられた値でない限り、
+応答に [CODE(HTTP)[[[Expire]]]] や
+[CODE(HTTP)[[[Last-Modified]]]] の値を設定してはなりません。
+時計のない起源サーバーは、サーバー設定時またはそれ以前に過去であることが分かっている
+[CODE(HTTP)[Expire]] 値を割り当てても'''構いません''' 
+(これによって各資源それぞれの [CODE(HTTP)[Expire]] 値を蓄積することなしに
+「事前期限切れ」が実現できます)。
+
+
+** RFC の部分の License
+
+[[RFCのライセンス]]
+
+
+* メモ
+
+- [1] [HTTP92] (''Object Header lines in HTTP'' <http://www.w3.org/Protocols/HTTP/Object_Headers.html#date>) では [CODE[Date:]] 欄の値は物体が作成された時間を指定するとされていました。原案ですが。
+- [2] >>1 この機能を持った欄は今の [[HTTP]] にはありませんね。 [[MIME]] の [CODE(MIME)[[[Content-Disposition]]: [VAR[disposition]]; [[creation-date]]=[VAR[date]]]] を使うという方法はあります。
+- [3] RFC 2616 で追加された 14.6.1 ってどうしてここにあるんですかね? [CODE(HTTP)[Date]] に全然触れてないじゃん。。。他に適当な場所がないからかな。
+- [4] [CODE(822)[Date]] 頭の日付の途中で[[折畳み]]されていると正しく日付を扱えない [[MUA]] があります。日付の途中で fold しないのが賢明です。
+
+[504] [[Twiggy]] という [[Perl]] の[[Webサーバー]]は [CODE(HTTP)@en[[[Date:]]]] を送信しないようです。 [TIME[2014-01-29T06:25:17.100Z]]

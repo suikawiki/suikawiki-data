@@ -1,0 +1,404 @@
+
+-[3] [CODE(HTTP)[Vary:]] [[HTTP]] [[応答頭欄]]は、[[内容折衝]]の元データとして使った[[要求頭欄]]の名前を列挙する欄です。
+-[4] この情報を使えば[[キャッシュ]]・[[串]]を通しても無いよう折衝を適切に処理できますし、[[利用者エージェント]]からは自分が送ったどの情報が折衝に使われたのかを知ることが出来て、有益かもしれません。
+-[5] [[RFC2068]] と [[RFC2616]] で、大体書いてある内容は同じなのに、かなり修正が加えてあって、段落の順序が行ったり来たりしていて比較するのに厄介です。
+--「仕様書から」の節では、[SAMP[RFC [DEL(RFC2068)[2068]] [INS(RFC2616)[2616]]]] のようにして差分を分かりやすく書いたはずだったのですが、段落の移動とかのせいでぐちゃぐちゃで却って分かりにくくなったような気がしています。ごめんんさい。
+---順序は RFC 2616 base なので、削除部分を読み飛ばせば 2616
+として読むことができます。
+-- 目視で差分取りつつ merge してるので、うっかり落とした単語とかがあるかもしれません。原文も併せて参照して下さい。
+[[#comment]]
+*仕様書から
+**RFC [DEL(RFC2068)[2068]] [INS(RFC2616)[2616]] (HTTP/1.1) 14.[DEL(RFC2068)[43]][INS(RFC2616)[44]] Vary
+[DEL[
+>The Vary response-header field is used by a server to signal that the
+response entity was selected from the available representations of
+the response using server-driven negotiation (section 12). 
+Field-names listed in Vary headers are those of request-headers. The Vary
+field value indicates either that the given set of header fields
+encompass the dimensions over which the representation might vary, or
+that the dimensions of variance are unspecified ("*") and thus may
+vary over any aspect of future requests.
+
+[1] [CODE(HTTP)[Vary]] [[応答頭欄]]は、[[鯖]]が、応答[[実体]]は[[サーバー駆動折衝]]を使って利用可能な応答の[[表現]]から選択したことを通知するために使います。
+[CODE(HTTP)[Vary]] 頭欄に列挙される欄名は要求頭欄のものです。
+[CODE(HTTP)[Vary]] 頭欄の値は、その頭欄の集合が表現が変化し得る範囲を含むことも、
+変化の範囲が未指定 ([CODE(ABNF)["*"]])
+で、従って将来の要求のどの角度によっても変化しうることをも示します。
+]DEL]
+
+[INS[
+>The Vary field value indicates the set of request-header fields that
+fully determines, while the response is fresh, whether a cache is
+permitted to use the response to reply to a subsequent request
+without revalidation. For uncacheable or stale responses, the Vary
+field value advises the user agent about the criteria that were used
+to select the representation. A Vary field value of "*" implies that
+a cache cannot determine from the request headers of a subsequent
+request whether this response is the appropriate representation. See
+section 13.6 for use of the Vary header field by caches.
+
+[11] [CODE(HTTP)[Vary]] 欄の値は、
+キャッシュが、要求が新鮮な間において、
+再検証すること無しにその応答を後続の要求に返信するのに使うことが認められるかを完全に決定する要求頭欄の集合を示します。
+キャッシュ不能であるか、又は新鮮でない応答に対しては、
+[CODE(HTTP)[Vary]] 欄の値は、
+表現を選択するのに使われた基準を[[利用者エージェント]]に助言するものとなります。
+[CODE(HTTP)[Vary]] 欄の値 [CODE(ABNF)["*"]] は、キャッシュが、
+この応答が後続の要求に対して適切な表現であるかどうかをその要求頭だけから決定出来ないことを示します。
+キャッシュの [CODE(HTTP)[Vary]] 
+頭欄の使用については13.6節 [INS[(>>17)]] をご覧下さい。
+]INS]
+
+-[12] [CODE(ABNF)[Vary  = "Vary" ":" ( "*" | 1#field-name )]]
+
+>An HTTP/1.1 server [DEL(RFC2068)[MUST]] [INS(RFC2616)[SHOULD]] 
+include a[DEL(RFC2068)[n appropriate]] 
+Vary header field with any
+cacheable response that is subject to server-driven negotiation.
+Doing so allows a cache to properly interpret future requests on that
+resource and informs the user agent about the presence of negotiation
+on that resource. 
+A server [DEL(RFC2068)[SHOULD]] [INS(RFC2616)[MAY]]
+include a[DEL(RFC2068)[n appropriate]] 
+Vary header field with a
+non-cacheable response that is subject to server-driven negotiation,
+since this might provide the user agent with useful information about
+the dimensions over which the 
+response [DEL(RFC2068)[might vary]] [INS(RFC2616)[varies at the time of the response]].
+
+[13] [[HTTP/1.1]] サーバーは、サーバー駆動折衝の対象であるどんなキャッシュ可能な応答についても[DEL(RFC2068)[適切な]]
+[CODE(HTTP)[Vary]] 頭欄を含め[DEL(RFC2068)[なければ'''なりません''']][INS(RFC2616)[る'''べきです''']]。
+そうすることで、キャッシュが将来の要求を適切に解釈することが出来ますし、利用者エージェントにその資源についての折衝があったことを知らせることとなります。
+サーバーは、サーバー駆動折衝の対象であるキャッシュ可能でない資源についても、[DEL(RFC2068)[適切な]]
+[CODE(HTTP)[Vary]] 頭欄を含め[DEL(RFC2068)[る'''べきです''']][INS(RFC2616)[ても'''構いません''']]。
+というのは、これによって、利用者エージェントに[DEL(RFC2068)[変化し得る]][INS(RFC2616)[応答の時点での応答の変種の]]規模についての有用な情報を提供することが出来るのです。
+
+[INS[
+(RFC 2068 では次は >>18)]]
+
+(RFC 2068 では >>16 から次の段落に続く。)
+]INS]
+
+>A Vary field value consisting of a list of field-names signals that
+the representation selected for the response is based on a selection
+algorithm which considers ONLY the listed request-header field values
+in selecting the most appropriate representation. A cache MAY assume
+that the same selection will be made for future requests with the
+same values for the listed field names, for the duration of time for
+which the response is fresh.
+
+[14] [CODE(HTTP)[Vary]] 欄の値は、欄名の一覧で構成します。
+これは、最も適切な表現を選択するに当たって、
+列挙された要求頭欄の値'''のみ'''を考慮する選択算法に基づいて、その応答の表現が選ばれたことを表します。
+キャッシュは、応答が新鮮である時間内においては、
+列挙された欄名に対して同じ値を持った将来の要求があった時に同じ選択がなされるものと仮定しても'''構いません'''。
+
+>The field-names given are not limited to the set of standard
+request-header fields defined by this specification. Field names are
+case-insensitive.
+
+[15] 与える欄名はこの仕様書 [INS[(RFC 2616)]] 
+で定義された標準の要求頭欄の集合には制限しません。
+欄名は大文字・小文字を区別しません。
+
+[INS[
+(RFC 2068 では >>15 で 14.43 節は終わり。)
+
+(RFC 2068 では >>20 から次の段落に続く。)
+]INS]
+
+>A Vary field value of "*" signals that unspecified parameters[DEL(RFC2068)[,]] [DEL(RFC2068)[possibly other than the contents of]] [INS(RFC2616)[not limited to the]] request-headers (e.g., the network address of the
+client), play a role in the selection of the response representation. [DEL(RFC2068)[Subsequent requests on that resource can only be properly interpreted by the origin server, and thus a cache MUST forward a (possibly conditional) request even when it has a fresh response cached for the resource. See section 13.6 for use of the Vary header by caches.]] [INS(RFC2616)[The "*" value MUST NOT be generated by a proxy server; it may only be generated by an origin server.]]
+
+[16] [CODE(HTTP)[Vary]] 欄の [CODE(ABNF)["*"]]
+という値は、要求頭に限らない、記述されていない変数
+(例えばクライアントのネットワーク・アドレス)
+が応答の表現の選択に影響したことを表します。 [DEL(RFC2068)[この資源に対する後続の要求は、源サーバーによってのみ適切に解釈され得、従ってキャッシュは、その資源の新鮮な応答がキャッシュされていても、 (おそらく条件付で) 要求を転送しなければ'''なりません'''。]]  [INS(RFC2616)[串サーバーは [CODE(ABNF)["*"]] という値を生成しては'''なりません'''。源サーバーのみがこの値を生成できます。]]
+
+[INS[
+(RFC 2068 では >>14 に続く)
+]INS]
+
+**RFC 2616 (HTTP/1.1) 13.6 Caching Negotiated Responses
+>Use of server-driven content negotiation (section 12[INS(RFC2616)[.1]]), as indicated
+by the presence of a Vary header field in a response, alters the
+conditions and procedure by which a cache can use the response for
+subsequent requests. [INS(RFC2616)[See section 14.44 for use of the Vary header field by servers.]]
+
+[17] サーバー駆動内容折衝を使用 (12[INS(RFC2616)[.1]]節)
+することによって、 [CODE(HTTP)[Vary]]
+頭欄が応答中に現れることで示される通り、
+キャッシュが後続の要求に対してその応答を使用することで状態と手続きが変更されます。 [INS(RFC2616)[サーバーによる [CODE(HTTP)[Vary]] 頭欄の使用については 14.4 節 [INS[(>>11)]] をご覧下さい。]]
+
+[DEL[
+(RFC 2068 での >>17 の続き)
+
+>A server MUST use the Vary header field (section 14.43) to inform a
+cache of what header field dimensions are used to select among
+multiple representations of a cachable response. A cache may use the
+selected representation (the entity included with that particular
+response) for replying to subsequent requests on that resource only
+when the subsequent requests have the same or equivalent values for
+all header fields specified in the Vary response-header. Requests
+with a different value for one or more of those header fields would
+be forwarded toward the origin server.
+>If an entity tag was assigned to the representation, the forwarded
+request SHOULD be conditional and include the entity tags in an If-
+None-Match header field from all its cache entries for the Request-
+URI. This conveys to the server the set of entities currently held by
+the cache, so that if any one of these entities matches the requested
+entity, the server can use the ETag header in its 304 (Not Modified)
+response to tell the cache which entry is appropriate. If the
+entity-tag of the new response matches that of an existing entry, the
+new response SHOULD be used to update the header fields of the
+existing entry, and the result MUST be returned to the client.
+>The Vary header field may also inform the cache that the
+representation was selected using criteria not limited to the
+request-headers; in this case, a cache MUST NOT use the response in a
+reply to a subsequent request unless the cache relays the new request
+to the origin server in a conditional request and the server responds
+with 304 (Not Modified), including an entity tag or Content-Location
+that indicates which entity should be used.
+
+(>>23 に続く。)
+]DEL]
+
+[INS[
+(RFC 2068 では >>13 の後が次の段落。)
+]INS]
+
+>[INS(RFC2616)[A server SHOULD use the Vary header field to inform a cache of what request-header fields were used to select among multiple representations of a cacheable response subject to server-driven negotiation.]] The set of header fields named by the Vary field value
+is known as the "selecting" request-headers.
+
+[18] [INS(RFC2616)[サーバーは、サーバー駆動折衝の対象であってキャッシュ可能な応答の複数の表現から選ぶのにどの要求頭欄が使われたかをキャッシュに告げるために、 [CODE(HTTP)[Vary]] 頭欄を使用する'''のが良い'''です。]]
+[CODE(HTTP)[Vary]] 欄の値に挙げられた頭欄の集合は
+「選択」要求頭とも呼ばれます。
+
+>When the cache receives a subsequent request whose Request-URI
+specifies one or more cache entries including a Vary header [INS(RFC2616)[field]],
+the cache MUST NOT use such a cache entry to construct a response to
+the new request unless all of the [INS(RFC2616)[selecting request-]]headers [DEL(RFC2068)[named in the cached Vary header are]] present
+in the new request [INS(RFC2616)[match the corresponding stored request-headers in
+the original request]].
+
+[19] [CODE(ABNF)[Request-URI]] が [CODE(HTTP)[Vary]]
+頭[INS(RFC2616)[欄]]を含むキャッシュ項目を1つ以上指定している後続の要求をキャッシュが受信した時は、
+キャッシュは新しい要求にある全ての[DEL(RFC2068)[キャッシュされた [CODE(HTTP)[Vary]] 頭に名前が挙げられた]][INS(RFC2616)[選択要求]]頭が[DEL(RFC2068)[出現する]][INS(RFC2616)[保管している元の要求の対応する要求頭と一致する]]ので無い限り、
+新しい要求への応答を構築するのにそのようなキャッシュ項目を使っては'''なりません'''。
+
+>The selecting request-headers from two requests are defined to match
+if and only if the selecting request-headers in the first request can
+be transformed to the selecting request-headers in the second request
+by adding or removing linear white space (LWS) at places where this
+is allowed by the corresponding BNF, and/or combining multiple
+message-header fields with the same field name following the rules
+about message headers in section 4.2.
+
+[20] 二番目の要求の選択頭欄を、相当する BNF
+で許されている箇所に置いて線形空白間隔 (LWS)
+を追加したり削除したりすること[[及び/又は]]4.2節のメッセージ頭についての規則に従って同じ欄名の複数のメッセージ頭欄を結合することによって、最初の要求の選択頭欄に変形できる場合、
+この場合に限って、2つの要求の選択要求頭は[DNF[一致する]]と定義します。
+
+[INS[
+(RFC 2068 では >>16 に続く)
+]INS]
+
+>A Vary header field-value of "*" always fails to match and subsequent
+requests on that resource can only be properly interpreted by the
+origin server.
+
+[21] [CODE(HTTP)[Vary]] 頭欄の値が [CODE(ABNF)["*"]] の時には、
+その資源への後続の要求は源サーバーによってのみ適切に解釈出来るので、
+絶対に一致しません。
+
+>If the selecting request header fields for the cached entry do not
+match the selecting request header fields of the new request, then
+the cache MUST NOT use a cached entry to satisfy the request unless
+it first relays the new request to the origin server in a conditional
+request and the server responds with 304 (Not Modified), including an
+entity tag or Content-Location that indicates the entity to be used.
+
+[22] 新しい要求の選択要求頭欄がキャッシュされている項目の選択要求頭欄が一致しなければ、
+キャッシュはその要求を満足させるのにキャッシュされた項目を使っては'''なりません'''。
+但し、最初に新しい要求を源サーバーに条件付要求で中継して、
+使用される実態を示す[[実体札]]又は [CODE(HTTP)[Content-Location]]
+を含んだ [CODE(HTTP)[304]] (未修正) 
+のサーバー応答を受け取った場合を除きます。
+
+>If an entity tag was assigned to a cached representation, the
+forwarded request SHOULD be conditional and include the entity tags
+in an If-None-Match header field from all its cache entries for the
+resource. This conveys to the server the set of entities currently
+held by the cache, so that if any one of these entities matches the
+requested entity, the server can use the ETag header field in its 304
+(Not Modified) response to tell the cache which entry is appropriate.
+If the entity-tag of the new response matches that of an existing
+entry, the new response SHOULD be used to update the header fields of
+the existing entry, and the result MUST be returned to the client.
+
+[23] キャッシュされた表現に実体札が割当てられていたなら、
+転送する要求は条件付として、その資源のキャッシュ項目全ての実体札を
+[CODE(HTTP)[If-None-Match]] 頭欄に含める'''べきです'''。
+これによってサーバーに現在キャッシュが保持している実体の集合を伝えることが出来て、
+その実体のいずれかが要求された実体と一致していれば、サーバーは
+[CODE(HTTP)[[[304]]]] (無修正) 応答に [CODE(HTTP)[ETag]]
+頭欄を使用することでキャッシュのどの実体が適切か教えることが出来ます。
+新しい応答の実体札が既存の項目と一致したなら、
+新しい応答は既存の項目の頭欄を更新するのに使う'''べき'''で、
+その結果はクライアントに返さなければ'''なりません'''。
+
+>If any of the existing cache entries contains only partial content
+for the associated entity, its entity-tag SHOULD NOT be included in
+the If-None-Match header [INS(RFC2616)[field]] unless the request is for a range that
+would be fully satisfied by that entry.
+
+[24] 既存のキャッシュ項目のいずれかが関連付けられた実体の部分内容のみしか含んでいなければ、
+その要求がその項目で十分満足される範囲に対するものでない限りは、
+その実体札を [CODE(HTTP)[If-None-Match]] 頭[INS(RFC2616)[欄]]に含める'''べきではありません'''。
+
+>If a cache receives a successful response whose Content-Location
+field matches that of an existing cache entry for the same 
+Request-URI, whose entity-tag differs from that of the existing entry, and
+whose Date is more recent than that of the existing entry, the
+existing entry SHOULD NOT be returned in response to future requests
+and SHOULD be deleted from the cache.
+
+[25] キャッシュが成功応答を受け取り、その 
+[CODE(HTTP)[Content-Location]] 欄が同じ [CODE(ABNF)[Request-URI]]
+に対する既存のキャッシュ項目のものと一致し、
+その実体札は既存の項目のものとは異なるもので、
+[CODE(HTTP)[Date]] は既存の項目のものより最近であるのなら、
+既存の項目は将来の要求の応答として返す'''べきではなく'''、
+キャッシュから削除する'''べきです'''。
+**RFC 2295 (HTTP 透過内容折衝) 10.6 Elaborate Vary headers
+[32]
+> If a HTTP/1.1 [1] server can generate varying responses for a request
+on some resource, then the server MUST include a Vary header in these
+responses if they are cacheable.  This Vary header is a signal to
+HTTP/1.1 caches that something special is going on.  It prevents the
+caches from returning the currently chosen response for every future request on the resource.
+
+HTTP/1.1 サーバーがなんかの資源に対する要求で変化する応答を生成することができるときは、
+サーバーはその応答が[[キャッシュ可能]]であれば 
+[CODE(HTTP)[[[Vary]]]] 頭を含めなければ'''なりません'''。
+この [CODE(HTTP)[Vary]] 頭は HTTP/1.1 キャッシュに何か特別なことをしているのだと通知します。
+これによってキャッシュが現在選ばれた応答をその資源についての将来の要求に返さないようにします。
+
+> Servers engaging in transparent content negotiation will generate
+varying responses.  Therefore, cacheable list, choice, and adhoc
+responses MUST always include a Vary header.
+
+> The most simple Vary header which can be included is
+- Vary: *
+
+> This header leaves the way in which the response is selected by the
+server completely unspecified.
+
+> A more elaborate Vary header MAY be used to allow for certain
+optimizations in HTTP/1.1 caches which do not have specific
+optimizations for transparent content negotiation, but which do cache
+multiple variant responses for one resource.  Such a more elaborate
+Vary header lists all request headers which can be used by the server
+when selecting a response for a request on the resource.
+
+より詳細な [CODE(HTTP)[Vary]] 頭を使用して透過内容折衝には特に最適化しないけれども一つの資源についての複数の変種資源はキャッシュする
+HTTP/1.1 キャッシュでの最適化を可能にしても'''構いません'''。
+そのようなより詳細な [CODE(HTTP)[Vary]] 頭は、サーバーがその資源についての要求に対する応答を選択するときに使用することが出来るすべての要求頭を列挙します。
+
+***10.6.1 Construction of an elaborate Vary header
+> Origin servers can construct a more elaborate Vary header in the
+following way.  First, start with the header
+
+起源サーバーは次の方法でより詳細な [CODE(HTTP)[Vary]]
+頭欄を構築できます。まず、頭
+
+>
+-       Vary: negotiate
+
+> `negotiate' is always included because servers use the information in
+the Negotiate header when choosing between a list, choice, or adhoc response.
+
+から始めます。 [CODE(HTTP)[negotiate]] はサーバーが[[目録応答]]・[[選択応答]]・[[臨時応答]]を選ぶときに
+[CODE(HTTP)[[[Negotiate]]]] 頭の情報を使用するので、
+常に含みます。
+
+> Then, if any of the following attributes is present in any variant
+description in the Alternates header, add the corresponding header
+name to the Vary header
+
+それから、 [CODE(HTTP)[[[Alternates]]]] 頭の[[変種記述]]のいずれかに次の属性のどれかが示されていれば、
+対応する頭名を [CODE(HTTP)[Vary]] 頭に追加します。
+
+>
+[PRE[
+         attribute  |   header name to add
+         -----------+---------------------
+          type      |   accept
+          charset   |   accept-charset
+          language  |   accept-language
+          features  |   accept-features
+]PRE]
+
+> The Vary header constructed in this way specifies the response
+variation which can be caused by the use of a variant selection
+algorithm in proxies.  If the origin server will in some cases, for
+example if contacted by a non-negotiating user agent, use a custom
+negotiation algorithm which takes additional headers into account,
+these names of these headers SHOULD also be added to the Vary header.
+
+この方法で構築された [CODE(HTTP)[Vary]] 頭は串で変種選択算法を使用したときに起こり得る応答変種を指定します。
+起源サーバーが、例えば非折衝利用者エージェントにより接触を受けた場合など幾つかの場合では、
+追加の頭を考慮に入れた個別折衝算法を使用するのであれば、
+その頭の名前も [CODE(HTTP)[Vary]] 頭に追加する'''べきです'''。
+
+***10.6.2 Caching of an elaborate Vary header
+> A proxy cache cannot construct an elaborate vary header using the
+method above, because this method requires exact knowledge of any
+custom algorithms present in the origin server.  However, when
+extracting an Alternates header from a response (section 10.4) caches
+MAY also extract the Vary header in the response, and reuse it along
+with the Alternates header.  A clean Vary header can however only be
+extracted if the variant does not vary itself, i.e. if a Variant-Vary header is absent.
+
+前述の方法は起源サーバーでどんな個別算法を使ったかの正確な知識が必要となるので、
+この方法を使って串キャッシュが詳細な変化頭を構築することは出来ません。
+しかし、応答から [CODE(HTTP)[Alternates]] 頭を取り出すときには、
+キャッシュは応答から [CODE(HTTP)[Vary]]
+頭をも取り出して、 [CODE(HTTP)[Alternates]] 頭と一緒に再利用しても'''構いません'''。
+しかし、綺麗な [CODE(HTTP)[Vary]] 頭を取り出すことが出来るのは、
+変種自体が変化しない時、つまり [CODE(HTTP)[[[Variant-Vary]]]]
+頭がないときだけです。
+
+*RFC の部分の License
+[[RFCのライセンス]]
+
+* 統計
+
+[2618] [CITE@en[HTTP/1.1 Vary header]] ([TIME[2009-07-19 11:40:34 +09:00]] 版) <http://www.http-stats.com/Vary>
+
+*メモ
+- [26] RFC 2616 は [CODE(HTTP)[Vary:]] 欄の値になるものを[[要求頭欄]]に限定していますが、[[一般頭欄]]や[[実体頭欄]]では駄目なのでしょうか? あんまり普通じゃないだけで、別にいいですよね、そう限定しなくても。
+- [27] [[Apache]] なんかは折衝をしたら [CODE(HTTP)[[[negotiate]]]] という謎の値を必ず送るんで、なんなのかなあと思うんですが、なんなんでしょう? 実質的に [CODE(TTP)[*]] と同じ意味になるわけですが。
+- [28] >>12 の構文だと、 [SAMP(HTTP)[Vary: [VAR[foo]]]] と別の欄で [SAMP(HTTP)[Vary: [VAR[bar]]]] にすることが出来ない (欄の値全体が [CODE(ABNF)[#]] で定義されてはいないため。) のですが、ちょっとまずくありません?
+- [29] [WEAK[2003-04-27 17:50]] ''[[わかば]]'': >>28 [[SuikaWiki]] の現実装ではそのまずいことをやってるわけですな。 (といっても Apache が勝手につけた [CODE(HTTP)[Vary: negotiate]] を [[CGI]] [[script]] 側から削除する方法は無いから・・・。)
+- [30] >>29 まずくないことに気づきました。 CGI script が吐いているのは CGI header field であって HTTP header field でないからね〜ん。 (つまり、 Apache が適当に連結してくれているらしい。)
+- [31] >>27 HTTP 本体の仕様書だけ読んでると確かにそう思ってしまうのですが、 [[RFC2295]] で [[Negotiate:]] という欄が規定されています。折衝時の [CODE(HTTP)[Vary:]] 欄の使い方についても言及があるので、ぜひ読んでおきましょう。
+- [33] 言語を折衝したときに [CODE(HTTP)[[[Content-Langage]]]] を [CODE(HTTP)[Vary]] に加えると間違って解説しているところがありますが、正しくは [CODE(HTTP)[''Accept''-Language]] を加える、です。クライアントからの受入れ言語申告に基づき折衝するのですから。[WEAK[クライアントからの実体の言語に基づき折衝するという稀な場合は [CODE(HTTP)[Content-Language]] で正しいですが、そんな場面ってあるでしょうか?]]
+
+[2617] [CITE@en[RFC 3143 - Known HTTP Proxy/Caching Problems]] ([TIME[2008-08-30 12:43:01 +09:00]] 版) <http://tools.ietf.org/html/rfc3143#section-2.1.1>
+
+[2619] [CITE[Apache HTTP Server Project]]
+( ([TIME[2011-05-28 00:58:55 +09:00]] 版))
+<http://httpd.apache.org/docs/1.3/misc/known_client_problems.html#ie40-vary>
+
+[2620] [CITE@en[Building Smartphone-Optimized Websites - Webmasters — Google Developers]]
+([TIME[2012-06-07 02:56:13 +09:00]] 版)
+<https://developers.google.com/webmasters/smartphone-sites/details>
+
+[2621] [CITE@en[Re: ''''''[''''''XHR'''''']'''''' Open issue: allow setting User-Agent?]]
+( ([[Boris Zbarsky]] 著, [TIME[2012-10-17 02:08:59 +09:00]] 版))
+<http://lists.w3.org/Archives/Public/public-webapps/2012OctDec/0200.html>
+
+[2622] [CITE@en[HTTP - WHATWG Wiki]]
+( ([TIME[2012-11-08 09:54:29 +09:00]] 版))
+<http://wiki.whatwg.org/wiki/HTTP#Assume_Vary:_User-Agent>

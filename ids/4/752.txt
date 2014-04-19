@@ -1,0 +1,121 @@
+[1] [[CGI]] の[[メタ変数]] [DFN[[CODE(CGI)@en[[[SERVER_PROTOCOL]]]]]] は、
+[[クライアント]]からの[[要求]]に使われた[[応用プロトコル]]の名前と版を表します。
+
+* 仕様書
+
+[REFS[
+- [21] [CITE@en[RFC 3875 - The Common Gateway Interface (CGI) Version 1.1]]
+-- [10] '''<http://tools.ietf.org/html/rfc3875#section-4.1.16>'''
+-- [22] <http://tools.ietf.org/html/rfc3875#section-4.3.4>
+]REFS]
+
+* 値
+
+[12] 値の構文は次のように定義されています [SRC[>>10]]。
+[PRE(ABNF code)[
+      SERVER_PROTOCOL   = HTTP-Version | "INCLUDED" | extension-version
+      HTTP-Version      = "HTTP" "/" 1*digit "." 1*digit
+      extension-version = protocol [ "/" 1*digit "." 1*digit ]
+      protocol          = token
+]PRE]
+
+[13] [[鯖]]は、[[クライアント]]からの[[要求]]において使われた[[応用プロトコル]]の名前と版を
+[CODE(CGI)@en[[[SERVER_PROTOCOL]]]] に設定しなければ[['''なりません''']]。なお、
+これは[[鯖]]が[[クライアント]]とやり取りするのに使う[[プロトコル]]の版と違っていることもあります。
+[SRC[>>10]]
+
+[EG[
+[14] 例えば[[クライアント]]が [[HTTP/1.1]] で[[要求]]し、[[鯖]]がそれに
+[[HTTP/1.0]] で[[応答]]することがあり、その場合 [CODE(CGI)@en[[[SERVER_PROTOCOL]]]]
+は [CODE(CGI)@en[[[HTTP/1.1]]]] となると思われます。
+
+;; [15] 本当にそれが有用なのかはわかりませんが・・・。
+]EG]
+
+[5] この変数の値は大文字・小文字を区別しませんが、
+伝統的に [CODE(ABNF)[protocol]]
+は大文字にすることになっています。
+
+CGI script の実装は大文字・小文字の違いを吸収するようになっていないことがほとんどであると予想されますから、
+サーバーは「よく知られた」
+表記とは違ったものを与えるべきではないでしょう。
+
+- [6] この値と応答に使われるプロトコルが一致するとは限らないのにも注意しましょう。 
+
+[3] [CODE(CGI)[protocol]]
+の値は、 URI の scheme
+と一致するとは限りません。
+たとえば、 [CODE(URI)[[[https:]]]]
+URI が使われたとしても、
+プロトコルは [[HTTP]] over 
+[[SSL]] で、実際に関係するのは
+HTTP だけなので、 
+[CODE(CGI)[HTTP]]
+という値が入ります。
+
+* プロトコル名の一覧
+
+[4]
+,[CODE(CGI)[HTTP/0.9]],[[HTTP/0.9]],[Apache]
+,[CODE(CGI)[HTTP/1.0]],[[HTTP/1.0]],[Apache]
+,[CODE(CGI)[HTTP/1.1]],[[HTTP/1.1]],[Apache]
+,[CODE(CGI)[[[INCLUDED]]]],取込み,"[Apache], [RFC]"
+,[CODE(CGI)[SIP/2.0]],[[SIP/2.0]]
+
+[8] Apache では [CODE[[[Action]]]] を使った関連付けみたいな機能がありますが、この機能を使って間接的に呼び出されることとなった CGI でも、普通に呼び出された場合と同じ結果 ([CODE(CGI)@en[HTTP/?.?]]) が得られるようです。
+
+[9] [[w3m]] の [[LocalCGI]] では [CODE(CGI)[HTTP/1.0]] になります。 
+
+;; [25] [[HTTP-Version]] の項も参照。
+
+* [CODE(CGI)@en[INCLUDED]]
+
+[11] [[CGIスクリプト]]が[[クライアント]]の[[要求]]に直接的に呼び出されたのではなく、
+他の[[文書]]の一部として取り込まれるために呼び出された場合、 [CODE(CGI)@en[[[SERVER_PROTOCOL]]]]
+として [DFN[[CODE(CGI)@en[[[INCLUDED]]]]]] という値を使うことができます [SRC[>>10]]。
+
+[18] 具体的には [[Apache]] で [[SSI]] を使うと [CODE(CGI)@en[[[INCLUDED]]]]
+という値が設定されます。
+
+[7] >>4 [CODE(SSI)[[[echo]]]] 擬似要素を使う方法と [CODE(SSI)[[[include]]]] 擬似要素を使う方法の2種類が SSI にはありますが、 [[Apache]] ではどちらでも [CODE(CII)[INCLUDED]] になりました。
+
+[19] [[CGIスクリプト]]は [CODE(CGI)@en[[[INCLUDED]]]] を [[HTTP/1.0]]
+として扱うべきです。 [SRC[>>10]]
+
+;; [20] ということは [[HTTP]] の[[プロトコル]]依存の機能 ([CODE(CGI)@en[[[HTTP_*]]]] など)
+が利用可能であると期待して良いのでしょうか。
+
+* 歴史
+
+[2] [NCSA] では形式は単に
+「protocol/revision」としか述べられていませんが、
+[COAR 03] で明確化されています。
+
+- SERVER_PROTOCOL   = HTTP-Version | extension-version | extension-token
+- HTTP-Version      = "HTTP" "/" 1*digit "." 1*digit
+- extension-version = protocol "/" 1*digit "." 1*digit
+- protocol          = 1*( alpha | digit | "+" | "-" | "." )
+- extension-token   = token
+
+[CODE(ABNF)[protocol]] であって
+[CODE(ABNF)[[[token]]]]
+でないのは、 [[URI]]
+の [[scheme]] 名との互換性を考慮したのでしょう。
+
+* 関連
+
+[16] [[CGI]] の[[プロトコル]]依存の機能に関して、どの[[プロトコル]]であるかは
+[CODE(CGI)@en[[[SERVER_PROTOCOL]]]] によって表されます。例えば [CODE(CGI)@en[[[SERVER_PROTOCOL]]]]
+の[[プロトコル]]名が [CODE(CGI)@en[[[HTTP]]]] の時、 [[HTTP]] の[[プロトコル]]依存の機能である
+[CODE(CGI)@en[[[HTTP_*]]]] [[メタ変数]]を使うことができます。
+
+;; [17] しかし[[プロトコル]]依存の機能の有無が [CODE(CGI)@en[[[SERVER_PROTOCOL]]]]
+だけで決まるわけではありません。[[トランスポート層]]に [[TLS]] を使っている場合
+[CODE(CGI)@en[[[SSL_*]]]] [[メタ変数]]が利用可能になりますが、それは
+[CODE(CGI)@en[[[SERVER_PROTOCOL]]]] には表れません。
+
+[23] [[鯖]]は [[HTTP/1.1]] の [CODE(HTTP)@en[[[PUT]]]] や [CODE(HTTP)@en[[[DELETE]]]]
+を実装する場合、 [CODE(CGI)@en[[[SERVER_PROTOCOL]]]] をチェックする[['''べき''']]とされています。 [SRC[>>22]]
+
+;; [24] 実際にはこれらの[[メソッド]]を使えるかどうかと [[HTTP]] の版は関係ないので、
+あまり意味のない要件な気がします。

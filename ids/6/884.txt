@@ -1,0 +1,403 @@
+[76] [[manakai DOM Extensions]] > Extensions to existing interfaces >
+Interfaces implemented by [CODE(DOMi)@en[[[Document]]]]
+objects
+
+* Extension to the [CODE(DOMi)@en[Document]] interface
+
+** Character Encoding
+
+[FIG[
+[57] 
+[PRE(IDL code)[
+[[partial]] [[interface]] [[Document]] {
+  [[attribute]] [[DOMString]] [[inputEncoding]];
+  [[readonly]] [[attribute]] [[DOMString]] [[charset]];
+  [[attribute]] [[DOMString]]? [[xmlEncoding]];
+  [[attribute]] [[DOMString]]? [[manakaiCharset]];
+  [[attribute]] [[boolean]] [[manakaiHasBOM]];
+};
+
+[[partial]] [[interface]] [[Entity]] {
+  [[attribute]] [[DOMString]] [[inputEncoding]];
+  [[attribute]] [[DOMString]]? [[manakaiCharset]];
+  [[attribute]] [[boolean]] [[manakaiHasBOM]];
+};
+]PRE]
+]FIG]
+
+[17] The [[entity]] has the [[encoding]].  Unless otherwise specified, it is [CODE@en[utf-8]].
+
+[58] On getting, the [DFN[[CODE(DOMa)@en[[[inputEncoding]]]]]] attribute of a [CODE(DOMi)@en[[[Document]]]]
+or [CODE(DOMi)@en[[[Entity]]]] object [['''MUST''']] return the [[encoding]] of the [[document]].
+
+[56] On setting, the [CODE(DOMa)@en[[[inputEncoding]]]] attribute of a [CODE(DOMi)@en[[[Document]]]]
+or [CODE(DOMi)@en[[[Entity]]]] object [['''MUST''']] run the following steps:
+[FIG[
+= Run the [[get an encoding]] steps with the input value and let [VAR@en[name]] be the result.
+= If [VAR@en[name]] is an encoding name and is one of labels for the encoding, set the [[encoding]] of the [[context object]] to [VAR@en[name]].
+]FIG]
+
+;; [75] The [CODE(DOMa)@en[[[inputEncoding]]]] attribute is originally defined by [[DOM3 Core]]
+and redefined here.  Unlike in [[DOM3 Core]], the [CODE(DOMa)@en[[[inputEncoding]]]] attribute return
+[CODE@en[[[utf-8]]]] rather than [CODE@en[null]] if it is not available.
+
+[59] On getting, the [CODE(DOMa)@en[[[charset]]]] attribute of the [CODE(DOMi)@en[[[Document]]]]
+interface [['''MUST''']] return the [[encoding]] of the document.
+
+[26] The [DFN@en[[CODE(DOMa)@en[[[xmlEncoding]] attribute]]
+of [CODE(DOMi)@en[[[Document]]]] and
+[CODE(DOMi)@en[[[Entity]]]] interfaces is now read-write.
+
+The setter of the [CODE(DOMa)@en[[[xmlEncoding]]]]
+[['''MUST''']] behave as if the following algorithm is performed:
+
+[DEL[
+= If the object is a [CODE(DOMi)@en[[[Document]]]] and
+its [CODE(DOMa)@en[[[manakaiIsHTML]]]] flag is set to
+[CODE(IDL)@en[[[true]]]], then throw a 
+[CODE(DOMc)@en[[[NOT_SUPPORTED_ERR]]]]
+[CODE(DOMi)@en[[[DOMException]]]].
+]DEL]
+
+= If the object is read-only,
+throw a [CODE(DOMc)@en[[[NO_MODIFICATION_ALLOWED_ERR]]]].
+= Otherwise, set the specified value as the new
+attribute value.  Note that the value might be
+[CODE(IDL)@en[[[null]]]].
+
+;; Note that setting this attribute might make the
+document inconsistent or non-serializable.
+
+[60] The [DFN[[CODE(DOMa)@en[[[manakaiCharset]]]]]] attribute of the [CODE(DOMi)@en[[[Document]]]]
+interface and the [CODE(DOMi)@en[[[Entity]]]] interface represents the [CODE(MIME)@en[[[charset]]]]
+information included in the [[[CODE(MIME)@en[[[Content-Type]]]] metadata]] of the resource from
+which the [[document]] or [[entity]] has been created.
+
+[61] For the [CODE(DOMi)@en[[[Document]]]] object created by [[fetch]]ing a resource,
+if the resource has the [[[CODE(MIME)@en[[[Content-Type]]]] metadata]] (i.e.
+[CODE(MIME)@en[[[Content-Type]]]] header field [[or equivalent]]) including the
+[CODE(MIME)@en[[[charset]]]] parameter whose definition is equivalent or subset of
+at least one of [CODE(MIME)@en[[[text/*]]]] and [[XML MIME types]]' [CODE(MIME)@en[[[charset]]]]
+parameter's definition, then the parameter value [['''MUST''']] be set to the [[charset metadata]]
+of the document.  Otherwise the [[charset metadata]] of the object [['''MUST''']] be initially
+set to [[null]].
+
+[62] For the [CODE(DOMi)@en[[[Entity]]]] object representing an external entity, if the
+entity has been created from the resource which has the [[[CODE(MIME)@en[[[Content-Type]]]] metadata]]
+including the
+[CODE(MIME)@en[[[charset]]]] parameter whose definition is equivalent or subset of
+at least one of [CODE(MIME)@en[[[text/*]]]] and [[XML MIME types]]' [CODE(MIME)@en[[[charset]]]]
+parameter's definition, then the parameter value [['''MUST''']] be set to the [[charset metadata]]
+of the entity.  Otherwise the [[charset metadata]] of the object [['''MUST''']] be initially
+set to [[null]].
+
+;; [64] Whether the parameter value is valid or not is irrelevant.
+
+;; [65] When the transfer protocol does not use [CODE(MIME)@en[[[charset]]]] name that is compatible
+with [[MIME]]'s definition, then the value has to be converted such that the [CODE(DOMa)@en[[[manakaiCharset]]]]
+attribute exposes the [[MIME]] compatible name representing that character encoding.
+
+[63] On getting, the [CODE(DOMa)@en[[[manakaiCharset]]]] attribute [['''MUST''']]
+return the [[charset metadata]] of the [[context object]].
+
+[66] On setting, the [CODE(DOMa)@en[[[manakaiCharset]]]] attribute [['''MUST''']]
+set the [[charset metadata]] of the [[context object]] to the new value.
+
+[67] The [DFN[[CODE(DOMa)@en[[[manakaiHasBOM]]]]]] attribute of the [CODE(DOMi)@en[[[Document]]]]
+and [CODE(DOMi)@en[[[Entity]]]] interfaces represents whether the [[context object]]'s byte representation
+has the [[BOM]] or not.  These objects has the [[has BOM]] flag, initially unset.
+
+[68] When the [CODE(DOMi)@en[[[Document]]]] object is created by [[fetch]]ing a resource,
+or the [CODE(DOMi)@en[[[Entity]]]] object is created by [[fetch]]ing a [[external entity]],
+if the resource is represented as byte sequence and starts with the [[BOM]], then the
+[[has BOM]] flag of the object [['''MUST''']] be set.
+
+[69] The [CODE(DOMa)@en[[[manakaiHasBOM]]]] attribute, on getting, [['''MUST''']] return the [[has BOM]]
+flag is set or not.  On setting, it [['''MUST''']] set the [[has BOM]] flag if the new value is true,
+or unset the flag, otherwise.
+
+** Metadata accessors
+
+[FIG[
+[PRE(IDL code)[
+partial interface [[Document]] {
+  void manakaiSetURL(DOMString url);
+};
+]PRE]
+]FIG]
+
+[74] The [DFN[[CODE(DOMm)@en[[[manakaiSetURL]]([VAR@en[url]])]]]] method
+of the [CODE(DOMi)@en[[[Document]]]] interface [['''MUST''']] run
+these steps:
+[FIG[
+= [[Resolve]] [VAR@en[url]] relative to the [[entry script]]'s [[base URL]].
+= If the previous step fails, throw a [CODE(DOMe)@en[[[SyntaxError]]]] exception and abort these steps.
+= Set [[the document's address]] to the new value.
+]FIG]
+
+@@ Scripts in Web pages cannot access this method.  How to implement this is binding dependent ?
+
+[DEL[
+[15]
+The [DFN@en[[CODE(DOMa)@en[manakaiEntityBaseURI]] attribute]]
+contains the base DOM URI of the document entity.
+
+The type of this attribute is [CODE(DOMi)@en[[[DOMString]]]].
+This attribute is read-write.
+
+If the [CODE(DOMi)@en[[[Document]]]] has the base URI
+information (in XML infoset terminology, the
+[CODE(InfoProp)@en[[[base URI]]]] property),
+then the getter [['''MUST''']] return that
+base URI.  Otherwise, the getter [['''MUST''']]
+return the [CODE(DOMa)@en[[[documentURI]]]]
+of the [CODE(DOMi)@en[[[Document]]]], possibly 
+[CODE(IDL)@en[[[null]]]].  Note that these 
+result in returning a [CODE(DOMi)@en[[[DOMString]]]]
+that is not a legal absolute URI, if the base URI
+information or [CODE(DOMa)@en[[[documentURI]]]]
+does not contain a legal absolute URI.
+
+On setting, if the [CODE(DOMi)@en[[[Document]]]] is read-only,
+then a [CODE(DOMc)@en[[[NO_MODIFICATION_ALLOWED_ERR]]]]
+[['''MUST''']] be thrown.  Otherwise,
+if the new value is [CODE(IDL)@en[[[null]]]],
+then the base URI information, if any, is unset.
+If the new value is non-[CODE(IDL)@en[[[null]]]],
+then the base URI information is set to that value.
+Note that no lexical checking is performed
+on that value.  Note also that setting this attribute
+does not affect on the [CODE(DOMa)@en[[[documentURI]]]]
+attribute.
+
+It is expected that if the [CODE(DOMi)@en[[[Document]]]]
+is created from an XML document entity retrieved from an HTTP
+entity, then the [CODE(HTTP)@en[[[Content-Location]]:]]
+and / or [CODE(HTTP)@en[[[Content-Base]]:]] header fields,
+if any, are reflected to this attribute.
+]DEL]
+
+[16]
+The 
+[DFN@en[[CODE(DOMa)@en[[[allDeclarationsProcessed]]]] attribute]]
+contains a value that represents whether the XML
+processor has read the complete DTD when the 
+XML document is parsed.  This attribute corresponding
+to the [CODE(InfoProp)@en[[[all declarations processed]]]]
+property of the document information item
+in the XML Information Set.
+
+;; Note that this attribute only exposes the information
+set property.  Its value does ''not'' indicate
+whether the document is [Q@en[complete]] or not,
+or valid or not.  In particular, modifications to the 
+DOM tree does not affect the value of this attribute.
+
+@@ ISSUE: Relationship between 
+the [CODE(DOMm)@en[[[normalizeDocument]]]] method
+and this attribute.
+
+The type of this attribute is [CODE(IDL)@en[[[boolean]]]].
+This attribute is read-write.
+
+The getter [['''MUST''']] return the value.
+
+On setting, if the [CODE(DOMi)@en[[[Document]]]] is read-only,
+then a [CODE(DOMc)@en[[[NO_MODIFICATION_ALLOWED_ERR]]]]
+[CODE(DOMi)@en[[[DOMException]]]]
+[['''MUST''']] be thrown.  Otherwise,
+it [['''MUST''']] set the value to the new value.
+
+The [CODE(DOMm)@en[[[createDocument]]]] method
+[['''MUST''']] set the 
+[CODE(DOMa)@en[[[allDeclarationsProcessed]]]] attribute 
+of the newly created [CODE(DOMi)@en[[[Document]]]]
+object as [CODE(IDL)@en[[[false]]]].
+
+If a [CODE(DOMi)@en[[[Document]]]] object is 
+created from an XML information set,
+the [CODE(DOMa)@en[[[allDeclarationsProcessed]]]]
+attribute of the [CODE(DOMi)@en[[[Document]]]] object
+[['''MUST''']] be set to the value of the
+[CODE(InfoProp)@en[[[all declarations processed]]]]
+property of the document information item.
+If the property is set to true, then the attribute
+[['''MUST''']] be set to [CODE(IDL)@en[[[true]]]].
+Otherwise, including the case the property is missing,
+the attribute [['''MUST''']] be set to
+[CODE(IDL)@en[[[false]]]].
+
+If a [CODE(DOMi)@en[[[Document]]]] object is mapped
+to an XML information set, then the
+[CODE(InfoProp)@en[[[all declarations processed]]]]
+property [['''MUST''']] be set to the value
+of the [CODE(DOMa)@en[[[allDeclarationsProcessed]]]]
+attribute.
+
+* Extensions to the [CODE(DOMi)@en[HTMLDocument]] interface
+
+[25] The [DFN@en[[CODE(DOMa)@en[[[manakaiIsHTML]]]]]]
+attribute represents whether the [CODE(DOMi)@en[[[Document]]]]
+is an HTML document or not.
+
+The type of this attribute is [CODE(IDL)@en[[[boolean]]]].
+This attribute is read-write.
+
+The getter [['''MUST''']] return [CODE(IDL)@en[[[true]]]]
+if and only if the [CODE(DOMi)@en[[[Document]]]]
+is an HTML document.  Otherwise it [['''MUST''']]
+return [CODE(IDL)@en[[[false]]]].
+
+[54] On setting, following steps [['''MUST''']] be performed:
+= If the new value is [CODE(IDL)@en[[[true]]]], run following substeps:
+== Change the [[document]] to [[HTML document]] if it is [[XML document]].
+== Set the [[content type]] to [CODE(MIME)@en[[[text/html]]]].
+= Otherwise, run following substeps:
+== Change the [[document]] to [[XML document]] if it is [[HTML document]].
+== Set the [[content type]] to [CODE(MIME)@en[[[application/xml]]]].
+= Set the mode to [[no quirks mode]].
+
+;; [55] Since the [CODE(DOMi)@en[[[Document]]]] that has just
+been created by [CODE(DOMm)@en[[[createDocument]]]] is
+not an HTML document, its [CODE(DOMa)@en[[[manakaiIsHTML]]]]
+is [CODE(IDL)@en[[[false]]]].
+
+[53]
+The [DFN@en[[CODE(DOMa)@en[[[manakaiCompatMode]]]] attribute]]
+of the [CODE(DOMi)@en[[[HTMLDocument]]]] interface
+is a read-write attribute of type [CODE(DOMi)@en[[[DOMString]]]].
+Its value represents the mode [HTML5] in which the document
+is interpreted.
+
+This attribute has three values:
+:[CODE(DOM)@en[[[no quirks]]]]:The no quirks (or standard)
+mode.
+:[CODE(DOM)@en[[[limited quirks]]]]:The limited quirks
+(or almost standard) mode.
+:[CODE(DOM)@en[[[quirks]]]]:The quirks mode.
+
+This attribute [['''MUST''']] return one of three
+values listed above depending on the mode of the document.
+Note that XML documents are always in the no quirks mode.
+
+On setting, the specified value [['''MUST''']] be set
+to the attribute if the specified value is one of three
+values listed above and the document is an HTML document.
+Otherwise, the attribute value [['''MUST NOT''']] be changed.
+
+;; A [CODE(DOMi)@en[[[Document]]]] node created
+by the [CODE(DOMm)@en[[[createDocument]]]] method is an
+XML document and is in the no quirks mode, therefore
+its [CODE(DOMa)@en[[[manakaiCompatMode]]]] attribute
+value is [CODE(DOM)@en[[[no quirks]]]].
+A [CODE(DOMi)@en[[[Document]]]] node created by an
+HTML parser from an HTML document is in one
+of three modes and its
+[CODE(DOMa)@en[[[manakaiCompatMode]]]] attribute
+value is a value corresponding to the mode.
+
+;; Setting the [CODE(DOMa)@en[[[manakaiIsHTML]]]]
+attribute [CODE(IDL)@en[[[false]]]] reset the 
+mode to the no quirks mode.
+
+[FIG[
+[70] 
+[PRE(IDL code)[
+[[partial]] [[interface]] [[Document]] {
+  [[readonly]] [[attribute]] [[HTMLHeadElement]] [[manakaiHead]];
+  [[readonly]] [[attribute]] [[HTMLHtmlElement]] [[manakaiHTML]];
+  [[attribute]] [[boolean]] [[manakaiIsSrcdoc]];
+};
+]PRE]
+]FIG]
+
+[71] The [DFN[[CODE(DOMa)@en[[[manakaiHead]]]]]] attribute of the [[document]] [['''MUST''']]
+return [[the [CODE(HTMLe)@en[head]] element]] of the document.
+
+[72] The [DFN[[CODE(DOMa)@en[[[manakaiHTML]]]]]] attribute of the [[document]] [['''MUST''']]
+return [[the [CODE(HTMLe)@en[html]] element]] of the document.
+
+[73] On getting, the [DFN[[CODE(DOMa)@en[[[manakaiIsSrcdoc]]]]]] attribute of the [[document]] [['''MUST''']]
+return whether the [[document]] is [[an [CODE(HTMLe)@en[iframe]] [CODE(HTMLe)@en[srcdoc]] document]] or not.
+On setting, if the attribute is invoked by an author script, it [['''MUST''']] do nothing.
+Otherwise, the attribute [['''MUST''']] make the [[document]] 
+[[an [CODE(HTMLe)@en[iframe]] [CODE(HTMLe)@en[srcdoc]] document]] if the new value is [[true]],
+or not [[an [CODE(HTMLe)@en[iframe]] [CODE(HTMLe)@en[srcdoc]] document]] otherwise.
+
+* Extension to the [CODE(DOMi)@en[DocumentTraversal]] interface
+
+[13]
+The [DFN@en[[CODE(DOMm)@en[[[manakaiCreateSerialWalker]]]] method]]
+creates and returns a new [CODE(DOMi)@en[[[SerialWalker]]
+object.
+
+This method takes four parameters:
+[CODE(DOMp)@en[[[root]]]], [CODE(DOMp)@en[[[whatToShow]]]],
+[CODE(DOMp)@en[[[filter]]]], and
+[CODE(DOMp)@en[[[entityReferenceExpansion]]]].
+
+The [DFN@en[[CODE(DOMp)@en[[[root]]]] parameter]] is 
+the node that will serve as the root for the
+[CODE(DOMi)@en[[[SerialWalker]]]].
+It is a [CODE(DOMi)@en[[[Node]]]].
+
+The [CODE(DOMp)@en[[[whatToShow]]]] flags and
+the [CODE(DOMi)@en[[[NodeFilter]]]] are not considered
+when setting this value; any node type
+will be accepted as the [CODE(DOMp)@en[[[root]]]].
+
+The [CODE(DOMa)@en[[[currentNode]]]] of the created
+[CODE(DOMi)@en[[[SerialWalker]]]] is initialized to
+the [CODE(DOMp)@en[[[root]]]] [CODE(DOMi)@en[[[Node]]]],
+whether or not it is visible.
+
+The [CODE(DOMp)@en[[[root]]]] functions as a stopping
+point for traversal method that look upwards
+in the document structure, i.e. [CODE(DOMm)@en[[[nextNode]]]].
+
+The [CODE(DOMp)@en[[[root]]]] [['''MUST NOT''']]
+be [CODE(IDL)@en[[[null]]]].  If it is, then
+a [CODE(DOMc)@en[[[NOT_SUPPORTED_ERR]]]] exception 
+[['''MUST''']] be thrown.
+
+The [DFN@en[[CODE(DOMp)@en[[[whatToShow]]]] parameter]]
+is the flags that specify which node types may appear
+in the logical view of the tree presented by the
+[CODE(DOMi)@en[[[SerialWalker]]]].
+It is an [CODE(IDL)@en[[[unsigned short]]]].
+
+The set of the flags are defined in the
+[CODE(DOMi)@en[[[NodeFilter]]]] interface.
+They can be combined using the binary [CODE@en[[[OR]]]]
+operation.
+
+The [DFN@en[[CODE(DOMp)@en[[[filter]]]] parameter]]
+is the [CODE(DOMi)@en[[[NodeFilter]]]] to be used
+with the created [CODE(DOMi)@en[[[SerialWalker]]]].
+If [CODE(IDL)@en[[[null]]]] is set, then no filter is used.
+
+The 
+[DFN@en[[CODE(DOMp)@en[[[entityReferenceExpansion]]]] parameter]]
+parameter is the [CODE(DOMa)@en[[[expandEntityReferences]]]]
+flag of the created [CODE(DOMi)@en[[[TreeWalker]]]].
+It is a [CODE(IDL)@en[[[boolean]]]] value.
+
+If it is set to [CODE(IDL)@en[[[true]]]],
+then the contents of the [CODE(DOMi)@en[[[EntityReference]]]]
+nodes ''are'' presented in the logical view.
+
+Otherwise, the contents of the [CODE(DOMi)@en[[[EntityReference]]]]
+nodes are ''not'' presented in the logical view.
+
+The method returns a [CODE(DOMi)@en[[[SerialWalker]]]].
+It [['''MUST''']] be a new [CODE(DOMi)@en[[[SerialWalker]]]]
+with following attributes:
+- [CODE(DOMa)@en[[[currentNode]]]] is [CODE(DOMp)@en[[[root]]]].
+- [CODE(DOMa)@en[[[expandEntityReferences]]]] is
+[CODE(DOMp)@en[[[entityReferenceExpansion]]]].
+- [CODE(DOMa)@en[[[filter]]]] is [CODE(DOMp)@en[[[filter]]]].
+- [CODE(DOMa)@en[[[root]]]] is [CODE(DOMp)@en[[[root]]]].
+- [CODE(DOMa)@en[[[whatToShow]]]] is 
+[CODE(DOMp)@en[[[whatToShow]]]].
+
+* memo (informative)

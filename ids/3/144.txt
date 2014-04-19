@@ -1,0 +1,54 @@
+#?SuikaWiki/0.9
+[1] [[XSLT]] では、 [CODE(XSLTe)[[VAR[xslt:]][[key]]
+要素・[CODE(XPathf)[key]] 関数と、
+[CODE(XSLTe)[[VAR[xslt:]][[sort]]]] 要素の2箇所で
+「鍵」 (key) に言及してます。
+
+前者は [[XML]] の [[ID]] の拡大版のような位置付けで、
+後者は単に並べ替えの時の比較対象であり、
+両者に関係はありません。
+
+[2] 以降は前者 <http://www.w3.org/TR/xslt#key>
+について触れます。
+
+[3] [DFN[鍵]]は、対象となる[DFN[[[節]]]],
+鍵の[DFN[名前]], 鍵の[DFN[値]]の3つの要素で構成されます。
+名前とは鍵の名前空間のようなものです。
+値が識別子です。但し、値は一意である必要はありませんし、
+XML 的な[[名前]]に限らず、どんな文字列でも構いません。
+
+同じ節・同じ名前だけど値は異なるとか、
+同じ名前・同じ値だけど異なる節というのも問題ありません。
+当然同じ節・同じ値の別の名前というのもあり得ます。
+
+[4] 鍵を定義するには、 [CODE(XSLTe)[[VAR[xslt:]]key]]
+要素を使います。
+鍵を使って節を選択するには、 [CODE(XPathf)[key]]
+関数を使います。
+
+[5] 鍵を使うと、相互参照を柔軟に取扱うことができます。
+例えば、
+
+-<i id="i1">xsl:<e>choose</e>, xsl:<e>when</e>, xsl:<e>otherwise</e></i>
+-<i id="i2"><f>document</f>()         </i>
+-<i id="i3">xsl:<e>key</e>, <f>key</f>()     </i>
+-<i id="i4">xsl:<e>template</e>       </i>
+
+で、
+[PRE[
+<xsl:key match="i[child::e]" name="element" use="string(self::node())"/>
+<xsl:key match="i[child::f]" name="function" use="string(self::node())"/>
+]PRE]
+とすると、
+,節の id,名前     ,値
+,i1     ,element  ,choose
+,i1     ,element  ,when
+,i1     ,element  ,otherwise
+,i2     ,function ,document
+,i3     ,element  ,key
+,i3     ,function ,key
+,i4     ,element  ,template
+
+という鍵が用意されます。
+[SAMP(XPath)[[CODE(XPathf)[key]]('element', 'key')]]
+では節集合 [CODE[{要素節 i3}]] が返ってきます。

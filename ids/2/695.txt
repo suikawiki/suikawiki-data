@@ -1,0 +1,153 @@
+
+*3.  Message Format (draft-ietf-822ext-qreadable-02.txt から)
+
+As in [2], the message exists as a series of parts, each part being a
+group of lines containing characters in the character set employed.
+
+1991年6月の [[MIME]] 原案では、メッセージは一連の部分として
+存在し、各部は使われる文字集合中の文字からなる行の集団であります。
+
+Each part may or may not be encoded using this format; we concern 
+ourselves in this document solely with those that are.  Within the relevant
+parts of the message, ordinary text may have occurrences of the 
+following sequence: an intro character, followed by a string of characters
+that represent a character mnemonic, as described below.  Similarly, the
+intro character may doubled, indicating a single occurence of the
+respective symbol in decoded format.
+
+This message format uses the headers "Content-Type:" and 
+"Content-Charset:" from [2] and is signified with the new header 
+"Mnemonic-Intro:" and the two optional headers "Orig-Content-Charset" and 
+"Orig-Mnemonic-Intro:". Case is ignored in these headers.  A description of
+these headers and their fields follows.
+
+このメッセージ書式は MIME 原案から「Content-Type:」と
+「Content-Charset:」の各頭を、それから2つの任意頭
+「Orig-Content-Charset」と「Orig-Mnemonic-Intro:」各頭を使います。
+各頭・領域の説明は次の通りです。
+
+**3.1.  Content-Type: Text
+
+If the Content-Type header is present, it must have the first header
+field as "Text" according to this specification. The Content-Type header
+can also be omitted, as Text is the default content type.  The mnemonic
+message format is intended to be read by the end user possibly without
+further intervention.
+
+**3.2.  Content-Charset: charset
+
+;; 編註: 長いので適当に段落区切ってます。
+
+The charset is given as one of the coded character set names in [3] and
+is the encoding used for the transport.  For general use on the 
+Internet, only "ASCII" and "ICS" are allowed.  
+
+charset は将来 RFC 1345 になる原案の中の符号化文字集合名の一つで、
+転送に使われる符号化方法です。 Internet では通常の使用では、
+「ASCII」と「ICS」だけが認められています。
+
+ASCII is the recommended character set, while ICS will be very robust 
+for traversing gateways, but it
+will cause trouble for (amongst other things) source code for several
+programming languages.  
+
+ASCII は推奨文字集合です。 ICS は関門を旅するのにとても
+力強いでしょうが、プログラム言語のソース・コードなんかで
+問題を起こすでしょう。
+
+The use of other character sets are delimited to
+agreement between the communicating parties. When such an agreement has
+been achieved, or when a User Agent is operating in another character
+set than this transport character set, conversion of the message body
+part is done according to the tables in [3], as characters occuring in
+both encodings are just transformed, and characters not existing in the
+receiving coded character set are represented by the intro character of
+the receiving coded character set plus the mnemonic from [3], as
+described under the intro character.  
+
+他の文字集合の使用は通信団体間の合意によります。かような
+合意のなされている時、あるいは利用者代理者が転送文字集合から他の文字集合
+に変換しようとする時には、メッセージ本体部分の変換は
+将来 RFC 1345 になる原案の表に沿い、両符号化方法で使える文字は
+普通に変換し、受信側文字集合で存在しない文字は受信側符号化文字集合の
+先導文字と将来 RFC 1345 になる原案の記法で表現します。
+
+The characters forming the
+mnemonic are translated into the receiving code, which must have these
+characters present.  An undefined character in the originating coded
+character set is transformed into a question mark character.  The
+Content-Type:-header is changed accordingly to reflect such conversion.
+Conversion is not allowed if the content-type is not "Text" (which is
+the default if the Content-Type header is missing).
+
+記法の文字形は受信符号に変換されますが、必ずそれらの文字表現を
+持たなければなりません。元の符号化文字集合の未定義文字は
+疑問符文字に変換されます。 Content-Type:(内容型) 頭は
+変換を反映して修正されます。 content-type が「Text」(文字列)
+(Content-Type 頭が無い時の既定値) でない時は
+変換は認められません。
+
+;; 編註: なんとここまで一段落。
+
+An example of changing headers is the following: The UA runs in an 8-bit
+character set:
+
+      Content-Type: Text
+      Content-Charset: ISO_8859-1
+      Mnemonic-Intro: 29
+      Orig-Content-Charset: ISO_8859-1
+      Orig-Mnemonic-Intro: 29
+
+The MTA converts it before sending it to the recepient:
+
+      Content-Type: Text
+      Content-Charset: ASCII
+      Mnemonic-Intro: 38
+      Orig-Content-Charset: ISO_8859-1
+      Orig-Mnemonic-Intro: 29
+
+**3.3.  Mnemonic-Intro: Intro
+
+The intro character is given as the decimal value of the intro character
+in the transport character set. The recommended value is 38 for the
+ampersand (&) character in ASCII. Another common value is 29 for the
+control character Group Seperator, which may be convenient when operat-
+ing in some environments, and ordinary text is not changed.  The intro
+character is used for introducing character mnemonics from [3] when a
+character is not present in the mail transport character set (as defined
+by "charset").  Character mnemonics longer than two characters are sur-
+rounded by the underline character. The intro character is doubled to
+repesent one occurance of itself.  Characters in the mail transport
+character set are normally just represented with their encoding, but may
+also be represented by the intro character and the mnemonic encoding.
+If the intro character is specified as 0 (zero), it is omitted in the
+transport, giving a better readably content, but eliminating the possi-
+bility of reversability and introducing an information loss.
+
+**3.4.  Orig-Content-Charset: orig-charset
+
+The orig-charset is given as the original character set name.  This may
+be set by the sending User Agent before converting the message into a
+character set suitable for transport.  If no orig-charset is specified,
+the charset character set is used.
+
+3.5.  Orig-Mnemonic-Intro: orig-intro
+
+The orig-intro character is given as the original intro character as
+used by the originating User Agent. The orig-charset and orig-intro may
+be used to recreate the message in its original encoding.  If no orig-
+intro character is specified, the intro character is used.  If the
+orig-intro character is specified as 0 (zero), no intro character was
+used in the original content.  On the other hand, having  a non-zero
+orig-intro value allows the user to generate characters, that are not
+available in the orig-charset.
+
+*See also
+-<urn:ietf:id:draft-ietf-822ext-qreadable-02>
+-[[RFC1345]]
+-[[MIME]]
+--[[charset]]
+-[[RFC822と仲間達の頭領域名]]
+--[[Content-Type:領域]]
+--[[Encoding:領域]]
+-[[RFCのライセンス]]

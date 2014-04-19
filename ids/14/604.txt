@@ -1,0 +1,32 @@
+[1]
+[PRE(perl code)[
+sub check_channel {
+    my ($self, $pig, $channel) = @_;
+    return unless $channel->is_active;
+
+    for my $feed (@{ $channel->feeds }) {
+        $feed->each_new_entry( $pig, sub {
+            my $entry = shift;
+
+            my $author = $entry->author;
+            my $title = $entry->title;
+            $title = '[SPAN[]]' if $title eq 'id:wakabatan' and $author eq 'wakabatan';
+
+            $pig->log->debug(
+                encode_utf8(sprintf( "%s: %s - %s",
+                    ($author || '[no name]'),
+                    ($title  || '[no title]'),
+                    ($entry->link   || '[no link]'))));
+
+            # TODO: メッセージフォーマットをconfigで指定できるよう
+            my @message;
+            push @message, sprintf '[%s] <%s>', $title, $entry->link;
+            push @message, substr $entry->content->body, 0, 500;
+
+#            $pig->privmsg( $self->bot_name, $channel->name, $message );
+            $pig->join($author, $channel->name);
+            $pig->privmsg( $author, $channel->name, $_ ) for @message;
+        });
+    }
+}
+]PRE]

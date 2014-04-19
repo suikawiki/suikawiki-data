@@ -1,0 +1,207 @@
+
+
+* Byte Order Mark
+
+バイト順印。
+
+[1] [[ISO/IEC10646]] には「byte order mark」という言葉は出てきません 
+([[UnicodeStandard]] には出てきます)。 10646 は [ABBR[BOM] [Byte order mark]] 
+のことを、「[ABBR[[[UCS]]]] を識別する『signature』」と呼んでいます。
+ISO/IEC 10646-1:2000 附属書 H (参考) The use of “signatures” to identify UCS
+に説明があります。
+
+> This annex describes a convention for the
+identification of features of the UCS, by the use of
+"signatures" within data streams of coded
+characters. The convention makes use of the
+character ZERO WIDTH NO-BREAK SPACE, and is
+applied by a certain class of applications.
+
+なんだそーです。使いたけりゃ使えば? 的で結構さめてます。
+引用部の後の方の記述によると、
+,UCS-2 signature	,FEFF
+,UCS-4 signature	,0000 FEFF
+,UTF-8 signature	,EF BB BF
+,UTF-16 signature	,FEFF
+
+ってことですが、別に [ABBR[UCS]]-2/4, [ABBR[UTF]]-8/16 を区別できるのが
+嬉しいのじゃなくて、その名の通りバイト順を区別できるのが嬉しいんです。
+
+- UCS-2/UTF-16BE: FEFF
+- UCS-2/UTF-16LE: FFFE
+- UCS-4/UTF-32BE: 0000 FEFF
+- UCS-4/UTF-32LE: FFFE 0000
+
+このように、[[エンディアン]]が識別できるんです。素晴らしいでしょ? :-)
+
+だから [[UTF-8]] ではこんなの要らんのですが、一貫性かなんかのために、
+つけようというのが当世風。対応してない応用からすると頭にゴミです。
+おまけに、 [ABBR[UTF]]-8 の最大の特徴であった [ABBR[[[ASCII]]]] との互換性を
+ぶっ飛ばしてしまいます。
+
+[CODE(char)[ZERO WIDTH NO-BREAK SPACE]] 
+([CODE(char)[[ABBR[ZWNBSP]]]]) が [CODE(char)[U+FEFF]] に置いてあって、
+[CODE(char)[U+FFFE]] が「not a character」になってるのは偶然じゃありません。
+[CODE(char)[[ABBR[BOM]]]] に使うためにわざわざこう配置したんです。
+
+で、あとから [CODE(char)[[ABBR[BOM]]]]
+ありなし問題云々で [CODE(char)[U+FEFF]] を [CODE(char)[[ABBR[ZWNBSP]]]] 
+本来(?)の役目に使うことが出来ない状況になってしまった [WEAK[(ほんとか?)]]
+もんですから、
+[CODE(char)[ZERO WIDTH NON-JOINER]] [WEAK[(だっけ?)]] 
+とかを別に追加することになったとか。 (そして追加されたとか。)
+しょーもない話ですなあ。
+
+
+
+
+
+[[#comment]]
+
+
+** BOM は必須ですか?
+
+[3] '''質問''':
+
+> BOMって本来必須なものだと思っていたのですけど、そうでもないんですね [INS[(<http://www.airemix.com/bbs/> No.148-13)]]
+
+[2] はい。 >>1 にあるように、原則として必要ありません。
+
+ただし、 [ABBR[[[UCS]]]]
+を使用する場面などによって、その場面で使用する規格などが
+[ABBR[BOM]] を使わなければならないと規定していること'''も'''あります。
+その場合はもちろん必須になります。
+
+[[#comment]]
+
+
+** UTF-8 と UTF-8n
+
+[4] '''質問''': [[UTF-8]] の名前に [CODE[UTF-8]] と [CODE[UTF-8n]]
+があるようなのですが、どう違うのですか。
+
+[5] まずはっきりさせておかないといけないこととして、 [CODE[UTF-8n]]
+という名前はあまり知られていません。ですから、 [CODE[UTF-8]]
+と [CODE[UTF-8n]] 
+にはっきり使い分けがあるのかというと、そうでもありません。
+
+[6] [CODE[UTF-8n]] という名前を提案しているのは、 [[UnicodeConsortium]]
+のそれなりに偉い人 (誰かは忘れた。) のようです。
+しかも、その人の文章 (どこにあったか忘れた。 [[dW]] かなあ。)
+では、使い分けが当然であるかのように書いてあります。
+
+しかし、 Unicode や [ABBR[ISO]]/[ABBR[IEC]] 10646 
+の規格票を見ても、そんなことは全然書いてありません。
+つまり、両者を使い分ける提案はありますが、標準化団体や世間で受け入れられているものではありません。
+また、受け入れられるけはいもありません。
+
+[7] さて、回答ですが、使い分けを提案している人は、
+[CODE[UTF-8n]] を [ABBR[BOM]] なしの UTF-8 に、 
+[CODE[UTF-8]] を [ABBR[BOM]]
+ありの UTF-8 に使おうと言っています。
+
+[9] しかし実際には [CODE[UTF-8]] という名前は [ABBR[BOM]] 
+なしに対して呼ばれることが多いです。 (最近は [ABBR[BOM]]
+ありに対して言うことも多くなってきたようです。
+[WEAK[(とはいえ、統計は無いので感覚的に、です。)]])
+
+[8] >>9 のような状況でどうして >>7
+のような定義を提案しているのかですが、おそらく [ABBR[BOM]]
+ありを普及させたい意図があるのでしょう。
+
+[10] なお、 [ABBR[[[IETF]]]] [[charset]] 名 ([ABBR[[[MIME]]]] ([[電子メイル]])
+や [ABBR[[[HTTP]]]] で使われる。) では [CODE(charset)[UTF-8]]
+だけを定義していて、その内容は [ABBR[BOM]] 
+はあっても無くてもいい、というものです。
+
+- [14] [WEAK[2004-02-17 05:00:41 +00:00]] ''[[naruse]]'': 結構UTF-8Nって使う人は多いように思いますよ。UNIX系で最初の一行で処理を決めるとき(#!なんちゃら)、BOMがあるとエラーになってしまうため、UTF-8Nでないといけないのです。
+
+[15] >>14 Windows のメモ帳の影響がどれくらいのものかはわかりませんが、
+基本的には今も昔も [ABBR[BOM]] なしの UTF-8 がずっと多いと思います。
+
+ここで問題にされているのは、そのような話ではなくて、
+BOM なし/ありの UTF-8 をそれぞれどのような名前で呼ぶかですよね。
+
+- BOM があってもなくても、どちらも (またはどちらかわからない状態を)
+[CODE[UTF-8]] と呼ぶ人がいる。
+- BOM があったら [CODE[UTF-8]] と呼び、 BOM がなければ [CODE[UTF-8N]]
+と呼ぶ人がいる。
+- BOM の問題を知らない人がいる。
+- この問題とは関係ないけど、 UTF-8 のことを Unicode と呼ぶ人もいる。
+
+「UTF-8N」といえば BOM なしであることに疑問の余地はありませんが、
+「UTF-8」といった時に一般には
+BOM のあり・なしを断定できないのです。
+
+経験的には、「UTF-8」に対応しているソフトウェアの多くは BOM ありまたは
+BOM なしのいずれかしか扱えなくて、 BOM なしだけを扱える方がずっと多く、
+たまに、 BOM ありで最初に実装したソフトウェアに後から「UTF-8N」
+と称して BOM なしを追加することがあるくらいの様に思われます。なんとなく。
+
+[[#comment]]
+
+
+* メモ
+
+- [11] [ABBR[BOM]] なんて消えてなくなれ!
+- [12] ついでに [[UTF-16]] もなくなれ!
+- [13] このさい [[Unicode]] もなくなってしまえ!!
+
+[16]
+[CITE[QA/Utf8BomInteropReport - ESW Wiki]] <http://esw.w3.org/topic/QA/Utf8BomInteropReport>
+([[名無しさん]] [WEAK[2006-12-13 12:36:42 +00:00]])
+
+[17]
+[CITE[I18N Tests: UTF-8 signature 1]] <http://www.w3.org/International/tests/sec-utf8-signature-1.html>
+
+[18]
+[CITE@ja[BOM は Bomb? | | プログラマ2.0日報 | あすなろBLOG]] ([TIME[2008-11-13 10:21:17 +09:00]] 版) <http://blog.pasonatech.co.jp/sugiura/8981.html>
+
+[19]
+>>18
+>まあ「BOM が必要」なコンテキストというのは単に
+>
+今が移行期だから
+>
+ということであるに過ぎません。とっととこういうものは要らなくなるようになってほしいですね。
+
+[[UTF-16]] よとっととなくなれということですね、わかります。
+
+[20] [CITE@en[MAMA: Basic document structure - Opera Developer Community]] ([TIME[2008-11-25 20:12:03 +09:00]] 版) <http://dev.opera.com/articles/view/mama-basic-document-structure/#boms>
+
+>The 3 BOMs were found in a total of 17,649 URLs (0.50% of all URLs analyzed). The BOM found most often is utf-8.
+>
+,BOM  	,Frequency
+,utf-8 	,"17,006"
+,utf-16 (little-endian) 	,647
+,utf-16 (big-endian) 	,26
+
+[21] [CITE@ja-JP[PHP スクリプトは BOM 付き UTF-8 で書いてはいけない - れぶろぐ (2009-01-29)]] ([[revulo]] 著, [TIME[2009-02-11 18:42:19 +09:00]] 版) <http://www.revulo.com/blog/20090129.html#p01>
+
+[22] [CITE@en[(X)HTML5 Tracking]]
+([TIME[2009-09-15 20:15:36 +09:00]] 版)
+<http://html5.org/tools/web-apps-tracker?from=3852&to=3853>
+
+[23] [CITE[Bug 12897 – In some parsers, UTF-8 BOM trumps the HTTP charset attribute (Encoding sniffing algorithm)]]
+([TIME[2011-12-29 20:02:59 +09:00]] 版)
+<https://www.w3.org/Bugs/Public/show_bug.cgi?id=12897>
+
+[24] [CITE@en[Web Applications 1.0 r7360     Make a BOM override HTTP headers.]]
+( ([TIME[2012-09-16 12:55:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=7359&to=7360>
+
+[25] [CITE@en[Charinfo — "﻿"]]
+( ([TIME[2013-03-16 12:16:43 +09:00]] 版))
+<http://chars.suikawiki.org/char/FEFF>
+
+[26] [CITE@en[Web Applications 1.0 r7782     Strip a leading BOM from scripts in workers, if any. Also, use more of the encoding spec.]]
+( ([TIME[2013-03-30 03:45:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=7781&to=7782>
+
+[27] [CITE@en[Re: ''''''[''''''Json'''''']'''''' JSON: remove gap between Ecma-404 and IETF draft]]
+( ([[Martin J. Dürst]] 著, [TIME[2013-11-14 20:14:29 +09:00]] 版))
+<http://lists.w3.org/Archives/Public/www-tag/2013Nov/0102.html>
+
+[28] [CITE@en[Re: BOMs]]
+( ([[Bjoern Hoehrmann]] 著, [TIME[2013-11-18 21:35:00 +09:00]] 版))
+<http://lists.w3.org/Archives/Public/www-tag/2013Nov/0119.html>

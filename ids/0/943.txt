@@ -1,0 +1,116 @@
+[10] [DFN[[[RFC 1468]]]] は、[[日本語]]用の[[文字コード]]である [DFN[[[ISO-2022-JP]]]] を規定しています。
+[[ISO-2022-JP]] の定義は複数存在しますが、「[[ISO-2022-JP]]」という名を翳した最初の正式な文書である
+[[RFC 1468]] が原典であると考えられています。
+
+* メモ
+
+[1] [[RFC 1468]]は単なる[[文字コード]]ではなく、
+従来[[JUNET]]で[[822]][[メッセージ]]の[[本文]]で使われてきた[[文字コード]]を[[MIME]]で使うために説明 & [[IANA]]登録するという形を採っているので、
+[CSECTION@en[Formal Syntax]]には[CODE(ABNF)@en[headers]]も含まれた[CODE(ABNF)@en[message]]の構文として説明されている。
+
+;; 古い案では[CODE(ABNF)@en[[[message]]]]と[CODE(ABNF)@en[[[headers]]]]はなく、[CODE(ABNF)@en[[[line]]]]があったのに、わざわざいまの形に変更されている。
+[CITE[iso-2022-jp doc]] 
+<http://www.imc.org/ietf-822/old-archive1/msg02541.html>
+
+にも関わらず、後から[[ietf-822]]で指摘されて[CSECTION@en[MIME Considerations]]に[CODE(ABNF)@en[[[encoded-word]]]]でも使えると追記しており、
+構文はそのままなので、どう使うのかが説明できていない。
+
+;; しかも一時は別文書にするつもりだったらしい。
+[CITE@en[Re: JUNET Kanji code document review]]
+<news:BytJt0.Jto@poel.juice.or.jp>
+
+[2] 末尾では[[ASCII]]状態でなければならないとされている。
+これは[[SMTP]]/[[822]]が[[ASCII]]で終わることとの整合性のためらしい。
+
+;; [CITE[re: new version of ISO-2022-JP document]] 
+<http://www.imc.org/ietf-822/old-archive1/msg02528.html>
+
+[[JUNET利用の手引き]] (6.3)
+では[[JIS X 0201]]で終えてもよいこととされており、
+現実にもそうされていたのと矛盾している。
+
+;; 
+1つの[[メッセージ]]中で[[ASCII]]と[[JIS X 0201]]の[[指示シーケンス]]を併用するのは稀で、
+1992年当時は[[JIS X 0201]]の方がよくつかわれていた。
+[CITE@en[ESC$? ESC(?]]
+<news:144@isdn1.smsc.sony.com>,
+[CITE@en[ESC$? ESC(?]]
+<news:1993Jan3.064853.27094@sm.sony.co.jp>
+
+[3]
+当初の案では隣接する[[指示シーケンス]]は異なるものであるべき
+([Q@en[should]]) とし、推奨されない例 ([Q@en[not recommended]])
+[CODE(example)@en[[CODE(charname)@en[[[ESC]]]] $ B [VAR[....]] [CODE(charname)@en[[[ESC]]]] $ B [VAR[....]]]]
+を示していた。
+
+この部分は不要ということで削除された。
+
+;; [CITE[Re: iso-2022-jp]] 
+<http://www.imc.org/ietf-822/old-archive1/msg02480.html>
+
+[4]
+[CSECTION@en[Description]]には[[JIS X 0208]]‐''1983''と明記されているが、
+[CSECTION@en[Background Information]]には[[更新番号]]なしで'''1990''''版の追加2文字を使ってもいいことにしようと提案している
+([Q@en[suggested here]])。
+
+[[著者]]のエリックはそれを書き足すに先だって同じことを提案しているが、
+それに関する議論はなかったのか、あるいは残っていない。
+[[反論がなければ合意]]なのか? [[合意]]がないから曖昧なのか?
+
+;; [CITE@en[Re: JUNET Kanji code document review]]
+<news:Bu7Av0.2I4@poel.juice.or.jp>
+
+;; そもそも[[RFC 1468]]に向けた作業をしていたらしい[[メイリング・リスト]]の記事が残っていない・・・。
+
+[5]
+[Q@en[Formal Syntax]] には、[[指示シーケンス]]なしの[[行]]が認められない不具合がある。
+
+[6]
+[Q@en[Formal Syntax]] によれば、[[行]]最後の
+[CODE(char)@en[[CODE(charname)@en[[[ESC]]]] ( B]] or [CODE(char)@en[[CODE(charname)@en[[[ESC]]]] ( J]]
+''以外''の[[指示シーケンス]]の後には1文字以上必要。
+
+もとの[[JUNET利用の手引き]] (6.3) にはこの制限は書かれていない。
+
+;; もっとも現実には[[RFC 1468]]の制限があっても問題はないだろう。
+
+[7]
+[Q@en[Formal Syntax]] によれば、[CODE(charname)@en[[[CR]]]]と[CODE(charname)@en[[[LF]]]]は単独では使用できず、
+必ず[CODE(ABNF)@en[[[CRLF]]]]でなければならない。
+
+この制限は[[822]]/[[SMTP]]由来で、[[RFC 1468]]の性質 (>>1) 
+によるものと考えられる。
+もとの[[JUNET利用の手引き]]には書いてないが、
+暗黙の仮定 (というより別の層の問題) としていたと考えてよいだろう。
+
+;; 
+では[[MIME]][[本体]]以外で[[RFC 1468]]の[[文字コード]]が使われる場合にこの制限はどうなるのか。
+
+;; 
+[[JUNET]]の時代も、ネットワーク転送中は[CODE(ABNF)@en[[[CRLF]]]]になるとしても
+(なるの?)、
+[[UNIX]]内部では[CODE(charname)@en[[[LF]]]]にしていたのでは。
+
+[8]
+[CSECTION@en[Formal Syntax]] によれば、[[JIS X 0208]]
+状態では[[制御文字]]や[CODE(charname)@en[[[SPACE]]]]が使えない。
+
+[[JUNET利用の手引き]] (6.3) では、
+[[改行]]前に[[ASCII]]または[[JIS X 0201]]状態にするのが望ましいことと[[JIS X 0208]]状態で[[制御文字]]や[CODE(charname)@en[[[SPACE]]]]を使ってもよいことが書かれているから、
+それと整合していない。
+
+ただし、92年時点で[[JIS X 0208]]状態で[[制御文字]]や[CODE(charname)@en[[[SPACE]]]]に対応できない実装があったようだし、
+ほとんど (ほとんど。) の[[メッセージ]]は[[RFC 1468]]の構文通りになっていたようだ。
+
+[9]
+[CSECTION@en[Background Information]] に古い [CODE(char)@en[[CODE(charname)@en[[[ESC]]]] ( H]]
+は使うべきではない ([Q@en[should not]]) と書いてある。
+
+>>3 の [Q@en[should]] やそれへの指摘
+
+;; [CITE[Re: iso-2022-jp]] 
+<http://www.imc.org/ietf-822/old-archive1/msg02479.html>
+
+も踏まえて、推奨なのか禁止なのか。推奨なら [CSECTION@en[Description]]
+や [CSECTION@en[Description]] や[[JUNET利用の手引き]] (禁止)
+や当時の実情 (絶滅) と矛盾する。

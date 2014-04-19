@@ -1,0 +1,171 @@
+
+[5] [[MIME]] の[[頭欄]]の[[欄本体]]に含めることのできる[[文字]]の[[長さ]]には制限があります。
+その一方で、 [[URI参照]]のように長さの制限が無く、
+実際にも長くなりがちなものを頭欄内で使いたいという要求もあります。
+そのための対策として提案されたものの一つが通称
+[DFN[URLBODY]] の方法です。
+
+[6]
+URLBODY の方法では、 URI 参照には[[空白]]が含まれないことに着目して、
+適宜 URI 参照中に空白を挟んで分割することによって字数制限を克服しています。
+空白を使って折り返すという方法は頭欄自体でも採用されており、
+それとよく整合していますし、なんといっても簡単に実装できるのが強みです。
+
+その一方で、 URI 参照以外の値に必ずしも適用できるとは限らないという問題があります。
+この点については後に [[RFC 2231]] 
+の一般の[[引数]]の値を分割することで長さ制限を乗り越える方法が標準化されています。 
+URI 参照を値とする引数であってももちろん RFC 2231 の方法が適用できますし、
+現在では一般化された RFC 2231 の方法を採用するのが望ましいでしょう
+[WEAK[(RFC 2231 の方法を採用しても URLBODY と矛盾することはありません)]]
+が、 RFC 2231 の方法はやや複雑なのが欠点です。
+
+[[#comment]]
+
+
+* 構文
+
+[1] URL-word の定義たる token とは何か。 [[RFC 1521]] 
+<urn:ietf:rfc:1521> の名が挙がっているので [[MIME]] の [[token]]
+のように思えますけど、 URL では token
+に含まれない文字も使えたはずです。
+
+[2] >>1 [[quoted-string]] の中のわけですし、 [[URI]]
+で使える文字 (もちろん [[FWS]] の文字も除外される。)
+と解釈するのが良さそうです。
+
+[3] (1) にはちゃんと書いてありませんが、 [CODE(ABNF)["<"]] とかも [[URI]] 
+では使えない文字ですから、もし間違って含まれていたら URI 
+符号化する必要があります。
+[[#comment]]
+
+
+* 仕様書
+
+
+** RFC 2017 (MHTML) 3.1.  Syntax and Use of the URL parameter [INS[URL パラメーターの構文と利用]]
+
+> Using the ANBF notations and definitions of RFC 822 and RFC 1521, the
+syntax of the URL parameter Is as follows:
+
+[[RFC 822]] と [[RFC 1521]] の [[ABNF]] 記法を使うと、 URL
+パラメータの構文は次のようになります。
+
+> URL-parameter := <"> URL-word *(*LWSP-char URL-word) <">
+>
+[PRE[
+     URL-word := token
+                 ; Must not exceed 40 characters in length [INS[長さが40文字を超えてはならない]]
+]PRE]
+
+> The syntax of an actual URL string is given in RFC 1738.  URL strings
+can be of any length and can contain arbitrary character content.
+This presents problems when URLs are embedded in MIME body part
+headers that are wrapped according to RFC 822 rules. For this reason
+they are transformed into a URL-parameter for inclusion in a
+message/external-body content-type specification as follows:
+
+実際の [[URL]] 文字列の構文は RFC 1738 で示されています。 URL
+文字列は任意の長さで任意の文字内容になり得ます。このため、
+RFC 822 の規則により包まれた [[MIME]]
+[[本体部分]][[頭]]に URL を埋め込む時に問題になります。このため、
+URL 文字列は message/external-body 内容型記述に含めるために次のように
+URL-parameter に変形します。
+
+>
+[PRE[
+    (1)   A check is made to make sure that all occurrences of
+          SPACE, CTLs, double quotes, backslashes, and 8-bit
+          characters in the URL string are already encoded using
+          the URL encoding scheme specified in RFC 1738. Any
+          unencoded occurrences of these characters must be
+          encoded.  Note that the result of this operation is
+          nothing more than a different representation of the
+          original URL.
+]PRE]
+
+URL 文字列中のすべての [[SPACE]], CTL, 二重引用符, 逆斜線, 
+8ビット文字が既に RFC 1738 で規定された URL 
+符号化方式を使って符号化されていることを確認します。符号化されていないこれらの文字は全て符号化しないといけません。この操作の結果は元の
+URL の異なる表現に過ぎないことに注意して下さい。
+
+>
+[PRE[
+    (2)   The resulting URL string is broken up into substrings
+          of 40 characters or less.
+]PRE]
+
+結果の URL 文字列を40文字以下の小文字列に分割します。
+
+>
+[PRE[
+    (3)   Each substring is placed in a URL-parameter string as a
+          URL-word, separated by one or more spaces.  Note that
+          the enclosing quotes are always required since all URLs
+          contain one or more colons, and colons are tspecial
+          characters [RFC 1521].
+]PRE]
+
+各小文字列を URL-word として URL-parameter 
+中に1つ以上の間隔で区切って配置します。全ての URL
+は1つ以上のコロンを含み、コロンは tspecial 
+文字なので、囲み引用符が常に必要であることに注意して下さい。
+
+> Extraction of the URL string from the URL-parameter is even simpler:
+The enclosing quotes and any linear whitespace are removed and the
+remaining material is the URL string.
+
+URL 文字列を URL-parameter 
+から取り出すのはより簡単です。囲み引用符と行空白間隔を削除して、残ったものが
+URL 文字列です。
+
+> The following example shows how a long URL is handled:
+
+次の例は長い URL の取り扱いを示します。
+
+>
+[PRE(MIME)[
+Content-type: message/external-body; access-type=URL;
+              URL="ftp://ftp.deepdirs.org/1/2/3/4/5/6/7/
+                   8/9/10/11/12/13/14/15/16/17/18/20/21/
+                   file.html"
+Content-type: text/html
+Content-Transfer-Encoding: binary
+THIS IS NOT REALLY THE BODY!
+]PRE]
+
+> Some URLs may provide access to multiple versions of the same object
+in different formats. The HTTP URL mechanism has this capability, for
+example.  However, applications may not expect to receive something
+whose type doesn't agree with that expressed in the
+message/external-body, and may in fact have already made irrevocable
+choices based on this information.
+
+同じ物体の違った形式の複数の版への接続を提供する URL
+もありましょう。 [[HTTP]] URL 
+機構が例えばこの能力を備えています。しかし、応用は
+message/external-body 
+で表明された型と一致しない型のものを受信することを予期していないかもしれませんし、実際既にこの情報に基づく選択は取り消せなくなっているかもしれません。
+
+> Due to these considerations, the following restriction is imposed:
+When URLs are used in the context of an access-type only those
+versions of an object whose content-type agrees with that specified
+by the inner message/external-body header can be retrieved and used.
+
+この点から、次の制限を課します。 URL が access-type
+の文脈で使われる時、内側の message/external-body 
+頭で指定されたものと一致する内容型の物体の版のみを取り出して試用することが出来ます。
+
+
+* メモ
+
+[4]
+''RFC 2557 Tests'' <http://www.w3.org/MarkUp/Test/xhtml-print/20040426/rfc2557_testlist.htm>
+
+このテスト、 URI を [CODE(ABNF)[[[encoded-word]]]] で包んだ''あと''に長さ制限でぶった切ったのがありますよ... いいのかなぁ。
+いいわけないようなぁ。。。
+
+[7]
+>>4 実はいいらしい。 [[RFC 2557]] ([CODE(MIME)[[[Content-Location]]]])
+の仕様にそうかいてある(!)
+([[名無しさん]] [sage])
+

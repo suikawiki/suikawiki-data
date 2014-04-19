@@ -1,0 +1,91 @@
+
+* 仕様書
+
+[REFS[
+- [1] '''[CITE@en-US-x-hixie[HTML Standard]] ([TIME[2012-03-28 21:58:58 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#provide-a-stable-state>'''
+- [2] '''[CITE@en-US-x-hixie[HTML Standard]] ([TIME[2012-03-28 21:58:58 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#await-a-stable-state>'''
+- [3] '''[CITE@en-US-x-hixie[HTML Standard]] ([TIME[2012-03-28 21:58:58 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#synchronous-section>'''
+- [17] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2012-03-28 21:58:58 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#playing-the-media-resource>
+]REFS]
+
+* 用法
+
+[30] [[安定状態]]を待つアルゴリズムは、ネットワークアクセスが発生するものなどです。
+[[スクリプト]]がそのようなアルゴリズムを実行した直後に同期的に[[同期区間]]を実行してしまうと、
+[[スクリプト]]のその後の部分による操作などで無駄になってしまう可能性があり、
+一連の[[スクリプト]]を実行し終わるまで遅延させるというのが目的のようです。
+
+[EG[
+[31] 例えば [CODE(HTMLe)@en[[[img]]]] [[要素]]の [CODE(HTMLa)@en[[[src]]]]
+[[属性]]を設定すると[[画像]]の読み込みが行われますが、その直後に [CODE(HTMLa)@en[[[src]]]]
+[[属性]]や [CODE(HTMLa)@en[[[srcset]]]] [[属性]]を[[スクリプト]]から操作すると元の[[画像]]の読み込みは無駄になります。
+ですから、当該[[スクリプト]]が終わってから読み込みが始まります。
+]EG]
+
+* 安定状態の提供
+
+[4] [RUBYB[[[安定状態を提供]]]@en[provide a stable state]]する場合は次のように処理します。
+[FIG[
+- [5] 非同期的に実行される[[算法]]が[DFN[[RUBYB[[[安定状態を待っている]]]@en[awaiting a stable state]]]]なら、
+-= [6] その[DFN[[RUBYB[[[同期区間]]]@en[synchronous section]]]]を走らせてから、
+非同期算法を走らせるのを (適切であれば) 再開しなければ[['''なりません''']]。 [SRC[>>1]]
+- [18] [[媒体要素]]の [[official playback position]] を [[current playback position]]
+に設定しなければ[['''なりません''']]。 [SRC[>>17]]
+]FIG]
+
+;; [7] [[同期区間]]が [[DOM]] を変化させたり、[[スクリプト]]を実行したり、
+その他副作用を起こすことはありません。 [SRC[>>3]]
+
+[8] 安定状態は次の場合に提供されます。
+[FIG[
+- [9] [[イベント・ループ]]で、[[タスク]]を実行した後
+- [10] [[HTML]] や [[XML]] の[[構文解析]]で、 [CODE(HTMLe)@en[[[script]]]]
+[[要素]]の[[終了タグ]]が処理される初めの段階 ([[スクリプト]]が実行される前)
+-- [28] ただし再帰的に実行される場合を除く [SRC[>>27]]
+]FIG]
+
+* 非同期的に安定状態を待つ算法
+
+[12] 次の[[算法]]は、その途中で[[非同期]]的に[[安定状態を待つ]]部分があり、
+[[同期区間]]の処理が規定されています。更にその後に非同期算法が続くものもあります。
+[FIG[
+- [11] [[update the image data]] ([CODE(HTMLe)@en[[[img]]]] [[要素]]の[[画像]]データの読み込み)
+- [13] [[媒体要素]]の[[資源選択算法]] ([CODE(HTMLe)@en[[[video]]]] [[要素]]や
+[CODE(HTMLe)@en[[[audio]]]] [[要素]]のデータの読み込み)
+- [14] [[媒体要素]]が [[[CODE(DOMi)@en[Document]]から削除]]された時の動作
+- [15] [[媒体要素]]の [[seek]]
+- [16] [[text track]] が追加された時の処理
+- [21] [CODE(DOMi)@en[[[PeerConnection]]]] [[構築子]]
+- [22] [[start autocommitting the scratch bitmap]]
+-- ただしコメント化されている: [CITE@en[Web Applications 1.0 r7509      First draft of a way to do canvas in workers.]] ([TIME[2012-11-17 05:26:00 +09:00]] 版) <http://html5.org/tools/web-apps-tracker?from=7508&to=7509>
+]FIG]
+
+[20] これらをどのような順序で実行するかは特に規定されていません。
+
+[29] [[安定状態]]は[[マイクロタスク]]として実装することも可能ですが、
+[[マイクロタスク]]はキューによって逐次的に実行されるのに対し、
+[[安定状態]]に実行される各手順は並列で実行できるものであるから、
+仕様上別の概念としているようです [SRC[>>26]]。ただし実際の[[Webブラウザー]]は逐次的に実行する実装になっているようです。
+
+[19] [[スタイル・シート]]が [CODE(CSS)@en[[[@import]]]] などの参照を持つ場合に[[スタイル・シート]]を[[スクリプト]]から参照可能にしなければならないタイミングは、
+[[イベント・ループ]]中の次の[[レンダリング]]の際、とされており
+[SRC[<http://www.whatwg.org/specs/web-apps/current-work/#style-sheet-ready>]]、
+実質的に、[[安定状態]]の最後に行うということになります。
+
+* 歴史
+
+[REFS[
+- [23] [CITE@en[Bug 24707 – The pause (for blocking dialog) algorithm should not provide a stable state]]
+( ([TIME[2014-02-21 08:33:59 +09:00]] 版))
+<https://www.w3.org/Bugs/Public/show_bug.cgi?id=24707>
+- [27] [CITE@en[Web Applications 1.0 r8479     Don't provide a stable state when parsing reentrantly, for more consistency with when we run microtask checkpoints]] ([TIME[2014-02-21 04:04:00 +09:00]] 版) <http://html5.org/tools/web-apps-tracker?from=8478&to=8479>
+- [24] [CITE@en[Bug 24724 – Can the microtask and stable state concepts be merged?]]
+( ([TIME[2014-02-21 08:38:38 +09:00]] 版))
+<https://www.w3.org/Bugs/Public/show_bug.cgi?id=24724>
+- [25] [CITE@en[Web Applications 1.0 r8498 Oops, edited the wrong line. (stable state and </script> parsing)]]
+( ([TIME[2014-02-22 03:50:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=8497&to=8498>
+- [26] [CITE[IRC logs: freenode / #whatwg / 20140402]]
+( ([TIME[2014-04-03 13:58:15 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20140402>
+]REFS]

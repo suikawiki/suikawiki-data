@@ -1,0 +1,281 @@
+[1] 一般に、「[[属性]]」と呼ばれるものの[[値]]のことを[DFN[[RUBY[属性値][ぞくせいち]@en[attribute value]]]]といいます。
+
+* 属性値 (HTML)
+
+** 歴史
+
+[67] [[XHTML 1.0]] の互換性指針は、
+[[属性値表記]]に[[改行]]や複数の[[空白]]を入れると実装によって扱いが違うので好ましくないとしています。
+
+[REFS[
+-[[XHTML 1.0]]
+--[CSECTION[C.5. Line Breaks within Attribute Values]]
+<IW:XHTML10:"C_5">
+]REFS]
+
+[5] [CITE['''['''whatwg''']''' Allowing ">" in attribute values]]
+([TIME[2010-08-10 09:35:29 +09:00]] 版)
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2010-August/027792.html>
+
+* 属性値 (XML)
+
+** 仕様書
+
+[REFS[
+- [74] [CITE@EN[Extensible Markup Language (XML) 1.0 (Fifth Edition)]] ([TIME[2013-05-28 20:49:56 +09:00]] 版) <http://www.w3.org/TR/xml/#sec-starttags>
+- [73] [CITE@EN[Extensible Markup Language (XML) 1.0 (Fifth Edition)]] ([TIME[2013-05-28 20:49:56 +09:00]] 版) <http://www.w3.org/TR/xml/#attdecls>
+]REFS]
+
+** 正規化
+
+[60] XML でも、大体は素の SGML
+と同じように処理されます。
+''Extensible Markup Language (XML) 1.0 3.3.3 Attribute-Value Normalization'' <http://www.w3.org/TR/REC-xml#AVNormalize>,
+<http://www.w3.org/XML/xml-V10-2e-errata#E6>
+
+[FIG[
+= [70] [[XML//空白]]にあるように、改行は [CODE(XML)[#xA]] に変換されている。ここから処理を開始する。
+= [61] 最初から最後に向かって順に、次の処理を施す。
+-- 文字参照は、その参照する文字とする。
+-- 一般実体参照は、その[[置換文]]について、再帰的に >>61 の処理を行う。
+-- 空白文字 ([CODE(XML)[#x20]], [CODE(XML)[#xA]], [CODE(XML)[#xD]], [CODE(XML)[#x9]]) は、 [CODE(XML)[#x20]] とする。
+-- その他の文字は、そのままとする。
+= 属性値の型が [CODE(XML)[CDATA]] 以外の場合は、更に
+-- 先頭及び末尾に現れる [CODE(XML)[SPACE]] を全て無視する。
+-- 2個以上連続する [CODE(XML)[#x20]] を1個の [CODE(XML)[#x20]] に置換する。
+]FIG]
+
+[69] なお、宣言されていないか読まれていない属性の型は、
+[CODE(XML)[CDATA]] として扱います。
+
+[66] 幸いなことに、 >>60 の規定は [[XML 1.1]] では変更されませんでした。ただし >>70 のステップで
+[CODE(char)[[[U+000A]]]] に変換されている[[符号位置]]は増えています。
+
+[72] [[文字参照]]として ([[実体参照]]を介さず) 直接記述されている場合にのみ、
+[CODE(char)[[[U+000D]]]]、
+[CODE(char)[[[U+0009]]]]、[CODE(char)[[[U+000A]]]]
+の3つの[[符号位置]]が[[正規化値]]に含まれることがあります。
+
+** SGML との関係
+
+[63] XML でも、 SGML 同様に属性値の構文一致
+(妥当性制約。) が求められるのは正規化後の値です。
+その辺、 XML 中核作業部会も認識が甘かったらしく、
+二転三転の修正があったりしました。
+<http://www.w3.org/XML/xml-V10-2e-errata#E20>
+
+[64] ところで、 >>62 の3番目の例に示されていること、
+つまり属性値表記に直接記述された数値文字参照の参照値が正規化の対象にならず、
+[CODE(XML)[#xD]] とかがそのまま残る、というのは
+SGML と話が全然違いませんか? Web SGML
+にも、こういう解釈が出来るという話は書かれていない気がしますが。
+
+[65] >>64 は、次の例のような場合です。
+
+[PRE(XML)[
+<!ENTITY foo "あいうえお&#x0A;">
+]PRE]
+
+[PRE(XML)[
+<element attr="&foo;"/>
+]PRE]
+
+>>59 の手順に従うなら、 [SAMP(XMLa)[attr]] の値は、[Q[あいうえお[CODE(char)[#x0A]]]]
+となり、 [CODE(char)[#x0A]] は [CODE(SGML)[RS]] なので、無視されて[Q[あいうえお]]になるはずです。
+
+ところが、 >>60 の手順に従うと、
+[Q[あいうえお[CODE(char)[#x0A]]]]
+は[Q[あいうえお[CODE(char)[#x20]]]]
+にならなければいけません。
+
+XML で [CODE(char)[#x0A]] が [CODE(SGML)[RS]] でないのなら、何も問題ではありませんが・・・。
+
+** DOM との関係
+
+[68] [[Firefox]] でも [[Chrome]] でも、[[XML文書]]を読み込んだ直後に現れる [CODE(DOMi)@en[[[Attr]]]]
+の [CODE(DOMa)@en[[[value]]]] は[[正規化値]]のようです。
+
+** 例
+
+[EG[
+[62] XML 1.0 仕様書にある例:
+[PRE[
+<!ENTITY d "&#xD;">
+<!ENTITY a "&#xA;">
+<!ENTITY da "&#xD;&#xA;">
+]PRE]
+
+.属性指定        ,a が [CODE(XML)[CDATA]] で,==
+,	,ない	,ある
+,"a=\"[CODE(XML)[#xD]][CODE(XML)[#xA]]xyz\""	,x y z	,#x20 #x20 x y z
+,"a=\"&d;&d;A&a;&#x20;&a;B&da;\""	,A #x20 B	,#x20 #x20 A #x20 #x20 #x20 B #x20 #x20
+
+.a="&#xd;&#xd;A&#xa;&#xa;B&#xd;&#xa;"	,#xD #xD A #xA #xA B #xD #xA	,#xD #xD A #xA #xA B #xD #xD
+]EG]
+
+* 属性値 (SGML)
+
+[2] [[SGML]] の世界で[Q[属性値]]と言うと、
+文脈によって2つの意味があります。
+一つは、一般に、[[属性]]の[[値]] (1)。
+もう一つは、生成規則[CODE[属性値]] (2) です。
+
+[[SGML文書]]では、属性の値は、
+[CODE[[[属性値指定]]]]で指定されます。
+[CODE[属性値指定]]は、[CODE[属性値]][SUP[2]]と[CODE[[[属性値表記]]]]の二種類があります。
+[CODE[属性値]][SUP[2]] (例: [SAMP(SGML)[value]]) 
+も[CODE[属性値表記]] (例: [SAMP(SGML)["value"]]) 
+も構文が違うだけで、
+属性値[SUP[1]] (例: [Q[value]]) を表すという点では同じです。
+
+- [3] [CODE(ABNF)[[DFN[属性値]][SUP[2]] := 1*[[名前文字]]]]
+
+[4]
+ふと、まさか[CODE(ABNF)[属性値指定]]が[CODE(ABNF)[属性値]]のとき、[CODE(SGML)[[[NAMECASE]]]] によっては大文字化されるのではと思いましたが、
+仕様をよく読んでみるとそんなことは全然ありませぬな。
+[CODE(ABNF)[[[名前字句]]]]なら大文字化されてしまうけど、
+[CODE(ABNF)[属性値]]は (実質的に構文はまったく同じながら) そうはならないようで。
+(もちろん、属性型によっては大文字化がなされる。)
+
+** 正規化
+
+[59] [[属性値表記]]を[[属性値]]として解釈するに当たっては、
+= [CODE(SGML)[[[lit]]]] 又は [CODE(SGML)[[[lita]]]] を取り除く。
+= [[参照]] ([[文字参照]]及び[[一般実体参照]]) を[[置換]]する。
+= [CODE(SGML)[[[Ee]]]] 及び [CODE(SGML)[[[RS]]]] を無視する。
+= [CODE(SGML)[[[RE]]]] 又は [CODE(SGML)[[[SEPCHAR]]]] を
+[CODE(SGML)[[[SPACE]]]] に置換する。
+
+という手順を経ます。なお、属性値表記の内容は、その[[属性]]がどんな[[型]]と[[宣言]]されていようと、
+このように解釈されます。
+ですから、例えば [SAMP(SGML)[id="&id;"]]
+のような属性値指定は間違いではありません。
+
+属性値の型が [CODE(SGML)[CDATA]] 以外の場合は、更に
+= 2個以上連続する [CODE(SGML)[SPACE]] を1個の [CODE(SGML)[SPACE]] に置換する。
+= 先頭及び末尾に現れる [CODE(SGML)[SPACE]] を無視する。
+
+[[空白]]文字が元々存在していたのが [CODE(SGML)[CDATA]]
+実体だろうが [CODE(SGML)[[[SDATA]]]]
+実体だろうが、この通りに処理されます。
+(以上、 [[JISX4151]]‐1992 6.9.3 参照。)
+
+実際に属性値として使用することが出来るのは、
+以上の処理の結果得られた値です。
+型ごとに決められた構文への[[一致]]が求められたり、
+「属性値の正規の長さ」の算出の元になるのはこの値であって、
+元の表記の値ではありません。
+
+* 属性値 (MathML)
+
+** 仕様書
+
+- [7] [CITE[MathML Fundamentals]] ([TIME[2010-10-21 05:51:46 +09:00]] 版) <http://www.w3.org/TR/2010/REC-MathML3-20101021/chapter2.html#fund.table.notn>
+
+** 空白の扱い
+
+[6] [[MathML]] では、[[応用]]ごとに[[空白]]の[[正規化]]が異なることを理由に、[[属性値]]の中の各部分を区切るときは[RUBYB[[[空白]][[文字]]]@en[whitespace character]]を1文字だけ使うことを[RUBYB[勧めて]@en[advisable]]います。更に、[[空白]]を最初や最後に置くことは避ける[RUBYB[べき]@en[should]]であるとしています。
+[SRC[>>7]]
+
+** 数値と値域
+
+[8] [[数値]]を扱う[[属性]]のほとんどでは、構文的に表現可能な[[数値]]のうちの一部分しか意味がありませんが、それ以外の値を指定したとしても、特に規定が無い限り[RUBYB[[[誤り]]]@en[error]]とはされません。
+範囲外の値は[[切捨て]]や[[切上げ]]によって[[丸め]]られて最も近い適切な値として扱われます。
+このときの「適切な値」の範囲や、[[切捨て]]や[[切上げ]]のどちらを選択するかは、 [[MathML]]
+ではなく[RUBYB[[[レンダリンク器]]]@en[renderer]]により決められるとされています。
+これは、構文的に [CODE(char)[[[-]]]] をつけることが認められている [CODE[[[integer]]]]
+や [CODE[[[number]]]] の[[属性値]]であって、[[負]]の値が意味を持たない場合も含んでいます。
+[SRC[>>7]]
+
+[9] この[[丸め]]は [CODE[[[length]]]] でも認められています。
+
+* value 属性 (DOM Attr 界面)
+
+[55] 属性 [CODE[[VAR(DOMi)[[[Attr]]]].[CODE(DOMa)[value]]]]
+の値は、その属性節の[[属性値]]です。
+
+設定する値・得られる値の型は [CODE(DOM)[[[DOMString]]]]
+です。その属性節の子節は複数個の文節や実体参照節があるかもしれませんが、
+一つの文字列として設定又は取得します。
+
+値を設定した時は、子節は一つの文節になります。
+
+[56] この属性は method
+[CODE[[VAR(DOMi)[[[Element]]]].[CODE(DOMm)[[[getAttribute]]]]]],
+[CODE[[VAR(DOMi)[Element]].[CODE(DOMm)[[[setAttribute]]]]]]
+と同様に機能します。
+
+[11] >>56 というか [CODE(DOMa)[[[nodeValue]]]] だよなあ、
+もろ同じじゃない? なんで2つあるんだろう。どっちかは正規化するとかでもないみたいだし。
+
+[57] 属性節が読取専用の時は当然値を設定することはできません。
+例外 [CODE(DOM)[NO_MODIFICATION_ALLOWED_ERR]]
+が発生します。
+
+- [DOM2] ''Document Object Model Core'' <http://www.w3.org/TR/DOM-Level-2-Core/core.html#ID-221662474>
+
+[54]
+[[DOM水準1]] [[FE]] の[[正誤表]]、[[DOM水準1]] [[SE]]、
+[[DOM水準2]]、[[DOM水準3]]によると、[[節点]]が[[読取専用]]なら
+[CODE(DOMc)@en[[[NO_MODIFICATION_ALLOWED_ERR]]]]
+です。
+
+** 実装
+
+[36]
+[[WinIE 6]] の [CODE(DOM)@en[[VAR(DOMi)[[[Attr]]]].[CODE(DOMa)[[[value]]]]]]
+は[CODE(InfoProp)@en[[[指定]]]]されていないと
+[CODE(DOM)@en[[[null]]]] になりますが、
+[[内在事象属性]]ではなぜか文字列の [CODE(JS)@en['[[null]]']]
+になります。
+[CODE(DOM)@en[[[nodeValue]]]] では両方
+[CODE(DOM)@en[[[null]]]] になります。
+
+([[名無しさん]] [WEAK[2005-09-03 11:14:50 +00:00]])
+
+** XML 情報集合との関係
+
+[37]
+[CODE(DOM)@en[[CODE(DOMi)@en[[[Attr]]]].[CODE(DOMa)[[[value]]]]]]
+は[[XML情報集合]]で[CODE(InfoProp)[[[正規化値]]]]に対応するとされています。
+
+;; <IW:DOM3:"infoset-mapping.html#Attr2Infoset">
+
+[CODE(DOM)@en[[CODE(DOMi)[[[Attr]]]].[CODE(DOMa)[[[value]]]]]] と
+[CODE(DOM)@en[[CODE(DOMi)[[[Node]]]].[CODE(DOMa)[[[nodeValue]]]]]]
+(等価) は[[構文解析器]]から渡された[[正規化値]]が最初の値になると明記もされています。
+その一方で、[[実体参照]]が[[属性値]]に含まれる場合は実装と読み込みのオプションに依存するともされています。
+
+;; 
+<IW:DOM3:"core.html#ID-637646024">
+
+ちなみに、[CODE(DOM)@en[[CODE(DOMi)@en[[[Node]]]].[CODE(DOMa)@en[[[textContent]]]]]]は定義が少し異なっていて、[[子供]]の[CODE(DOMa)@en[[[textContent]]]]の[[連接]]とされています。
+
+;; <IW:DOM3:"core.html#Node3-textContent">
+
+[[XML]] では、[[属性値表記]]内で[[参照]]されている[[実体]]
+(の[[実体値]]) に[[空白]][[文字]]が含まれている場合は、
+[CODE(charname)@en[[[SPACE]]]] に[[正規化]]するとしています。
+
+;; [[XML//空白]]
+
+[[DOM]]の[CODE(DOMi)@en[[[EntityReference]]]]は対応する[CODE(DOMi)@en[[[Entity]]]]と同じ[[子孫]]を持つ、ただし[[名前空間]]に関する場合だけ例外だ、とされています。
+
+そして[[正規化]]が行われるとき[CODE(DOMi)@en[[[EntityReference]]]]が問題になるかもとは書いてありますが、その時どうしろとはいっていません。
+
+;; <IW:DOM3:"core.html#ID-11C98490">
+
+以上を踏まえた上で、[[DOM]]で[[属性値]]内の[[一般実体参照]]を[CODE(DOMi)@en[[[EntityReference]]]]にする場合、[[正規化]]はどうしたらよいのでしょう??
+
+[38]
+[CODE(DOMi)@en[[[EntityReference]]]]は使わないというのが、一番楽で正当な方法。
+
+[[実体参照]]が入ったら[[属性値]]の[[正規化]]は諦めるというのが、楽なものの邪道な方法。
+
+[CODE(DOMi)@en[[[Attr]]]]の[[子供]]の[CODE(DOMi)@en[[[EntityReference]]]]だけは[CODE(DOMa)@en[[[textContent]]]]の[[空白]][[文字]]を[CODE(charname)@en[[[SPACE]]]]に置き換えて[CODE(DOMa)@en[[[value]]]] ([CODE(DOMa)@en[[[nodeValue]]]], [CODE(DOMm)@en[[[getAttribute]]]], ...) を作るというのが、面倒だけどあまり不都合なくうまく動きそうな方法。
+ただし[CODE(DOM)@en[[CODE(DOMi)[[[Attr]]]].[CODE(DOMa)@en[[[textContent]]]]]]と[CODE(DOM)@en[[CODE(DOMi)[[[Attr]]]].[CODE(DOMa)@en[[[value]]]]]]が違ってしまうのがちょっとアレ。
+
+
+[58] [CITE@Ja[各ブラウザのクォートの URL エンコード状況 / ''''''[''''''win'''''']'''''''''['''HTTP''']''' | 戯術者の日記]]
+( ([TIME[2012-06-20 01:50:19 +09:00]] 版))
+<http://www.jp-z.jp/changelog/2004-12-07-1.html>

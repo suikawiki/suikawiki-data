@@ -1,0 +1,106 @@
+[12] [[DOM]] において[DFN[[RUBYB[[[養子化]]]@en[adopt]]]]とは、ある[[節点]]の[[節点文書]]
+([CODE(DOMa)@en[[[ownerDocument]]]]) をある[[文書]]に書き換える操作です。
+この時[[節点]]の[[親]]がいればその[[親子]]関係は解消され、
+[[節点]]の[[子節点]]その他付随する[[節点]]があればそれらの[[節点文書]]も新しい[[節点文書]]に書き換わります。
+
+[13] [CODE(DOMi)@en[[[Document]]]] [[オブジェクト]]の [DFN[[CODE(DOMm)@en[[[adoptNode]]]]]]
+[[メソッド]]は、指定された[[節点]]を当該 [CODE(DOMi)@en[[[Document]]]] に [[adopt]] します。
+
+;; [14] [[adopt]] 操作は [CODE(DOMm)@en[[[adoptNode]]]] [[メソッド]]以外でも用いられます。
+例えば [CODE(DOMm)@en[[[adoptChild]]]]  は新しい[[子節点]]を[[親節点]]と同じ[[文書]]に移し、
+既に[[親]]がいればその[[親子]]関係を解消するために [[adopt]] します。
+
+* 仕様書
+
+[REFS[
+- '''[10] [CITE@en-US[DOM Standard]] ([TIME[2014-03-20 17:08:41 +09:00]] 版) <http://dom.spec.whatwg.org/#concept-node-adopt>'''
+- [11] [CITE@en-US[DOM Standard]] ([TIME[2014-03-20 17:08:41 +09:00]] 版) <http://dom.spec.whatwg.org/#dom-document-adoptnode>
+- [24] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2014-04-03 03:44:44 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#the-img-element>
+- [26] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2014-04-03 03:44:44 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#the-template-element>
+]REFS]
+
+* 養子化操作
+
+[15] ある[[節点]]のある[[文書]]への [[adopt]] 操作は、次の処理で構成されます [SRC[>>10]]。
+[FIG[
+- [16] その[[節点]]の[[親]]が [[null]] でなければ[[親]]からその[[節点]]を[[削除]]する操作を行います。
+- [17] その[[節点]]の[[包括的子孫]]の[[節点文書]]をその[[文書]]に設定します。
+- [18] [[節点]]の種類に依存の処理があれば、これを実行します。
+]FIG]
+
+[19] >>18 は [DFN[[[adopting steps]]]] と呼ばれており [SRC[>>10]]、次のものがあります。
+[FIG[
+- [25] [CODE(HTMLe)@en[[[img]]]] [[要素]]では、 [[update the image data]] やそれに相当する処理 [SRC[>>24]]
+- [9] [CODE(HTMLe)@en[[[template]]]] [[要素]]では、[[雛形内容]]の [[adopt]] [SRC[>>26]]
+-- [CODE(DOMa)@en[[[ownerDocument]]]] が変化した時だけ
+]FIG]
+
+;; [27] >>9 は [[adopting steps]] が導入される以前に規定されたため、「[CODE(DOMa)@en[[[ownerDocument]]]]
+が変化した時」という表現になっています。 [CODE(DOMa)@en[[[ownerDocument]]]] が変化する操作は
+[[adopt]] だけです。
+
+;; [28] [[DOM Standard]] は [[adopt]] された[[節点]] ([[根]]) に対して [[adopting steps]]
+を呼ぶと言っていますが、 [[HTML Standard]] は変更が発生した[[節点]]すべてに対して [[adopting steps]]
+が呼ばれることを期待しているようにみえます。
+
+* [CODE(DOMi)@en[Document]] インターフェイス [CODE(DOMm)@en[adoptNode]] メソッド (DOM)
+
+[20] [CODE(DOMm)@en[[[adoptNode]]]] [[メソッド]]は引数として指定された[[節点]]を[[文脈オブジェクト]]たる[[文書]]へと
+[[adopt]] します。 [SRC[>>11]]
+
+[21] ただし指定された[[節点]]が[[文書]]であるときは、 [CODE(DOMe)@en[[[NotSupportedError]]]]
+[[例外]]となります。 [SRC[>>11]]
+
+[22] この[[メソッド]]は引数として指定された[[節点]]を返します。 [SRC[>>11]]
+
+;; [23] この[[メソッド]]は [[DOM3]] で追加されたもので、 [[DOM3]] 仕様上は明示的に [CODE(DOMm)@en[[[adoptNode]]]]
+を呼ばなければ [CODE(DOMm)@en[[[adoptChild]]]] などで違う[[文書]]に挿入することができませんでしたが、
+[[Webブラウザー]]は自動的に [[adopt]] する実装にほぼなっており、現在の [[DOM Standard]]
+はそちらの動作を採用しているため、この[[メソッド]]が必要になる場面はほとんどありません。
+
+* 歴史
+
+[1]
+[CITE[[dom3core] Cross-document appending of nodes from Anne van Kesteren on 2006-08-24 (www-dom@w3.org from July to September 2006)]] <http://lists.w3.org/Archives/Public/www-dom/2006JulSep/0012>
+([[名無しさん]] [WEAK[2006-09-10 04:25:33 +00:00]])
+
+[2]
+[[原始文書]]と[[対象文書]]が同じ場合に
+[CODE(DOMi)@en[[[UserDataHandler]]]] があれば呼ばれるのかどうか、
+[[メソッド]]の返す値は何かは明記されていません。
+
+[4]
+[CODE(DOMi)@en[[[UserDataHandler]]]] が呼ばれるタイミングは明記されていません。
+(複数の[[節点]]が同時に[[養子縁組]]されるとき、
+すべての[[節点]]が[[養子縁組]]し終えてから呼ばれるのか?
+どの順番で呼ばれるのか?)
+([[名無しさん]])
+
+[5]
+[CODE(DOMi)@en[[[Document]]]] や 
+[CODE(DOMi)@en[[[DocumentType]]]] を[[養子縁組]]しようとすると
+[CODE(DOMc)@en[[[NOT_SUPPORTED_ERR]]]]
+ですが、 [CODE(DOMi)@en[[[Entity]]]] や
+[CODE(DOMi)@en[[[Notation]]]] だとどうなるのかは不明です。
+
+[6]
+[CITE@en[Re: ''''''[''''''dom'''''']'''''' Need to describe the interaction of adoptNode with  prototype  chains]]
+( ([[Boris Zbarsky]] 著, [TIME[2013-01-17 01:27:26 +09:00]] 版))
+<http://lists.w3.org/Archives/Public/www-dom/2013JanMar/0075.html>
+
+[7] [CITE@en[Web Applications 1.0 r8270     Share the ownerDocument of template contents amongst the templates of a document.]]
+( ([TIME[2013-11-13 06:36:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=8269&to=8270>
+
+[8] [CITE[Index of /~stewart/css/html-options]]
+([TIME[2010-03-04 09:46:12 +09:00]] 版)
+<http://www.metahusky.net/~stewart/css/html-options/>
+
+[REFS[
+- [29] [CITE[Make the adopt hook more generic. https://www.w3.org/Bugs/Public/show_bu... · e50fd71 · whatwg/dom]]
+( ([TIME[2014-04-11 23:02:31 +09:00]] 版))
+<https://github.com/whatwg/dom/commit/e50fd7138f1bf288c4fa0b92f1673359a3affadb>
+- [30] [CITE@en[Web Applications 1.0 r8509     Make <img> reload if inserting it into a new doc causes the URL to change (note that exactly what this does depends on whether the browser's 'list of available images' is maintained per-Doc, or whether there's only one list per origin)]] ([TIME[2014-02-25 07:53:00 +09:00]] 版) <http://html5.org/tools/web-apps-tracker?from=8508&to=8509>
+]REFS]
+
+[31] [[adopting steps]] は[[要素の基底URL]]の処理の一般化として >>29 で導入されました。

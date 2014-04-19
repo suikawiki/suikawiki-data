@@ -1,0 +1,178 @@
+* アルゴリズム
+
+  new Ant type, source, destination := {
+    this.type := type;
+    this.visited-nodes := [source];
+    this.destination := destination;
+    this.hop := 0;
+    this.broadcast-hop := 0;
+    this.generation := random (source, this);
+  };
+
+  s.start-communication-session d := {
+    unless (s has routing information for d) {
+      3 times do {
+        a := new Ant ReactiveForward, s, d;
+        a.estimated-time := s.estimated-time;
+        s.cast-forward-ant a;
+        sleep 1s;
+        if (s has route information for d) {
+          return;
+        }
+      }
+    }
+  };
+  
+  s.send-data d, packet := {
+    unless (there is session from s to d) {
+      s.start-communication-session d;
+    }
+    
+    a := new Ant Data, s, d;
+    a.data = packet;
+    s.cast-data-ant a;
+    
+    n = 5;
+    for each n packets {
+      a := new Ant ProactiveForward, s, d;
+      a.estimated-time := this-node.estimated-time;
+      s.cast-forward-ant a;
+    }
+  };
+  
+  this-node.on-ant-received a, prev-node := {
+    if (a.type = Data) {
+      this-node.on-data-ant-received a;
+    } else if (a.type = ReactiveForward or a.type = ProactiveForward) {
+      this-node.on-forward-ant-received a;
+    } else if (a.type == Backward) {
+      this-node.on-backward-ant-received a, prev-node;
+    }
+  };
+  
+  this-node.on-data-ant-received a := {
+    if (this-node = a.destination) {
+      // TODO: ?
+      return;
+    } else {
+      if (a.hop = ttl) {
+        return;
+      }
+      this-node.cast-data-ant a;
+    }
+  };
+  
+  this-node.on-forward-ant-received a := {
+    if (this-node = a.destination) {
+      a.type := Backward;
+      a.hop := 0;
+      a.broadcast-hop := 0;
+      a.estimated-time := 0;
+      next-hop := a.visited-nodes.pop;
+      this-node.cast-backward-ant a;
+    } else {
+      n_b = 2;
+      if (a.hop = ttl or (a.type = ProactiveForward and a.broadcast-hop = n_b)) {
+        return;
+      }
+      
+      if (this-node.best-hop[a.generation]) {
+        a_1 = 0.9;
+        a_2 = 2;
+        a_ := a.visited-nodes[0] != this-node.previous-first-node ? a_2 : a_1;
+        if (this-node.best-time[a.generation] * (a_1 + 1) > a.estimated-time and
+            this-node.best-hop[a.generation] * (a_1 + 1) > a.hop) {
+          if (this-node.best-time[a.generation] > a.estimated-time) {
+            this-node.best-time[a.generation] := a.estimated-time;
+          }
+          if (this-node.best-hop[a.generation] > a.hop) {
+            this-node.best-hop[a.generation] := a.hop;
+          }
+          this-node.previous-first-node := a.visited-nodes[0];
+        } else {
+          return;
+        }
+      } else {
+        this-node.best-time[a.generation] := a.estimated-time;
+        this-node.best-hop[a.generation] := a.hop;
+      }
+      a.estimated-time += this-node.estimated-time;
+      
+      a.visited-nodes.push this-node;
+      this-node.cast-forward-ant a;
+    }
+  };
+  
+  this-node.on-backward-ant-received a, prev-node := {
+    a.estimated-time += this-node.estimated-time;
+    t_hop := 3 * 10 ^ -3 /* [s] */;
+    tau := ((a.estimated-time + a.hop * t_hop) / 2) ^ -1;
+    gamma = 0.7;
+    this-node.pheromone[prev-node][a.destination] *= gamma;
+    this-node.pheromone[prev-node][a.destination] += (1 - gamma) * tau;
+    if (a.visited-nodes.length > 0) {
+      next-hop := a.visited-nodes.pop;
+      this-node.cast-backward-ant a;
+    }
+  };
+  
+  this-node.cast-data-ant a := {
+    a.hop++;
+    if (this-node has routing information for a.destination) {
+      a.broadcast-hop := 0;
+      this-node.unicast-data a;
+      // TODO: failure
+    } else {
+      // TODO: ?
+    }
+  };
+  
+  this-node.cast-forward-ant a := {
+    a.hop++;
+    if (this-node has routing information for a.destination) {
+      if (a.type = ProactiveForward and probability 0.1) {
+        a.broadcast-hop := 1;
+        this-node.broadcast a;
+      } else {
+        a.broadcast-hop := 0;
+        this-node.unicast-ant a;
+        // TODO: failure?
+      }
+    } else {
+      a.broadcast-hop++;
+      this-node.broadcast a;
+    }
+  }; // cast-forward-ant
+  
+  this-node.cast-backward-ant a := {
+    a.hop++;
+    a.broadcast-hop := 0;
+    this-node.unicast-ant a;
+    // TODO: failure
+  }; // cast-backward-ant
+  
+  this-node.unicast-ant a := {
+    this-node.unicast a, 1;
+  };
+
+  i.unicast-data a := {
+    this-node.unicast a, 2;
+  };
+  
+  this-node.unicast a, beta := {
+    P[n][a.destination] = (this-node.pheromone[n][a.destination]) ^ beta
+        / Sigma_(j in N[i][d]) (this-node.pheromone[j][a.destination] ^ beta);
+    next-hop := choose n by probability P[n][a.destination];
+  };
+  
+  this-node.estimated-time := {
+    return (this-node.queue.length + 1) * this-node.mac-estimated-time;
+  };
+  
+  this-node.update-mac-estimated-time t := {
+    alpha = 0.7;
+    this-node.mac-estimated-time := alpha * this-node.mac-estimated-time + (1 - alpha) * t;
+  };
+  
+  // TODO: hello messages are not incorporated
+  // TODO: link failure

@@ -1,0 +1,961 @@
+[31] [DFN[[RUBY[[[JSON]]][ジェイソン]]]] ([DFN[JavaScript Object Notation]] / [DFN[JavaScript オブジェクト記法]])
+は、 [[JavaScript]] における[[オブジェクト・リテラル]]の[[部分集合]]によって[[オブジェクト]]や[[配列]]を表記するデータ交換書式です。
+[[JavaScript]] を始め数多くの[[言語]]で[[ライブラリー]]が整備されており、
+汎用的な[[データ構造]]の交換形式として広く用いられています。
+
+[FIG[
+[FIGCAPTION[
+[30] [CITE@en[JSON]] ([TIME[2011-07-09 12:55:13 +09:00]] 版) <http://www.json.org/>
+]FIGCAPTION]
+
+>JSON (JavaScript Object Notation) is a lightweight data-interchange format. It is easy for humans to read and write. It is easy for machines to parse and generate. It is based on a subset of the JavaScript Programming Language, Standard ECMA-262 3rd Edition - December 1999. JSON is a text format that is completely language independent but uses conventions that are familiar to programmers of the C-family of languages, including C, C++, C#, Java, JavaScript, Perl, Python, and many others. These properties make JSON an ideal data-interchange language.
+]FIG]
+
+* 仕様書
+
+[REFS[
+- [132] [CITE[Standard ECMA-404]]
+( ([TIME[2013-10-09 12:19:30 +09:00]] 版))
+<http://www.ecma-international.org/publications/standards/Ecma-404.htm>
+]REFS]
+
+[219] 現在 [[JSON]] は [[ECMA-404]] によって定義されています。以前は [[ES5]] に定義が含まれていましたが、
+[[ES6]] は [[ECMA-404]] を参照する形になっています。
+
+[220] それとは別に [[RFC 7159]] にもやや異なる定義があります。 [[RFC 7159]] は [[RFC 7158]]
+を再出版したもので、 [[RFC 4627]] の改訂版でもあります。
+
+[221] [[json.org]] にも定義が掲載されていますが、現在ではこれは仕様ではなく、半公式の解説と理解するべきでしょう。
+
+[222] 以降の各項目では [[ECMA-404]] での定義に加えて、各仕様での歴史的な定義についても触れます。
+全体としての経緯は歴史の項を参照してください。
+
+* JSON 値
+
+[37] [DFN[[[JSON]] [RUBYB[値]@en[value]]]] には次の種類があります [SRC[>>132, >>3 1.]]。
+[FIG[
+- [38] [RUBYB[[[プリミティブ型]]]@en[primitive types]]
+-- [39] [RUBYB[[[文字列]]]@en[string]]
+-- [40] [RUBYB[[[数値]]]@en[number]]
+-- [41] [[boolean]] - [[true]], [[false]]
+-- [42] [[null]]
+- [43] [RUBYB[[[構造化型]]]@en[structured types]]
+-- [44] [RUBYB[[[オブジェクト]]]@en[object]]
+-- [45] [RUBYB[[[配列]]]@en[array]]
+]FIG]
+
+** オブジェクト
+
+[48] [[オブジェクト]]は、 [CODE(char)[[['''{''']]]] の後に0個[[以上]]の[RUBYB[[[メンバー]]]@en[member]]を
+[CODE(char)[[[,]]]] で区切って並べ、最後に [CODE(char)[[['''}''']]]] が来る文字列として表されます。
+メンバーは、名前と値の組であり、[[文字列]]の後に [CODE(char)[[[:]]]] が来て、
+その後に値が来ます。 [SRC[>>132, >>3 2.2.]]
+
+[52] 最後の[[メンバー]]の後に [CODE(char)[[[,]]]] を入れることは認められていません。
+
+;; [244] [[JSON]] の派生元である [[ES3]] がこれを認めておらず、当時の [[IE]] も対応していなかったためです。
+
+[226] [[メンバー]]の個数に制約はありません。
+
+[227] [[メンバー]]の順序に意味はあるかどうかは仕様上言及されていません。
+
+[248] [[RFC 7159]] の追加部分によると、[[メンバー]]の順序を保持する実装と保持しない実装があるようです。
+
+[49] [[RFC]] では[[オブジェクト]]内で名前は固有である[['''べき''']] [SRC[>>3 2.2., [[RFC 7159]]]]
+とされていますが、 [[ECMA-404]] ではそのような制限はありません。
+[[ECMAScript]] 仕様書で定義される [[JSON]] から [[JavaScript]] への変換では、
+同名の[[メンバー]]のうち最後のものが [[JavaScript]] [[オブジェクト]]に反映されます。
+
+[223] 同名の[[メンバー]]に対する処理が定義されていないため、実装によりどの値を選択するかが異なり、
+[[セキュリティー]]上問題となる危険性もあります。
+
+[247] [[RFC 7159]] の追加部分によると、重複の内最後を選択する実装の他、エラーとなる実装やすべてを返す実装もあるようです。
+
+[224] しばしば[[注釈]]として他の正規の[[メンバー]]と衝突しない名前を採用する慣習が一部にあり、
+同名の[[メンバー]]があってもエラーにはならないことを仮定して複数の同名の[[メンバー]]によって複数の[[注釈]]を表すことがあるようです。
+
+[225] [[オブジェクト]]とその[[名前]]や値の解釈は仕様上定義されていません。 [[JavaScript]]
+では[[オブジェクト]]に、 [[Perl]] では[[ハッシュ参照]]に対応付けられるなど、[[言語]]と環境により異なります。
+また [[JSON]] を利用する[[プロトコル]]や [[Web API]] などがそれぞれで認められる名前の種類と解釈を定めていたりします。
+
+** 配列
+
+[50] [[配列]]は、 [CODE(char)[[['''[''']]]] の後に0個[[以上]]の値を [CODE(char)[[[,]]]]
+で区切って並べ、最後に [CODE(char)[[[''']''']]]] が来る文字列として表されます。 [SRC[>>132, >>3 2.3.]]
+
+[232] 値の個数に上限はありません。
+
+[51] 最後の値の次に [CODE(char)[[[,]]]] を入れることは認められていません。
+値なしに [CODE(char)[[[,]]]] が連続することも認められていません。
+
+[231] [[配列]]がどう解釈されるのか、順序に意味があるという以上には定義されていません。
+一般的には各種[[プログラミング言語]]の[[配列]]に対応付けられています。
+
+[233] 値について、すべて同じ種類の値でなければならないなどの制約はありませんが、
+[[JSON]] を利用する[[プロトコル]]その他によっては値の種類や可能な値に制約があるかもしれません。
+
+** 数値
+
+[53] [[数値]]は、必要なら[[負符号]]の後、[[整数部]]が来て、
+必要なら[[小数部]]が来て、最後に必要なら([[十]]の)[[指数部]]が来る形を取ります。
+[SRC[>>132, >>3 2.4.]]
+
+[FIG[
+-         number = ["-"] int ["." 1*DIGIT] [ exp ]
+-         int = "0" / ( (DIGIT - "0") *DIGIT )
+-         exp = "e" ["-" / "+"] 1*DIGIT
+]FIG]
+
+[54] 先頭に[[正符号]]を使うことは認められていません。[[指数部]]では使えます。
+
+[234] [[符号]]の意味は自明であるためか明記されていません。
+
+[55] [[十進数]]により表記します [SRC[>>132, [[RFC 7159]]]]。
+
+[56] [[整数部]]で[[先導0]]は認められていません [SRC[>>132]]。
+[[指数部]]では使えます。
+
+;; [243] [[先導0]]が排除されているのは、[[JavaScript]] において[[八進数]]と解釈されるからです。
+
+[57] [[無限大]]や[[NaN]]は表現できません。 [SRC[>>132, >>3 2.4.]]
+
+[235] 表現できる数値の最小や最大、精度は規定されていません。 [[JSON]]
+を利用する[[プロトコル]]その他や実装する[[プログラミング言語]]によっては制限や限界があるかもしれません。
+
+[249] [[RFC 7159]] は次のような追加の規定を設けています。 [[IEEE 754]]-2008 [[binary64]]
+([[倍精度]]) 数が広く実装されておりますので、その範囲・精度で [[JSON]]
+数を実装すると[[相互運用性]]が高くなります。その範囲外の [[JSON]] 数を使うと[[相互運用性]]の問題が生じるかもしれません。
+
+** 文字列
+
+[58] [[文字列]]は、0個以上の[[文字]]を[[引用符]]で括ることによって表されます
+[SRC[>>132, >>3 2.5.]]。
+
+[236] ただしここでいう[[文字]]は、厳密には [[Unicode符号位置]]であり、以降でも同様です。
+これについては >>216 を参照してください。
+
+[237] [[文字列]]は[[JSON値]]の一種として、または[[オブジェクト]]の[[名前]]の部分として用いられます。
+
+[59] [[文字]] (厳密には[[符号位置]]) は [[escape]] により表現することができます。特に [CODE(char)[[["]]]],
+[CODE(char)[[[\]]]], [CODE(char)[[[U+0000]]]] - [CODE(char)[[[U+001F]]]]
+については必ず [[escape]] しなければなりません。
+[SRC[>>132, >>3 2.5.]]
+
+[65] [[escape]] とそれによって表される[[文字]]の対応関係は次の表の通りです。
+[FIG[
+,[CODE(JS)[\"]],[CODE(char)[[["]]]]
+,[CODE(JS)[\\]],[CODE(char)[[[\]]]]
+,[CODE(JS)[\/]],[CODE(char)[[[/]]]]
+,[CODE(JS)[\b]],[CODE(char)[[[U+0008]]]]
+,[CODE(JS)[\f]],[CODE(char)[[[U+000C]]]]
+,[CODE(JS)[\n]],[CODE(char)[[[U+000A]]]]
+,[CODE(JS)[\r]],[CODE(char)[[[U+000D]]]]
+,[CODE(JS)[\t]],[CODE(char)[[[U+0009]]]]
+,[CODE(JS)[\u[VAR[HHHH]]]],[CODE(char)[U+[VAR[HHHH]]]]
+]FIG]
+
+[66] [[escape]] 内の[[大文字]]と[[小文字]]は一般に区別されます。
+しかし[[十六進数]]は[[大文字]]でも[[小文字]]でも構いません。 [SRC[>>132, >>3 2.5.]]
+
+[60] [CODE(char)[[[U+10000]]]] [[以上]]の[[文字]]は [[UTF-16]]
+[[サロゲート・ペア]]の2つの[[16ビット符号単位]]の列によって [[escape]]
+で表せます。 [SRC[>>132, >>3 2.5.]]
+
+[238] [[16進数]]はなぜか [[Unicode]] ではなく [[ISO/IEC 10646]]:2012 により解釈する [SRC[>>132]]
+とされています。しかし実用上は [[Unicode]] の任意の版と理解して構わないでしょう。
+
+[64] [[サロゲート]]や[[非文字]]の[[符号位置]]を使うことは禁止されていません。
+
+[61] 明記されていませんが、半分は[[サロゲート・ペア]]の[[符号位置]]そのまま、
+もう半分は [[escape]] というような列で [CODE(char)[[[U+10000]]]] 
+より大きな[[文字]]を表現することは認められていないと解釈できます。
+
+;; [115] [[ES5]] の [[JSON]] の構文と構文解析の定義上は、 [[ECMAScript]] の [[UnicodeEscape]]
+と同じとなっており、従って[[サロゲート・ペア]]の[[符号位置]]も単なる[[16ビット符号単位]]の文字列表現として普通に解釈されるべきものであるようです。
+
+;; [116] [[Perl]] モジュール [CODE(perl)[[[JSON::XS]]]] はそのような[[サロゲート・ペア]]の[[符号位置]]に遭遇するとエラーを出して構文解析を中止します。
+
+[239] [[文字]]の数に上下限はありません。[[文字列]]は[[空文字列]]であっても構いません。
+
+[240] [[JSON]] を利用する[[プロトコル]]等によっては、[[文字]]の数やどのような[[文字列]]が認められるかに制限があるかもしれません。
+
+** boolean
+
+[67] [CODE(JS)[[[true]]]] や [CODE(JS)[[[false]]]] の意味は >>132 では定義されていませんが、それぞれ [[boolean]]
+の[[真]]と[[偽]]を表すと理解されています。これらは[[小文字]]でなければなりません。
+
+** null
+
+[68] [CODE(JS)[[[null]]]] の意味は >>132 では定義されていませんが、 [[null]] を表すと理解されています。
+これは[[小文字]]でなければなりません。
+
+** バイナリー
+
+[213] [[JSON]] には[[バイナリーデータ]]を表現する方法がありません。[[文字]]の列は[[文字列]]として表現できますが、
+[[バイト]]の列を [[JSON]] に直接含めることはできません。
+
+[214] [[文字]]と[[バイト]]の区別が無いか曖昧な[[言語]]や環境では[[文字列]]が[[バイト列]]として使われることもありますが、
+厳密にはそのような用法は [[JSON]] ではありません。
+
+[215] [[バイト列]]その他の[[バイナリーデータ]]を扱いたい時は、 [[MessagePack]] など[[バイナリーデータ]]を扱えるデータ形式を使うか、
+[[Base64]] など[[バイト列]]を[[文字列]]に符号化する方法を使って [[JSON]] の[[文字列]]に埋め込むなどする必要があります。
+
+* 構文
+
+[101] [DFN[[[JSON]] [RUBYB[テキスト]@en[text]]]]とは、[[JSON値]]1つです [SRC[>>132]]。
+なお [[ECMAScript]] の仕様上はこれは [DFN[[CODE[[[JSONText]]]]]] と呼ばれています [SRC[>>36 15.12]]。
+
+[47] [[RFC 4627]] は [[JSONテキスト]]を[[オブジェクト]]または[[配列]]を1つ[[直列化]]したもの
+[SRC[>>3 2.]] と定義しており、[[文字列]]や[[数値]]や [[true]] や [[false]] や [[null]] のような値は認めていませんでした。
+これは [[RFC 7159]] で改められていて、現在では [[RFC]] でも >>101 の定義に揃えられています。
+[[IETF]] の立場からはこれは厳密には非互換変更になります。
+
+[228] [[空文字列]]は [[JSONテキスト]]ではありません。
+
+** 字句解析
+
+[46] [[JSONテキスト]]は、次の[[字句]]により構成されます [SRC[>>132, >>3 2.]]。
+[FIG[
+- [RUBYB[構造的文字]@en[structual character]]
+-- [CODE(char)[[['''[''']]]], [CODE(char)[[[''']''']]]], [CODE(char)[[[{]]]],
+[CODE(char)[[[}]]]], [CODE(char)[[[:]]]], [CODE(char)[[[,]]]]
+-- 前後に[[空白]]があっても構いません。
+-- [[空白]]は、0[[文字]][[以上]]の [CODE(char)[[[U+0009]]]], [CODE(char)[[[U+000A]]]],
+[CODE(char)[[[U+000D]]]], [CODE(char)[[[U+0020]]]] です。
+- JSON [RUBYB[値]@en[value]]
+-- [[文字列]]
+-- [[数値]]
+-- [[リテラル名]]
+--- [CODE(char)[[[true]]]], [CODE(char)[[[false]]]], [CODE(char)[[[null]]]]
+--- [[小文字]]でなければ[['''なりません''']]。
+]FIG]
+
+[245] 多くの[[プログラミング言語]]などと異なり、 [[JSON]] には[[注釈]]がありません。
+
+** 符号化文字集合とサロゲート
+
+[216] [[JSONテキスト]]は、[[Unicode符号位置]]の列として定義されています [SRC[>>132]]。
+
+;; [217] [[ECMA-404]] は [[Unicode 6.2.0]] を引用していますが、実用上は任意の版の [[Unicode Standard]]
+と解釈して構わないでしょう。
+
+[229] [[Unicode文字]]ではなく[[Unicode符号位置]]の列ですから、[[サロゲート]]の[[符号位置]]も含まれます。
+
+[230] [[ES5]] の [[JSON]] は、 [[BNF]] により [[SourceCharacter]]、すなわち [[UTF-16]]
+の[[16ビット符号単位]]について定義していました [SRC[>>36 15.12]]。この定義では、
+[[サロゲート]]が正しく2つ連続する場合に[[サロゲート]]の[[符号位置]]が2つ分と解釈されるのではなく、
+[[文字]]が1つと解釈されるので、厳密には >>216 の定義と違うことになりますが、
+実用上は同じと言っても構わないでしょう。
+
+[100] [[RFC 4627]] の [[JSON]] は[[文字]]の列として定義されていました。 [[RFC 7159]]
+は [[Unicode文字]]の列であるとより明確に述べています。従って[[サロゲート]]は認められていません。
+ただし [[ABNF]] 構文および [[escape]] の定義で[[サロゲート]]は除外されていません。
+それらの意味は、 [[escape]] された[[サロゲート]]2つ分として使われる場合を除き、明確に定義されていません。
+[[RFC 7159]] は実装により扱いが異なり、エラーになることもあると述べています。
+
+;; [242] この[[サロゲート]]の扱いが問題となるのは、[[文字列]]の中だけです。 [[JSON]] として構文的に正しいテキストで[[サロゲート]]を含み得るのは[[文字列]]だけです。
+
+[241] [[非文字]]の[[符号位置]]も禁止はされていません。
+
+** 文字符号化方式
+
+[218] [[JSON]] としてはこの [[Unicode符号位置]]の列をどのような[[文字符号化方式]]で表現するかまでは規定していません。
+多くのプロトコルでは [[UTF-8]] の[[バイト列]]として転送されます。
+[[JavaScript]] では [[UTF-16スカラー値]]の列である[[文字列]]として表現されます。
+場合によっては[[シフトJIS]] や [[ISO-8859-1]] など旧来の[[文字符号化方式]]が使われます。
+
+[69] [[RFC]] の [[JSON]] は更に[[文字符号化]]の制約があります。
+[[RFC 4627]] では、 [[Unicode]] で[[符号化]]しなければ[['''ならない''']] [SRC[>>3 3.]]
+とされていました。 [[RFC 7159]] では更に制約され、 [[UTF-8]]、[[UTF-16]]、[[UTF-32]]
+で符号化しなければ[['''ならない''']]とされています。
+[[RFC 4627]] にも [[UTF-8]]、[[UTF-16]]、[[UTF-32]] を使って構わないという記述はありましたが [SRC[>>3 6.]]、
+それ以外を使ってはいけないとは明確に規定されていませんでした。
+
+[71] [[既定]]の[[符号化]]は [[UTF-8]] です [SRC[>>3 3.]]。 [[RFC 4627]] ではこの「既定」
+が何を表すのかは明記されていませんでした。特に意図がなければ [[UTF-8]]
+を使うべきであるということとも、[[文字符号化方式]]が特定できないときに
+[[UTF-8]] として解釈するべきということとも解釈できましたし、それ以外の解釈もあり得ました。
+[[RFC 7159]] では [[UTF-16]] と [[UTF-32]] に対応していない実装があり、 [[UTF-8]]
+が最も[[相互運用性]]が高いという記述が追加されています。
+
+[75] 実装はこれらの[[符号化方式]]のいずれ、あるいはすべてに対応しなければならないのか、
+しなくてもよいのか、といったことは [[RFC 4627]] ではまったく規定されておらず、
+[[RFC 7159]] でも明記はされていませんが、 [[UTF-8]] は実装しなければならず、
+[[UTF-16]] と [[UTF-32]] はオプションであると解釈するのが妥当でしょう。
+
+;; [251] そんなことで[[相互運用性]]はいいのでしょうか。
+
+** Sniffing
+
+[72] [[RFC 4627]] の規定していた [[JSONテキスト]]は、最初の2文字が必ず [[ASCII文字]]となります。
+そのため、最初の4つの[[オクテット]]のパターンにより、
+,[CODE[00 00 00 [VAR[xx]]]],[[UTF-32BE]]
+,[CODE[00 [VAR[xx]] 00 [VAR[xx]]]],[[UTF-16BE]]
+,[CODE[[VAR[xx]] 00 00 00]],[[UTF-32LE]]
+,[CODE[[VAR[xx]] 00 [VAR[xx]] 00]],[[UTF-16LE]]
+,[CODE[[VAR[xx]] [VAR[xx]] [VAR[xx]] [VAR[xx]]]],[[UTF-8]]
+
+... と区別できるとされています。 [SRC[>>3 3.]] [VAR[xx]] は [CODE[00]]
+以外の[[オクテット]]を表すのでしょう。 [[JSONテキスト]]に直接 [CODE(char)[[[U+0000]]]]
+が出現することは無いとされているので、 [CODE[00]] かどうかで確実に判定できます。
+
+[73] 一般の [[JSON]] は2文字目が必ずしも [[ASCII文字]]であるとは限りません (1文字以上の[[文字列]]や1文字だけの[[数]]の場合。) が、
+それでもやはり同様にこれら5つの[[文字符号化方式]]を区別できます。
+
+[76] この [[sniffing]] は、実装が必ず使わなければならないなどという規定は特にありません。
+しかし [CODE(MIME)@en[[[application/json]]]] には [CODE(MIME)@en[[[charset]]]]
+[[引数]]がありませんし、実際にこれらの[[文字符号化]]が使われているのであれば、
+これ、あるいはこれに類する [[sniffing]] を実装する以外に選択肢はありません。
+
+[253] [[RFC 7159]] では [[sniffing]] の項は削除されています。
+
+[254] なお [[ECMA-404]] は[[文字符号化]]に関して規定していないので、 [[sniffing]]
+への言及もありません。
+
+[255] このような [[sniffing]] が実際に行われているのかは不明です。例えば [[XHR]]
+は使っていません。
+
+** BOM
+
+[160] [[ECMA-404]] は [[BOM]] を使っても良いかどうか明記していません。ただし [[ECMA-404]]
+は[[文字符号化]]については触れずに[[Unicode符号位置]]の列について定義しているに過ぎないので、
+別の[[層]]の[[直交]]する問題 (つまり [[JSON]] を利用するプロトコルその他に依存する)
+と解するべきだと思われます。
+
+[74] [[RFC 4627]] は [[BOM]] について言及していませんでした。 [[BOM]] がある場合は >>72 のパターンに当てはまらず、
+[[UTF-16]] や [[UTF-32]] であっても [[UTF-8]] と判定されてしまいます。ただし [[RFC]]
+のこの部分は単なる事実の記述であって、そう解釈[[しなければならない]]などと規定されているわけではなく、
+また明確に [[BOM]] を使用しては[[ならない]]と規定されているわけでもありませんから、
+どう理解するべきか難しいところです。[[RFC 4627]] の改訂にあたっても [[BOM]] 
+が認められているかどうかは議論になっていました。
+
+[159] [[RFC 7159]] は [[JSON]] を生成するときに [[BOM]] を含めては[['''ならず''']]、
+[[JSON]] を解釈するときに [[BOM]] を無視しても[['''構わない''']]としています。
+
+;; [250] [[BOM]] が含まれていると [[JSON]] でないとしてエラーとみなす実装も認めています。
+そんなことで[[相互運用性]]はいいのでしょうか。
+
+;; [252] なお [[ZWNBSP]] ([[BOM]] と同じ [[U+FEFF]]) は[[文字列]]以外で現れることはありませんから、
+[[BOM]] かどうかは明確に判断できます。
+
+[161] [[XHR]] は [[JSON]] の解釈の際に [[BOM]] があれば無視するよう規定しています。
+>>74 の通り [[RFC 4627]] で [[BOM]] の扱いが明記されていなかったことから、
+[[XHR]] が [[JSON]] の変種を規定しているとみなす人もいます。
+
+** 構文解析器
+
+[256] [[ECMA-404]] は構文を定めるのみで、構文解析の方法は定義していません。
+
+[77] [[RFC]] の定義する[DFN[JSON [RUBYB[構文解析器]@en[parser]]]]は、 [[JSONテキスト]]を他の表現に変形するものです
+[SRC[>>3 4., [[RFC 7159]]]]。
+
+[78] [[JSON構文解析器]]は、 [[JSON]] の文法に適合するすべての[[テキスト]]を[[受理]]しなければ[['''なりません''']]
+[SRC[>>3 4., [[RFC 7159]]]]。
+
+[79] [[JSON構文解析器]]は、 [[JSON]] ではない形式や拡張を[[受理]]しても[['''構いません''']]
+[SRC[>>3 4., [[RFC 7159]]]]。
+
+[80] [[受理]]する[[テキスト]]の[[サイズ]]を制限して構いません [SRC[>>3 4., [[RFC 7159]]]]。
+
+[81] [[入れ子]]の深さを制限して構いません [SRC[>>3 4., [[RFC 7159]]]]。
+
+[82] [[数値]]の範囲を制限して構いません [SRC[>>3 4., [[RFC 7159]]]]。
+
+[83] [[文字列]]の[[長さ]]や[[文字]]の[[内容]]を制限して構いません [SRC[>>3 4., [[RFC 7159]]]]。
+
+;; [84] これらの制限に抵触する場合にどのように処理しなければならないかは規定されていません。
+また、 >>83 の文字の内容の制限というのが具体的に何を指しているかは不明確です。
+特定の種類の文字から構成される文字列以外を処理できなくても構わないといったことでしょうか。
+
+[102] [[ES5]] の [CODE(JS)[[[JSON.parse]]]] は、 >>79 の拡張は認めておらず、
+[[ES5]] の規定に厳密に従って構文解析しなければなりません [SRC[>>36 15.12]]。
+なお、 [[ES5]] の規定は [[RFC]] の規定より若干拡張されています (>>101)。
+
+** 生成器
+
+[257] [[ECMA-404]] は [[JSON]] の構文を定義するのみで、その生成の方法は定義していません。
+
+[85] [[RFC]] の定義する [DFN[JSON [RUBYB[生成器]@en[generator]]]]は、 [[JSONテキスト]]を生産するものです 
+[SRC[>>3 5., [[RFC 7159]]]]。
+
+[86] [[JSON生成器]]が生産する[[テキスト]]は、[[JSON]] の[[文法]]に厳密に[[適合]]しなければ[['''なりません''']]
+[SRC[>>3 5., [[RFC 7159]]]]。
+
+[103] [[ES5]] の [CODE(JS)@[[[JSON.stringify]]]] は、 [[RFC]] ではなく [[ES5]]
+の規定に従って [[JSON]] を生成しなければなりません [SRC[>>36 15.12]]。これは [[RFC]]
+の規定より拡張された [[ES5]] の [[JSON]] を生成するので、 [[RFC]] の規定に基づく
+[[JSON生成器]] (>>85) には適合しません。
+
+* JSON の変種
+
+[258] [[RFC]] が拡張された [[JSON]] に対応することを認めていることもあり、また [[JSON]]
+が広い分野で用いられていることもあり、いろいろな [[JSON]] の変種が「[[JSON]]」
+と呼ばれていることがあります。
+
+- [22] [[JSONP]] が [[JSON]] として扱われることがあります。
+- [23] [[オブジェクト]]の[[特性名]]を表す[[文字列リテラル]]が [CODE(char)[[["]]]] で括られないことがあります。
+- [24] [[JSON]] の前に「[CODE(JS)[[[var]] name = ]]」のような[[文字列]]がつくことがあります。
+- [25] [[YAML]] の [[serializer]] によって実際には [[JSON]] ではない [[YAML]] が [[JSON]] であるとして出力されることがあります (>>176)。
+- [87] [[JavaScript]] の[[注釈]]が含まれることがあります。
+-- /* ... */
+-- // ...
+- [88] [[配列]]や[[オブジェクト]]の最後の[[メンバー]]の後に [CODE(char)[[[,]]]] が余分に挿入されることがあります。
+- [110] 果ては[[関数リテラル]]が含まれることすらあります。
+- [112] # ... のような注釈が使われることがあります。
+- [117] 0x0000 のような数値の16進数表記が用いられることがあります。
+- [158] [[XSSI]] 防止のために本来の [[JSON]] データの前に「[CODE[)]}]]」のようなごみを挿入することがあります。
+[[Source Map]] はこれを明示的に認めています。
+- [165] [[Perl]] モジュールである [CODE(perl)@en[[[JSON::XS]]]] は、[[符号化]]時に数値としての [[inf]] や [[nan]] が与えられると[[引用符]]のない
+[CODE[inf]] や [CODE[nan]] を出力します。 ([[復号]]はできず構文エラーになります。) [TIME[2014-01-09T11:35:59.600Z]]
+
+* JavaScript との互換性
+
+[105] [[JavaScript]] の[[文字列リテラル]]では [CODE(char)[[[U+2028]]]] や [CODE(char)[[[U+2029]]]]
+を直接記述することは認められていませんが、 [[JSON]] では認められています
+[SRC[>>36 15.12.2]]。
+
+[REFS[
+- [28] [CITE[JSON: The JavaScript subset that isn't — Timeless]]
+([TIME[2011-05-16 04:05:34 +09:00]] 版)
+<http://timelessrepo.com/json-isnt-a-javascript-subset>
+- [27] [CITE[JSON::XS - search.cpan.org]] ([TIME[2011-04-15 12:50:01 +09:00]] 版) <http://search.cpan.org/dist/JSON-XS/XS.pm#JSON_and_ECMAscript>
+]REFS]
+
+[FIG[
+[FIGCAPTION[
+[119] >>27 より
+]FIGCAPTION]
+
+>One of the problems is that U+2028 and U+2029 are valid characters inside JSON strings, but are not allowed in ECMAscript string literals
+
+>Another problem is that some javascript implementations reserve some property names for their own purposes (which probably makes them non-ECMAscript-compliant). For example, Iceweasel reserves the __proto__ property name for it's own purposes.
+]FIG]
+
+[118] また、 [CODE(JS)@en[[[__proto__]]]] のように [[JavaScript]] 自体の持つ機能の名前と衝突した場合に、
+[[JSON]] を直接 [[JavaScript]] と解釈すると問題が起こり得ることも指摘されています (>>119)。
+
+[120] このような [[JavaScript]] との非互換性は、 [CODE(JS)@en[[[JSON]]]] [[オブジェクト]]のような正規の実装に依らず、
+[CODE(JS)@en[[[eval]]]] などで [[JavaScript]] 文字列として解釈する際に発症します。しかも通常は
+[CODE(char)@en[[[U+2028]]]] などは使わない[[文字]]なので気づきにくく、時にサービス拒否攻撃のように悪用されることもあります。
+
+[121] また、 [[JSON]] を[[関数]]で括った“だけ”であるはずの [[JSONP]] も、
+[WEAK[([[JavaScript]] と解釈されるのが目的のものですから、 [[JavaScript]] コードであることになり、)]]
+実は [[JSON]] とは非互換であることになります。
+
+* YAML との互換性
+
+[176] [[Perl]] コミュニティーの一部など、 [[JSON]] 以前に [[YAML]] が広く用いられていた人達の中には、
+[[JSON]] は [[YAML]] の[[部分集合]]であるとして、 [[YAML]] の実装を元にした [[JSON]] 
+の実装が行われていました。
+
+[26] しかし [[JSON]] は [[YAML]] の[[部分集合]]であるとの主張は'''嘘'''とされています。
+
+[REFS[
+- [177] [CITE[JSON::XS - search.cpan.org]] ([TIME[2011-04-15 12:50:01 +09:00]] 版) <http://search.cpan.org/dist/JSON-XS/XS.pm#JSON_and_YAML>
+]REFS]
+
+[178] このため [[JSON]] であると称しながら実際には [[JSON]] ではない [[YAML]]
+のデータが存在しています。
+
+* MIME 型
+
+[89] [[JSON]] の [[MIME型]]は [DFN[[CODE(MIME)@en[[[application/json]]]]]] です [SRC[>>3 6.]]。
+
+[90] この他 [DFN[[CODE(MIME)@en[[[*/*+json]]]]]] により [[JSON]] を使った特定の[[応用]]を表すことがあります。
+
+;;
+[124] [CODE(MIME)@en[[[text/json]]]], [CODE(MIME)@en[[[text/x-json]]]],
+[CODE(MIME)@en[[[text/jaavscript]]]], [CODE(MIME)@en[[[text/x-javascript]]]],
+[CODE(MIME)@en[[[application/x-javascript]]]],
+[CODE(MIME)@en[[[text/plain]]]] が使われることもあります。
+
+[261] [[JSONP]] は [[JavaScript]] なので、 [CODE(MIME)@en[[[text/javascript]]]] を使うのが正しいですが、
+[[JSON]] の [[MIME型]]になっていることもあります。
+
+** CTE
+
+[91] [[CTE]] としては、 [[UTF-8]] を使う時は [CODE(MIME)@en[[[8bit]]]]、
+[[UTF-16]] や [[UTF-32]] を使う時は [CODE(MIME)@en[[[binary]]]] が適切です。 [SRC[>>3 6.]]
+
+** 引数
+
+[92] [CODE(MIME)@en[[[application/json]]]] には[[引数]]が定義されていません。
+
+[93] たまに [CODE(MIME)@en[[[charset]]]] [[引数]]が付けられていることがあります。
+
+[125] [CODE(MIME)@en[[[charset]]]] が指定されていないと [[UTF-8]] であっても正しく[[復号]]できない実装があります。
+[TIME[2013-03-06T07:46:28.900Z]]
+
+[129] 他方、[[引数]]なしの「[CODE(MIME)@en[[[application/json]]]]」でないと [[JSON]]
+が指定されたとみなさない実装もあります。
+
+[FIG[
+[FIGCAPTION[
+[147] [CODE(MIME)@en[[[application/json]]]] の[[引数]]
+]FIGCAPTION]
+- [CODE(MIME)@en[[[charset]]]]
+- [CODE(MIME)@en[[[ieee754compatible]]]]
+- [CODE(MIME)@en[[[odata]]]]
+- [CODE(MIME)@en[[[odata.metadata]]]]
+- [CODE(MIME)@en[[[odata.streaming]]]]
+]FIG]
+
+** [CODE(MIME)@en[+json]] で終わる MIME 型
+
+[FIG[
+- [98] [CODE(MIME)@en[[[application/jsonml+json]]]]
+- [122] [CODE(MIME)@en[[[application/ld+json]]]]
+- [99] [CODE(MIME)@en[[[application/microdata+json]]]]
+]FIG]
+
+* 拡張子
+
+[94] [[JSON]] の[[拡張子]]には [CODE(file)@en[[[.json]]]] [SRC[>>3 6.]] がしばしば使われます。
+
+* Macintosh ファイル型
+
+[95] 古い [[Mac OS]] で[[ファイル]]の種類を表す[[符号]]としては [CODE[[[TEXT]]]]
+が使われます [SRC[>>3 6.]]。
+
+* 素片識別子
+
+[96] [[RFC]] では[[素片識別子]]には言及されていません。
+
+[97] [[JSON]] では[[素片識別子]]は使われていません。
+
+[162] [[JSON Pointer]] というものがあり、[[JSON]] の[[素片識別子]]として使われることが想定されています。
+
+* 歴史
+
+[REFS[
+- [3] [CITE@en[RFC 4627 - The application/json Media Type for JavaScript Object Notation (JSON)]]
+<http://tools.ietf.org/html/rfc4627>
+- [34] [CITE[Annotated ES5]]
+-- [35] [CSECTION@en[5.1.5 The JSON Grammar]] <http://es5.github.com/#x5.1.5>
+-- [36] '''[CSECTION@en[15.12 The JSON Object]] <http://es5.github.com/#x15.12>'''
+]REFS]
+
+[104] [[ES5]] は、 [[RFC]] を引用しつつも独自に構文や解釈を規定しています。
+[[Webブラウザー]]は [[ES5]] を実装しており、現在ではこちらが [[JSON]] の定義として参照されるべきものでしょう。
+
+[163] その後 [[ECMA-404]] が出版されました。 [[ES6]] は [[ECMA-404]] を参照するように改められています。
+ただし [CODE(JS)@en[[[JSON]]]] オブジェクトや構文解析、直列化の方法は [[ES]] 側に残されています。
+
+** ietf-json と ECMA-404
+
+[194] 2013年の初め頃、 [[IETF]] において [[RFC 4627]] を改訂して[[標準化過程]] [[RFC]]
+とすることを目指す動きが起こり、 [DFN[[[IETF]] JSON [RUBYB[作業部会]@en[working group]]]]
+([DFN[[[ietf-json]]]]) が組織されました。細かな修正もありますが、[[Informational]] から[[標準化過程]]に移すことで、
+([[IETF]] の標準化手続き上) より他の[[標準化過程]] [[RFC]] から参照しやすくすることが主たる目的だったようです。
+
+[195] 当初は [[JSON]] の考案者で [[RFC 4627]] の著者でもある [[Douglas Crockford]]
+も協力する姿勢を見せていましたが、改訂の方向性に納得がいかなかったのか、2013年の中頃には関わらないようになります。
+その理由は明言していませんし、 [[ietf-json]] [[メーリングリスト]]の記事をみても議論がはっきり決裂しているわけではないのですが、
+Douglas が意図的に曖昧にし (各言語・環境の) 実装に委ねている箇所を特定の解釈に固定したり、
+[[部分集合]]や拡張によって非互換な[[プロファイル]]を作ろうとしたりする動きに賛成しかねているようです。
+
+[196] 2013年の夏、 Douglas と [[ECMA]] [[TC 39]] ([[ECMAScript]] の標準化コミュニティー) は [[ES5.1]]
+における [[JSON]] の定義を元にした独立した [[JSON]] の仕様書を作成し、数週間で [DFN[[[ECMA-404]]]]
+として出版されました。 [[ES6]] からは [[JSON]] の定義は削除され、 [[ECMA-404]] を参照する形に改められました。
+ただし [CODE(JS)@en[[[JSON]]]] オブジェクトの定義や [[ECMAScript]] との相互変換の定義は [[ES6]]
+側に残されています。
+
+[197] この ([[IETF]] では考えられないくらいに) 素早い新仕様の出版に、 [[Tim Bray]] ら [[ietf-json]]
+側の関係者は [[JSON]] の標準化を行っているのは [[ietf-json]] であって [[TC 39]] では無い、
+[[TC 39]] とは協力関係にあったはずなのに連絡もなかったなどと非難しますが、
+[[TC 39]] 側はほとんど相手にしていません。互いの仕様の不備を主張し合うなど、両者の溝は埋まりません。
+そこへ一見無関係な [[W3C]] の [[TAG]] も乱入してきて、
+[[RFC]] の改訂版は [[ECMA-404]] の定義を参照するべきとするコメントを [[IETF]]
+側に送付するなど、ちょっとした騒ぎになりました。
+
+[198] 結局 [[RFC]] の改訂版は [[ECMA-404]] を参照していますが、違いを説明するために引用しているに過ぎず、
+独自に [[JSON]] を定義しています。ただし [[JSON]] 全体は[[オブジェクト]]や[[配列]]だけでなく、
+任意の値となるよう拡張されました ([[ECMA-404]] と同等になりました。 >>47、>>101 を参照。)
+その他にも旧 [[RFC]] や [[ECMA-404]] にない規定が追加されています。更に [[JSON]]
+の拡張や[[部分集合]]を定義することが引き続き [[ietf-json]] で検討されています。
+こうして [[IETF]] によって [[JSON]] は [[fork]] されました。
+
+[REFS[
+- [179] [CITE[''''''[''''''Json'''''']'''''' Coordinating publication of 4627bis with ECMA]]
+( ([TIME[2013-05-17 10:20:05 +09:00]] 版))
+<http://www.ietf.org/mail-archive/web/json/current/msg00267.html>
+- [180] [CITE@en[charter-ietf-json-01]]
+( ([TIME[2013-10-21 05:27:10 +09:00]] 版))
+<https://datatracker.ietf.org/doc/charter-ietf-json/>
+- [181] [CITE@en[JavaScript Object Notation (json) - Charter]]
+( ([TIME[2013-10-21 05:28:37 +09:00]] 版))
+<https://datatracker.ietf.org/wg/json/charter/>
+- [182] [CITE[json Discussion Archive - Thread Index]]
+( ([TIME[2013-10-23 18:32:14 +09:00]] 版))
+<http://www.ietf.org/mail-archive/web/json/current/threads.html>
+- [183] [CITE[''''''[''''''Json'''''']'''''' Possible next work for the WG]]
+( ([TIME[2013-10-16 19:21:19 +09:00]] 版))
+<http://www.ietf.org/mail-archive/web/json/current/msg01856.html>
+- [184] [CITE[''''''[''''''Json'''''']'''''' Authorship]]
+( ([TIME[2013-09-27 18:20:05 +09:00]] 版))
+<http://www.ietf.org/mail-archive/web/json/current/msg01623.html>
+- [185] [CITE[''''''[''''''Json'''''']'''''' JSON & ECMA]]
+( ([TIME[2013-03-19 21:22:04 +09:00]] 版))
+<http://www.ietf.org/mail-archive/web/json/current/msg00222.html>
+- [186] [CITE[''''''[''''''Json'''''']'''''' Two Documents]]
+( ([TIME[2013-06-18 14:21:41 +09:00]] 版))
+<http://www.ietf.org/mail-archive/web/json/current/msg00822.html>
+- [187] [CITE[Re: ''''''[''''''Json'''''']'''''' Two Documents]]
+( ([TIME[2013-06-19 14:52:20 +09:00]] 版))
+<http://www.ietf.org/mail-archive/web/json/current/msg00894.html>
+- [188] [CITE[''''''[''''''Json'''''']'''''' 2-step proposal 4627bis + I-JSON]]
+( ([TIME[2013-07-08 16:50:03 +09:00]] 版))
+<http://www.ietf.org/mail-archive/web/json/current/msg01145.html>
+- [189] [CITE[''''''[''''''Json'''''']'''''' Consensus call: document title]]
+( ([TIME[2013-06-24 16:20:15 +09:00]] 版))
+<http://www.ietf.org/mail-archive/web/json/current/msg00916.html>
+- [190] [CITE[''''''[''''''Json'''''']'''''' What are we trying to do?]]
+( ([TIME[2013-07-03 20:21:08 +09:00]] 版))
+<http://www.ietf.org/mail-archive/web/json/current/msg01087.html>
+- [191] [CITE[Appropriate list for JSON standardization disussion]]
+( ([TIME[2013-06-21 04:11:18 +09:00]] 版))
+<https://mail.mozilla.org/pipermail/es-discuss/2013-June/031070.html>
+- [126] ( ([TIME[2013-03-11 16:24:22 +09:00]] 版))
+<http://www.ietf.org/proceedings/86/slides/slides-86-json-2.pdf>
+- [127] [CITE[''''''[''''''apps-discuss'''''']'''''' JSON mailing list and BoF]]
+( ([TIME[2013-02-19 20:50:03 +09:00]] 版))
+<http://www.ietf.org/mail-archive/web/apps-discuss/current/msg08912.html>
+- [131] [CITE@en[Next Steps on JSON + Proposed TAG Resolution]]
+( ([[Appelquist Daniel (UK)]] 著, [TIME[2013-10-18 04:39:12 +09:00]] 版))
+<http://lists.w3.org/Archives/Public/www-tag/2013Oct/0029.html>
+- [133] [CITE@en[draft-ietf-json-rfc4627bis-04 - The JSON Data Interchange Format]]
+( ([TIME[2013-10-14 08:15:24 +09:00]] 版))
+<http://tools.ietf.org/html/draft-ietf-json-rfc4627bis-04>
+- [134] [CITE@en[draft-ietf-json-rfc4627bis-06 - The JSON Data Interchange Format]]
+( ([TIME[2013-10-16 22:34:48 +09:00]] 版))
+<http://tools.ietf.org/html/draft-ietf-json-rfc4627bis-06>
+- [135] [CITE@en[Re: XHR vs JSON, was: Next Steps on JSON + Proposed TAG Resolution]]
+( ([[Bjoern Hoehrmann]] 著, [TIME[2013-10-18 21:47:00 +09:00]] 版))
+<http://lists.w3.org/Archives/Public/www-tag/2013Oct/0037.html>
+- [136] [CITE[Re: ''''''[''''''Json'''''']'''''' I-JSON vs. JSON-S]]
+( ([TIME[2013-07-08 16:50:05 +09:00]] 版))
+<http://www.ietf.org/mail-archive/web/json/current/msg01206.html>
+- [138] [CITE[Re: ''''''[''''''Json'''''']'''''' Comments on proposed charter for JSON]]
+( ([TIME[2013-03-01 20:54:39 +09:00]] 版))
+<http://www.ietf.org/mail-archive/web/json/current/msg00193.html>
+- [139] [CITE@en[Re: Next Steps on JSON + Proposed TAG Resolution]]
+( ([[Tim Bray]] 著, [TIME[2013-10-19 00:01:07 +09:00]] 版))
+<http://lists.w3.org/Archives/Public/www-tag/2013Oct/0041.html>
+- [140] [CITE@en[Technical Architecture Group Teleconference -- 02 Oct 2013]]
+( ([TIME[2013-10-03 12:30:11 +09:00]] 版))
+<http://www.w3.org/2001/tag/2013/10/02-minutes.html#item03>
+- [141] [CITE[tc39-notes/es6/2013-03/mar-12.md at master · rwaldron/tc39-notes]]
+( ([TIME[2013-10-21 05:06:57 +09:00]] 版))
+<https://github.com/rwaldron/tc39-notes/blob/master/es6/2013-03/mar-12.md#49-json-ietf-changes>
+- [142] [CITE[tc39-notes/es6/2013-07/july-24.md at master · rwaldron/tc39-notes]]
+( ([TIME[2013-10-21 05:13:50 +09:00]] 版))
+<https://github.com/rwaldron/tc39-notes/blob/master/es6/2013-07/july-24.md#9-json-continued>
+- [143] [CITE@en[Re: ''''''[''''''Json'''''']'''''' FYI ECMA, W3C, IETF coordination on JSON]]
+( ([[Allen Wirfs-Brock]] 著, [TIME[2013-10-09 04:37:43 +09:00]] 版))
+<http://lists.w3.org/Archives/Public/www-tag/2013Oct/0015.html>
+- [144] [CITE@en[Re: ''''''[''''''Json'''''']'''''' FYI ECMA, W3C, IETF coordination on JSON]]
+( ([[John Cowan]] 著, [TIME[2013-10-09 01:42:19 +09:00]] 版))
+<http://lists.w3.org/Archives/Public/www-tag/2013Oct/0007.html>
+- [145] [CITE[Re: ''''''[''''''Json'''''']'''''' Streaming JSON parsers]]
+( ([TIME[2013-07-03 06:50:40 +09:00]] 版))
+<http://www.ietf.org/mail-archive/web/json/current/msg01090.html>
+- [146] [CITE[Re: ''''''[''''''Json'''''']'''''' Streaming JSON parsers]]
+( ([TIME[2013-07-03 06:50:40 +09:00]] 版))
+<http://www.ietf.org/mail-archive/web/json/current/msg01090.html>
+- [148] [CITE[JSON Duplicate Keys]]
+( ([TIME[2013-06-21 04:11:18 +09:00]] 版))
+<https://mail.mozilla.org/pipermail/es-discuss/2013-June/031057.html>
+- [149] [CITE[JSON specification WAS: Re: JSON Duplicate Keys]]
+( ([TIME[2013-06-21 04:11:18 +09:00]] 版))
+<https://mail.mozilla.org/pipermail/es-discuss/2013-June/031063.html>
+- [150] [CITE[May 21, 22, 23 TC39 Meeting Notes]]
+( ([TIME[2013-06-21 04:11:18 +09:00]] 版))
+<https://mail.mozilla.org/pipermail/es-discuss/2013-June/030958.html>
+- [151] [CITE@en[JSON feedback we could submit]]
+( ([[Anne van Kesteren]] 著, [TIME[2013-11-11 12:08:26 +09:00]] 版))
+<http://lists.w3.org/Archives/Public/www-tag/2013Nov/0061.html>
+- [152] [CITE@en[JSON: remove gap between Ecma-404 and IETF draft]]
+( ([[Anne van Kesteren]] 著, [TIME[2013-11-12 16:01:30 +09:00]] 版))
+<http://lists.w3.org/Archives/Public/www-tag/2013Nov/0074.html>
+- [153] [CITE@en[Concerns from the W3C Technical Architecture Group regarding JSON]]
+( ([[Philippe Le Hegaret]] 著, [TIME[2013-11-27 07:31:33 +09:00]] 版))
+<http://lists.w3.org/Archives/Public/public-ietf-w3c/2013Nov/0000.html>
+- [155] [CITE@en[Re: ''''''[''''''Json'''''']'''''' Consensus on JSON-text (WAS: JSON: remove gap between  Ecma-404 and IETF draft)]]
+( ([[Tim Bray]] 著, [TIME[2013-11-28 09:13:40 +09:00]] 版))
+<http://lists.w3.org/Archives/Public/www-tag/2013Nov/0204.html>
+- [156] [CITE[''''''[''''''Json'''''']'''''' Response to Statement from Ecma International TC39]]
+( ([TIME[2013-12-06 16:51:36 +09:00]] 版))
+<http://www.ietf.org/mail-archive/web/json/current/msg02131.html>
+- [157] [CITE@en[TAG Teleconference -- 05 Dec 2013]]
+( ([TIME[2013-12-09 15:52:58 +09:00]] 版))
+<http://www.w3.org/2001/tag/2013/12/05-minutes.html>
+]REFS]
+
+[202] [[Tim Bray]] と [[ietf-json]] による [[RFC]] の改訂版は、2014年3月に [DFN[[[RFC 7158]]]] 
+として出版されました。ところがこのとき [[RFC Editor]] が誤って日付を「201'''3'''年3月」
+としてしまったため、すぐに修正して [DFN[[[RFC 7159]]]] として再出版されました。
+
+[203] これだけでも前代未聞の珍事ですが、どうやら [[RFC Editor]] も相当慌てていたらしく、
+当初の [[RFC 7159]] は Errata のリンクや [[IANA Considerations]] の章の記述が「[[RFC 715'''8''']]」
+のままになっていました。それらを修正したものがすぐに '''[[RFC 7159]] のまま'''再出版されました。
+
+;; [205] この旧版 [[RFC 7159]] は2014年3月20日の時点で [[Google]] のキャッシュに [[HTML]]
+版と [[PDF]] 版が残っています。 [[RFC Editor]] のサイトでも >>204 には [[PDF]]
+版がまだ残っています。イレギュラーな操作で改版してここだけ差し替えを忘れているのでしょうか。
+
+[206] さすがに3つ目の [[RFC]] を発行することは憚られたのでしょうが、一度出版した [[RFC]]
+を置き換えないというポリシーを守るために日付だけ書き換えた [[RFC]] を再発行し、
+日付が間違った [[RFC]] を (廃止状態とはいえ) 放置したり、
+その直後にポリシーを歪めてより多くの箇所を変更した [[RFC]] を同じ番号で改版したりと、
+[[RFC]] の発行手続きの運用上の大きな問題を曝け出す形になりましたが、なぜか [[IETF]]
+界隈ではそれほど重大な問題として取り上げられていないようです。
+
+;; [207] このような再出版に関する [[RFC Editor]] と著者の間のやり取りも個別に行われていたと見られ、
+[[ietf-json]] などの[[メーリングリスト]]には記録は特に残っていません。
+
+[209] >>201 は [[RFC 7158]] と新版 [[RFC 7159]] の差分です。
+
+[210] このような流れを皮肉ってか、 [[RFC 7159]] への [[Errata]] として、
+“全文を削除して「[[RFC 7158]] 参照」に置き換える”という修正案まで提案されています (>>263)。
+
+;; [262] >>210 は >>208 に掲載されていたのですが、
+残念なことにいつの間にか (却下ではなく) 削除されてしまいました。
+なお [[RFC 7158]] に対して報告されていた Errata 2件 (>>264、>>265)
+も (却下ではなく) 削除されています。現時点で残っているのは
+[[RFC 7159]] に対する >>266 だけです。 [TIME[2014-04-02T07:23:09.00Z]]
+
+[212] >>211 は [[RFC 4627]] と新版 [[RFC 7159]] の差分です。
+
+[REFS[
+- [199] [CITE@en[RFC 7158 - The JavaScript Object Notation (JSON) Data Interchange Format]] ([TIME[2014-03-04 16:52:46 +09:00]] 版) <http://tools.ietf.org/html/rfc7158>
+- [200] [CITE@en[RFC 7159 - The JavaScript Object Notation (JSON) Data Interchange Format]] ([TIME[2014-03-07 18:11:43 +09:00]] 版) <http://tools.ietf.org/html/rfc7159>
+- [201] [CITE[wdiff rfc7158.txt rfc7159.txt]] ([TIME[2014-03-23 09:55:50 +09:00]] 版) <http://tools.ietf.org/rfcdiff?difftype=--hwdiff&url1=rfc7158&url2=rfc7159>
+- [204] ([TIME[2014-03-03 10:54:26 +09:00]] 版) <http://www.rfc-editor.org/pdfrfc/rfc7159.txt.pdf>
+-- [171] [[魚拓]] ( ([TIME[2014-03-20 16:10:57 +09:00]] 版))
+<http://megalodon.jp/2014-0321-0110-13/www.rfc-editor.org/pdfrfc/rfc7159.txt.pdf>
+- [211] [CITE[wdiff rfc4627.txt rfc7159.txt]] ([TIME[2014-03-23 10:19:06 +09:00]] 版) <http://tools.ietf.org/rfcdiff?difftype=--hwdiff&url1=rfc4627&url2=rfc7159>
+- [264] [CITE['''['''Json''']''' [Technical Errata Reported] RFC7158 (3907)]] ([TIME[2014-03-04 15:22:08 +09:00]] 版) <http://www.ietf.org/mail-archive/web/json/current/msg02522.html>
+- [265] [CITE['''['''Json''']''' [Technical Errata Reported] RFC7158 (3908)]] ([TIME[2014-03-03 10:55:34 +09:00]] 版) <http://www.ietf.org/mail-archive/web/json/current/msg02523.html>
+- [208] [CITE[RFC Errata Report]] ([TIME[2014-03-23 10:16:41 +09:00]] 版) <http://www.rfc-editor.org/errata_search.php?rfc=7159>
+- [266] [CITE['''['''Json''']''' [Technical Errata Reported] RFC7159 (3915)]] ([TIME[2014-03-13 15:52:13 +09:00]] 版) <http://www.ietf.org/mail-archive/web/json/current/msg02546.html>
+- [263] [CITE['''['''Json''']''' [Editorial Errata Reported] RFC7159 (3922)]] ([TIME[2014-03-20 02:50:35 +09:00]] 版) <http://www.ietf.org/mail-archive/web/json/current/msg02726.html>
+- [168] [CITE@en[ongoing by Tim Bray · JSON Redux AKA RFC7159]]
+( ([TIME[2014-03-18 02:26:29 +09:00]] 版))
+<https://www.tbray.org/ongoing/When/201x/2014/03/05/RFC7159-JSON>
+- [170] [CITE[RFC 7159 — the JSON Data Interchange Format]]
+( ([TIME[2014-03-04 17:33:33 +09:00]] 版))
+<http://rfc7159.net/>
+]REFS]
+
+[246] なお [[RFC 7159]] には誤って [[RFC 607]] と [[RFC 3607]] を参照しているというおもしろ不具合があります。
+
+* 実装
+
+[192] 現在ではありとあらゆる言語で [[JSON]] が実装されています。
+
+[193] ただし [[JSON]] の仕様が (本項で長々と説明している通り) 半ば意図的に細部を曖昧にしていることもあり、
+細部の実装はそれぞれに異なっており、境界ケースや独自拡張機能を使っていると他の実装で意図通り扱えないことがよくあります。
+
+* [CODE(JS)@en[JSON]] オブジェクト (JavaScript)
+
+- [CODE(JS)@en[[[JSON.parse]]]]
+- [CODE(JS)@en[[[JSON.stringify]]]]
+
+** 歴史
+
+[9] [CITE[Re: Native JSON parsing API]] ([[Henri Sivonen]] 著, [TIME[2008-06-16 06:12:12 +09:00]] 版) <http://permalink.gmane.org/gmane.org.w3c.whatwg.discuss/14410>
+
+>
+The JSON parsers I've used in non-browser contexts have been Draconian  
+and incompatible with existing content such as output from  
+del.icio.us, which can contain escaped single quotes, which isn't  
+allowed in proper JSON.
+
+[10] 
+[CITE[JSON Serialization (was Re: ES4 draft: Name)]] ([TIME[2008-04-01 12:34:49 +09:00]] 版) <https://mail.mozilla.org/pipermail/es-discuss/2008-March/002397.html>
+
+[11] [CITE[Re: Native JSON parsing API]] ([[Maciej Stachowiak <mjs@...>]] 著, [TIME[2008-06-14 08:43:00 +09:00]] 版) <http://permalink.gmane.org/gmane.org.w3c.whatwg.discuss/14404>
+
+>Native JSON parsing is being considered for the next versions of  
+ECMAScript (the 3.1 and 4 versions). It seems like a better fit there  
+than in HTML5. If it ends up not being added to ECMAScript, I would  
+propose it as a standalone spec for the W3C Web Apps WG.
+
+[12] [CITE@en[es3.1:json_support '''['''ES4 Wiki''']''']] ([TIME[2008-12-20 11:20:05 +09:00]] 版) <http://wiki.ecmascript.org/doku.php?id=es3.1:json_support>
+
+[14] [CITE@ja-jp[2008/9/10 - Internet Explorer 8 のネイティブ JSON]] ([TIME[2009-02-02 22:11:29 +09:00]] 版) <http://msdn.microsoft.com/ja-jp/ie/dd218503.aspx>
+
+[15] [CITE@en-us[Firefox 3.1 for developers - MDC]] ([TIME[2009-02-08 18:25:06 +09:00]] 版) <https://developer.mozilla.org/ja/Firefox_3.1_for_developers#.E6.96.B0.E3.81.97.E3.81.8F.E3.82.B5.E3.83.9D.E3.83.BC.E3.83.88.E3.81.95.E3.82.8C.E3.81.9F.E6.A9.9F.E8.83.BD_2>
+
+>ネイティブ JSON の DOM バインディング( bug 408838 ) 。
+
+** 実装
+
+[13] [CITE@en-us[JSON - MDC]] ([TIME[2009-02-02 22:06:53 +09:00]] 版) <https://developer.mozilla.org/en/JSON>
+
+[16] [CITE[JSON、8進数 - 素人がプログラミングを勉強するブログ]] ([TIME[2009-06-28 10:12:45 +09:00]] 版) <http://d.hatena.ne.jp/javascripter/20090627/1246111914>
+
+>まず、0123のように、0以外で先頭が0の数値はJSONとして不正である。
+>例えばJSON.parse("0123")を評価すると、IE8とWebKit(r45311)ではSyntaxErrorが投げられる。
+>
+Firefox(20090617のナイトリー)では、123になる。
+>
+http://www.json.org/json2.js:json2.jsとGoogle Chrome(3.0.191)では、83になる。
+
+[18] [CITE@en-us[JSON - MDC]]
+([TIME[2009-10-18 14:43:23 +09:00]] 版)
+<https://developer.mozilla.org/ja/JSON>
+
+* 関連
+
+** XML との関係
+
+[172] [[JSON]] は [[XML]] とは構文的にもデータモデル的にも全く互換性も歴史的関係もありませんが、
+しばしば対比して語られます。 [[XML]] は90年代末から00年代中頃にかけて、
+[[文書]]と[[データ]]の両方の記述形式の大本命としてもてはやされていました。ところが [[JSON]]
+の登場により、[[データ]]の情報交換形式として多くの場面で [[XML]] より [[JSON]]
+の方がより勘弁で扱い易いと認識されるようになりました。 [[JSON]] は元々 [[JavaScript]]
+の[[リテラル]]から派生したものですから、多くの近代的な[[プログラミング言語]]における[[オブジェクト]]とも自明な対応関係が存在しており、
+多くの[[プログラマー]]達には [[XML]] よりも [[JSON]] の方が理解しやすいという性質もありました。
+
+[173] [[Webアプリケーション]]のサーバーが提供する [[Web API]] のデータ形式としては、かつては
+([CODE(DOMi)@en[[[XMLHttpRequest]]]] という[[インターフェイス]]名に象徴されるように)
+[[XML]] を用いるのが最善策であると考えられていた時期もありましたが、現在では専ら [[JSON]]
+が用いられています。10年代の最初期には ([[Atom]] や [[RSS]] を含め) [[XML]] ベースの形式と
+[[JSON]] の両方を提供する [[Web API]] も少なくありませんでしたが、10年代中頃には後方互換性のために必要な場合を除き、
+[[XML]] ベースの [[Web API]] は見られなくなっています。
+
+[174] アプリケーションの設定ファイルの類の記述形式としても、 [[XML]]
+(や [[YAML]] その他の独自形式) から [[JSON]] へのシフトが同時期に起こっています。
+例えば [[Widgets 1.0]] は [[XML]] 形式の設定ファイルを使っていますが、 [[Chrome拡張]]の設定ファイルは
+[[JSON]] です。
+
+[175] 世間一般での [[XML]] の衰退と [[JSON]] の普及を後追いするように、標準化コミュニティーでもかつての [[XML]]
+ベースの技術にかわり、 [[JSON]] ベースで同様の技術を定義しようとする動きがあります。例えば
+[[JSON Pointer]] ([[XPointer]])、[[JSON Schema]] ([[XML Schema]])、[[JSON Web Signature]] ([[XML Signature]])、
+[[JSON-LD]] ([[RDF/XML]])、[[JSON Home Document]] ([[WSDL]]、[[AtomPub]]) などが提案されています。
+
+* メモ
+
+[1]
+[CITE[Introducing JSON]] <http://www.crockford.com/JSON/>
+
+> [CODE[JSON]] (JavaScript Object Notation) is a lightweight data-interchange format. It is easy for humans to read and write. It is easy for machines to parse and generate. It is based on a subset of the JavaScript Programming Language, Standard ECMA-262 3rd Edition - December 1999. JSON is a text format that is completely language independent but uses conventions that are familiar to programmers of the C-family of languages, including C, C++, C#, Java, JavaScript, Perl, Python, and many others. These properties make JSON an ideal data-interchange language.
+
+;; [29] リンク切れ [TIME[2011-08-24T11:10:03.000Z]]
+
+[2]
+''Semantic Interpretation for Speech Recognition (SISR) Version 1.0'' <http://www.w3.org/TR/semantic-interpretation/#SI7>
+([[名無しさん]] [WEAK[2006-01-19 03:31:05 +00:00]])
+
+[4]
+>>3 明記されていないけど [[BOM]] は使えないということでおk?
+([[名無しさん]])
+
+[5]
+不適合文書の扱いも明記されていないけど、構文解析器は不適合も処理して'''構わない'''ことになっているから、
+適当に理解するなりはじくなりでおk?
+([[名無しさん]])
+
+[6]
+[[サロゲート・ペア]]の片割れだけが escape されている場合は >>5?
+
+([[名無しさん]])
+
+[7]
+[CITE@ja-JP[Matzにっき(2007-04-16)]] ([[Yukihiro -matz- Matsumoto]] 著, [CODE[2007-04-23 23:58:26 +09:00]] 版) <http://www.rubyist.net/~matz/20070416.html#p01>
+([[名無しさん]] [WEAK[2007-05-05 03:25:51 +00:00]])
+
+[8]
+[CITE@en[JSONLint - The JSON Validator.]] ([TIME[2008-06-22 12:32:25 +09:00]] 版) <http://www.jsonlint.com/>
+
+[17] [CITE[IRC logs: freenode / #whatwg / 20090906]]
+([TIME[2009-10-17 22:08:59 +09:00]] 版)
+<http://krijnhoetmer.nl/irc-logs/whatwg/20090906>
+
+;; [33] [[JSON]] の[[構文解析]]における互換性について。 [[RFC]] は非標準の拡張を理解することを認めている。
+[[ES5]] はより厳密に定義している。古い案では[[注釈]]を認めていたが、
+非標準の[[指令]]の埋込みに使われるようになったため、結局認めないことになった。
+
+[19] [CITE[as3corelib の JSON.decode() をいい加減な JSON に対応させる - てっく煮ブログ]]
+([TIME[2010-01-01 12:15:16 +09:00]] 版)
+<http://d.hatena.ne.jp/nitoyon/20091228/as3corelib_lazy_json>
+
+[20] [CITE[IRC logs: freenode / #whatwg / 20100104]]
+([TIME[2010-01-06 08:11:05 +09:00]] 版)
+<http://krijnhoetmer.nl/irc-logs/whatwg/20100104#l-342>
+
+;; [32] [[JSON]] の[[文字符号化]]について。
+
+[62] [[JSON]] の [[RFC]] はデータ型と構文上の要素と字句の関係を半ば暗黙のものとして扱っていて、
+何がどう解釈されるかといったことを明確に規定していません。
+
+;; [63] こういうのが、 [[Hixie]] が [[BNF]] を使わない理由の1つだよなー。
+
+[106] [CITE[PHPのイタい入門書を読んでAjaxのXSSについて検討した(3)~JSON等の想定外読み出しによる攻撃~ - ockeghem(徳丸浩)の日記]]
+([TIME[2011-09-15 11:02:11 +09:00]] 版)
+<http://d.hatena.ne.jp/ockeghem/20110907/p1>
+
+[107] [CITE@en-US[An update is available for the native JSON feature in Internet Explorer 8]]
+([TIME[2011-10-05 11:52:02 +09:00]] 版)
+<http://support.microsoft.com/kb/976662/en-us>
+
+[108] [CITE@en[Native JSON in IE8 - IEBlog - Site Home - MSDN Blogs]]
+([TIME[2011-10-05 11:52:24 +09:00]] 版)
+<http://blogs.msdn.com/b/ie/archive/2008/09/10/native-json-in-ie8.aspx>
+
+[109] [CITE[IRC logs: freenode / #whatwg / 20111005]]
+( ([TIME[2011-10-06 22:50:15 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20111005#l-204>
+
+[111] [CITE@en[draft-pbryan-http-json-resource-01 - A Convention for HTTP Access to JSON Resources]]
+( ([TIME[2012-02-05 13:38:13 +09:00]] 版))
+<http://tools.ietf.org/html/draft-pbryan-http-json-resource-01>
+
+[113] [CITE@ja[JSONIC - simple json encoder/decoder for java]]
+( ([TIME[2012-02-12 13:26:51 +09:00]] 版))
+<http://jsonic.sourceforge.jp/#liberalparsing>
+
+[114] [CITE[dominictarr/JSON.sh · GitHub]]
+( ([TIME[2012-03-12 23:04:45 +09:00]] 版))
+<https://github.com/dominictarr/JSON.sh>
+
+[123] [CITE[JSON::XSで作られる浮動小数点数でハマった話 - 北海道苫小牧市出身のPGが書くブログ]]
+( ([TIME[2012-10-24 11:49:48 +09:00]] 版))
+<http://d.hatena.ne.jp/hiratara/20121024/1351054828>
+
+[128] [CITE[''''''[''''''whatwg'''''']'''''' asynchronous JSON.parse and sending large structured data between threads without compromising responsiveness]]
+( ([TIME[2013-08-06 23:47:37 +09:00]] 版))
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2013-August/040391.html>
+
+[130] [CITE@en[RFC 6839 - Additional Media Type Structured Syntax Suffixes]]
+( ([TIME[2013-06-28 00:23:48 +09:00]] 版))
+<http://tools.ietf.org/html/rfc6839#section-3.1>
+
+[137] [CITE@EN[XSL Transformations (XSLT) Version 3.0]]
+( ([TIME[2012-07-10 14:04:59 +09:00]] 版))
+<http://www.w3.org/TR/xslt-30/#func-parse-json>
+
+[154] [CITE[twitterのXSSとJSON in ECMAScriptと外部JSONを安全に取り扱うためのアプローチ - 金利0無利息キャッシング – キャッシングできます - subtech]]
+( ([TIME[2013-12-03 04:59:58 +09:00]] 版))
+<http://subtech.g.hatena.ne.jp/mala/20101122/1290436563>
+
+[164] [CITE@en[PostgreSQL: Documentation: 9.3: JSON Functions and Operators]]
+( ([TIME[2013-12-17 07:19:21 +09:00]] 版))
+<http://www.postgresql.org/docs/9.3/static/functions-json.html>
+
+[166] [CITE[Twitter の JSON に罪はない - ぐま あーかいぶ]]
+( ([TIME[2014-01-06 18:51:36 +09:00]] 版))
+<http://archive.guma.jp/2010/12/twitter-json.html>
+
+[167] [CITE[IRC logs: freenode / #whatwg / 20140319]]
+( ([TIME[2014-03-20 20:29:26 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20140319#l-228>
+
+[259] [CITE@en-US[JSON JavaScript Object Notation - Yahoo Groups]]
+( ([TIME[2014-03-24 09:51:04 +09:00]] 版))
+<https://groups.yahoo.com/neo/groups/json/conversations/messages/1977>
+
+[260] [CITE@en-US[JSON JavaScript Object Notation - Yahoo Groups]]
+( ([TIME[2014-03-24 09:51:44 +09:00]] 版))
+<https://groups.yahoo.com/neo/groups/json/conversations/messages/1966>

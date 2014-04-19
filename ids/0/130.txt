@@ -1,0 +1,90 @@
+
+[21] [[HTTP]] で使用されている[[転送符号化]]を示すのがこの欄です。
+HTTP には転送符号化と[[内容符号化]]という似た二つの概念があります。
+
+前者は転送を安全に行うための手段であって [[chunked]] 符号化が現在実質的に唯一使えます。
+Transfer-Encoding: 欄の他に [[TE]] 欄が関係します。
+
+後者はその名の通り内容の符号化ですが、現時点では実質的に[[圧縮]]転送のための手段となっています。
+
+[22] HTTP から派生したプロトコルである [[RTSP]] や [[SIP]]
+では chunked 符号化を禁止するなど差異がありますので注意が必要です。
+
+[23] [[CGI]] で[[転送符号化]]した内容を出力するのって機能するんでしょうか?
+仕様書には特に触れられていませんね。
+
+サーバーが [[Apache]] でクライアントが [[HTTP/1.1]] の場合は、 CGI
+や [[SSI]] などを使うと chunked 符号化をサーバー側が処理するみたいですが・・・。
+
+* 転送符号化値
+
+→[[内容転送符号化]>>1]
+
+
+* 仕様書から
+
+
+** RFC 2068 (HTTP/1.1) 14.40; RFC 2616 (HTTP/1.1) 14.41 Transfer-Encoding
+
+> The Transfer-Encoding general-header field indicates what (if any)
+type of transformation has been applied to the message body in order
+to safely transfer it between the sender and the recipient. This
+differs from the [DEL[Content-Encoding]] [INS[content-coding]] in that the transfer[INS[-]]coding is a
+property of the message, not of the entity.
+
+[CODE(HTTP)[Transfer-Encoding]] [[一般頭欄]]は、
+[[メッセージ本体]]を送信者と受信者の間で安全に転送するために変形が適用されているなら、どの型の変形が適用されているのかを示します。
+[CODE(ABNF)[[[transfer-coding]]]] はメッセージの特性であって実体の特性ではないという点で
+[CODE(ABNF)[[[content-coding]]]] とは異なります。
+
+>
+- Transfer-Encoding       = "Transfer-Encoding" ":" 1#transfer-coding
+
+> Transfer[INS[-]]codings are defined in section 3.6. An example is:
+- Transfer-Encoding: chunked
+
+[INS[
+
+> If multiple encodings have been applied to an entity, the transfer-codings MUST be listed in the order in which they were applied.
+Additional information about the encoding parameters MAY be provided
+by other entity-header fields not defined by this specification.
+
+一つの[[実体]]に複数の符号化が適用されているのなら、
+[CODE(ABNF)[transfer-coding]] は適用された順に列挙しなければ'''なりません'''。
+符号化引数についての追加の情報をこの仕様書で定義しない他の[[実体頭欄]]で提供しても'''構いません'''。
+]INS]
+
+> Many older HTTP/1.0 applications do not understand the Transfer-Encoding header.
+
+多くの古い [[HTTP/1.0]] 応用は、 [CODE(HTTP)[Transfer-Encoding]] 頭を理解しません。
+
+
+** RFC 2068・RFC 2616 (HTTP/1.1) 3.6 Transfer Codings
+
+→[CODE(WikiPage)[[[転送符号化//HTTP]]]]
+
+
+** RFC 2068・2616 (HTTP/1.1) 19.4.4; Introduction of Transfer-Encoding
+
+→[CODE(WikiPage)[[[chunked]]]]
+
+
+** RFC の部分の License
+
+[[RFCのライセンス]]
+
+
+* 実装について
+
+[26] [[Opera]] 6.05 (Win32) は [CODE(HTTP)[TE: deflate, gzip, chunked, identity, trailers]] を送ってきます。実際ちゃんと対応しています。 [CODE(HTTP)[Transfer-Encoding: x-gzip]] みたいな値でも解釈してくれます。
+
+[27] >>26 複数の値を指定しても OK です。 [CODE(HTTP)[gzip,deflate]] とか [CODE(HTTP)[gzip,chunked]] みたいに。[CODE(HTTP)[chunked,gzip]] (不正) も解してくれますが、 [CODE(HTTP)[chunked,gzip,chunked]](不正)や [CODE(HTTP)[chunked,chunked]] だと内側の chunked が解されずに残ります。
+
+[28] 手元の [[WinIE]] 3.02, [[NC]] 4.01, [[w3m]] 0.3.2.2 はいずれも転送符号化に対応していません。
+
+[29] >>26,28 知らない転送符号化・内容符号化は知らんふりして処理を続行させようとするみたいです。
+
+[[#comment]]
+
+
+* メモ

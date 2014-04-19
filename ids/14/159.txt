@@ -1,0 +1,124 @@
+[5] [[Cookie]] の [DFN[[CODE(HTTP)@en[Expires]] [RUBYB[[[属性]]]@en[attribute]]]]は、
+設定する[[名前]]と[[値]]の組の[[有効期限]]を指定します。
+
+* 仕様書
+
+[REFS[
+- [23] [CITE@en[RFC 6265 - HTTP State Management Mechanism]] ([TIME[2012-03-01 09:57:02 +09:00]] 版) <http://tools.ietf.org/html/rfc6265#page-9>
+- [25] '''[CITE@en[RFC 6265 - HTTP State Management Mechanism]] ([TIME[2012-03-01 09:57:02 +09:00]] 版) <http://tools.ietf.org/html/rfc6265#section-4.1.2.1>'''
+]REFS]
+
+* 意味
+
+[7] [CODE(HTTP)@en[[[Expires]]]] [[属性]]は[[クッキー]]の最大[RUBYB[寿命]@en[lifetime]]を、
+[[クッキー]]が期限切れとなる日時として示します。 [SRC[>>25, >>6]]
+
+[26] この時刻を過ぎるとその [[Cookie]] は保存・送信されなくなります。 [SRC[>>6]]
+ただし[[利用者エージェント]]はこの時刻まで必ず[[クッキー]]を保持し続けなければならないわけでは''ありません''
+[SRC[>>25]]。
+
+[8] [CODE(HTTP)@en[[[Expires]]]] [[属性]]が指定されない場合、
+[[利用者]]の[[セッション]]が終了次第[[有効期限]]に達したとみなします。 [SRC[>>6]]
+
+;;
+[9] [[セッション]]の終了のタイミングは規定されておらず、 [[Webブラウザ]]の実装に依りますが、
+[[ブラウザ]]の[[窓]]を閉じた時などに[[セッション]]が終了したとみなすのが普通です。
+
+* 構文
+
+[10] [CODE(HTTP)@en[[[Expires]]]] [[属性]]の値は[[Cookieの日付形式]]の文字列です。
+
+[FIG[
+[FIGCAPTION[
+[24] [[RFC 6265]] における [CODE(HTTP)@en[[[Expires]]]] [[属性]]の構文
+]FIGCAPTION]
+
+[PRE(ABNF code)[
+ expires-av        = "Expires=" sane-cookie-date
+ sane-cookie-date  = <rfc1123-date, defined in [RFC2616], Section 3.3.1>
+                       ; In practice, both expires-av and max-age-av
+                       ; are limited to dates representable by the
+                       ; user agent.
+]PRE]
+]FIG]
+
+** 過去
+
+[15] [[Cookie]] を削除するには ([CODE(HTTP)@en[[[Domain]]] と [CODE(HTTP)@en[[[Path]]]]
+を揃えた上で) 同じ名前の [[Cookie]] を過去の [CODE(HTTP)@en[[[Expires]]]]
+[[属性]]の値で設定することになっています。 [SRC[>>6]]
+
+[16] 過去の時刻でなく現在の時刻を指定することもありますが、過去にした方が安全です。
+
+** 無限大
+
+[12] 有効期限を無期限とすることはできないため、十分将来の値を設定することで事実上の無期限としていることがあります。それを有効な技法として紹介している解説サイトもあります。
+
+[2]
+>無期限という指定はできないようです。2038年以降の日付をうまく扱えないシステムもあるので、2030年頃の日付を指定しておきましょう。
+
+;; [CITE[とほほのCookie入門]] ([TIME[2009-01-19 23:44:50 +09:00]] 版) <http://www.tohoho-web.com/wwwcook.htm>
+
+[13] しかし、このような実装になっていると'''2030年になると使えなくなる'''ことに注意が必要です。
+Web サイトが予想以上に長く使われたり、コードがコピペで転用されていつまでも使いまわされるのはよくあることなので、
+危険です。
+
+[14] 本当に無期限にしたいときは、現在時刻より数年先としておく方が無難でしょう。
+
+* 処理モデル
+
+[20] [[利用者エージェント]]は、有効期限に達していなくても、[[Cookieのサイズ制限]]などの理由で [[Cookie]]
+を削除して構いません。 [SRC[>>6]]
+
+* 実装
+
+[11] [[Netscape Navigator]] の1.1までの版には不具合があって、 [CODE(HTTP)@en[[[Path]]]]
+[[属性]]に [CODE(URI)@en[[[/]]]] が明示的に設定されないと[[セッション]]を超えて [[Cookie]]
+が保持されませんでした。 [SRC[>>6]]
+
+[1] [CITE[cookieのexpireがブラウザにより異なる - エンジニアが作る最新ITブログ by DODA]] ([TIME[2009-01-28 16:44:33 +09:00]] 版) <http://www.asp-edita.jp/doda/one/doda7204_34.html>
+
+>
+:ieの場合:
+HTTPレスポンス内のexpireを忠実に使用します。従って、「Expires=Mon, 13-Feb-2006 02:52:04 GMT」とあれば、2006/2/13の11:52:04までcookieは有効です。
+:firefoxの場合:
+HTTPレスポンス内のexpireとdateの差を、クライアントのシステム時間に加えてcookieの有効時間を計算しています(結果から予想)。
+
+>
+むかしのnn4.7もfirefoxと同じだったはず。operaはieと同じだった。
+
+* 歴史
+
+** Netscape Cookie
+
+[REFS[
+- [6] [[Netscape Cookie]]: [CITE[Client Side State - HTTP Cookies]] <http://web.archive.org/web/19961125090609/http://www2.netscape.com/newsref/std/cookie_spec.html>
+]REFS]
+
+** IETF Cookie
+
+[21] [[IETF]] は [[Netscape Cookie]] にかわる独自仕様の [[Cookie]] を推進していました。
+[[RFC 2109]] の [CODE(HTTP)@en[[[Set-Cookie:]]]] や [[RFC 2965]] の
+[CODE(HTTP)@en[[[Set-Cookie2:]]]] では [CODE(HTTP)@en[[[Expires]]]] [[属性]]ではなく、
+[CODE(HTTP)@en[[[Max-Age]]]] [[属性]]が使われていました。また [[RFC 2965]]
+では [[Cookie]] の削除専用の [CODE(HTTP)@en[[[Discard]]]] [[属性]]もありました。
+
+[22] [[RFC 2109]] [CSECTION@en[10.1.2  Expires and Max-Age]] では、[[Netscape Cookie]] の 
+[CODE(HTTP)@en[[[Expires]]]] [[属性]]についても参考までに簡単に紹介されていました。
+
+* 関連
+
+[17] [[HTTP]] [[頭部]]には [CODE(HTTP)@en[[[Expires:]]]] [[頭欄]]を指定することができますが、
+こちらは[[実体]]の有効期限を示すものなので、[CODE(HTTP)@en[[[Set-Cookie:]]]]
+欄で使う [CODE(HTTP)@en[[[Expires]]]] [[属性]]とは関係ありません。
+
+[18] [[IETF]] 版の [[Cookie]] 仕様には [CODE(HTTP)@en[[[Expires]]]] [[属性]]に代わり
+[CODE(HTTP)@en[[[Max-Age]]]] [[属性]]が定義されています。後にこれは一般的な[[利用者エージェント]]でも実装されるようになり、
+[[IETF]] 独自の [[Cookie]] 仕様が破棄された後の [[RFC 6265]] の [[Cookie]]
+仕様にも [CODE(HTTP)@en[[[Expires]]]] と [CODE(HTTP)@en[[[Max-Age]]]] の両方が残っています。
+
+* メモ
+
+[19] [[属性]]の値に[[空白]]が含まれるので、本来なら値を [CODE(char)[[["]]]] で括るのが
+[[MIME]] や [[HTTP]] の仕様的に美しい方法ではあるのですが、
+[[Cookie]] では逆に括ってはいけません。

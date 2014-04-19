@@ -1,0 +1,381 @@
+#?SuikaWiki/0.9
+The 'go' URI Scheme for the Common Name Resolution Protocol [INS[共通名前解決プロトコル用 [CODE(URI)[go]] URI 方式]]
+-Network Working Group                                       
+-Request for Comments: 3368                               
+-Category: Standards Track                                   
+- M. Mealling
+- VeriSign, Inc.
+- August 2002
+
+* Status of this Memo
+
+   This document specifies an Internet standards track protocol for the
+   Internet community, and requests discussion and suggestions for
+   improvements.  Please refer to the current edition of the "Internet
+   Official Protocol Standards" (STD 1) for the standardization state
+   and status of this protocol.  Distribution of this memo is unlimited.
+
+* Copyright Notice
+
+   Copyright (C) The Internet Society (2002).  All Rights Reserved.
+
+* Abstract
+> This document defines a URI scheme, 'go:' to be used with the Common
+Name Resolution Protocol.  Specifically it lays out the syntactic
+components and how those components are used by URI Resolution to
+find the available transports for a CNRP service.  Care should be
+taken with several of the URI components because, while they may look
+like components found in other URI schemes, they often do not act
+like them.  The "go" scheme has more in common with the location
+independent "news" scheme than any other URI scheme.
+
+この文書は、共通名前解決プロトコルと共に使用する [CODE(URI)[go:]]
+URI 方式を定義します。特にこの文書は構文的部品と空らの部品が
+CNRP サービスの利用可能な輸送路を探すために URI 解決によりどう使用されるかを述べます。
+URI 部品の幾つかは、他の URI 方式に見える部品と似ているように見えますが、
+しばしば同じようには働かないので、注意するべきです。
+[CODE(URI)[go]] 方式は、位置独立である [CODE(URI)[news]]
+方式に、他の URI 方式よりも似ています。
+
+* Table of Contents
+
+   1.    Goals  . . . . . . . . . . . . . . . . . . . . . . . . . . .  2
+   2.    Terminology  . . . . . . . . . . . . . . . . . . . . . . . .  2
+   3.    Syntax Rules . . . . . . . . . . . . . . . . . . . . . . . .  3
+   3.1   General Syntax . . . . . . . . . . . . . . . . . . . . . . .  3
+   3.2   ABNF Grammar . . . . . . . . . . . . . . . . . . . . . . . .  3
+   3.3   Special Cases and Default Values . . . . . . . . . . . . . .  4
+   3.3.1 If There is Only a Server  . . . . . . . . . . . . . . . . .  4
+   3.3.2 If Server is Empty Then server=localhost . . . . . . . . . .  4
+   3.3.3 Default Port . . . . . . . . . . . . . . . . . . . . . . . .  4
+   3.4   Encoding Rules . . . . . . . . . . . . . . . . . . . . . . .  4
+   4.    Transport Independence . . . . . . . . . . . . . . . . . . .  4
+   5.    Examples . . . . . . . . . . . . . . . . . . . . . . . . . .  4
+   6.    Security Considerations  . . . . . . . . . . . . . . . . . .  5
+   7.    IANA Considerations  . . . . . . . . . . . . . . . . . . . .  5
+         References . . . . . . . . . . . . . . . . . . . . . . . . .  6
+   A.    Registration Template  . . . . . . . . . . . . . . . . . . .  7
+         Author's Address . . . . . . . . . . . . . . . . . . . . . .  7
+         Full Copyright Statement . . . . . . . . . . . . . . . . . .  8
+
+* 1. Goals
+> The two goals of the CNRP [3] URI [1] are to identify both a specific
+common-name record at a specific server and to identify a possibly
+dynamic query or entry point into the query process.  Since CNRP
+requires that the ID be a core query term, these two cases can be
+generalized down to simply specifying a query that contains only the
+ID of the item.
+
+[[CNRP]] [[URI]] の二つの目的は、特定の鯖にある特定の橋通名記録を識別することと、
+動的たり得る問合せまたは問合せ手続きへの項目点を識別することです。
+CNRP は [[ID]] が中核問合せ語となることを要求していますから、
+この二つの場合は単純に項目の ID だけを含む問合せを指定すると一般化できます。
+
+> On first glance it would seem a simple enough exercise to
+canonicalize the XML encoded query and then insert it into the query
+portion of the URL.  The problem here is that, due to the encoding
+rules, any remotely complex query will quickly blow out the URI
+length limitations.  The suggested solution is to provide a
+simplified query syntax that is a subset of what is available via the XML.
+
+一見すると [[XML]] 符号化問合せを[[正準化]]して、それを [[URL]]
+の問合せ部分に挿入するだけの十分簡単なことに見えます。
+ここでの問題は、符号化規則により、少し問合せが複雑であるとすぐに URI
+長制限を飛ばしてしまうことです。提案する解決策は、
+XML を介して利用可能な問合せ構文の部分集合である簡略化問合せ構文を提供することです。
+
+* 2. Terminology
+> The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+"SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
+document are to be interpreted as described in RFC 2119 [4].
+
+この文書で見出し語「'''しなければならない'''」、「'''してはならない'''」、
+「'''する必要がある'''」、「'''するべきである'''」、
+「'''するべきではない'''」、「'''推奨する'''」、
+「'''構わない'''」、「'''任意選択'''」
+は [[RFC 2119]] に記述されているように解釈します。
+
+* 3. Syntax Rules
+
+** 3.1 General Syntax
+> The CNRP URI comes in two forms.  The first form is for talking to a
+specific server.  The second form is for expressing a query that is
+meant to be sent to several different CNRP services.  The following
+two examples are for pedagogical purposes only.  The complete ABNF
+grammar in Section 3.2 is the only authoritative syntax definition.
+
+CNRP URI は二つの形を取ります。最初の形は特定の鯖と話すための物です。
+二番目の形は幾つかの異なる CNRP サービスに送信されるところの問合せを表現するための物です。
+次の二つの例は説明の目的のためだけのものです。
+3.2節の完全な [[ABNF]] 文法だけが規定的構文定義です。
+
+>
+-   go://[<host>]?[<common-name>]*[;<attribute>=[<type>,]<value>]
+
+>   and
+
+と
+
+>
+-   go:<common-name>*[;<attribute>=[<type>,]<value>]
+
+** 3.2 ABNF Grammar
+> The full ABNF [2] (certain values are included by reference from RFC 2396 [1]):
+
+完全な ABNF (ある値は [[RFC 2396]] からの参照により含んでいます。):
+
+>
+-   cnrp-uri      = "go:" (form1 / form2)
+-   form1         = "//" [server] ["?" ((common-name *avpair) / id-req) ]
+-   form2         = common-name *avpair
+>
+-   id-req        = "id=" value
+-   avpair        = ";" attribute "=" [ type "," ] value
+>
+-   server        = // as specified in RFC2396
+>
+-   common-name     = *(unreserved | escaped)
+-   attribute       = *(unreserved | escaped)
+-   value           = *(unreserved | escaped)
+-   type            = *(unreserved | escaped)
+>
+-   unreserved      = // as specified in RFC2396
+>
+-   escaped       = "%" hex hex
+-   hex           = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" |
+"8" | "9" | "A" | "B" | "C" | "D" | "E" | "F" |
+"a" | "b" | "c" | "d" | "e" | "f"
+
+** 3.3 Special Cases and Default Values
+*** 3.3.1 If There is Only a Server
+> In the case where the CNRP URI contains only the server production
+then the URI identifies a given CNRP server, not any particular query
+that is to be done.  A client can assume that this server will at
+least answer the 'servicequery' request.
+
+CNRP URI が [CODE(ABNF)[[[server]]]] (鯖) 生成字句だけを含んでいる場合は、
+その URI は行われる特定の問合せではなく、特定の CNRP 鯖を識別します。
+クライアントはこの鯖が少なくても [CODE[[[servicequery]]]]
+要求の返答であると仮定できます。
+
+*** 3.3.2 If Server is Empty Then server=localhost
+> If the 'server' element has no value then its value MUST be assumed
+to be "localhost".
+
+[CODE(ABNF)[server]] 要素が値を持たなければ、その値は
+[CODE(URI)[[[localhost]]]] と仮定しなければ'''なりません'''。
+
+*** 3.3.3 Default Port
+> CNRP's well known HTTP transport port is 1096.  If the port value
+portion of the server production is not specified then port 1096
+SHOULD be used if the client has no prior knowledge about other ports
+or transports that the service may support.
+
+CNRP のよく知られた [[HTTP]] 転送[[ポート]]は [CODE[[[1096]]]]
+です。 [CODE(ABNF)[server]] 生成字句の [CODE(ABNF)[[[port]]]]
+値が指定されていなければ、サービスが支援している他のポートまたは輸送路についての慈善の知識をクライアントが有しないなら、
+ポート [CODE[1096]] を使用する'''べきです'''。
+
+** 3.4 Encoding Rules
+> The common-name, query parameters, and parameter values must be
+encoded using the UTF-8 encoding scheme [5], and any octet that is
+not one of the permitted characters per the above grammar MUST
+instead be represented by a "%" followed by two characters from the
+<hex> character set above.  The two characters give the hexadecimal
+representation of that octet.
+
+[CODE(ABNF)[common-name]] (共通名)、問合せ引数、
+引数 [CODE(ABNF)[value]] (値) は [[UTF-8]] 符号化方式を用いて符号化し、
+上記の文法で認められている文字以外の[[オクテット]]は代わりに
+[CODE(URI)[%]] に上述の [CODE(ABNF)[hex]] 文字集合からの2文字を続けて
+表現しなければ'''なりません'''。2文字はそのオクテットの十六進数表現を与えます。
+
+* 4. Transport Independence
+> As stated in the CNRP protocol specification [3], CNRP is allowed to
+be expressed over multiple transport protocols with HTTP being
+mandatory to implement.  In the case where a client attempts to
+resolve a CNRP URI and it knows nothing about the service being
+referenced in that URI, then it SHOULD use HTTP on the CNRP default
+port (1096).
+
+CNRP プロトコル仕様書が述べているように、 CNRP
+は複数の輸送路プロトコル上で表現することが認められており、
+そのうち HTTP は実装することが強制されています。
+クライアントが CNRP URI を解決しようとする場合であって、
+その URI で参照されているサービスについて何も知らない場合は、
+CNRP 既定ポート ([CODE[1096]]) で HTTP を使用する'''べきです'''。
+
+* 5. Examples
+>
+[PRE[
+go:Mercedes%20Benz
+]PRE]
+> This example shows a general query for the common-name "Mercedes
+Benz".  The intent is that the query should be packaged with any
+client provided defaults and sent to the one or more services that
+the client has configured to ask.
+
+この例は共通名 [SAMP[Mercedes Benz]] の一般問合せを示しています。
+意図するところは、問合せはクライアントが既定値を提供して包み、
+クライアントがたずねるように設定されている一つ以上のサービスに送信するべきとのことです。
+
+>
+[PRE[
+go://?Mercedes%20Benz
+]PRE]
+>      This example shows a general query for the common-name "Mercedes
+Benz" that is sent to the server running on the 'localhost'.
+
+この例は [CODE[localhost]] で走っている鯖への共通名 [CODE[Mercedes Benz]]
+の一般問合せを示しています。
+
+>
+[PRE[
+go://cnrp.foo.com?Mercedes%20Benz;geography=US-ga
+]PRE]
+> This example shows a query for the common-name "Mercedes Benz" in
+the geographic area "US-ga" which should be sent to the server
+found at cnrp.foo.com.
+
+この例は [CODE[cnrp.foo.com]] にある鯖に送信されるべき地理的地域
+[CODE[US-ga]] 内の共通名 [CODE[Mercedes Benz]] の問合せを示します。
+
+>
+[PRE[
+go://cnrp.foo.org?Martin%20J.%20D%C3%BCrst
+]PRE]
+>      This example includes a UTF-8 character encoded using hex
+escaping.  The value encoded is a u-umlaut (a 'u' with two dots
+over it).  This simple query is sent to a server found at
+cnrp.foo.org with no parameters.
+
+この例は十六進数逃避を使って符号化された UTF-8 文字を含んでいます。
+符号化された値はウムラウト付き [CODE(char)[u]]
+([CODE(char)[u]] の上に点二つ) です。
+この簡単な問合せは [CODE[cnrp.foo.org]] にある鯖に引数無しで送られます。
+
+>
+[PRE[
+go://cnrp.foo.com?id=5432345
+]PRE]
+>      Here only an id is given which means that his example points
+directly at a particular common-name record on a particular
+server.  This example would probably be found in a link on a web
+page of some type.
+
+ここでは [CODE[id]] だけが与えられていて、これはこの例が特定の鯖の特定の共通名記録を直接指していることを意味します。
+この例はおそらくある型の[[ウェブ頁]]の[[連結]]に見当たります。
+
+* 6. Security Considerations
+>  In addition to the security considerations inherent in CNRP itself
+(see the Security Considerations section of RFC 3367 [3]), the URI
+mechanism can also be used to retrieve a URI identifying some other
+site by including just the ID and not the common-name being linked
+to.  I.e., the user may think he/she is being shown the URI currently
+mapped to the "BMW" common-name but in the case where only the ID is
+used the actual common-name is not part of the URI, thus making it
+possible to use a CNRP URI without knowing which common-name it is
+referring to.
+
+CNRP 自体のそもそもの安全上の考察 ([[RFC 3367]] の安全性についての章を参照)
+に加えて、 URI 機構は、連結される ID だけを含んでいて共通名は含まないで他のサイトを識別する URI を取出すためにも使用することができます。
+すなわち、利用者は示されている物が現在 [SAMP[BMW]] 共通名に写像されている
+URI と考えることができますが、 ID だけが使われている場合には実際の共通名は
+URI の一部ではないので、どの共通名を指しているのか知らずに CNRP
+URI を使ってしまうことが可能になります。
+
+* 7. IANA Considerations
+> The IANA is asked to register the URL registration template found in
+Appendix A in accordance with RFC 2717 [6].
+
+IANA は [[RFC 2717]] に従って附属書 A にある URL 登録雛形を登録して下さい。
+
+* References
+
+   [1]  Berners-Lee, T., Fielding, R. and L. Masinter, "Uniform Resource
+        Identifiers (URI): Generic Syntax", RFC 2396, August 1998.
+
+   [2]  Crocker, D., "Augmented BNF for Syntax Specifications: ABNF",
+        RFC 2234, November 1997.
+
+   [3]  Popp, N., Mealling, M. and M. Moseley, "Common Name Resolution
+        Protocol (CNRP)", RFC 3367, August 2002.
+
+   [4]  Bradner, S., "Key words for use in RFCs to Indicate Requirement
+        Levels", BCP 14, RFC 2119, March 1997.
+
+   [5]  The Unicode Consortium, "The Unicode Standard, Version 2.0:
+        Appendix A.2", ISBN 0-201-48345-9, January 1988.
+
+   [6]  Petke, R. and I. King, "Registration Procedures for URL Scheme
+        Names", BCP 35, RFC 2717, November 1999.
+
+* Appendix A. Registration Template
+
+   URL scheme name: go
+
+   URL scheme syntax: Section 3.2
+
+   Character encoding considerations: Section 3.4
+
+   Intended usage: Section 1
+
+   Applications and/or protocols which use this scheme: [3]
+
+   Interoperability considerations: None not specified in [3]
+
+   Security considerations: Section 6
+
+   Relevant publications: [3]
+
+   Contact: CNRP Working Group
+
+   Author/Change Controller: IESG
+
+* Author's Address
+
+   Michael Mealling
+   VeriSign, Inc.
+   21345 Ridgetop Circle
+   Dulles, VA  20170
+   US
+
+   Phone: (703) 742-0400
+   EMail: michael@verisignlabs.com
+
+* Full Copyright Statement
+
+   Copyright (C) The Internet Society (2002).  All Rights Reserved.
+
+   This document and translations of it may be copied and furnished to
+   others, and derivative works that comment on or otherwise explain it
+   or assist in its implementation may be prepared, copied, published
+   and distributed, in whole or in part, without restriction of any
+   kind, provided that the above copyright notice and this paragraph are
+   included on all such copies and derivative works.  However, this
+   document itself may not be modified in any way, such as by removing
+   the copyright notice or references to the Internet Society or other
+   Internet organizations, except as needed for the purpose of
+   developing Internet standards in which case the procedures for
+   copyrights defined in the Internet Standards process must be
+   followed, or as required to translate it into languages other than
+   English.
+
+   The limited permissions granted above are perpetual and will not be
+   revoked by the Internet Society or its successors or assigns.
+
+   This document and the information contained herein is provided on an
+   "AS IS" basis and THE INTERNET SOCIETY AND THE INTERNET ENGINEERING
+   TASK FORCE DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING
+   BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE INFORMATION
+   HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED WARRANTIES OF
+   MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+
+[[RFCのライセンス]]参照。
+
+* Acknowledgement
+
+   Funding for the RFC Editor function is currently provided by the
+   Internet Society.
+
+* メモ

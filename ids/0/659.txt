@@ -1,0 +1,597 @@
+
+[5] [DFN[Base64]] は、[[オクテット列]]を64種類の[[英数字]]などに転写する[[符号化方式]]の一種です。
+
+(一般に [Q[base 64]] は[Q[64進数]]を意味します。特に大文字で [Q[Base64]]
+と書いた場合や、インターネットで言われる場合には、 [[MIME]] の
+Base64 を指します。)
+
+
+* 符号化方式
+
+[27]
+オクテット値3つ (8ビット×3 = 24ビット) を4文字 (6ビット×4)
+で表現します。ですからデータ量は3分の4倍、33%増加になります。
+
+64文字 (と、特殊用途に使われる [CODE(char)[=]]) は、 
+[[ISO/IEC 646の版]]で全て共通に存在し、しかも [[EBCDIC]] 
+の全ての版で使える文字から選ばれたそうです。
+
+[PRE[
+     Value Encoding  Value Encoding  Value Encoding  Value Encoding
+         0 A            17 R            34 i            51 z
+         1 B            18 S            35 j            52 0
+         2 C            19 T            36 k            53 1
+         3 D            20 U            37 l            54 2
+         4 E            21 V            38 m            55 3
+         5 F            22 W            39 n            56 4
+         6 G            23 X            40 o            57 5
+         7 H            24 Y            41 p            58 6
+         8 I            25 Z            42 q            59 7
+         9 J            26 a            43 r            60 8
+        10 K            27 b            44 s            61 9
+        11 L            28 c            45 t            62 +
+        12 M            29 d            46 u            63 /
+        13 N            30 e            47 v
+        14 O            31 f            48 w         (pad) =
+        15 P            32 g            49 x
+        16 Q            33 h            50 y
+]PRE]
+
+[28]
+Base64 は6ビット単位になりますが、オクテット列の長さと必ずしも
+一致する (6と8の公倍数の長さになる) とは限らないので、
+[CODE(char)[=]] で埋めて調節します。この結果、 Base64 data は必ず
+4の整数倍の長さになります。
+
+[24]
+Base64'ed data は、 一行辺り76文字以下でなければなりません。
+([[電子メイル]]/[[MIME]] の制限に由来。)
+区切りの改行文字列 [CODE(char)[CRLF]] は、復号の時には無視されます。 
+(これ以外でも、上の表に無い文字が現れたら、無視して処理を続けます。)
+
+
+
+
+* 仕様
+
+[25] Base64 は、最初 [[PEM]] ([[RFC 1421]] <urn:ietf:rfc:1421>)
+で規定されましたが、後に [[MIME]] ([[RFC 1341]] <urn:ietf:rfc:1341>,
+[[RFC 1521]] <urn:ietf:rfc:1521>, [[RFC 2045]] <urn:ietf:rfc:2045>)
+で採用され、広く普及するに至りました。
+
+[15] その後、 Base64 を規定する新しい RFC, [[RFC 3548]] がでました。
+
+[6] PEM 以来の Base64 の定義を採用する仕様:
+- [[PEM]] 署名
+- [[MIME]] [CODE(MIME)[Base64]] [[転送符号化]]
+- [CODE(MIME)[[[x-gzip64]]]] 転送符号化
+- [[PGP/MIME]] 署名
+- MIME [CODE(MIME)[[[Content-MD5]]:]] 欄
+- [[822]] [CODE(822)[[[Face]]:]] 欄
+- MIME [CODE(ABNF)[[[encoded-word]]]] [CODE(MIME)[B]] 符号化
+- [CODE(URI)[[[data]]:]] [[URI]] [[scheme]]
+- [[uuencode]] 風表現 >>3
+- [32] [CODE(ABNF)[[[instance-digest]]]]
+([CODE(ABNF)[[[digest-algorithm]]]] が
+[CODE(HTTP)[[[SHA]]]] または [CODE(HTTP)[[[MD5]]]] の時)
+
+[33] [[RFC 3548]] の MIME 型 Base64 の定義を採用する仕様:
+- [[RFC 3548]] の MIME 型 Base64
+- [[XMPP]] ([[RFC 3920]])
+
+[30] よく参照される MIME の Base64 の定義には76文字制限がありますが、
+この制限を撤廃した仕様も多くあります。
+
+MIME の Base64 の定義から行長制限を撤廃したもの:
+- [[XML Schema]] のデータ型 [CODE(XML)[[[base64Binary]]]]
+
+[36]
+[[Atom 1.0]] ([[RFC 4287]]) では、[[RFC 3548]]の定義を参照しています。
+ただし、最初と最後に[[空白]]があっても'''構いません'''。
+また、各[[行]]は[CODE(char)[[[U+000A]]]] 1つで区切ります。
+
+[46]
+[[RFC 4648]]
+
+* URL で安全な Base64
+
+[833] [DFN[[[modified Base64 for URL]]]] [SRC[>>829]] あるいは [DFN[[[base64url]]]] と呼ばれる変種は、
+[[MIME]] の [[Base64]] よりを [[URL]] で利用しやすくしたものです。 [[Web]]
+関係の分野でよく用いられるようになってきました。
+
+[834] [[MIME]] との差異は次の通りです。
+- [835] [CODE(char)[[[+]]]] と [CODE(char)[[[/]]]] のかわりに [CODE(char)[[[-]]]]
+と [CODE(char)[[[_]]]] を使います
+- [836] 末尾の詰め文字 [CODE(char)[[[=]]]] は省略します
+- [837] 76文字の文字数制限が無く、改行無しで最後まで連続させます
+
+** 歴史
+
+[REFS[
+- [831] [CITE[please prefer base 64 over base 32 (was: Re: '''['''p2p-hackers''']''' Bitzi (was Various identifier choices))]] ([TIME[2006-12-10 07:13:19 +09:00]] 版) <http://zgp.org/pipermail/p2p-hackers/2001-September/000317.html>
+- [832] [CITE[please prefer base 64 over base 32 (was: Re: '''['''p2p-hackers''']''' Bitzi (was Various identifier choices))]] ([TIME[2006-12-10 07:13:19 +09:00]] 版) <http://zgp.org/pipermail/p2p-hackers/2001-September/000316.html>
+- [830] [CITE@en[RFC 4648 - The Base16, Base32, and Base64 Data Encodings]] ([TIME[2012-04-15 07:19:30 +09:00]] 版) <http://tools.ietf.org/html/rfc4648#section-5>
+- [829] [CITE@en[Base64 - Wikipedia, the free encyclopedia]] ([TIME[2012-05-01 23:31:28 +09:00]] 版) <http://en.wikipedia.org/wiki/Base64#URL_applications>
+]REFS]
+
+[838] 出典としてはしばしば [[Wikipedia]] [SRC[>>829]] が参照されます。
+
+[839] 公的な文書としては [[RFC]] [SRC[>>830]] があり、ファイル名や [[URL]]
+で安全なものとして紹介されています。ただし [[RFC]] は原則として [CODE(char)[[[=]]]]
+は省略できず、特に認められた状況でのみ省略することもできる、としており、
+一般的な実装とは異なっています。
+
+[840] [[RFC]] は既存の利用例として[[メーリング・リスト]]の記事を参照していますが、
+[[URL]] が変わってしまったのか、関係ない記事になっています。本来指すべきだったと思われる
+>>831、>>832 によると、元々は [[Freenet]] で使われていたのを採用したようです。
+
+** 実装
+
+[REFS[
+- [841] [CITE[MIME::Base64 - search.cpan.org]] ([TIME[2012-05-23 19:19:16 +09:00]] 版) <http://search.cpan.org/dist/MIME-Base64/Base64.pm#encode_base64url(_$bytes_)>
+- [843] [CITE[MIME::Base64::URLSafe - search.cpan.org]] ([TIME[2012-05-23 19:21:18 +09:00]] 版) <http://search.cpan.org/dist/MIME-Base64-URLSafe/lib/MIME/Base64/URLSafe.pm>
+- [845] [CITE[Kazuho@Cybozu Labs: URL と Base64]] ([TIME[2012-05-23 19:26:17 +09:00]] 版) <http://labs.cybozu.co.jp/blog/kazuho/archives/2006/01/url_base64.php>
+]REFS]
+
+[842] [[Perl]] の[[標準モジュール]]である [CODE(perl)@en[[[MIME::Base64]]]] [SRC[>>841]]
+に実装されています。 [[Perl]] では今後はこちらが標準的な実装となっていくと思われます。
+[[Wikipedia]] [SRC[>>829]] が出典とされています。
+[TIME[2012-05-23T10:20:19.800Z]]
+
+[844] >>843 は >>841 が実装される前によく用いられていました。 [[Python]]
+の実装に倣った [SRC[>>843, >>845]] としつつ、 [[Wikipedia]] [SRC[>>829]] も引用しています。
+
+[REFS[
+-[848] [CITE[18.12. base64 — RFC 3548: Base16, Base32, Base64 Data Encodings — Python v2.7.3 documentation]] ([TIME[2012-05-23 16:26:05 +09:00]] 版) <http://docs.python.org/library/base64.html>
+]REFS]
+
+[849] [[Python]] の実装というのは >>848 でしょうが、こちらは >>841、>>843
+とは違って [CODE(char)[[[=]]]] を省略しません。 >>839 に従っている実装です。
+
+;; [850] 最初からそうだったのか、それとも [[Perl]] の実装が派生した後に動作が変わったのかは不明です。
+
+;; [851] なお、 [[Python]] の実装は >>835 の2文字を任意の文字に変更できるようですw
+
+* uuencode 風表現
+
+[3] [[MIME]] 以外の場面でファイルを貼り付けるのに、 [[uuencode]]
+みたいな書き方をすることがあるみたい。
+
+例1:
+[PRE(example)[
+begin-base64 644 base64ed.data
+[INS[... base64 stream ...]]
+====
+]PRE]
+
+[26] 例2:
+[PRE(example)[
+begin-base64 644 code.tgz
+[INS[... base64 stream ...]]
+=
+]PRE]
+
+* 応用
+
+[823] [[Atom 0.3]] は [[RFC 2045]] の [[Base64]] を採用しています
+([CODE(XMLa)@en[[[mode]]]] [[属性]]の値 [CODE(XML)@en[[[base64]]]] を使って指定します)。
+
+* 変種
+
+[23] MIME Base64 と似ながら少しずつ異なる変種がいろいろ知られています。
+
+[31] '''主要なチェック点''':
+:字母:MIME の字母65文字と出入りはないか?
+:詰め:詰め文字は必須か、省略可能か、禁止か?
+:改行:行長制限はあるか? あるなら何文字 (以内 / 丁度) か?
+:空白:空白・改行の混入を認めているか?
+:誤り処理:字母以外の文字の混入時の処理は?
+字母数が4の倍数でない時の処理は?
+
+** 詰め文字の省略
+
+[1] データ長がある程度決まっている場合は、 [CODE(char)[=]] padding
+が無駄であることがあります。この場合で、 [CODE(char)[=]] padding 
+を省略すると規定しているものがあります。
+
+[2] 必ず[[8ビット・バイト]]を使用するものは、 [CODE(char)[=]] padding
+の代わりに、元のデータの後に任意個の [CODE[0x00]] が並んでいる
+としても解釈上影響がないことがあります。そういうものがあります。
+
+- [[UTF-7]] の Base64 は、必ず16ビット単位のデータを扱うので、
+最後の詰め文字を省略すると規定されています。
+- [29][[Norton AntiSpam]] は [CODE(ABNF)[[[encoded-word]]]] の最後の
+[CODE(MIME)[=]] を省くそうです。 [SRC[mew-dist 25264]]
+もちろんこの実装は MIME 違反です。
+
+[39]
+機械的に電子メイルを生成する類のプログラムで、
+末尾に4つも [CODE(MIME)@en[=]] を付けるとんでもない符号化するものがあるそうです。
+[WEAK[(しかも改善するように要求したら使っている [[MUA]] が悪いのだろうと言われたとか。。。)]]
+
+([[名無しさん]] [sage] [WEAK[2005-12-10 07:32:30 +00:00]])
+
+[45]
+[[RFC 4387]] では個低調の[[オクテット列]]を符号化するため、常に最後が [CODE[=]] になってしまうので、
+[CODE[=]] は省略することになっています。
+[SRC@en[[[RFC 4387]] 2.1]]
+
+[55]
+[[Perl]] の [CODE(perl)@en[[[Digest::MD5]]]] や
+[CODE(perl)@en[[[Digest::SHA1]]]] が出力する [[Base64]]
+化[[文字列]]は、[[詰め]]が省略されています。
+
+[REFS[
+- [853] [CITE[Digest::SHA - search.cpan.org]] ([TIME[2013-09-21 12:18:41 +09:00]] 版) <http://search.cpan.org/dist/Digest-SHA/lib/Digest/SHA.pm#PADDING_OF_BASE64_DIGESTS>
+]REFS]
+
+** 斜線の代替文字
+
+[22] MIME の Base64 字母には [CODE(char)[/]] が含まれますが、
+色々なシステムで階層の区切り文字として使われているので、
+あまり嬉しくないことがあります。
+
+[7] [[IMAP]] の修正 [[UTF-7]] では、 >>2 の修正に加えて、 
+[CODE(char)[/]] の代わりに [CODE(char)[,]] が使われています。
+
+仕様書:
+- [[RFC 3501]]
+[CITE[INTERNET MESSAGE ACCESS PROTOCOL - VERSION 4rev1]]
+<urn:ietf:rfc:3501>
+-- [CSECTION[5.1.3]]
+- [CITE[RFC ERRATA]] 
+<http://www.rfc-editor.org/cgi-bin/errata.pl#rfc3501>
+-- 明確化のための修正が行われています。
+
+[9] [CODE(URI)[[[urn:urn-5]]]] [[URN]] [[名前空間]]で使っている Base64
+変種は、 [CODE(char)[/]] の代わりに [CODE(char)[-]]
+を使います。 (URN では [CODE(URI)[/]] が使えないため。)
+また、詰め文字は使いません。
+(''Namespace ID: urn-5'' <http://www.iana.org/assignments/urn-informal/urn-5>)
+
+[16] [[RFC 3548]] 曰く、 MIME Base64 ではファイル名や [[URI]] 
+で安全ではないので、 [CODE(char)[/]] の代わりに [CODE(char)[~]] 
+を使う提案があったそうです。しかし [CODE(char)[~]] もやはりファイル・システムや 
+URI で安全とは言えません。
+
+[17] そこで RFC 3548 はファイル名や URI で安全な代替 Base64 字母として、 
+[CODE(char)[+]] と [CODE(char)[/]] に代えて [CODE(char)[-]] と [CODE(char)[_]] 
+を使うものを規定しています。それでも [CODE(char)[=]] が padding 
+に使われてるので、まだ完全に URI で安全とは言えません。 [CODE(char)[-]] 
+が先頭に来る可能性があるので [[Un|x]] で安全でない虞もあります。
+
+[18] [[M$XML]] は [CODE(char)[/]] の代わりに [CODE(char)[*]] 
+を使っていたそうです。最近の版では両方認識するそうです。
+
+** 文字数制限の撤廃
+
+[827] [[基本認証]]の [[credentials]] では [[RFC 2045]] の [[Base64]] 
+から、1行当たりの文字数制限を撤廃したものを使っています。
+
+[REFS[
+- [826] [CITE@en[RFC 1945 - Hypertext Transfer Protocol -- HTTP/1.0]] ([TIME[2012-02-18 23:25:56 +09:00]] 版) <http://tools.ietf.org/html/rfc1945#section-11.1>
+- [828] [CITE@en[RFC 2617 - HTTP Authentication: Basic and Digest Access Authentication]] ([TIME[2012-01-09 21:04:30 +09:00]] 版) <http://tools.ietf.org/html/rfc2617#section-2>
+]REFS]
+
+** memo
+
+[14] 変種ではありませんが、 [[MIME]] の [CODE(MIME)[[[application/octet-stream]]]] 
+では、[[オクテット]] (8[[ビット]]) 単位でないビット列も扱うことが出来ます。
+そのような場合には全体長が8の倍数になるようにビット [CODE[0]] を詰め、
+詰めた数を引数でメモっておきます。
+
+[REFS[
+- [846] [CITE[Kazuho@Cybozu Labs: URL と Base64]] ([TIME[2012-05-23 19:26:17 +09:00]] 版) <http://labs.cybozu.co.jp/blog/kazuho/archives/2006/01/url_base64.php>
+]REFS]
+
+[847] >>846 によると
+>
+,採用アプリ	,変換方式
+,Hibernate	,"+/ → *-"
+,IMAP4	,"+/ → +,"
+,IRCu	,"+/ → []"
+,Python	,"+/ → -_"
+,正規表現フリー注2	,"+/ → !-"
+
+* Web Base64 API
+
+[858] [DFN[[CODE(JS)@en[[[btoa()]]]]]] と [DFN[[CODE(JS)@en[[[atob()]]]]]] は、 [[Base64]]
+の[[符号化]]と[[復号]]を行う[[関数]]です。
+
+** 仕様書
+
+[REFS[
+- [857] '''[CITE@en-US-x-hixie[HTML Standard]] ([TIME[2014-04-03 03:44:44 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#atob>'''
+- [860] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2014-04-03 03:44:44 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#apis-available-to-workers>
+]REFS]
+
+** 定義
+
+[859] [DFN[[CODE(DOMi)@en[[[WindowBase64]]]]]] [[インターフェイス]]の[[メソッド]] [DFN[[CODE(DOMm)@en[[[btoa]]]]]]
+と [DFN[[CODE(DOMm)@en[[[atob]]]]]] は、いずれも [CODE(DOMi)@en[[[DOMString]]]] を[[引数]]とし、
+[CODE(DOMi)@en[[[DOMString]]]] を返します [SRC[>>857]]。 [CODE(DOMi)@en[[[WindowBase64]]]]
+[[インターフェイス]]は、 [CODE(IDL)@en[[[NoInterfaceObject]]]] であり、
+[CODE(DOMi)@en[[[Window]]]] [SRC[>>857]] と [CODE(DOMi)@en[[[WorkerGlobalScope]]]] [SRC[>>860]]
+に[[実装]]されています。
+
+[861] [CODE(DOMm)@en[[[btoa]]]] は、[[引数]]の [[U+0000]]-[[U+00FF]] を [[0x00]]-[[0xFF]]
+の[[オクテット列]]とみなし、 [[RFC 4648]] [[Base64]] により[[符号化]]します。
+[[引数]]にそれ以外の[[符号位置]]が含まれていれば、 [CODE(DOMc)@en[[[InvalidCharacterError]]]]
+[[例外]]を投げます。 [SRC[>>857]]
+
+[862] [CODE(DOMm)@en[[[atob]]]] は、[[引数]]を次のように処理した結果を返します [SRC[>>857]]。
+[FIG[
+= [863] [[空白文字]]をすべて削除します。
+= [864] [[文字]]数が4の倍数であり、末尾が [CODE[[[=]]]] か [CODE[[[==]]]] なら、これらを削除します。
+= [865] [[文字]]数を4で割ると1文字余るなら、 [CODE(DOMc)@en[[[InvalidCharacterError]]]] [[例外]]を投げて終わります。
+= [866] [[ASCIIラテン文字]]、[[ASCII数字]]、 [CODE(char)[[[+]]]]、[CODE(char)[[[/]]]] 以外が含まれていれば、
+[CODE(DOMc)@en[[[InvalidCharacterError]]]] [[例外]]を投げて終わります。
+= [867] [[Base64]] [[復号]]し、得られた[[オクテット列]]の [[0x00]]-[[0xFF]] を
+[[U+0000]]-[[U+00FF]] に置き換えた[[文字列]]を返します。[[復号]]結果が8ビットの倍数にならないときは、
+余ったビットは捨てます。
+]FIG]
+
+** 歴史
+
+[REFS[
+- [869] [CITE[atob()/btoa() tests]]
+([TIME[2011-01-07 14:45:31 +09:00]] 版)
+<http://dvcs.w3.org/hg/html/raw-file/tip/tests/submission/AryehGregor/base64.html>
+- [870] [CITE['''['''whatwg''']''' Specs for window.atob() and window.btoa()]]
+([TIME[2011-01-07 14:10:51 +09:00]] 版)
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2011-January/029699.html>
+- [871] [CITE[atob/btoa spec WIP]]
+([TIME[2011-01-07 05:09:49 +09:00]] 版)
+<http://aryeh.name/spec/base64.html>
+- [872] [CITE[IRC logs: freenode / #whatwg / 20110102]]
+( ([TIME[2011-01-07 23:25:06 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20110102>
+- [873] [CITE@en[Web Applications 1.0 r5814      Specify window.atob() and .btoa(). (ack Aryeh for the reverse-engineering to do this)]]
+( ([TIME[2011-02-01 17:18:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=5813&to=5814>
+- [874] [CITE[''''''[''''''whatwg'''''']'''''' Specs for window.atob() and window.btoa()]]
+( ([TIME[2011-02-05 15:12:28 +09:00]] 版))
+<http://lists.whatwg.org/htdig.cgi/whatwg-whatwg.org/2011-February/030154.html>
+- [875] [CITE@en[Web Applications 1.0 r5867 remove window.atob/btoa from the W3C draft]]
+( ([TIME[2011-02-11 04:45:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=5866&to=5867>
+- [876] [CITE@en[Web Applications 1.0 r5874 revert 5867, which was apparently based on a miscommunication]]
+( ([TIME[2011-02-12 04:42:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=5873&to=5874>
+- [877] [CITE[IRC logs: freenode / #whatwg / 20110211]]
+([TIME[2011-02-12 12:58:50 +09:00]] 版)
+<http://krijnhoetmer.nl/irc-logs/whatwg/20110211>
+- [878] [CITE[IRC logs: freenode / #whatwg / 20110210]]
+( ([TIME[2011-03-21 18:25:22 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20110210#l-949>
+- [879] [CITE[''''''[''''''whatwg'''''']'''''' Specs for window.atob() and window.btoa()]]
+( ([TIME[2011-05-13 23:16:00 +09:00]] 版))
+<http://lists.whatwg.org/htdig.cgi/whatwg-whatwg.org/2011-May/031541.html>
+- [880] [CITE@en[Web Applications 1.0 r6874     Change atob() to ignore whitespace. This is a potentially breaking change, but Opera has implemented it for a while and doesn't seem to have had any problems resulting.]]
+( ([TIME[2011-12-15 09:44:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=6873&to=6874>
+- [868] [CITE[''''''[''''''whatwg'''''']'''''' BinaryEncoding for Typed Arrays using window.btoa and window.atob]]
+( ([TIME[2013-08-05 16:18:46 +09:00]] 版))
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2013-August/040364.html>
+]REFS]
+
+* 実装
+
+[4] [[Perl]] なら、 [CODE(perl)[[[MIME::Base64]]]] を使うのが気楽かと。
+Perl 5.7.3 以降では標準で入っています。
+
+但し、 >>1,>>2,>>7 のような変種には対応していません。
+
+[8] [[uuencode]] も64進数であることを利用して、 uuencode
+で符号化した後に [CODE[[[tr]]]] を使うという方法が使われることもあります。
+
+** [52] BASE64.ASM
+
+[PRE[
+	ASSUME	CS:CODE,DS:CODE
+CODE	SEGMENT
+
+	ORG	100H
+START:	MOV	BX,0
+START1:	MOV	DI,0
+LOOP1:	PUSH	BX
+	PUSH	DI
+	MOV	AH,06H
+	MOV	DL,0FFH
+	INT	21H
+	POP	DI
+	POP	BX
+	JNZ	JUMP1
+	CMP	DI,0
+	JZ	END1
+	CMP	DI,1
+	JZ	END2
+	CMP	DI,2
+	JZ	END3
+JUMP1:	MOV	BUFFER[DI],AL
+	INC	DI
+	CMP	DI,3
+	JNZ	LOOP1
+
+SHORI2:	MOV	CH,4
+LOOP3:	MOV	CL,6
+	MOV	SI,0
+LOOP2:	SAL	BUFFER+2,1
+	RCL	BUFFER+1,1
+	RCL	BUFFER+0,1
+	RCL	SI,1
+	DEC	CL
+	JNZ	LOOP2
+	PUSH	BX
+	PUSH	DI
+	PUSH	SI
+	PUSH	CX
+	MOV	DL,BASE64[SI]
+	MOV	AH,06H
+	INT	21H
+	POP	CX
+	POP	SI
+	POP	DI
+	POP	BX
+	DEC	CH
+	JNZ	LOOP3
+	ADD	BX,DI
+	CMP	BX,57
+	JNZ	START1
+	PUSH	BX
+	PUSH	CX
+	PUSH	DI
+	PUSH	SI
+	MOV	DL,0AH
+	MOV	AH,06H
+	INT	21H
+	MOV	DL,0DH
+	MOV	AH,06H
+	INT	21H
+	POP	SI
+	POP	DI
+	POP	CX
+	POP	BX
+	JMP	START
+
+END2:	MOV	CH,2
+	JMP	LOOP5
+END3:	MOV	CH,3
+LOOP5:	MOV	CL,6
+	MOV	SI,0
+LOOP4:	SAL	BUFFER+2,1
+	RCL	BUFFER+1,1
+	RCL	BUFFER+0,1
+	RCL	SI,1
+	DEC	CL
+	JNZ	LOOP4
+	PUSH	CX
+	PUSH	DI
+	PUSH	SI
+	MOV	DL,BASE64[SI]
+	MOV	AH,06H
+	INT	21H
+	POP	SI
+	POP	DI
+	POP	CX
+	DEC	CH
+	JNZ	LOOP5
+	CMP	DI,2
+	JZ	JUMP2
+	MOV	DL,'='
+	MOV	AH,06H
+	INT	21H
+JUMP2:	MOV	DL,'='
+	MOV	AH,06H
+	INT	21H
+
+;処理終了
+END1:	MOV	AH,4CH
+	MOV	AL,00H
+	INT	21H
+
+;base64 moji hyoji
+	MOV	AH,09H
+	MOV	DX,OFFSET BASE64
+	INT	21H
+
+BASE64	DB	'ABCDEFGHIJKLMNOP'
+[PRE[
+	DB	'QRSTUVWXYZabcdef'
+	DB	'ghijklmnopqrstuv'
+	DB	'wxyz0123456789+/'
+BUFFER	DB	'000','$'
+
+CODE	ENDS
+	END	START
+]PRE]
+
+([[名無しさん]] [WEAK[2007-05-30 05:16:55 +00:00]])
+
+
+* 安全性に関して
+
+[34] '''秘密情報送信のための使用''':
+[[HTTP]] の[[認証]]や [[SASL]] などでは、[[合言葉]]などの繊細な情報を送信するために
+Base64 を使うことがあります。 Base64 
+は[[転送符号化]]であって[[暗号化]]では''ありません''が、
+第3者 [WEAK[(例えばシステムの管理者)]] 
+が繊細な情報を含むメッセージを見てしまったとしても読むことができません
+[WEAK[(流石に脳内で Base64 を復号できる猛者はいないでしょう)]]。
+もちろん、悪意のある人は計算機を使って復号してしまうでしょうから、
+それに対する効果はありません。
+
+[35] '''バッファ溢れ攻撃''': 不正な (字母に含まれない)
+文字や末尾以外にある詰めの [CODE(char)[=]]
+への対処がいい加減だと、バッファ溢れ攻撃に使われることがあり得ます。
+[SRC[[[RFC 3920]] 14.9 など]]
+
+[[#comment]]
+
+
+* メモ
+
+[12] [[インターネット]]でのオクテット列の文字列転写法の[[デ・ファクト標準]]です。
+
+[10] [[XML]] でバイナリを扱う時には Base64 を使うのが推奨されている (誰に?) 
+そうです。 ([Q[XML は人間可読である]]のじゃなかったのか? って気もするが。)
+
+[11] >>10 実際のところ、 [[ISO/IEC 6479]] 
+の[[制御シーケンス]]とかが混じったデータを使いたいという要求はある。 (それは XML 
+の思想に反するという反発は強く、 XML 1.1 でも結局駄目になったけど。)
+
+[21] >>11 [[XML 1.1]] では結局[[文字参照]]なら OK
+([CODE(char)[[[U+0000]]]] 以外。) になりましたね。
+
+[13] >>11 でも、せめて [CODE(char)[[ABBR[[[FF]]] [FORM FEED]]]] 
+くらい使いたい気はする。 (実質 [[Un*x]] 
+でしか使えない環境依存だから入れたくないのかもしれんが。)
+
+[37]
+[[XML]] [[デジタル署名]]系仕様では
+[[Base64]] を使うことを識別するために
+[CODE(URI)[[[http://www.w3.org/2000/09/xmldsig#base64]]]]
+という [[URI参照]]を使っています。
+([[名無しさん]] [sage])
+
+[41]
+[CITE[たっぴ (パソコン質問掲示板) - Question and Answers -]] <http://pcq.furu.org/thread.php?thread=81003>
+
+> BASE64への変換(エンコード)やBASE64からの逆変換(デコード)はこちらで確認することができるようです。
+http://suika.fam.cx/~wakaba/-temp/wiki/wiki?Base64 
+
+ちょ[AA(fw)[wwwwwwwwwwwwwwwwwwwwwwwwwww]] そんな話聞いたことないって[AA(fw)[www]]
+([[名無しさん]] [WEAK[2006-05-28 11:09:01 +00:00]])
+
+[42]
+[CITE[Base64 - Wikipedia, the free encyclopedia]] <http://en.wikipedia.org/wiki/Base64>
+([[名無しさん]] [WEAK[2006-06-11 00:06:34 +00:00]])
+
+[51]
+[[MTOM]] は、[[往復変換]]を保障するため、 [[XML Schema]]
+の [CODE(XML)@en[[[base64Binary]]]] の[[正準形]]のみを最適化対象としています。
+([[名無しさん]])
+
+[824] [CITE@en[Base64 - Wikipedia, the free encyclopedia]]
+([TIME[2009-11-14 07:15:36 +09:00]] 版)
+<http://en.wikipedia.org/wiki/Base64>
+
+[825] [CITE@en[RFC 6120 - Extensible Messaging and Presence Protocol (XMPP): Core]]
+( ([TIME[2011-03-31 08:23:45 +09:00]] 版))
+<http://tools.ietf.org/html/rfc6120#section-13.9.1>
+
+[852] [CITE@EN[W3C XML Schema Definition Language (XSD) 1.1 Part 2: Datatypes]]
+( ([TIME[2012-04-05 06:34:51 +09:00]] 版))
+<http://www.w3.org/TR/2012/REC-xmlschema11-2-20120405/#base64Binary>
+
+[854] [CITE[Jakarta Commons Codec による Base64符号の末尾に改行が付加される件について - keigoiの日記]]
+( ([TIME[2013-09-30 01:27:44 +09:00]] 版))
+<http://d.hatena.ne.jp/keigoi/20090820/1250760023>
+
+[855] [CITE@ja[Base 64 エンコーディングと改行 (line feed) の話 - ひだまりソケットは壊れない]]
+( ([TIME[2013-09-30 01:27:54 +09:00]] 版))
+<http://vividcode.hatenablog.com/entry/2012/05/12/051058#comment-11696248318757556925>
+
+[856] [CITE@en[RFC 6591 - Authentication Failure Reporting Using the Abuse Reporting Format]]
+( ([TIME[2013-08-11 08:35:52 +09:00]] 版))
+<http://tools.ietf.org/html/rfc6591#section-2.3>

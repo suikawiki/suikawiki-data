@@ -1,0 +1,379 @@
+
+'''Form-based Device Input and Upload in HTML [INS[基__&&form&&__機器入力及び__&&upload&&__]]'''
+
+> W3C NOTE 06 July 1999 [INS[1999-07-06]]
+
+:This version [INS[この版]]:<http://www.w3.org/1999/07/NOTE-device-upload-19990706>
+:Latest version [INS[最新版]]:<http://www.w3.org/TR/device-upload>
+:Editors [INS[編集者]]:James P. Salsman, Cisco Systems <http://www.cisco.com> <MAIL:jsalsman@cisco.com>
+
+[INS[
+
+:和訳の最新版:<IW:SuikaWiki:"device-upload">
+]INS]
+
+
+* Status of this Document [INS[このメモの位置づけ]]
+
+> This document is a submission to the World Wide Web Consortium from Cisco Systems (see Submission Request <http://www.w3.org/Submission/1999/09/>, W3C Staff Comment
+<http://www.w3.org/Submission/1999/09/Comment>).
+
+この文書は Cisco Systems から World Wide Web Consortium に提出したものです
+(提出報告 <http://www.w3.org/Submission/1999/09/>, W3C 職員注釈
+<http://www.w3.org/Submission/1999/09/Comment> を参照)。
+
+> This draft extends an implemented protocol for the Internet World Wide Web community. Distribution of this draft and the use of the information described herein is unlimited. This draft is intended for submission to the World Wide Web Consortium to be considered as a proposed recommendation. This document should be referred to as part of the "device-upload" submission.
+
+この原案は Internet World Wide Web 社会で実装されたプロトコルを拡張します。
+この原案の配布及びここに説明する情報の使用は制限しません。
+この原案は提案勧告として考慮されるものとして World Wide Web Consortium に提出することを意図したものです。
+この文書は「機器__&&upload&&__」提出の部分として参照するのがよいです。
+
+> This document is a NOTE made available by W3C for discussion only. This indicates no endorsement of its content, nor that W3C has had any editorial control in its preparation, nor that W3C has, is, or will be allocating any resources to the issues addressed by the NOTE.
+
+この文書は W3C により議論のためのみに提供される NOTE (覚書) です。
+これはその内容を推薦することを意味しませんし、 W3C がその準備に何らの編集上の統制を行うものでもありませんし、
+W3C がこの NOTE で触れている問題に何らの資源を割当てている, 割当てる,
+又は割り当てようものでもありません。
+
+
+* Copyright Notice
+
+> &#169; Copyright Cisco Systems 1999.
+
+> For terms and conditions, see IPR section <http://www.w3.org/Submission/1999/09/#IPR>
+of the Submission Request <http://www.w3.org/Submission/1999/07/>.
+
+条件については、提出要求 <http://www.w3.org/Submission/1999/09/> [INS[(原文 URI は誤植)]]
+の IPR の節 <http://www.w3.org/Submission/1999/09/#IPR> を参照。
+
+
+* Contents
+
+>
+[PRE[
+    * Abstract
+    * Introduction
+    * Extensions
+    *      Examples
+    * Compatibility with earlier forms for audio input
+    * HTML Document Type Description changes
+    * Motivations
+    * User interface usability and quality concerns for audio
+    * Scaling considerations
+    * Security considerations
+    * Acknowledgments
+    * Perpetual unlimited permissions and disclaimer
+    * References
+]PRE]
+
+
+* Abstract
+
+> Currently, HTML forms allow the producer of the form to request information, including files of data, from the operator using the form. However, this capability is limited because HTML forms don't provide a way to ask the operator to submit input from arbitrary sources such as audio devices like microphones. Since input and upload from various devices is a feature that will benefit many applications, this draft proposes an extension to the HTML INPUT type="file" form element. Motivations include language instruction assistance, voice transcription, and high-quality speech transmission under low-bandwidth conditions.
+
+最近、 HTML __&&form&&__は__&&form&&__の製作者が__&&form&&__を使う操作者から、ファイルのデータを含む、情報を要求することを可能としています。
+しかしこの能力は、操作者にマイクのような音声機器をはじめとする特定の資源からの入力を送信するように頼む方法を
+HTML __&&form&&__が提供していないことから限られています。
+種々の機器資源からの入力及び__&&upload&&__は多くの応用に有益であろう機能ですから、この原案は
+HTML INPUT type="file" __&&form&&__要素の拡張を提案します。
+動機には言語指示補助器, 音声書き出し器及び低帯域状態での高品質会話伝送装置を含みます。
+
+
+* Introduction
+
+> The following protocol extensions to the HTML INPUT type="file" protocol of [RFC 1867] are defined by this draft:
+
+この原案は、[[RFC1867]] の HTML [CODE[INPUT type="file"]]
+プロトコルへの次のプロトコル拡張を定義します。
+
+>
+- a device attribute to be used in HTML with the INPUT element along with the type="file" attribute-value, which identifies the peripheral device from which the input file is to be taken. The following nine device names are used in this draft: microphone, mic, filesystem, files, camera, keyboard, scanner, serial, any.
+- an HTTP request header called Client-file-maxlength, specifying a decimal integer of bytes, which specifies the input buffer length available to the client for storage of input data for file upload.
+- two parameters for the MIME Content-Disposition header used in HTTP form submissions with the enctype="multipart/form-data" encoding:
+-- device -- the lowercase value of the device attribute, or unavailable if the requested device is supported but unavailable, or unsupported if the device is not supported or the MIME type(s) requested in the accept attribute are not supported.
+-- alternates -- a space-separated list of MIME types indicating the types available from the requested device when the requested type(s) are unsupported.
+- and the type="audio" HTML INPUT element extension, first published in 1993 by Dave Raggett [HTML+ forms].
+
+- HTML で INPUT 要素及び [CODE[type="file"]] 属性‐値と共に使用する [CODE[device]]
+(機器) 属性。これは入力ファイルを取り込む周辺機器を識別します。
+次の9つの機器名をこの原案では使用します: [CODE[microphone]] (マイク),
+[CODE[mic]] (マイク), [CODE[filesystem]] (ファイル・システム),
+[CODE[files]] (ファイル), [CODE[camera]] (カメラ), [CODE[keyboard]] (鍵盤),
+[CODE[scanner]] (読み取り機), [CODE[serial]] (シリアル), [CODE[any]] (任意)。
+- [CODE[Client-file-maxlength]] という [[HTTP]] 要求頭。バイト数の十進数値を指定して、クライアントがファイル__&&upload&&__用の入力データの貯蔵庫とするのに利用出来る入力バッファ長を指定します。
+- [CODE[enctype="multipart/form-data"]] 符号化での HTTP __&&form&&__送信で使う [[MIME]]
+[CODE[Content-Disposition]] 頭の2つのパラメータ。
+-- [CODE[device]] —— 機器属性の小文字の値又は要求された機器に対応しているが利用出来ない場合に [CODE[unavailable]] という値又は機器に対応していないか [CODE[accept]]
+属性で要求された MIME 型に対応していない場合に [CODE[unsupported]] という値。
+-- [CODE[alternates]] —— 要求された MIME 型に対応していない時に、要求された機器について利用出来る型の間隔で区切った一覧。
+- [CODE[type="audio"]] HTML INPUT 要素拡張 (最初に 1993年に Dave Raggett が出版 [HTML+ forms])。
+
+
+* Extensions [INS[拡張]]
+
+> Section 3.1 of [RFC 1867] provides for the presentation of an arbitrary "widget" to specify input for file uploads. When an INPUT tag of type="file" is encountered with a device attribute, the associated value (such as "microphone", or an abbreviation like "mic") should [RFC 2119] select the use of a widget capable of buffering and editing real-time input (such as speech) from the specified device and uploading the buffered file when the form is submitted.
+
+[[RFC 1867]] の3.1節はファイル[[うp]]の入力を指定するために任意の
+[Q[widget]] の[[表現]]を提供しています。
+[CODE(HTML)[type="file"]] の [CODE(HTMLe)[[[input]]]]
+[[タグ]]で [CODE(HTMLa)[[[device]]]] [[属性]]があるものに遭遇したら、
+その値 (例えば [CODE(HTML)[microphone]] か、 [CODE(HTML)[mic]]
+のような省略形) で特定の装置からの実時間入力 (会話など)
+をバッファ付け・編集して、バッファ付けした[[ファイル]]を[[フォーム]]の[[提出]]時に[[うp]]できるような
+[[widget]] を使うことを選ぶ'''べきです'''。
+
+> If an accept attribute also has a value in such a device file input element, the browser may constrain the MIME type of uploaded data to match those with the list of types specified as the value of the accept attribute. If the value of the device attribute is "filesystem" (or "files") then the INPUT element may be treated as usual according to RFC 1867 except that the subset of files presented to the operator to choose from may be constrained by the specified list of MIME types instead of a pattern of file names or extensions. Please note that without device="files" the accept attribute should be treated as a filename pattern.
+
+斯様な装置ファイル入力要素で [CODE(HTMLa)[[[accept]]]]
+[[属性]]も[[値]]を持つ場合に於いては[[ブラウザ]]は[[うp]]する[[データ]]の
+[[MIME型]]を [CODE(HTMLa)[[[accept]]]] [[属性]]の[[値]]で指定された型の[[並び]]に一致するものに制約して構いません。
+[CODE(HTMLa)[[[device]]]] [[属性]]の[[値]]が [CODE(HTML)[filesystem]]]]
+(または [CODE(HTML)[files]]) であるなら、その [CODE(HTMLe)[[[input]]]]
+要素は運用者に選択候補として示される[[ファイル]]の[[部分集合]]が[[ファイル名]]の[[パターン]]や[[拡張子]]ではなくて指定された 
+[[MIME型]]の[[並び]]であることを除き、 [[RFC 1867]]
+に従って通常通り取り扱って構いません。 [CODE(HTML)[device="files"]]
+でなければ [CODE(HTMLa)[[[accept]]]] [[属性]]は[[ファイル名]]の[[パターン]]として扱うべきであることに注意して下さい。
+
+> If the value of the device parameter is "any", the operator may be offered a choice of all available supported devices and files, restricted to the choices compatible with the MIME types specified in the accept attribute, if present.
+
+[CODE(HTMLa)[[[device]]]] [[引数]]の[[値]]が [CODE(HTML)[any]]
+であるなら、運用者はすべての利用可能な対応している[[装置]]と[[ファイル]]のうち、
+[CODE(HTMLa)[[[accept]]]] [[属性]]があればそこに指定された
+[[MIME型]]と互換な選択肢から選ぶことができます。
+
+> File-upload forms are submitted with enctype="multipart/form-data", an alternate FORM tag specification for sending MIME content. Each part of such a submission, representing the value of each input element in the submitted form, is given a Content-Disposition header, which in the case of Content-Disposition: file, may also have a Content-Type header representing the MIME type of the data being uploaded. Files uploaded using the extensions in this draft should include a Content-Type header when the file type is known or can be accurately determined by the client browser. Since no original filename as specified in section 3.3 of [RFC 1867] will be available for arbitrary peripheral input, parameters of the Content-Disposition: form-data submission headers should include a device parameter with the lowercase value of the device attribute of the associated form input element, unless the device or MIME type(s) specified are unsupported in which case the value of the device header parameter may be unsupported, or unless the device is unavailable in which case the value should be unavailable.
+
+[[ファイル]]を[[うp]]する[[フォーム]]は 
+[CODE(HTML)[enctype="multipart/form-data"]] という、 [[MIME]]
+[[内容]]を送るための [CODE(HTMLe)[[[form]]]] [[タグ]]の指定で[[提出]]します。
+[[提出]]物の各[[部分]]は[[提出]]する[[フォーム]]内の各 [CODE(HTMLe)[[[input]]]] [[要素]]の[[値]]を示し、
+また [CODE(MIME)[[[Content-Disposition]]]] 頭を与えますが、
+それが [CODE(MIME)[[[Content-Disposition]]: [[file]]]] の場合は[[うp]]
+する[[データ]]の [[MIME型]]を示す [CODE(MIME)[[[Content-Type]]]]
+頭も含めることができます。この原案の拡張を使った[[ファイル]]は、
+そのファイルの型が既知である場合や[[クライアント]]・[[ブラウザ]]が正確に決定できる時には
+[CODE(MIME)[[[Content-Type]]]] 頭を含めるべきです。 [[RFC 1867]]
+3.3節で言う[[ファイル名]]は[[周辺機器]]からの[[入力]]では利用できませんから、
+[CODE(MIME)[[[Content-Disposition]]: [[form-data]]]]
+[[提出]]物頭の[[引数]]に対応する[[フォーム]]入力要素の
+[CODE(HTMLa)[[[device]]]] [[属性]]の小文字の値を
+[CODE(MIME)[[[device]]]] [[引数]]に含めるべきです。
+但し指定された[[装置]]または [[MIME型]]に対応していない場合には
+[CODE(MIME)[[[device]]]] 頭引数の値は [CODE(MIME)[unsupported]]
+でも構いませんし、[[装置]]が利用できない場合には値は
+[CODE(MIME)[unavailable]] でも構いません。
+
+> If the MIME types requested are unsupported, an additional parameter alternates may be included with a space-separated list of MIME types of the same primary content-type which may be supported as alternatives for the specified device. The alternates parameter is not intended as a content negotiation feature; merely a way for a server to log upload failures which were constrained by the lack of type conversion facilities. The Content-Disposition header parameter syntax is described in [RFC 2183] that contains, along with [RFC 1867], examples of the protocols extended by this proposal.
+
+要求された [[MIME型]]に対応していない場合には追加の[[引数]]
+[CODE(MIME)[[[alternates]]]] に指定された[[装置]]で対応している同じ一次内容型の
+[[MIME型]]の[[間隔]]分離の[[並び]]を値として含めても構いません。
+[CODE(MIME)[alternates]] 引数は[[内容折衝]]機能を想定しているのではありません。
+ただ単に[[鯖]]が型変換機能がないために[[うp]]に失敗したことを記録するためのものです。
+[CODE(MIME)[[[Content-Disposition]]]] 頭引数構文は
+[[RFC 2183]] で説明されており、そこには [[RFC 1867]]
+と共にこの提案によって拡張される[[プロトコル]]の例もあります。
+
+> There may be significant limitations on the client browser's ability to buffer input for upload. Browsers may provide an estimate of the default maxlength available for device input and upload through the HTTP response header Client-file-maxlength: followed with the ASCII decimal representation of the number of bytes representing the content-length available to the browser for buffering.
+
+> A server can also specify information about the largest file size it can accept for upload, by use of the HTML maxlength attribute with a value representing the decimal integer of bytes in the HTML form's device input elements. The minimum of all "maxlength" values specified should take precedence. Additionally, for types with extensions in time (such as audio/* and video/*, but not image/* or text/*) the maxtime="integer seconds" parameter specifies the maximum duration of the file to be uploaded without regard for the underlying number of bytes. The maxlength attribute should take precedence over the maxtime attribute if both are specified.
+
+> Furthermore, the value attribute may be used to provide a numeric disambiguation between multiple similar devices when present. Under most conditions the operator should be allowed to select the device from ambiguous sources of input, or re-select it if specified by a value parameter. The value attribute might also be used to specify alternative methods of input when the value of value is nonnumeric.
+
+> Because of security concerns discussed below, HTML scripts must not be able to invoke a form submission when the form involves any kind of file upload without explicit instructions from the session operator to the contrary.
+
+
+* Examples [INS[例]]
+
+> In this short form, the HTML author has requested the upload of sampled microphone input from the operator upon form submission:
+
+[PRE[
+     <FORM enctype="multipart/form-data" method="post" action="_URL_">
+       Say something:  <INPUT name="speech1" type="file" device="mic">
+       <INPUT type="submit" value="Send Speech">
+     </FORM>
+]PRE]
+
+> Below, MIC is not used as an abbreviation. The author of the HTML has requested that the data input from the microphone be encoded as either the MIME type Audio/L16 -- sixteen bit signed linear audio samples (most-significant byte first) -- as specified in [RFC 2586] with a single (monaural) channel and a sample rate of 11,025 samples per second, or an unspecified extended MIME Audio type named x-cepstral-voc. Please note that MIME types are separated by spaces except when the following character is a semicolon, in which case the following non-space string should be of the form ;parameter=value which modifies the preceding MIME type. Space before such MIME type parameters is optional.
+
+[PRE[
+     <INPUT name="speech2" type="file" device="microphone"
+       accept="audio/L16;rate=11025 ;channels=1 audio/x-cepstral-voc">
+]PRE]
+
+[INS[
+
+訳注: [SAMP[accept="audio/L16;rate=11025 ;channels=1'','' audio/x-cepstral-voc"]]
+の誤りか。
+]INS]
+
+> Below, the form element may be used to upload a file as usual, except that the files to select from may be constrained to text files, without explicit regard of their filename or extensions. Please note that "/*" after "text" is optional.
+
+[PRE[
+     <INPUT name="file1" type="file" device="files" accept="text/*">
+]PRE]
+
+> The next two examples show how these extensions may be used to request input from other kinds of devices, such as the second of two or more cameras connected to the system running the browser. Please note that the VALUE is only a suggestion, and the browser operator should still be offered to select from multiple devices, with the only difference being the default selection.
+
+[PRE[
+     <INPUT name="picture1" type="file" device="camera" value="2">
+]PRE]
+
+> For this next example only, if there is only one keyboard, the operator's preferred editor may be invoked, but the filename should be unique and not influenced in any way by the string "EMACS". If that value influences the selection of an editor, it should do so with a pre-specified table (such as a "mailcap" file) and should not be used as any part of the command string of the editor executed.
+
+[PRE[
+     <INPUT name="essay1" type="file" device="keyboard" value="emacs">
+]PRE]
+
+> The final example below requests the operator to select images from any device, including the filesystem, for upload to the server, as long as they are less than 100 KB.
+
+[PRE[
+     <INPUT name="picture2" type="file" device="any" accept="image"
+       maxlength="100000">
+]PRE]
+
+> Compatibility with earlier forms of audio input
+Audio input in HTML forms was proposed in late 1993. To accommodate the syntax of these earlier extensions, a browser might interpret an HTML statement such as
+
+[PRE[
+     <INPUT type="audio" ...>
+]PRE]
+
+> as the device input form
+
+[PRE[
+     <INPUT type="file" device="microphone" ...>
+]PRE]
+
+> with all other attribute/value pairs of the original INPUT element kept the same as specified. This would retain compatibility for all implementations of which the author of this draft is aware.
+
+
+* HTML Document Type Description changes [INS[HTML 文書型記述の変更]]
+
+> Along with the extension to the HTML InputType entity described in the previous section, this proposal makes an addition to the HTML DTD for the INPUT element ATTLIST of an #IMPLIED attribute device of type CDATA, and reserves an #IMPLIED attribute CONNEG, also of type CDATA, for a to-be-specified content negotiation protocol.
+
+> Contemporary revisions of HTML are being defined as XML modules called XHTML, which involves a different DTD structure. The preceding paragraph was written with the HTML 3.2 and 4.0 DTDs in mind. Note that in XML and thus XHTML all attribute values must be quoted, and empty tags (unitary elements which are not used to contain text) must end with space followed by a slash before the closing angle bracket. For example:
+
+[PRE[
+     <input type="file" device="camera" accept="video/mpeg" />
+]PRE]
+
+> Registration of new device names not suggested in this draft will be administered by the W3C HTML activity. The official definition of the assigned device values should be reflected in the comments of the HTML DTD after approval, immediately following the device attribute.
+
+
+* Motivations [INS[動機]]
+
+> The primary motivation for these extensions is to add the capability of speech input to Web-based educational systems. [LISTEN, ORDINATE] Other motivations include the development of "dictation servers" [CYBERTRANSCRIBER] capable of transforming spoken audio uploaded though an HTTP session to the corresponding text suitable for sending in email or including in another document, for example. Natural language continuous speech recognition software conforming to standard APIs for automatic dictation is as of this writing available for free in small quantity so there is ample reason to believe that transcription servers might soon become commonplace on the Web with these extensions. These extensions could also be a help to hearing-impaired people who could use a "phonology server" to practice improving pronunciation.
+
+> Larry Masinter, author of RFC 1867, and member of the IETF Content Negotiation Working Group, has indicated that graphical paper scanners could be used for applications such as OCR and bar-code upload.
+
+> Finally, it is important to note that the addition of this proposal will allow web-enabled devices, such as radio telephones, to transmit high-quality asynchronous content, such as voicemail, under low-bandwidth conditions.
+User interface usability and quality concerns for audio
+An audio sample is customarily recorded on computer equipment with a dialog routine capable of allowing the user to record, pause, play back, erase, or otherwise edit the recording. Browsers may provide the operator with the same kind of dialog routine for audio device input. And if a maxlength has been specified or a Client-file-maxlength is in force because of limited buffer size, a display of the buffer size used and remaining may be displayed as a dynamic bar graph (or as a percentage if graphics are unavailable.) A display of time in seconds used and remaining in the buffer may also be provided.
+
+> Most MIME types defined for audio do not provide high-quality audio encodings [RFC 2586]. The type audio/basic and other types which use a sample rate of 8,000 samples per second truncate the audio spectrum at 4,000 Hz according to the Nyquist theorem, discarding information important for determining consonants. Also, audio/basic and other MIME Audio types use a sample size of eight bits, which does not usually provide enough dynamic range for accurate automatic speech recognition. If sixteen-bit unsigned audio encodings are used as according to [RFC 2586], the sample rate -- specified as the rate parameter of the MIME type audio/l16 -- may be at least 11,025 or 16,000 to adequately provide sufficient information for automatic speech recognition. Otherwise, the audio feature extraction encoding of the speech recognition algorithm may be used to provide a more compact representation to shorten the upload.
+
+
+* Scaling considerations [INS[大きさに関して]]
+
+> The protocol proposed in this draft has been proven to scale for very large files, but is not intended for open-ended uploads of content of indeterminate length. Real-time protocols such as RTP (RFC 1889) are much more appropriate for such open-ended transmission of device input, and when real-time interactions are required.
+
+
+* Security considerations [INS[安全性に関して]]
+
+> Browser operators may not want to send their files, recordings, pictures, video, or other device inputs to arbitrary sites without their explicit permission and direction. Therefore, browser authors are encouraged to disallow the submission of forms which include any kind of file upload by any means other than the standard HTML operator-controlled buttons for form submission without explicit instruction from the session operator to the contrary. Accordingly, the size attribute, style sheets, and document layers should be prevented from obscuring any kind of file upload widget if they are capable of accepting a default filename. Furthermore, just as the operator may take direct action to initiate, terminate, review and edit recording as described in the previous section, browser authors are encouraged to prevent HTML scripts from taking those and similar actions, unless for example the operator has specifically enabled such script actions with a security option. Even then, such preferences may be specified by the operator to reset after an interval or at the end of the browsing session. Finally, explicit information should be provided by the browser to the operator to insure that the operator is fully informed when files are being uploaded.
+
+
+* Acknowledgments [INS[謝辞]]
+
+> Larry Masinter and Ernesto Nebel laid the foundation for this proposal. Harald Alvestrand contributed excellent advice and the larger part of coauthoring RFC 2586. Ed Tecot of Microsoft's Macintosh Internet Explorer team contributed the means of device and media independence. David McMillian, of the Stanford Center for the Study of Language and Information, specified the capabilities of audio input widgets. Companies such as DynEd international provided a great deal of inspiration, as did Jack Mostow, Greg Aist, and their colleagues at CMU's Project LISTEN. Dave Raggett helped integrate the proposal into the W3C process. Keith Moore provided comments and assistance from the Internet Engineering Task Force. Gavin McKenzie of the W3C HTML working group forms sub-group helped with device names. John Whitehead, the Cisco W3C AC Representative, reviewed and provided several helpful improvements.
+
+
+* Perpetual unlimited permissions and disclaimer [INS[恒久的且つ無制限の許諾及び否認]]
+
+[INS[
+
+訳注: この許諾及び否認条項の翻訳は参考であり、有効なのは原文のみです。
+訳文は正確であるように努めましたが、これを保証するものではありません。
+]INS]
+
+> This document and translations of it may be copied and furnished to others, and derivative works that comment on or otherwise explain it or assist in its implementation may be prepared, copied, published and distributed, in whole or in part, without restriction of any kind. This document may be modified as needed for the purpose of developing W3C and Internet standards or as required to translate it into languages other than English. These permissions are granted perpetually and will not be revoked by the author or his successors or assigns. Moreover, the author will not make any effort to restrict the use of the information contained in this document.
+
+この文書及びその翻訳を複製及び他者に提供することや、これに注釈を付けたりその他説明したり、又はその実装を補助する派生的作業を準備, 複製, 出版及び配付することは、全部であるか一部であるかに関わらず、いかなる種類の制限なしに行って構いません。
+この文書は W3C 及び Internet 標準の開発の目的で必要な場合或いは英語以外の言語への翻訳に必要な場合において修正してもかまいません。
+これらの許諾は恒久的に認めるものであって、著者或いはその後継者又は代理人によって取り消されることはありません。
+更に、著者はこの文書に含まれる情報の使用を制限するいかなる行為も行いません。
+
+> This document and the information contained herein is provided on an "as is" basis and the author disclaims all warranties, express or implied, including but not limited to any warranty that the use of the information herein will not infringe on any rights or any implied warranties of merchantability or fitness for a particular purpose. In the opinion of the author, use of the information contained in this document does not infringe on any rights.
+
+この文書及びここに含まれる情報は'''現状有姿'''のもとに提供され、著者は明示又は暗示の、ここに含まれる情報の使用がいかなる権利をも侵害しないことのいかなる保証或いは市場性又は特定目的への適応性の黙示的保証をも含むがこれに限定されない、全ての保証を否認します。
+著者の考えでは、この文書に含まれる情報の使用はいかなる権利をも侵害しません。
+
+
+* References
+
+- [HTML+ Forms]      HTML+ Fill-out Forms and Input fields [INS[『HTML+ 記入フォーム及び入力欄』]], D. Raggett, November 1993. <http://www.w3.org/MarkUp/HTMLPlus/htmlplus_41.html>
+- [LISTEN]           literacy instruction from a reading tutor that listens, J. Mostow, et alli, CMU Project LISTEN. <http://www.cs.cmu.edu/~listen>
+- [ORDINATE]         over-the-phone automated testing of English fluency, listening, and vocabulary, Ordinate Corporation. <http://www.ordinate.com>
+- [CYBERTRANSCRIBER] automatic transcription from spoken dictation, Speech Machines Corporation. <http://www.cybertranscriber.com>
+- [RFC 1867]         Form-based File Upload in HTML. E. Nebel & L. Masinter, November 1995. <http://www.ietf.org/rfc/rfc1867.txt> [[RFC1867]]
+- [RFC 1890]         RTP Profile for Audio and Video Conferences with Minimal Control. H. Schulzrinne, January 1996. <http://www.ietf.org/rfc/rfc1890.txt> [[RFC1890]]
+- [RFC 2068]         Hypertext Transfer Protocol -- HTTP/1.1. R. Fielding, J. Gettys, J. Mogul, H. Frystyk, T. Berners-Lee, January 1997. <http://www.ietf.org/rfc/rfc2068.txt> [[RFC2068]]
+- [RFC 2119]         Key words for use in RFCs to Indicate Requirement Levels. S. Bradner, March 1997. <http://www.ietf.org/rfc/rfc2119.txt> [[RFC2119]]
+- [RFC 2183]         Communicating Presentation Information in Internet Messages: The Content-Disposition Header. R. Troost, S. Dorner, K. Moore, August 1997. <http://www.ietf.org/rfc/rfc2183.txt> [[RFC2183]]
+- [RFC 2586]         The Audio/L16 MIME content type. J. Salsman, H. Alvestrand, May 1999. <http://www.ietf.org/rfc/rfc2586.txt> [[RFC2586]]
+
+> Copyright &#169; 1997-1999
+James P. Salsman, Cisco Systems and Bovik Research Inst.
+jsalsman@{cisco.com,bovik.org} draft references renamed 7 July 1999; MAXLENGTH DOM problem corrected 19 July 1999. 
+
+
+* License
+
+- [1] 原文の規定に従います。
+
+
+* メモ
+
+- [2] <http://www.w3.org/Submission/1999/09/Comment> に [[W3C]]
+での検討の結果が載っています。この提案は HTML の機器独立性を損なうものであるとして却下されました。
+- [3] >>2 W3C 的には、 [CODE(HTML)[file]] は機器依存のもので、マイク入力は中間ファイルを介してうp可能という見解らしいけど、そんなのが実現するのはいつの話しぞや。
+
+[4]
+[CITE[Form-based Device Input and Upload in HTML]] ([CODE[2000-03-02 16:04:04 +09:00]] 版) <http://www.bovik.org/device-upload-19991111.html>
+([[名無しさん]] [WEAK[2007-01-27 10:05:44 +00:00]])
+
+[5]
+[CITE[Form-based Device Input and Upload in HTML]] ([CODE[2000-03-07 08:57:37 +09:00]] 版) <http://www.bovik.org/devup-gm.html>
+([[名無しさん]])
+
+[6]
+[CITE[Device Upload Petition]] ([CODE[2000-07-22 07:27:57 +09:00]] 版) <http://www.bovik.org/devup/>
+([[名無しさん]])
+
+[7]
+[CITE[Device Upload Petition]] ([CODE[2000-07-22 07:27:57 +09:00]] 版) <http://www.bovik.org/devup/>
+([[名無しさん]])
+
+[8]
+[CITE[Bug 46135 &#8211; input helper applications for file upload form submission]] ([CODE[2007-01-27 19:08:13 +09:00]] 版) <https://bugzilla.mozilla.org/show_bug.cgi?id=46135>
+([[名無しさん]])
+
+[9]
+[CITE@en[draft-salsman-www-device-upload-07 - Form-based Device Input in HTML]] ([CODE[2007-01-27 19:13:08 +09:00]] 版) <http://tools.ietf.org/html/draft-salsman-www-device-upload-07>
+([[名無しさん]])
+
+[10]
+[CITE[www-html@w3.org from August 1997: <input type=audio>]] ([CODE[2004-06-22 19:47:59 +09:00]] 版) <http://lists.w3.org/Archives/Public/www-html/1997Aug/0022.html>
+([[名無しさん]])
+
+[11]
+[CITE[WWW-HTML Oct-Dec 1995: <INPUT TYPE=audio> (was: Re: Client side file push) (fwd)]] ([TIME[2007-01-27 21:54:27 +09:00]] 版) <http://1997.webhistory.org/www.lists/www-html.1995q4/0171.html>
+([[名無しさん]])
+
+
+
+[12] [CITE['''['''whatwg''']''' syncronous device upload]]
+([TIME[2010-05-09 14:10:41 +09:00]] 版)
+<http://lists.whatwg.org/htdig.cgi/whatwg-whatwg.org/2010-May/026243.html>

@@ -1,0 +1,116 @@
+*8.  Security Considerations
+>   The security considerations discussed in [RFC3986] also apply to
+IRIs.  In addition, the following issues require particular care for IRIs.
+
+安全性に関して [[RFC 3986]] で議論されていることが [[IRI]]
+にも適用されます。また、次の問題を IRI では特に注意する必要があります。
+
+>   Incorrect encoding or decoding can lead to security problems.  In
+particular, some UTF-8 decoders do not check against overlong byte
+sequences.  As an example, a "/" is encoded with the byte 0x2F both
+in UTF-8 and in US-ASCII, but some UTF-8 decoders also wrongly
+interpret the sequence 0xC0 0xAF as a "/".  A sequence such as
+"%C0%AF.." may pass some security tests and then be interpreted as
+"/.." in a path if UTF-8 decoders are fault-tolerant, if conversion
+and checking are not done in the right order, and/or if reserved
+characters and unreserved characters are not clearly distinguished.
+
+不正な符号化や復号が安全上の問題を招くことがあります。
+特に、 UTF-8 復号器には長過ぎのバイト列の検査を行わないものがあります。
+例えば、 [CODE(char)[/]] は UTF-8 でも US-ASCII でもバイト [CODE[0x2F]]
+で符号化しますが、 UTF-8 復号器には誤って [CODE[0xC0]] [CODE[0xAF]]
+というバイト列をも [CODE(char)[/]] と解釈します。 UTF-8
+復号器が誤りに寛容であったり、変換と検査が正しい順序で行われなかったり、
+予約文字と非予約文字を明確に区別しなかったりすると、 [CODE(ABNF)[[[path]]]] 中の
+[SAMP(URI)[%C0%AF..]] のような列が安全試験をすり抜けて
+[SAMP(URI)[/..]] と解釈されてしまうかもしれません。
+
+>   There are various ways in which "spoofing" can occur with IRIs.
+"Spoofing" means that somebody may add a resource name that looks the
+same or similar to the user, but that points to a different resource.
+The added resource may pretend to be the real resource by looking
+very similar but may contain all kinds of changes that may be
+difficult to spot and that can cause all kinds of problems.  Most
+spoofing possibilities for IRIs are extensions of those for URIs.
+
+IRI では色々な方法で[Q[なりすまし]]ができます。
+[Q[なりすまし]]とは、他の資源名と同じか似たような名前に見えて実際には異なる資源を指しているようなことをいいます。
+なりすました資源は実際の資源とよく似て見えるように偽装されているかもしれませんし、
+どんな見つけにくい変更が加えられているかもしれませんし、
+どんな問題が起こるかもわかりません。 IRI 
+のなりすましの余地は URI の余地を拡大したものとなっています。
+
+>   Spoofing can occur for various reasons.  First, a user's
+normalization expectations or actual normalization when entering an
+IRI or transcoding an IRI from a legacy character encoding do not
+match the normalization used on the server side.  Conceptually, this
+is no different from the problems surrounding the use of
+case-insensitive web servers.  For example, a popular web page with a
+mixed-case name ("http://big.example.com/PopularPage.html") might be
+"spoofed" by someone who is able to create
+"http://big.example.com/popularpage.html".  However, the use of
+unnormalized character sequences, and of additional mappings for user
+convenience, may increase the chance for spoofing.  Protocols and
+servers that allow the creation of resources with names that are not
+normalized are particularly vulnerable to such attacks.  This is an
+inherent security problem of the relevant protocol, server, or
+resource and is not specific to IRIs, but it is mentioned here for completeness.
+
+なりすましは色々な理由で起こり得ます。まず、 IRI を入力したり遺物文字符号化から転符号化したりする時の利用者が期待する正規化や実際に行われる正規化が鯖側で使われている正規化と一致しない場合です。
+これは、概念的には大文字・小文字を区別しないウェブ鯖を使うときの問題と変わりません。
+例えば、混ぜ書きの人気ウェブ頁 ([SAMP(URI)[http://big.example.com/PopularPage.html]])
+に[Q[なりすまし]]て何者かが [SAMP(URI)[http://big.example.com/popularpage.html]]
+を作ることができるかもしれません。正規化されていない文字列を使ったり、
+利用者の便宜を図って追加の写像を行ったりすると、
+なりすましの機会が増えます。正規化されていない名前の資源の作成を認めるプロトコルや鯖は特にこのような攻撃に脆弱です。
+これは関係するプロトコル、鯖、資源の生来の安全上の問題であって、 IRI
+特有の問題ではありませんが、完全性のためにここで言及します。
+
+>   Spoofing can occur in various IRI components, such as the domain name
+part or a path part.  For considerations specific to the domain name
+part, see [RFC3491].  For the path part, administrators of sites that
+allow independent users to create resources in the same sub area may
+have to be careful to check for spoofing.
+
+なりすましはドメイン名部や [CODE(ABNF)[[[path]]]] 部などいろいろな IRI
+部品で起こり得ます。ドメイン名部に関しては [[RFC 3491]] をご覧下さい。
+[CODE(ABNF)[path]] 部については、同じ部分領域に別々の利用者が資源を作成できるようにしているサイトの管理者がなりすましの検査を銃bん行わなければならないかもしれません。
+
+>   Spoofing can occur because in the UCS many characters look very
+similar.  Details are discussed in Section 7.5.  Again, this is very
+similar to spoofing possibilities on US-ASCII, e.g., using "br0ken"
+or "1ame" URIs.
+
+なりすましは UCS によく似た文字が多くあることから起こり得ます。
+詳細は7.5節で議論しています。繰り返しますが、これは US-ASCII
+における[Q[コ 'フ |ノ夕]]、[Q[不 + 分な]] URI でのなりすましの可能性とよく似ています。
+
+>   Spoofing can occur when URIs with percent-encodings based on various
+character encodings are accepted to deal with older user agents.  In
+some cases, particularly for Latin-based resource names, this is
+usually easy to detect because UTF-8-encoded names, when interpreted
+and viewed as legacy character encodings, produce mostly garbage.
+
+なりすましは古い利用者エージェントに対応するために色々な文字符号化に基づいて[[百分率符号化]]した
+URI を認めている時に起こり得ます。場合により、
+特にラテン文字による資源名の場合には、
+UTF-8 で符号化した名前を遺物文字符号化で解釈・
+表示するとほとんどごみになってしまうので簡単に検出できるのが普通です。
+
+>   When concurrently used character encodings have a similar structure
+but there are no characters that have exactly the same encoding,
+detection is more difficult.
+
+並行して使用している文字符号化が似たような構造を持っていて丁度同じ符号化の文字がない時には検出はより難しくなります。
+
+>   Spoofing can occur with bidirectional IRIs, if the restrictions in
+section 4.2 are not followed.  The same visual representation may be
+interpreted as different logical representations, and vice versa.  It
+is also very important that a correct Unicode bidirectional
+implementation be used.
+
+なりすましは4.2節の制限に従わなかったときに双方向性 IRI
+で起こり得ます。同じ視覚的表現が異なる論理的表現で解釈されたり、
+その逆になったりします。正しい Unicode 双方向性実装を使うことも非常に重要です。
+
+* メモ

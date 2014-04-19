@@ -1,0 +1,296 @@
+
+[1] [[HTTP]] における [[URI]] の取扱いについて。
+
+
+
+
+* 仕様書から
+
+
+** RFC 1945 (HTTP/1.0); RFC 2068・2616 (HTTP/1.1) 3.2 Uniform Resource Identifiers
+
+> URIs have been known by many names: WWW addresses, Universal Document
+Identifiers, Universal Resource Identifiers [DEL[[INS[{1945}]] [2] ]] [INS[[INS[{2616}]] [3] ]], and finally the
+combination of Uniform Resource Locators (URL) [DEL[[INS[{1945}]] [4] ]] [INS[[INS[{2616}]] [4] ]] and Names (URN) [DEL[[INS[{1945}]] [16] ]] [INS[[INS[{2616}]] [20] ]].
+As far as HTTP is concerned, Uniform Resource Identifiers are simply
+formatted strings which identify--via name, location, or any other characteristic--a [DEL[[INS[{1945}]] network]] resource.
+
+URI は多くの名前で知られています : WWW 番地, 普遍文書識別子,
+普遍資源識別子, そして最後に共通資源指示子 (URL)
+と共通資源名 (URN) です。 HTTP に関係する限りでは、
+共通資源識別子は[DEL[ネットワーク]]資源を
+(名前、位置、その他の特質によって) 識別する単なる書式化された文字列です。
+
+
+*** 3.2.1 General Syntax
+
+> URIs in HTTP can be represented in absolute form or relative to some
+known base URI [DEL[[INS[{1945}]] [9] ]] [INS[[INS[{2616}]] [11] ]], depending upon the context of their use. The two
+forms are differentiated by the fact that absolute URIs always begin
+with a scheme name followed by a colon. [INS[[INS[{2616}]] For definitive information on URL syntax and semantics, see "Uniform Resource Identifiers (URI): Generic Syntax and Semantics," RFC 2396 [42] (which replaces RFCs 1738 [4] and RFC 1808 [11]). This specification adopts the definitions of "URI-reference", "absoluteURI", "relativeURI", "port", "host","abs_path", "rel_path", and "authority" from that specification.]]
+
+HTTP では URI は、その使用する文脈によって絶対形で表現したり何らかの既知の基底 URI
+からの相対形で表現します。二つの形式は、絶対 URI
+は常に scheme 名とコロンで始まることにより区別できます。[INS[URL の構文と意味の定義的情報は (RFC 1738 と RFC 1808 を置き換える) [[RFC2396]] 『共通資源識別子 (URI): 一般構文及び意味』を見て下さい。この仕様書はその仕様書の [CODE(ABNF)[[[URI-reference]]]], [CODE(ABNF)[[[absoluteURI]]]], [CODE(ABNF)[[[relativeURI]]]], [CODE(ABNF)[[[port]]]], [CODE(ABNF)[[[host]]]], [CODE(ABNF)[[[abs_path]]]], [CODE(ABNF)[[[rel_path]]]], [CODE(ABNF)[[[authority]]]] の定義を使用します。]]
+
+[DEL[
+
+> [INS[{1945,2068}]]
+- URI            = ( absoluteURI | relativeURI ) [ "#" fragment ]
+- absoluteURI    = scheme ":" *( uchar | reserved )
+- relativeURI    = net_path | abs_path | rel_path
+>
+- net_path       = "//" net_loc [ abs_path ]
+- abs_path       = "/" rel_path
+- rel_path       = [ path ] [ ";" params ] [ "?" query ]
+>
+- path           = fsegment *( "/" segment )
+- fsegment       = 1*pchar
+- segment        = *pchar
+>
+- params         = param *( ";" param )
+- param          = *( pchar | "/" )
+>
+- scheme         = 1*( ALPHA | DIGIT | "+" | "-" | "." )
+- net_loc        = *( pchar | ";" | "?" )
+- query          = *( uchar | reserved )
+- fragment       = *( uchar | reserved )
+>
+- pchar          = uchar | ":" | "@" | "&" | "=" | "+"
+- uchar          = unreserved | escape
+- unreserved     = ALPHA | DIGIT | safe | extra | national
+>
+- escape         = "%" HEX HEX
+- reserved       = ";" | "/" | "?" | ":" | "@" | "&" | "=" | "+"
+- extra          = "!" | "*" | "'" | "(" | ")" | ","
+- safe           = "$" | "-" | "_" | "."
+- unsafe         = CTL | SP | <"> | "#" | "%" | "<" | ">"
+- national       = <any OCTET excluding ALPHA, DIGIT, reserved, extra, safe, and unsafe>
+
+> For definitive information on URL syntax and semantics, see RFC 1738 [4] and RFC 1808 [DEL[[INS[{1945}]] [9] ]] [INS[[INS[{2068}]] [11] ]]. The BNF above includes national characters not
+allowed in valid URLs as specified by RFC 1738, since HTTP servers
+are not restricted in the set of unreserved characters allowed to
+represent the rel_path part of addresses, and HTTP proxies may
+receive requests for URIs not defined by RFC 1738.
+
+URL の構文と意味の定義的情報は [[RFC1738]] と [[RFC1808]]
+を見て下さい。上の BNF は RFC 1738 の規定する妥当な URL
+では認められていない国家文字を含んでいますが、
+これは、 HTTP [[サーバー]]は番地の [CODE(ABNF)[rel_path]]
+部分を表現するのに認められた非予約文字の集合に制限されていないこと、
+HTTP 串は RFC 1738 で定義されていない URI についての要求を受信するかもしれないことによります。
+]DEL]
+
+[INS[
+
+> [INS[{2068,2616}]]  The HTTP protocol does not place any a priori limit on the length of
+a URI. Servers MUST be able to handle the URI of any resource they
+serve, and SHOULD be able to handle URIs of unbounded length if they
+provide GET-based forms that could generate such URIs. A server
+SHOULD return 414 (Request-URI Too Long) status if a URI is longer
+than the server can handle (see section 10.4.15).
+
+HTTP プロトコルは URI の長さに優先的な制限を設けていません。
+サーバーはその供する任意の資源の URI を取扱うことができなければ'''なりません'''し、
+長さに上限の無い URI を生成することがある [CODE(HTTP)[[[GET]]]]
+を基にした[[フォーム]]を提供するのであれば、
+そのような URI を取扱うことができる'''べきです'''。
+サーバーは、 URI が取扱うことのできる長さよりも長い場合には
+[CODE(HTTP)[[[414]] ([CODE(ABNF)[Request-URI]] 長過ぎ)]]
+状態を返す'''べきです'''。
+
+> Note: Servers [DEL[should]] [INS[ought to]] be cautious about depending on URI lengths
+above 255 bytes, because some older client or proxy implementations
+may not properly support these lengths.
+
+注意 : サーバーは、古い[[クライアント]]や[[串]]の中には255バイトを超える URI
+に適切に対応していない実装があるかもしれませんから、
+そのような URI に依存することには慎重になるべきであります。
+]INS]
+
+
+*** 3.2.2 http URL
+
+> The "http" scheme is used to locate network resources via the HTTP
+protocol. This section defines the scheme-specific syntax and
+semantics for http URLs.
+
+[CODE(URI)[[[http]]]] scheme は、 HTTP
+プロトコルを介してネットワーク資源を位置付けするのに使います。
+この節では [CODE(URI)[http]] URL の scheme 依存構文と意味を定義します。
+
+[DEL[
+
+> [INS[{1945,2068}]]
+- http_URL       = "http:" "//" host [ ":" port ] [ abs_path ]
+>
+- host           = <A legal Internet host domain name or IP address (in dotted-decimal form), as defined by Section 2.1 of RFC 1123>
+>
+- port           = *DIGIT
+]DEL]
+
+[INS[
+
+> [INS[{2616}]]
+- http_URL = "http:" "//" host [ ":" port ] [ abs_path [ "?" query ]]
+]INS]
+
+> If the port is empty or not given, port 80 is assumed. The semantics
+are that the identified resource is located at the server listening
+for TCP connections on that port of that host, and the Request-URI
+for the resource is abs_path [INS[[INS[{2616}]] (section 5.1.2)]]. [INS[[INS[{2068,2616}]] The use of IP addresses in URL[DEL[']]s SHOULD be avoided whenever possible (see RFC 1900 [24]).]]
+If the abs_path is not present in the URL, it [DEL[[INS[{1945}]] must]] [INS[MUST]] be given as "/" when used as a Request-URI [INS[for a resource]] (Section 5.1.2). [INS[[INS[{2616}]] If a proxy receives a host name which is not a fully qualified domain name, it MAY add its domain to the host name it received. If a proxy receives a fully qualified domain name, the proxy MUST NOT change the host name.]]
+
+[CODE(URI)[port]] が空であるか、または与えられていない時は、
+ポート [CODE[80]] を仮定します。
+意味するところは、識別される資源はそのホストのそのポートの [[TCP]]
+[[接続]]を聴取しているサーバーに位置付けられ、
+その資源の [CODE(ABNF)[[[Request-URI]]]] が [CODE(URI)[[[abs_path]]]]
+であるということです。[INS[IP 番地を URL で使用することは可能な限り避ける'''べきです'''。]]
+[CODE(URI)[abs_path]] が URL 中に現れない場合には、[INS[資源の]]
+[CODE(ABNF)[Request-URI]] として使用するときには [CODE(URI)[/]]
+を与えなければ'''なりません'''。[INS[串が[[完全修飾ドメイン名]]ではないホスト名を受信した場合は、受信したホスト名にドメインを加えても'''構いません'''。串が完全修飾名を受信した場合には、串はホスト名を変えては'''なりません'''。]]
+
+[DEL[
+
+> [INS[{1945}]]  Note: Although the HTTP protocol is independent of the transport
+layer protocol, the http URL only identifies resources by their
+TCP location, and thus non-TCP resources must be identified by
+some other URI scheme.
+
+注意 : HTTP プロトコルは[[転送層]]プロトコルとは独立していますが、
+[CODE(URI)[http]] URL は TCP 位置によってのみ資源を識別しますから、
+非 TCP 資源は他の URI scheme で識別しなければなりません。
+
+> The canonical form for "http" URLs is obtained by converting any
+UPALPHA characters in host to their LOALPHA equivalent (hostnames are
+case-insensitive), eliding the [ ":" port ] if the port is 80, and
+replacing an empty abs_path with "/".
+
+[CODE(HTTP)[http]] URL の[[正統形]]は、 [CODE(URI)[[[host]]]] 中の
+[CODE(ABNF)[[[UPALPHA]]]] 文字をすべて [CODE(ABNF)[[[LOALPHA]]]]
+の同等のものに変換し (ホスト名は大文字・小文字を区別しません)、
+[CODE(URI)[[[port]]]] が [CODE(URI)[80]] であれば
+[CODE(ABNF)[ [ ":" port ] ]] を省略し、空の [CODE(ABNF)[abs_path]]
+を [CODE(URI)[/]] で置換することで得られます。
+]DEL]
+
+[INS[
+]INS]
+
+
+**** RFC 2068・2616 3.2.3 URI Comparison
+
+> When comparing two URIs to decide if they match or not, a client
+SHOULD use a case-sensitive octet-by-octet comparison of the entire
+URIs, with these exceptions:
+
+二つの URI が一致するかどうかを決めるために比較する時には、
+[[クライアント]]は URI 全体をオクテット毎に大文字・小文字を区別して比較する'''べきです'''。
+但し、次をその例外とします。
+
+>
+- [DEL[o]] [INS[-]] A port that is empty or not given is equivalent to the default
+port for that URI[INS[-reference]];
+- [DEL[o]] [INS[-]] Comparisons of host names MUST be case-insensitive;
+- [DEL[o]] [INS[-]] Comparisons of scheme names MUST be case-insensitive;
+- [DEL[o]] [INS[-]] An empty abs_path is equivalent to an abs_path of "/".
+
+- [CODE(URI)[port]] が空であるか、または与えられていない時には、
+その URI 参照の既定のポートと等しい。
+- ホスト名の比較は大文字・小文字を区別しては'''ならない'''。
+- Scheme 名の比較は大文字・小文字を区別しては'''ならない'''。
+- 空の [CODE(ABNF)[abs_path]] は [CODE(ABNF)[abs_path]] [CODE(URI)[/]]
+と等しい。
+
+> Characters other than those in the "reserved" [DEL[[INS[{2068,2616}]] and "unsafe"]] set[DEL[s [INS[(Errata で削除)]]]] (see [DEL[section 3.2]] [INS[RFC 2396 [42] ]]) are equivalent to their ""%" HEX HEX" encodings.
+
+[CODE(ABNF)[[[reserved]]]] 集合[DEL[と [CODE(ABNF)[[[unsafe]]]] 集合]]にある文字以外の文字は、
+その [CODE(ABNF)["%" [[HEX]] HEX]] 符号化と等しいとします。
+
+> For example, the following three URIs are equivalent:
+
+例えば、次の3つの URL は同等です。
+
+>
+- http://abc.com:80/~smith/home.html
+- http://ABC.com/%7Esmith/home.html
+- http://ABC.com:/%7esmith/home.html
+
+
+** RFC 2616 (HTTP/1.1) 15.1.3 Encoding Sensitive Information in URI's
+
+> Because the source of a link might be private information or might
+reveal an otherwise private information source, it is strongly
+recommended that the user be able to select whether or not the
+Referer field is sent. For example, a browser client could have a
+toggle switch for browsing openly/anonymously, which would
+respectively enable/disable the sending of Referer and From information.
+
+[[リンク]]の[[始点]]は
+
+> Clients SHOULD NOT include a Referer header field in a (non-secure)
+HTTP request if the referring page was transferred with a secure
+protocol.
+
+> Authors of services which use the HTTP protocol SHOULD NOT use GET
+based forms for the submission of sensitive data, because this will
+cause this data to be encoded in the Request-URI. Many existing
+servers, proxies, and user agents will log the request URI in some
+place where it might be visible to third parties. Servers can use
+POST-based form submission instead
+
+HTTP プロトコルを使用するサービスの著者は、繊細なデータの送信に
+[CODE(HTTP)[[[GET]]]] を基にした[[フォーム]]を使用する'''べきではありません'''。
+なぜなら、そうするとそのデータは [CODE(ABNF)[[[Request-URI]]]]
+に符号化されてしまいます。多くの既存の[[鯖]], [[串]],
+[[利用者エージェント]]は、要求 URI をどこかしら第三者に可視であるかもしれないところに記録します。
+サーバーは代わりに [CODE(HTTP)[[[POST]]]] を基にしたフォーム送信を使用することができます。
+
+
+** RFC 1945 (HTTP/1.0) 12.5; RFC 2068 (HTTP/1.1) 15.5; RFC 2616 (HTTP/1.1) 15.2 Attacks Based On File and Path Names
+
+> Implementations of HTTP origin servers [DEL[should]] [INS[SHOULD]] be careful to restrict
+the documents returned by HTTP requests to be only those that were
+intended by the server administrators. If an HTTP server translates
+HTTP URIs directly into file system calls, the server [DEL[must]] [INS[MUST]] take
+special care not to serve files that were not intended to be
+delivered to HTTP clients. For example, [DEL[Unix]] [INS[UNIX]], Microsoft Windows, and
+other operating systems use ".." as a path component to indicate a
+directory level above the current one. On such a system, an HTTP
+server [DEL[must]] [INS[MUST]] disallow any such construct in the Request-URI if it
+would otherwise allow access to a resource outside those intended to
+be accessible via the HTTP server. Similarly, files intended for
+reference only internally to the server (such as access control
+files, configuration files, and script code) [DEL[must]] [INS[MUST]] be protected from
+inappropriate retrieval, since they might contain sensitive
+information. Experience has shown that minor bugs in such HTTP server
+implementations have turned into security risks.
+
+HTTP [[起源鯖]]の実装者は、 HTTP [[要求]]により返される[[文書]]が鯖管理者により意図されたものだけとなるように制限することに注意を払う'''べきです'''。
+HTTP 鯖が HTTP URI を直接ファイル・システム呼出しに翻訳するのであれば、
+鯖は HTTP [[クライアント]]に配送されることを意図していないファイルを給仕しないように特別の注意を払わなければ'''なりません'''。
+例えば、 [[UNIX]], [[MicrosoftWindows]], および他の[[オペレーティング・システム]]は、
+[[経路]]部品 [CODE[..]] を現在のディレクトリ水準より一水準上を示すものとして使います。
+このようなシステムでは、 HTTP 鯖は、 [CODE(ABNF)[[[Request-URI]]]]
+中でそのような構造があると、 HTTP 鯖を介して接続可能とすることを意図しているもの以外の[[資源]]に接続することを認めてしまうなら、
+そのような構造を禁止しなければ'''なりません'''。
+同様に、鯖内部でのみ参照することを意図している[[ファイル]]
+(例えば接続制御ファイル、設定ファイル、スクリプト符号)
+は、極秘の情報を含むかもしれませんから、
+不適切な取り出しから保護しなければ'''なりません'''。
+経験によれば、そのような HTTP 鯖実装での小さな不具合が安全上の危険性となります。
+
+[INS[
+
+注: 変更点は RFC 1945 → RFC 2068 のもの。
+]INS]
+
+
+** RFC の部分の License
+
+[[RFCのライセンス]]
+
+* 関連
+
+[415] [[HTTPにおけるURLの比較]]の項もご覧ください。

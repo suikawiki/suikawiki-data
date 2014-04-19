@@ -1,0 +1,89 @@
+#?SuikaWiki/0.9
+
+
+* データ字句化器 (DATATOK) グローブ / グローブ構築処理 (SGML)
+
+[1] [CODE[[RUBYB[データ字句化器] [Data tokenizer]] (DATATOK) グローブ構築処理]]は、
+下位「[[一致字句模型]]」を持つ[[字句模型]]を[[グローブ]]中の[[データ]]に適用して、
+datatok グローブを生成します。
+
+仕様書: [[ISO/IEC 10744]]:1997 A.4.4.2 Data tokenizer (DATATOK) grove construction
+<http://www.y12.doe.gov/sgml/wg8/docs/n1920/html/clause-A.4.4.html#clause-A.4.4.2>
+
+[2] 
+,段階	,Datatok グローブ構築処理	,例	,例 ([CODE(SGMLa)[catsrc]]=☆)
+,1a	,[[グローブ根]] [CODE(SGML)[[[tokroot]]]] を作成
+,1b	,グローブ根の[[特性]] [CODE(SGML)[[[source]]]] は原始グローブのもとの[[節]]の並び
+,2	,原始節それぞれのデータから[[文字列]]の並びを作成	,('Oregon' ' ' 'river otters' ' are cute')	,==
+,3	,原始連結分離子 ([CODE(SGMLa)[[[catsrc]]]]) が指定されていればそれで連結して1文字列に	,〃	,('Oregon☆ ☆river otters☆ are cute')
+,4	,並び中のそれぞれの文字列に字句模型を適用
+,4a	,字句模型中の一致字句模型を満足する部分文字列の並びを作成	,(('Oregon') () ('river' 'otters') ('are' 'cute'))	,(('Oregon☆' '☆river' 'otters☆' 'are' 'cute'))
+,4b	,各部分文字列は字句模型の応用の間中[[辞書式順序]]再順序付けされ続ける
+,5	,字句連結分離子 ([CODE(SGMLa)[[[cattoken]]]]) が指定されていれば部分並びはそれで連結して1文字列に	,〃	,〃
+,6	,文字列の並びの並びを展開して、文字列の1つの並びに	,('Oregon' 'river' 'otters' 'are' 'cute')	,('Oregon☆' '☆river' 'otters☆' 'are' 'cute')
+,7	,結果連結分離子 ([CODE(SGMLa)[[[catres]]]]) が指定されていればそれで連結して1文字列に	,〃	,〃
+,8a	,並び中の文字列に対応する [CODE(SGML)[[[tokenstr]]]] 節の並びを作成
+,8b	,各 [CODE(SGML)[tokenstr]] の特性 [CODE(SGML)[[[string]]]] の値は対応する文字列	,({string: 'Oregon'} {string: 'river'} {string: 'otters'} {string: 'are'} {string: 'cute'})	,({string: 'Oregon☆'} {string: '☆river'} {string: 'otters☆'} {string: 'are'} {string: 'cute'})
+,8c	,各 [CODE(SGML)[tokenstr]] の特性 [CODE(SGML)[[[source]]]] の値は一部または全部が文字列に対応する原始グローブの節
+,9	,グローブ根の特性 [CODE(SGML)[[[strings]]]] の値を [CODE(SGML)[tokenstr]] 並びに
+
+例には、仕様書にある 
+[SAMP(SGML)[<state>Oregon</state> <animal>river otters</animal> are cute]]
+を使いました。
+
+
+[4]
+[CODE(SGMLa)[catsrc]] 以外の [CODE(SGMLa)[cat[VAR[*]]]] も、適用される場所が違うだけで似たような結果が得られます。仕様書には例があるので、そちらを参照してください。
+
+
+
+[[#comment]]
+
+
+* datatok 特性集合 (SGML)
+
+[3] 
+:仕様書:[[ISO/IEC 10744]]:1997 A.4.4.2.1 Data tokenizer property set
+<http://www.y12.doe.gov/sgml/wg8/docs/n1920/html/clause-A.4.4.html#clause-A.4.4.2.1>
+:グローブ構築仕様文書 ([CODE(SGMLa)[[[gcsd]]]]) 記法公開識別子:
+[CODE(SGML)[ISO/IEC 10744:1997//NOTATION Data Tokenizer Grove Construction Process//EN]]
+:[[級]]:
+,規格参照具象構文名	,応用名	,完全名	,説明
+,[CODE(SGML)[[[tokroot]]]]	,[RUBYB[[CODE(SGML)[tokenized root]]] [字句化根]]	,==	,結果グローブ根
+,[CODE(SGML)[[[tokenstr]]]]	,[RUBYB[[CODE(SGML)[tokenized string]]] [字句化文字列]]	,==	,一つ以上の字句の文字列
+
+
+[[#comment]]
+
+* datatok 記法形式 (SGML)
+
+[5] Datatok グローブ構築処理は、
+[DFN[[RUBYB[データ字句化器][data tokenizer]] ([RUBYB[構築処理][construction process]]) ([CODE(SGML)[datatok]]) [[記法形式]]]]から[[派生]]した[[データ内容記法]]により宣言します。
+
+仕様書: ISO/IEC 10744:1997 A.4.4.2.2 Data tokenizer notation form
+<http://www.y12.doe.gov/sgml/wg8/docs/n1920/html/clause-A.4.4.html#clause-A.4.4.2.2>
+
+[6] Datatok 処理が使用する[[字句模型]]は、
+- Datatok 処理に内在のもの (自然言語の字句解析処理など) でも構いません
+- Datatok 処理と一緒に規定した記法で別途データとして指定しても構いません
+- Datatok 記法に適合する要素の内容として指定します
+- [CODE(SGMLa)[[[NotNames]]]] を使えば属性値として指定できます
+
+[7]
+:公開識別子:[CODE(SGML)[ISO/IEC 10744:1997//NOTATION Data Tokenizer Grove Construction Process//EN]]
+:属性:
+,名前,宣言型,既定値,説明
+,%[CODE(SGML)[[[altreps]]]],==,==,[CODE(SGML)[GenArc]] より
+,%[CODE(SGML)[[[included]]]],==,==,[CODE(SGML)[GenArc]] より
+,%[CODE(SGML)[[[superdcn]]]],==,==,[CODE(SGML)[GenArc]] より
+,%[CODE(SGML)[[[bosdatt]]]],==,==,[CODE(SGML)[base]] より
+,%[CODE(SGML)[[[egrvplan]]]],==,==,[CODE(SGML)[locs]] より
+,[CODE(SGML)[[[boundary]]]],[CODE(SGML)[sodeod | sodiec | isceod | isciec | inmodel]],[CODE(SGML)[isciec]],打撃境界制約
+,[CODE(SGML)[[[catsrc]]]],[CODE(SGML)[[[CDATA]]]],(なし),原始連結分離子
+,[CODE(SGML)[[[cattoken]]]],[CODE(SGML)[CDATA]],(なし),字句連結分離子
+,[CODE(SGML)[[[catres]]]],[CODE(SGML)[CDATA]],(なし),結果連結分離子
+,[CODE(SGML)[[[maxtoksz]]]],[CODE(SGML)[[[NUMBER]]]],(システム定義),最大字句寸法
+
+[[#comment]]
+
+* メモ

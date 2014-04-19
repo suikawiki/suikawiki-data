@@ -1,0 +1,61 @@
+
+
+
+* 圧縮
+
+既に変数に入っているデータを圧縮する時は、
+
+[PRE[
+ require Compress::Zlib;
+ $compressed_data = Compress::Zlib::memGzip ($original_data);
+]PRE]
+
+で OK。
+
+
+* 展開
+
+変数にあるデータを展開する手軽な方法がなぜかありません。
+(Google で探しても見つからない。)
+
+[PRE[
+ ## Taken from Namazu <http://www.namazu.org/>, filter/gzip.pl
+ my $s = $original_data; ## compressed data
+ my $flags = unpack('C', substr($s, 3, 1));
+ $s = substr($s, 10);
+ $s = substr($s, 2)  if ($flags & 0x04);
+ $s =~ s/^[^\0]*\0// if ($flags & 0x08);
+ $s =~ s/^[^\0]*\0// if ($flags & 0x10);
+ $s = substr($s, 2)  if ($flags & 0x02);
+ 
+ my $zl = Compress::Zlib::inflateInit
+     (-WindowBits => - Compress::Zlib::MAX_WBITS());
+ my ($inf, $stat) = $zl->inflate ($s);
+  if ($stat == Compress::Zlib::Z_OK()
+   || $stat == Compress::Zlib::Z_STREAM_END()) {
+  return $inf;
+ } else {
+   die 'Bad compressed data';
+ }
+]PRE]
+
+Namazu から拝借してきたもの (をちょっといじったもの) です。
+ちなみに Namazu のライセンスは GNU GPL2 です。
+
+Gzip の外部ファイルからの読み込みなら、 Gompress::Zlib の関数が使えます。
+
+
+* See also
+
+- [[符号化]]
+- [[圧縮]]
+-- [[gzip]]
+
+[1]
+最近の (といってももう随分前になりますが) [CODE(perl)[Compress::Zlib]] には memory 上の gziped data を展開する method が用意されていますから、面倒な code を書く必要は無くなりました。
+([[名無しさん]] [WEAK[2004-05-29 10:31:24 +00:00]])
+
+[2]
+元のデータ = Compress::Zlib::memGunzip(圧縮したデータ)で戻せます。
+([[みず]] [WEAK[2004-10-29 12:28:02 +00:00]])
+

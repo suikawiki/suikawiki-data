@@ -1,0 +1,122 @@
+[4] [CODE(HTTP)@en[[[Set-Cookie:]]]] [[頭欄]]、
+[CODE(HTTP)@en[[[Set-Cookie2:]]]] [[頭欄]]の [DFN[[CODE(HTTP)@en[[[Max-Age]]]] [[属性]]]]は、
+発行する [[Cookie]] の[[寿命]]を指定します [SRC[>>7, >>8]]。
+
+* 仕様書
+
+[REFS[
+- [16] [CITE@en[RFC 6265 - HTTP State Management Mechanism]] ([TIME[2012-03-01 09:57:02 +09:00]] 版) <http://tools.ietf.org/html/rfc6265#page-9>
+- [18] '''[CITE@en[RFC 6265 - HTTP State Management Mechanism]] ([TIME[2012-03-01 09:57:02 +09:00]] 版) <http://tools.ietf.org/html/rfc6265#section-4.1.2.2>'''
+]REFS]
+
+* 意味
+
+[19] [CODE(HTTP)@en[[[Max-Age]]]] [[属性]]は[[クッキー]]の最大[RUBYB[寿命]@en[lifetime]]を、
+[[クッキー]]の期限切れまでの[[秒数]]として表します。 [SRC[>>18]]
+
+[20] [[利用者エージェント]]はこの[[秒数]]が経過すると[[クッキー]]を破棄し、
+[[鯖]]に送信しなくなります。ただし[[利用者エージェント]]は必ずしもこの[[秒数]]が経過するまで[[クッキー]]を保存しなければならないわけでは''ありません''
+[SRC[>>18]]。
+
+[23] [CODE(HTTP)@en[[[Max-Age]]]] [[属性]]も [CODE(HTTP)@en[[[Expires]]]] [[属性]]も指定されていなければ、
+[[クッキー]]は現在の[[セッション]]が終了するまで保持されます。
+
+* 構文
+
+[9] 値は [CODE(ABNF)@en[[[delta-seconds]]]] で、[[寿命]]の[[秒]]数を[[非負整数]]で表します
+[SRC[>>7, >>8]]。[[零]]は [[Cookie]] をただちに破棄[['''するべき''']]ことを表します
+[SRC[>>7, >>8]]。
+
+[FIG[
+[FIGCAPTION[
+[17] [[RFC 6265]] における [CODE(HTTP)@en[[[Max-Age]]]] [[属性]]の構文
+]FIGCAPTION]
+
+[PRE(ABNF code)[
+ max-age-av        = "Max-Age=" non-zero-digit *DIGIT
+                       ; In practice, both expires-av and max-age-av
+                       ; are limited to dates representable by the
+                       ; user agent.
+ non-zero-digit    = %x31-39
+                       ; digits 1 through 9
+]PRE]
+]FIG]
+
+* 処理モデル
+
+[10] [[Cookie]] の[[齢]]は [WEAK[([CODE(HTTP)@en[[[Cache-Control]]]] の [CODE(HTTP)@en[[[max-age]]]] と同じ)]]
+[[齢計算規則]]に従って計算します [SRC[>>8]]。その結果[[齢]]が [CODE(ABNF)@en[[[delta-seconds]]]]
+で指定された[[秒]]数よりも大きければ、その [[Cookie]] は破棄[['''するべき''']]です
+[SRC[>>7, >>8]]。
+
+[13] [CODE(HTTP)@en[[[Max-Age]]]] [[属性]]が省略された場合、
+その [[Cookie]] は[[利用者エージェント]]が終了したときに捨てられます [SRC[>>14, >>15]]。
+
+* 歴史
+
+** IETF Cookie
+
+[REFS[
+- [5] [DEL[[[RFC 2109]]]] ([[廃止]]済み)
+-- [7] '''[CSECTION@en[4.2.2 Set-Cookie Syntax]]'''
+-- [14] [CSECTION@en[4.3.1 Interpreting Set-Cookie2]]
+- [6] [[RFC 2965]]
+-- [8] '''[CSECTION@en[3.2.2 Set-Cookie2 Syntax]]'''
+-- [15] [CSECTION@en[3.3.1 Interpreting Set-Cookie2]]
+]REFS]
+
+* 実装
+
+[12] [[Netscape Cookie]] には含まれていなかった [CODE(HTTP)@en[[[Max-Age]]]] [[属性]]ですが、
+一部の[[利用者エージェント]]や鯖側ライブラリーは [[RFC 2109]]
+に従い実装しているようです。
+
+@@ [CODE(HTTP)@en[[[Version]]]] がなくても使えるのかどうか? 
+[CODE(HTTP)@en[[[Expires]]]] との相互作用は?
+
+[21] [CODE(HTTP)@en[[[Max-Age]]]] [[属性]]は [[RFC 6265]] により公式にも
+[[Netscape]] 由来の [CODE(HTTP)@en[[[Set-Cookie]]]] 仕様の一部となりましたが、
+それでも過去の[[利用者エージェント]]の中には [CODE(HTTP)@en[[[Max-Age]]]]
+[[属性]]に対応していないものがあります。 [CODE(HTTP)@en[[[Max-Age]]]]
+[[属性]]に対応していない[[利用者エージェント]]はこれを無視します [SRC[>>18]]。
+
+* 関連
+
+[11] [[Netscape Cookie]] では [CODE(HTTP)@en[[[Expires]]]] [[属性]]がありましたが、
+[[IETF]] 独自の [[Cookie]] では代わりに [CODE(ABNF)@en[[[Max-Age]]]] [[属性]]が提供されています。
+
+[22] [[RFC 6265]] の新しい [[Cookie]] 仕様ではこの両方が定義されています。
+両方が指定されている場合は [CODE(HTTP)@en[[[Max-Age]]]] [[属性]]が優先されます
+[SRC[>>18]]。
+
+* メモ
+
+[1] [CITE['''['''ruby-list:35933''']''' Re: Tofu の有効期限について]] ([TIME[2009-02-01 21:37:59 +09:00]] 版) <http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-list/35933>
+
+>> ruby-1.6.7のCGI::Cookieではmax-ageは扱ってないようですが、
+扱う予定はあるでしょうか?
+>
+最新の CGI.pm も開発版の CGI.pm もまだ対応する様子が無いのですが、
+まあ、RFC にある事ですから、扱えるようにしたいと思います。しかし、
+ちょっと検索してみると、
+>
+http://www.m-fr.net/etc/cookie.html
+>> 少なくとも、WindowsでIEの5.5、NNの4.76、6.02、Operaと試しまくってみ
+たのですが、概ねペケです。
+>
+このあたりまで対応していないとなると、あまり実用にはならないかもしれま
+せんね。
+
+[2] [CITE@ja[2008年3月 - Blog - EOF]] ([[Taku Watabe]] 著, [TIME[2009-01-02 21:39:11 +09:00]] 版) <http://end-of-file.net/blog/2008-03.html#date-2008-03-18>
+
+>IE は6と7、Safari は Mac 版 2.0.4 と 3.0.4 で確認。Firefox 2.0.0.12、Opera 9.26 は利用可能。
+
+[3] [CITE@ja[KDDI au: そのほかの技術情報 > Cookie]] ([TIME[2009-02-01 22:41:38 +09:00]] 版) <http://www.au.kddi.com/ezfactory/tec/spec/cookie.html>
+
+>
+:デフォルトの有効期限:
+「max age」の有効期限の指定がないない場合、そのCookieの有効期限はデフォルトで「1日 (24時間) 」となります。
+:有効期限の指定方法:
+Cookieの有効期限はHTTPレスポンスヘッダの「Set-Cookie」フィールドの「max age (有効残存秒数) 」で指定することができます。
+
+;; 逆に [CODE(HTTP)@en[[[Expires]]]] が使えるという記述はない。

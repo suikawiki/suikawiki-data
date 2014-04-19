@@ -1,0 +1,107 @@
+#?SuikaWiki/0.9
+
+* SuikaWiki 2 から SuikaWiki 3 への移行の手引き
+
+[1] まず、 [[SuikaWiki3//Setup]] などを参考に、 SuikaWiki 3
+を用意します。
+
+[2] 古い SuikaWiki 2 の WikiDatabase ([SAMP(file)[wikidata/page/[VAR[*]]]])
+の中身を新しい SuikaWiki 3 の WikiDatabase ([SAMP(file)[wikidata/page/[VAR[*]]]])
+に複製します。
+
+ディレクトリ [CODE(file)[[VAR[*]].ns]] とファイル [CODE(file)[[VAR[*]].txt]]
+はそのまま使用できますが、特性データベースのファイル
+[CODE(file)[mt--[VAR[*]].dat]] はそのままでは使用できません。
+
+:[CODE(file)[mt--41646D696E50617373776F7264.dat]]:
+SuikaWiki 2 の管理者用合言葉を記録するデータベースですが、
+SuikaWiki 3 には相当する機能がありません。このファイルは削除してください。
+(将来 SuikaWiki 3 で認証機能が実装される時には、
+SuikaWiki 2 とは互換性のない方法を使用する予定です。)
+:[CODE(file)[mt--497346726F7A656E.dat]]:
+SuikaWiki 2 で WikiPage の凍結状態を記録するデータベースですが、
+SuikaWiki 3 で相当する機能は実装していません。
+(将来 SuikaWiki 3 で認証機能が実装される時には、
+もし要望があれば変換器を提供するかもしれません。)
+:[CODE(file)[mt--4C6173744D6F646966696564.dat]]:
+SuikaWiki 2 で WikiPage の最終更新日時を記録していたデータベースですが、
+SuikaWiki 3 ではファイル名が変更されました。
+[KBD[mv mt--4C6173744D6F646966696564.dat mt--6C6173745F6D6F646966696564.dat]]
+としてください。
+:[CODE(file)[mt--52656665726572.dat]]:
+参照子情報 (逆リンク URI) を記録するデータベースですが、
+SuikaWiki 3 では書式が変更されました。
+[CODE(file)[bin/referer2to3.pl]] を使って変換できますが、
+この作業は'''後で'''行ってください。。
+
+設定用スクリプト [CODE(file)[suikawiki-config.ph]]
+の内容は全面的に改められましたので、 SuikaWiki 2 用のものは使用できません。
+SuikaWiki 3 用のものに置換えてください。
+
+なお、 SuikaWiki 3 の [CODE(file)[suikawiki-config.ph]]
+は、通常は一切書換えずに既定値のまま使用できます。
+[WEAK[(以前のように自分自身の URI を指定する必要はありません。)]]
+
+SuikaWiki 2 の [CODE(file)[suikawiki-config.ph]] の後半にあった
+[[WikiView]] の customize は、 SuikaWiki 3 では [CODE(file)[config.wp2]]
+に記述し、 [KBD[make config.ph]] する必要があります。
+WikiView の仕様は大きく変更されているので、
+以前のものはそのままではまず動かないでしょう。
+
+[3] SuikaWiki 2 の特別な WikiPage の幾つかは名前が変わっています。
+また、内容の記述方法が変わったものもあります。 SuikaWiki 3
+のものを基に、必要なら修正してお使いください。
+
+WikiName は変わっていないが、内容を修正する必要のあるもの:
+: [[Wiki//Page//Create]], [[Wiki//Page//Search]] :
+入力箱の指定方式が変わったので、その部分を新しい物に差し替える必要があります。
+: [[Wiki//Resource//ja]], [[Wiki//Resource//en]] :
+多くの語が追加されているので、新しい物に差し替えてください。
+: [[Wiki//InterWikiName]] :
+書式が変わりました。
+
+WikiName が変わったもの:
+: [[Wiki//NewPageTemplate]] :
+旧名 [[NewPageTemplate]]。内容はそのままお使いいただけます。
+: [[Wiki//Style//List//text/html]] :
+旧名 [[Wiki//Style//List//HTML]]。書式も変わりました。
+: [[Wiki//Referer//IgnoreSite]], [[Wiki//Referer//SiteName]] :
+[[Wiki//InterWikiName]] に統合されました (書式も変わっています)。
+古い物は削除してください。
+
+また、特にこだわりがなければ、スタイル・シートも新しい物に入れ替えてください。
+- [[Wiki//Style//SuikaWiki//HTML]]
+- [[Wiki//Style//SuikaWiki//HTML//Semantic]]
+- [[Wiki//Style//浮動物//HTML]]
+- [[Wiki//Style//Plugin//HTML]]
+
+[4] 参照子 (逆リンク) データベースを新しい書式に変換します。
+[KBD[perl referer2to3.pl --input-file=mt--52656665726572.dat --output-file=referer.db]]
+としてください。変換後に [CODE(file)[mt--52656665726572.dat]]
+は削除してください。
+
+(この作業は >>3 で Wiki//InterWikiName を新しい物に修正した後から行わないと、
+wiki 内での移動まで記録されてしまいます。
+
+[5] 以上で SuikaWiki 3 に更新した wiki の準備が整いました。
+
+[[..//SuikaWiki2からの変更点]]もお読みください。
+
+[[#comment]]
+
+* BugTrack WikiPlugin Module
+
+[9] バグ追跡システム (BugTrack WikiPlugin module)
+で新しいバグの WikiPage を追加する form
+のための整形規則の入力欄名 ([CODE(HTTP)[[[POST]]]]
+される際の引数の名前) が変わりましたので、
+そのままでは使えません。
+
+[CODE[%bt--create-new-bug]] の引数 [CODE[content]]
+の内容がこれに影響します。 BugTrack plugin
+にある記述を参考に修正するか、 [CODE[content]]
+引数を消去してください。 (SuikaWiki 3 版
+[CODE[%bt--create-new-bug]] は [CODE[content]]
+引数が無い場合は[[資源]]を参照します。)
+
+[[#comment]]

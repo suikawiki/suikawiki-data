@@ -1,0 +1,2130 @@
+
+* 仕様書から
+** RFC 2068・2616 (HTTP/1.1) 13 Caching in HTTP
+> HTTP is typically used for distributed information systems, where
+performance can be improved by the use of response caches. The
+HTTP/1.1 protocol includes a number of elements intended to make
+caching work as well as possible. Because these elements are
+inextricable from other aspects of the protocol, and because they
+interact with each other, it is useful to describe the basic caching
+design of HTTP separately from the detailed descriptions of methods,
+headers, response codes, etc.
+
+HTTP は典型的に分散情報システムで使用されますが、
+分散情報システムでは応答キャッシュを使用することで性能を向上させることができます。
+HTTP/1.1 プロトコルは、キャッシュ付けが可能な限り働くようにすることを意図した数々の要素を含んでいます。
+それらの要素はプロトコルの他の部分とは不可分ですし、
+相互に作用しますから、方式, 頭群, 応答符号, その他の詳細な説明とは別個に
+HTTP の基本キャッシュ付け設計を説明することは有用でしょう。
+
+> Caching would be useless if it did not significantly improve
+performance. The goal of caching in HTTP/1.1 is to eliminate the need
+to send requests in many cases, and to eliminate the need to send
+full responses in many other cases. The former reduces the number of
+network round-trips required for many operations; we use an
+"expiration" mechanism for this purpose (see section 13.2). The
+latter reduces network bandwidth requirements; we use a "validation"
+mechanism for this purpose (see section 13.3).
+
+キャッシュ付けは、それによって性能を著しく向上させることができなければ無用です。
+HTTP/1.1 でのキャッシュ付けの目標は、多くの場合に要求を送信する必要をなくし、
+他の多くの場合にも完全な応答を送信する必要をなくすことです。
+前者は多くの操作で必要なネットワーク往復の数を減らします。
+この目的のために「[[満期]]」機構を使います。
+後者はネットワーク帯域要件を減らします。この目的のために「[[検証]]」
+機構を使います。
+
+> Requirements for performance, availability, and disconnected
+operation require us to be able to relax the goal of semantic
+transparency. The HTTP/1.1 protocol allows origin servers, caches,
+and clients to explicitly reduce transparency when necessary.
+However, because non-transparent operation may [INS[{ママ}]] confuse non-expert
+users, and [DEL[may]] [INS[might]] be incompatible with certain server applications
+(such as those for ordering merchandise), the protocol requires that
+transparency be relaxed
+- [DEL[o]] [INS[-]] only by an explicit protocol-level request when relaxed
+by client or origin server
+- [DEL[o]] [INS[-]] only with an explicit warning to the end user when relaxed
+by cache or client
+
+性能, 利用可能性, 絶縁操作の要件があるので、
+意味的透過性の目標を緩和することができる必要が出てきます。 HTTP/1.1
+プロトコルは、[[起源鯖]], キャッシュ, そして[[クライアント]]が必要な時に陽に透過性を削減します。
+しかし、非透過操作は非専門利用者を困惑させるかもしれませんし、
+特定の鯖応用 (商品注文のためのものなど) とは非互換かもしれませんから、
+HTTP/1.1 プロトコルは
+- クライアントまたは起源鯖により緩和される時、陽なプロトコル水準の要求でのみ
+- キャッシュまたはクライアントにより緩和される時、末端利用者への陽な警告と共にのみ
+
+透過性が緩和されることを必要とします。
+
+> Therefore, the HTTP/1.1 protocol provides these important elements:
+-
+1. Protocol features that provide full semantic transparency when this
+is required by all parties.
+-
+2. Protocol features that allow an origin server or user agent to
+explicitly request and control non-transparent operation.
+-
+3. Protocol features that allow a cache to attach warnings to
+responses that do not preserve the requested approximation of
+semantic transparency.
+
+従って、 HTTP/1.1 プロトコルは、次の重要な要素を提供します:
+- すべての当事者が必要とする時、完全な意味的透過性を提供するプロトコル機能
+- 起源鯖または[[利用者エージェント]]が非透過操作を陽に要求および制御することを認めるプロトコル機能
+- キャッシュが応答に要求された意味的透過性の近似を保持しないことを付記することを認めるプロトコル機能
+
+> A basic principle is that it must be possible for the clients to
+detect any potential relaxation of semantic transparency.
+
+基本原理は、クライアントが意味的透過性の緩和の可能性を判定することが可能でなければならないということです。
+
+> Note: The server, cache, or client implementer [DEL[may]] [INS[might]] be faced with
+design decisions not explicitly discussed in this specification. If
+a decision [DEL[may]] [INS[might]] affect semantic transparency, the [DEL[implementer]] [INS[implementor]]
+ought to err on the side of maintaining transparency unless a careful and
+complete analysis shows significant benefits in breaking transparency.
+
+注意: 鯖, キャッシュまたはクライアントの実装者は、この仕様書で陽に議論していない設計の決定に直面するかもしれません。
+決定が意味的透過性に影響を及ぼすかもしれないのであれば、
+実装者は透過性を崩すことが著しい利益をもたらすと注意深く完全な調査が示していない限り透過性を維持する側に倒すべきです。
+
+**** 13.1.1 Cache Correctness
+> A correct cache MUST respond to a request with the most up-to-date
+response held by the cache that is appropriate to the request (see
+sections 13.2.5, 13.2.6, and 13.12) which meets one of the following conditions:
+-
+1. It has been checked for equivalence with what the origin server
+would have returned by revalidating the response with the origin
+server (section 13.3);
+-
+2. It is "fresh enough" (see section 13.2). In the default case, this
+means it meets the least restrictive freshness requirement of the
+client, [INS[origin]] server, and cache (see section 14.9); if
+the origin server so specifies, it is the freshness requirement of the
+origin server alone.
+
+正しい[[キャッシュ]]は、[[要求]]に対して、その要求に対して適切である、
+条件
+- [[応答]]を[[起源鯖]]で[[再検証]]したら起源鯖が返すであろうものとの同等性を検査していること
+- 「十分新しい」こと。既定の場合では、これは[[クライアント]], [INS[起源]]鯖,
+およびキャッシュの最低[[制限新鮮性要件]]を満たすことを意味します。
+起源鯖がそう指定していれば、これは起源鯖の新鮮性要件だけです。
+
+のうちの一つを満たす、
+そのキャッシュが持つ一番新しい応答でもって応答しなければ'''なりません'''。
+
+[INS[
+> If a stored response is not "fresh enough" by the most
+restrictive freshness requirement of both the client and the
+origin server, in carefully considered circumstances the cache
+MAY still return the response with the appropriate Warning
+header (see section 13.1.5 and 14.46), unless such a response
+is prohibited (e.g., by a "no-store" cache-directive, or by a
+"no-cache" cache-request-directive; see section 14.9).
+
+蓄積応答がクライアントおよび起源鯖両者の最大制限新鮮性において「十分新し」
+くない場合は、注意深く考慮した状況においてキャッシュはこの場合でも適切な
+[CODE(HTTP)[[[Warning]]]] 頭と共に応答を返して'''構いません'''。
+但し、 (たとえば [CODE(HTTP)[[[no-store]]]] キャッシュ指令や
+[CODE(HTTP)[[[no-cache]]]] キャッシュ要求指令によって)
+そのような応答が禁止されている場合を除きます。
+]INS]
+
+[DEL[
+>
+- 3. It includes a warning if the freshness demand of the client
+or the origin server is violated (see section 13.1.5 and 14.45).
+
+- クライアントまたは起源鯖の新鮮性要求に反している時には警告を含めている。
+]DEL]
+
+>
+-  [DEL[4.]] [INS[3.]] It is an appropriate 304 (Not Modified), 305 (Proxy Redirect),
+or error (4xx or 5xx) response message.
+
+- 適切な [CODE(HTTP)[[[304]] (未修正)]], [CODE(HTTP)[[[305]] (串再指向)]],
+または誤り ([CODE(HTTP)[[[4[VAR[xx]]]]]] または [CODE(HTTP)[[[5[VAR[xx]]]]]])
+応答メッセージである。
+
+> If the cache can not communicate with the origin server, then a
+correct cache SHOULD respond as above if the response can be
+correctly served from the cache; if not it MUST return an error or
+warning indicating that there was a communication failure.
+
+キャッシュが起源鯖と通信できない場合には、正しいキャッシュは、
+応答をキャッシュから正しく支給することができるなら、
+上述のように応答する'''べきです'''。できないなら、
+キャッシュは通信に失敗したことを示す誤りまたは警告を返さなければ'''なりません'''。
+
+> If a cache receives a response (either an entire response, or a 304
+(Not Modified) response) that it would normally forward to the
+requesting client, and the received response is no longer fresh, the
+cache SHOULD forward it to the requesting client without adding a new
+Warning (but without removing any existing Warning headers). A cache
+SHOULD NOT attempt to revalidate a response simply because that
+response became stale in transit; this might lead to an infinite
+loop. A[DEL[n]] user agent that receives a stale response without a Warning
+MAY display a warning indication to the user.
+
+キャッシュが通常なら要求しているクライアントに転送するところの応答
+(完全な応答か、または [CODE(HTTP)[304 (未修正)]] 応答のいずれか)
+を受信した場合で、受信した応答が既に[[新鮮]]でない時には、
+キャッシュは新しい [CODE(HTTP)[Warning]] を追加せずに
+(しかし既存の [CODE(HTTP)[Warning]] 頭を削除することはなしに)
+要求しているクライアントにこれを転送する'''べきです'''。
+キャッシュは、単にこの応答は輸送の途中に[[腐敗]]したのですから、
+これを再検証しようと試みる'''べきではありません'''。
+そうすると無限循環に陥るかもしれません。 [CODE(HTTP)[Warning]] のない腐った応答を受信した利用者エージェントは利用者に警告を表示して'''構いません'''。
+
+**** 13.1.2 Warnings
+> Whenever a cache returns a response that is neither first-hand nor
+"fresh enough" (in the sense of condition 2 in section 13.1.1), 
+it [DEL[must]] [INS[MUST]]
+attach a warning to that effect, using a Warning [DEL[response-header]] [INS[general-header]]. [INS[The Warning header and the currently defined warnings are described in section 14.46.]] [DEL[This]] [INS[The]] warning allows clients to take appropriate action.]]
+
+キャッシュが[[初手]] (直接) でも「[[十分新鮮]]」 (13.1.1 の条件 2 の意味で。)
+でもない応答を返す時はいつも、その施行に警告を [CODE(HTTP)[[[Warning]]]] [DEL[応答]][INS[一般]]頭を使って添付しなければ'''なりません'''。[INS[[CODE(HTTP)[Warning]] 頭および現在定義されている警告は 14.46 で説明しています。]][DEL[この]]警告はクライアントが適切な動作を取ることを可能とします。
+
+> Warnings [DEL[may]] [INS[MAY]] be used for other purposes, both cache-related and
+otherwise. The use of a warning, rather than an error status code,
+distinguish these responses from true failures.
+
+警告は、他の、キャッシュ関係やその他の目的に使っても'''構いません'''。
+誤り[[状態符号]]ではなく警告を使うことで、その応答を真の失敗から区別します。
+
+[DEL[
+> Warnings are always cachable, because they never weaken the
+transparency of a response. This means that warnings can be passed to
+HTTP/1.0 caches without danger; such caches will simply pass the
+warning along as an entity-header in the response.
+
+警告は常に[[キャッシュ可能]]です。なぜなら、警告は応答の透過性を弱めることがないからです。これは、警告が
+HTTP/1.0 キャッシュに危険性なしに渡すことができることを意味します。
+HTTP/1.0 キャッシュは警告を単に応答中の実体頭として渡すでしょう。
+]DEL]
+
+> Warnings are assigned [DEL[numbers between 0 and 99]] [INS[three digit warn-codes]]. [DEL[This specification defines the code numbers and meanings of each currently assigned warnings, allowing a client or cache to take automated action in some (but not all) cases.]] [INS[The first digit indicates whether the Warning MUST or MUST NOT be deleted from a stored cache entry after a successful revalidation:]]
+
+警告には[DEL[[CODE[0]]〜[CODE[99]] の間の数字]][INS[3桁警告符号]]を割当てます。[DEL[この仕様書は符号番号とそれぞれの現在割当てられている警告の意味を定義し、クライアントやキャッシュが幾つかの (しかし全てではない) 場合に自動動作を取ることを可能とします。]] [INS[最初の数字は [CODE(HTTP)[Warning]] を成功裏[[再検証]]の後に蓄積キャッシュ項目から削除し'''なければならない'''かまたは削除'''してはならない'''かを示します。]]
+
+[INS[
+>
+: 1xx : Warnings that describe the freshness or revalidation status of
+the response, and so MUST be deleted after a successful
+revalidation. 1XX warn-codes MAY be generated by a cache only when
+validating a cached entry. It MUST NOT be generated by clients.
+: 2xx : Warnings that describe some aspect of the entity body or entity
+headers that is not rectified by a revalidation (for example, a
+lossy compression of the entity bodies) and which MUST NOT be
+deleted after a successful revalidation.
+
+: [CODE(HTTP)[[[1[VAR[xx]]]]]]: 応答の新鮮さや再検証状態を説明する警告で、
+従って成功裏再検証の暁には削除しなければ'''なりません'''。
+[CODE(HTTP)[1[VAR[XX]]]] 警告符号は、キャッシュがキャッシュ項目を検証した時にのみ生成して'''構いません'''。クライアントが生成しては'''なりません'''。
+: [CODE(HTTP)[[[2[VAR[xx]]]]]]: 再検証により強制していない[[実体本体]]または実体頭群
+(たとえば実体本体に損失のある圧縮を行った) を説明する警告で、
+成功裏再検証の後に削除しては'''なりません'''。
+
+> See section 14.46 for the definitions of the codes themselves.
+
+符号自体の定義は14.46節を参照して下さい。
+
+> HTTP/1.0 caches will cache all Warnings in responses, without
+deleting the ones in the first category. Warnings in responses that
+are passed to HTTP/1.0 caches carry an extra warning-date field,
+which prevents a future HTTP/1.1 recipient from believing an
+erroneously cached Warning.
+
+HTTP/1.0 キャッシュは応答のすべての [CODE(HTTP)[Warning]]
+を、最初の分類のものも削除せずにキャッシュするでしょう。
+HTTP/1.0 キャッシュに渡す応答中の警告は余分な [CODE(ABNF)[warning-date]]
+欄を運びますから、後で HTTP/1.1 受信者が誤ってキャッシュされた
+[CODE(HTTP)[Warning]] を信じてしまうのを防ぐことができます。
+]INS]
+
+> Warnings also carry a warning text. The text [DEL[may]] [INS[MAY]] be in any
+appropriate natural language (perhaps based on the client's Accept
+headers), and include an [DEL[optional]] [INS[OPTIONAL]] indication of what character set is used.
+
+警告は警告文も運びます。文は任意の自然言語文 (たぶんクライアントの
+[CODE(HTTP)[[[Accept]]]] 頭に基づく。) で記述子手'''構いません'''し、
+どの[[文字集合]]が使われているかの'''[[任意選択]]'''の表示を含めても'''構いません'''。
+
+> Multiple warnings [DEL[may]] [INS[MAY]] be attached to a response (either by the origin
+server or by a cache), including multiple warnings with the same code
+number. For example, a server [DEL[may]] [INS[might]] provide the same warning with texts
+in both English and Basque.
+
+複数の警告を一つの応答に (起源鯖がであれ、キャッシュがであれ、)
+添付して'''構いません'''。これには複数の警告が同じ符号番号である場合も含みます。
+たとえば、鯖は[[英語]]と[[バスク語]]の両方で同じ警告を提供するかもしれません。
+
+> When multiple warnings are attached to a response, it [DEL[may]] [INS[might]] not be
+practical or reasonable to display all of them to the user. This
+version of HTTP does not specify strict priority rules for deciding
+which warnings to display and in what order, but does suggest some heuristics.
+
+複数の警告が一つの応答に添付されている時は、
+その全てを利用者に表示するのは実用的・合理的ではないかもしれません。
+この版の HTTP は、どの警告をどの順で表示するかを決める厳密な優先規則は規定しませんが、
+少しばかり発見的方法を提案しておきます。
+
+[DEL[
+> The Warning header and the currently defined warnings are described
+in section 14.45.
+
+[CODE(HTTP)[Warning]] 頭と現在定義している警告は14.45節で説明します。
+]DEL]
+
+**** 13.1.3 Cache-control Mechanisms
+> The basic cache mechanisms in HTTP/1.1 (server-specified expiration
+times and validators) are implicit directives to caches. In some
+cases, a server or client [DEL[may]] [INS[might]] need to provide explicit directives to
+the HTTP caches. We use the Cache-Control header for this purpose.
+
+HTTP/1.1 の基本キャッシュ機構 (鯖指定[[満期]]時刻・[[検証子]])
+はキャッシュに対する暗示的指令です。場合によっては、
+鯖またはクライアントは HTTP キャッシュに明示的に指令を提供する必要があるかもしれません。
+
+> The Cache-Control header allows a client or server to transmit a
+variety of directives in either requests or responses. These
+directives typically override the default caching algorithms. As a
+general rule, if there is any apparent conflict between header
+values, the most restrictive interpretation [DEL[should be]] [INS[is]] applied (that
+is, the one that is most likely to preserve semantic transparency). However,
+in some cases, [DEL[Cache-Control]] [INS[cache-control]] directives are explicitly
+specified as weakening the approximation of semantic transparency
+(for example, "max-stale" or "public").
+
+[CODE(HTTP)[Cache-Control]] 頭を使ってクライアントまたは鯖が要求または応答で種々の指令を伝えることができます。
+そうした指令は、典型的に、既定のキャッシュ付け算法を上書きします。
+一般的規則として、頭値間に明白な衝突があったら、
+もっとも制限的な解釈 (すなわち、意味的透過性をもっとも保持しそうなもの) を適用します。
+しかし、場合によっては、 [CODE(ABNF)[cache-control]] 
+指令は意味的透過性の近似を弱めるために陽に指定することがあります
+(たとえば、 [CODE(HTTP)[[[max-stale]]]] や [CODE(HTTP)[[[public]]]])。
+
+> The [DEL[Cache-Control]] [INS[cache-control]] directives are described in detail in section 14.9.
+
+[CODE(ABNF)[cache-control]] 指令は14.9節で詳しく説明しています。
+
+**** 13.1.4 Explicit User Agent Warnings
+> Many user agents make it possible for users to override the basic
+caching mechanisms. For example, the user agent [DEL[may]] [INS[might]] allow the user
+to specify that cached entities (even explicitly stale ones) are never
+validated. Or the user agent might habitually add "Cache-Control: max-stale=3600"
+to every request. The user [INS[agent]] [DEL[should have to explicitly request]] [INS[SHOULD NOT default to]]
+either non-transparent behavior, or behavior that results in
+abnormally ineffective caching[INS[, but MAY be explicitly configured to do so by an explicit action of the user]].
+
+ほとんどの利用者エージェントは基本キャッシュ付け機構を利用者が上書きすることを可能としています。
+たとえば、利用者エージェントは利用者がキャッシュした項目を
+(陽に[[腐敗]]しているものであっても) 決して[[検証]]しないように指定することを認めているかもしれません。
+あるいは利用者エージェントはすべての要求にいつも [SAMP(HTTP)[Cache-Control: [[max-stale]]=3600]]
+を加えるかもしれません。利用者[INS[エージェント]]は非等価動作または異常に非効率なキャッシュ付け結果になる動作を[INS[陽に要求しなければならないべきです]][INS[既定とする'''べきではありません'''が、利用者の明示的動作によって陽にそうするように設定しても'''構いません''']]。
+
+> If the user has overridden the basic caching mechanisms, the user
+agent [DEL[should]] [INS[SHOULD]] explicitly indicate to the user whenever this results in
+the display of information that might not meet the server's
+transparency requirements (in particular, if the displayed entity is
+known to be stale). Since the protocol normally allows the user agent
+to determine if responses are stale or not, this indication need only
+be displayed when this actually happens. The indication need not be a
+dialog box; it could be an icon (for example, a picture of a rotting
+fish) or some other [DEL[visual]] indicator.
+
+利用者が基本キャッシュ付け機構を上書きしている場合は、
+利用者エージェントは、これが鯖の透過性要件に合致しないかもしれない情報を表示することになるとき
+(特に、表示する[[実体]]が腐っていると分かっているとき) には常に、
+利用者に陽に示す'''べきです'''。 HTTP は通常利用者エージェントが応答が腐っているかどうかを決定することを認めていますから、
+この標示はこれが実際に起こったときにのみ表示する必要があります。
+標示は[RUBY[対話箱][ダイアログ・ボックス]]である必要はありません。
+アイコン (たとえば、腐った魚の絵) や他の[DEL[視覚的]]標識でもかまいません。
+
+> If the user has overridden the caching mechanisms in a way that would
+abnormally reduce the effectiveness of caches, the user agent [DEL[should]] [INS[SHOULD]]
+continually [DEL[display an indication]] [INS[indicate this state to the user]] (for example, [INS[by a display of]] a picture
+of currency in flames) so that the user does not inadvertently consume excess
+resources or suffer from excessive latency.
+
+利用者がキャッシュの効率を異常に削減するようにキャッシュ付け機構を上書きしている場合は、
+利用者エージェントは[INS[この状態を利用者に]]継続的に
+(たとえば、燃えているお金の絵[INS[の表示で]]) 示す'''べきです'''。
+そうすれば利用者が不注意で資源を過剰に消費したり、
+過剰に待たされることがなくなります。
+
+**** 13.1.5 Exceptions to the Rules and Warnings
+> In some cases, the operator of a cache [DEL[may]] [INS[MAY]] choose to configure it to
+return stale responses even when not requested by clients. This
+decision [DEL[should]] [INS[ought]] not be made lightly, but may be necessary for reasons
+of availability or performance, especially when the cache is poorly
+connected to the origin server. Whenever a cache returns a stale
+response, it MUST mark it as such (using a Warning header)[DEL[. This allows]] [INS[enabling]]
+the client software to alert the user that there might be a potential problem.
+
+場合によっては、キャッシュの運用者はクライアントからそう要求されていない場合であっても腐った応答を返すように設定することを選んでも'''構いません'''。
+この決定は簡単に行うべきではありませんが、利用可能性や効率の理由から、
+特にキャッシュと[[起源鯖]]の接続が貧しいときには、必要かもしれません。
+キャッシュが腐った応答を返すときには、常に、そのように
+([CODE(HTTP)[[[Warning]]]] 頭を使って) マークしなければ'''なりません'''。
+こうすることでクライアント・ソフトウェアは利用者に問題のある可能性を警告できます。
+
+> It also allows the user agent to take steps to obtain a first-hand or
+fresh response. For this reason, a cache SHOULD NOT return a stale
+response if the client explicitly requests a first-hand or fresh one,
+unless it is impossible to comply for technical or policy reasons.
+
+また、利用者エージェントが[[初手]]応答や[[新鮮]]応答を獲る手順を踏むことも可能になります。この理由から、キャッシュは、
+クライアントが陽に初手応答や新鮮応答を要求しているときには、
+技術的あるいは方針上の理由によって応じることが不可能な場合を除き、
+腐った応答を返す'''べきではありません'''。
+
+**** 13.1.6 Client-controlled Behavior
+> While the origin server (and to a lesser extent, intermediate caches,
+by their contribution to the age of a response) are the primary
+source of expiration information, in some cases the client [DEL[may]] [INS[might]] need
+to control a cache's decision about whether to return a cached
+response without validating it. Clients do this using several
+directives of the Cache-Control header.
+
+起源鯖 (と、応答の[[齢]]の設定により、それより少程度ですが[[中間キャッシュ]])
+は[[満期]]情報の一次情報源ですから、場合によってはクライアントはキャッシュした応答を検証せずに返すかどうかのキャッシュの決定を制御する必要があるかもしれません。
+クライアントは [CODE(HTTP)[Cache-Control]] 頭の幾つかの指令を使ってこれを行います。
+
+> A client's request [DEL[may]] [INS[MAY]] specify the maximum age it is willing to
+accept of an unvalidated response; specifying a value of zero forces
+the cache(s) to revalidate all responses. A client [DEL[may]] [INS[MAY]] also specify
+the minimum time remaining before a response expires. Both of these
+options increase constraints on the behavior of caches, and so cannot
+further relax the cache's approximation of semantic transparency.
+
+クライアントの要求は検証していない応答を受入れる意思がある最大の齢を指定して'''構いません'''。
+零という値を指定するとキャッシュ(群)がすべての応答を再検証することを強制します。
+クライアントは応答の満期前に残っている最小時間を指定しても'''構いません'''。
+両選択肢はキャッシュの動作の制約を増しますから、
+キャッシュの意味的透過性の近似を更に緩和することはできません。
+
+> A client [DEL[may]] [INS[MAY] also specify that it will accept stale responses, up to
+some maximum amount of staleness. This loosens the constraints on the
+caches, and so [DEL[may]] [INS[might] violate the origin server's specified
+constraints on semantic transparency, but [DEL[may]] [INS[might] be necessary to
+support disconnected operation, or high availability in the face of poor connectivity.
+
+クライアントは、最大腐敗量を引上げることで、腐った応答を受入れることも指定して'''構いません'''。
+これはキャッシュの制約を緩めますから、意味的透過性についての起源鯖の指定した制約に反するかもしれませんが、
+非接続操作や貧しい接続性で高い利用可能性を支援するために必要かもしれません。
+
+*** 13.2 Expiration Model
+**** 13.2.1 Server-Specified Expiration
+> HTTP caching works best when caches can entirely avoid making
+requests to the origin server. The primary mechanism for avoiding
+requests is for an origin server to provide an explicit expiration
+time in the future, indicating that a response [DEL[may]] [INS[MAY]] be used to satisfy
+subsequent requests. In other words, a cache can return a fresh
+response without first contacting the server.
+
+HTTP キャッシュ付けは、キャッシュが起源鯖に要求を行うことを完全に避けることができれば最もよく働きます。
+要求を避けるための第一の機構は、起源鯖が明示的に未来の[[満期]]時刻を提供し、
+応答が後続の要求を満足するために使用して'''構わない'''と示します。
+言い換えれば、キャッシュは最初に鯖に接触せずに[[新鮮]]んじゃ応答を返すことができます。
+
+> Our expectation is that servers will assign future explicit
+expiration times to responses in the belief that the entity is not
+likely to change, in a semantically significant way, before the
+expiration time is reached. This normally preserves semantic
+transparency, as long as the server's expiration times are carefully chosen.
+
+鯖は、将来のある満期時刻に達するまでに実体が意味的に重大に変更されそうにないと信じて、
+応答に陽に満期時刻を割当てることを期待しています。
+これは、通常、鯖の満期時刻は注意深く選んだものなので、意味的透過性を護ります。
+
+> The expiration mechanism applies only to responses taken from a cache
+and not to first-hand responses forwarded immediately to the
+requesting client.
+
+満期機構はキャッシュから取った応答にのみ適用し、要求しているクライアントに即座に転送される初手応答には適用しません。
+
+> If an origin server wishes to force a semantically transparent cache
+to validate every request, it [DEL[may]] [INS[MAY]] assign an explicit expiration time
+in the past. This means that the response is always stale, and so the
+cache SHOULD validate it before using it for subsequent requests. See
+section 14.9.4 for a more restrictive way to force revalidation.
+
+起源鯖が意味的等価キャッシュに要求毎に[[検証]]を強いたいのであれば、
+過去の満期時刻を陽に割当てて'''構いません'''。これは、
+その応答が常に[[腐敗]]しており、キャッシュは後続要求にこれを用いる前に検証する'''べきである'''ことを意味します。
+再検証を強いるより制限的な方法については19.9.4節をご覧下さい。
+
+> If an origin server wishes to force any HTTP/1.1 cache, no matter how
+it is configured, to validate every request, it [DEL[should]] [INS[SHOULD]] use the 
+"must-revalidate" [DEL[Cache-Control]] [INS[cache-control]] directive (see section 14.9).
+
+起源鯖が、どう設定されている HTTP/1.1 キャッシュにも要求毎に検証することを強いたいのなら、
+[CODE(HTTP)[[[must-revalidate]]]] キャッシュ制御指令を使用する'''べきです'''。
+
+> Servers specify explicit expiration times using either the Expires
+header, or the max-age directive of the Cache-Control header.
+
+鯖は、 [CODE(HTTP)[[[Expires]]]] 頭または
+[CODE(HTTP)[[[Cache-Control]]]] 頭の [CODE(HTTP)[[[max-age]]]]
+指令を用いて陽に満期時刻を指定します。
+
+> An expiration time cannot be used to force a user agent to refresh
+its display or reload a resource; its semantics apply only to caching
+mechanisms, and such mechanisms need only check a resource's
+expiration status when a new request for that resource is initiated.
+See section 13.13 for [INS[an]] explanation of the difference between caches
+and history mechanisms.
+
+満期時刻は利用者エージェントにその表示を更新させたり[[資源]]を再読込みさせたりするために使用することはできません。
+満期時刻の意味はキャッシュ付け機構にのみ適用され、
+キャッシュ付け機構は資源に対する新しい要求が初期化された時にのみその資源の満期状態を検査する必要があります。
+13.13節のキャッシュと履歴機構の違いの説明をご覧下さい。
+
+**** 13.2.2 Heuristic Expiration
+> Since origin servers do not always provide explicit expiration times,
+HTTP caches typically assign heuristic expiration times, employing
+algorithms that use other header values (such as the Last-Modified
+time) to estimate a plausible expiration time. The HTTP/1.1
+specification does not provide specific algorithms, but does impose
+worst-case constraints on their results. Since heuristic expiration
+times [DEL[may]] [INS[might]] compromise semantic transparency, they [DEL[should be]] [INS[ought to]] used
+cautiously, and we encourage origin servers to provide explicit
+expiration times as much as possible.
+
+起源鯖は常に満期時刻を陽に提供するのではありませんから、 HTTP
+キャッシュは典型的に発見的満期時刻を割当てます。
+他の頭欄値 (たとえば [CODE(HTTP)[[[Last-Modified]]]] 時刻)
+を使ってそれっぽい満期時刻を見積もる算法を使います。
+HTTP/1.1 仕様書は特定の算法を提供しませんが、
+その結果の最悪の場合の制約は課します。発見的満期時刻は意味的透過性を曲げるかもしれませんから、
+慎重に利用するべきであり、起源鯖も可能な限り満期時刻を陽に提供するよう勧めます。
+
+**** 13.2.3 Age Calculations
+> In order to know if a cached entry is fresh, a cache needs to know if
+its age exceeds its freshness lifetime. We discuss how to calculate
+the latter in section 13.2.4; this section describes how to calculate
+the age of a response or cache entry.
+
+キャッシュした項目が新鮮かどうかを知るために、
+キャッシュはその[[齢]]が[[新鮮寿命]]を超えているかを知る必要があります。
+後者の計算方法は13.2.4で議論します。この節では応答やキャッシュ項目の齢の計算方法を記述します。
+
+> In this discussion, we use the term "now" to mean "the current value
+of the clock at the host performing the calculation." Hosts that use
+HTTP, but especially hosts running origin servers and caches, [DEL[should]] [INS[SHOULD]]
+use NTP [28] or some similar protocol to synchronize their clocks to
+a globally accurate time standard.
+
+この議論において、「今」という用語を、「計算を行うホストの時計の現在値」
+の意味で使います。 HTTP を使用するホスト、特に起源鯖やキャッシュが動いているホストは、
+時計を大域的に正確な時刻表準と同期させる、 [[NTP]]
+や同様のプロトコルを使用する'''べきです'''。
+
+> [DEL[Also note that]] HTTP/1.1 requires origin servers to send a Date header[INS[, if possible,]]
+with every response, giving the time at which the response was
+generated [INS[(see section 14.18)]]. We use the term "date_value" to denote the value of
+the Date header, in a form appropriate for arithmetic operations.
+
+HTTP/1.1 は起源鯖が応答毎に[INS[可能であれば]]その応答が生成された時刻を与える 
+[CODE(HTTP)[[[Date]]]] 頭を送信することも要求します。
+[CODE[date_value]] という用語は、算術演算に適当な形式の [CODE(HTTP)[Date]]
+頭の値を指して使います。
+
+> HTTP/1.1 uses the Age response-header to [DEL[help]] convey [INS[the estimated]] age [DEL[information between caches]] [INS[of the response message when obtained from a cache]].
+The Age [DEL[header]] [INS[field]] value is the [DEL[sender's]] [INS[cache's]]
+estimate of the amount of time since the response was generated [DEL[at]] [INS[or revalidated by]] the origin server. [DEL[In the case of a cached response that has been revalidated with the origin server, the Age value is based on the time of revalidation, not of the original response.]]
+
+HTTP/1.1 は、[DEL[キャッシュ間で]][INS[応答メッセージをキャッシュから得たときにその]]齢[INS[の見積もり]]を伝達する[DEL[のを助ける]]
+[CODE(HTTP)[[[Age]]]] 応答頭を使用します。 [CODE(HTTP)[Age]] 欄値は起源鯖で応答が生成[INS[または[[再検証]]]]されてからの時間量のキャッシュの見積もりです。[DEL[起源鯖で再検証したキャッシュした応答の場合は、 [CODE(HTTP)[Age]] 値は起源応答の時刻ではなく、再検証の時刻に基づきます。]]
+
+> In essence, the Age value is the sum of the time that the response
+has been resident in each of the caches along the path from the
+origin server, plus the amount of time it has been in transit along
+network paths.
+
+本質的に、 [CODE(HTTP)[Age]] 値は応答が応答が起源鯖からの経路上のキャッシュそれぞれに滞在した時間の和に、
+ネットワーク経路に沿って転送された時間量を足したものです。
+
+> We use the term "age_value" to denote the value of the Age header, in
+a form appropriate for arithmetic operations.
+
+[CODE[age_value]] という用語は、算術演算に適当な形式の [CODE(HTTP)[Age]]
+頭の値を指して使います。
+
+> A response's age can be calculated in two entirely independent ways:
+- 1. now minus date_value, if the local clock is reasonably well
+synchronized to the origin server's clock. If the result is
+negative, the result is replaced by zero.
+- 2. age_value, if all of the caches along the response path implement HTTP/1.1.
+
+応答の齢は二つのまったく独立な方法で計算できます。
+- 今引く [CODE[date_value]]、ただし局所時計が起源鯖の時計と十分よく同期されている場合。
+結果が負であれば、結果を零で置換する。
+- [CODE[age_value]]、ただし応答経路上のキャッシュがすべて HTTP/1.1
+を実装している場合。
+
+> Given that we have two independent ways to compute the age of a
+response when it is received, we can combine these as
+- corrected_received_age = max(now - date_value, age_value)
+
+応答を受信した時にその齢を計算する二つの独立な方法があったとして、
+それを
+- [CODE(math)[[VAR[corrected_received_age]] = max([VAR[今]] − [VAR[date_value]], [VAR[age_value]])]]
+
+> and as long as we have either nearly synchronized clocks or all-HTTP/1.1 paths, one gets a reliable (conservative) result.
+
+のように組合せることができます。
+そして、同期時計を持っているか、またはすべて HTTP/1.1 の経路を持っていれば、
+当てになる (保守的な) 結果が得られます。
+
+[DEL[
+> Note that this correction is applied at each HTTP/1.1 cache along the
+path, so that if there is an HTTP/1.0 cache in the path, the correct
+received age is computed as long as the receiving cache's clock is
+nearly in sync. We don't need end-to-end clock synchronization
+(although it is good to have), and there is no explicit clock synchronization step.
+
+この修正は経路上の各 HTTP/1.1 キャッシュで適用されるので、
+経路上に HTTP/1.0 キャッシュがあると、正しい受信齢は受信したキャッシュの時計がほぼ同期されているとき計算できることに注意してください。
+末端対末端の時計同期は (よいことではありますが) 必要とはしていませんし、
+陽に時計を同期する手順もありません。
+]DEL]
+
+> Because of network-imposed delays, some significant interval [DEL[may]] [INS[might]] pass [DEL[from]] [INS[between]]
+the time that a server generates a response and the time it is
+received at the next outbound cache or client. If uncorrected, this
+delay could result in improperly low ages.
+
+ネットワークによる遅延のため、鯖が応答を生成した時刻と次の[[外向き]]キャッシュ・クライアントが受信した時刻は大きな差があり得ます。
+修正が行われなければ、この遅延のせいで不適切に小さな齢となりかねません。
+
+> Because the request that resulted in the returned Age value must have
+been initiated prior to that Age value's generation, we can correct
+for delays imposed by the network by recording the time at which the
+request was initiated. Then, when an Age value is received, it MUST
+be interpreted relative to the time the request was initiated, not
+the time that the response was received. This algorithm results in
+conservative behavior no matter how much delay is experienced. So, we compute:
+- corrected_initial_age = corrected_received_age + (now - request_time)
+
+返される [CODE(HTTP)[Age]] 値になる要求はその [CODE(HTTP)[Age]]
+値の生成の前に初期化されていなければなりませんから、
+その要求を初期化した時刻を記録しておくことでネットワークによる遅延を修正できます。
+[CODE(HTTP)[Age]] 値を受信した時、この値は、応答を受信した時刻ではなく、
+要求が初期化された時刻に対するものとして解釈しなければ'''なりません'''。
+この算法により、どれだけの遅延があろうとも、
+保守的に振舞った結果が得られます。ですから、
+- [CODE(math)[[VAR[corrected_initial_age]] = [VAR[corrected_received_age]] + ([VAR[今]] − [VAR[request_time]])]]
+
+> where "request_time" is the time (according to the local clock) when
+the request that elicited this response was sent.
+
+と計算できます。ここで、 [CODE[request_time]] はこの応答を引出した要求を送った
+(局所時計による) 時刻です。
+
+> Summary of age calculation algorithm, when a cache receives a response:
+[PRE[
+      /*
+       * age_value
+       *      is the value of Age: header received by the cache with
+       *              this response.
+       * date_value
+       *      is the value of the origin server's Date: header
+       * request_time
+       *      is the (local) time when the cache made the request
+       *              that resulted in this cached response
+       * response_time
+       *      is the (local) time when the cache received the
+       *              response
+        * now
+        *      is the current (local) time
+        */
+       apparent_age = max(0, response_time - date_value);
+       corrected_received_age = max(apparent_age, age_value);
+       response_delay = response_time - request_time;
+       corrected_initial_age = corrected_received_age + response_delay;
+       resident_time = now - response_time;
+       current_age   = corrected_initial_age + resident_time;
+]PRE]
+
+齢計算算法をまとめると、キャッシュが応答を受信した時、
+: 齢値 : キャッシュがこの応答で受信した [CODE(HTTP)[Age:]] 頭の値。
+: 日付値 : 起源鯖の [CODE(HTTP)[Date:]] 頭の値。
+: 要求時刻 : このキャッシュした応答となった要求をキャッシュが行った(局所)時刻。
+: 応答時刻 : キャッシュが応答を受信した(局所)時刻。
+: 今 : 現在(局所)時刻
+
+- [CODE(math)[[VAR[見かけの齢]] = 最大 (0, [VAR[応答時刻]] − [VAR[日付値]])]];
+- [CODE(math)[[VAR[正しい受信齢]] = 最大 ([VAR[見かけの齢]], [VAR[齢値]])]];
+- [CODE(math)[[VAR[応答遅延]] = [VAR[応答時刻]] − [VAR[要求時刻]]]];
+- [CODE(math)[[VAR[正しい初期齢]] = [VAR[正しい受信齢]] + [VAR[応答遅延]]]];
+- [CODE(math)[[VAR[滞在時間]] = [VAR[今]] − [VAR[応答時刻]]]];
+- [CODE(math)[[VAR[現在齢]] = [VAR[正しい初期齢]] + [VAR[滞在時間]]]];
+
+[DEL[
+> When a cache sends a response, it must add to the
+corrected_initial_age the amount of time that the response was
+resident locally. It must then transmit this total age, using the Age
+header, to the next recipient cache.
+
+キャッシュが応答を送信する時、[VAR[正しい初期齢]]に応答が局所的に滞在した時間量を加えなければなりません。
+キャッシュはそれからこの合計齢を次の受信キャッシュに [CODE(HTTP)[Age]]
+頭を使って転送しなければなりません。
+]DEL]
+[INS[
+> The current_age of a cache entry is calculated by adding the amount
+of time (in seconds) since the cache entry was last validated by the
+origin server to the corrected_initial_age. When a response is
+generated from a cache entry, the cache MUST include a single Age
+header field in the response with a value equal to the cache entry's current_age.
+
+キャッシュ項目の[VAR[現在齢]]はキャッシュ項目を最後に起源鯖で検証してからの時間量 
+(秒単位) を[VAR[正しい初期齢]]に加えることで計算します。
+応答がキャッシュ項目から生成されたときは、
+キャッシュはキャッシュ項目の[VAR[現在齢]]と等しい値の [CODE(HTTP)[Age]]
+頭欄を一つ応答に含めなければ'''なりません'''。
+]INS]
+
+[DEL[
+> Note that a client cannot reliably tell that a response is first-hand,
+but the presence of an Age header indicates that a response
+is definitely not first-hand. Also, if the Date in a response is
+earlier than the client's local request time, the response is
+probably not first-hand (in the absence of serious clock skew).
+
+クライアントは応答が初手であることを確実に伝えることはできませんが、
+[CODE(HTTP)[Age]] 頭の存在が応答は明らかに初手でないことを示すのに注意してください。
+また、応答の [CODE(HTTP)[Date]] がクライアントの局所要求時刻より早ければ、
+その応答は (時計がひどく歪んでいるのでなければ) おそらく初手です。
+]DEL]
+[INS[
+> The presence of an Age header field in a response implies that a
+response is not first-hand. However, the converse is not true, since
+the lack of an Age header field in a response does not imply that the
+response is first-hand unless all caches along the request path are
+compliant with HTTP/1.1 (i.e., older HTTP caches did not implement
+the Age header field).
+
+応答に [CODE(HTTP)[Age]] 頭欄が存在することは、
+応答が初手でないことをほのめかします。しかし、逆は真ではありません。
+応答に [CODE(HTTP)[Age]] 頭欄がないことは、
+(古い HTTP キャッシュは [CODE(HTTP)[Age]] 頭欄を実装していないので、)
+要求経路上のすべてのキャッシュが HTTP/1.1 に適合しているのでない限り、
+応答が初手であることを暗示してはいません。
+]INS]
+
+**** 13.2.4 Expiration Calculations
+> In order to decide whether a response is fresh or stale, we need to
+compare its freshness lifetime to its age. The age is calculated as
+described in section 13.2.3; this section describes how to calculate
+the freshness lifetime, and to determine if a response has expired.
+In the discussion below, the values can be represented in any form
+appropriate for arithmetic operations.
+
+応答が新鮮か腐っているかを決めるためには、
+応答の齢に対する新鮮寿命を計算する必要があります。
+齢は13.2.3節で説明したように計算します。
+この節はどう新鮮寿命を計算し、応答が満期であるかを決定するかを説明します。
+以後の議論で、値は算術演算に適当な任意の形式で表現できます。
+
+> We use the term "expires_value" to denote the value of the Expires
+header. We use the term "max_age_value" to denote an appropriate
+value of the number of seconds carried by the [INS["]]max-age[INS["]] directive of
+the Cache-Control header in a response (see section [DEL[14.10]] [INS[14.9.3)]].
+
+用語「満期値」は、 [CODE(HTTP)[[[Expires]]]] 頭の値を示します。
+用語「最大齢値」は、応答の [CODE(HTTP)[[[Cache-Control]]]]
+頭の [CODE(HTTP)[[[max-age]]]] 指令により伝達される秒数の適切な値を示します。
+
+> The max-age directive takes priority over Expires, so if max-age is
+present in a response, the calculation is simply:
+- freshness_lifetime = max_age_value
+
+[CODE(HTTP)[max-age]] 指令は [CODE(HTTP)[Expires]] より優先しますから、
+[CODE(HTTP)[max-age]] が応答にある場合は、計算は単純です。
+- [CODE(math)[[VAR[新鮮寿命]] = [VAR[最大齢値]]]]
+
+> Otherwise, if Expires is present in the response, the calculation is:
+- freshness_lifetime = expires_value - date_value
+
+そうでなければ、 [CODE(HTTP)[Expires]] が応答にあれば、
+計算は次のようになります。
+- [CODE(math)[[VAR[新鮮寿命]] = [VAR[満期値]] − [VAR[日付値]]]]
+
+> Note that neither of these calculations is vulnerable to clock skew,
+since all of the information comes from the origin server.
+
+どちらの計算も、すべての情報は起源鯖から来たものですから、
+時計のずれに脆弱ではないことに注意してください。
+
+> If [DEL[neither]] [INS[none of]] Expires[INS[,]] [DEL[nor]] Cache-Control: max-age[INS[, or Cache-Control: s-maxage (see section 14.9.3)]]
+appears in the response, and the response does not include other restrictions on
+caching, the cache MAY compute a freshness lifetime using a heuristic. [DEL[If the value is greater than 24 hours, the]] [INS[The]]
+cache [DEL[must]] [INS[MUST]] attach Warning [INS[1]]13 to any response whose age is more than 24 hours if
+such warning has not already been added.
+
+[CODE(HTTP)[Expires]], [CODE(HTTP)[Cache-Control: max-age]],
+[CODE(HTTP)[Cache-Control: [[s-maxage]] のいずれもが応答になく、
+応答がキャッシュ付けについての他の制限を含んでいなければ、
+キャッシュは新鮮寿命を発見的に計算して'''構いません'''。 [DEL[値が24時間より大きいなら、]]
+キャッシュは齢が24時間を超す応答に [CODE(HTTP)[[[Warning]]]] [CODE(HTTP)[[[113]]]]
+を (既に追加されていなければ) 添付しなければ'''なりません'''。
+
+> Also, if the response does have a Last-Modified time, the heuristic
+expiration value SHOULD be no more than some fraction of the interval
+since that time. A typical setting of this fraction might be 10%.
+
+また、応答が [CODE(HTTP)[[[Last-Modified]]]] 時刻を持てば、
+発見的満期値はその時刻からの時間の何割かを超す'''べきではありません'''。
+その割合の典型的な設定は10%でしょう。
+
+> The calculation to determine if a response has expired is quite simple:
+- response_is_fresh = (freshness_lifetime > current_age)
+
+応答が満期しているかどうかの決定の計算はきわめて単純で、
+- [CODE(math)[[VAR[応答は新鮮]] = ([VAR[新鮮寿命]] > [VAR[現在齢]])]]
+
+です。
+
+**** 13.2.5 Disambiguating Expiration Values
+> Because expiration values are assigned optimistically, it is possible
+for two caches to contain fresh values for the same resource that are different.
+
+満期値は楽天的に割当てられますから、二つのキャッシュが同じ資源の異なった新鮮値を持っていることがあり得ます。
+
+> If a client performing a retrieval receives a non-first-hand response
+for a request that was already fresh in its own cache, and the Date
+header in its existing cache entry is newer than the Date on the new
+response, then the client MAY ignore the response. If so, it MAY
+retry the request with a "Cache-Control: max-age=0" directive (see
+section 14.9), to force a check with the origin server.
+
+取出しを行うクライアントが、要求に対する非初手応答を受け取った時で、
+自身のキャッシュで既に新鮮であった場合で、
+その既存のキャッシュ項目の [CODE(HTTP)[[[Date]]]] 頭が新しい応答の
+[CODE(HTTP)[Date]] よりも新しい時には、
+クライアントはその応答を無視して'''構いません'''。
+そうする場合には、[[起源鯖]]での検査を強制するため、
+[CODE(HTTP)[[[Cache-Control]]: [[max-age]]=0]]
+指令つきで要求を再試行して'''構いません'''。
+
+> If a cache has two fresh responses for the same representation with
+different validators, it MUST use the one with the more recent Date
+header. This situation [DEL[may]] [INS[might]] arise because the cache is pooling
+responses from other caches, or because a client has asked for a
+reload or a revalidation of an apparently fresh cache entry.
+
+キャッシュが同じ[[表現]]で異なる[[検証子]]の二つの新鮮な応答を持っている時は、
+[CODE(HTTP)[Date]] 頭のより新しい方を使わなければ'''なりません'''。
+この状況は、キャッシュが他のキャッシュからの応答を溜めている場合や、
+クライアントが明らかに新鮮なキャッシュ項目の再読込みや再検証を依頼している場合に起こり得ます。
+
+**** 13.2.6 Disambiguating Multiple Responses
+> Because a client [DEL[may]] [INS[might]] be receiving responses via multiple paths, so
+that some responses flow through one set of caches and other
+responses flow through a different set of caches, a client [DEL[may]] [INS[might]]
+receive responses in an order different from that in which the origin
+server sent them. We would like the client to use the most recently
+generated response, even if older responses are still apparently fresh.
+
+クライアントは応答を複数の経路から受信するかもしれませんから、
+ある応答はあるキャッシュの集合を通じて流れ、
+他の応答は異なるキャッシュの集合を通じて流れ、
+クライアントは起源鯖が送信したものとは異なる順番で応答を受信するかもしれません。
+クライアントは、古い方の応答が明らかにまだ新鮮であったとしても、
+一番新しく生成された応答を使用してほしいです。
+
+> Neither the entity tag nor the expiration value can impose an
+ordering on responses, since it is possible that a later response
+intentionally carries an earlier expiration time. [DEL[However, the HTTP/1.1 specification requires the transmission of Date headers on every response, and the Date values are ordered to a granularity of one second.]] [INS[The Date values are ordered to a granularity of one second.]]
+
+実体札も満期値も、応答の順序を示すことはできません。
+後の応答が意図的に早い満期時刻を伝えることが可能であるからです。[DEL[しかし、 HTTP/1.1 仕様書は各応答で [CODE(HTTP)[Date]] 頭を転送することを要求しており、 [CODE(HTTP)[Date]] 値は一秒の粒度で順序付けられています。]] [INS[[CODE(HTTP)[Date]] 値は一秒の粒度で順序付けられています。]]
+
+> When a client tries to revalidate a cache entry, and the response it
+receives contains a Date header that appears to be older than the one
+for the existing entry, then the client SHOULD repeat the request
+unconditionally, and include
+
+クライアントがキャッシュ項目の再検証を試みる時で、
+その受信した応答が既存の項目のものよりも古い [CODE(HTTP)[Date]]
+頭を含んでいる時には、クライアントは要求を非条件付で、
+中間キャッシュがその複製を直接起源鯖に検証することを強制するために
+
+>
+- Cache-Control: max-age=0
+> to force any intermediate caches to validate their copies directly
+with the origin server, or
+
+を、または中間キャッシュが起源鯖から新しい複製を得ることを強制するために
+
+>
+- Cache-Control: no-cache
+> to force any intermediate caches to obtain a new copy from the origin server.
+
+を含めて繰り返す'''べきです'''。
+
+> If the Date values are equal, then the client [DEL[may]] [INS[MAY]] use either response
+(or [DEL[may]] [INS[MAY]], if it is being extremely prudent, request a new response).
+Servers MUST NOT depend on clients being able to choose
+deterministically between responses generated during the same second,
+if their expiration times overlap.
+
+[CODE(HTTP)[Date]] 値が等しければ、クライアントはどちらの応答を使っても'''構いません''' (し、極めて慎重にするのであれば、新しい応答を要求しても'''構いません''')。
+鯖は、クライアントが同じ秒に生成された応答を、満期時刻が重なっている時、
+決定的に選ぶことができるのに依存しては'''なりません'''。
+
+*** 13.3 Validation Model
+> When a cache has a stale entry that it would like to use as a
+response to a client's request, it first has to check with the origin
+server (or possibly an intermediate cache with a fresh response) to
+see if its cached entry is still usable. We call this "validating"
+the cache entry. Since we do not want to have to pay the overhead of
+retransmitting the full response if the cached entry is good, and we
+do not want to pay the overhead of an extra round trip if the cached
+entry is invalid, the HTTP/1.1 protocol supports the use of
+conditional methods.
+
+キャッシュが腐った項目を持っていて、その項目がクライアントの要求に対する応答として使われそうであるときには、
+まずそのキャッシュ項目がまだ利用可能かを見るために[[起点鯖]]
+(または場合によって新鮮応答を持っている中間キャッシュ)
+で検査しなければなりません。これをキャッシュした項目を[DFN[(妥当性) 検証する]]と呼びます。
+キャッシュ項目がよいときには完全応答を再転送する overhead 
+を払わなければならないのは望ましくありませんし、
+キャッシュした項目が不当であるときに余分な往復の overhead
+を払いたくありませんから、 HTTP/1.1 プロトコルは条件付 method
+の使用に対応しています。
+
+> The key protocol features for supporting conditional methods are
+those concerned with "cache validators." When an origin server
+generates a full response, it attaches some sort of validator to it,
+which is kept with the cache entry. When a client (user agent or
+proxy cache) makes a conditional request for a resource for which it
+has a cache entry, it includes the associated validator in the
+request.
+
+条件付 method 対応の鍵となるプロトコル昨日は「キャッシュ検証子」
+に関するものです。起点鯖が完全応答を生成する時に、
+鯖は応答にある種の検証子を添付し、
+これをキャッシュ項目と共に保存しておきます。
+クライアント (利用者エージェントまたは串キャッシュ)
+が、キャッシュ項目を持つ資源についての条件付要求を行うときに、
+その要求中の関連付けられた検証子を含めます。
+
+> The server then checks that validator against the current validator
+for the entity, and, if they match [INS[(see section 13.3.3)]], it responds
+with a special status code (usually, 304 (Not Modified)) and no entity-body.
+Otherwise, it returns a full response (including entity-body). Thus, we avoid
+transmitting the full response if the validator matches, and we avoid
+an extra round trip if it does not match.
+
+鯖はそれからその検証子を現在の実体の検証子と比べて、
+一致すれば、特別な状態符号 (通常、 [CODE(HTTP)[[[304]]]] (未修正))
+で [CODE(ABNF)[[[entity-body]]]] なしで応答します。
+そうでなければ、完全応答を ([CODE(ABNF)[entity-body]] 込みで)
+返します。したがって、検証子が一致したときには完全応答を転送するのを避け、
+検証子が一致しないときには余分な往復を避けることとなります。
+
+[DEL[
+> Note: the comparison functions used to decide if validators match
+are defined in section 13.3.3.
+
+注意: 検証子の一致を決定するために使用する比較関数は
+13.3.3 節で定義しています。
+]DEL]
+
+> In HTTP/1.1, a conditional request looks exactly the same as a normal
+request for the same resource, except that it carries a special
+header (which includes the validator) that implicitly turns the
+method (usually, GET) into a conditional.
+
+HTTP/1.1 では、条件付要求は、特別な頭を送ることを除いて、
+同じ資源に対する通常の要求とまったく同じに見えます。
+その特別な頭は (検証子を含み)、 method (通常は [CODE(HTTP)[[[GET]]]])
+を暗に条件付きに換えます。
+
+> The protocol includes both positive and negative senses of 
+cache-validating conditions. That is, it is possible to request either that
+a method be performed if and only if a validator matches or if and
+only if no validators match.
+
+HTTP プロトコルは正の意味と負の意味両方のキャッシュ検証状況をもっています。
+すなわち、検証子が一致したらその場合に限って施す method
+と検証子が一致しなかったらその場合に限って施す method
+のいずれで要求することも可能です。
+
+> Note: a response that lacks a validator may still be cached, and
+served from cache until it expires, unless this is explicitly
+prohibited by a [DEL[Cache-Control]] [INS[cache-control]] directive. However, a cache cannot
+do a conditional retrieval if it does not have a validator for the
+entity, which means it will not be refreshable after it expires.
+
+注意: 検証子を欠く応答もまだキャッシュされているかもしれず、
+満期するまでは [CODE(ABNF)[[[cache-control]]]] 指令で陽に禁止されていない限り、
+キャッシュから給仕されるかもしれません。しかし、
+キャッシュはその項目の検証子を持っていないときには条件付取出しを行うことはできず、
+これは満期した後には最新鮮化できないことを意味します。
+
+**** 13.3.1 [DEL[Last-modified]] [INS[Last-Modified]] Dates
+> The Last-Modified entity-header field value is often used as a cache
+validator. In simple terms, a cache entry is considered to be valid
+if the entity has not been modified since the Last-Modified value.
+
+[CODE(HTTP)[[[Last-Modified]]]] [[実体頭欄]]値はしばしばキャッシュ検証子として使われます。
+単純な言葉で言えば、キャッシュ項目はその実体が [CODE(HTTP)[Last-Modified]]
+値から修正されていなければ妥当と考えられます。
+
+**** 13.3.2 Entity Tag Cache Validators
+> The ETag [DEL[entity-header]] [INS[response-header]] field value, an entity tag, provides for an
+"opaque" cache validator. This [DEL[may]] [INS[might]] allow more reliable validation
+in situations where it is inconvenient to store modification dates,
+where the one-second resolution of HTTP date values is not
+sufficient, or where the origin server wishes to avoid certain
+paradoxes that [DEL[may]] [INS[might]] arise from the use of modification dates.
+
+[CODE(HTTP)[[[ETag]]]] [[応答頭欄]]値である[[実体札]]は、
+「不透明」なキャッシュ検証子を提供します。これで、
+修正日を蓄積するのが不便である状況、
+HTTP 日付値の一秒単位の解像度が十分でない状況や起点鯖が修正日の使用によって起こり得るある種の逆接を避けたいと思う状況でより当てになる検証を行えます。
+
+> Entity Tags are described in section 3.11. The headers used with
+entity tags are described in sections [DEL[14.20, 14.25,]] [INS[14.19, 14.24,]] 14.26 and [DEL[14.43]] [INS[14.44]].
+
+実体札は3.11節で説明しています。
+実体札を使う頭は各節で説明しています。
+
+**** 13.3.3 Weak and Strong Validators
+> Since both origin servers and caches will compare two validators to
+decide if they represent the same or different entities, one normally
+would expect that if the entity (the entity-body or any entity-headers) changes in any way, then the associated validator would
+change as well. If this is true, then we call this validator a
+"strong validator."
+
+起点鯖とキャッシュの両者が2つの検証子を比較して同じ実体をあらわしているのか異なる実体をあらわしているのかを決めますから、
+実体 ([CODE(ABNF)[[[entity-body]]]] または [CODE(ABNF)[entity-header]] のどれか)
+が何らかの形で変更されたら、関連付けられた検証子も変わるであろうことが通常期待できます。
+これが真であるとき、この検証子を[DFN[強い検証子]]と呼びます。
+
+> However, there [DEL[may]] [INS[might]] be cases when a server prefers to change the
+validator only on semantically significant changes, and not when
+insignificant aspects of the entity change. A validator that does not
+always change when the resource changes is a "weak validator."
+
+しかし、鯖が意味的に有意な変更においてのみ検証子を変更し、
+実体の意味のない側面での変更の時には検証子は変更しないようにしたい場合というのもあるかもしれません。
+資源が変更されたときに必ずしも変更されない検証子は[DFN[弱い検証子]]です。
+
+> Entity tags are normally "strong validators," but the protocol
+provides a mechanism to tag an entity tag as "weak." One can think of
+a strong validator as one that changes whenever the bits of an entity
+changes, while a weak value changes whenever the meaning of an entity
+changes. Alternatively, one can think of a strong validator as part
+of an identifier for a specific entity, while a weak validator is
+part of an identifier for a set of semantically equivalent entities.
+
+実体札は通常「強い検証子」ですが、 HTTP は実体札が「弱い」
+ものであると札付けする仕組みを用意しています。
+強い検証子は実体のほんのわずかな変更でも必ず変わるもので、
+弱い値は実態の意味の変更の時には必ず変わるものと考えることができます。
+あるいは、強い検証子は特定の実体の識別子の一部であり、
+弱い検証子は意味的に等価な実体群の集合の識別子の一部であると考えることもできます。
+
+> Note: One example of a strong validator is an integer that is
+incremented in stable storage every time an entity is changed.
+
+注意: 強い検証子の一つの例は、実体が変更されるたびに増える、
+安定した記憶装置上の整数です。
+
+> An entity's modification time, if represented with one-second
+resolution, could be a weak validator, since it is possible that
+the resource [DEL[may]] [INS[might]] be modified twice during a single second.
+
+実体の修正時刻は、一秒の粒度で表現されていれば、
+弱い検証子とすることができます。といいますのは、
+資源が一秒の間に二度修正されるかもしれないからです。
+
+> Support for weak validators is optional[DEL[;]][INS[. However]] [DEL[however]], weak validators
+allow for more efficient caching of equivalent objects; for
+example, a hit counter on a site is probably good enough if it is
+updated every few days or weeks, and any value during that period
+is likely "good enough" to be equivalent.
+
+弱い検証子への対応は任意です。しかし、
+弱い検証子で等価な物体のより効率的なキャッシュ付けが可能になります。
+たとえば、サイトの打撃計数器は、何日間か何週間かごとに更新されて、
+その期間中の値がすべて等価であるのに「十分良い」ようであれば、
+おそらく弱い検証子で十分良いでしょう。
+
+> A "use" of a validator is either when a client generates a request
+and includes the validator in a validating header field, or when a
+server compares two validators.
+
+検証子の「使用」は、クライアントが要求を生成し、
+検証子を検証頭欄に含めるときか、または鯖が2つの検証子を比較するときのいずれかです。
+
+> Strong validators are usable in any context. Weak validators are only
+usable in contexts that do not depend on exact equality of an entity.
+For example, either kind is usable for a conditional GET of a full
+entity. However, only a strong validator is usable for a sub-range
+retrieval, since otherwise the client [DEL[may]] [INS[might]] end up with an internally
+inconsistent entity.
+
+強い検証子は任意の文脈で使用可能です。
+弱い検証子は実体の実際の同等性に依存しない文脈でのみ使用可能です。たとえば、
+完全な実体の条件付 [CODE(HTTP)[[[GET]]]] ではどちらの種類も使用可能です。
+しかし、部分範囲取出しでは、
+弱い検証子を使うとクライアントが内部的に不整合な実体を得てしまうことになるかもしれませんから、
+強い検証子だけが使用可能です。
+
+[INS[
+> Clients MAY issue simple (non-subrange) GET requests with either weak
+validators or strong validators. Clients MUST NOT use weak validators
+in other forms of request.
+
+クライアントは単純 (非部分範囲) [CODE(HTTP)[GET]]
+要求を弱い検証子と強い検証子のいずれを使ってでも発行して'''構いません'''。
+クライアントは他の書式の要求では弱い検証子を使っては'''なりません'''。
+]INS]
+
+> The only function that the HTTP/1.1 protocol defines on validators is
+comparison. There are two validator comparison functions, depending
+on whether the comparison context allows the use of weak validators or not:
+- [DEL[o]] [INS[-]] The strong comparison function: in order to be considered equal,
+both validators [DEL[must]] [INS[MUST]] be identical in every way, and [DEL[neither may]] [INS[both MUST NOT]] be weak.
+- [DEL[o]] [INS[-]] The weak comparison function: in order to be considered equal,
+both validators [DEL[must]] [INS[MUST]] be identical in every way, but either or
+both of them [DEL[may]] [INS[MAY]] be tagged as "weak" without affecting the result.
+
+HTTP/1.1 プロトコルが検証子について定義する関数は比較だけです。
+検証子比較関数は、比較する文脈が弱い検証子を認めているかどうかによって2種類あります。
+- 強い比較関数: 等しいと考えられるためには、
+両方の検証子がすべてにおいて同一でなければ'''なりません'''し、
+両者共に弱い検証子であっては'''なりません'''。
+- 弱い比較関数: 等しいと考えられるためには、
+両方の検証子がすべてにおいて同一でなければ'''なりません'''が、
+検証子の一方または両方が「弱い」と札付けされていても'''構いません'''で、
+これは結果には影響しません。
+
+[DEL[
+> The weak comparison function MAY be used for simple (non-subrange)
+GET requests. The strong comparison function MUST be used in all other cases.
+
+弱い比較関数は単純 (非部分範囲) [CODE(HTTP)[GET]] 要求に使用して'''構いません'''。
+強い比較関数は他のすべての場合に使用しなければ'''なりません'''。
+]DEL]
+
+> An entity tag is strong unless it is explicitly tagged as weak.
+Section 3.11 gives the syntax for entity tags.
+
+実体札は、陽に弱いと札付けされていない限り強い検証子です。
+実体札の構文は3.11節で与えています。
+
+> A Last-Modified time, when used as a validator in a request, is
+implicitly weak unless it is possible to deduce that it is strong,
+using the following rules:
+- [DEL[o]] [INS[-]] The validator is being compared by an origin server to the
+actual current validator for the entity and,
+- [DEL[o]] [INS[-]] That origin server reliably knows that the associated entity did
+not change twice during the second covered by the presented validator.
+
+[CODE(HTTP)[Last-Modified]] 時刻は、要求で検証子として使われるときは、
+次の規則を用いて強いと演繹することが可能でない限り、暗に弱いものとします。
+
+- 検証子が起点鯖によって実体の現在の実際の値と比較し、
+- 起点鯖は関連付けられた実体が示された検証子の覆う範囲で一秒間に二度変更されていないと確実に知っている場合
+
+> or
+- [DEL[o]] [INS[-]] The validator is about to be used by a client in an If-Modified-Since
+or If-Unmodified-Since header, because the client has a cache
+entry for the associated entity, and
+- [DEL[o]] [INS[-]] That cache entry includes a Date value, which gives the time
+when the origin server sent the original response, and
+- [DEL[o]] [INS[-]] The presented Last-Modified time is at least 60 seconds before
+the Date value.
+
+または
+- 検証子はクライアントが [CODE(HTTP)[[[If-Modified-Since]]]] または
+[CODE(HTTP)[[[If-Unmodified-Since]]]] 頭で使用しているものである場合
+(クライアントは関連付けられた実体のキャッシュ項目を持っているから)、および
+- キャッシュ項目が [CODE(HTTP)[[[Date]]]] 値を含んでおり、
+それが起点鯖のもとの応答を送った時刻を与えており、かつ
+- 示された [CODE(HTTP)[Last-Modified]] 時刻は [CODE(HTTP)[Date]]
+値の最低60秒前である
+
+> or
+- [DEL[o]] [INS[-]] The validator is being compared by an intermediate cache to the
+validator stored in its cache entry for the entity, and
+- [DEL[o]] [INS[-]] That cache entry includes a Date value, which gives the time
+when the origin server sent the original response, and
+- [DEL[o]] [INS[-]] The presented Last-Modified time is at least 60 seconds before
+the Date value.
+
+または
+- 検証子はその実体のキャッシュ項目に蓄積された検証子に対して中間キャッシュで比較され、かつ
+- そのキャッシュ項目は [CODE(HTTP)[Date]] 値を含んでおり、
+それが起点鯖のもとの応答の時刻を与えており、かつ
+- 示された [CODE(HTTP)[Last-Modified]] 時刻は [CODE(HTTP)[Date]]
+値の最低60秒前である
+
+> This method relies on the fact that if two different responses were
+sent by the origin server during the same second, but both had the
+same Last-Modified time, then at least one of those responses would
+have a Date value equal to its Last-Modified time. The arbitrary 60-second limit guards against the possibility that the Date and Last-Modified values are generated from different clocks, or at somewhat
+different times during the preparation of the response. An
+implementation [DEL[may]] [INS[MAY]] use a value larger than 60 seconds, if it is
+believed that 60 seconds is too short.
+
+この方式は、起点鯖が同じ秒の間に2つの異なる応答を送ったとした場合に、
+その2つの応答の少なくても一つは
+[CODE(HTTP)[Last-Modified]] 時刻と等しい [CODE(HTTP)[Date]] 
+値を持っているであろうという事実に拠っています。
+勝手な60秒の制限は、 [CODE(HTTP)[Date]] 値と [CODE(HTTP)[Last-Modified]]
+値が異なる時計で生成しているか、または応答の準備の過程で何か異なる時刻を使っている可能性からです。
+実装は、60秒が短すぎると信ずる場合には、60秒より大きな値を使って'''構いません'''。
+
+> If a client wishes to perform a sub-range retrieval on a value for
+which it has only a Last-Modified time and no opaque validator, 
+it [DEL[may]] [INS[MAY]] do this only if the Last-Modified time is strong in the sense described here.
+
+クライアントが [CODE(HTTP)[Last-Modified]] 時刻のみを持っていて不透明検証子を持っていない値の部分範囲取出しを行おうと思っているときは、
+これを [CODE(HTTP)[Last-Modified]] 時刻がここで説明した意味で強いときのみ行って'''構いません'''。
+
+> A cache or origin server receiving a [DEL[cache-]]conditional request, other than
+a full-body GET request, MUST use the strong comparison function to
+evaluate the condition.
+
+完全本体 [CODE(HTTP)[GET]] 要求ではない条件付要求を受信したキャッシュや起点鯖は、
+状況を評価するために強い比較関数を使用しなければ'''なりません'''。
+
+> These rules allow HTTP/1.1 caches and clients to safely perform sub-range
+retrievals on values that have been obtained from HTTP/1.0 servers.
+
+これらの規則によって、 HTTP/1.1 のキャッシュと串が安全に
+HTTP/1.0 鯖から得た値について部分範囲取出しを行うことができます。
+
+**** 13.3.4 Rules for When to Use Entity Tags and [DEL[Last-modified]] [INS[Last-Modified]] Dates
+> We adopt a set of rules and recommendations for origin servers,
+clients, and caches regarding when various validator types [DEL[should]] [INS[ought to]]
+be used, and for what purposes.
+
+種々の検証子の種類をいつ、どのように使用するべきであるのかについて起点鯖、
+クライアント、キャッシュに規則と勧告を示します。
+
+> HTTP/1.1 origin servers:
+- [DEL[o]] [INS[-]] SHOULD send an entity tag validator unless it is not feasible to
+generate one.
+- [DEL[o]] [INS[-]] MAY send a weak entity tag instead of a strong entity tag, if
+performance considerations support the use of weak entity tags,
+or if it is unfeasible to send a strong entity tag.
+- [DEL[o]] [INS[-]] SHOULD send a Last-Modified value if it is feasible to send one,
+unless the risk of a breakdown in semantic transparency that could
+result from using this date in an If-Modified-Since header would
+lead to serious problems.
+
+HTTP/1.1 起点鯖は、
+- 実体札検証子を生成できない場合を除いて、送信する'''べきです'''。
+- 効率を考えると弱い実体札を使用した方が良いか、
+または強い実体札を送信することができない場合には、
+強い実体札の代わりに弱い実体札を送信しても'''構いません'''。
+- [CODE(HTTP)[Last-Modified]] 値を送信することができる時には、
+意味的透過性を壊してしまって [CODE(HTTP)[If-Modified-Since]]
+頭でその日付を使うと大きな問題を招きかねない虞のある場合を除き、
+[CODE(HTTP)[Last-Modified]] 値を送信する'''べきです'''。
+
+> In other words, the preferred behavior for an HTTP/1.1 origin server
+is to send both a strong entity tag and a Last-Modified value.
+
+言い換えれば、 HTTP/1.1 起点鯖の望ましい振る舞いは、
+強い実体札と [CODE(HTTP)[Last-Modified]] 値の両方を送信することです。
+
+> In order to be legal, a strong entity tag MUST change whenever the
+associated entity value changes in any way. A weak entity tag SHOULD
+change whenever the associated entity changes in a semantically
+significant way.
+
+強い実体札は、関連付けられた実体値が何らかの形で変更されたときには必ず変更し'''なければ'''合法ではありません。
+弱い実体札は関連付けられた実体が意味的に重大な変更があったときには必ず変更する'''べきです'''。
+
+> Note: in order to provide semantically transparent caching, an
+origin server must avoid reusing a specific strong entity tag value
+for two different entities, or reusing a specific weak entity tag
+value for two semantically different entities. Cache entries [DEL[may]] [INS[might]]
+persist for arbitrarily long periods, regardless of expiration
+times, so it [DEL[may]] [INS[might]] be inappropriate to expect that a
+cache will never again attempt to validate an entry using a validator that it
+obtained at some point in the past.
+
+注意: 意味的に等価なキャッシュ付けを行うために、
+起点鯖は特定の強い実体札値を2つの異なる実体に再利用したり、
+特定の弱い実体札値を2つの意味的に異なる実体に再利用したりすることを避けなければなりません。
+キャッシュ項目は満期時刻にかかわらず任意の期間持続しているかもしれませんから、
+キャッシュが過去のいつかの時点で得た検証子を使って項目を検証しようとすることはなかろうと期待することは不適切です。
+
+> HTTP/1.1 clients:
+- [DEL[o]] [INS[-]] If an entity tag has been provided by the origin server, MUST
+use that entity tag in any cache-conditional request (using 
+If-Match or If-None-Match).
+- [DEL[o]] [INS[-]] If only a Last-Modified value has been provided by the origin
+server, SHOULD use that value in non-subrange cache-conditional
+requests (using If-Modified-Since).
+- [DEL[o]] [INS[-]] If only a Last-Modified value has been provided by an HTTP/1.0
+origin server, MAY use that value in subrange cache-conditional
+requests (using If-Unmodified-Since:). The user agent [DEL[should]] [INS[SHOULD]]
+provide a way to disable this, in case of difficulty.
+- [DEL[o]] [INS[-]] If both an entity tag and a Last-Modified value have been
+provided by the origin server, SHOULD use both validators in
+cache-conditional requests. This allows both HTTP/1.0 and
+HTTP/1.1 caches to respond appropriately.
+
+HTTP/1.1 クライアントは、
+- 実体札が起点鯖により提供されている場合は、その実体札を
+([CODE(HTTP)[[[If-Match]]]] や [CODE(HTTP)[[[If-None-Match]]]] を使った) 
+すべてのキャッシュ条件付要求に使用しなければ'''なりません'''。
+- [CODE(HTTP)[Last-Modified]] 値だけが起点鯖により提供されている場合は、その値を
+([CODE(HTTP)[If-Modified-Since]] を使った) 非部分範囲キャッシュ条件付要求に使用しなければなりません。
+- [CODE(HTTP)[Last-Modified]] 値だけが HTTP/1.0 起点鯖により提供されている場合は、
+その値を ([CODE(HTTP)[[[If-Unmodified-Since]]:]] を使った) 
+部分範囲キャッシュ条件付要求で使って'''構いません'''。
+[[利用者エージェント]]は、支障がある場合のため、これを無効化する方法を提供する'''べきです'''。
+- 実体札と [CODE(HTTP)[Last-Modified]] 値の両方が起点鯖により提供されている場合は、
+両方の検証子をキャッシュ条件付要求で使用する'''べきです'''。
+こうすることで HTTP/1.1 キャッシュと HTTP/1.1 キャッシュの両方が適当に応答できます。
+
+[DEL[
+> An HTTP/1.1 cache, upon receiving a request, MUST use the most
+restrictive validator when deciding whether the client's cache entry
+matches the cache's own cache entry. This is only an issue when the
+request contains both an entity tag and a last-modified-date
+validator (If-Modified-Since or If-Unmodified-Since).
+
+HTTP/1.1 キャッシュは、要求の受信に際して、
+クライアントのキャッシュ項目がキャッシュ自身のキャッシュ項目に一致するかを決める時にもっとも制限的な検証子を使わなければ'''なりません'''。
+これは要求が実体札と最終修正日付検証子 ([CODE(HTTP)[If-Modified-Since]]
+または [CODE(HTTP)[If-Unmodified-Since]]) の両方を含んでいるときのみ問題です。
+]DEL]
+
+[INS[
+> An HTTP/1.1 origin server, upon receiving a conditional request that
+includes both a Last-Modified date (e.g., in an If-Modified-Since or
+If-Unmodified-Since header field) and one or more entity tags (e.g.,
+in an If-Match, If-None-Match, or If-Range header field) as cache
+validators, MUST NOT return a response status of 304 (Not Modified)
+unless doing so is consistent with all of the conditional header
+fields in the request.
+
+HTTP/1.1 起点鯖は、 [CODE(HTTP)[Last-Modified]] 日付
+(たとえば [CODE(HTTP)[If-Modified-Since]] 頭欄または
+[CODE(HTTP)[If-Unmodified-Since]] 頭欄で。) 
+および1つ以上の実体札 (たとえば [CODE(HTTP)[If-Match]] 頭欄、
+[CODE(HTTP)[If-None-Match]] 頭欄または [CODE(HTTP)[If-Range]] 頭欄で。)
+の両方をキャッシュ検証子として含む条件付要求の受信に際して、
+[CODE(HTTP)[[[304]]]] (未修正) の[[状態符号]]を返しても要求のすべての条件付頭欄と整合する場合を除き、
+[CODE(HTTP)[[[304]]]] (未修正) の状態符号を返しては'''なりません'''。
+
+> An HTTP/1.1 caching proxy, upon receiving a conditional request that
+includes both a Last-Modified date and one or more entity tags as
+cache validators, MUST NOT return a locally cached response to the
+client unless that cached response is consistent with all of the
+conditional header fields in the request.
+
+HTTP/1.1 キャッシュ串は、 [CODE(HTTP)[Last-Modified]] 日付と1つ以上の実体札の両方をキャッシュ検証子として含む条件付要求の受信に際して、
+局所的にキャッシュした応答が要求のすべての条件付頭欄に整合する場合を除き、
+キャッシュした応答をクライアントに返しては'''なりません'''。
+]INS]
+
+> [DEL[A note on rationale:]] [INS[Note:]] The general principle behind these rules is
+that HTTP/1.1 servers and clients should transmit as much non-redundant
+information as is available in their responses and requests.
+HTTP/1.1 systems receiving this information will make the most
+conservative assumptions about the validators they receive.
+
+注意: これらの規則の裏にある一般原則は、 HTTP/1.1
+の鯖とクライアントは応答と要求で利用できる冗長でないできるだけ多くの情報を転送するべきということです。
+この情報を受信した HTTP/1.1 システムは、
+受信した検証子についての最も保守的な過程を行います。
+
+> HTTP/1.0 clients and caches will ignore entity tags. Generally,
+last-modified values received or used by these systems will support
+transparent and efficient caching, and so HTTP/1.1 origin servers
+should provide Last-Modified values. In those rare cases where the
+use of a Last-Modified value as a validator by an HTTP/1.0 system
+could result in a serious problem, then HTTP/1.1 origin servers
+should not provide one.
+
+HTTP/1.0 のクライアントとキャッシュは実体札を無視します。
+通常、これらのシステムが受信または使用する [CODE(HTTP)[last-modified]] 
+値は透明で有効なキャッシュ付けを支援しますから、 HTTP/1.1
+起点鯖は [CODE(HTTP)[Last-Modified]] 値を提供するべきです。
+HTTP/1.0 システムが [CODE(HTTP)[Last-Modified]]
+値を使用していて重大な問題になり得るという稀な場合には、
+HTTP/1.1 起点鯖は [CODE(HTTP)[Last-Modified]]
+を提供するべきではありません。
+
+**** 13.3.5 Non-validating Conditionals
+> The principle behind entity tags is that only the service author
+knows the semantics of a resource well enough to select an
+appropriate cache validation mechanism, and the specification of any
+validator comparison function more complex than byte-equality would
+open up a can of worms. Thus, comparisons of any other headers
+(except Last-Modified, for compatibility with HTTP/1.0) are never
+used for purposes of validating a cache entry.
+
+実体札の裏にある原則は、サービス著者だけが適切なキャッシュ検証機構を選択できるだけ十部よく資源の意味を知っており、
+バイト等価性以上の複雑な検証子比較関数の仕様が害虫の缶を開けることになるでろうということです。
+従って、他の頭 (HTTP/1.0 との互換性のため [CODE(HTTP)[Last-Modified]]
+を除く。) の比較がキャッシュ項目の検証の目的で使用されることは決してありません。
+
+*** 13.4 Response Cach[INS[e]]ability
+> Unless specifically constrained by a [DEL[Cache-Control]] [INS[cache-control]] (section 14.9)
+directive, a caching system [DEL[may]] [INS[MAY]] always store a successful response
+(see section 13.8) as a cache entry, [INS[may]] [INS[MAY]] return it without validation
+if it is fresh, and [INS[may]] [INS[MAY]] return it after successful validation. If
+there is neither a cache validator nor an explicit expiration time
+associated with a response, we do not expect it to be cached, but
+certain caches [INS[may]] [INS[MAY]] violate this expectation (for example, when little
+or no network connectivity is available). A client can usually detect
+that such a response was taken from a cache by comparing the Date
+header to the current time.
+
+キャッシュ付けシステムは、 [CODE(ABNF)[[[cache-control]]]] 指令で制約が指定されていない限り、常に[[成功裏応答]]をキャッシュ項目として蓄積して'''構いません'''し、
+それが[[新鮮]]であれば検証なしに返して'''構いません'''し、
+[[成功裏検証]]の後返しても'''構いません'''。応答に関連付けられた[[検証子]]も陽な満期時刻もなければ、キャッシュされることは期待しませんが、
+ある種のキャッシュは (たとえば、ネットワーク接続がほとんどまたはまったく利用できないときは)
+この期待に反しても'''構いません'''。クライアントは通常、
+そのような応答がキャッシュから取られたことを [CODE(HTTP)[Date]]
+頭と現在時刻を比較することで検出できます。
+
+> Note[INS[:]] [DEL[that]] some HTTP/1.0 caches are known to violate this
+expectation without providing any Warning.
+
+注意: いくつかの HTTP/1.0 キャッシュはこの期待に
+[CODE(HTTP)[[[Warning]]]] を出さずに違反することが知られています。
+
+> However, in some cases it [DEL[may]] [INS[might]] be inappropriate for a cache to
+retain an entity, or to return it in response to a subsequent request. 
+This [DEL[may]] [INS[might]] be because absolute semantic transparency is
+deemed necessary by the service author, or because of security or privacy
+considerations. Certain [DEL[Cache-Control]] [INS[cache-control]] directives are therefore
+provided so that the server can indicate that certain resource entities,
+or portions thereof, [DEL[may]] [INS[are]] not [INS[to]] be cached regardless of other considerations.
+
+しかし、場合によってはキャッシュが実体を保有しておいたり、
+[[後続要求]]への応答で返すことが不適切であるかもしれません。
+これはサービス著者にとって絶対的意味等価性が必要と思われるためか、
+または安全や匿私のためかもしれません。従ってある種の [CODE(ABNF)[cache-control]]
+指令を提供しており、鯖がある資源の実体やその一部を他の条件にかかわらずキャッシュしないように指示することができます。
+
+> Note that section 14.8 normally prevents a shared cache from saving
+and returning a response to a previous request if that request
+included an Authorization header.
+
+なお、14.8節は通常、以前の要求が [CODE(HTTP)[[[Authorization]]]]
+頭を含んでいたら[[共有キャッシュ]]がその要求に対する応答を保存して後から返すことを防ぎます。
+
+> A response received with a status code of 200, 203, 206, 300, 301 or
+410 [DEL[may]] [INS[MAY]] be stored by a cache and used in reply to a subsequent
+request, subject to the expiration mechanism, unless a [DEL[Cache-Control]] [INS[cache-control]]
+directive prohibits caching. However, a cache that does not support
+the Range and Content-Range headers MUST NOT cache 206 (Partial
+Content) responses.
+
+状態符号 [CODE(HTTP)[[[200]]]], [CODE(HTTP)[[[203]]]],
+[CODE(HTTP)[[[206]]]], [CODE(HTTP)[[[300]]]], [CODE(HTTP)[[[301]]]],
+[CODE(HTTP)[[[410]]]] で受信した応答は、
+[CODE(ABNF)[cache-control]] 指令がキャッシュ付けを禁止していない限り、
+キャッシュが蓄積して、満期機構の対象として、
+後続要求への応答として使用して'''構いません'''。
+
+> A response received with any other status code [INS[(e.g. status codes 302 and 307)]]
+MUST NOT be returned in a reply to a subsequent request unless there 
+are [DEL[Cache-Control]] [INS[cache-control]] directives or another header(s) that
+explicitly allow it. For example, these include the following: an Expires header (section 14.21);
+a "max-age", [INS["s-maxage",]] "must-revalidate", "proxy-revalidate", "public" or "private" [DEL[Cache-Control]] [INS[cache-control]] directive (section 14.9).
+
+他の状態符号 (たとえば状態符号 [CODE(HTTP)[[[302]]]] や
+[CODE(HTTP)[[[307]]]]) で受信した応答は、
+[CODE(ABNF)[cache-control]] 指令や他の頭(群)で陽に認めていない限り後続要求への応答として返しては'''なりません'''。
+そのようなものには、たとえば次を含みます。
+[CODE(HTTP)[[[Expires]]]] 頭。 [CODE(ABNF)[cache-control]] 指令
+[CODE(HTTP)[[[max-age]]]], [CODE(HTTP)[[[s-maxage]]]],
+[CODE(HTTP)[[[must-revalidate]]]], [CODE(HTTP)[[[proxy-revalidate]]]],
+[CODE(HTTP)[[[public]]]], [CODE(HTTP)[[[private]]]]。
+
+*** 13.5 Constructing Responses From Caches
+> The purpose of an HTTP cache is to store information received in
+response to requests[DEL[,]] for use in responding to future requests. In
+many cases, a cache simply returns the appropriate parts of a
+response to the requester. However, if the cache holds a cache entry
+based on a previous response, it [DEL[may]] [INS[might]] have to combine parts of a new
+response with what is held in the cache entry.
+
+HTTP キャッシュの目的は、要求に対する応答で受信した情報を、
+将来の要求に対する応答で使用するために蓄積することです。
+多くの場合、キャッシュは単純に要求者に応答の適切な部分を返します。
+しかし、キャッシュが以前の応答に基づくキャッシュ項目を保持していれば、
+キャッシュはキャッシュ項目中に持っているもので新しい応答の部分を組合せなければならないかもしれません。
+
+**** 13.5.1 End-to-end and Hop-by-hop Headers
+> For the purpose of defining the behavior of caches and non-caching
+proxies, we divide HTTP headers into two categories:
+
+キャッシュと非キャッシュ付け串の振舞いを定義するために、
+HTTP 頭群を2種類に分けます。
+
+> 
+- [DEL[o]] [INS[-]] End-to-end headers, which [DEL[must be]] [INS[are]] transmitted to the
+ultimate recipient of a request or response. End-to-end headers in
+responses [DEL[must]] [INS[MUST]] be stored as part of a cache entry and [INS[MUST be]]
+transmitted in any response formed from a cache entry.
+- [DEL[o]] [INS[-]] Hop-by-hop headers, which are meaningful only for a single
+transport-level connection, and are not stored by caches or
+forwarded by proxies.
+
+:末端対末端頭:要求や応答の最終受領者に転送されます。
+応答中の末端対末端頭群はキャッシュ項目の一部として蓄積しなければ'''なりません'''し、
+キャッシュ項目から形成されるいかなる応答でも転送しなければ'''なりません'''。
+:ホップ毎頭:単一の輸送層接続でのみ意味があり、
+キャッシュに蓄積されたり串により転送されたりしません。
+
+> The following HTTP/1.1 headers are hop-by-hop headers:
+
+次の HTTP/1.1 頭群はホップ毎頭です。
+
+>
+- [DEL[o]] [INS[-]] Connection
+- [DEL[o]] [INS[-]] Keep-Alive
+- [DEL[o  Public]]
+- [DEL[o]] [INS[-]] Proxy-Authenticate
+- [INS[- Proxy-Authorization]]
+- [INS[- TE]]
+- [INS[- Trailer[DEL[s]]]] [INS[{Errata で修正}]]
+- [DEL[o]] [INS[-]] Transfer-Encoding
+- [DEL[o]] [INS[-]] Upgrade
+
+> All other headers defined by HTTP/1.1 are end-to-end headers.
+
+HTTP/1.1 で定義している他のすべての頭は末端対末端頭です。
+
+[DEL[
+> Hop-by-hop headers introduced in future versions of HTTP MUST be
+listed in a Connection header, as described in section 14.10.
+
+将来の版の HTTP で導入するホップ毎頭は14.10節で記述する通り
+[CODE(HTTP)[[[Connection]]]] 頭に列しなければ'''なりません'''。
+]DEL]
+
+[INS[
+> Other hop-by-hop headers MUST be listed in a Connection header,
+(section 14.10) to be introduced into HTTP/1.1 (or later).
+
+他のホップ毎頭は HTTP/1.1 (以降) 
+で導入するためには [CODE(HTTP)[Connection]] 頭に列しなければ'''なりません'''。
+]INS]
+
+**** 13.5.2 Non-modifiable Headers
+> Some features of the HTTP/1.1 protocol, such as Digest
+Authentication, depend on the value of certain end-to-end headers. A [DEL[cache or non-caching]] [INS[transparent]]
+proxy SHOULD NOT modify an end-to-end header
+unless the definition of that header requires or specifically allows that.
+
+HTTP/1.1 プロトコルのいくつかの機能、たとえば要約認証は、
+ある種の末端対末端頭の値に依存します。
+[[透過串]]が末端対末端頭を修正することは、
+その頭の定義が要求しているか、または認めると規定している場合を除き、
+する'''べきではありません'''。
+
+[DEL[
+> A cache or non-caching proxy MUST NOT modify any of the following
+fields in a request or response, nor may it add any of these fields
+if not already present:
+
+キャッシュまたは非キャッシュ付け串は、
+要求または応答の次の頭欄のいずれをも修正しては'''なりません'''し、
+これらの頭欄が既に存在しない場合にはどれも追加してはいけません。
+
+>
+-     o  Content-Location
+-     o  ETag
+-     o  Expires
+-     o  Last-Modified
+]DEL]
+
+> A [DEL[cache or non-caching]] [INS[transparent]] proxy MUST NOT modify [DEL[or add]]
+any of the following fields in a [DEL[response that contains the no-transform Cache-Control directive, or in any request]] [INS[request or response, and it MUST NOT add any of these fields if not already present]]:
+
+透過串は、要求や応答の次のいずれの欄をも修正しては'''なりません'''し、
+既に存在する場合にはいずれも追加しては'''なりません'''。
+
+[INS[
+>
+-      - Content-Location
+-      - Content-MD5
+-      - ETag
+-      - Last-Modified
+
+> A transparent proxy MUST NOT modify any of the following fields in a response:
+
+透過串は応答の
+
+>
+- - Expires
+
+> but it MAY add any of these fields if not already present. If an
+Expires header is added, it MUST be given a field-value identical to
+that of the Date header in that response.
+
+の欄を修正しては'''なりません'''が、
+既に存在していない場合には追加しても'''構いません'''。
+[CODE(HTTP)[Expires]] 頭を追加する場合は、
+その応答の [CODE(HTTP)[[[Date]]]] 頭と同一の欄値を与えなければ'''なりません'''。
+
+> A  proxy MUST NOT modify or add any of the following fields in a
+message that contains the no-transform cache-control directive, or in
+any request:
+
+串は、要求や [CODE(HTTP)[[[no-transform]]]] 
+キャッシュ制御指令を持つメッセージの次の欄を修正したり追加したりしては'''なりません'''。
+]INS]
+
+>
+- [DEL[o]] [INS[-]] Content-Encoding
+- [DEL[o  Content-Length]]
+- [DEL[o]] [INS[-]] Content-Range
+- [DEL[o]] [INS[-]] Content-Type
+
+> A [DEL[cache or non-caching]] [INS[non-transparent]]
+proxy MAY modify or add these fields [DEL[in a response]] [INS[to a message]]
+that does not include no-transform, but if it does so, it MUST add a
+Warning [INS[2]]14
+(Transformation applied) if one does not already appear in the [DEL[response]] [INS[message (see section 14.46)]].
+
+非透過串は、これらの欄を [CODE(HTTP)[no-transform]]
+を含まないメッセージに追加したり修正したりしても'''構いません'''が、
+そうする場合には [CODE(HTTP)[[[Warning]]]] [CODE(HTTP)[[[214]]]]
+(変形適用済み) を (メッセージに既に存在しなければ)
+追加しなければ'''なりません'''。
+
+> Warning: unnecessary modification of end-to-end headers [DEL[may]] [INS[might]]
+cause authentication failures if stronger authentication mechanisms are
+introduced in later versions of HTTP. Such authentication
+mechanisms [DEL[may]] [INS[MAY]]
+rely on the values of header fields not listed here.
+
+警告: 末端対末端頭の不必要な修正は、
+新しい版の HTTP で強めの認証機構が導入された場合に認証が失敗することとなるかもしれません。
+そのような認証機構はここに列していない頭欄の値に依存しても'''構いません'''。
+
+[INS[
+> The Content-Length field of a request or response is added or deleted
+according to the rules in section 4.4. A transparent proxy MUST
+preserve the entity-length (section 7.2.2) of the entity-body,
+although it MAY change the transfer-length (section 4.4).
+
+要求や応答の [CODE(HTTP)[[[Content-Length]]]]
+欄は、4.4節の規則に従って追加・削除します。
+透過串は、 [CODE(ABNF)[[[transfer-length]]]]
+を変更しても'''構いません'''が、 [CODE(ABNF)[[[entity-body]]]]
+の [CODE(ABNF)[[[entity-length]]]] は保存しなければ'''なりません'''。
+]INS]
+
+**** 13.5.3 Combining Headers
+> When a cache makes a validating request to a server, and the server
+provides a 304 (Not Modified) response [INS[or a 206 (Partial Content) response]],
+the cache [DEL[must]] [INS[then]] construct[INS[s]] a response to send to the requesting client.
+
+キャッシュが要求を鯖に検証させる時で、
+鯖が [CODE(HTTP)[[[304]]]] (未修正) 応答または [CODE(HTTP)[[[206]]]]
+(部分内容) 応答を提供した時には、キャッシュは、
+要求しているクライアントに送信する応答を構築することとなります。
+
+> [INS[If the status code is 304 (Not Modified), the]] [DEL[The]] cache uses the entity-body stored in the cache entry as the entity-body of this
+outgoing response. [DEL[The end-to-end headers stored in the cache entry are used for the constructed response, except that any end-to-end headers provided in the 304 response MUST replace the corresponding headers from the cache entry. Unless the cache decides to remove the cache entry, it MUST also replace the end-to-end headers stored with the cache entry with corresponding headers received in the incoming response.]] [INS[If the status code is 206 (Partial Content) and the ETag or Last-Modified headers match exactly, the cache MAY combine the contents stored in the cache entry with the new contents received in the response and use the result as the entity-body of this outgoing response, (see 13.5.4).]]
+
+状態符号が [CODE(HTTP)[304]] (未修正) の時は、
+キャッシュはキャッシュ項目に蓄積されている [CODE(ABNF)[[[entity-body]]]]
+をこの[[外行き]]の応答の [CODE(ABNF)[[[entity-body]]]]
+として使います。
+状態符号が [CODE(HTTP)[206]] (部分内容) で [CODE(HTTP)[[[ETag]]]] 頭か
+[CODE(HTTP)[[[Last-Modified]]]] 頭がキャッシュ項目に蓄積されている内容と正確に一致する場合は、
+キャッシュはそのキャッシュ項目に蓄積されている内容を応答で受信した新しい内容と結合してこの外行きの応答の
+[CODE(ABNF)[entity-body]] として使って'''構いません'''。
+
+[INS[
+> The end-to-end headers stored in the cache entry are used for the
+constructed response, except that
+- any stored Warning headers with warn-code 1xx (see section
+14.46) MUST be deleted from the cache entry and the forwarded response.
+- any stored Warning headers with warn-code 2xx MUST be retained
+in the cache entry and the forwarded response.
+- any end-to-end headers provided in the 304 or 206 response MUST
+replace the corresponding headers from the cache entry.
+
+キャッシュ項目に蓄積されている末端対末端頭は、
+次の場合を除き、応答の構築に使います。
+
+- [CODE(ABNF)[warn-code]] [CODE(HTTP)[[[1[VAR[xx]]]]]]
+の [CODE(HTTP)[[[Warning]]]] 頭が蓄積されていれば、
+キャッシュ項目や転送する応答からは削除しなければ'''なりません'''。
+- [CODE(ABNF)[warn-code]] [CODE(HTTP)[[[2[VAR[xx]]]]]]
+の [CODE(HTTP)[Warning]] 頭が蓄積されていれば、
+キャッシュ項目と転送する応答に残さなければ'''なりません'''。
+- [CODE(HTTP)[304]] や [CODE(HTTP)[206]]
+の応答で提供された末端対末端頭でキャッシュ項目からの対応する頭を置換しなければ'''なりません'''。
+
+> Unless the cache decides to remove the cache entry, it MUST also
+replace the end-to-end headers stored with the cache entry with
+corresponding headers received in the incoming response, except for
+Warning headers as described immediately above. If a header field-name in the incoming response matches more than one header in the
+cache entry, all such old headers MUST be replaced.
+
+キャッシュがキャッシュ項目を削除すると決めた場合を除き、
+キャッシュはキャッシュ項目に蓄積されている末端対末端頭も受取った応答で受信した対応する頭で置換しなければ'''なりません'''
+(但し [CODE(HTTP)[Warning]] 頭はただいま述べた通りとします)。
+受取った応答の頭欄名がキャッシュ項目の複数の頭と一致する場合は、
+すべての該当する頭を置換しなければ'''なりません'''。
+]INS]
+
+> In other words, the set of end-to-end headers received in the
+incoming response overrides all corresponding end-to-end headers
+stored with the cache entry [INS[(except for stored Warning headers with warn-code 1xx, which are deleted even if not overridden)]]. [DEL[The cache may add Warning headers (see section 14.45) to this set.]]
+
+言換えれば、受取った応答で受信した末端対末端頭の集合はすべてキャッシュ項目に蓄積されている対応する末端体末端頭で上書きします
+(但し [CODE(HTTP)[Warning]] 頭で [CODE(ABNF)[warn-code]] が 
+[CODE(HTTP)[1[VAR[xx]]]] の場合は、上書きしなくても削除します)。
+
+[DEL[
+> If a header field-name in the incoming response matches more than one
+header in the cache entry, all such old headers are replaced.
+
+受取った頭欄名がキャッシュ項目の複数の頭と一致する場合は、
+すべての該当する頭を置換します。
+]DEL]
+
+> Note: this rule allows an origin server to use a 304 (Not Modified) [INS[or a 206 (Partial Content)]]
+response to update any header associated with a previous response for the same entity [INS[or sub-ranges thereof]], although it might not always be meaningful or correct to do so.
+This rule does not allow an origin server to use a 304
+([DEL[not]] [INS[Not]] Modified) [INS[or a 206 (Partial Content)]]
+response to entirely delete a header that it had provided with a previous response.
+
+参考: この規則は、同じ実体 (または同じ部分範囲) についての以前の応答に関連付けられた頭を更新するために[[起点鯖]]が
+[CODE(HTTP)[304]] (未修正) 応答や [CODE(HTTP)[206]] (部分内容)
+応答を使うことができるようにしています。但し、
+そうすることが常に意味のある正しいことであるとは限りません。
+この規則は、以前の応答で提供した頭を完全に削除するために
+[CODE(HTTP)[304]] (未修正) 応答や [CODE(HTTP)[206]] (部分内容)
+応答を使うことは認めていません。
+
+**** 13.5.4 Combining Byte Ranges
+> A response [DEL[may]] [INS[might]] transfer only a subrange of the bytes of an entity-body, either because the request included one or more Range
+specifications, or because a connection was broken prematurely. After
+several such transfers, a cache [DEL[may]] [INS[might]] have received several ranges of
+the same entity-body.
+
+応答は、要求が一つ以上の [CODE(HTTP)[[[Range]]]] 指定を含んでいるためか、
+または接続が早いうちに壊れてしまったために、 [CODE(ABNF)[[[entity-body]]]]
+のバイト列の一部の範囲だけしか転送しないかもしれません。
+このような転送が幾つか行われた後には、キャッシュは、
+同じ [CODE(ABNF)[entity-body]] の幾つかの範囲を受信しているかもしれません。
+
+> If a cache has a stored non-empty set of subranges for an entity, and
+an incoming response transfers another subrange, the cache MAY
+combine the new subrange with the existing set if both the following
+conditions are met:
+- [DEL[o]] [INS[-]] Both the incoming response and the cache entry [DEL[must]] have a cache validator.
+- [DEL[o]] [INS[-]] The two cache validators [DEL[must]] match using the strong comparison function (see section 13.3.3).
+
+キャッシュがある実体の部分範囲の空ではない集合を蓄積している場合で、
+到着中の応答が他の部分範囲を転送している場合には、
+キャッシュは次の条件を満たす時、
+新しい部分範囲を既存の集合と結合して'''構いません'''。
+- 到着中の応答とキャッシュ項目の両方が[[キャッシュ検証子]]を持つ。
+- 2つのキャッシュ検証子が[[強い比較]]関数を使って一致する。
+
+> If either requirement is not [DEL[meant]] [INS[met]], the cache [DEL[must]] [INS[MUST]] use only the most
+recent partial response (based on the Date values transmitted with
+every response, and using the incoming response if these values are
+equal or missing), and [DEL[must]] [INS[MUST]] discard the other partial information.
+
+いずれかの要件を満たさない時は、キャッシュは、
+新しい (各応答で転送される [CODE(HTTP)[[[Date]]]]
+値に基づき、その値が等しいか欠けている時には到着中の応答を使います。)
+方の部分応答だけを使わなければ'''なりません'''。
+他の部分情報は捨てなければ'''なりません'''。
+
+*** 13.6 Caching Negotiated Responses
+> Use of server-driven content negotiation (section 12[INS[.1]]), as indicated
+by the presence of a Vary header field in a response, alters the
+conditions and procedure by which a cache can use the response for
+subsequent requests. [INS[See section 14.44 for use of the Vary header field by servers.]]
+
+[[鯖駆動内容折衝]]を使用している場合
+(そのことは応答中の [CODE(HTTP)[[[Vary]]]] 頭欄の存在で示されます。) は、
+キャッシュが[[後続要求]]に応答を使うことができる条件と手続きがかわります。
+
+> A server [DEL[MUST]] [INS[SHOULD]] use the Vary header field [DEL[(section 14.43)]]
+to inform a cache of what [INS[request-]]header field[INS[s]] [DEL[dimensions are]] [INS[were]]
+used to select among multiple representations of a cachable response [INS[subject to server-driven negotiation]]. [DEL[A cache may use the selected representation (the entity included with that particular response) for replying to subsequent requests on that resource only when the subsequent requests have the same or equivalent values for all header fields specified in the Vary response-header. Requests with a different value for one or more of those header fields would be forwarded toward the origin server.]] [INS[The set of header fields named by the Vary field value is known as the "selecting" request-headers.]]
+
+鯖は、鯖駆動内容折衝の対象である[[キャッシュ可能]]な[[資源]]の複数の[[表現]]から選択するためにどの[[要求頭欄]]をしようしたのかをキャッシュに通知する
+[CODE(HTTP)[[[Vary]]]] 頭欄を使用する'''べきです'''。 [DEL[キャッシュは、その資源についての後続要求が [CODE(HTTP)[Vary]] 応答頭で指定されたすべての頭欄について同じか等価な値を持っている時に限って、後続要求に返答するためにこの選択された表現 (この特定の応答に含まれた実体) を使用して構いません。どれかの頭欄について異なる値の要求は、[[起点鯖]]に転送されます。]] [INS[[CODE(HTTP)[Vary]] 欄値で名前が挙げられた頭欄の集合は、[DFN[選択]]要求頭と呼びます。]]
+
+[INS[
+> When the cache receives a subsequent request whose Request-URI
+specifies one or more cache entries including a Vary header field,
+the cache MUST NOT use such a cache entry to construct a response to
+the new request unless all of the selecting request-headers present
+in the new request match the corresponding stored request-headers in
+the original request.
+
+キャッシュが、 [CODE(HTTP)[Vary]] 頭欄を含む1つ以上のキャッシュ項目を指定する
+[CODE(ABNF)[[[Request-URI]]]] を持つ後続要求を受信した時、
+キャッシュは、新しい要求に存在する選択要求頭のすべてが元の要求の対応する要求頭と一致する場合を除き、
+その要求に対する応答を構築するのにこのキャッシュ項目を使用しては'''なりません'''。
+
+> The selecting request-headers from two requests are defined to match
+if and only if the selecting request-headers in the first request can
+be transformed to the selecting request-headers in the second request
+by adding or removing linear white space (LWS) at places where this
+is allowed by the corresponding BNF, and/or combining multiple
+message-header fields with the same field name following the rules
+about message headers in section 4.2.
+
+2つの要求の選択要求頭は、
+最初の要求の選択要求頭で認められている場所に[[線形空白]] ([CODE(ABNF)[[[LWS]]]])
+を追加したり削除したり[[及び/又は]]同じ欄名の複数のメッセージ頭欄を
+4.2 節のメッセージ頭についての規則に従って結合したりすることで
+2つ目の要求の選択要求頭に変形することができる場合、
+その場合に限って一致すると定義します。
+
+> A Vary header field-value of "*" always fails to match and subsequent
+requests on that resource can only be properly interpreted by the origin server.
+
+[CODE(HTTP)[Vary]] 頭欄値 [CODE(HTTP)[*]] は常に一致に失敗します。
+その資源についての後続要求は起点鯖によってのみ適切に解釈できます。
+
+> If the selecting request header fields for the cached entry do not
+match the selecting request header fields of the new request, then
+the cache MUST NOT use a cached entry to satisfy the request unless
+it first relays the new request to the origin server in a conditional
+request and the server responds with 304 (Not Modified), including an
+entity tag or Content-Location that indicates the entity to be used.
+
+キャッシュ項目の選択要求頭欄が新しい要求の選択要求頭欄に一致しない場合には、
+キャッシュは、最初に新しい要求を条件付要求で起点鯖に中継して、
+鯖が [CODE(HTTP)[[[304]]]] (未修正) で応答し、
+その応答には使用する実体を示す[[実体札]]または [CODE(HTTP)[[[Content-Location]]]]
+が含まれているという場合を除いて、その要求を満足するためにこのキャッシュ項目を使用しては'''なりません'''。
+]INS]
+
+> If an entity tag was assigned to [DEL[the]] [INS[a cached]] representation, the forwarded
+request SHOULD be conditional and include the entity tags in an If-None-Match header field from all its cache entries for the [DEL[Request-URI]] [INS[resource]]. This conveys to the server the set of entities currently held by
+the cache, so that if any one of these entities matches the requested
+entity, the server can use the ETag header in its 304 (Not Modified)
+response to tell the cache which entry is appropriate. If the
+entity-tag of the new response matches that of an existing entry, the
+new response SHOULD be used to update the header fields of the
+existing entry, and the result MUST be returned to the client.
+
+実体札がキャッシュされた表現に割当てられたいた場合には、
+転送要求は条件付とし、その資源のキャッシュ項目すべての実体札を
+[CODE(HTTP)[[[If-None-Match]]]] 頭欄に含める'''べきです'''。
+これはキャッシュが現在保持している実体の集合を鯖に伝達しますので、
+その実体のいずれかが要求された実態に一致すれば、
+鯖はどの実体が適切かをキャッシュに知らせるため [CODE(HTTP)[[[304]]]] (未修正)
+応答で [CODE(HTTP)[[[ETag]]]] 頭を使うことができます。
+新しい応答の実体札が既存のものと一致した場合には、
+新しい応答を既存の項目の頭欄を更新するために使用する'''べきです'''。
+そしてその結果をクライアントに返却しなければ'''なりません'''。
+
+[DEL[
+> The Vary header field may also inform the cache that the
+representation was selected using criteria not limited to the
+request-headers; in this case, a cache MUST NOT use the response in a
+reply to a subsequent request unless the cache relays the new request
+to the origin server in a conditional request and the server responds
+with 304 (Not Modified), including an entity tag or Content-Location
+that indicates which entity should be used.
+
+[CODE(HTTP)[Vary]] 頭は、キャッシュに要求頭に限定されない規準により表現が選択されたことをも知らせることができます。
+この場合、キャッシュは、最初に新しい要求を条件付要求で起点鯖に中継して、
+鯖が [CODE(HTTP)[[[304]]]] (未修正) で応答し、
+その応答には使用する実体を示す[[実体札]]または [CODE(HTTP)[[[Content-Location]]]]
+が含まれているという場合を除いて、その要求を満足するためにこのキャッシュ項目を使用しては'''なりません'''。
+]DEL]
+
+> If any of the existing cache entries contains only partial content
+for the associated entity, its entity-tag SHOULD NOT be included in the If-None-Match header [INS[field]]
+unless the request is for a range that would be fully satisfied by that entry.
+
+既存のキャッシュ項目のいずれかが関連付けられた実体の部分的な内容だけしか含んでいない場合には、
+その実体札は、その要求が実体を完全に満足させることになる範囲のものである場合を除き、
+[CODE(HTTP)[If-None-Match]] 頭欄に含める'''べきではありません'''。
+
+> If a cache receives a successful response whose Content-Location
+field matches that of an existing cache entry for the same [DEL[Request-URI]] [INS[Request-]URI]] [INS[{ママ}]], whose entity-tag differs from that of the existing entry, and
+whose Date is more recent than that of the existing entry, the
+existing entry SHOULD NOT be returned in response to future requests[DEL[,]]
+and [DEL[should]] [INS[SHOULD]] be deleted from the cache.
+
+キャッシュが[[成功裏応答]]を受信し、その [CODE(HTTP)[[[Content-Location]]]]
+欄が同じ [CODE(ABNF)[Request-URI]] の既存のキャッシュ項目に一致して、
+実体札は既存の項目のものと異なる時で、 [CODE(HTTP)[[[Date]]]]
+は既存の実体よりも最近のものであるなら、既存の項目は将来の要求への応答として返す'''べきではありません'''し、
+キャッシュから削除する'''べきです'''。
+
+*** 13.7 Shared and Non-Shared Caches
+> For reasons of security and privacy, it is necessary to make a
+distinction between "shared" and "non-shared" caches. A non-shared
+cache is one that is accessible only to a single user. Accessibility
+in this case SHOULD be enforced by appropriate security mechanisms.
+All other caches are considered to be "shared." Other sections of
+this specification place certain constraints on the operation of
+shared caches in order to prevent loss of privacy or failure of
+access controls.
+
+保安と秘私性の理由から、「共有」キャッシュと「非共有」
+キャッシュを区別する必要があります。非共有キャッシュは単一の[[利用者]]のみからアクセス可能なものです。
+この場合のアクセス制御は適当な保安機構により実施する'''べきです'''。
+他のすべてのキャッシュは「共有」と考えます。
+この仕様書の別の章で、秘私性が失われたりアクセス制御に失敗したりすることを防ぐための共有キャッシュの運用の制限に触れています。
+
+*** 13.8 Errors or Incomplete Response Cache Behavior
+> A cache that receives an incomplete response (for example, with fewer
+bytes of data than specified in a Content-Length header) [DEL[may]] [INS[MAY]] store
+the response. However, the cache MUST treat this as a partial
+response.  Partial responses [DEL[may]] [INS[MAY]] be combined as described in section
+13.5.4; the result might be a full response or might still be
+partial. A cache MUST NOT return a partial response to a client
+without explicitly marking it as such, using the 206 (Partial
+Content) status code. A cache MUST NOT return a partial response
+using a status code of 200 (OK).
+
+不完全な応答 (例えば、 [CODE(HTTP)[[[Content-Length]]]] 
+頭で指定されたのよりもバイト数が少ないデータ) を受取ったキャッシュは、
+その応答を蓄積しても'''構いません'''。しかし、
+キャッシュはそれを部分応答として扱わなければ'''なりません'''。
+部分応答は前の 13.5.4 章で説明したように結合して'''構いません'''。
+キャッシュは部分応答をそうであると [CODE(HTTP)[[[206]]]] (部分応答)
+状態符号で明確に印を付けずにクライアントに返しては'''なりません'''。
+キャッシュは、状態符号 [CODE(HTTP)[[[200]]]] (了解)
+を使って部分応答を返しては'''なりません'''。
+
+> If a cache receives a 5xx response while attempting to revalidate an
+entry, it [DEL[may]] [INS[MAY]] either forward this response to the requesting client,
+or act as if the server failed to respond. In the latter case, it MAY
+return a previously received response unless the cached entry
+includes the "must-revalidate" [DEL[Cache-Control]] [INS[cache-control]] directive (see section 14.9).
+
+キャッシュが項目を再検証しようとして [CODE(HTTP)[[[5[VAR[xx]]]]]]
+応答を受信した時は、この応答を要求しているクライアントに転送するか、
+または鯖が応答に失敗したかのように動作するかのいずれでも'''構いません'''。
+後者の場合は、キャッシュは以前に受信した応答を
+(そのキャッシュ項目が [CODE(HTTP)[[[must-revalidate]]]] 
+キャッシュ制御指令を含んでいる場合を除き) 
+返しても'''構いません'''。
+
+*** 13.9 Side Effects of GET and HEAD
+> Unless the origin server explicitly prohibits the caching of their
+responses, the application of GET and HEAD methods to any resources
+SHOULD NOT have side effects that would lead to erroneous behavior if
+these responses are taken from a cache. They [DEL[may]] [INS[MAY]] still have side
+effects, but a cache is not required to consider such side effects in
+its caching decisions. Caches are always expected to observe an
+origin server's explicit restrictions on caching.
+
+起点鯖が明示的に応答のキャッシュ付けを禁止していない限り、任意の[[資源]]に対する
+[CODE(HTTP)[[[GET]]]] method や [CODE(HTTP)[[[HEAD]]]] method
+は、その応答がキャッシュから取られたとしたら誤った動作を招いてしまうような副作用を持つ'''べきではありません'''。
+それでも副作用を持っても'''構いません'''が、
+キャッシュはキャッシュ付けの決定においてこのような副作用を考慮する必要はありません。
+キャッシュは常に起点鯖の明示的なキャッシュ付けに関する制限に従うことが期待されます。
+
+> We note one exception to this rule: since some applications have
+traditionally used GETs and HEADs with query URLs (those containing a
+"?" in the rel_path part) to perform operations with significant side
+effects, caches MUST NOT treat responses to such [DEL[URLs]] [INS[URIs]] as fresh unless
+the server provides an explicit expiration time. This specifically
+means that responses from HTTP/1.0 servers for such URIs [DEL[should not]] [INS[SHOULD NOT]] be taken from a cache. See section 9.1.1 for related information.
+
+この規則には一つ例外があることを注意しておきます。
+幾つかの応用は重大な副作用を持つ操作を行うために伝統的に照会 URL
+([CODE(ABNF)[[[rel_path]]]] 部に [CODE(URI)[?]] を持つもの)
+による [CODE(HTTP)[GET]] や [CODE(HTTP)[HEAD]]
+を使っていますから、キャッシュは、鯖が明示的に[[満期時刻]]を示さない限り、
+このような URI の応答を[[新鮮]]であるものとして扱っては'''なりません'''。
+これは特に、このような URI についての HTTP/1.0 
+鯖からの応答をキャッシュから取る'''べきではない'''ことを意味します。
+
+*** 13.10 Invalidation After Updates or Deletions
+> The effect of certain methods [INS[performed on a resource]] at the origin server [DEL[may]] [INS[might]]
+cause one or more existing cache entries to become non-transparently invalid.
+That is, although they [DEL[may]] [INS[might]]
+continue to be "fresh," they do not accurately reflect what the origin server would return for a new request [INS[on that resource]].
+
+ある資源に行われるある種の method の起点鯖における影響で、
+一つ以上の既存のキャッシュ項目が非透過的に不当となるかもしれません。
+つまり、そのキャッシュ項目は依然[Q[[[新鮮]]]]であり続けるかもしれませんが、
+その資源の新しい要求に起点鯖が返すであろうものを正確に反映してはいません。
+
+> There is no way for the HTTP protocol to guarantee that all such
+cache entries are marked invalid. For example, the request that
+caused the change at the origin server [DEL[may]] [INS[might]] not have gone through
+the proxy where a cache entry is stored. However, several rules help
+reduce the likelihood of erroneous behavior.
+
+HTTP プロトコルにはこのようなすべてのキャッシュ項目が不当と印付けされることを保証する方法はありません。
+例えば、起点鯖で変更を起こす要求はキャッシュ項目が蓄積される串を通じては行かないかもしれません。
+しかし、幾つかの規則が誤った動作の発生する虞を減らす助けとなります。
+
+> In this section, the phrase "invalidate an entity" means that the
+cache [DEL[should]] [INS[will]] either remove all instances of that entity from its
+storage, or [DEL[should]] [INS[will]] mark these as "invalid" and in need of a mandatory
+revalidation before they can be returned in response to a subsequent request.
+
+この節では、[DFN[実体の不当化]]という語句は、
+キャッシュが蓄積庫からその[[実体]]のすべての[[実現値]]を削除するか、
+またはすべての実現値を[Q[不当]]と印付けして[[後続要求]]に対する応答で返すためには強制[[再検証]]を必要とするかのいずれかであることを意味します。
+
+> Some HTTP methods [DEL[may]] [INS[MUST cause a cache to]] invalidate an entity.
+This is either the entity referred to by the Request-URI, or by the Location
+or Content-Location [DEL[response-]]headers (if present). These methods are:
+
+いくつかの HTTP method でキャッシュは実体を不当化しなければ'''なりません'''。
+これは、 [CODE(ABNF)[[[Request-URI]]]] か、
+または [CODE(HTTP)[[[Location]]]] 頭か [CODE(HTTP)[[[Content-Location]]]]
+頭 (あれば。) により参照される実体です。
+該当する method:
+
+>
+- [DEL[o]] [INS[-]] PUT
+- [DEL[o]] [INS[-]] DELETE
+- [DEL[o]] [INS[-]] POST
+
+> [DEL[In order to prevent denial of service attacks, an]] [INS[An]] invalidation based
+on the URI in a Location or Content-Location header MUST [DEL[only]] [INS[NOT]] be
+performed if the host part [DEL[is the same as]] [INS[of that URI differs from the host part]] in the Request-URI. [INS[This helps prevent denial of service attacks.]] [INS[{この段落は、正誤表により修正された。}]]
+
+[CODE(HTTP)[Location]] 頭や [CODE(HTTP)[Content-Location]]
+頭の URI に基づく不当化は、 [CODE(ABNF)[Request-URI]]
+と [CODE(ABNF)[[[host]]]] 部が異なる場合には行っては'''なりません'''。
+これはサービス拒否攻撃を防ぐ助けとなります。
+
+[INS[
+> A cache that passes through requests for methods it does not
+understand SHOULD invalidate any entities referred to by the Request-URI.
+
+自分が理解しない method の要求を渡すキャッシュは、
+[CODE(ABNF)[Request-URI]] で参照される実体を不当化する'''べきです'''。
+]INS]
+
+*** 13.11 Write-Through Mandatory
+> All methods that [DEL[may]] [INS[might]] be expected to cause modifications to the
+origin server's resources MUST be written through to the origin server. This
+currently includes all methods except for GET and HEAD. A cache MUST
+NOT reply to such a request from a client before having transmitted
+the request to the inbound server, and having received a
+corresponding response from the inbound server. This does not prevent
+a [INS[proxy]] cache from sending a 100 (Continue) response before the
+inbound server has [DEL[replied]] [INS[sent its final reply]].
+
+起点鯖の資源が編集されることが予期され得るすべての method
+は、起点鯖を通じて書かれなければ'''なりません'''。
+これには現在 [CODE(HTTP)[GET]] と [CODE(HTTP)[HEAD]]
+以外のすべての method が含まれます。
+キャッシュはクライアントからのこのような要求に[[内向き]]鯖に要求を転送して内向き鯖から対応する応答を受信する前に返答しては'''なりません'''。
+これは串キャッシュが内向き鯖から最終返答が送られる前に
+[CODE(HTTP)[[[100]]]] (続行) 応答を送信することを防ぎます。
+
+> The alternative (known as "write-back" or "copy-back" caching) is not
+allowed in HTTP/1.1, due to the difficulty of providing consistent
+updates and the problems arising from server, cache, or network
+failure prior to write-back.
+
+代替 ([Q[書き戻し]]・[Q[複製戻し]]キャッシュ付けと呼ばれます。) は、
+一貫した更新の提供の難しさや書き戻し前の鯖・キャッシュ・ネットワークの失敗によって起こる問題のため、
+HTTP/1.1 では認められていません。
+
+*** 13.12 Cache Replacement
+> If a new cach[INS[e]]able (see sections 14.9.2, 13.2.5, 13.2.6 and 13.8)
+response is received from a resource while any existing responses for
+the same resource are cached, the cache SHOULD use the new response
+to reply to the current request. It [DEL[may]] [INS[MAY]] insert it into cache storage
+and [DEL[may]] [INS[MAY]], if it meets all other requirements, use it to respond to any
+future requests that would previously have caused the old response to
+be returned. If it inserts the new response into cache storage [DEL[it should follow the rules in section 13.5.3]] [INS[the rules in section 13.5.3 apply]].
+
+新しい[[キャッシュ可能]]応答をある[[資源]]から受取り、
+しかも同じ資源に対する応答が既にキャッシュされている場合、
+キャッシュは新しい応答を現在の要求に対する返答として使う'''べきです'''。
+キャッシュは新しい応答をキャッシュ蓄積に挿入して'''構いません'''し、
+他のすべての要件を満たしていれば、
+将来の、以前であれば古い応答が返されるはずであろう要求に応答するために使っても'''構いません'''。
+新しい応答をキャッシュ蓄積に挿入するなら、13.5.3節の規則を適用します。
+
+> Note: a new response that has an older Date header value than
+existing cached responses is not cach[INS[e]]able.
+
+注意: 既存のキャッシュ応答よりも古い [CODE(HTTP)[[[Date]]]]
+頭値を持つ新しい応答は、キャッシュ可能ではありません。
+
+*** 13.13 History Lists
+> User agents often have history mechanisms, such as "Back" buttons and
+history lists, which can be used to redisplay an entity retrieved
+earlier in a session.
+
+利用者エージェントは、しばしば[Q[戻る]]ボタンや履歴一覧のような履歴機構を持っており、
+そのセッションで以前に取出した[[実体]]を再表示するために使用できます。
+
+> History mechanisms and caches are different. In particular history
+mechanisms SHOULD NOT try to show a semantically transparent view of
+the current state of a resource. Rather, a history mechanism is meant
+to show exactly what the user saw at the time when the resource was retrieved.
+
+履歴機構とキャッシュは異なります。特に、履歴機構は、
+ある資源の現在状態の意味的等価な表示を利用者に示そうとする'''べきではありません'''。
+むしろ、履歴機構はその応答を取出した時に利用者が見たものをそのまま示すものです。
+
+> By default, an expiration time does not apply to history mechanisms.
+If the entity is still in storage, a history mechanism [DEL[should]] [INS[SHOULD]] display
+it even if the entity has expired, unless the user has specifically
+configured the agent to refresh expired history documents.
+
+既定では、[[満期時刻]]は履歴機構には適用しません。
+実体がまだ蓄積されていれば、履歴機構は実体が満期していても
+(利用者が満期した履歴文書を更新するようにあえて利用者エージェントを設定していない限り)
+その実体を表示する'''べきです'''。
+
+> This [DEL[should]] [INS[is]] not [INS[to]] be construed to prohibit the history mechanism from
+telling the user that a view [DEL[may]] [INS[might]] be stale.
+
+これは、表示が[[腐敗]]しているかもしれないと履歴機構が利用者に知らせることを禁じているわけではありません。
+
+> Note: if history list mechanisms unnecessarily prevent users from
+viewing stale resources, this will tend to force service authors
+to avoid using HTTP expiration controls and cache controls when
+they would otherwise like to. Service authors may consider it
+important that users not be presented with error messages or warning
+messages when they use navigation controls (such as BACK) to view
+previously fetched resources. Even though sometimes such resources
+ought not to cached, or ought to expire quickly, user interface
+considerations may force service authors to resort to other means
+of preventing caching (e.g. "once-only" URLs) in order not to
+suffer the effects of improperly functioning history mechanisms.
+
+注意: 履歴一覧機構が不必要に利用者が腐敗した資源を見ることを妨げるなら、
+サービス著者が HTTP の満期制御とキャッシュ制御を本来使いたい時にも使うのを避けざるを得なくなるでしょう。
+サービス著者は、利用者が以前に取寄せた資源を見るために誘導制御
+([Q[戻る]]など) を使用したときに誤りメッセージや警告メッセージが表示されてしまわないことが重要と考えるかもしれません。
+時にそのような資源はキャッシュするべきではなかったり、
+すぐに満期とするべきだったりするかもしれませんが、
+利用者界面を考えると、サービス著者は不適切に機能する履歴機構の影響を受けないように、
+キャッシュ付けを防ぐ他の手段 (例えば[Q[一度きり]]の [[URL]]) 
+を使わざるを得ないかもしれません。
+
+
+* メモ
+
+

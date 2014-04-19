@@ -1,0 +1,174 @@
+[[電子ニュース]]とか[[HTTP]]とかは厳密には [[RFC822]]
+では無かったりしますが、広義の RFC 822 世界でしょう。 [[CPIM]] なんかも。
+
+ここでは、 X.400 みたいな非SMTPな世界とのメッセージ交換を扱います。
+
+*RFC 822 世界の標準的な領域本体構文を持つ領域
+
+-Deferred-Delivery:領域 (date-time) (RFC 2156)
+-Delivery-Date:領域 (date-time) (RFC 2156)
+-Latest-Delivery-Time:領域 (date-time) (RFC 2156)
+-Reply-By:領域 (date-time) (RFC 2156)
+-[[Supersedes:領域]] (1*msg-id) (RFC 2156)
+-Originator-Return-Address:領域 (1#mailbox) (RFC 2156)
+-X400-Originator:領域 (mailbox) (RFC 2156)
+-X400-Recipients:領域 (1#mailbox) (RFC 2156)
+
+**[[Content-Language:領域]] (1#language) (RFC 2156)
+
+ ;; based on RFC 2156
+ Content-Language = "Content-Language" [FWS] ":" [CFWS] language
+                    * ([FWS] "," [FWS] language)
+ language = 2*ALPHA ["(" language-description ")"]
+ language-description = printable-string
+
+*token 型
+
+ ;; based on RFC 2156
+ Importance    = "Importance" [FWS] ":" [FWS] ("low" / "normal" / "high")
+ Sensitivity   = "Sensitivity" [FWS] ":" [FWS]
+                ("Personal" / "Private" / "Company-Confidential")
+ Message-Type  = "Message-Type" [FWS] ":" [FWS] ("Delivery Report"
+               / "InterPersonal Notification" / "Multiple Part")
+ Autosubmitted = "Autosubmitted" [FWS] ":" [FWS]
+                 (  "not-auto-submitted" / "auto-generated"
+                  / "auto-replied" / "auto-forwarded")
+ Autofowarded  = "Autoforwarded" [FWS] ":" [FWS] ("TRUE" / "FALSE")
+ Conversion    = "Conversion" [FWS] ":" [FWS] prohibition
+ Conversion-With-Loss = "Conversion-With-Loss" [FWS] ":" [FWS] prohibition
+ prohibition   = "Prohibited" / "Allowed"
+ Priority      = "Priority" [FWS] ":" [FWS]
+                 ("normal" / "non-urgent" / "urgent")
+
+*その他
+
+ Incomplete-Copy = "Incomplete-Copy" [FWS] ":" [FWS]
+ ;; 本体部分が無い。
+
+ Discarded-X400-IPMS-Extensions = "Discarded-X400-IPMS-Extensions"
+                                  [FWS] ":" [FWS] object-identifier
+                                  *([FWS] "," [FWS] object-identifier)
+ ;; 変換不能 X.400 IPMS 拡張に使う。
+
+ XMTSI  = "X400-MTS-Identifier" [FWS] ":" [FWS] mts-msg-id
+ OEIT   = "Original-Encoded-Information-Types" [FWS] ":" [FWS] encoded-info
+ XCT    = "X400-Content-Type" [FWS] ":" [FWS] mts-content-type
+ XCID   = "X400-Content-Identifier" [FWS] ":" [FWS] printablestring
+ DLEH   = "DL-Expansion-History" [FWS] ":" [FWS] mailbox ";" date-time ";"
+ DXMTSX = "Discarded-X400-MTS-Extensions" [FWS] ":" [FWS]
+                            (object-identifier / labelled-integer)
+          *([FWS] "," [FWS] (object-identifier / labelled-integer) )
+
+ mts-msg-id    = "[" global-id ";" *text "]"
+ global-id     = 1*( "/" gid-attribute "=" std-printablestring ) "/"
+ gid-attribute = standard-type / "RFC-822" / dd-key "." std-printablestring
+ standard-type = key-string
+ dd-key        = key-string
+ std-printablestring = *( std-char / std-pair )
+ std-char = DIGIT / ALPHA / " " / "'" / "+" / "," / "-" / "." / ":" / "?"
+          / "(" / ")" / "{" / "}" / "*"
+ std-pair = "$" ps-char
+
+ mts-content-type  = "P2" / labelled-integer / object-identifier
+ labelled-integer  = [key-string] "(" *(DIGIT / SP) ")"
+ key-string        = *(DIGIT / ALPHA / "-")
+ object-identifier = 1*( *(ALPHA / DIGIT / "-") "(" *(DIGIT / SP) ")" )
+
+**X400-Received: 領域 (RFC 2156) (See also [[Received:領域]])
+
+ X400-Received = "X400-Received" [FWS] ":" [FWS] x400-trace
+
+ x400-trace    =   "by" [ "mta" mta "in" ]  global-id ";"
+                 [ "deferred until" date-time ";" ]
+                 [ "converted" "(" encoded-info ")" ";" ]
+                 [ "attempted" md-or-mta ";"  ]
+                   action-list ";" date-time
+ mta           = word
+ md-or-mta     = "MD" global-id / "MTA" mta
+ Action-list   = action *([FWS] "," [FWS] action)
+ action        = "Redirected" / "Expanded" / "Relayed" / "Rerouted"
+
+***例
+
+   X400-Received: by /PRMD=UK.AC/ADMD=Gold 400/C=GB/ ; Relayed ;
+           Tue, 20 Jun 89 19:25:11 +0100
+   X400-Received: by mta "UK.AC.UCL.CS" in
+          /PRMD=UK.AC/ADMD=Gold 400/C=GB/ ;
+          deferred until  Tue, 20 Jun 89 14:24:22 +0100 ;
+           converted (undefined, g3fax) ; attempted MD /ADMD=Foo/C=GB/ ;
+           Relayed, Expanded, Redirected ; Tue, 20 Jun 89 19:25:11 +0100
+   Received: from isode.com by isode.com
+          (MIXER Conversion following RFC 1327);
+          Thu, 2 Jan 1997 14:46:03 +0000
+
+*printable-string など
+
+[[PrintableString]]
+
+[[T.61String]]
+
+*メッセージ例
+
+ Received: from mhs-relay.ac.uk by bells.cs.ucl.ac.uk via JANET with
+           NIFTP id <7906-0@bells.cs.ucl.ac.uk>;
+           Thu, 30 May 1991 18:24:55 +0100
+ X400-Received: by mta "mhs-relay.ac.uk" in /PRMD=uk.ac/ADMD= /C=gb/;
+                Relayed; Thu, 30 May 1991 18:23:26 +0100
+ X400-Received: by /PRMD=HMG/ADMD=GOLD 400/C=GB/; Relayed;
+                Thu, 30 May 1991 18:20:27 +0100
+ Message-Type: Multiple Part
+ Date: Thu, 30 May 1991 18:20:27 +0100
+ X400-Originator: Stephen.Harrison@gosip-uk.hmg.gold-400.gb
+ X400-MTS-Identifier:
+      [/PRMD=HMG/ADMD=GOLD 400/C=GB/;PC1000-910530172027-57D8]
+ Original-Encoded-Information-Types: ia5
+ X400-Content-Type: P2-1984 (2)
+ X400-Content-Identifier: Email Problems
+ From: Stephen.Harrison@gosip-uk.hmg.gold-400.gb (Tel +44 71 217 3487)
+ Message-ID: <PC1000-910530172027-57D8*@MHS>
+ To: Jim Craigie <NTIN36@gec-b.rutherford.ac.uk>,
+     Tony Bates <tony@ean-relay.ac.uk>,
+     Steve Kille <S.Kille@cs.ucl.ac.uk>
+ Subject: Email Problems
+ Sender: Stephen.Harrison@gosip-uk.hmg.gold-400.gb
+ MIME-Version: 1.0
+ Content-Type: multipart/mixed; boundary=boundary-1
+ 
+ --boundary-1
+ Content-Type: text/plain; charset=US-ASCII
+ 
+ Hope you gentlemen.......
+ 
+ Regards,
+ 
+ Stephen Harrison
+ UK GOSIP Project
+ 
+ --boundary-1
+ Content-Type: message/rfc822
+ 
+ From: Urs Eppenberger <Eppenberger@verw.switch.ch>
+ Message-ID:
+  <562*/S=Eppenberger/OU=verw/O=switch/PRMD=SWITCH/ADMD=ARCOM/C=CH/@MHS>
+ To: "Stephen.Harrison" <Stephen.Harrison@gosip-uk.hmg.gold-400.gb>
+ Cc: kimura@bsdarc.bsd.fc.nec.co.jp
+ Subject: Response to Email link
+ Content-Type: multipart/mixed; boundary=boundary-2
+ 
+ 
+ --boundary-2
+ 
+ Dear Mr Harrison......
+ 
+ 
+ --boundary-2--
+ 
+ --boundary-1--
+
+(RFC 2156 より)
+
+*SEE ALSO
+-[[非SMTP世界とのメイル関門]]
+-[[RFC822と仲間達の頭領域名]]
+--[[Message-Type:領域]]
+-<urn:ietf:rfc:2156>

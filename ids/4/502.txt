@@ -1,0 +1,378 @@
+
+
+* 2.  Characters
+
+> The URI syntax provides a method of encoding data, presumably for the
+sake of identifying a resource, as a sequence of characters.  The URI
+characters are, in turn, frequently encoded as octets for transport
+or presentation.  This specification does not mandate any particular
+character encoding for mapping between URI characters and the octets
+used to store or transmit those characters.  When a URI appears in a
+protocol element, the character encoding is defined by that protocol;
+without such a definition, a URI is assumed to be in the same
+character encoding as the surrounding text.
+
+URI の構文はおそらくは資源の識別のために使われるのであろうデータを文字列として符号化する方法を提供しています。
+その URI の各文字は輸送や表現のためにオクテットとして符号化されることがよくあります。
+この仕様では URI の文字と蓄積や転送の際に使用するオクテットとの写像のための特定の文字符号化を強制することはしません。
+URI がプロトコル要素に現れる時は、そのプロトコルによって文字符号化が定義されます。
+定義がないときには、 URI は周りの文章と同じ文字符号化であると仮定します。
+
+> The ABNF notation defines its terminal values to be non-negative
+integers (codepoints) based on the US-ASCII coded character set
+[ASCII].  Because a URI is a sequence of characters, we must invert
+that relation in order to understand the URI syntax.  Therefore, the
+integer values used by the ABNF must be mapped back to their
+corresponding characters via US-ASCII in order to complete the syntax rules.
+
+ABNF 記法は終端値を US-ASCII 符号化文字集合に基づく非負整数
+(符号位置) であると定義しています。 URI は文字列ですから、
+URI 構文を理解するためにはその関係を逆転させなければなりません。
+従って、 ABNF で使われている整数値を US-ASCII
+により対応する文字に逆写像させることで完全な構文規則が得られます。
+
+> A URI is composed from a limited set of characters consisting of
+digits, letters, and a few graphic symbols.  A reserved subset of
+those characters may be used to delimit syntax components within a
+URI while the remaining characters, including both the unreserved set
+and those reserved characters not acting as delimiters, define each
+component's identifying data.
+
+URI は限られた[RUBYB[文字] [letter]]、数字、いくつかの図形記号の集合から作ります。
+その文字のうち、予約集合は URI の中の構文部品を区切るために使用し、
+残った非予約集合と区切子のはたらきをしていない予約文字の集合は各構成部品の識別するデータを定義します。
+
+
+** 2.1.  Percent-Encoding
+
+> A percent-encoding mechanism is used to represent a data octet in a
+component when that octet's corresponding character is outside the
+allowed set or is being used as a delimiter of, or within, the
+component.  A percent-encoded octet is encoded as a character
+triplet, consisting of the percent character "%" followed by the two
+hexadecimal digits representing that octet's numeric value.  For
+example, "%20" is the percent-encoding for the binary octet
+"00100000" (ABNF: %x20), which in US-ASCII corresponds to the space
+character (SP).  Section 2.4 describes when percent-encoding and
+decoding is applied.
+
+百分率符号化は部品中で認められている文字の集合に含まれていない文字や部品の内外で区切子として使われている文字について、
+その文字に対応するデータ・オクテットを表現する仕組みです。
+百分率符号化オクテットは、百分率記号 [CODE(URI)[%]]
+の後にオクテットの数値を表現する2つの十六進数字をつけた
+3文字の組で符号化します。例えば、 [CODE(URI)[%20]]
+はバイナリ・オクテット [SAMP[001000000]] (ABNF: [CODE(ABNF)[%x20]])
+の百分率符号化であり、 US-ASCII では間隔文字 ([CODE(char)[SP]])
+に対応します。百分率符号化をいつ符号化したり復号したりするかは
+2.4節で説明します。
+
+>
+- [CODE(ABNF)[[DFN[pct-encoded]] = "%" HEXDIG HEXDIG]]
+
+> The uppercase hexadecimal digits 'A' through 'F' are equivalent to
+the lowercase digits 'a' through 'f', respectively.  If two URIs
+differ only in the case of hexadecimal digits used in percent-encoded
+octets, they are equivalent.  For consistency, URI producers and
+normalizers should use uppercase hexadecimal digits for all percent-encodings.
+
+大文字の十六進数字 [CODE(URI)[A]]〜[CODE(URI)[F]] と
+小文字の数字 [CODE(URI)[a]]〜[CODE(URI)[f]] はそれぞれ同値です。
+2つの URI が百分率符号化オクテットで使われている十六進数字の大文字・
+小文字の差以外は同じであるなら、この2つの URI
+は同値です。一貫性のため、 URI 生成器と URI 正規化器はすべての百分率符号化において大文字の十六進数字を使用するべきです。
+
+
+** 2.2.  Reserved Characters
+
+> URIs include components and subcomponents that are delimited by
+characters in the "reserved" set.  These characters are called
+"reserved" because they may (or may not) be defined as delimiters by
+the generic syntax, by each scheme-specific syntax, or by the
+implementation-specific syntax of a URI's dereferencing algorithm.
+If data for a URI component would conflict with a reserved
+character's purpose as a delimiter, then the conflicting data must be
+percent-encoded before the URI is formed.
+
+URI は[Q[予約]]集合の文字によって区切られる部品や部分部品を含みます。
+これらの文字が[Q[予約]]と呼ばれるのは、
+URI の参照を解く方法の一般構文や scheme 規定の構文や実装規定の構文で区切子として定義されるかもしれません
+(しされないかもしれません) からです。
+URI 部品のデータが予約文字の区切子としての目的と衝突するのであれば、
+衝突しているデータは URI を作る前に百分率符号化しなければなりません。
+
+>
+- [CODE(ABNF)[[DFN[reserved]]    = gen-delims / sub-delims]]
+- [CODE(ABNF)[[DFN[gen-delims]]  = ":" / "/" / "?" / "#" / "[" / "]" / "@"]]
+- [CODE(ABNF)[[DFN[sub-delims]]  = "!" / "$" / "&" / "'" / "(" / ")"]]
+[PRE[
+                  [CODE(ABNF)[/ "*" / "+" / "," / ";" / "="]]
+]PRE]
+
+> The purpose of reserved characters is to provide a set of delimiting
+characters that are distinguishable from other data within a URI.
+URIs that differ in the replacement of a reserved character with its
+corresponding percent-encoded octet are not equivalent.  
+Percent-encoding a reserved character, or decoding a percent-encoded octet
+that corresponds to a reserved character, will change how the URI is
+interpreted by most applications.  Thus, characters in the reserved
+set are protected from normalization and are therefore safe to be
+used by scheme-specific and producer-specific algorithms for
+delimiting data subcomponents within a URI.
+
+予約文字の目的は、 URI の他のデータと区別できる区切子文字の集合を提供することです。
+ある URI とその中の予約文字を対応する百分率符号化オクテットに置き換えた URI
+は同値ではありません。予約文字を百分率符号化したり、
+予約文字に対応する百分率符号化オクテットを復号したりすると、その URI
+のほとんどの応用による解釈のされ方が変わってしまいます。ですから、
+予約集合の文字は正規化から護られており、従って URI 中のデータ部品を区切るための 
+scheme 規定の方法や生産者規定の方法で使っても安全なのです。
+
+> A subset of the reserved characters (gen-delims) is used as
+delimiters of the generic URI components described in Section 3.  A
+component's ABNF syntax rule will not use the reserved or gen-delims
+rule names directly; instead, each syntax rule lists the characters
+allowed within that component (i.e., not delimiting it), and any of
+those characters that are also in the reserved set are "reserved" for
+use as subcomponent delimiters within the component.  Only the most
+common subcomponents are defined by this specification; other
+subcomponents may be defined by a URI scheme's specification, or by
+the implementation-specific syntax of a URI's dereferencing
+algorithm, provided that such subcomponents are delimited by
+characters in the reserved set allowed within that component.
+
+予約文字の部分集合 [CODE(ABNF)[gen-delims]] は3章の一般 URI
+部品の区切子として使われています。部品の ABNF 構文規則は規則名
+[CODE(ABNF)[reserved]] や規則名 [CODE(ABNF)[gen-delims]] 
+を直接使いません。その代わりに、各構文規則が部品内で認める
+(その部品を区切らない) 文字を列挙しています。そしてその中で予約集合にもある文字はその部品の中で部分部品区切子として使うために
+[Q[予約]]されています。この仕様書では本当によく使われる部分部品だけを定義しています。
+他の部分部品は URI scheme の仕様書で定義されるかもしれませんし、
+実装規定の URI の参照を解く算法の構文で定義されるかもしれません。
+その部分部品はその部品の中で認められている予約集合の文字で区切ります。
+
+> URI producing applications should percent-encode data octets that
+correspond to characters in the reserved set unless these characters
+are specifically allowed by the URI scheme to represent data in that
+component.  If a reserved character is found in a URI component and
+no delimiting role is known for that character, then it must be
+interpreted as representing the data octet corresponding to that
+character's encoding in US-ASCII.
+
+URI 生成応用は、 URI scheme が特に認めていない限り、
+予約集合の文字に対応するデータ・オクテットを部品の中で表現するにあたって百分率符号化するべきです。
+予約文字が URI 部品の中に見つかり、その文字に区切子としての役割が知られていなければ、
+US-ASCII でその文字に対応するデータ・オクテットを表現していると解釈しなければなりません。
+
+
+** 2.3.  Unreserved Characters
+
+> Characters that are allowed in a URI but do not have a reserved
+purpose are called unreserved.  These include uppercase and lowercase
+letters, decimal digits, hyphen, period, underscore, and tilde.
+
+URI で認められておりかつ予約目的を持たない文字を、非予約と呼びます。
+非予約には大文字・小文字, 十進数字, ハイフン, 句点,
+下線, チルダが含まれます。
+
+>
+- [CODE(ABNF)[[DFN[unreserved]]  = ALPHA / DIGIT / "-" / "." / "_" / "~"]]
+
+> URIs that differ in the replacement of an unreserved character with
+its corresponding percent-encoded US-ASCII octet are equivalent: they
+identify the same resource.  However, URI comparison implementations
+do not always perform normalization prior to comparison (see Section
+6).  For consistency, percent-encoded octets in the ranges of ALPHA
+(%41-%5A and %61-%7A), DIGIT (%30-%39), hyphen (%2D), period (%2E),
+underscore (%5F), or tilde (%7E) should not be created by URI
+producers and, when found in a URI, should be decoded to their
+corresponding unreserved characters by URI normalizers.
+
+ある URI と非予約文字を対応する百分率符号化 US-ASCII オクテットで置き換えた URI
+は等価です。両者は同じ資源を識別します。しかし、 URI
+比較実装は比較の前に必ずしも正規化を行いません。一貫性のため、
+[CODE(ABNF)[[[ALPHA]]]] ([CODE(URI)[%41]]〜[CODE(URI)[%5A]] および 
+[CODE(URI)[%61]]〜[CODE(URI)[%7A]]), [CODE(ABNF)[[[DIGIT]]]] 
+([CODE(URI)[%30]]〜[CODE(URI)[%39]]),
+ハイフン ([CODE(URI)[%2D]]), 句点 ([CODE(URI)[%2E]]),
+下線 ([CODE(URI)[%5F]]), チルダ ([CODE(URI)[%7E]]) 
+の百分率符号化オクテットを URI 生成器は作るべきではなく、
+URI 正規化器はこれらが URI 中に見つかった時は対応する非予約文字に復号するべきです。
+
+
+** 2.4.  When to Encode or Decode
+
+> Under normal circumstances, the only time when octets within a URI
+are percent-encoded is during the process of producing the URI from
+its component parts.  This is when an implementation determines which
+of the reserved characters are to be used as subcomponent delimiters
+and which can be safely used as data.  Once produced, a URI is always
+in its percent-encoded form.
+
+普通の状況では、 URI 中のオクテットが百分率符号化されるのは構成する部品から
+URI を生成する過程においてのみです。この時が実装がどの予約文字を部分部品の区切子として使用し、
+どの予約文字を安全にデータとして使用できるかを決定する時です。
+一度 URI を生成してしまったら、常に URI は百分率符号化形となります。
+
+> When a URI is dereferenced, the components and subcomponents
+significant to the scheme-specific dereferencing process (if any)
+must be parsed and separated before the percent-encoded octets within
+those components can be safely decoded, as otherwise the data may be
+mistaken for component delimiters.  The only exception is for
+percent-encoded octets corresponding to characters in the unreserved
+set, which can be decoded at any time.  For example, the octet
+corresponding to the tilde ("~") character is often encoded as "%7E"
+by older URI processing implementations; the "%7E" can be replaced by
+"~" without changing its interpretation.
+
+URI の参照を解く時、 scheme 規定の参照を解く過程で重要な部品や部分部品は
+(あれば) 部品内の百分率符号化オクテットを復号するより先に構文解析して分離しておかなければなりません。
+そうしなければデータが部品区切子と誤解されてしまうかもしれませんから、
+安全に復号することはできません。唯一の例外は非予約集合の文字に対応する百分率符号化オクテットで、
+こちらはいつでも復号できます。例えば、チルダ ([CODE(URI)[~]])
+文字に対応するオクテットはしばしば古い URI 処理実装によって [CODE(URI)[%7E]]
+と符号化されます。 [CODE(URI)[%7E]] はその解釈を変えてしまうことなく
+[CODE(URI)[~]] に置換できます。
+
+> Because the percent ("%") character serves as the indicator for
+percent-encoded octets, it must be percent-encoded as "%25" for that
+octet to be used as data within a URI.  Implementations must not
+percent-encode or decode the same string more than once, as decoding
+an already decoded string might lead to misinterpreting a percent
+data octet as the beginning of a percent-encoding, or vice versa in
+the case of percent-encoding an already percent-encoded string.
+
+百分率記号 ([CODE(URI)[%]]) は百分率符号化オクテットの標識として機能しますから、
+URI 中のデータとして使用する時には必ず [CODE(URI)[%25]]
+と百分率符号化しなければなりません。同じ文字列を百分率符号化を行ったり復号したりを何度も繰り返すと、
+百分率データ・オクテットを百分率符号化の始まりと誤認してしまったり、
+逆に既に百分率符号化された文字列を百分率符号化することが起こってしまうかもしれませんから、
+実装はそのようなことを行ってはなりません。
+
+
+** 2.5.  Identifying Data
+
+> URI characters provide identifying data for each of the URI
+components, serving as an external interface for identification
+between systems.  Although the presence and nature of the URI
+production interface is hidden from clients that use its URIs (and is
+thus beyond the scope of the interoperability requirements defined by
+this specification), it is a frequent source of confusion and errors
+in the interpretation of URI character issues.  Implementers have to
+be aware that there are multiple character encodings involved in the
+production and transmission of URIs: local name and data encoding,
+public interface encoding, URI character encoding, data format
+encoding, and protocol encoding.
+
+URI の文字は URI 部品それぞれの識別データを提供し、
+システム間の識別のための外部界面として働きます。
+URI の生成の界面の存在と性質は URI を使うクライアントから隠されています
+(しそれ故にこの仕様で定義される相互運用性要件の適用範囲外です) が、
+URI の文字の問題の解釈はよくある混乱と誤りの原因です。
+実装は URI の生成や転送に局所名・局所データの符号化、
+公開界面符号化、 URI 文字符号化、データ書式符号化、
+プロトコル符号化といくつもの文字符号化が関係していることに注意しなければなりません。
+
+> Local names, such as file system names, are stored with a local
+character encoding.  URI producing applications (e.g., origin
+servers) will typically use the local encoding as the basis for
+producing meaningful names.  The URI producer will transform the
+local encoding to one that is suitable for a public interface and
+then transform the public interface encoding into the restricted set
+of URI characters (reserved, unreserved, and percent-encodings).
+Those characters are, in turn, encoded as octets to be used as a
+reference within a data format (e.g., a document charset), and such
+data formats are often subsequently encoded for transmission over
+Internet protocols.
+
+ファイル・システム名のような局所名は局所文字符号化で蓄積されています。
+URI 生成応用 (例えば起点鯖) は普通局所符号化を意味のある名前の生成の基礎とします。
+URI 生成器は局所符号化を公開界面に適当な符号化に変形し、
+公開界面符号化を限られた URI の文字の集合 (予約文字、非予約文字、
+百分率符号化) に変形します。 URI 文字は次にデータ書式の中で参照として使うためにオクテット列に符号化され、
+そのデータ書式はインターネットのプロトコルによる転送のために更に符号化されることもよくあります。
+
+> For most systems, an unreserved character appearing within a URI
+component is interpreted as representing the data octet corresponding
+to that character's encoding in US-ASCII.  Consumers of URIs assume
+that the letter "X" corresponds to the octet "01011000", and even
+when that assumption is incorrect, there is no harm in making it.  A
+system that internally provides identifiers in the form of a
+different character encoding, such as EBCDIC, will generally perform
+character translation of textual identifiers to UTF-8 [STD63] (or
+some other superset of the US-ASCII character encoding) at an
+internal interface, thereby providing more meaningful identifiers
+than those resulting from simply percent-encoding the original octets.
+
+ほとんどのシステムでは URI 部品に現れる非予約文字は US-ASCII
+によるその文字の符号化に対応するデータ・オクテットを表現していると解釈します。
+URI の消費者は文字 [SAMP(URI)[X]] がオクテット [SAMP[01011000]]
+に対応していると仮定しており、しかもこの仮定が間違っていてもそう仮定することに何の害もありません。
+内部的に識別子を EBCDIC など異なる文字符号化の形で提供しているシステムは通常内部界面で識別子を
+UTF-8 (やその他の US-ASCII 文字符号化の超集合) に文字を翻訳し、
+単なる元のオクテットの百分率符号化よりもずっと意味のある識別子を提供しています。
+
+> For example, consider an information service that provides data,
+stored locally using an EBCDIC-based file system, to clients on the
+Internet through an HTTP server.  When an author creates a file with
+the name "Laguna Beach" on that file system, the "http" URI
+corresponding to that resource is expected to contain the meaningful
+string "Laguna%20Beach".  If, however, that server produces URIs by
+using an overly simplistic raw octet mapping, then the result would
+be a URI containing "%D3%81%87%A4%95%81@%C2%85%81%83%88".  An
+internal transcoding interface fixes this problem by transcoding the
+local name to a superset of US-ASCII prior to producing the URI.
+Naturally, proper interpretation of an incoming URI on such an
+interface requires that percent-encoded octets be decoded (e.g.,
+"%20" to SP) before the reverse transcoding is applied to obtain the
+local name.
+
+例えば、局所的に EBCDIC を基にしたファイル・システムを使って蓄積されたデータを提供する情報サービスが
+HTTP 鯖を通じてインターネットのクライアント向けに提供されていると考えましょう。
+著者がファイルを [SAMP[Laguna Beach]] という名前で作成すると、
+その資源に対応する [SAMP(URI)[http]] URI は意味のある文字列
+[SAMP(URI)[Laguna%20Beach]] を含んでいることが期待されます。
+しかし、鯖が URI を単純に生のオクテットを写像するだけで URI
+を生成すると、 [SAMP(URI)[%D3%81%87%A4%95%81@%C2%85%81%83%88]]
+が含まれる URI になります。この問題は内部の転符号化界面が局所名を
+URI の生成の前に US-ASCII の超集合に転符号化することで修正できます。
+当然、このような界面に来る URI を適切に解釈するためには局所名を得るための逆の転符号化を行う前に百分率符号化オクテットを復号する
+(例えば [SAMP(URI)[%20]] を [CODE(ABNF)[SP]] にする) 必要があります。
+
+> In some cases, the internal interface between a URI component and the
+identifying data that it has been crafted to represent is much less
+direct than a character encoding translation.  For example, portions
+of a URI might reflect a query on non-ASCII data, or numeric
+coordinates on a map.  Likewise, a URI scheme may define components
+with additional encoding requirements that are applied prior to
+forming the component and producing the URI.
+
+場合によっては URI 部品と技巧的に表現された識別データの内部界面が文字符号化翻訳以上に非直接的なこともあります。
+例えば、 URI の一部分が非 ASCII データの照会を亜hんえいしていたり、
+地図の数値座標だったりするかもしれません。同様に、
+URI scheme は部品を形成したて URI を生成する前に更に符号化を適用するように要求した部品を定義しても構いません。
+
+> When a new URI scheme defines a component that represents textual
+data consisting of characters from the Universal Character Set [UCS],
+the data should first be encoded as octets according to the UTF-8
+character encoding [STD63]; then only those octets that do not
+correspond to characters in the unreserved set should be 
+percent-encoded.  For example, the character A would be represented as "A",
+the character LATIN CAPITAL LETTER A WITH GRAVE would be represented
+as "%C3%80", and the character KATAKANA LETTER A would be represented
+as "%E3%82%A2".
+
+新しい URI scheme が普遍文字集合の文字からなる文章的なデータを表現する部品を定義する時には、
+データはまず UTF-8 文字符号化に従ってオクテットとして符号化するべきです。
+その後非予約集合に対応する文字のないオクテットだけを百分率符号化するべきです。
+例えば、文字 [SAMP(char)[A]] は [SAMP(URI)[A}] と表現し、]]
+文字 [SAMP(char)[LATIN CAPITAL LETTER A WITH GRAVE]]
+は [SAMP(URI)[%C3%80]] と表現し、 [SAMP(char)[KATAKANA KETTER A]]
+は [SAMP(URI)[%E3%82%A2]] と表現します。
+
+
+* memo
+
+[1]
+<a href="http://xasfasfasfsafsa.com/pizdaeb-asa.html">asdaPizda</a> http://xyuvglandy.com/xyu-vo-rty.html [url=http://bbmazafaka.com]BB MAZAFAK![/url]
+([[Zhopahome]] [nomailsasd@yahoo.com])
+

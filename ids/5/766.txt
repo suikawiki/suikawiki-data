@@ -1,0 +1,368 @@
+
+*6.  Normalization and Comparison
+>   One of the most common operations on URIs is simple comparison:
+determining whether two URIs are equivalent without using the URIs to
+access their respective resource(s).  A comparison is performed every
+time a response cache is accessed, a browser checks its history to
+color a link, or an XML parser processes tags within a namespace.
+Extensive normalization prior to comparison of URIs is often used by
+spiders and indexing engines to prune a search space or to reduce
+duplication of request actions and response storage.
+
+URI にもっともよく行われる操作の一つに単純比較があります。
+単純比較は、2つの URI をそれぞれの資源にアクセスせずに同値かどうか決定します。
+比較は応答キャッシュにアクセスする時やブラウザがリンクを色付けするために履歴を調べる時や
+XML 構文解析器が名前空間付きタグを処理する時に行われます。
+蜘蛛や索引付け機関は検索範囲を狭めたり要求行為や応答蓄積域を削減したりするために
+URI の比較に先立って大規模な正規化を行うこともあります。
+
+>   URI comparison is performed for some particular purpose.  Protocols
+or implementations that compare URIs for different purposes will
+often be subject to differing design trade-offs in regards to how
+much effort should be spent in reducing aliased identifiers.  This
+section describes various methods that may be used to compare URIs,
+the trade-offs between them, and the types of applications that might use them.
+
+URI 比較は何らかの特定の目的で行います。 URI
+を比較するプロトコルや実装は、
+比較の目的によって別名識別子を減らすためにどれだけの労力を費やすべきかの算段により異なる設計をすることにもなります。
+この章では URI を比較するために使うことができる様々な方法とそれぞれの優劣、
+そしてそれぞれが使われそうな応用の種類を説明します。
+
+**6.1.  Equivalence
+>   Because URIs exist to identify resources, presumably they should be
+considered equivalent when they identify the same resource.  However,
+this definition of equivalence is not of much practical use, as there
+is no way for an implementation to compare two resources unless it
+has full knowledge or control of them.  For this reason,
+determination of equivalence or difference of URIs is based on string
+comparison, perhaps augmented by reference to additional rules
+provided by URI scheme definitions.  We use the terms "different" and
+"equivalent" to describe the possible outcomes of such comparisons,
+but there are many application-dependent versions of equivalence.
+
+URI は資源を識別するために存在するのですから、
+おそらくは同じ資源を識別するのであれば同値と考えるべきでしょう。しかし、
+ある実装が2つの資源を比較するためには両資源についての完全な知識と制御権が必要となりますから、
+これはあまり現実的な同値性の定義ではありません。そのため、 URI
+が等価か異なるかの決定は文字列としての比較と URI scheme
+の定義による追加の規則による補正で行います。この比較の結果となるものを説明するために
+[Q[異なる]]と[Q[同値]]という言葉を使いますが、
+実際には多くの応用依存の同値性が存在しています。
+
+>   Even though it is possible to determine that two URIs are equivalent,
+URI comparison is not sufficient to determine whether two URIs
+identify different resources.  For example, an owner of two different
+domain names could decide to serve the same resource from both,
+resulting in two different URIs.  Therefore, comparison methods are
+designed to minimize false negatives while strictly avoiding false positives.
+
+2つの URI が同値かどうかを決定することは可能ですが、
+2つの URI が異なる資源を識別しているかどうかを決定するのに
+URI の比較は不十分です。例えば、2つの異なるドメイン名の所有者は両方で、
+つまり2つの別の URI で同じ資源を供給することができます。従って、
+比較法は偽陽性を厳密に避けつつ偽陰性を最小化するように設計されています。
+
+>   In testing for equivalence, applications should not directly compare
+relative references; the references should be converted to their
+respective target URIs before comparison.  When URIs are compared to
+select (or avoid) a network action, such as retrieval of a
+representation, fragment components (if any) should be excluded from the comparison.
+
+応用は同値性の試験の際に相対参照を直接比較するべきではありません。
+参照は比較に先立ってそれぞれ対象 URI に変換するべきです。
+URI の比較が表現の取出しなどのネットワーク動作の選択 (または回避)
+のためなら、 [CODE(ABNF)[fragment]] 部品を (あれば)
+比較の対象から外すべきです。
+
+**6.2.  Comparison Ladder
+>   A variety of methods are used in practice to test URI equivalence.
+These methods fall into a range, distinguished by the amount of
+processing required and the degree to which the probability of false
+negatives is reduced.  As noted above, false negatives cannot be
+eliminated.  In practice, their probability can be reduced, but this
+reduction requires more processing and is not cost-effective for all applications.
+
+URI の同値性を試験するために様々な方法が実際に用いられています。
+それらの方法は必要な処理の量と偽陰性の可能性を減らせる度合で分類できます。
+前述のように、偽陰性は見積もることができません。実際にはその可能性を減らすことはできますが、
+減らすためにはより処理が必要となり、すべての応用にとって経費的に有効ではありません。
+
+>   If this range of comparison practices is considered as a ladder, the
+following discussion will climb the ladder, starting with practices
+that are cheap but have a relatively higher chance of producing false
+negatives, and proceeding to those that have higher computational
+cost and lower risk of false negatives.
+
+この比較法の分類は梯子のように考えることができます。
+以後の議論では安価ながら偽陰性を生成する機会が比較的高い方法からはじめ、
+梯子をのぼって計算経費が高つくものの偽陰性の虞が減る方法へと進んでいきます。
+
+***6.2.1.  Simple String Comparison
+>   If two URIs, when considered as character strings, are identical,
+then it is safe to conclude that they are equivalent.  This type of
+equivalence test has very low computational cost and is in wide use
+in a variety of applications, particularly in the domain of parsing.
+
+2つの URI が文字列として見た時に同一であれば、
+両者は同値であると安全に結論できます。この種類の同値性試験は計算経費が極めて低く、
+様々な応用で、特に構文解析の分野で広く使われています。
+
+>   Testing strings for equivalence requires some basic precautions.
+This procedure is often referred to as "bit-for-bit" or
+"byte-for-byte" comparison, which is potentially misleading.  Testing
+strings for equality is normally based on pair comparison of the
+characters that make up the strings, starting from the first and
+proceeding until both strings are exhausted and all characters are
+found to be equal, until a pair of characters compares unequal, or
+until one of the strings is exhausted before the other.
+
+文字列の同値性の試験にはいくつかの基本的な用意が必要です。
+この方法はしばしば[Q[ビット毎]]の比較だとか[Q[バイト毎]]の比較だとか言われますが、
+それには誤解の虞があります。文字列の同値性の検査は通常文字列を構成している文字を最初から順に見て、
+両文字列の最後まで来てすべての文字が等しかったと分かるか、
+どれかの文字の組が等しくないか、一方の文字列が他方よりも先に終わってしまうまで文字の組毎に比較を行います。
+
+>   This character comparison requires that each pair of characters be
+put in comparable form.  For example, should one URI be stored in a
+byte array in EBCDIC encoding and the second in a Java String object
+(UTF-16), bit-for-bit comparisons applied naively will produce
+errors.  It is better to speak of equality on a character-for-character 
+basis rather than on a byte-for-byte or bit-for-bit basis.
+In practical terms, character-by-character comparisons should be done
+codepoint-by-codepoint after conversion to a common character encoding.
+
+この文字比較のためには文字の組の両方が比較できる形である必要があります。
+例えば、ある URI が EBCDIC で符号化されたバイト配列に蓄積されており、
+もう一つの URI が Java [CODE[String]] 物体 (UTF-16)
+で蓄積されているとしますと、ビット毎の比較は当然誤りとなります。
+ですからバイト毎とかビット毎とかではなくて、文字毎の同値性というのがよいのです。
+実際上は文字毎の比較は共通の文字符号化に変換した後に符号位置毎に行うべきです。
+
+>   False negatives are caused by the production and use of URI aliases.
+Unnecessary aliases can be reduced, regardless of the comparison
+method, by consistently providing URI references in an 
+already-normalized form (i.e., a form identical to what would be produced
+after normalization is applied, as described below).
+
+偽陰性は URI 別名の生成や使用によって起こります。
+URI 参照を正規化済みの形 (後述の正規化を適用した結果生成されるであろうものと同一の形)
+を一貫して生成することによって不必要なべうt名を比較方法によらず減らすことができます。
+
+>   Protocols and data formats often limit some URI comparisons to simple
+string comparison, based on the theory that people and
+implementations will, in their own best interest, be consistent in
+providing URI references, or at least consistent enough to negate any
+efficiency that might be obtained from further normalization.
+
+プロトコルやデータ書式はしばしば人々と実装がそれぞれの最高の利益のために、
+あるいは少なくても更に正規化を行って得られる効果を打ち消す程度には一貫した URI
+参照を提供するであろうとの論理に基づいて URI
+の比較を単純な文字列の比較に限定していたりします。
+
+***6.2.2.  Syntax-Based Normalization
+>   Implementations may use logic based on the definitions provided by
+this specification to reduce the probability of false negatives.
+This processing is moderately higher in cost than character-for-character 
+string comparison.  For example, an application using this
+approach could reasonably consider the following two URIs equivalent:
+
+実装は偽陰性の可能性を減らすためにこの仕様書にある定義に基づいた論理を用いて構いません。
+この処理は文字毎の文字列比較より若干高価です。例えば、
+この方法を使った応用は次の 2つの URI は同値であるというもっともらしい考えができます。
+
+>
+-      [SAMP(URI)[example://a/b/c/%7Bfoo%7D]]
+-      [SAMP(URI)[eXAMPLE://a/./b/../b/%63/%7bfoo%7d]]
+
+>   Web user agents, such as browsers, typically apply this type of URI
+normalization when determining whether a cached response is
+available.  Syntax-based normalization includes such techniques as
+case normalization, percent-encoding normalization, and removal of dot-segments.
+
+Web 利用者エージェント、例えばブラウザは、普通キャッシュした応答が利用できるかどうか決定する時にこの種の
+URI の正規化を行います。構文を基にした正規化には大文字・小文字の正規化、
+百分率符号化の正規化、点部分の削除などの技術があります。
+
+****6.2.2.1.  Case Normalization
+>   For all URIs, the hexadecimal digits within a percent-encoding
+triplet (e.g., "%3a" versus "%3A") are case-insensitive and therefore
+should be normalized to use uppercase letters for the digits A-F.
+
+すべての URI について百分率符号化3文字組の中の十六進数字
+(例えば [SAMP(URI)[%3a]] と [SAMP(URI)[%3A]]) は大文字・小文字の区別がなく、
+故に大文字の数字 [SAMP(URI)[A]]〜[SAMP(URI)[F]] に正規化するべきです。
+
+>   When a URI uses components of the generic syntax, the component
+syntax equivalence rules always apply; namely, that the scheme and
+host are case-insensitive and therefore should be normalized to
+lowercase.  For example, the URI <HTTP://www.EXAMPLE.com/> is
+equivalent to <http://www.example.com/>.  The other generic syntax
+components are assumed to be case-sensitive unless specifically
+defined otherwise by the scheme (see Section 6.2.3).
+
+URI が一般構文の部品を使う場合、部品構文の同値性の規則が常に適用されます。
+すなわち、 [CODE(ABNF)[scheme]] と [CODE(ABNF)[host]] は大文字と小文字を区別せず、
+小文字に正規化するべきです。例えば URI <URI:HTTP://www.EXAMPLE.com/>
+は <http://www.example.com/> と同値です。他の一般構文の部品は scheme
+が特に規定していない限り大文字・小文字を区別するものとします。
+
+****6.2.2.2.  Percent-Encoding Normalization
+>   The percent-encoding mechanism (Section 2.1) is a frequent source of
+variance among otherwise identical URIs.  In addition to the case
+normalization issue noted above, some URI producers percent-encode
+octets that do not require percent-encoding, resulting in URIs that
+are equivalent to their non-encoded counterparts.  These URIs should
+be normalized by decoding any percent-encoded octet that corresponds
+to an unreserved character, as described in Section 2.3.
+
+百分率符号化法は本来同一の URI を色々に変えてしまう大きな原因です。
+前述の大文字・小文字の正規化の問題に加えて、
+URI 生成器によっては百分率符号化が必要ではないオクテットを百分率符号化するものもあります。
+そのような URI は百分率符号化オクテットを対応する非予約文字に復号して正規化するべきです。
+
+****6.2.2.3.  Path Segment Normalization
+>   The complete path segments "." and ".." are intended only for use
+within relative references (Section 4.1) and are removed as part of
+the reference resolution process (Section 5.2).  However, some
+deployed implementations incorrectly assume that reference resolution
+is not necessary when the reference is already a URI and thus fail to
+remove dot-segments when they occur in non-relative paths.  URI
+normalizers should remove dot-segments by applying the
+remove_dot_segments algorithm to the path, as described in Section 5.2.4.
+
+[CODE(URI)[.]] や [CODE(URI)[..]] だけの [CODE(ABNF)[path]] [CODE(ABNF)[segment]]
+は相対参照でのみ使うことが想定されており、参照解決処理で削除されます。
+しかし、実際に使用されている実装の中には参照が既に URI
+である場合には参照解決が不要であると誤って仮定して非相対 [CODE(ABNF)[path]]
+に現れる点部分を削除しないものがあります。 URI
+正規化器は [CODE(ABNF)[path]] に点部分削除の算法を適用して正規化するべきです。
+
+***6.2.3.  Scheme-Based Normalization
+>   The syntax and semantics of URIs vary from scheme to scheme, as
+described by the defining specification for each scheme.
+Implementations may use scheme-specific rules, at further processing
+cost, to reduce the probability of false negatives.  For example,
+because the "http" scheme makes use of an authority component, has a
+default port of "80", and defines an empty path to be equivalent to
+"/", the following four URIs are equivalent:
+
+URI の構文と意味は scheme 毎の仕様で定義されていますが、
+scheme 毎に実に様々です。実装は偽陰性の可能性を削減するために更に処理費を掛けて
+scheme 規定の規則を使っても構いません。例えば、
+[CODE(URI)[http]] scheme は [CODE(ABNF)[authority]] 部品を使い、
+既定のポートは [CODE(URI)[80]] であり、空の [CODE(ABNF)[path]]
+は [CODE(URI)[/]] と同値であると定義していますから、次の
+4つの URI は同値です。
+
+>
+-      [SAMP(URI)[http://example.com]]
+-      [SAMP(URI)[http://example.com/]]
+-      [SAMP(URI)[http://example.com:/]]
+-      [SAMP(URI)[http://example.com:80/]]
+
+>   In general, a URI that uses the generic syntax for authority with an
+empty path should be normalized to a path of "/".  Likewise, an
+explicit ":port", for which the port is empty or the default for the
+scheme, is equivalent to one where the port and its ":" delimiter are
+elided and thus should be removed by scheme-based normalization.  For
+example, the second URI above is the normal form for the "http" scheme.
+
+一般に [CODE(ABNF)[authority]] と空の [CODE(ABNF)[path]] を一般構文に使う URI 
+は [CODE(ABNF)[path]] を [CODE(URI)[/]] に正規化するべきです。
+同様に、 [SAMP(URI)[:[VAR[ポート]]]] が明示されていて[VAR[ポート]]が空か、
+その scheme の既定の値であるなら、その[VAR[ポート]]と区切子の
+[SAMP(URI)[:]] を除去したものと同値であり、 scheme を基にした正規化では削除するべきです。
+例えば、前記の2番目の URI が [CODE(URI)[http]] scheme での正規形です。
+
+>   Another case where normalization varies by scheme is in the handling
+of an empty authority component or empty host subcomponent.  For many
+scheme specifications, an empty authority or host is considered an
+error; for others, it is considered equivalent to "localhost" or the
+end-user's host.  When a scheme defines a default for authority and a
+URI reference to that default is desired, the reference should be
+normalized to an empty authority for the sake of uniformity, brevity,
+and internationalization.  If, however, either the userinfo or port
+subcomponents are non-empty, then the host should be given explicitly
+even if it matches the default.
+
+正規化が scheme によって変わる別の事例が空の [CODE(ABNF)[authority]]
+部品や空の [CODE(ABNF)[host]] 部分部品の扱いです。
+多くの scheme の仕様では空の [CODE(ABNF)[authority]] や [CODE(ABNF)[host]]
+は誤りと考えています。ものによっては [CODE(URI)[localhost]]
+(末端利用者のホスト) と同値と考えています。 Scheme が [CODE(ABNF)[authority]]
+の既定値を定義していて、その既定値への URI 参照を望む場合には、
+参照は統一性, 簡潔性, 国際化のため、空の [CODE(ABNF)[authority]] に正規化するべきです。
+しかし、 [CODE(ABNF)[userinfo]] 部分部品や [CODE(ABNF)[port]]
+部分部品が空でない場合は、 [CODE(ABNF)[host]] が既定値に一致しても明示しておくべきです。
+
+>   Normalization should not remove delimiters when their associated
+component is empty unless licensed to do so by the scheme
+specification.  For example, the URI "http://example.com/?" cannot be
+assumed to be equivalent to any of the examples above.  Likewise, the
+presence or absence of delimiters within a userinfo subcomponent is
+usually significant to its interpretation.  The fragment component is
+not subject to any scheme-based normalization; thus, two URIs that
+differ only by the suffix "#" are considered different regardless of the scheme.
+
+対応する部品が空の区切子は scheme の仕様がそうしてもよいと規定しない限り削除するべきではありません。
+例えば、 URI [SAMP(URI)[http://example.com/?]] は先の例のいずれとも同値と考えることはできません。
+同様に、 [CODE(ABNF)[userinfo]] 部分部品中の区切子の有無は通常解釈に影響を持ちます。
+[CODE(ABNF)[fragment]] 部品は scheme を基にした正規化の対象ではありません。
+ですから、末尾の [CODE(URI)[#]] だけが異なる2つの URI
+は scheme に関わらず異なると考えます。
+
+>   Some schemes define additional subcomponents that consist of 
+case-insensitive data, giving an implicit license to normalizers to
+convert this data to a common case (e.g., all lowercase).  For
+example, URI schemes that define a subcomponent of path to contain an
+Internet hostname, such as the "mailto" URI scheme, cause that
+subcomponent to be case-insensitive and thus subject to case
+normalization (e.g., "mailto:Joe@Example.COM" is equivalent to
+"mailto:Joe@example.com", even though the generic syntax considers
+the path component to be case-sensitive).
+
+Scheme によっては更に大文字・小文字を区別するデータを含む部分部品を定義していて、
+正規化器がそのデータの形を揃える (例えばすべて小文字にする)
+ことを暗に認めていることがあります。例えば、 [CODE(URI)[mailto]] URI
+scheme のようにインターネットのホスト名を含む [CODE(ABNF)[path]]
+の部分部品を定義している URI scheme ではその部分部品が大文字・
+小文字を区別しないことになり、従って大文字・小文字の正規化の対象となります
+(例えば一般構文では [CODE(ABNF)[path]] 部品で大文字・小文字を区別するとしていますが、
+[SAMP(URI)[mailto:Joe@Example.COM]] は [SAMP(URI)[mailto:Joe@example.com]] 
+と同値です)。
+
+>   Other scheme-specific normalizations are possible.
+
+他の scheme 規定の正規化もあり得ます。
+
+***6.2.4.  Protocol-Based Normalization
+>   Substantial effort to reduce the incidence of false negatives is
+often cost-effective for web spiders.  Therefore, they implement even
+more aggressive techniques in URI comparison.  For example, if they
+observe that a URI such as
+
+偽陰性の発生を削減する実際的な試みもしばしば蜘蛛の巣の蜘蛛にとって経費に見合うだけのものです。
+ですから、蜘蛛はもっと積極的な URI の比較の方法を実装しています。
+例えば、
+
+>      [SAMP(URI)[http://example.com/data]]
+
+>   redirects to a URI differing only in the trailing slash
+
+という URI が末尾の斜線だけが違う
+
+>      [SAMP(URI)[http://example.com/data/]]
+
+>   they will likely regard the two as equivalent in the future.  This
+kind of technique is only appropriate when equivalence is clearly
+indicated by both the result of accessing the resources and the
+common conventions of their scheme's dereference algorithm (in this
+case, use of redirection by HTTP origin servers to avoid problems
+with relative references).
+
+という URI を再指向すると分かれば、将来も2つが同値と考えます。
+この種の技法は資源へのアクセスの結果とその scheme の参照を解く方法で広く行われている慣習の両方によって明らかに同値性が示されている時にのみ適切であります
+(この場合、相対参照での問題を避けるため HTTP 起点鯖により再指向が使われています)。
+
+*memo

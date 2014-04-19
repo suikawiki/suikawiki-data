@@ -1,0 +1,234 @@
+[30] [DFN[[[GRDDL]]]] は、[[XML]] を [[XSLT]] によって [[RDF]] に変換する技術です。
+2003年頃から [[Dan Connolly]] により開発され、 [[W3C]] [[GRDDL WG]] によって [[W3C勧告]]となりました。
+
+* 仕様書
+
+[REFS[
+- [29] [CITE[Gleaning Resource Descriptions from Dialects of Languages (GRDDL)]] ([TIME[2007-09-10 23:49:31 +09:00]] 版) <http://www.w3.org/TR/grddl/>
+]REFS]
+
+[32] この仕様書は事実の文と例示によって説明する古いスタイルで書かれていますが、比較的平易で解釈の揺れる範囲もそう大きくありません。
+(勧告となった2007年はともかく) 2004年頃の水準では中の上くらいの品質でしょうか。
+
+* 処理モデル
+
+[31] [[GRDDL]] の処理は、 [[XPath]] [[文書節点]]が入力で、 [[RDFグラフ]]が出力とされています。
+
+[33] [[RDFグラフ]]は、いくつかの方法で得た[DFN[GRDDL [RUBYB[結果]@en[result]]]]をマージして得られたものです。
+[[GRDDL結果]]を得る方法には次のものがあります。 [SRC[>>29]]
+[FIG[
+- [34] [[RDF/XML文書]]の[[GRDDL結果]]は、そのものです。
+- [35] [CODE(XMLa)@en[[[grddl:transformation]]]] [[属性]]があれば、そこから参照されている[[GRDDL変形]]を適用した結果が
+[[GRDDL結果]]です。
+- [37] [[HTMLメタ情報プロファイル]] [DFN[[CODE(URI)@en[[[http://www.w3.org/2003/g/data-view]]]]]] の [[HTML]] [[リンク型]] 
+[CODE(HTML)@en[[[transformation]]]] によって参照されている[[GRDDL変形]]を適用した結果が
+[[GRDDL結果]]です。
+- [36] 使用している[[名前空間]]の[[名前空間文書]]の[[GRDDL結果]]が [CODE@en[[[grddl:namespaceTransformation]]]] を含んでいれば、
+その[[GRDDL変形]]を適用した結果が[[GRDDL結果]]です。
+- [38] 使用している[[HTMLメタ情報プロファイル]]の定義文書の[[GRDDL結果]]が [CODE@en[[[grddl:profileTransformation]]]]
+を含んでいれば、その[[GRDDL変形]]を適油した結果が [[GRDDL結果]]です。
+]FIG]
+
+;; [42] [[GRDDL]] は [[HTML4]]/[[XHTML1]] 時代に作られたので[[HTMLメタ情報プロファイル]]
+([CODE(HTMLe)@en[[[head]]]] [[要素]]の [CODE(HTMLa)@en[[[profile]]]] [[属性]]) を使っています。
+この[[属性]]は [[HTML5]] により廃止されました。現行の [[HTML]] 仕様の元で [[GRDDL]]
+を使う方法は特に発表されていないようですし、その需要があるかもわかりませんが、
+>>37 においてプロファイルの条件を削除して [CODE(HTMLa)@en[[[rel]]]] [[属性]]だけを見るようにして良さそうですし、
+>>38 は無視して良さそうです。また >>37 について [[HTML4]] 時代は [CODE(HTMLe)@en[[[a]]]] [[要素]]と
+[CODE(HTMLe)@en[[[link]]]] [[要素]]でしか使えませんでしたが、 [[HTML5]] 以降 [CODE(HTMLe)@en[[[area]]]]
+[[要素]]もこれらと同等として扱われており、それに従って自然に拡張するべきでしょう。
+
+[39] ただし複数の[[GRDDL結果]]が得られ得る場合で、そのいずれかまたは全部を適用するかは[[利用者エージェント]]が能力、
+セキュリティその他の事情に応じて決定できます。 [SRC[>>29]]
+
+[40] [[名前空間文書]]やプロファイルの文書の [[GRDDL結果]]を得る操作は再帰的に行う必要がありますが、
+無限ループは避ける必要があります。 [SRC[>>29]]
+
+[41] この[[GRDDL結果]]を得るソフトウェアモジュールを[DFN[[RUBYB[GRDDL対応エージェント]@en[GRDDL-aware agent]]]]といいます
+[SRC[>>29]]。
+
+* GRDDL 変形
+
+[54] [[GRDDL]] によって指定された[[変形]]を記述したものが [DFN[GRDDL [RUBYB[変形]@en[transformation]]]]です。
+[[GRDDL変形]]が記述する[[変形]]の方法 ([[文書節点]]から[[RDFグラフ]]への[[関数]]) 
+のことを[DFN[[RUBYB[変形特性]@en[transformation property]]]]といいます [SRC[>>29]]。
+
+[55] この変形の記述方法としては [[XSLT1]] が最もよく用いられます [SRC[>>29]] が、それに限定しているわけではないようです。
+[[XSLT2]] を使った例も指摘されていますし、理論上は [[XQuery]] や各種[[プログラミング言語]]でも構わない [SRC[>>29]] ようです。
+ただし [[XML]] からの変形を記述する方法としては [[XSLT]] が使いやすいだろうとも指摘されています。
+
+* GRDDL 結果
+
+[45] [[GRDDL結果]]は元の文書の[[基底URL]]を使って解釈します。 [SRC[>>29]]
+
+[46] [[GRDDL結果]]は [[RDF/XML]] とすることが想定されているようですが、特にそれに限定されているわけではないようで、
+[[N3]] の例も示されています [SRC[>>29]]。 
+
+* [CODE[grddl:transformation]] 属性
+
+[43] [[XML文書]]の[[根要素]]が [CODE(URI)@en[[[http://www.w3.org/2003/g/data-view#]]]] [[名前空間]]の
+[DFN[[CODE(XMLa)@en[[[transformation]]]]]] [[属性]]を持っている時、その値を[[空白]]
+([CODE(char)[[[U+0009]]]], [CODE(char)[[[U+000A]]]], [CODE(char)[[[U+000D]]]], [CODE(char)[[[U+0020]]]])
+で区切ったそれぞれの字句を [[RFC 3987]] [[IRI参照]]とみなして[[根要素]]の[[基底IRI]]
+により[[解決]]したものが、[[GRDDL変形]]です。 [SRC[>>29]]
+
+;; [44] 処理方法だけで、[[属性値]]の適合性は規定されていませんが、自然に解釈すれば空でない[[相対IRI参照]]の[[空白]]区切りのリストでしょう
+(0個以上?)。
+
+* リンク型 [CODE(HTML)@en[transformation]], [CODE(HTML)@en[profileTransformation]] (HTML)
+
+[50] [[HTML]] の[[リンク型]] [DFN[[CODE(HTML)@en[[[transformation]]]]]] を [CODE(HTMLa)@en[[[rel]]]]
+[[属性]]に指定すると、 [CODE(HTMLa)@en[[[href]]]] [[属性]]で指定された [[URL]]
+が[[GRDDL変形]]となります。 [SRC[>>29]]
+
+[53] 同様に[[プロファイル文書]]において[[リンク型]] [DFN[[CODE(HTML)@en[[[profileTransformation]]]]]]
+はその[[プロファイル]]を使っている[[文書]]についての [[GRDDL変形]]となります。 [SRC[>>29]]
+
+[51] この[[リンク型]]は[[HTMLメタ情報プロファイル]] [CODE(URI)@en[[[http://www.w3.org/2003/g/data-view]]]]
+に属するものですが [SRC[>>29]]、 >>42 の通り現在となってはそこは気にせずともよいでしょう。
+
+* 名前空間文書、プロファイル文書
+
+[47] [[名前空間文書]]の [[GRDDL結果]]に[[主語]]が[[名前空間文書]]自身、
+[[述語]]が [DFN[[CODE[[[grddl:namespaceTransformation]]]]]] 
+([DFN[[CODE(URI)[[[http://www.w3.org/2003/g/data-view#namespaceTransformation]]]]]])
+である[[三項組]]が含まれていれば、その[[目的語]]が[[GRDDL変形]]となります。 [SRC[>>29]]
+
+[52] [[プロファイル文書]]の [[GRDDL結果]]に[[主語]]が[[名前空間文書]]自身、
+[[述語]]が [DFN[[CODE[[[grddl:profileTransformation]]]]]] 
+([DFN[[CODE(URI)[[[http://www.w3.org/2003/g/data-view#profileTransformation]]]]]])
+である[[三項組]]が含まれていれば、その[[目的語]]が[[GRDDL変形]]となります。 [SRC[>>29]]
+
+[48] [[名前空間文書]]に毎回アクセスするとサーバーが過負荷になるかもしれないのでキャッシュするべきですが、
+更新されないべきではなく、利用者が設定したりキャッシュを消去したりできるべきでもあるとされています [SRC[>>29]]。
+
+;; [49] しかしそう書いたところで実際には大量にアクセスが来て辛くなる気がしますが・・・。
+
+* 歴史
+
+[1]
+[CITE[Gleaning Resource Descriptions from Dialects of Languages (GRDDL)]] <http://www.w3.org/TeamSubmission/grddl/>
+([[名無しさん]])
+
+[2]
+[CITE[Gleaning Resource Descriptions from Dialects of Languages (GRDDL)]] <http://www.w3.org/2004/01/rdxh/spec>
+([[名無しさん]])
+
+[3]
+[CITE[Gleaning Resource Descriptions from Dialects of Languages (GRDDL)]] <http://www.w3.org/TeamSubmission/2005/SUBM-grddl-20050516/>
+([[名無しさん]])
+
+[4]
+[CITE[Gleaning Resource Descriptions from Dialects of Languages (GRDDL)]] <http://www.w3.org/TR/2004/NOTE-grddl-20040413/>
+([[名無しさん]])
+
+[5]
+[CITE[W3C GRDDL Working Group]] <http://www.w3.org/2001/sw/grddl-wg/>
+([[名無しさん]] [WEAK[2006-07-15 12:31:13 +00:00]])
+
+[6]
+[CITE[GRDDL - Web技術研究所]] <http://tech.4dd.co.jp/sw-app/grddl.html>
+
+わりと良質な解説だと思うけど、こういう [[RDF]]
+を作りたいからこういう [[HTML]] を書くんだ的発想はおかしいんじゃないの?
+([[名無しさん]] [WEAK[2006-08-12 14:27:27 +00:00]])
+
+[7]
+[CITE[GRDDL Primer]] <http://www.w3.org/TR/2006/WD-grddl-primer-20061002/>
+([[名無しさん]] [WEAK[2006-10-05 23:37:12 +00:00]])
+
+[8]
+[CITE[GRDDL Use Cases: Scenarios of extracting RDF data from XML documents]] <http://www.w3.org/TR/2006/WD-grddl-scenarios-20061002/>
+([[名無しさん]] [WEAK[2006-10-05 23:39:22 +00:00]])
+
+[9]
+[CITE[GRDDL Primer]] <http://www.w3.org/2001/sw/grddl-wg/doc29/primer>
+([[名無しさん]] [WEAK[2006-10-21 12:25:12 +00:00]])
+
+[10]
+[CITE[Gleaning Resource Descriptions from Dialects of Languages (GRDDL)]] <http://www.w3.org/TR/2006/WD-grddl-20061024/>
+([[名無しさん]] [WEAK[2006-10-25 00:18:37 +00:00]])
+
+[11]
+[CITE@ja[ちょっとしたメモ - GRDDLサポートツール2つ]] ([[Masahide Kanzaki]] 著, [CODE[2007-02-02 23:44:05 +09:00]] 版) <http://www.kanzaki.com/memo/2007/02/02-1>
+([[名無しさん]] [WEAK[2007-02-03 02:34:01 +00:00]])
+
+[12]
+[CITE[Gleaning Resource Descriptions from Dialects of Languages (GRDDL)]] ([CODE[2007-03-02 13:01:10 +09:00]] 版) <http://www.w3.org/TR/2007/WD-grddl-20070302/>
+([[名無しさん]] [WEAK[2007-03-09 15:53:26 +00:00]])
+
+[13]
+[CITE[GRDDL background]] ([CODE[2006-10-24 13:26:58 +09:00]] 版) <http://www.w3.org/2004/01/rdxh/specbg.html>
+([[名無しさん]] [WEAK[2007-03-09 15:57:34 +00:00]])
+
+[14]
+[CITE[GRDDL Test Cases]] ([CODE[2007-03-28 23:31:48 +09:00]] 版) <http://www.w3.org/TR/2007/WD-grddl-tests-20070328/>
+([[名無しさん]] [WEAK[2007-03-31 08:27:55 +00:00]])
+
+[15]
+[CITE[GRDDL Use Cases: Scenarios of extracting RDF data from XML documents]] ([CODE[2007-04-06 02:31:40 +09:00]] 版) <http://www.w3.org/TR/2007/NOTE-grddl-scenarios-20070406/>
+([[名無しさん]] [WEAK[2007-04-07 10:30:32 +00:00]])
+
+[16]
+[CITE[Gleaning Resource Descriptions from Dialects of Languages (GRDDL)]] ([CODE[2007-05-03 23:17:51 +09:00]] 版) <http://www.w3.org/TR/2007/CR-grddl-20070502/>
+([[名無しさん]] [WEAK[2007-05-07 09:29:17 +00:00]])
+
+[17]
+[CITE[GRDDL Test Cases]] ([CODE[2007-05-04 01:59:38 +09:00]] 版) <http://www.w3.org/TR/2007/WD-grddl-tests-20070502/>
+([[名無しさん]] [WEAK[2007-05-07 09:30:03 +00:00]])
+
+[18]
+[CITE[GRDDL Primer]] ([CODE[2007-06-28 03:39:11 +09:00]] 版) <http://www.w3.org/TR/2007/NOTE-grddl-primer-20070628/>
+([[名無しさん]])
+
+[19]
+[CITE[Gleaning Resource Descriptions from Dialects of Languages (GRDDL)]] ([CODE[2007-07-17 06:34:21 +09:00]] 版) <http://www.w3.org/TR/2007/PR-grddl-20070716/>
+([[名無しさん]])
+
+[20]
+[CITE[GRDDL Test Cases]] ([CODE[2007-07-17 06:40:17 +09:00]] 版) <http://www.w3.org/TR/2007/PR-grddl-tests-20070716/>
+([[名無しさん]])
+
+[21]
+[CITE[W3C GRDDL service]] ([CODE[2007-09-01 12:29:39 +09:00]] 版) <http://www.w3.org/2007/08/grddl/>
+
+[24]
+[CITE@ja[ちょっとしたメモ - GRDDLがW3C勧告に]] ([[Masahide Kanzaki]] 著, [CODE[2007-09-13 00:50:24 +09:00]] 版) <http://www.kanzaki.com/memo/2007/09/13-1>
+
+> 最初の草案が昨年10月下旬に出てから1年未満、GRDDL作業部会が設置された昨年6月から数えても15ヶ月と、最近のW3C規格の中では異例のスピードだ。
+
+> Dan Connollyが上のメールでXSLTを使うアイデアを示したのが2000年3月のこと。それから2003年3月にW3CのTAGの検討課題としてRDFinXHTML-35が設定され、2003/2004の年末年始にかけてGRDDLという考えが登場する。
+
+[25]
+[CITE[Gleaning Resource Descriptions from Dialects of Languages (GRDDL)]] ([CODE[2007-09-10 23:49:31 +09:00]] 版) <http://www.w3.org/TR/2007/REC-grddl-20070911/>
+
+[26]
+[CITE[GRDDL Test Cases]] ([CODE[2007-09-11 23:26:07 +09:00]] 版) <http://www.w3.org/TR/2007/REC-grddl-tests-20070911/>
+
+* メモ
+
+[22]
+[CITE@ja[「ゲド戦記」監督日誌 - 第二十二回 押井守監督の最新作を観た]] ([CODE[2006-10-27 16:05:21 +09:00]] 版) <http://www.ghibli.jp/ged_02/20director/000252.html>
+([[XHTML 1.0]] ([CODE(MIME)@en[[[text/html]]]]); 非[[整形式]])
+
+> <head profile="http://www.w3.org/2003/g/data-view">
+
+[CODE(HTMLa)@en[[[profile]]]] が指定されているだけで、
+実際には [[GRDDL]] の機能を使っていないようです。
+([[名無しさん]])
+
+[23]
+[CITE@ja[ムシトリアミとボク | Gadget]] ([[KOH16]] 著, [CODE[2007-09-02 18:22:16 +09:00]] 版) <http://koh16.blog11.fc2.com/blog-category-11.html>
+
+状況としては >>22 と同じ。非[[整形式]]。
+
+[27]
+>>25 [[文書]]の[[適合性]]に関する言及がまったくないような。。。
+
+[28]
+[CITE@ja[GRDDL で広がる XHTML の可能性 | WWW WATCH]] ([TIME[2007-09-23 18:15:42 +09:00]] 版) <http://hyper-text.org/archives/2007/09/grddl_xhtml_to_rdf.shtml>
+
+[56] [[GRDDL]] はほとんど使われていません。 [[RDF]] 自体が世間からほとんど注目されていない上に、
+[[XSLT]] で [[RDF/XML]] を生成するというのがハードルが高いこと、それ以前に [[XHTML]] を含め [[XML]]
+自体があまり使われていないことが原因でしょう。 [[RDF]] が好きな人達の多くはそもそもはじめから [[RDF]]
+でデータを用意すればよく、 [[RDF]] でない [[XML]] に埋め込んで提供する必要性が特にないというのもあるかもしれません。

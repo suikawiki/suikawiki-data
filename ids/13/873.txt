@@ -1,0 +1,31 @@
+[1] [CITE[Hawk's W3 Laboratory : Disposable WSH : 番外編:文字エンコーディングとADODB.Stream]] ([TIME[2009-01-04 12:10:28 +09:00]] 版) <http://web.archive.org/web/20060903202336/www.hawk.34sp.com/stdpls/dwsh/charset_adodb.html#index-1>
+
+[2] 
+>これらを克服する上で大きな役割を果たすのがADODB.StreamというActiveX オブジェクトです。
+>
+;;ADODB.Stream は Microsoft ActiveX Data Objectsに含まれるオブジェクトです。ADO Historyによると ADODB.Stream が使用可能なバージョンは2.5以降で、MDAC リリース一覧によれば Windows 2000 以降ならばデフォルトでサポートされているはずです。
+>
+ADODB.Streamは非常に柔軟性が高い入出力機能を備えており、文字エンコーディングの変換なども可能です。さらにtypeプロパティの指定によって、テキストデータもバイナリデータも扱うことが出来ます。双方の特徴は次のようになります。
+-      type を adTypeText(=2) に設定するとテキストモードになる。テキストモードではCharsetプロパティに設定した文字エンコーディングが、Streamの内部エンコーディングおよび(Streamに対する入力データの)入力エンコーディングとして用いられる。Streamにデータを入力する手段としてはLoadFromFileメソッドやWriteTextメソッドなどがある。さらにReadTextメソッドを使ってStreamからデータを取り出すと通常のUTF-16文字列に変換される。つまり外部エンコーディングの自動判定を回避してテキストデータを読み込むことが出来る。
+-      type を adTypeBinary(=1) に設定するとバイナリモードになる。バイナリモードではStreamに対する入力は一切の変換を受けない。入力手段としてはLoadFromFileメソッドやWriteメソッドなどがある。ただしReadメソッドでデータを取り出すとVARIANT型の値が返るので、JavaScriptでは直接操作することは出来ない。
+>
+;;Charsetのデフォルトは "Unicode" で、これはUTF-16LEのことです。この場合に限らず、Windows上で単にUnicodeというとUTF-16LEのことを指すようです。
+>
+;;またリファレンスには、Charsetに使えるエンコーディング名はレジストリの HKEY_CLASSES_ROOT\MIME\Database\Charset にあると書かれていますが、実はここに無い名前(UTF-16BEなど)も使えたりします。結局一覧がどこにあるのかは分かりません。 
+
+[3] 
+>まずはテキストモードでの克服を試みましょう。具体的にはCharsetをiso-8859-1に設定(つまり入力エンコーディングをiso-8859-1に設定)します。
+>これは必ず失敗します。
+>こうなる理由は単純です。Windows上でiso-8859-1を指定すると、”cp1252”というWindows独自拡張文字入りのエンコーディングスキームと見なされるからです。cp1252とUnicodeの対応表を見れば分かりますが、0x80-0x9f に割り当てられた独自拡張文字のせいで上に書いた理屈の2が成り立たなくなっています。今のところ本物のiso-8859-1を指定する方法はなさそうなので、この方法は諦めざるを得ません。 
+
+[4] 
+>テキストモードではうまくいきそうにないことが分かったので、バイナリモードでの克服を試みます。特徴でも書いたとおり、Read メソッドの戻り値は「内部処理形式がByte型の配列であるVARIANT型の値」であって、これはJavaScriptでは代入を除く一切の操作が不可能です。ゆえにこちらの問題点はこのデータを如何にしてJavaScriptで扱える形に変換するか、という点に尽きます。…VARIANT型の内部処理形式が云々といわれてもさっぱりな私にとってこれはかなりの難題で、自力での解決には至りませんでした。
+>
+結局解決策を見つけたのは、Disposable WSHトップページからもリンクを張ってある『fooling around with JScript』でした。こちらの「JScriptの道 掲示板」の中にある「base64エンコード(投稿日 4月8日(月)00時13分 投稿者 hir)」(管理人hirさん自身の投稿)で、JavaScriptによるbase64エンコード・デコードが紹介されています。キモとなっているのはMSXMLの nodeTypedValue プロパティで、これはVARIANT型の値とXDR Schemaで定義されたデータ型とを相互に変換するためのプロパティです。そして今問題にしている「内部処理形式がByte型の配列であるVARIANT型の値」は base64Binary と hexBinary への変換がサポートされています。このうち hexBinary に変換を行えば万事解決です。 
+
+[5] 
+>補足:なぜ役に立たないの?
+>
+ひとえに、ADODB.Stream の Charset には "_autodetect(自動判定)" という設定があるからです。これさえ設定しておけば FileSystemObject の TextStream では読めない EUC-JP や UTF-8 のファイルも、(外部エンコーディングを知らずとも)読み込むことが出来ます。 
+
+;; [6] これはひどい落ちwwwwww

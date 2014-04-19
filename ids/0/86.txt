@@ -1,0 +1,123 @@
+#?SuikaWiki/0.9
+*GetVersionEx Win32API
+
+VB で使うならこう。
+
+Private Declare Function GetVersionEx Lib "kernel32" Alias "GetVersionExA" (lpVersionInfo As Any) As Long
+
+引数には構造体を渡す。
+
+  Private Type OSVERSIONINFO
+    dwOSVersionInfoSize As Long
+    dwMajorVersion      As Long
+    dwMinorVersion      As Long
+    dwBuildNumber       As Long
+    dwPlatformId        As Long
+    szCSDVersion        As String * 128
+  End Type
+
+より新しい版 (Windoze NT 4.0 SP6 以降) では、 EX の方の構造体に対応。
+こっちのほーがより多くの情報を取れる。
+
+  Private Type OSVERSIONINFOEX
+    dwOSVersionInfoSize As Long
+    dwMajorVersion      As Long
+    dwMinorVersion      As Long
+    dwBuildNumber       As Long
+    dwPlatformId        As Long
+    szCSDVersion        As String * 128
+    wServicePackMajor   As Integer
+    wServicePackMinor   As Integer
+    wSuiteMask          As Integer
+    wProductType        As Byte
+    wReserved           As Byte
+  End Type
+
+API 関数の返し値が 0 なら失敗。であるからにして、最初に
+EX の方を渡してみて、 0 だったら EX じゃ無い方で試してみる。
+
+Revision の実際の値を得るには & 0xFFFF する。 (という説明は
+厳密じゃないけど、まーいいや。)
+
+詳しくは [[M$DN]] 見てちょ。
+
+*dwPlatformId
+
+-0 Win32s
+-1 Windoze 9x
+-2 Windoze NT
+
+*Major.Minor.Revision
+
+Win9x 系
+
+-4.00.950 Windoze 95
+-4.00.1111 Windoze 95 [[OSR]]2
+-4.10.1998 Windoze 98
+-4.10.2222 Windoze 98 Second Edition
+-4.90.3000 Windoze Me
+
+[2] 以下のは構成ファイル (DLL とか) の値らしいんだけど、
+GetVersionEx の値で返ってくるのか不明 ([[M$DN]] に載ってない)。
+
+[3] >>2 といいつつ、 4.00.1111 も M$DN になかったけど、実際にやってみたら返って来ることがわかった。
+
+-4.03.1212〜1214 Windoze 95 OSR2.1
+-4.03.1214 Windoze 95 OSR2.5
+ 
+WinNT 系
+
+-(Windoze NT 3.1 には GetVersionEx がない。)
+-(Windoze NT 3.5 でどういう値を返すのか、 M$DN には書いてない。)
+-3.51 Windoze NT 3.51
+-4.0 Windoze NT 4.0
+-5.0 Windoze 2000
+-5.1 Windoze XP / Windoze 2002 .NET (Server だけは名前が違うらしい(爆))
+
+*szCSDVersion
+
+細かい版情報の文字列。 Windoze 95 だと、 [AaBbCc] がかえって来得る。
+(大文字・小文字どちらもあり得るらしい。 M$ は何考えてるんだ?)
+
+Windoze NT だと、「Service Pack x」が返って来得る。 (M$ のことだから、
+版によっては「サーヒ゛ス ハ゜ック 1」とかが版によっては
+返りそうだけど(藁)、幸いそういう話は見かけないね。)
+
+:Windoze 95 + "A":Windoze 95 SP1/OSR1
+:Windoze 95 + "B":Windoze 95 OSR2/OSR2.1
+:Windoze 95 + "C":Windoze 95 OSR2.5
+:Windoze 98 + "A":Windoze 95 Second Edition
+
+[1] OSR2 は実際にやってみると " B" が返ってきた。
+
+*wProductType
+
+VER_NT_WORKSTATION = 0x40000000 だと 
+Workstation 系 (Windoze NT Workstation, Windoze 2000 Professional),
+VER_NT_SERVER = 0x80000000 だと Server 系 (Windoze NT Server, 
+Windoze 2000 Server, Windoze 2002 .NET Server)。
+
+*wSuiteMask
+
+ビットマスク。
+
+:VER_SUITE_PERSONAL = 0x200:Home (Windoze XP Home Edition)
+:VER_SUITE_DATACENTER:DataCenter Server
+:VER_SUITE_ENTERPRISE:Advanced Server (NT4), Enterprise Server
+:VER_SUITE_BLADE:Web Server
+
+*レジストリから取得
+
+[[HKLM]]\SYSTEM\CurrentControlSet\Control\ProductOptions
+で "ProductType" から Workstation とかが取れる。
+
+:"ServerNT":Advanced Server
+:"RANMANNT":Server
+:"WinNT":Workstation, Professional
+
+*See also
+-[[Windoze]]
+-<http://support.microsoft.com/default.aspx?scid=%2Fisapi%2Fgomscom%2Easp%3Ftarget%3D%2Fjapan%2Fsupport%2Fkb%2Farticles%2Fjp158%2F2%2F38%2Easp&LN=JA>
+-<http://msdn.microsoft.com/library/default.asp?url=/library/en-us/sysinfo/sysinfo_49iw.asp>
+*メモ
+- [4] HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\"VersionNumber" という値があって、 [[OSR]]2 では 4.00.1111 だった。同じ階層の "Version"="Windows 95", "SubVersionNumber"=" B", "ProductName"="Microsoft Windows 95"

@@ -1,0 +1,198 @@
+
+
+* script 要素 defer 属性 (HTML, XHTML 1)
+
+[1] [[HTML]] の [CODE(HTMLe)[[[script]]]] 要素の
+[DFN[[CODE(HTMLa)[defer]] 属性]]は、
+そのスクリプトが文書内容を生成しないことを示します。
+
+[2] 仕様書:
+- [[HTML 4]]
+-- <IW:HTML4:"interact/scripts.html#adef-defer">
+
+[22]
+HTML 4 DTD の[[注釈]] (参考) には
+[Q[UA may defer execution of script]]
+と書かれています。
+
+
+** 属性値
+
+[3] この属性は[[真偽値属性]]です。指定すれば真、
+省略すれば偽です。
+
+[[#comment]]
+
+
+** UA による利用
+
+[4] この属性が指定されていると、そのスクリプトが文書の内容を生成しないことを意味します。
+[[JavaScript]] の [CODE(JS)[[[document]].[[write]]]] が文書内容生成に該当します。
+UA はこの属性が指定されていれば、構文解析とレンダリングを続行できます。
+[SRC[HTML 4 18.2.1]]
+
+仕様書は当たり前だと思って書いていないのでしょうが、
+文書を読み込みながら構文解析しながらスクリプトを実行しつつレンダリングするという処理モデルが念頭にあるのだと思われます。
+レンダリングする文書の内容は普通は鯖から送られてきたものですが、
+[CODE(HTMLe)[script]] 要素によって動的に生成されるかもしれません。
+ですから、 [CODE(HTMLe)[script]] 要素まで読取り・構文解析・レンダリングが到達したら、
+そのスクリプトを実行して結果を反映して続きの構文解析・レンダリングを行わなければなりません。
+しかし、スクリプトの内容が関数の定義や[[事象取扱器]]の登録なら、
+その時点で行う必要はありません。そこで [CODE(HTMLa)[defer]]
+と指定しておけば、 UA は文書全体をレンダリングしてから実行することができます。
+
+[[#comment]]
+
+
+** 不思議解釈
+
+[19] ''JavaScript質問スレ'' <http://pc2.2ch.net/test/read.cgi/hp/1041701828/701->
+
+> 703 名前: Name_Not_Found  投稿日: 03/01/31 21:13 ID:???
+[PRE[
+defer
+【誤答例】
+スクリプトに文書の表示を生成する要素を含まないことを宣言します。
+この要素内のスクリプトが、文書の内容となるものを一切生成しない
+(例えば、"document.write" などを使用していない)ことを表わします。
+【正答例】
+ブロック内にインラインスクリプトがなく、関数だけを含んでいることを示す。
+スクリプトが必要になるまでその解析を延期することにより、
+ドキュメントのロード時間が短くなり、結果的にパフォーマンスが良くなる
+]PRE]
+> 704 名前: Name_Not_Found 投稿日: 03/01/31 22:08 ID:???
+[PRE[
+>>703
+http://www.w3.org/TR/1999/REC-html401-19991224/interact/scripts.html#adef-defer
+http://msdn.microsoft.com/workshop/author/dhtml/reference/properties/defer.asp
+http://www.microsoft.com/japan/developer/library/jpisdk/dhtml/references/html/SCRIPT.htm
+つまり誤答例の HTML4 Spec. はウ゛ァカ仕様で
+「関数だけを含む」と書いてないMSDN本家も厨房マニュアルで
+正答例のMSDN日本語版スハ゛ラシイ!ってことでよろしいか? 
+]PRE]
+
+[[#comment]]
+
+
+** 歴史
+
+[27]
+[[Ian Hickson]] は当初 [CODE(HTMLa)@en[[[defer]]]]
+は相互運用可能に実装されていないとして [[HTML 5]]
+に含めないつもりだったようです (たぶん。) が、結局
+[CODE(HTMLa)@en[[[src]]]] が指定されている場合にのみ利用できる[[属性]]として
+[[HTML 5]] に残りました。
+
+[[#comment]]
+
+
+** メモ
+
+[23]
+
+> Indicates that the user agent can defer processing of the script. See the defer attribute definition  in HTML 4.0.
+
+;; 
+<IW:DOM1:"level-one-html.html#ID-93788534">
+
+[24]
+
+> Indicates that the user agent can defer processing of the script. See the defer attribute definition in HTML 4.01.
+
+;; 
+<IW:DOM2:"HTML/html.html#ID-93788534">
+
+[20]
+[CITE[ishinao.net/mylog - deferとWScript.Shell.Runの第3引数]] <http://mylog.ishinao.net/id/1190>
+
+[26] >>20 は [CODE(HTTP)[[[404]]]] なので...
+
+[CITE[ishinao.net/mylog - deferとWScript.Shell.Runの第3引数]] <http://web.archive.org/web/20050302231327/http://mylog.ishinao.net/id/1190>
+
+>
+[PRE(example code)[
+<script type="text/javascript" defer>
+var shell = new ActiveXObject("WScript.Shell");
+shell.run("notepad.exe", 1, true);
+alert("end");
+</script>
+]PRE]
+> みたいなスクリプトで、shell.runの第3引数がtrue(終了するまで待つ)になっているのが効かないのはどうしてだろう? よりローカルな設定ほど強力であるというのが一般的だと思うんだけど、defer設定は何よりも強力ってことなのかなー。
+
+いってることがよくわからない。
+
+[28]
+[CITE@ja[「週報」を含むエントリー - Buzzurl '''['''バザール''']''' / ソーシャルブックマーク]] ([TIME[2008-06-08 00:26:54 +09:00]] 版) <http://buzzurl.jp/tag/%E9%80%B1%E5%A0%B1>
+
+[PRE(HTML example code)[
+<script type="text/javascript" defer="defer">
+	<!--
+(function(){
+	var date = new Date();
+	date.setTime(date.getTime() + (24*60*60*1000));
+	var expires = '; expires=' + date.toGMTString();
+	document.cookie = 'is_ssl=1' + expires + '; path=/; secure';
+})();
+
+(function(){
+ 	function beforeChange(container, active){
+		if(!active){ return; }
+		var bef = $(active).getAttribute("rel");
+		if(!bef){ return; }
+		var def = container.options.afterChange;
+		container.options.afterChange = function(t,a){
+			var aft = $(a).getAttribute("rel");
+			if(aft){
+				$(aft).value = $F(bef);
+			}
+			def(t,a);
+			t.options.afterChange = def;
+		};
+	}
+	Event.observe(window,'load',function(){
+		new Control.Tabs($("search_tab_list"), {"defaultTab":'form_buzzurl', "beforeChange":beforeChange});
+	});
+})();
+function gnJoin(done, caption){
+	if(done){ document.join_form.done.value = done; }
+	if(caption){ document.join_form.caption.value = caption; }
+	document.join_form.submit();
+}
+-->
+</script> 
+]PRE]
+
+[405] [CITE@en-us[Firefox 3.1 for developers - MDC]] ([TIME[2009-02-08 18:25:06 +09:00]] 版) <https://developer.mozilla.org/ja/Firefox_3.1_for_developers#HTML_.e3.81.ae.e5.a4.89.e6.9b.b4.e7.82.b9>
+
+>script 要素の defer 属性のサポートが実装されました。
+
+
+[406] [CITE[script要素のdefer属性の実装 - Thousand Years]] ([TIME[2009-02-03 20:39:32 +09:00]] 版) <http://d.hatena.ne.jp/shogo4405/20070306/1173160753>
+
+[407] [CITE[Firefox_3.5_for_developers#Miscellaneous_new_features]] (Referenced: [TIME[2009-07-12T21:29:47+09:00]])
+<https://developer.mozilla.org/en/Firefox_3.5_for_developers#Miscellaneous_new_features>
+
+
+[408] [CITE@en[(X)HTML5 Tracking]]
+([TIME[2009-08-08 01:13:50 +09:00]] 版)
+<http://html5.org/tools/web-apps-tracker?from=3549&to=3550>
+
+[409] [CITE[IRC logs: freenode / #whatwg / 20090721]]
+([TIME[2009-09-26 21:27:34 +09:00]] 版)
+<http://krijnhoetmer.nl/irc-logs/whatwg/20090721>
+
+[410] [CITE[IRC logs: freenode / #whatwg / 20090807]]
+([TIME[2009-10-06 00:19:08 +09:00]] 版)
+<http://krijnhoetmer.nl/irc-logs/whatwg/20090807>
+
+[411] [CITE@en[(X)HTML5 Tracking]]
+([TIME[2009-10-10 02:56:30 +09:00]] 版)
+<http://html5.org/tools/web-apps-tracker?from=4097&to=4098>
+
+[412] [CITE[IRC logs: freenode / #whatwg / 20100118]]
+([TIME[2010-01-20 07:35:37 +09:00]] 版)
+<http://krijnhoetmer.nl/irc-logs/whatwg/20100118#l-426>
+
+[413] [CITE[IRC logs: freenode / #whatwg / 20130528]]
+( ([TIME[2013-05-29 23:52:26 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20130528>

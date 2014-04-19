@@ -1,0 +1,107 @@
+
+[1] [CODE(DOM)[DOMString]] は、 [[DOM]] の仕様書やその [[IDL]]
+定義で使われている[[型]]です。
+多くの[[プログラム言語]]等に存在する[[文字列型]]の DOM
+版を特にこう呼ぶと考えて良いでしょう。
+
+[2] DOM は言語非依存を頑張ってるとか言ってるくせに、
+この [CODE(DOM)[DOMString]] にはかなり厳しい制限があります。
+それに場合によっては不合理な挙動も規定されています。
+
+[8] >>2 DOM 3 仕様書では [CODE(DOM)[DOMString]] の章は基本型の章の一部になりまして、
+基本型の章には [Q[bindings may use different types]<IW:DOM3:"Core/core.html#BasicTypes">]
+と書いてあるので、 [CODE(DOM)[DOMString]] 
+を使わないことでこの問題は回避できると思われます。
+
+(ただ、 [CODE(DOMa)[[[length]]]] 系で UTF-16 でないことによる面倒臭さは残りますが。)
+
+[3]
+- [CODE(DOM)[DOMString]] は連続する16ビット値です。 IDL
+的に書くと、 [CODE(IDL)[typedef sequence<unsigned short> DOMString;]] と表されます。
+- [[応用]]は [CODE(DOM)[DOMString]] を [[UTF-16]] で符号化しなければなりません。従って1文字が2つの16ビット値で表現される ([[サロゲート・ペア]]) こともあります。
+- [[束縛]]は [CODE(DOM)[DOMString]] という名前を使う必要はありません。例えば [[Java]] 束縛では、 [WEAK[(Java 標準の)]]
+[CODE(Java)[String]] 型 (こちらも UTF-16 で文字を表現。)
+を使います。
+
+[4] >>2 でいう不合理とは、具体的には、次の事項が挙げられます。
+- 処理系 native の文字列型の表現が UTF-16 以外の場合、それを流用できない。
+-- 例えば [[perl]] の内部表現は [[UTF-8]] を使っているが、この規定に厳密に従うなら、別途 UTF-16 表現の型を用意しないといけない。一つの script 内で、本質的に不必要な符号変換をしなければならなくなる。
+- UTF-16 の具体的な種類が規定されていない。 UTF-16
+には [[LE]] か [[BE]] かの違い、 [[BOM]] を使うか否かの違いがあるが、そこまで規定しないのは片手落ちだ。
+
+- [DOM1] ''Document Object Model (Core) Level 1'' <http://www.w3.org/TR/REC-DOM-Level-1/level-one-core.html#ID-C74D1578>
+- [DOM1ERRATA] ''Errata in REC-DOM-Level-1-19981001'' <http://www.w3.org/DOM/updates/REC-DOM-Level-1-19981001-errata.html>
+- [DOM2] ''Document Object Model Core'' <http://www.w3.org/TR/DOM-Level-2-Core/core.html#ID-C74D1578>
+- [DOM 3] 1.2.1 The [CODE(DOM)[DOMString]] Type
+<IW:DOM3:"Core/core.html#ID-C74D1578">
+- [6] [[length]] とかの DOM の文字列の長さを調べる仕組みが返す値は、すべて文字の数ではなく、16ビット単位の数になっています。ですから >>3 の規定を破る場合は、 [CODE(char)[U+10000]] 以上の値の文字が含まれる時に値を適当に増やすとかの工作が必要になります。
+- [7] >>5 [[正規化]]の問題については、 DOM 1 は検討中だとしています。
+
+[12]
+[CITE@en[Definition of DOMString]] ([[Cameron McCormack]] 著, [TIME[2007-05-18 17:28:44 +09:00]] 版) <http://lists.w3.org/Archives/Public/www-dom/2007AprJun/0005.html>
+([[名無しさん]])
+
+
+[[#comment]]
+
+
+* 比較
+
+[5] 文字列比較について。
+
+'''原則''': 文字列を構成する16ビット値をバイナリ比較します。
+すなわち、大文字・小文字は区別します。
+
+'''HTML の場合''': XML でなく従来の HTML を扱う場合、
+- HTML 処理器は[[名前]]を大文字 (ときたま小文字) に正規化する。[SUP[ [DOM 1,2] ]]
+- HTML 処理器はしばしば[[マーク]]を要素型名は大文字、属性名は小文字に正規化する。
+[SUP[ [DOM 3] ]]
+- DOM 構造を構築する前に大文字・小文字正規化が行う。[SUP[ [DOM 1,2] ]]
+- DOM 構造を構築する前にしばしば大文字・小文字正規化を行う。[SUP[ [DOM 3] ]]
+- DOM 的に比較の扱いは原則通り。[SUP[ [DOM 1,2] ]]
+- [[応用]]は DOM 実装から返された要素型名・属性名を大文字・小文字区別せずに比較するべき。
+[SUP[ [DOM 3] ]]
+
+'''正規化''':
+- 大文字・小文字以外の正規化は検討中。 [SUP[ [DOM 1,2] ]]
+- [[完全正規化]]形変換は[[直列化]]時その他に行う。 [SUP[ [DOM 3] ]]
+
+[9]
+仕様書:
+- [DOM 1] Core 1.1.6. Case sensitivity in the DOM
+<IW:DOM1:"level-one-core.html#ID-5DFED1F0">
+- [DOM 2] Core 1.1.7. String comparisons in the DOM
+<IW:DOM2:"Core/core.html#ID-5DFED1F0">
+- [DOM 3] Core 1.3.1 String Comparisons in the DOM
+<IW:DOM3:"Core/core.html#ID-5DFED1F0">
+
+[[#comment]]
+
+
+* 正規化
+
+[10] 文字群は次の時、 [[XML 1.1]] 附属書 B 
+で定義された通り[[完全正規化]]されています。 [SUP[ [DOM 3] ]]
+
+- 文書が読み込まれた時か、 XML 1.1 で定義されたとおり検査 (certify)
+した時に引数 [CODE(DOMp)[[[normalize-characters]]]] が [CODE(DOM)[[[true]]]]
+に設定された場合。
+- メソッド [CODE(DOM)[[CODE(DOMi)[[[Document]]]].[CODE(DOMm)[[[normalizedDocument]]]] ()]]
+またはメソッド [CODE(DOM)[[CODE(DOMi)[[[Node]]]].[CODE(DOMm)[[[normalize]]]] ()]]
+によって引数 [CODE(DOMp)[normalize-characters]]]] が [CODE(DOM)[true]]
+に設定された場合。
+
+この2つのメソッドの場合を除いて、一般に DOM 
+メソッドを使用した文字の操作で完全正規化状態が保存されることは保証されません。
+
+[[#comment]]
+
+
+* メモ
+
+[11] 特に [CODE(DOM)[DOMString]] が [[URI]] を表現する場合のことは
+[[DOM//URI]] をご覧ください。
+
+[13] [CITE[IRC logs: freenode / #whatwg / 20130809]]
+( ([TIME[2013-08-11 19:46:34 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20130809>

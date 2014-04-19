@@ -1,0 +1,331 @@
+
+[3] [DFN[UTF-7]] は [[UCS]] ([[ISO/IEC 10646]]/[[Unicode]])
+の[[符号化方式]]の一つで、 [CODE(char)[U+0080]]〜[CODE(char)[U+10FFFF]] を [[ASCII]]
+の[[図形文字]]に [[Base64]] を使って転写するものです。
+
+[[Experimental]] RFC である [[RFC 1642]] <urn:ietf:rfc:1642>
+で定義されていましたが、この RFC は [[RFC 2152]]
+<urn:ietf:rfc:2152> ([[Informational]])
+で廃止されました。 RFC 2152 は editorial な変更以外は
+RFC 1642 と同じ内容です。
+
+[12]
+UTF-7 は 7ビットの制限がある[[電子メイル]] (特に [[SMTP]])
+での使用を想定して設計されたものですが、現在では使用は非推奨とされています。 
+([[UTF-8]] を [[MIME]] の [[Base64]] で包むなりして送るのが [[IETF]] 
+のお勧めらしいです。)
+
+[[IMAP]] では[DFN[修正 UTF-7]] が使われています。
+
+[41]
+あ
+([[名無しさん]] [WEAK[2006-07-24 11:16:00 +00:00]])
+
+[[#comment]]
+
+
+* 符号化方式
+
+[13]
+:集合 D (直接符号化文字):[CODE(regex)['''['''A-Za-z0-9'(),-./:?''']''']]
+:集合 O (任意符号化文字):[CODE(regex)['''['''!"#$%&*;<=>@[]^_`{|}''']''']]
+:集合 B (修正 Base64):[[Base64]] 字母 ([CODE(char)[=]] を除く。)
+
+[14]
+[DFN[規則1 (直接符号化)]]: 集合 D と集合 O の文字は、そのまま
+1 オクテットの [[ASCII]] で符号化。集合 O 
+の文字は使用する頭欄や通過する関門によっては問題があり得るから注意。
+
+[15]
+[DFN[規則2 (Unicode シフト符号化)]]: 任意の Unicode 文字
+([[UTF-16BE]] で表したもの。) を[DFN[修正 [[Base64]]]]
+で符号化。この前に [CODE(char)[+]] を置く。これは集合 B に無い文字 
+([CODE(char)[[[CR]]]] や [CODE(char)[[[LF]]]] などを含む。) 
+が出現するまで続く。[Q[集合 B に無い文字]]が 
+[CODE(char)[-]] の時は、これを棄てる。
+
+規則2を別の言い方で説明すると、こう。任意の Unicode
+文字(列)は修正 Base64 で符号化して、頭とお尻に [CODE(char)[+]] と [CODE(char)[-]]
+をつける。但し、この塊の直後が集合 B に含まれない文字である場合は、
+[CODE(char)[-]] を省略しても良い。
+
+[CODE(char)[+-]] は、 [CODE(char)[+]] を表す。
+
+[16]
+[DFN[規則3]]: [CODE(char)[[[SP]]]] ([CODE(char)[U+0020]]), 
+[CODE(char)[[[HT]]]] ([CODE(char)[U+0009]]), [CODE(char)[CR]] ([CODE(char)[U+000D]]), 
+[CODE(char)[LF]] ([CODE(char)[U+000A]])
+は、そのまま1オクテットの ASCII で表現。
+
+[17]
+RFC 2152 は集合 O の [CODE(char)[`]] を [CODE(char)[']] に誤植しています。
+(RFC 1642 はあってるのに。) 気になるなら両方とも集合 O
+として扱うのが良いかもしれません。
+
+[18] これをみるとわかるように、 UTF-7 は他の UTF-8
+などの符号化方式とは違って UCS 専用の[[転送符号化]]のような趣です。
+Charset の一種ではなく、 [[MIME]] の一部であったなら、
+もう少しは普及したかもしれません。
+
+[[#comment]]
+
+
+* UTF-7 の修正 Base64
+
+[19] 基本的には [[MIME]] の [[Base64]] なのですが、
+詰め物 [CODE(char)[=]] は使わずに、 0 のビットがあるとして処理します。
+(復号の時は余ったのを棄てるだけで良い。)
+
+(だけど最後が [CODE(char)[U+0000]] だと困るような。 [CODE(char)[U+0000]] は 
+[CODE(char)[[[NUL]]]] だし、ステステなのかな。)
+
+[11] >>19 [[C]] 以来 (それ以前から??) [CODE(char)[[[NULL]]]] 
+って冷遇されてますよねぇ。 (っていうか [CODE(char)[NULL]] ってそういうもの?)
+
+[35]
+MIME の改行に関する規定もないことになってるような。 UTF-7 RFC にそう明記されていたっけ?
+([[名無しさん]])
+
+
+[46]
+配送明細
+([[名無しさん]] [WEAK[2007-12-07 09:10:50 +00:00]])
+
+
+[[#comment]]
+
+
+* Korean mess と UTF-7
+
+[1] 
+Charset 名 [CODE(charset)[UNICODE-1-1-UTF-7]] は、 [[Unicode 1.1]] 
+([[ハングルの大移動]]以前) のデータを UTF-7 
+で符号化したものに対して使います。
+
+[[#comment]]
+
+
+* 修正 UTF-7
+
+[24]
+[DFN[IMAP [RUBYB[修正] [modified]] UTF-7]] は、
+[[RFC 2060]] <urn:ietf:rfc:2060> ([[IMAP]]) 5.1.3 で定義されています。
+(決まった呼び名はなく、[Q[IMAP の UTF-7]] とか呼びたい人が好きな名前で呼んでいます。)
+
+[25]
+[CODE(char)[&]] を除く印字可能 ASCII 文字 ([CODE(char)[[[SP]]]] を含む。) は全て、
+そのままにします。
+それ以外の文字 ([[C0]], [CODE(char)[[[DEL]]]] を含む。) は修正修正 Base64 
+を使います。
+
+修正修正 Base64 は、前に [CODE(char)[&]] が、後に [CODE(char)[-]] が来ます。
+(明記されてはいませんが、修正前の UTF-7 とは異なり、 
+[CODE(char)[-]] は省略不能だと思います。)
+Base64 字母の [CODE(char)[/]] は
+[WEAK[IMAP 的意味との衝突防止から]] [CODE(char)[,]] で代用します。
+
+[CODE(char)[&-]] が [CODE(char)[&]] を表します。
+
+[27] これだけ違うと別の名前付けた方がよかったと思うぞ。
+[[#comment]]
+
+
+* UTF-7 を採用した規格
+
+[34] UTF-7 を積極的に (単なる可能な選択肢の一つとしてではなく、
+実装必須であろうが任意選択であろうが規格の完全な一部として)
+採用している規格には次のようなものがあります。
+
+- [[IMAP]]
+-- IMAP は名前に UTF-7 を使っています。但し、素の UTF-7
+ではなく、アルゴリズムが同じなだけで互換性のない修正版 UTF-7 です。
+- [[PICS]] ([CODE(MIME)[[[application/pics-service]]]])
+-- 記述に UTF-7 を使っています。
+-- 区切子と使う二重引用符以外の集合 O の文字は直接符号化します。
+-- 仕様書: [CITE[REC-PICS-services-961031]] 
+<http://www.w3.org/TR/REC-PICS-services#Syntax>
+
+[42]
+sdfs
+([[名無しさん]] [WEAK[2007-04-17 04:43:31 +00:00]])
+
+[[#comment]]
+
+
+* MIME での使用
+
+
+** 素の UTF-7
+
+[28]
+[[MIME]] で使用する時は、 [CODE(MIME)[[[charset]]]] 名 
+[CODE(charset)[UTF-7]] または
+[CODE(charset)[UNICODE-1-1-UTF-7]] (RFC 1642) を使います。
+
+IANA 登録簿に無い名前では、 [CODE(charset)[UTF7]], [CODE(charset)[CP65000]], 
+[CODE(charset)[UNICODE-2-0-UTF-7]],
+[CODE(charset)[UNICODE-2-0-UTF7]], [CODE(charset)[X-UNICODE-2-0-UTF-7]] 
+が観測されてます。
+
+[29]
+[[SMTP]] で使う時は、 [CODE(char)[LINE SEPARATOR]] ([CODE(char)[U+2028]]) tp
+[CODE(char)[PARAGRAPH SEPARATOR]] ([CODE(char)[U+2029]])
+を [CODE(char)[[[CRLF]]]] に変換してあげたら良さげ、って RFC 2152 に書いてあります。
+でも実際 [CODE(char)[LS]] とか [CODE(char)[PS]] を使ってる文書ってあるんですかね?
+
+[Q[[[MUST]]]] じゃないし、無視していいと思います。 [CODE(char)[PS]] を 
+[CODE(char)[CRLF]] に変換するのは明らかに情報劣化ですし。 
+(plain‐text で [CODE(char)[PS]] なんて使うなっていう
+話もありますが。)
+
+[[#comment]]
+
+
+** 修正 UTF-7
+
+[30]
+IMAP の修正 UTF-7 の名前としては、 [CODE(charset)[X-IMAP4-Modified-UTF7]],
+[CODE(charset)[UTF-7-for-IMAP]] が観測されてます。 
+IANA 登録簿に登録しようという動きがありましたが、情報交換用でない charset 
+を登録する必要は無いという意見があって、立ち消えになってしまいました。
+(登録派の意見は、プログラムの内部名として使うときに IANA 
+名が標準化されていたほうが便利、というもの。確かに根拠としては弱い。)
+
+ちなみに、 [[PHP]] では [CODE(charset)[UTF7-IMAP]] という名前を使っています。
+
+[[#comment]]
+
+
+** 内容転送符号化
+
+[36] [[MIME]] で使用する場合、 [CODE(MIME)[[[Content-Transfer-Encoding]]]]
+は不要です。 ([CODE(MIME)[[[7bit]]]] で十分です。)
+
+[[ASCII]] すら保証されない転送路 [WEAK[(いまどきあるのか?)]]
+を通す必要がある時は、適当な CTE を使うか、集合 O
+の文字も UTF-7 で修正 Base64 を使って符号化すればよいでしょう。
+(集合 D の文字が危険な場合は CTE を使うしかありません。
+[[関門]]などで charset を勝手に変えたくない場合も CTE を使うしかありません。)
+
+CTE を使う場合は [CODE(MIME)[[[Base64]]]] ではなく、
+[CODE(MIME)[[[Quoted-Printable]]]] を使うべきです。
+[CODE(MIME)[Base64]] を使うのは無駄過ぎです。
+
+[[#comment]]
+
+
+** 符号化語
+
+[37] [[MIME]] [CODE(ABNF)[[[encoded-word]]]] で使用する場合、
+[CODE(MIME)[[[B]]]] 符号化ではなく [CODE(MIME)[[[Q]]]]
+符号化を使うべきです。 (Base64 を使うのは無駄過ぎです。)
+ほとんどの場合は [CODE(MIME)[Q]] 符号化でも実質無変換で使用できます。
+
+[[#comment]]
+
+
+** その他
+
+[[#comment]]
+
+
+* CodePage
+
+[33] [[Windows CodePage]] 65000 が素の UTF-7 に割り当てられているようです。
+
+[[#comment]]
+
+
+* ファイル名
+
+[32] 素の UTF-7 で書かれた[[ファイル]]であることを[[ファイル名]]の[[接尾辞]]
+([[拡張子]]) を使って示すことがたまにあります。
+
+そのような場合に使われる接尾辞の例:
+- [SAMP(file)[.u7]]
+- [SAMP(file)[.utf7]]
+- [SAMP(file)[.utf-7]]
+
+[[#comment]]
+
+
+* 実装について
+
+[6] 古い [ABBR[[[NN]]] [[[Netscape Navigator]]]] は [CODE(char)[+-]] 
+に対応していないらしいです。。。
+
+[7] >>6 のように間違った実装では [CODE(char)[[[PLUS SIGN]]]] をそのまま 
+[CODE(char)[+]] と表すみたいです。
+
+[8] もし >>6-7 のような問題が気になるのなら、
+[CODE(char)[+]] は規則2で符号化することにすれば、(きっと) 問題ないでしょう。
+
+[32] [[Outlook Express]] (版不明) では、 UTF-7
+で本文を符号化すると、 [CODE(822)[[[Message-ID]]:]] 欄などでも意味もなく
+UTF-7 で符号化してしまうらしいです。 ([CODE(ABNF)[[[encoded-word]]]]
+などではなく、[[欄本体]]が生の UTF-7。)
+
+[[#comment]]
+
+
+* 例
+
+
+** 素の UTF-7
+
+- [20] [SAMP[A+ImIDkQ.]] (= [SAMP[A[CODE(char)[<NOT IDENTICAL TO>]]Α.]]) 
+([CODE(char)[U+0041]] [CODE(char)[U+2262]] [CODE(char)[U+0391]] [CODE(char)[U+002E]])
+- [21] [SAMP[Hi Mom -+Jjo--!]] (= [SAMP[Hi Mom -[CODE(char)[<WHITE SMILING FACE>]]-!]]) 
+([CODE(char)[U+0048]] [CODE(char)[U+0069]] [CODE(char)[U+0020]] 
+[CODE(char)[U+004D]] [CODE(char)[U+006F]] [CODE(char)[U+006D]] 
+[CODE(char)[U+0020]] [CODE(char)[U+002D]] [CODE(char)[U+263A]] 
+[CODE(char)[U+002D]] [CODE(char)[U+0021]])
+- [22] [SAMP[+ZeVnLIqe-]] (= [SAMP[日本語]]) 
+([CODE(char)[U+65E5]] [CODE(char)[U+672C]] [CODE(char)[U+8A9E]])
+- [23] [SAMP[Item 3 is +AKM-1.]] (= [SAMP[Item 3 is £1.]])
+
+(RFC 2152 より。この例はもはや伝説になりつつあるな。。)
+
+[[#comment]]
+
+
+** 修正 UTF-7
+
+- [26] [SAMP[~peter/mail/&ZeVnLIqe-/&U,BTFw-]]
+
+[[#comment]]
+
+
+* メモ
+
+[38]
+[CITE[スラッシュドット ジャパン | UTF-7エンコードされたタグ文字列によるXSS脆弱性に注意]] <http://slashdot.jp/security/05/12/21/2318216.shtml>
+([[名無しさん]] [WEAK[2005-12-22 01:14:03 +00:00]])
+
+[39]
+[CITE[Bug 4868 - ASCIIと互換性のない文字コードはユーザーの指定で選択可能にすべきでない]] <http://bugzilla.mozilla.gr.jp/show_bug.cgi?id=4868>
+
+>>38 の問題は[[UTF-7]]に限らずどんな[[文字コード]]でも、可能な[[ビット列]]の組合わせによって生じうる。
+
+([[名無しさん]] [sage])
+
+[40]
+[CITE[The Old New Thing : Some files come up strange in Notepad]] <http://blogs.msdn.com/oldnewthing/archive/2004/03/24/95235.aspx>
+
+[[BOM]]
+([[名無しさん]] [sage])
+
+[43]
+[CITE@en[I'm not a Klingon : Please avoid UTF-7]] ([CODE[2007-05-02 10:19:34 +09:00]] 版) <http://blogs.msdn.com/shawnste/archive/2007/05/01/please-avoid-utf-7.aspx>
+([[名無しさん]] [WEAK[2007-05-02 01:22:20 +00:00]])
+
+[44]
+>>43 UTF-8 over MIME が使えない legacy な mail/NNTP
+の実装ってあるのか? UTF-7 over MIME only な UA
+なんて UTF-7 がでてきた極々初期くらいにしか存在しなかったのでは?
+
+([[名無しさん]] [WEAK[2007-05-02 01:24:35 +00:00]])
+
+[45]
+[CITE[葉っぱ日記 - そろそろ UTF-7 について一言いっとくか]] ([CODE[2007-07-22 01:39:26 +09:00]] 版) <http://d.hatena.ne.jp/hasegawayosuke/20070717/p1>
+([[名無しさん]])

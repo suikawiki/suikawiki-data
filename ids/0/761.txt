@@ -1,0 +1,306 @@
+
+
+* [CODE(MIME)@en[Content-Transfer-Encoding:]] 頭欄 (MIME)
+
+[1]
+[[MIME]] [[実体]]の頭領域で、実体に使われている
+内容転送符号化 — CTE を示します。 CTE が使われていない時は、
+使っているオクテット種を示します。
+
+[34] 仕様書:
+- [[RFC 4409]] ([[IETF]] [[提案標準]])
+<urn:ietf:rfc:4409>
+-- [CSECTION@en[8.4.  Transfer Encode]]
+
+
+** 構文
+
+@@ BNF の章を書きなおす
+
+[[#comment]]
+
+
+** 値
+
+@@ 一覧表を書きなおす、メモで報告されている非標準の値も追加
+
+@@ [[転送符号化]]の WikiPage との関係はどうする??
+
+[[#comment]]
+
+
+** 既定値
+
+@@ [[MIME]] の規定は? [[電子メイル]]では
+[CODE(MIME)@en[[[7bit]]]]
+
+[35] '''BEEP'''
+
+[[BEEP]] で伝送される [[MIME実体]]に
+[CODE(MIME)@en[[[Content-Transfer-Encoding]]:]]
+[[頭欄]]が明記されていない場合の[[既定値]]は
+[CODE(MIME)@en[[[binary]]]]
+です。 [SRC@en[[[RFC 3080]] 2.2]]
+
+[[#comment]]
+
+
+** 未対応の値への対処
+
+@@ [[MIME]] によれば、 [CODE(MIME)@en[[[application/octet-stream]]]]
+とするべき
+
+* 応用
+
+** PO ファイル
+
+[225] [[GNU gettext]] により拡張された [[POファイル]]の[[頭部]]には
+[CODE(MIME)@en[[[MIME-Version]]]] 欄などと合わせて
+[CODE(MIME)@en[[[Content-Transfer-Encoding]]]] 欄を指定する必要がありますが、
+実際にはまったく意味を持ちません。値は常に [CODE(MIME)@en[[[8bit]]]] で構いません。
+
+** 関連
+
+[3] '''MSA との関係'''
+
+[[MSA]] は、必要で、かつ使用している 
+[CODE(MIME)@en[[[Content-Type]]]] に無害なら、
+[[転送符号化]]を適用[['''して構いません''']]。
+[SRC@en[[[RFC 4409]] 8.4]]
+
+@@ Content-Type, Content-Encoding, Transfer-Encoding
+との関係
+
+@@ Content-Type が CTE を限定している場合について
+
+[[#comment]]
+
+
+* RFC 2045 BNF
+
+= encoding := "Content-Transfer-Encoding" ":" mechanism
+= mechanism := "7bit" / "8bit" / "binary" / "quoted-printable" / "base64" / ietf-token / x-token
+
+値の大文字・小文字は区別しません。
+
+MIME での既定値は "7bit" です。
+[[HTTP]] には (RFC になった最終仕様には) CTE は存在しませんが、
+相当する既定値的なものは "binary" です。
+
+See also [[RFC-2045のCTE:の定義]]
+
+@@ 個別の CTE に関しては、個別の WikiPage
+に移動する
+
+
+* "7bit", "8bit" 転送符号化
+
+符号化無し。一行998オクテット以下 ([[SMTP]]の制限)で、
+行区切は CRLF。7ビットでは値 128 以上は出現しない。
+
+値 0 (NULL) は出現しない。 13 (CR) と 10 (LF) は CRLF
+以外としては出現しない。 
+
+
+* "binary" 転送符号化
+
+符号化無し、制限無しのオクテット列。 [[SMTP]] 電子メイル
+では使用不可。
+
+
+* ietf-token 転送符号化
+
+ietf-token の登録簿は
+<http://www.iana.org/assignments/transfer-encodings>。
+追加名は登録されていない。 MIME RFC は、相互通信性の観点から
+新しい CTE は定義するべきじゃないって言ってる。
+
+
+* x-token 転送符号化
+
+MIME 以前から使われて来た、 [[uuencode]] 用に、 x-uuencode
+とか x-uue とか x-uu とかが使われてる。
+
+x-gzip64 は、 gzip で圧縮して base64 したもの。
+Perl だと MIME::Decoder::Gzip64 てのがあるみたい。
+
+圧縮 CTE が MIME で標準化されてない理由みたいなもの
+<http://www.mew.org/ml/mew-dist-1.94/msg07639.html>。なるほど。
+納得できないけど理解はできるな。
+
+,7bit	,%x01-09 / %x0B-0C / %x0E-7F / CRLF	,[[MIME]]
+,8bit	,%x01-09 / %x0B-0C / %x0E-FF / CRLF	,[[MIME]]
+,base64	,64進数 [[Base64]]	,[[MIME]]
+,binary	,%x00-FF	,[[MIME]]
+,quoted-string	,=
+,x-gzip64	,GNU Zip + Base64
+,x-uu	,[[uuencode]]
+,x-uue	,uuencode
+,x-uuencode	,uuencode
+,x-uuencoded	,uuencode
+
+[30]
+Uuencode を表す [ABBR[CTE]] 名は MIME ができてすぐの頃から複数種類使われています。
+MIME が uuencode を採用しなかったのは電子メイル輸送路で必ずしも安全で無い文字を使うからで、 MIMEr の立場では uuencode は使うな、 Base64 を使え、ということで、そのために uuencode の [ABBR[CTE]] 名は標準化されませんでした。
+
+現実には、すべての [ABBR[MUA]] が MIME
+を実装したわけではなく、しかも Base64
+を復号するソフトウェアはまったく普及していなかったので (あるとしたら MIME 用ばかり)、 MIME MUA の利用者も含めた多くの人達が Base64 より uuencode を使いました。
+MIME を実装した MUA の開発者も、
+その需要に応えて uuencode を実装しましたが、その際に MIME の枠組みの中で [ABBR[CTE]] として使用するのは自然なことです。しかし標準化された [ABBR[CTE]]
+名はない。かくして数々の uuencode
+のための [ABBR[CTE]] 名が生まれることになったのです。
+(後から追加しようにも、 MIMEr に
+[ABBR[CTE]] の追加は RFC に書いてあるとおり、互換性のためによくないのだと一蹴されるだけです。)
+
+MIMEr としては彼らの目指す美しき将来を描いていたのでしょうが、現実を甘く見過ぎていたという点で、 MIME の失敗の一つと言えるでしょう。
+
+[[#comment]]
+
+
+* 仕様書から
+
+
+** RFC 1945 (HTTP/1.0) C.4; RFC 2068 (HTTP/1.1) 19.4.4; RFC 2616 (HTTP/1.1) 19.4.5 No Content-Transfer-Encoding
+
+> HTTP does not use the Content-Transfer-Encoding (CTE) field of [DEL[[DEL[RFC 1521]] [INS[MIME]]]] [INS[RFC 2045]].
+Proxies and gateways from MIME-compliant protocols to HTTP [DEL[must]] [INS[MUST]]
+remove any [DEL[[INS[{Errata で削除}]] non-identity]] CTE [DEL[[INS[{Errata で削除}]] ("quoted-printable" or "base64")]] encoding
+prior to delivering the response message to an HTTP client.
+
+[15] HTTP は RFC 2045 の Content-Transfer-Encoding ([[CTE]])
+欄を使いません。 MIME に従ったプロトコルから
+HTTP への串や関門は「同等」でない CTE ("quoted-printable" と
+"base64") 符号化を HTTP 
+クライアントへの応答メッセージで渡す前に解かなければ'''なりません'''。
+
+> Proxies and gateways from HTTP to MIME-compliant protocols are
+responsible for ensuring that the message is in the correct format
+and encoding for safe transport on that protocol, where "safe
+transport" is defined by the limitations of the protocol being used.
+Such a proxy or gateway [DEL[should]] [INS[SHOULD]] label the data with an appropriate
+Content-Transfer-Encoding if doing so will improve the likelihood of
+safe transport over the destination protocol.
+
+[16] HTTP から MIME 
+に従うプロトコルへの串と関門は、メッセージが適切な形式であってそのプロトコルでの安全な転送のために符号化することに責任を持ちます。
+ここで「安全な転送」とは、使用するプロトコルの制限により決まります。
+そうした串や関門は、向こうのプロトコルでの安全な転送のためになりそうであれば、適切な
+Content-Transfer-Encoding でデータを札付けする'''のが良いです'''。
+
+[INS[
+
+注意: 注記のない修正点は RFC 1945 → RFC 2068 もの。
+]INS]
+
+
+** RFC の部分の License
+
+[[RFCのライセンス]]
+
+
+* メモ
+
+- [2] [WEAK[2003-10-12 01:11:04 +00:00]] ''[[名無しさん]]'': [CODE(MIME)[8 bit]] っていう値を見ました。 spam でしたが。。。
+- [3] >>1 [CODE[MIME 形式]]という言葉はしばしば用いられますけど、その意味は曖昧ですよね。本当に MIME [[実体]]を指している事もあれば、単に [[Base64]] の意味だったり、 [[uuencode]] 風に Base64 を包んだものだったり、或いは[[媒体型]]のことを言っていたり。
+- [4] 腐った実装は [CODE(MIME)[7bits]] とかいう値を返したりするらしいですよ。
+- [5] >>4 <IW:Google:"\"Content-Transfer-Encoding: 7bits\"">, <IW:Google:"\"Content-Transfer-Encoding: 8bits\""> : 思った以上に引っ掛かりますよ。 WWW でこれだけ見つかるってことは潜在的にはかなりの量流通してそう。
+- [6] [SAMP(MIME)[Content-Transfer-Encoding: uuencode]] というのも結構あって、例えば [[Becky!]] なんかもこれの解読に対応しています : ''Becky! Ver.2の改版履歴'' <http://www.becky-users.net/history2.html>
+- [7] ''CBFlib Manual'' <http://www.iucr.org/iucr-top/cif/imgcif/CBFlib.html#3.2.1> : このソフトウェアはファイル形式に MIME を採用していますが、独自の CTE [CODE(MIME)[x-base8]], [CODE(MIME)[x-base10]], [CODE(MIME)[x-base16]] に対応しています。
+- [8] >>7 ''cbfext98 v0.7.1'' <http://www.iucr.org/iucr-top/cif/imgcif/cbfext98.html#_array_data.data> では [CODE(MIME)[x-base-8]] みたいに [CODE[-]] が3つ共に入ってます。おまけに [CODE(MIME)[base-64]] にまで入ってます。。。なお、 Base8/10/16 の説明はこの文書にあります。
+- [9] ''The ISG+IRT/JIM System: Quick Tour - Demonstration On-Line'' <http://www.cc.gatech.edu/projects/calton+morimori/ISG+IRT-JIM/MMFR-000920-01/demo1.html> : [[XML]] で MIME もどきの語彙を使ってますが、 CTE の値に [CODE(MIME)[X-URL]] というのが使われています。 [[URI符号化]]かと思えばそうではなくて、 [CODE(MIME)[Content-Type: [[message/external-body]]; [[access-type]]=[[url]]]] みたいな意味 (本体が URI) のようです。
+- [10] ''ContentTransferEncodingプロパティ'' <http://www.hitachi-to.co.jp/prod/prod_2/inter/emk/help/IMimeEntity/property/IMimeEntityContentTransferEncoding.htm> : この実装は [CODE(MIME)[7-bit]], [CODE(MIME)[8-bit]], [CODE(MIME)[x-uu]], [CODE(MIME)[x-uue]], [CODE(MIME)[x-uuencode]], [CODE(MIME)[uu]], [CODE(MIME)[uue]], [CODE(MIME)[uuencode]], [CODE(MIME)[x-xx]], [CODE(MIME)[x-xxe]], [CODE(MIME)[x-xxencode]], [CODE(MIME)[xx]], [CODE(MIME)[xxe]], [CODE(MIME)[xxencode]], [CODE(MIME)[x-binhex]], [CODE(MIME)[x-gzip64]], [CODE(MIME)[gzip64]] に触れています。
+- [11] 何らかの理由で [CODE(MIME)[x-unknown]] を送る MUA があるっぽい。
+- [12] uuencode 系の中では、 [CODE(MIME)[x-uuencode]] が一番多くの MUA に理解されそうです。なんとなくですが。
+
+[13] ''File - ドリームキャストでできること'' <http://www.mars.jstar.ne.jp/~a_zone/dc/file.htm> : [CODE(MIME)[x-dreamcast-file]] というのを使ってます。単に [CODE(MIME)[binary]] のような気がしますが。。。
+
+謎ですが意外と用例が見つかります。
+なんでそんなに普及してるんでしょう? わけがわからん。
+
+[14] ''Bommanews technical'' <http://b-news.sourceforge.net/tech.html> : 内部用として、 [CODE(MIME)[X-Bommanews-[VAR[224]]-[VAR[ZZZ]]]] というのを使っています。 [VAR[224]] は使用オクテット数 (0x20〜0xFF で 224), [VAR[ZZZ]] は encoding block size で現時点では [CODE[40]] 固定。
+
+内部用なのにニュースにうじゃうじゃ流れていたりします。なぜか。
+なお、
+[CODE(MIME)[X-Bommanews-224-40]] 以外の実例はまだ見つかっていません。
+
+- [15] [CODE(MIME)[x-pp-base128]] : 8ビットの怪しい形式 (参考 ''PostPet V3はOpenGL採用'' <http://slashdot.jp/comments.pl?sid=39332&cid=150006>)
+- [16] [CODE(MIME)[x-ferrum-uids]] : ''IronDoc febase.h'' <http://www.treedragon.com/ged/irondoc/febase.htm#fe_box>
+- [17] >>15 [CODE(MIME)[[[x-postpet/*]]]] という媒体型でセットで使われるみたい。 CTE と CT を分離できるものなのかは不明。
+- [18] >>16 [CODE(MIME)[[[x-ferrum-head/*]]]] 又は [CODE(MIME)[[[x-ferrum-menu/*]]]] という媒体型とセットで使用されるぽ。
+- [19] [CODE(MIME)[X-Zm-base64]] : Zm は MUA 名の略号だろうな。 <http://hp.ujf.cas.cz/mail/WA98_official/199707/19970718.html> に例があるけど、単なる [[Base64]]。
+- [20] ''The Information and Content Exchange (ICE) Format and Protocol'' <http://www.w3.org/TR/1998/NOTE-ice-19981026> : 純粋に MIME ではありませんが、 MIME から「派生した」 [CODE(XML)[content-transfer-encoding]] 属性の値は [CODE(MIME)[x-native-xml]] 又は [CODE(MIME)[base64]] とされています。前者は、 [[XML]] の標準の方法で[[文字実体]]を使うんだ云々といっていますが、実際には実体の展開は XML 処理系の仕事ですから、 XML 文書内における [CODE(MIME)[7bit]] とか [CODE(MIME)[8bit]] とか [CODE(MIME)[binary]] に相当するものとみていいでしょう。
+
+[21] [CODE(MIME)[gzip]] というのもしばしば見かけますが、ほとんどが [[HTTP]] での用例なので [CODE(HTTP)[[[Content-Encoding]] と勘違いしているのでしょう。ほんとにそんなので機能しているのですかね? ([[WWWブラウザ]]で見て確認くらいしないのかなー。)]]
+
+[28] >>21 [CODE(MIME)[x-gzip]] というのも多数。
+どこまで本気なんだか。。。
+
+- [22] [CODE(MIME)[x-ace]] : 電子メイルで [[IDN]] どうするよ? と IDN ML でちょっと話題になったものですが、具体的に形式がどうとかいう話にまでは至ってないみたいです。
+- [23] [CODE(MIME)[x-base65]] : <http://groups.google.com/groups?selm=3AB60548.B2C16EF0%40remotepoint.com> 
+- [24] >>23 他に用例がないし、字母が64文字しか見つかってないし、彼が base65 って何よ? とたずねても誰も知る人がいないし、なんかの間違いのような気もするんだけど、 [CODE(MIME)[base65]] じゃなくて [CODE(MIME)[x-base65]] ってのは奇妙な間違い方ではあるんだよなあ。
+
+[25] >>10 xxe ってのは実際用例はあるんだけど正体がよくわかんない。
+
+[29] >>25 uuencode
+変種で、字母に [CODE[+-0〜9A〜Za〜z]] を使うものらしい。
+
+- [26] [CODE(MIME)[x-custom3to4]] : 不明。 [[uuencode]] のような感じだけど、違うものなのかな? 誰か検証してください。
+
+[27]
+[CODE(MIME)[x-pgp-[VAR[version]]]] : [[PGP/MIME]] を CTE として実現しようとした過去の案。実際に仕様としてまとめた草案や実装や用例があるのかは不明。
+
+[28] [CODE(MIME)[x-yenc]] : [[yEnc]]。
+関連 ML で激論になった曰くつき。[WEAK[おかげで yEnc 界の一部は MIME 嫌いになったとかならないとか。]]
+
+なんだかんだでも結局用例はあります。
+本体は [CODE(MIME)[x-uuencode]] のように、 yEnc
+の符号化をまるごと (メタ情報部も含めて) つっこみます。
+
+なかには、こんな素晴らしいのもありました。
+[PRE[
+Content-Type: application/binary
+Content-Transfer-Encoding: x-yenc; line=128; size=2345436;
+  name=021005-301.dwg.zip
+]PRE]
+
+謎の[[媒体型]] [CODE(MIME)[[[application/binary]]]]
+もそうですが、 CTE で引数を使っているのが素敵。
+[WEAK[(CTE でも引数を使うのは、 MIME のもともとの思想には反するけど、妥当な態度だと思いますよ。現状では規格違反ですが。[WEAK[(一般論としては正しいと思うんですが、 yEnc の場合本体のめた情報として line とか size とか name とかを持ってるんですよね。それを MIME のレベルで重複させる意味があるのかは謎。それとも純粋な yEnc (謎) を CTE として使って、メタ情報は MIME レベルで指定しようという意味なのかなあ。)]])]]
+
+[25] [CODE(MIME)[x-usercode]] : xxencode のように見えるけど謎。
+
+[31]
+[SAMP(HTTP)[Content-Transfer-Encoding: packet]] というのが提案されたこともありました。 (今の [SAMP(HTTP)[[[Transfer-Encoding]]: [[chunked]]]])
+
+[33]
+[CODE(MIME)[plain]]: spam で流行中らしいです
+([[名無しさん]] [WEAK[2004-06-13 13:19:31 +00:00]])
+
+[36]
+無料の[[電子メイル]]・サービスや[[メイリング・リスト]]などでは、
+[[メッセージ]]の[[本文]]の最初や最後に[[広告]]や[[メイリング・リスト]]情報などをつけたすことがあります。
+往々にして [CODE(MIME)@en[[[Content-Type]]:]] や
+[CODE(MIME)@en[[[Content-Transfer-Encoding]]:]]
+に対応していないので、非 [CODE(MIME)@en[[[text/plain]]]]
+[[メッセージ]]や [[Base64]] 化された[[メッセージ]]は壊れてしまうことがあります。
+([[名無しさん]])
+
+[37]
+元々[[合成型]]] ([CODE(MIME)@en[[[message/[VAR[*]]]]]] や 
+[CODE(MIME)@en[[[multipart/[VAR[*]]]]]])
+での (非[[同一]]) [[内容転送符号化]] ([[Base64]] など) の使用が禁止されていましたが、
+[CODE(MIME)@en[[[message/[VAR[*]]]]]] については [[RFC 5335]]
+で緩和され、[[亜型]]毎に個別に禁止するか規定できるようになりました
+(従来の[[亜型]]については禁止のままです)。実際に
+[CODE(MIME)@en[[[message/global]]]] では[[内容転送符号化]]の使用が認められています。
+
+;; 詳しくは、個々の[[媒体型]]の記事を参照。
+
+([[名無しさん]])
+
+
+
+[226] [CITE@en[RFC 2660 - The Secure HyperText Transfer Protocol]]
+( ([TIME[2013-07-20 22:21:48 +09:00]] 版))
+<http://tools.ietf.org/html/rfc2660#section-2.5>

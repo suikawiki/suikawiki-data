@@ -1,0 +1,1353 @@
+
+@@ 
+[1] 
+This is the work-in-progress
+specification for the manakai's DOM binding for Perl.
+This specification only scopes [[manakai]]'s DOM implementation;
+it does not try to define what any other DOM implementation
+should do.  However, other DOM implementation
+that exposes interfaces to Perl scripts '''[[MAY]]''' use this binding.
+
+@@ 
+[2] TODO:
+- Truck the draft for the ECMAScript binding authored by
+W3C Web APIs WG
+- Write comparison with SVGT 1.2's DOM Perl Language Binding
+- [CITE@en-US[XML Binding Language (XBL) 2.0]] ([TIME[2007-03-16 13:20:16 +09:00]] 版) <http://www.w3.org/TR/xbl/#xbl-element-example>
+- The global object ([CODE(DOMi)@en[[[Window]]]])
+
+
+* Conformance
+
+@@ 
+
+[48] Statements about conformance in this specification
+are only applied to implementations that support related
+feature.  For example, [['''MUST''']]-level requirements
+for treatement of the [CODE(DOMi)@en[[[EventHandler]]]] objects
+do not apply to implementations that do not support
+DOM Events module.
+
+
+* Objects and interfaces
+
+[3]
+A DOM object, i.e. an object implementing one
+or more DOM interfaces, '''[[MUST]]''' be represented
+by a Perl object, i.e. a thingly referenced
+by some Perl references and [CODE@en[bless]]ed in
+a Perl class, unless otherwise specified.
+The Perl class '''[[MUST]]''' implement 
+the DOM interfaces implemented by the DOM object.
+
+@@ better wording, getFeature consideration
+
+[114] The class implementing a DOM interface [['''MAY''']] inherit non-DOM classes.
+
+[EG[
+[115] For example, the class implementing the [CODE(DOMi)@en[[[DOMException]]]] interface
+might inherit a class that defines the exception mechanism the implementation is build on top of it.
+Another example is that any class implementing DOM interfaces might inherit from the "object"
+base class provided by the object-orient programming framework used by the implementation.
+]EG]
+
+[117] The implementation [['''MAY''']] provide ways to determine whether an object implements
+a specific DOM interface or not.  However, this is not required.
+
+[66] Specifications often requires that two objects be ''same''.  They don't have to be same object in Perl
+sense, but they have to exhibit following characteristics:
+- [67] Two objects [['''MUST''']] be equal according to [CODE(perl)@en[[[eq]]]] operation if and only if 
+they are ''same''.  Operations [CODE(perl)@en[[[ne]]]] and [CODE(perl)@en[[[cmp]]]] [['''MUST''']] be 
+consistent with the [CODE(perl)@en[[[eq]]]] operation.
+- [68] If the stringifier is not defined for the object, its stringified value [['''MUST''']]
+be different from the stringified value of any object without stringifier at the moment.
+The stringified value [['''MUST NOT''']] change.
+
+;; [69] >>68 ensures that following code works as intended:
+[PRE(example perl code)[
+@different_parents = grep { not $found{$node->parent_node}++ } @node;
+]PRE]
+
+* Methods and attributes
+
+[5]
+A [[DOM]] method [['''MUST''']] be implemented as a [[Perl]] method.
+
+[6]
+A read-only [[DOM]] attribute [['''MUST''']] be implemented as
+a [[Perl]] method that returns the value contained in the [[DOM]] attribute.
+The [[Perl]] method [['''MAY''']] throw an implementation
+dependent exception if any argument is specified for the [[Perl]] method.
+
+[7]
+A read-write [[DOM]] attribute [['''MUST''']] be implemented as
+a [[Perl]] method.  The [[Perl]] method [['''MUST''']] return
+the value contained in the [[DOM]] attribute if no argument is
+specified for the [[Perl]] method (i.e. the only argument to
+the subroutine implementing the [[Perl]] method is the object itself).
+Otherwise, the [[Perl]] method [['''MUST''']] try to set
+the first argument specified for the method (i.e. the
+second argument to the subroutine implementing the
+[[Perl]] method) to the [[DOM]] attribute.
+
+;; Note that specifying [CODE(perl)@en[[[undef]]]]
+as the argument to the [[Perl]] method, which
+set the [CODE(DOM)@en[[[null]]]] value
+to the [[DOM]] attribute, is different from
+specifying no argument, which returns the [[DOM]]
+attribute value.
+
+[8]
+A [[DOM]] parameter to a method is [DFN@en[optional]] if
+either [CODE(DOM)@en[[[null]]]] or [CODE(IDL)@en[[[boolean]]]]
+[CODE(DOM)@en[[[false]]]] value is allowed to be specified
+to that parameter and any following [[DOM]] parameter
+is optional.
+
+The [[Perl]] method [['''MUST''']] act as if an [CODE(perl)@en[[[undef]]]]
+or a [[Perl]] false value, depending on the data type of the parameter,
+is specified to each optional parameter if no argument
+corresponding to that parameter is specified.
+
+[98] If the return value of the operator is defined as [[void]], the method implementing the operation
+[['''MUST''']] return an empty list.
+
+[123] Since Perl objects can be overloaded such that stringification and similar operations can be
+defined by the application, it is important to ensure the conversion from the Perl value to the WebIDL
+value is performed in the right way.
+
+[EG[
+[124] Following pairs of code fragments can make different side effects:
+[PRE(perl code)[
+## Evaluation order is significant.
+$v1 = [SPAN[']]'.$_[1];
+$v2 = [SPAN[']]'.$_[2];
+
+$v2 = [SPAN[']]'.$_[2];
+$v1 = [SPAN[']]'.$_[1];
+
+
+## Three serializations can be different.
+$v1 = [SPAN[']]'.$_[1];
+
+$v1 = 0+$_[1];
+
+$v1 = !!$_[1];
+
+
+## Whether the overloaded operation has been invoked or not is observable.
+$v1 = [SPAN[']]'.$_[1];
+$v2 = [SPAN[']]'.$_[2];
+return;
+
+$v1 = [SPAN[']]'.$_[1];
+return if $v1; # or throw an exception
+$v2 = [SPAN[']]'.$_[2];
+return;
+
+
+## How many times overloaded operation has been invoked is observable.
+$v1 = [SPAN[']]'.$_[1];
+$v1 = [SPAN[']]'.$_[1];
+
+$v1 = [SPAN[']]'.$_[1];
+]PRE]
+]EG]
+
+* Constants
+
+[62] When a constant is defined by some interface, any platform object implementing the interface [['''MUST''']]
+have a method whose name is equal to the constant name.  The method [['''MUST''']] return the constant value.
+
+[65] Any class implementing the interface [['''SHOULD''']] have a method whose name is equal to the constant name.
+If there is such a method, it [['''MUST''']] return the constant value.
+
+[63] If there is a module corresponding to the interface, it [['''MAY''']] have a constant subroutine
+whose name is equal to the constant name.  If there is such a constant subroutine, it
+[['''MUST''']] return the constant value.  It [['''MAY''']] be exported from the module.
+
+;; [64] If an implementation supports all of these constant representations, the [CODE(DOMc)@en[[[ELEMENT_NODE]]]]
+constant of the [CODE(DOMi)@en[[[Node]]]] interface can be used like this:
+[PRE(perl example code)[
+# >>62
+is $node->ELEMENT_NODE, 1;
+
+# >>65
+is +MyDOM::Node->ELEMENT_NODE, 1;
+
+# >>63
+use MyDOM::Node;
+is ELEMENT_NODE, 1;
+]PRE]
+Since module or class name appears in invocations of >>65 and >>63, they are not portable among implementations
+by definition, which is why they are not a MUST-level requirement.  Note that when a constant is exported as
+mentioned in >>63, whether it is exported by default or not is implementation dependent.  Moreover,
+it can be exported as part of some tag (e.g. [CODE[:node_type]]) if desired.
+
+* Exceptions and errors
+
+[9]
+Throwing an exception [['''MUST''']] be implemented by [[Perl]]
+[CODE(perl)@en[[[die]]]] function.  If the exception is one
+defined in DOM specification, the argument to the
+[CODE(perl)@en[[[die]]]] function [['''MUST''']]
+be an object implementing the associated exception interface.
+
+[DEL[
+;; [53] Implementations are encouraged to employ the
+[CODE(perl)@en[[[Error]]]] module as a basis
+to construct their own exception mechanism.
+]DEL]
+
+[54] The [CODE(DOMi)@en[[[Error]]]] object and the [CODE(DOMi)@en[[[TypeError]]]] object
+as defined in the [[WebIDL]] specification [['''MUST''']] be implemented as if they were
+defined by following [[WebIDL]] fragment:
+[FIG[
+[PRE(IDL code)[
+// XXX constructor
+interface Error {
+  readonly attribute DOMString name;
+  readonly attribute DOMString message;
+  readonly attribute DOMString fileName;
+  readonly attribute long lineNumber;
+  stringifier DOMString ();
+  // XXX readonly attribute DOMString stack;
+};
+
+[Constructor(optional DOMString message)]
+interface TypeError : Error {
+  
+};
+]PRE]
+]FIG]
+
+[55] The [DFN[[CODE(DOMa)@en[[[name]]]]]] attribute [['''MUST''']] return the name [SRC[WebIDL]]
+of the exception.
+
+[56] The [DFN[[CODE(DOMa)@en[[[message]]]]]] attribute [['''MUST''']] return the message [SRC[WebIDL]]
+of the exception.
+
+[57] The [DFN[[CODE(DOMa)@en[[[fileName]]]]]] attribute [['''MUST''']] return the string identifying
+the file where the method or attribute that throws the exception is invoked.
+The [DFN[[CODE(DOMa)@en[[[lineNumber]]]]]] attribute [['''MUST''']]
+return the line number in the file, where the method or attribute that throws the exception is invoked.
+How to determine the these values are implementation dependent.
+
+[58] The stringifier [SRC[WebIDL]] method [['''MUST''']] return the message [SRC[WebIDL]]
+followed by string [CODE[ at ]] followed by the [CODE(DOMa)@en[[[fileName]]]] followed by string
+[CODE[ line ]] followed by stringified [SRC[XXXref]] representation of [CODE(DOMa)@en[[[lineNumber]]]] followed
+by [CODE[.]] followed by the value equal to Perl expression [CODE(perl)["\n"]].
+
+[76] The [[constructor]] of the [CODE(DOMi)@en[[[TypeError]]]] interface [['''MUST'''']] follow
+these steps:
+[FIG[
+= [77] Let [VAR@en[error]] be a new [CODE(DOMi)@en[[[TypeError]]]] object.
+= [78] If [VAR[message]] is specified but is not [CODE@en[[[null]]]],
+let [[message]] of the [VAR@en[error]] be the stringified value of [VAR[message]].
+= [79] Return [VAR@en[error]].
+]FIG]
+
+[59] Any exception [['''MUST''']] inherit the class for the [CODE(DOMi)@en[[[Error]]]] interface.
+
+@@ Constructor
+
+[116] The [CODE(DOMi)@en[[[DOMError]]]] object's [CODE(perl)[[[""]]]] operation [['''MUST''']]
+return the implementation-specific value that describes the error.
+
+* Events
+
+@@ ...
+
+* Method names
+
+[15] The name of the method corresponding to an IDL attribute or method [['''MUST''']] be the value
+returned by the following steps:
+[FIG[
+= Let [VAR@en[n]] be the name of the IDL attribute or method.
+= If it is an IDL attribute and the IDL attribute [[reflect]]s the content attribute with
+name [VAR@en[attr]]:
+== If [VAR@en[n]] is equal to [VAR@en[attr]] [[ASCII case-insensitively]], return [VAR@en[attr]] and abort these steps.
+= Otherwise, if it is a [[camel-cased attribute]] <http://dev.w3.org/csswg/cssom/#dom-cssstyledeclaration-camel-cased-attribute>
+of the [CODE(DOMi)@en[[[CSSStyleDeclaration]]]] interface:
+== Let [VAR@en[prop]] be the result of the [[IDL attribute to CSS property]] algorithm for the attribute.
+== Replace any [CODE(char)[[[-]]]] character in [VAR@en[prop]] by the [CODE(char)[[[_]]]] character.
+== Return [VAR@en[prop]] and abort these steps.
+= If the [CODE[method_name_map]] JSON object in <https://github.com/manakai/data-web-defs/blob/master/data/dom-perl.json>
+contains a name [VAR@en[name]], return the corresponding value and abort these steps.
+== [DEL[If there is a row in the table >>14 whose first column is equal to [VAR@en[n]], return the value of the second column of the row and abort these steps.]]
+= Otherwise, replace a sequence of one or more uppercase
+letters at the end of [VAR@en[n]], if any, by the lowercase
+variant of the sequence.
+= Replace any sequence of two or more uppercase letters
+in [VAR@en[n]] by a sequence of a 
+[CODE(charname)@en[[[LOW LINE]]]] character, 
+the lowercase variant of the sequence except the last letter, 
+a [CODE(charname)@en[[[LOW LINE]]]] character,
+and the lowercase variant of the last letter of the sequence.
+= Replace any uppercase letter 
+by a [CODE(charname)@en[[[LOW LINE]]]] character
+followed by the lowercase variant of the letter.
+= Then, return [VAR@en[n]].
+]FIG]
+
+[EG[
+[139] For example, [CODE(DOMa)@en[[[localName]]]]
+is mapped to [CODE(perl)@en[[[local_name]]]],
+[CODE(DOMm)@en[[[setAttributeNS]]]] to
+[CODE(perl)@en[[[set_attribute_ns]]]],
+[CODE(DOMm)@en[[[createLSInput]]]] to
+[CODE(perl)@en[[[create_ls_input]]]], and
+[CODE(DOMa)@en[[[MozBoxSizing]]]] to
+[CODE(perl)@en[[[_moz_box_sizing]]]].
+]EG]
+
+[EG[
+[140] If a random interface defines the [CODE(DOMa)@en[[[itemId]]]] attribute, its Perl name is 
+[CODE(perl)[item_id]].  However, since the [CODE(DOMa)@en[[[itemId]]]] attribute of the
+[CODE(DOMi)@en[[[HTMLElement]]]] interface [[reflects]] the [CODE(HTMLa)@en[[[itemid]]]]
+[[content attribute]], its Perl name is [CODE(perl)[itemid]].
+]EG]
+
+[DEL[
+[14]
+'''Exceptions'''.
+,[[DOM]]	,[[DOM Perl Binding]]	,Note
+,[CODE(DOMa)@en[[[accessKey]]]]	,[CODE(perl)@en[[[accesskey]]]]	,"[CODE(DOMi)@en[[[HTMLInputElement]]]], [CODE(DOMi)@en[[[HTMLTextAreaElement]]]], [CODE(DOMi)@en[[[HTMLButtonElement]]]], [CODE(DOMi)@en[[[HTMLLabelElement]]]], [CODE(DOMi)@en[[[HTMLLegendElement]]]], [CODE(DOMi)@en[[[HTMLAnchorElement]]]], [CODE(DOMi)@en[[[HTMLAreaElement]]]] ([[DOM HTML]])"
+,[CODE(DOMa)@en[[[aLink]]]]	,[CODE(perl)@en[[[alink]]]]	,[CODE(DOMi)@en[[[HTMLBodyElement]]]] ([[DOM HTML]])
+,[CODE(DOMa)@en[[[bgColor]]]]	,[CODE(perl)@en[[[bgcolor]]]]	,"[CODE(DOMi)@en[[[HTMLDocument]]]], [CODE(DOMi)@en[[[HTMLBodyElement]]]], [CODE(DOMi)@en[[[HTMLTableElement]]]], [CODE(DOMi)@en[[[HTMLTableRowElement]]]], [CODE(DOMi)@en[[[HTMLTableCellElement]]]] ([[DOM HTML]])"
+,[CODE(DOMa)@en[[[cellPadding]]]]	,[CODE(perl)@en[[[cellpadding]]]]	,[CODE(DOMi)@en[[[HTMLTableElement]]]] ([[DOM HTML]])
+,[CODE(DOMa)@en[[[cellSpacing]]]]	,[CODE(perl)@en[[[cellspacing]]]]	,[CODE(DOMi)@en[[[HTMLTableElement]]]] ([[DOM HTML]])
+,[CODE(DOMa)@en[[[codeBase]]]]	,[CODE(perl)@en[[[codebase]]]]	,"[CODE(DOMi)@en[[[HTMLObjectElement]]]], [CODE(DOMi)@en[[[HTMLAppletElement]]]] ([[DOM HTML]])"
+,[CODE(DOMa)@en[[[codeType]]]]	,[CODE(perl)@en[[[codetype]]]]	,[CODE(DOMi)@en[[[HTMLObjectElement]]]] ([[DOM HTML]])
+,[CODE(DOMa)@en[[[colSpan]]]]	,[CODE(perl)@en[[[colspan]]]]	,[CODE(DOMi)@en[[[HTMLTableCellElement]]]] ([[DOM HTML]])
+,[CODE(DOMm)@en[[[createTFoot]]]]	,[CODE(perl)@en[[[create_tfoot]]]]	,[CODE(DOMi)@en[[[HTMLTableElement]]]] ([[DOM HTML]])
+,[CODE(DOMm)@en[[[createTHead]]]]	,[CODE(perl)@en[[[create_thead]]]]	,[CODE(DOMi)@en[[[HTMLTableElement]]]] ([[DOM HTML]])
+,[CODE(DOMa)@en[[[dateTime]]]]	,[CODE(perl)@en[[[datetime]]]]	,[CODE(DOMi)@en[[[HTMLModElement]]]] ([[DOM HTML]])
+,[CODE(DOMa)@en[[[dateTime]]]]	,[CODE(perl)@en[[[datetime]]]]	,[CODE(DOMi)@en[[[HTMLTimeElement]]]] ([[DOM HTML]])
+,[CODE(DOMm)@en[[[deleteTFoot]]]]	,[CODE(perl)@en[[[delete_tfoot]]]]	,[CODE(DOMi)@en[[[HTMLTableElement]]]] ([[DOM HTML]])
+,[CODE(DOMm)@en[[[deleteTHead]]]]	,[CODE(perl)@en[[[delete_thead]]]]	,[CODE(DOMi)@en[[[HTMLTableElement]]]] ([[DOM HTML]])
+,[CODE(DOMm)@en[[[findOffset16]]]]	,[CODE(perl)@en[[[find_offset_16]]]]	,[CODE(DOMi)@en[[[StringExtended]]]] ([[DOM Core]] informative)
+,[CODE(DOMm)@en[[[findOffset32]]]]	,[CODE(perl)@en[[[find_offset_32]]]]	,[CODE(DOMi)@en[[[StringExtended]]]] ([[DOM Core]] informative)
+,[CODE(DOMa)@en[[[frameBorder]]]]	,[CODE(perl)@en[[[frameborder]]]]	,"[CODE(DOMi)@en[[[HTMLFrameElement]]]], [CODE(DOMi)@en[[[HTMLIFrameElement]]]] ([[DOM HTML]])"
+,[CODE(DOMm)@en[[[getAbsoluteReference3986]]]]	,[CODE(perl)@en[[[get_absolute_reference_3986]]]]	,[CODE(DOMi)@en[[[URIReference]]]] ([[manakai]]'s extension)
+,[CODE(DOMm)@en[[[getAbsoluteReference3987]]]]	,[CODE(perl)@en[[[get_absolute_reference_3987]]]]	,[CODE(DOMi)@en[[[URIReference]]]] ([[manakai]]'s extension)
+,[CODE(DOMm)@en[[[getIRIReference3987]]]]	,[CODE(perl)@en[[[get_iri_reference_3987]]]]	,[CODE(DOMi)@en[[[URIReference]]]] ([[manakai]]'s extension)
+,[CODE(DOMm)@en[[[getURIReference3986]]]]	,[CODE(perl)@en[[[get_uri_reference_3986]]]]	,[CODE(DOMi)@en[[[URIReference]]]] ([[manakai]]'s extension)
+,[CODE(DOMa)@en[[[isAbsoluteIRI3987]]]]	,[CODE(perl)@en[[[is_absolute_iri_3987]]]]	,[CODE(DOMi)@en[[[URIReference]]]] ([[manakai]]'s extension)
+,[CODE(DOMa)@en[[[isAbsoluteURI3986]]]]	,[CODE(perl)@en[[[is_absolute_uri_3986]]]]	,[CODE(DOMi)@en[[[URIReference]]]] ([[manakai]]'s extension)
+,[CODE(DOMa)@en[[[isIRI3987]]]]	,[CODE(perl)@en[[[is_iri_3987]]]]	,[CODE(DOMi)@en[[[URIReference]]]] ([[manakai]]'s extension)
+,[CODE(DOMa)@en[[[isIRIReference3987]]]]	,[CODE(perl)@en[[[is_iri_reference_3987]]]]	,[CODE(DOMi)@en[[[URIReference]]]] ([[manakai]]'s extension)
+,[CODE(DOMa)@en[[[isMap]]]]	,[CODE(perl)@en[[[ismap]]]]	,[CODE(DOMi)@en[[[HTMLImageElement]]]] ([[DOM HTML]])
+,[CODE(DOMa)@en[[[isRelativeIRIReference3987]]]]	,[CODE(perl)@en[[[is_iri_reference_3987]]]]	,[CODE(DOMi)@en[[[URIReference]]]] ([[manakai]]'s extension)
+,[CODE(DOMa)@en[[[isRelativeReference3986]]]]	,[CODE(perl)@en[[[is_relative_reference_3986]]]]	,[CODE(DOMi)@en[[[URIReference]]]] ([[manakai]]'s extension)
+,[CODE(DOMm)@en[[[isSameDocumentReference3986]]]]	,[CODE(perl)@en[[[is_same_document_reference_3986]]]]	,[CODE(DOMi)@en[[[URIReference]]]] ([[manakai]]'s extension)
+,[CODE(DOMa)@en[[[isURI3986]]]]	,[CODE(perl)@en[[[is_uri_3986]]]]	,[CODE(DOMi)@en[[[URIReference]]]] ([[manakai]]'s extension)
+,[CODE(DOMa)@en[[[isURIReference3986]]]]	,[CODE(perl)@en[[[is_uri_reference_3986]]]]	,[CODE(DOMi)@en[[[URIReference]]]] ([[manakai]]'s extension)
+,[CODE(DOMa)@en[[[itemValue]]]],[CODE(perl)@en[[[itemvalue]]]],[CODE(DOMi)@en[[[HTMLElement]]]]
+,[CODE(DOMa)@en[[[longDesc]]]]	,[CODE(perl)@en[[[longdesc]]]]	,"[CODE(DOMi)@en[[[HTMLImageElement]]]], [CODE(DOMi)@en[[[HTMLFrameElement]]]], [CODE(DOMi)@en[[[HTMLIFrameElement]]]] ([[DOM HTML]])"
+,[CODE(DOMa)@en[[[marginHeight]]]]	,[CODE(perl)@en[[[marginheight]]]]	,"[CODE(DOMi)@en[[[HTMLFrameElement]]]], [CODE(DOMi)@en[[[HTMLIFrameElement]]]] ([[DOM HTML]])"
+,[CODE(DOMa)@en[[[marginWidth]]]]	,[CODE(perl)@en[[[marginwidth]]]]	,"[CODE(DOMi)@en[[[HTMLFrameElement]]]], [CODE(DOMi)@en[[[HTMLIFrameElement]]]] ([[DOM HTML]])"
+,[CODE(DOMa)@en[[[maxLength]]]]	,[CODE(perl)@en[[[maxlength]]]]	,[CODE(DOMi)@en[[[HTMLInputElement]]]] ([[DOM HTML]])
+,[CODE(DOMa)@en[[[noHref]]]]	,[CODE(perl)@en[[[nohref]]]]	,[CODE(DOMi)@en[[[HTMLAreaElement]]]] ([[DOM HTML]])
+,[CODE(DOMa)@en[[[noResize]]]]	,[CODE(perl)@en[[[noresize]]]]	,[CODE(DOMi)@en[[[HTMLFrameElement]]]] ([[DOM HTML]])
+,[CODE(DOMa)@en[[[noShade]]]]	,[CODE(perl)@en[[[noshade]]]]	,[CODE(DOMi)@en[[[HTMLHRElement]]]] ([[DOM HTML]])
+,[CODE(DOMa)@en[[[noWrap]]]]	,[CODE(perl)@en[[[nowrap]]]]	,[CODE(DOMi)@en[[[HTMLTableCellElement]]]] ([[DOM HTML]])
+,[CODE(DOMa)@en[[[readOnly]]]]	,[CODE(perl)@en[[[readonly]]]]	,"[CODE(DOMi)@en[[[HTMLInputElement]]]], [CODE(DOMi)@en[[[HTMLTextAreaElement]]]]([[DOM HTML]])"
+,[CODE(DOMa)@en[[[rowSpan]]]]	,[CODE(perl)@en[[[rowspan]]]]	,[CODE(DOMi)@en[[[HTMLTableCellElement]]]] ([[DOM HTML]])
+,[CODE(DOMa)@en[[[scrollbar3dLightShadowColor]]]]	,[CODE(perl)@en[[[scrollbar_3dlight_color]]]]	,[CODE(DOMi)@en[[[CSSStyleDeclarationProperties]]]] ([[CSSOM]])
+,[CODE(DOMa)@en[[[scrollbarDarkShadowColor]]]]	,[CODE(perl)@en[[[scrollbar_darkshadow_color]]]]	,[CODE(DOMi)@en[[[CSSStyleDeclarationProperties]]]] ([[CSSOM]])
+,[CODE(DOMa)@en[[[tabIndex]]]]	,[CODE(perl)@en[[[tabindex]]]]	,"[CODE(DOMi)@en[[[HTMLSelectElement]]]], [CODE(DOMi)@en[[[HTMLInputElement]]]], [CODE(DOMi)@en[[[HTMLTextAreaElement]]]], [CODE(DOMi)@en[[[HTMLButtonElement]]]], [CODE(DOMi)@en[[[HTMLAnchorElement]]]], [CODE(DOMi)@en[[[HTMLObjectElement]]]], [CODE(DOMi)@en[[[HTMLAreaElement]]]] ([[DOM HTML]])"
+,[CODE(DOMa)@en[[[tBodies]]]]	,[CODE(perl)@en[[[tbodies]]]]	,[CODE(DOMi)@en[[[HTMLTableElement]]]] ([[DOM HTML]])
+,[CODE(DOMa)@en[[[tFoot]]]]	,[CODE(perl)@en[[[tfoot]]]]	,[CODE(DOMi)@en[[[HTMLTableElement]]]] ([[DOM HTML]])
+,[CODE(DOMa)@en[[[tHead]]]]	,[CODE(perl)@en[[[thead]]]]	,[CODE(DOMi)@en[[[HTMLTableElement]]]] ([[DOM HTML]])
+,[CODE(DOMa)@en[[[timeStamp]]]] ,[CODE(perl)@en[[[timestamp]]]] ,[CODE(DOMi)@en[[[Event]]]]
+,[CODE(DOMa)@en[[[URL]]]]	,[CODE(perl)@en[[[url]]]]	,[CODE(DOMi)@en[[[HTMLDocument]]]] ([[DOM HTML]])
+,[CODE(DOMa)@en[[[useMap]]]]	,[CODE(perl)@en[[[usemap]]]]	,"[CODE(DOMi)@en[[[HTMLInputElement]]]] , [CODE(DOMi)@en[[[HTMLImageElement]]]], [CODE(DOMi)@en[[[HTMLObjectElement]]]] ([[DOM HTML]])"
+,[CODE(DOMa)@en[[[utf16Offset]]]]	,[CODE(perl)@en[[[utf16_offset]]]]	,[CODE(DOMi)@en[[[DOMLocator]]]] ([[DOM Core]])
+,[CODE(DOMa)@en[[[utf32Offset]]]]	,[CODE(perl)@en[[[utf32_offset]]]]	,[CODE(DOMi)@en[[[DOMLocator]]]] ([[DOM Core]])
+,[CODE(DOMa)@en[[[vAlign]]]]	,[CODE(perl)@en[[[valign]]]]	,"[CODE(DOMi)@en[[[HTMLTableColElement]]]] , [CODE(DOMi)@en[[[HTMLTableSectionElement]]]], [CODE(DOMi)@en[[[HTMLTableRowElement]]]], [CODE(DOMi)@en[[[HTMLTableCellElement]]]] ([[DOM HTML]])"
+,[CODE(DOMa)@en[[[valueType]]]]	,[CODE(perl)@en[[[valuetype]]]]	,[CODE(DOMi)@en[[[HTMLParamElement]]]] ([[DOM HTML]])
+,[CODE(DOMa)@en[[[vLink]]]]	,[CODE(perl)@en[[[vlink]]]]	,[CODE(DOMi)@en[[[HTMLBodyElement]]]] ([[DOM HTML]])
+
+;; Editor's note (informative): [[manakai//Issue//1//9]]
+]DEL]
+
+* Data types
+
+[10] In this section, [DFN@en[number type]]s includes:
+[CODE(IDL)@en[[[long]]]], [CODE(IDL)@en[[[unsigned long]]]],
+[CODE(IDL)@en[[[unsigned long long]]]],
+[CODE(IDL)@en[[[short]]]], 
+and [CODE(IDL)@en[[[unsigned short]]]].
+
+[11]
+If the return value of the [[DOM]] method or the [[DOM]] attribute
+is of number type and a [[Perl]] method return a value
+in that type, jt [['''MUST''']] return a value
+that can be evaluated as a number (by, e.g., [CODE(perl)@en[0+]]
+operation).
+
+[12]
+If a [[DOM]] method parameter or the [[DOM]] attribute is 
+of number type and it is necessary for a [[Perl]] method to
+get the specified value, it [['''MAY''']] evaluate
+the specified value as a value (by, e.g., [CODE(perl)@en[0+]]
+operation).
+
+@@ 
+Similary, IDL type <TYPE^^DISCore|QName::idl|boolean>
+[PRE[
+    is expected to be evaluated in the Boolean context.
+]PRE]
+
+[PRE[
+    IDL type <TYPE^^DISCore|QName::idl|any> is corresponding to any scalar valu\
+e
+    in Perl.  IDL type <TYPE^^DISCore|QName::idl|Object> is bound to object.
+]PRE]
+
+** Execution of algorithms defined for JavaScript
+
+[84] When an algorithm for JavaScript is executed for a Perl value, the word "ECMAScript value" 
+in the algorithm is read as "Perl value" instead.
+
+[85] When the [CODE(JS)@en[[[ToNumber()]]]] function is invoked, the following steps [['''MUST''']]
+be processed instead:
+[FIG[
+= Let [VAR@en[$x]] be the argument to the algorithm.
+= Evaluate the Perl expression [CODE(perl)[0 + $x]] in scalar context and return the result.
+]FIG]
+
+** [CODE(IDL)@en[boolean]]
+
+[120] If a [[WebIDL]] [[boolean]] value [[true]] or [[false]] is converted into a [[Perl]] value,
+it [['''MUST''']] be converted to a [[Perl]] true or false value, respectively.
+If the value is returned in context where both [[boolean]] and [[null]] can be returned,
+the false value [['''MUST''']] be represented as non-[CODE(perl)@en[[[undef]]]] value in [[Perl]].
+
+** [CODE(IDL)@en[unsigned long]]
+
+[83] A [[Perl]] value is converted to an IDL [CODE(IDL)@en[[[unsigned long]]]] value by running the
+algorithm for JavaScript <http://dev.w3.org/2006/webapi/WebIDL/#es-unsigned-long>.
+
+** [CODE(IDL)@en[unsigned short]]
+
+[118] A [[Perl]] value is converted to an IDL [CODE(IDL)@en[[[unsigned short]]]] value by running the
+algorithm for JavaScript <http://dev.w3.org/2006/webapi/WebIDL/#es-unsigned-short>.
+
+** [CODE(IDL)@en[null]]
+
+[23]
+The [CODE(IDL)@en[[[null]]]] value in [[DOM]] is bound to
+[CODE(perl)@en[[[undef]]]] in [[Perl]].
+
+[24]
+If something is defined to return or set [CODE(IDL)@en[[[null]]]],
+it [['''MUST''']] return or set [CODE(perl)@en[[[undef]]]]
+unless otherwise specified.
+
+[25]
+Where [CODE(IDL)@en[[[null]]]] is allowed to
+be specified, an implementation [['''MUST''']] behave as if a
+[CODE(IDL)@en[[[null]]]] is specified when
+a [CODE(perl)@en[[[undef]]]] is specified.
+
+[26]
+Where [CODE(IDL)@en[[[null]]]] is ''not'' allowed to
+be specified, how an implementation behaves when
+a [CODE(perl)@en[[[undef]]]] depends on the 
+expected data type.  An implementation [['''MAY''']]
+cause zero or more [Q@en[uninitialized]] warnings
+reported by Perl or [['''MAY''']] report its own
+[Q@en[uninitialized]] warnings, when warnings
+are enabled by e.g. [CODE(perl)@en[[[use]] [[warnings]]]]
+pragma.
+
+@@ TODO: Make relationship to [[JavaScript]]
+[CODE(JS)@en[[[undefined]]]] and
+[CODE(JS)@en[[[null]]]] clearer.
+
+
+** [CODE(DOM)@en[DOMString]]
+
+;; [70] In [[WebIDL]] and [[DOM]], strings are defined in terms of UTF-16 code units,
+while in [[Perl]] they are represented in UTF-8 based encoding in most environments.
+
+;; [75] This specification does not support any environment where Perl character strings are not
+represented in [[utf8]] (e.g. [[EBCDIC]] environment).
+
+[EG[
+[96] Since some methods are defined in terms of [[UTF-16 code units]], if the index used by the method
+identifies a location between surrogate code points, a character is broken into two surrogate code points.
+If the string [CODE(perl)["a\x{10003}b"]] is split into two substrings with index two (2),
+the first substring is [CODE(perl)["a\x{D800}"]] and the second substring is [CODE(perl)["\x{DC03}b"]].
+]EG]
+
+[71] When a string in [[WebIDL]] context is exposed to Perl, it [['''MUST''']] be represented
+as the value that can be interpreted as a sequence of characters.  If no character in
+the sequence is greater than U+00FF, it [['''MAY''']] be represented as the value 
+that can be interpreted as a sequence of bytes encoded in [[Latin-1]].
+
+;; [72] The [[Latin-1]] encoding in this context is different from the Web [CODE(charset)@en[[[iso-8859-1]]]]
+encoding, which is equivalent to the [CODE(charset)@en[[[windows-1252]]]] encoding [SRC[[[Encoding]]]]. 
+
+[73] When a value in Perl in interpreted in [[WebIDL]] context, it [['''MUST''']]
+be first stringified by concatenated with the empty string and then interpreted as the
+sequence of characters.  If the result of the stringification is the sequence of the bytes,
+then it is interpreted as encoded in the [[Latin-1]] encoding.
+
+[74] A [[Perl]] string can contain non-Unicode characters (i.e. code points greater than [[U+10FFFF]]).
+Unless otherwise specified, such a character [['''MUST''']] be treated as if that were an unassigned
+Unicode character.
+
+;; [91] Therefore, the [[code-point length]] of the string consist of a character greater than [CODE(char)[[[U+10FFFF]]]]
+is one (1).
+
+[92] A [[Perl]] string can contain both surrogate code points and code points greater than [CODE(char)[[[U+FFFF]]]].
+Since a [[Perl]] string is not encoded in [[UTF-16]], combination of surrogate code points does not represent
+a character, but are barely interpreted as sequence of those code points as is.
+
+[EG[
+[93] For example, a string [CODE(perl)["\x{10003}"]] is different from [CODE(perl)["\x{D800}\x{DC03}"]].
+]EG]
+
+[DEL[
+[94] When a string ending with a high surrogate code point is concatenated with a string starting by
+a low surrogate code point by a [[DOM]] operation, these two code points [['''MUST''']] be replaced
+by corresponding code point.
+
+[EG[
+[95] For example, if [CODE(perl)["a\x{D800}"]] is followed by [CODE(perl)["\x{DC03}b"]], then
+the result is string [CODE(perl)["a\x{10003}b"]].
+]EG]
+]DEL]
+
+[97] Even when strings beginning with or ending by surrogate pair code points are concatenated,
+they are not automatically converted into a Unicode character.  Therefore, even if same sequence of operations are
+performed, semantics of result strings could be different in the [[DOM Perl Binding]] and 
+in the [[JavaScript]]-based Web browser environment.
+However, this does not mean requirements in Web platform specifications apply differently
+among these environments.
+
+[EG[
+[121] The number of [[Unicode code points]] in the string [CODE(perl)["a\x{D800}\x{DC03}b"]] is three
+in both environments.
+]EG]
+
+[33]
+Some methods are defined to accept a scalar reference
+specified as a value of a parameter.  Such a method,
+when a scalar reference is specified as a parameter value,
+[['''MUST''']] dereference the parameter value as a
+scalar reference (i.e. by operator [CODE(perl)[[[${}]]]])
+before it is in use, if the [CODE(perl)@en[[[ref]]]] of the parameter
+value is [CODE(perl)@en[[[SCALAR]]]].
+
+[89] If the [CODE(IDL)@en['''['''[[TreatNullAs]]=[[EmptyString]]''']''']] [[extended attribute]] is specified,
+when the value is [[undef]] it [['''MUST''']] be converted to the empty string before it is processed.
+
+;; [90] The [CODE(IDL)@en['''['''[[TreatUndefinedAs]]''']''']] [[extended attribute]] is ignored
+by the [[DOM Perl Binding]].
+
+** [CODE(DOMi)@en[StringExtended]]
+
+[99] The operations of the [CODE(DOMi)@en[[[StringExtended]]]] interface [SRC[DOM3CORE]]
+[['''MUST''']] be implemented as functions, where the zeroth argument to the function
+is treated as the [[context object]] (i.e. the string) and the first argument to the function
+is treated as the argument to the operation.  The [CODE(IDL)[int]] data type [['''MUST''']] be
+handled as [[WebIDL]] [CODE(IDL)@en[[[unsigned long]]]] data type.  The [CODE@en[StringIndexOutOfBoundsException]]
+exception [['''MUST''']] be treated as the "[CODE[[[IndexSizeError]]]]" exception.
+
+** Enumeration types
+
+[135] Enumeration types are represented as character strings in Perl.
+
+[136] If an invalid value is specified to the method argument where the enumeration type is expected,
+a [CODE(DOMi)@en[[[TypeError]]]] [['''MUST''']] be thrown.
+
+@@ [137] Much more stricter definition is necessary...
+
+** [CODE(DOM)@en[DOMTimeStamp]]
+
+[4] '''[CODE(DOM)@en[DOMTimeStamp]] for a Calendar Date-Time'''
+
+A [CODE(DOM)@en[DOMTimeStamp]] value that is
+an absolute date-time [['''MUST''']] be represented
+by a scalar value of the number of the seconds
+from [CODE[[[1970-01-01T00:00:00Z]]]].
+The scalar value [['''MAY''']] contain fraction part,
+which represents a fraction of a second.
+
+;; For example, [CODE[[[1970-01-01T00:00:00Z]]]]
+is mapped to a numeric value of [CODE(perl)[[[0]]]].
+
+@@ Leap seconds, days before [CODE[[[1970-01-01T00:00:00Z]]]]
+
+** Objects
+
+@@ XXX this wording is a bit unclear
+
+[80] If [[WebIDL]] definition for the method parameter is typed with an interface but the
+value that is not an instance of the interface is specified as the argument, then
+a [CODE(DOMi)@en[[[TypeError]]]] [['''MUST''']] be thrown and the processing of the method
+[['''MUST''']] be aborted.  This type checking [['''MUST''']] be performed in the
+order of parameters.
+
+[81] Likewise, if [[WebIDL]] definition for the attribute is typed with an interface but the
+value that is not an instance of the interface is specified as the new value of the attribute,
+then a [CODE(DOMi)@en[[[TypeError]]]] [['''MUST''']] be thrown and the processing of the method
+[['''MUST''']] be aborted.
+
+[82] An implementation [['''MAY''']] treat an object from another DOM implementation
+as implementing no DOM interface at all.
+
+@@ XXX but it might be treated as user object (rather than platform object).
+
+** [CODE(DOMi)@en[DOMUserData]]
+
+[100] The [CODE(DOMi)@en[[[DOMUserData]]]] data type [SRC[DOM3CORE]]
+corresponding to any scalar value in [[Perl]].
+
+* Security
+
+
+* Features
+
+
+* [CODE(DOMi)@en[[[DOMImplementationRegistry]]]]
+
+[16]
+The variable
+[CODE(perl)@en[$[[Message::DOM::DOMImplementationRegistry]]]]
+[['''MUST''']] contain a value via which methods
+provided by [CODE(DOMi)@en[[[DOMImplementationRegistry]]]]
+object can be invoked.
+
+;; For example,
+[PRE(perl example code)[
+$Message::DOM::DOMImplementationRegistry->get_dom_implementation
+]PRE]
+
+returns a DOM implementation.
+
+;; The [CODE(DOMi)@en[[[DOMImplementationRegistry]]]]
+[Q@en[object]] don't have to be an object in the Perl
+context; it might be a string representing
+the package name of the class implementing
+the [CODE(DOMi)@en[[[DOMImplementationRegistry]]]]
+[Q@en[interface]].
+
+* Operator overloading
+
+
+[127] The implementation [['''MUST NOT''']] overload the following operators (using the [CODE(perl)[[[overload]]]]
+pragma) in a way that contradicts with this specification and any [[applicable specifications]]:
+[FIG[
+[CODE(perl)[[[""]]]], [CODE(perl)[[[0+]]]], [CODE(perl)[[[bool]]]],
+[CODE(perl)[[[@{}]]]], [CODE(perl)[[[%{}]]]], [CODE(perl)[[[&{}]]]],
+[CODE(perl)[[[cmp]]]], [CODE(perl)[[[eq]]]], [CODE(perl)[[[ne]]]],
+[CODE(perl)[[[lt]]]], [CODE(perl)[[[le]]]], [CODE(perl)[[[gt]]]], and [CODE(perl)[[[ge]]]].
+]FIG]
+
+[18] Unless otherwise specified, an object implementing some DOM interface [['''SHOULD NOT''']] overload 
+these operators.  If these operators are overloaded in implementation-specific ways, it [['''MUST''']]
+behave as if it were not overloaded to the extent applications don't have to distinguish whether it is
+overloaded or not.
+
+[EG[
+[128] For example, an implementation can choose to let the [CODE(perl)[[[""]]]] operator of the
+[CODE(DOMi)@en[[[Element]]]] object to return the internal address of the object followed by the class name
+of the implementation.  An application can use this string to distinguish element objects each other,
+or element objects and non-DOM objects, as it does for non-DOM objects.  However, the implementation
+cannot choose to let the operator to return the XML representation of the element.
+]EG]
+
+[28] In any way, when an operator is overloaded,
+it [['''MUST''']] be consistent with other operators.
+
+;; For example, if the [CODE(perl)@en[[[eq]]]]
+operator is overloaded,
+[PRE(perl example code)[
+my $eq = $a eq $b;
+my $ne = $a ne $b;
+die unless ($eq and not $ne) or (not $eq and $ne);
+]PRE]
+
+... must not die.
+
+@@ More details - 
+- Even if "" is overloaded and results in false, bool must return true.
+- eq, ne, and cmp must be consistent.
+- ==, !=, and <=> must be consistent.
+
+** Array-like and / or hash-like objects
+
+[86] If an interface [[supports indexed properties]] <http://dev.w3.org/2006/webapi/WebIDL/#dfn-support-indexed-properties>,
+the object implementing the interface [['''MUST''']] behave as if that were a blessed array reference,
+at least to the extent allowed by defining the Perl [CODE(perl)@en[[[overload]]]] pragma's [CODE[[[@{}]]]] operator.
+
+[87] If only the [[indexed property getter]] is defined for the interface, the object [['''MUST''']]
+behave as if that were a read-only array reference.
+
+[EG[
+[88] Following code fragment illustrates how the [CODE(DOMi)@en[[[NodeList]]]] object behave:
+[PRE(perl example code)[
+my $node_list = $node->child_nodes;
+warn scalar @$node_list;      # Number of child nodes
+warn $node_list->[1];         # Child node with index 1 (= second node in the children list)
+warn $node_list->[-1];        # Last child node
+$node_list->[2] = $new_node;  # Error because setter is not defined for NodeList
+]PRE]
+
+Please note that index [CODE(perl)[-1]] is converted by Perl to the index of the last element in the
+array before WebIDL processing (i.e. [CODE(IDL)@en[[[unsigned long]]]] conversion), it would return
+different item in the list from the corresponding normal method;
+[PRE(perl example code)[
+warn $node_list->[-1];        # last item in the list
+warn $node_list->item (-1);   # (-1 % 2^32 == 4294967295)th item (undef in most cases)
+]PRE]
+]EG]
+
+@@ better wording
+
+[17]
+For following interfaces, dereferencing an object
+as array acts as if it is an array:
+- [CODE(DOMi)@en[[[DOMImplementationList]]]]
+- [CODE(DOMi)@en[[[DOMStringList]]]]
+- [CODE(DOMi)@en[[[TextTrackCueList]]]]
+
+That is, 
+[CODE(perl)@en[[VAR@en[$obj]]->'''['''[VAR@en[$n]]''']''']]
+[['''MUST''']] return the same value as
+[CODE(perl)@en[[VAR@en[$obj]]->item ([VAR@en[$n]])]]
+if [VAR@en[$obj]] is an object implementing 
+any of interfaces listed above and [VAR@en[$n]]
+is a non-negative integer less than
+[CODE(perl)@en[[VAR@en[$obj]]->length]].
+
+@@ If [VAR@en[$n]] is negative, then 
+length - $n.
+If length is zero, greater than $n, smaller than -length,
+non-number, then?
+
+@@ [138] Need to define [[DOMTokenList]] binding
+
+@@ [CODE(DOMi)@en[[[NameList]]]]
+
+@@ [ArrayClass]
+
+[50] The [CODE(perl)@en[[[to_a]]]] method and the [CODE(perl)[[[as_list]]]] of an
+array-like object [['''MUST''']] return a reference to a new array that contains
+the items in the array-like object, in order.
+
+;; [51] The [CODE(perl)[[[as_list]]]] method is provided for compatibility with 
+[CODE(perl)[[[Template::Iterator]]]] module.  It should not be used for other purposes.
+
+[52] The [CODE(perl)@en[[[to_list]]]] method of an array-like object [['''MUST''']]
+return a Perl list that contains the items in the array-like object, in order.
+
+;; [154] The [CODE(DOMi)@en[[[CSSStyleDeclaration]]]] interface does not have these methods.
+
+[113] If an interface [[supports named properties]], they [['''MUST''']] be accessible by
+dereferencing the object by the [CODE(perl)[[[%{}]]]] operator.
+
+@@ Need to define it much more strictly...
+
+@@ [126] [VAR[T]][] (e.g. DOMString[]) - tied array; obj.domstringlist = ["str1", "str2"]
+
+[133] [CODE(perl)@en[[[keys]]]] and [CODE(perl)@en[[[each]]]] do not have to preserve the order
+of items in the hash-like object.  However, the order has to be stable such that [CODE(perl)@en[[[each]]]]
+can be used for iteration.
+
+*** Read-only array-like or hash-like objects
+
+[DEL[
+[29]
+If an array-like or hash-like object is read-only,
+[CODE(perl)@en[[[STORE]]]], [CODE(perl)@en[[[STORESIZE]]]],
+[CODE(perl)@en[[[DELETE]]]], and any other operations
+that implies these operations [['''MUST''']]
+throw an [CODE(DOMc)@en[[[NO_MODIFICATION_ALLOWED_ERR]]]]
+[CODE(DOMi)@en[[[DOMException]]]].
+]DEL]
+
+[112] When an array or hash is read-only, any attempt to modify it or its values [['''MAY''']] throw
+an exception.  Whether an exception is thrown or not, any attempt to modify them [['''MUST''']]
+be ignored.
+
+;; [129] Whether that exception is a string or an object, what the stringified representation of the
+exception is, or whether the exception is actually thrown or not, is implementation dependent.
+This is a quality of implementation issue, as what is the behavior of the "native" Perl read-only array or hash
+is somewhat unclear or unstable.
+
+;; [134] [CODE(DOMi)@en[[[NodeList]]]], [CODE(DOMi)@en[[[HTMLCollection]]]], and [CODE(DOMi)@en[[[NamedNodeMap]]]]
+can be used as read-pnly array-like object.
+
+*** The [CODE(DOMi)@en[DOMConfiguration]] interface
+
+[105] The [DFN[Perl parameter name]] of a parameter is the value returned by the following steps:
+[FIG[
+= Let [VAR@en[name]] be the parameter name.
+= If [VAR@en[name]] starts with [CODE[http://]], return [[null]] and abort these steps.
+= Replace any [CODE(char)[[[-]]]] character in [VAR@en[name]] by a [CODE(char)[[[_]]]] character.
+= Return [VAR@en[name]].
+]FIG]
+
+[106] The [[supported property names]] of a [CODE(DOMi)@en[[[DOMConfiguration]]]] object is the
+values returned by the following steps:
+[FIG[
+= Let [VAR@en[values]] be the array of the string containing the values in the
+[CODE(DOMa)@en[[[parameterNames]]]] attribute of the object.
+= For each item [VAR@en[value]] in the array, in order:
+== Let [VAR@en[perl value]] be the [[Perl parameter name]] of the parameter whose name is [VAR@en[name]].
+== If [VAR@en[perl value]] is [[null]], delete [VAR@en[value]] from [VAR@en[values]].
+== Otherwise, replace [VAR@en[value]] in [VAR@en[values]] by [VAR@en[perl value]].
+= Return [VAR@en[values]].
+]FIG]
+
+[107] To [[determine the value of a named property]] of a [CODE(DOMi)@en[[[DOMConfiguration]]]] object,
+the following steps [['''MUST''']] be run:
+[FIG[
+= Let [VAR@en[name]] be the property name.
+= If [VAR@en[name]] is one of the [[supported property names]], return the value
+that would be returned if the [CODE(DOMm)@en[[[getParameter]]]] method is invoked with
+the parameter name whose [[Perl parameter name]] is [VAR@en[name]].
+= Otherwise, return [CODE(perl)@en[[[undef]]]].
+]FIG]
+
+[108] To [[set the value of an existing named property]] or [[set the value of a new named property]]
+of a [CODE(DOMi)@en[[[DOMConfiguration]]]] object, the following steps [['''MUST''']] be run:
+[FIG[
+= Let [VAR@en[name]] be the property name.
+= If [VAR@en[name]] is one of the [[supported property names]], return the value
+that would be returned if the [CODE(DOMm)@en[[[setParameter]]]] method is invoked with
+the parameter name whose [[Perl parameter name]] is [VAR@en[name]] and the assigned value.
+For the purpose of this invocation only, the [COCDE(DOMm)@en[[[setParameter]]]] method [['''MUST NOT''']]
+treat the [CODE(perl)@en[[[undef]]]] value as [[WebIDL]] [[null]].
+]FIG]
+
+[EG[
+[110] The following code set "false" to the parameter:
+[PRE(perl example code)[
+$config = $document->dom_config;
+$config->{manakai_strict_document_children} = undef;
+ok not $config->{manakai_strict_document_children};
+]PRE]
+
+However, the following code unset the parameter:
+[PRE(perl example code)[
+$config->set_parameter ('manakai-strict-document-children', undef);
+ok $config->{manakai_strict_document_children};
+]PRE]
+
+Since the default value of the parameter is "true", unsetting the parameter results
+in the "true" value set to the parameter.
+]EG]
+
+[109] To [[delete an existing named property]] of a [CODE(DOMi)@en[[[DOMConfiguration]]]] object,
+the following steps [['''MUST''']] be run:
+[FIG[
+= Let [VAR@en[name]] be the property name.
+= If [VAR@en[name]] is one of the [[supported property names]], return the value
+that would be returned if the [CODE(DOMm)@en[[[setParameter]]]] method is invoked with
+the parameter name whose [[Perl parameter name]] is [VAR@en[name]] and [CODE(IDL)@en[[[null]]]].
+]FIG]
+
+[111] The [[IDL]] data type of the second argument to the [CODE(DOMm)@en[[[setParameter]]]] method 
+is [CODE(DOMi)@en[[[DOMUserData]]]], which can be any [[Perl]] scalar value, while parameters have
+their expected value type defined.  Therefore "casting" of the value is performed within the
+[CODE(DOMm)@en[[[setParameter]]]] method.  It [['''MUST''']] be performed by applying the steps
+to convert the Perl value into [[WebIDL]] value of appropriate data type.  If this fails,
+as defined in the DOM3 Core specification, a "[CODE(DOMe)@en[[[TypeMismatchError]]]]" exception
+is thrown.
+
+** Constructor
+
+[19] The [CODE(perl)@en[[[new]]]] method is reserved.
+
+
+** Cloning method
+
+[20] The [CODE(perl)@en[[[clone]]]] method is reserved.
+
+@@ It is planned to make [CODE(DOMi)@en[[[Node]]]]'s
+[CODE(perl)@en[[[clone]]]] method an alias of
+[CODE(DOMm)@en[[[cloneNode]]]] method.
+
+
+** Stringify method
+
+[21] Method names [CODE(perl)@en[[[stringify]]]], [CODE(perl)@en[[[as_string]]]],
+and [CODE(perl)@en[[[to_string]]]] are reserved.
+
+@@ XXX What "reserved" means?
+
+[60] If the WebIDL interface has the stringifier [SRC[WebIDL]] defined, the [CODE(perl)[""]]
+operator of the class [['''MUST''']] be overloaded such that stringifying the object 
+invoke the stringifier.
+
+[61] Unless otherwise defined, the [CODE(perl)@en[bool]] operator of the class [['''MUST''']]
+return a true value, whatever value is returned by the stringifier.
+
+* Function-like interfaces
+
+@@ Maybe support for non-coderef objects (arbitrary object with "handle_event" method,
+or &{} overloaded) will be dropped...
+
+[22]
+Several interfaces are defined as [DFN@en[function-like]].
+Only Perl native [CODE(perl)@en[[[CODE]]]] references, i.e.
+values whose [CODE(perl)@en[[[ref]]]] is [CODE(perl)@en[[[CODE]]]],
+and objects for which the [CODE(perl)[[[&{}]]]] operation is defined
+[['''MUST''']] be treated as if they implement the 
+function-like interfaces and are referred to as objects
+implementing the function-like interfaces.  Each function-like interface
+has a method, typically named as [CODE(DOMm)@en[[[handleEvent]]]].
+Invoking that method on the object implementing a function-like
+interface from another language binding invokes the 
+object itself, by [CODE(perl)[[[&{}]]]] operation.  In the Perl binding itself,
+however, the method of the interface is not directly accessible on 
+the object implementing the interface.
+
+;; Unlike in ECMAScript language binding, arbitrary object
+with [CODE(perl)@en[[[handle_event]]]] method (and no
+[CODE(perl)[[[&{}]]]] operation defined) does not 
+implement the function-like interfaces.
+
+[43] Function-like interfaces are:
+- [CODE(DOMi)@en[[[DOMErrorHandler]]]]
+- [CODE(DOMi)@en[[[EventHandler]]]]
+- [CODE(DOMi)@en[[[NodeFilter]]]]
+- [CODE(DOMi)@en[[[UserDataHandler]]]]
+- [CODE(DOMi)@en[[[VoidCallback]]]]
+
+[44] 
+When the method would be invoked, the [CODE(perl)[[[&{}]]]]
+operation [['''MUST''']] be performed over the object with appropriate
+arguments.  The return value of the [CODE(perl)[[[&{}]]]]
+operation [['''MUST''']] be treated as if the return value
+of the method.  If the [CODE(perl)[[[&{}]]]] operation
+results in an exception is raised, it [['''MUST''']]
+be treated as if it is an exception raised by the method.
+
+;; For example, 
+[PRE(perl example code)[
+$node->add_event_listener ('click', sub {
+  my $ev = shift;
+  print $ev->details, "\n";
+  return 0;
+});
+]PRE]
+
+would make the subroutine invoked when the node is clicked.
+The subroutine, implementing the [CODE(DOMi)@en[[[EventHandler]]]]
+interface and treated as if it is the [CODE(DOMm)@en[[[handleEvent]]]]
+method, would [CODE(perl)@en[[[print]]]]s the 
+number of clicks and then cancel the default action
+for the event.
+
+[45] Though in some of function-like interfaces constants are defined,
+they are not accessible via the object implemeting that interface
+in the Perl binding.  Other interface might provide
+such constants alternatively.  For example, 
+objects implementing the [CODE(DOMi)@en[[[Node]]]]
+interface provides contants in [CODE(DOMi)@en[[[UserDataHandler]]]]
+interface (see >>42).
+
+** Legacy caller
+
+[DEL[
+[144] If an interface defines the [[legacy caller]], the [CODE(perl)[[[&{}]]]] operation of the corresponding class
+[['''MUST''']] invoke the [[legacy caller]] and return its result.
+]DEL]
+
+* Dictionaries
+
+[153] [[dictionary]] is represented by a hash reference.
+
+@@ details...
+
+* Specifics
+
+
+** The [CODE(DOMi)@en[Node]] interface
+
+[27]
+Multiple calles of the getter of 
+[CODE(DOMa)@en[[[attributes]]]] or
+[CODE(DOMa)@en[[[childNodes]]]] on a [CODE(DOMi)@en[[[Node]]]]
+[['''MUST''']] return the same object respectively in terms
+of Perl [CODE(perl)@en[[[eq]]]] operator.
+
+;; For example, 
+[PRE(perl example code)[
+my $c1 = $node->child_nodes;
+my $c2 = $node->child_nodes;
+die unless $c1 eq $c2;
+]PRE]
+
+... must not die.
+
+[34] The [CODE(DOMm)@en[[[manakaiAppendText]]]]
+method of the [CODE(DOMi)@en[[[Node]]]] interface
+accepts a scalar reference (>>33) as the first parameter.
+
+[42]
+A package that implements the [CODE(DOMi)@en[[[Node]]]]
+interface [['''MUST''']] implement the [CODE(DOM)@en[[[OperationType]]]]
+constant group of the [CODE(DOMi)@en[[[UserDataHandler]]]]
+interface.
+
+;; For example, [CODE(perl example)@en[[VAR[$node]]->NODE_CLONED]]
+where [CODE(perl)@en[[VAR[$node]]]] is a [CODE(DOMi)@en[[[Node]]]]
+object must return the value of [CODE(perl)[[[1]]]].
+
+
+** The [CODE(DOMi)@en[Document]] interface
+
+
+*** Qualified name methods
+
+[119] Methods [CODE(DOMm)@en[[[createElementNS]]]], [CODE(DOMm)@en[[[createAttributeNS]]]],
+[CODE(DOMm)@en[[[setAttributeNS]]]], [CODE(DOMm)@en[[[createDocument]]]]:
+
+[13]
+= If the second parameter, [CODE(DOMp)@en[[[qualifiedName]]]],
+is an array reference, i.e. the [CODE(perl)@en[[[ref]]]]
+operator with that parameter returns a string
+of [CODE(perl)@en[[[ARRAY]]]], then the parameter 
+[['''MUST''']] be interpreted as following:
+-- The namespace prefix part of the qualified name
+is the zeroth item in the array.  If it is 
+[CODE(perl)@en[[[undef]]]], then there is
+no namespace prefix (i.e. the qualified name has no
+[CODE(char)@en[[[COLON]]]] character).
+-- The local name part of the qualified name
+is the first item in the array.  It [['''MUST NOT''']]
+be [CODE(perl)@en[[[undef]]]]; if it is, then
+it [['''MUST''']] be treated as if an empty string
+is specified.
+
+;; Second (third) or more items, if any, are ignored.
+
+[122] In addition to qualified name's syntax tests performed by these methods, following steps
+[['''MUST''']] be run:
+[FIG[
+= If the namespace prefix is not [[null]] and is not an XML [[NCName]], throw a "[CODE(DOM)@en[[[NamespaceError]]]]"
+exception.
+= If the local name is not an XML [[NCName]], throw a "[CODE(DOM)@en[[[NamespaceError]]]]" exception.
+]FIG]
+
+;; The [CODE(DOMa)@en[[[strictErrorChecking]]]] attribute also affects these checks.
+
+;; Unlike these methods, the [CODE(DOMp)@en[[[qualifiedName]]]]
+parameter of the [CODE(DOMm)@en[[[createDocumentType]]]]
+method of the [CODE(DOMi)@en[[[DOMImplementation]]]]
+interface has ''no'' special interpretation for
+an array reference, since the method does not
+parse the parameter as a pair of 
+namespace prefix and local name.
+
+*** The [CODE(DOMm)@en[createDocumentType]] method
+
+[125] If the second or third argument to the [CODE(DOMm)@en[[[createDocumentType]]]] method of the 
+[CODE(DOMi)@en[[[DOMImplementation]]]] interface is [CODE(perl)@en[[[undef]]]], it [['''MUST''']]
+be converted to the empty string.
+
+*** Methods [CODE(DOMm)@en[createTextNode]], [CODE(DOMm)@en[createComment]], [CODE(DOMm)@en[createCDATASection]]
+
+[32] Methods [CODE(DOMm)@en[[[createTextNode]]]],
+[CODE(DOMm)@en[[[createComment]]]], and
+[CODE(DOMm)@en[[[createCDATASection]]]] of the 
+[CODE(DOMi)@en[[[Document]]]] interface
+accept a scalar reference (>>33) as the first parameter.
+
+
+** The [CODE(DOMi)@en[DOMStringList]] interface
+
+@@ ==
+
+@@ Should we allow any Perl array reference
+as [CODE(DOMp)@en[[[arg]]]]?
+
+** The [CODE(DOMi)@en[DOMStirngMap]] interface
+
+[147] For the purpose of [[DOM Perl Binding]], following definitions [['''MUST''']] be applied:
+
+[FIG[
+[FIGCAPTION[
+[148] [DFN[The algorithm for getting the list of name-value pairs]]
+]FIGCAPTION]
+= Let [VAR[list]] be an empty list of name-value pairs.
+= For each content attribute on the element whose first five characters are the string "data-" and whose remaining characters (if any) do not include U+005F [CODE(charname)@en[[[LOW LINE]]]] character ([CODE(char)[[[_]]]]), add a name-value pair to [VAR[list]] whose name is the attribute's name with the first five characters removed and whose value is the attribute's value.
+= For each name [VAR[list]], replace each U+005F [CODE(charname)@en[[[LOW LINE]]]] character ([CODE(char)[[[_]]]]) by a U+002D [CODE(charname)@en[[[HYPHEN-MINUS]]]] character ([CODE(char)[[[-]]]]).
+= Return [VAR@en[list]].
+]FIG]
+
+[FIG[
+[FIGCAPTION[
+[149] [DFN[The algorithm for setting names to certain values]]
+]FIGCAPTION]
+= Let [VAR@en[name]] be the name passed to the algorithm.
+= Let [VAR@en[value]] be the value passed to the algorithm.
+= If [VAR@en[name]] contains a U+002D [CODE(charname)@en[[[HYPHEN-MINUS]]]] character ([CODE(char)[[[-]]]]), throw a [CODE(DOMe)@en[[[SyntaxError]]]] exception and abort these steps.
+= Replace each U+005F [CODE(charname)@en[[[LOW LINE]]]] character ([CODE(char)[[[_]]]]) in [VAR@en[name]] by a U+002D [CODE(charname)@en[[[HYPHEN-MINUS]]]] character ([CODE(char)[[[-]]]]).
+= Insert the string [CODE(HTML)[[[data-]]]] at the front of [VAR@en[name]].
+= Set the value of the attribute with the name [VAR@en[name]], to the value [VAR@en[value]], replacing any previous value if the attribute already existed. If [CODE(DOM)@en[setAttribute()]] would have thrown an exception when setting an attribute with the name [VAR@en[name]], then this must throw the same exception.
+]FIG]
+
+[FIG[
+[FIGCAPTION[
+[150] [DFN[The algorithm for deleting names]]
+]FIGCAPTION]
+= Let [VAR@en[name]] be the name passed to the algorithm.
+= Replace each U+005F [CODE(charname)@en[[[LOW LINE]]]] character ([CODE(char)[[[_]]]]) in [VAR@en[name]] by a U+002D [CODE(charname)@en[[[HYPHEN-MINUS]]]] character ([CODE(char)[[[-]]]]).
+= Insert the string [CODE(HTML)[[[data-]]]] at the front of [VAR@en[name]].
+= Remove the attribute with the name [VAR@en[name]], if such an attribute exists. Do nothing otherwise.
+]FIG]
+
+;; [151] The subset of the [CODE(HTMLa)@en[[[data-*]]]] attributes accessible via the [CODE(DOMi)@en[[[DOMStringMap]]]]
+object of the [[DOM Perl Binding]] is different from those in JavaScript binding or the set of valid
+[CODE(HTMLa)@en[[[data-*]]]] attribute names.
+
+[152] The [CODE(perl)@en[[[CLEAR]]]] operation of the hash reference returned by the [CODE(perl)[[[%{}]]]] operation
+on the [CODE(DOMi)@en[[[DOMStringMap]]]] object [['''MUST''']] remove all attributes in the [[null namespace]] whose name 
+begins with [CODE(HTMLa)@en[[[data-]]]].
+
+** The [CODE(DOMi)@en[NodeList]] interface
+
+[DEL[
+[30]
+For any [CODE(DOMi)@en[[[NodeList]]]] object,
+the [CODE(perl)[[[==]]]] operator [['''MUST''']]
+be so overloaded that it returns whether 
+two arguments are equal in the equality defined
+for the [CODE(DOMa)@en[[[isEqualNode]]]] method
+of the [CODE(DOMi)@en[[[Node]]]] interface.
+
+''However'', if the other operand is not a
+[CODE(DOMi)@en[[[NodeList]]]] object, then
+it [['''MUST''']] return a false value.
+]DEL]
+
+** The [CODE(DOMi)@en[NamedNodeMap]] interface
+
+[DEL[
+[31]
+For any [CODE(DOMi)@en[[[NamedNodeMap]]]] object,
+the [CODE(perl)[[[==]]]] operator [['''MUST''']]
+be so overloaded that it returns whether 
+two arguments are equal in the equality defined
+for the [CODE(DOMa)@en[[[isEqualNode]]]] method
+of the [CODE(DOMi)@en[[[Node]]]] interface.
+]DEL]
+
+[130] The [CODE(DOMi)@en[[[NamedNodeMap]]]] object [['''MUST''']] be treated as a read-only hash-like object,
+where keys are those accessible via the [CODE(DOMm)@en[[[getNamedItem]]]] method.
+
+;; [131] If there are multiple items with same name in the [CODE(DOMi)@en[[[NamedNodeMap]]]],
+the [CODE(DOMm)@en[[[getNamedItem]]]] method returns the first one.
+
+@@ [132] This definition is not so strict...
+
+** The [CODE(DOMi)@en[XPathNSResolver]] Interface
+
+;; [162] The [CODE(DOMi)@en[[[XPathNSResolver]]]] interface is part of [[DOM XPath]].  The
+[CODE(DOMi)@en[[[NSResolver]]]] interface is a variant of the [CODE(DOMi)@en[[[XPathNSResolver]]]]
+interface defined in the earlier versions of [[Selectors API]].
+
+[46] The [CODE(DOMi)@en[[[XPathNSResolver]]]] interface is unusual in that it can be existed both
+as a [[platform object]] and as a [[user object]].
+
+[47] The [CODE(DOMm)@en[[[createNSResolver]]]] method [['''MUST''']] return a [[platform object]]
+implementing the [CODE(DOMi)@en[[[XPathNSResolver]]]] interface.
+
+[163] For the purpose of the [CODE(DOMi)@en[[[XPathNSResolver]]]] interface used as a [[user object]],
+its IDL definition [['''MUST''']] be interpreted as if it were a [[callback interface]].
+
+;; [164] In other word, a Perl code reference can be used as a [CODE(DOMi)@en[[[XPathNSResolver]]]] object.
+
+[EG[
+[165] For example, the return value of the [CODE(DOMm)@en[[[createNSResolver]]]] method
+can be specified as an argument to the [CODE(DOMm)@en[[[evaluate]]]] method:
+[PRE(perl code)[
+$resolver = $document->create_ns_resolver ($node);
+$result = $document->evaluate ($expr, $ctx, $resolver);
+]PRE]
+
+[166] A code reference returning the namespace URL can also be used as an argument:
+[PRE(perl code)[
+$result = $document->evaluate ($expr, $ctx, sub {
+  my ($self, $prefix) = @_;
+  return $PrefixToURL->{$prefix};
+});
+]PRE]
+]EG]
+
+** [CODE(JS)@en[document.all]]
+
+[141] The [CODE(DOMm)@en[[[item]]]] method and the [CODE(perl)[[[&{}]]]] operation
+of the [CODE(JS)@en[[[document.all]]]] object [['''MUST''']] run these steps:
+[FIG[
+= Convert the argument from Perl to IDL as a [CODE(DOMi)@en[DOMString]] value and let [VAR@en[index]] be the result.
+= If [VAR@en[index]] is a [[valid non-negative integer]], invoke the operation [CODE[item(unsigned long index)]] of the [CODE(DOMi)@en[[[HTMLCollection]]]] interface with [VAR@en[index]], return its result, and abort these steps.
+= Otherwise, invoke the operation [CODE[item(DOMString name)]] of the [CODE(DOMi)@en[[[HTMLAllCollection]]]]
+interface with [VAR@en[index]] and return its result.
+]FIG]
+
+;; [142] Based on [[Chrome]] behavior.  [TIME[2013-01-16T13:39:59.300Z]]
+
+[DEL[
+[143] The [CODE(DOMi)@en[[[HTMLAllCollection]]]]'s [CODE(perl)[[[bool]]]] operation [['''MUST''']]
+return the false value.
+]DEL]
+
+[145] The [CODE(DOMm)@en[[[namedItem]]]] method [['''MUST''']] always return the same object
+if the same argument is specified.
+
+[146] The [CODE(DOMm)@en[[[tags]]]] method [['''MUST''']] always return the same object
+if the same argument (after [[converted to ASCII lowercase]] if it is an [[HTML document]]) is specified.
+
+** The [CODE(DOMi)@en[DOMImplementation]] interface
+
+[37] If the class for the [CODE(DOMi)@en[[[DOMImplementation]]]] interface has the
+constructor method, i.e. the [CODE(perl)@en[[[new]]]] method, it [['''MUST''']]
+follow these steps:
+[FIG[
+= Let [VAR@en[document]] be the document returned by invoking the [CODE(DOMi)@en[[[Document]]]] constructor [SRC[DOM]].
+= Return the [CODE(DOMi)@en[[[DOMImplementation]]]] object that is associated with
+[VAR@en[document]].
+]FIG]
+
+** The [CODE(DOMi)@en[HTMLPropertiesCollection]] interface and the [CODE(DOMi)@en[PropertyNodeList]] interface
+
+[167] An [CODE(DOMi)@en[[[HTMLPropertiesCollection]]]] object [['''MUST''']] be represented as a read-only hash
+reference in Perl.
+
+;; [170] Note that "read-only" hash is different from [[restricted hash]] of [[Perl]] in DOM Perl Binding.
+
+[168] The keys of the hash [['''MUST''']] be the values that would be returned by the [CODE(DOMm)@en[[[names]]]] attribute
+of the [CODE(DOMi)@en[[[HTMLPropertiesCollection]]]].
+
+;; [169] In [[Perl]], order of hash keys are undefined.
+
+[171] The values of the hash [['''MUST''']] be the [CODE(DOMi)@en[[[PropertyNodeList]]]] objects corresponding
+to the keys, respectively.
+
+[172] A [CODE(DOMi)@en[[[PropertyNodeList]]]] object [['''MUST''']] be represented as a read-only array
+reference in Perl.
+
+[173] The items of the array [['''MUST''']] be the nodes in the [CODE(DOMi)@en[[[PropertyNodeList]]]], in same order.
+
+* Exposing unsupported features
+
+[156] In general, when a feature is not supported at all, it [['''SHOULD NOT''']] be exposed to
+the application.
+
+[EG[
+[157] If an implementation does not support the [CODE(DOMm)@en[[[adoptNode]]]] method of the
+[CODE(DOMi)@en[[[Document]]]] interface, the [CODE(DOMi)@en[[[Document]]]] object ought not have
+the [CODE(perl)[adopt_node]] method.
+]EG]
+
+[158] When a feature might or might not be supported depending on the configuration of the implementation,
+the feature [['''MAY''']] be exposed even when it is not enabled.
+
+[EG[
+[159] If a CSS implementation does support the [CODE(CSS)@en['[[float]]']] property but the associated
+renderer does not support floating of the box, the [CODE(DOMa)@en[[[cssFloat]]]] attribute of the
+[CODE(DOMi)@en[[[CSSStyleDeclaration]]]] interface might be exposed as the [CODE(perl)@en[css_float]]
+method.  As the method is defined in terms of the [CODE(DOMm)@en[[[getPropertyValue]]]] and
+[CODE(DOMm)@en[[[setProperty]]]] methods, these methods' behavior on unsupported CSS properties apples.
+(That is, the method return the empty on getting, or do nothing on setting.)
+]EG]
+
+[EG[
+[160] An [[event handler IDL attribute]] might be exposed even when the implementation is currently not
+connected to the device that would fire the event in question.
+]EG]
+
+[EG[
+[161] There might be the [CODE(DOMa)@en[[[geolocation]]]] attribute of the [CODE(DOMi)@en[[[Navigator]]]] object
+even when no positioning device is known to available.
+]EG]
+
+* Garbage collection
+
+[101] Since [[Perl]]'s garbage collection is [[reference count]], simply implementing various [[DOM]]
+attributes as references could cause objects that could not be freed at all.  To work around this
+situation, implementations can adopt different strategies, including:
+- [102] Force the application to explicitly invoke some method to destroy a tree
+- [103] Force the application to keep a reference to the root node
+- [104] Implement implementation's own garbage collection mechanism
+
+For the purpose of DOM conformance, limitations caused by those strategies are considered
+"platform-specific limitations" <http://dom.spec.whatwg.org/#conformance>.
+
+* References
+
+
+** Normative References
+
+:[DOMBinding]:
+@@ DOM Bindings
+
+Specifications listed below are only normative for implementations
+that support features defined by those specification.
+
+:[DOMCore]:
+@@
+:[DOMEvents]:
+@@
+:[DOMLS]:
+@@
+:[DOMTraversal]:
+@@
+:[HTML5]:
+@@
+:[SelectorsAPI]:
+[CITE@en[Selectors API]], W3C Editor's Draft, 29 August 2007, 
+<http://dev.w3.org/cvsweb/~checkout~/2006/webapi/selectors-api/Overview.html?rev=1.28&content-type=text/html;%20charset=utf-8>. 
+The latest published version of Selectors API is available at 
+<http://www.w3.org/TR/selectors-api/>. 
+(Latest version of the specifcation whose maturity level is higher 
+than Candidate Recommendation, if any, or latest Editor's Draft 
+is referenced.)
+
+
+** Informative References
+
+:[SVGPB]:
+@@ SVG's Perl binding
+
+
+* memo
+
+[35]
+
+@@ Maybe we should define "==" for DOMImplementationList
+(and any other array like objects)
+([[名無しさん]])
+
+[36]
+
+@@ DOMImplementationList.push (non-dom-impl)
+
+[38]
+
+@@ %Message::DOM::DOMImplementationRegistry::SourceClass
+([[名無しさん]])
+
+[39]
+>>38 $SourceClass
+
+[41]
+
+@@ Node.isEqualNode == Node.==
+
+[49]
+
+>In binding languages that support setting to a readonly attribute setting media to a string must set the value of mediaText on the MediaList object.
+
+[CSSOM]

@@ -1,0 +1,384 @@
+[22] [DFN[[CODE(URI)@en[[[ftp:]]]]]] は、 [[FTP]] によってアクセス可能な[[資源]]を表す
+[[URL]] です。
+
+* 仕様書
+
+[23] [CODE(URI)@en[[[ftp:]]]] [[URL scheme]] は現在公式には仕様書が存在しない状態です。
+
+* 意味
+
+[64] [CODE(URI)@en[[[ftp:]]]] [[URL]] は [[FTP]] の [CODE@en[[[USER]]]],
+[CODE@en[[[PASS]]]], [CODE@en[[[CWD]]]], [CODE@en[[[TYPE]]]], [CODE@en[[[NLST]]]],
+[CODE@en[[[RETR]]]] といった[[命令]]の連続によってアクセス可能な[[資源]]を表しています。
+
+[36] [[RFC 1630]] では [[FTP]] の[[転送モード]]としては常に[[ストリーム・モード]]を使うことを表している
+[SRC[>>7]] とされていました。この規定は [[RFC 1738]] で削除されています。
+
+* 構文
+
+[65] [CODE(URI)@en[[[ftp:]]]] [[URL]] は[[階層的]]であり、
+[CODE(ABNF)@en[[[userinfo]]]] ([CODE(ABNF)@en[[[user]]]], [CODE(ABNF)@en[[[password]]]]),
+[CODE(ABNF)@en[[[host]]]], [CODE(ABNF)@en[[[port]]]],
+[CODE(ABNF)@en[[[path]]]], [CODE(ABNF)@en[[[fragment]]]] を使うことができます。
+
+[66] 
+[[相対URL]] を使うこともできます。
+
+* userinfo
+
+[24] [CODE(ABNF)@en[[[userinfo]]]] に [[FTP]] でアクセスするための[[利用者名]]と[[合言葉]]を指定できます。
+[SRC[>>7, >>9 3.2.1.]] これは [CODE[[[USER]]]], [CODE[[[PASS]]]] 両[[命令]]で使います。
+[SRC[>>9 3.2.1.]]
+
+[25] 省略された場合の[[既定値]]は、[[匿名FTP]] の慣習により、[[利用者名]]
+[CODE@en[[[anonymous]]]]、[[合言葉]]が[[電子メール・アドレス]]となります。
+[SRC[>>7, >>9 3.2.1.]]
+
+[39] 
+この[[電子メール・アドレス]]は可能であれば実際に[[利用者]]が使えるアドレスとするべきであり、
+[[クライアント]]の [[IPアドレス]]に解決されるような [[DNS]]
+[[ホスト名]]であることが好ましいとされていました。 [SRC[>>7]]
+
+;; [38] この要件は [[RFC 1738]] で削除されています。
+
+[40] [[利用者名]]だけしか指定されていない場合で[[鯖]]が[[合言葉]]を要求してきた場合は、
+[[利用者]]に尋ねるべきです。 [SRC[>>9 3.2.1.]]
+
+;; [41] 現実にはどちらも指定されていない場合であっても、必要なら[[利用者]]に問い合わせるのが一般的な気がします。
+
+* port
+
+[37] [[FTP]] の[[既定のポート番号]]は [CODE[[[21]]]] です [SRC[>>9 3.2.]]。
+
+* path
+
+[42] [CODE(URI)@en[[[ftp:]]]] [[URL]] の [[path]] 部分は次のような構文となります。
+[SRC[>>9 3.2.]]
+
+[PRE(code)[
+/<cwd1>/<cwd2>/.../<cwdN>/<name>;type=<typecode>
+]PRE]
+
+- [43] これ全体が省略可能です。 [SRC[>>9 3.2.2.]]
+- [44] [VAR[cwd]] や [VAR[name]] は[[空文字列]]であっても構いません。 [SRC[>>9 3.2.2.]]
+- [45] [CODE(URI)[;type=...]] は省略可能です。 [SRC[>>7, >>9 3.2.2., >>9 3.2.3.]]
+
+[46] [[path]] は、 [[FTP]] によるアクセスにおいて、まず [VAR[cwd]]
+によって表される [CODE@en[[[CWD]]]] [[命令]]を発行し、次に
+[VAR@en[typecode]] によって表される [CODE@en[[[TYPE]]]] [[命令]]を発行し、
+最後に [VAR@en[[[name]]]] によって表される [CODE@en[[[RETR]]]]
+[[命令]]を発行することを意味しています。
+
+[67] なお、 [[RFC 1738]] の構文定義では [[path]] 内で [CODE(URI)[[[?]]]]
+を使うことができるとされていましたが、これは誤りであったと考えられており、
+[[RFC 1808]] で訂正されています。 [SRC[>>12 2.3.]]
+
+** ディレクトリー部分
+
+[26] [VAR[cwd]] の部分は、それぞれについて [CODE[[[CWD]]]] 
+[[命令]]を発行して[[作業ディレクトリー]]を変更することを表しています。
+[SRC[>>7, >>9 3.2.2.]]
+
+[27] [[Unix]] では [CODE(char)[[[/]]]] を[[ディレクトリー]]の区切りに使うので、
+[[FTP]] の [[URL]] と [[FTP]] の背後の[[ファイル・システム]]上の[[ディレクトリー]]が同じになることがあります。
+ただし [[FTP]] を [[Unix]] [[ファイル・システム]]により実装しなければならないわけではありません。
+[SRC[>>7, >>9 3.2.4.]]
+
+[28] [[FTP]] 仕様上は [[FTP]] における[[階層化]]について共通のモデルが無く、
+同じ[[ホスト]]の [[FTP]] アクセスを連続して行う時に意図した[[ディレクトリー]]へと確実に移動する方法がありません。
+2つの同じ[[ホスト]]の [[FTP]] [[URL]] へのアクセスを意図通り確実に行う方法は、
+一旦接続を切断して再接続するというものだけです。
+[SRC[>>7, >>9 3.2.5.]]
+
+[47] [VAR[cwd]] は[[空文字列]]となることがありますが、これは[[空文字列]]を与えて
+[CODE[[[CWD]]]] [[命令]]を送信するということのよう [SRC[>>9 3.2.2.]] です。
+
+[1] [CODE(URI)[frp://foo.example/bar]] という [[URI]]
+に基づいて [[FTP]] で [SAMP[foo.example]]
+に接続した時、 [[RFC 1738]] に従えば [SAMP(FTP)[CWD bar]]
+を送る必要がありますが、多くの [[UA]]
+は [SAMP(FTP)[CWD /bar]] とします。
+
+このため、 [CODE(URI)[frp://foo.example/~bar]]
+で、利用者 [SAMP[bar]] の [[HOME]] を示しているものを正しく動作させるためには最初の文字が [CODE(URI)[~]]
+である時だけ特別扱いしないといけません。
+
+なお、 [[Lynx]] は RFC 1738 に触れながらも、現実の実装にあわせて敢えて
+「間違った」やり方にしていると言っています。
+
+RFC 1738 の方法に従うと、 FTP で接続した直後の current directory
+によって URI の指すものが変わってくる虞があります。
+
+(参考 [[w3m-dev]] #3787)
+
+[2]
+>>1 のような事情で、 [SAMP(URI)[ftp://user@foo.example/]] だと root directory になるが、 [SAMP(URI)[ftp://user@foo.example/./]] だと [CODE(file)[~]] になるという裏技(?)があるらしい。
+
+[71] 
+2004年の [[I-D]] (>>19) は、「ほとんどの実装は最初に [CODE(URI)[[[/]]]] をつける」
+としながらも、 [[RFC 1738]] と同じ定義を採用し、「[[鯖]]の実装者は二つの解釈があるので注意せよ」
+と述べるにとどまっています [SRC[>>19 2.2]]。
+
+;; [72] のんきなものですね。標準化は何のためにやるものなんだか。
+
+** ファイル名部分
+
+[48] [VAR[name]] の部分は [CODE@en[[[RETR]]]] [[命令]]により取得する[[ファイル名]]を表します。
+
+[49] [[RFC 1630]] では [VAR[name]] が[[空文字列]]の時には [CODE@en[[[NLST]]]]
+[[命令]]により[[ディレクトリー]]内の[[ファイル]]の一覧を取得することを表すとされていました
+[SRC[>>7]] が、 [[RFC 1738]] ではそうは説明されていません。
+代わりにどのような意味を表すのかは明確ではありませんが、
+[[空文字列]]を引数として [CODE@en[[[RETR]]]] [[命令]]を送信するということで良いのでしょうか・・・。
+
+** [CODE(URI)@en[type]]
+
+[29] [[path]] の最後には [CODE[[[TYPE]]]] [[命令]]によって指定する[[データ型]]を付加できます。
+[SRC[>>7, >>9 3.2.2.]]
+
+- [31] [[RFC 1630]] での定義 [SRC[>>7]]
+-- [CODE[[[A]]]], [CODE[[[E]]]], [CODE[[[I]]]], [CODE[[[L]]]] のいずれか
+-- [CODE[[[A]]]], [CODE[[[E]]]] の場合は、その後に更に [CODE[[[N]]]], [CODE[[[T]]]], [CODE[[[C]]]] のいずれか
+-- [CODE[[[L]]]] の場合は、その後に1文字以上の [CODE(ABNF)@en[[[DIGIT]]]]
+- [50] [[RFC 1738]] での定義 [SRC[>>8 3.2.2.]]
+-- [CODE[[[a]]]], [CODE[[[i]]]], [CODE[[[d]]]] のいずれか
+
+[32] [[ASCII]] [[テキスト]]、[[バイナリー]]といった [[FTP]] の転送時の[[データ型]]は、
+[CODE@en[[[CWD]]]] [[命令]]と [CODE@en[[[RETR]]]] [[命令]]の間に
+[CODE@en[[[TYPE]]]] [[命令]]を送信することによって指定します。
+[SRC[>>7, >>9 3.2.2.]]
+
+[51] この[[データ型]]を決定する方法は一般には存在しません。 [CODE(URI)@en[[[type]]]]
+が指定されている場合は、それを利用します。そうでない場合は、[[ファイル名]]の[[接尾辞]]
+([[拡張子]]) などから推定しなければなりません。ただしそれについて標準化された方法はありません。
+[SRC[>>7, >>9 3.2.2.]]
+
+[53] ただし、値が [CODE[[[d]]]] の場合、 [CODE@en[[[TYPE]]]] と [CODE@en[[[RETR]]]]
+の代わりに [CODE@en[[[NLST]]]] [[命令]]を送信して、[[ディレクトリー]]内の[[ファイル]]の一覧を取得します。
+[SRC[>>9 3.2.2.]]
+
+;; [54] これは [[RFC 1630]] にはありませんでした。
+
+[52] 「[CODE(URI)@en[[[type]]]]」の部分は [[RFC 1630]] の構文定義上は[[小文字]]でなければならないように読めます。
+[[RFC 1738]] では [[ABNF]] 構文定義上[[大文字]]でも[[小文字]]でも構わないと解釈するのが形式的には正しいのでしょうが、
+値の[[生成規則]]ではあえて[[大文字]]と[[小文字]]を列挙しているので、[[小文字]]だけしか認めないという意図があるかもしれません。
+
+[34] [[RFC 1630]] の構文定義上は値は[[大文字]]でなければならないように読めますが、
+[[RFC 1738]] には[[小文字]]で示されており、
+現実にも[[小文字]]でも構わないようです。 [[RFC 1738]] の [[ABNF]]
+構文定義上は両方共認められています。
+
+;; [68] [CODE(URI)@en[[[;]]]] 以後の部分は [[RFC 1808]] までは[[引数]] ([CODE(ABNF)@en[[[params]]]])
+として [[path]] とは別の構成部品と考えられていました。 [[RFC 2396]] 以後は [[path]]
+の一部とみなされています。
+
+** パーセント符号化
+
+[60] [VAR@en[cwd]] と [VAR@en[name]] は[[パーセント符号化]]を使えます。
+[[FTP]] の[[命令]]に使う前に[[パーセント復号]]しなければなりません [SRC[>>9 3.2.2.]]。
+
+[61] [VAR@en[cwd]] と [VAR@en[name]] において [CODE(URI)@en[[[/]]]] と
+[CODE(URI)@en[[[;]]]] は[[予約]]されており、[[命令]]の引数として使うことを意図しているのであれば[[パーセント符号化]]しなければなりません。
+[SRC[>>9 3.2.2.]]
+
+[63] [CODE(URI)@en[[[type]]]] とその値について、 [[RFC 1738]] の [[ABNF]]
+構文上[[パーセント符号化]]は認められていません。
+
+** ディレクトリーの表現
+
+[69] 前述の通り、[[ディレクトリー]]を表す [[URL]] としては [[RFC 1630]]
+による [[path]] を [CODE(URI)@en[[[/]]]] で終わらせる方法と、 [[RFC 1738]]
+による [CODE(URI)@en[;[[type]]=[[d]]]] で終わらせる方法が存在しています。
+
+[70] この両者は、[[相対URL]] の[[解決]]において解釈を変えてしまいます。
+そのため、 [[RFC 1808]] は[[相対URL]] を扱う文脈にあっては [CODE(URI)@en[;[[type]]=[[d]]]]
+の方法を使わないことを推奨しています [SRC[>>12 5.3.]]。
+
+* 処理モデル
+
+** FTP 操作
+
+[58] [CODE@en[[[RETR]]]] によって[[ファイル]]を取得したり、 
+[CODE@en[[[NLST]]]] によって[[ディレクトリー]]内の[[ファイル]]の一覧を取得したりする操作は、
+[CODE(URI)@en[[[ftp:]]]] [[URL]] の定義として概ね明確に規定されています。
+
+[59] それ以外の、[[アップロード]]や情報の取得などの操作に [CODE(URI)@en[[[ftp:]]]]
+[[URL]] を使うことについては述べない [SRC[>>9 3.2.2.]] とされています。
+
+** フォーム提出
+
+*** 仕様書
+
+- [5] [CITE@en-US-x-hixie[Web Applications 1.0]] ([TIME[2011-06-04 00:47:42 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/complete.html#form-submission-algorithm>
+
+* 歴史
+
+** RFC 1630
+
+[8] [[IETF]] として最初の [[URI]] の仕様書である [[RFC 1630]] には、 [CODE(URI)@en[[[ftp:]]]]
+[[URL]] の仕様も含まれていました。
+
+[7] [CITE@en[RFC 1630 - Universal Resource Identifiers in WWW: A Unifying Syntax for the Expression of Names and Addresses of Objects on the Network as used in the World-Wide Web]] ([TIME[2011-06-04 17:20:47 +09:00]] 版) <http://tools.ietf.org/html/rfc1630#page-14>
+
+;; 1994年
+
+[35] 構文は次のように定義されていました [SRC[>>7]]。
+
+[PRE(code)[
+  ftpaddress             f t p : / / login / path [  ftptype ]
+  login                  [ user [ : password ] @ ] hostport
+  ftptype                A formcode | E formcode | I | L digits
+  formcode               N | T | C
+]PRE]
+
+;; [33] [CODE(ABNF)@en[[[ftptype]]]] の定義が間違っています。なお、 
+[CODE(URI)[[[/]]]] で終わる[[ディレクトリー]]指定の場合は [CODE(ABNF)@en[[[path]]]]
+の定義に含まれています。
+
+** RFC 1738
+
+[10] [[IETF]] [[標準化過程]]としては最初の [[URL]] の仕様書である [[RFC 1738]] にも、
+[CODE(URI)@[[[ftp:]]]] [[URL]] の仕様が含まれていました。
+
+[9] [CITE@en[RFC 1738 - Uniform Resource Locators (URL)]]
+<http://tools.ietf.org/html/rfc1738#section-3.2>
+
+;; 1994年
+
+[62] 構文は次のように定義されていました [SRC[>>9 5.]]。
+
+[PRE(ABNF code)[
+; FTP (see also RFC959)
+
+ftpurl         = "ftp://" login [ "/" fpath [ ";type=" ftptype ]]
+fpath          = fsegment *[ "/" fsegment ]
+fsegment       = *[ uchar | "?" | ":" | "@" | "&" | "=" ]
+ftptype        = "A" | "I" | "D" | "a" | "i" | "d"
+]PRE]
+
+** RFC 1808
+
+[11] [[IETF]] [[標準化過程]]としては最初の[[相対URL]] の仕様書である [[RFC 1808]] には、
+[CODE(URI)@en[[[ftp:]]]] [[URL]] に関する[[相対URL]] の扱いについての規定も含まれていました。
+
+[12] [CITE@en[RFC 1808 - Relative Uniform Resource Locators]] 
+<http://tools.ietf.org/html/rfc1808>
+
+;; 1995年
+
+** RFC 改訂、されない
+
+[16] [[RFC 1738]], [[RFC 1808]] はその後 [[RFC 2368]] (1998年), [[RFC 3986]]
+(2005年) と二度も改訂され、
+[CODE(URI)@en[[[ftp:]]]] を含む個別の [[URL scheme]] の定義は含まれないようになりましたが、
+[CODE(URI)@en[[[ftp:]]]] の定義は独立した [[RFC]] にならないまま [[RFC 1738]],
+[[RFC 1808]] ともに廃止されてしまいました。
+
+[17] 現実には [CODE(URI)@en[[[ftp:]]]] は [[URL scheme]] の中ではよく使われている部類なのですが、
+数年以上公式には廃止された状態が続くとか、 [[IETF]] の[[標準化過程]]は無茶苦茶ですね。
+
+[18] 一応 [[I-D]] はありますが、果たして完成するのかどうか。
+
+*** draft-casey-url-ftp (1997)
+
+[75] [CITE@en[draft-casey-url-ftp-00 - A FTP URL Format]]
+<http://tools.ietf.org/html/draft-casey-url-ftp-00>
+
+[76] この [[I-D]] は基本的には [[RFC 1738]] の定義を踏襲していますが、 >>1
+の件を既知の問題として記述しています。
+
+*** draft-hoffman-ftp-uri (2004-2005)
+
+[19] [CITE@en[draft-hoffman-ftp-uri-04 - The ftp URI Scheme]] 
+<http://tools.ietf.org/html/draft-hoffman-ftp-uri-04>
+
+[73] この2004年の [[I-D]] は [[RFC 1738]] の該当部分を抜き出しただけで、唯一の違いは >>71
+です。 [[ABNF]] 構文定義はコピペされていないので、構文は本文中で曖昧に述べられているだけです。
+仕事が雑ですねぇ。
+
+*** draft-yevstifeyev-ftp-uri-scheme (2011)
+
+[15] [CITE@en[draft-yevstifeyev-ftp-uri-scheme - The 'ftp' URI Scheme]]
+<http://tools.ietf.org/html/draft-yevstifeyev-ftp-uri-scheme>
+
+** フォーム提出
+
+[6] [[Web Forms 2.0]] ではじめて [CODE(URI)@en[[[ftp:]]]] [[URL]] への[[フォーム提出]]の処理モデルが規定されました。
+これはその後 [[Web Applications 1.0]] に取り込まれました。
+
+[3] [CITE@en-GB-x-Hixie[Web Forms 2.0]] ([TIME[2009-01-05 20:07:15 +09:00]] 版) <http://www.whatwg.org/specs/web-forms/current-work/#for-ftp>
+
+* 例
+
+[13] 
+[PRE(URI example code)[
+ftp://ftp.is.co.za/rfc/rfc1808.txt
+]PRE]
+
+[14]
+[PRE(URI example code)[
+ftp://user@example.com:/pub/ruby;type=i
+]PRE]
+
+;; この [[URL]] を書いた人の意図とは違うような気もしますが、たまたま正しい [[URL]] です。
+
+[55] 
+[PRE(URI example code)[
+ftp://myname@host.dom/%2Fetc/motd
+]PRE]
+
+= [VAR@en[host.dom]] に [[FTP]] で接続して
+= [[利用者名]] [VAR@en[myname]] (と、聞かれれば[[利用者]]に尋ねた[[合言葉]]) でログインし、
+= [CODE[[[CWD]] /etc]] を実行し、
+= [CODE[[[RETR]] motd]] を実行します。 [SRC[>>9 3.2.2.]]
+
+[56] 
+[PRE(URI example code)[
+ftp://myname@host.dom/etc/motd
+]PRE]
+
+= [VAR@en[host.dom]] に [[FTP]] で接続して
+= [[利用者名]] [VAR@en[myname]] (と、聞かれれば[[利用者]]に尋ねた[[合言葉]]) でログインし、
+= [CODE[[[CWD]] etc]] を実行し、
+= [CODE[[[RETR]] motd]] を実行します。 [SRC[>>9 3.2.2.]]
+
+[57] 
+[PRE(URI example code)[
+ftp://myname@host.dom//etc/motd
+]PRE]
+
+= [VAR@en[host.dom]] に [[FTP]] で接続して
+= [[利用者名]] [VAR@en[myname]] (と、聞かれれば[[利用者]]に尋ねた[[合言葉]]) でログインし、
+= [CODE[[[CWD]] ]] を実行し、
+= [CODE[[[CWD]] etc]] を実行し、
+= [CODE[[[RETR]] motd]] を実行します。 [SRC[>>9 3.2.2.]]
+
+[77] 
+[PRE(URI example code)[
+ftp://host/~/foo/bar.html
+ftp://user:pass@host/~/
+]PRE]
+
+>>1 の問題への対処として、実際の [[Webブラウザー]]の挙動に従うとして、
+[[ホーム・ディレクトリー]]からの [[path]] でアクセスする方法が必要であると提案されていた
+[SRC[>>71]] 構文です。
+
+* 関連
+
+[20] [CODE(URI)@en[[[ftp:]]]] と [CODE(URI)@en[[[file:]]]] はしばしば混同されますが、別物です。
+
+[21] [CODE(URI)@en[[[sftp:]]]]、[CODE(URI)@en[[[tftp:]]]] という [[URL scheme]] がありますが、そもそも
+[[FTP]] と [[SFTP]] や [[TFTP]] は別物です。
+
+
+[74] [CITE[Results for ftp: URL canonicalization (See <http://suika.fam.cx/www/url/perl-weburl/t/browsers/decomps.html?decomps-ftp.dat;compat>)]]
+( ([TIME[2011-06-05 18:11:20 +09:00]] 版))
+<http://suika.fam.cx/gate/test-results/list/url-canon-ftp-20110604/all>
+
+[78] [CITE[URL Schemes Supported in Lynx]]
+( ([TIME[2012-02-13 02:46:17 +09:00]] 版))
+<http://lynx.isc.org/current/lynx2-8-8/lynx_help/lynx_url_support.html#ncftp_url>
+
+[79] [CITE[ncsa-mosaic/CHANGES at master · alandipert/ncsa-mosaic]]
+( ([TIME[2014-04-07 05:29:11 +09:00]] 版))
+<https://github.com/alandipert/ncsa-mosaic/blob/master/CHANGES#L189>

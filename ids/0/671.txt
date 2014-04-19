@@ -1,0 +1,3158 @@
+
+<!ENTITY ja.baseline "基線">
+<!ENTITY ja.cache "キャッシュ">
+<!ENTITY ja.conneg.baseline "基線">
+<!ENTITY ja.fax.Internet-fax "インターネット・ファックス">
+<!ENTITY ja.fax.extended-mode "拡張モード">
+<!ENTITY ja.fax.simple-mode "単純モード">
+<!ENTITY ja.fax.system "系統">
+<!ENTITY ja.kwd.MUST "<KWD:kwd>なりません</KWD:kwd>">
+<!ENTITY ja.kwd.must "なりません">
+<!ENTITY ja.kwd.should "べきです">
+<!ENTITY ja.mail.agent "エージェント">
+<!ENTITY ja.mail.email "電子メイル">
+<!ENTITY ja.mail.field "欄">
+<!ENTITY ja.mail.header "頭">
+<!ENTITY ja.mail.header-field "頭欄">
+<!ENTITY ja.mail.mdn.disposition "配置">
+<!ENTITY ja.mail.mdn.disposition-modifier "&ja.mail.mdn.disposition;修飾子">
+<!ENTITY ja.mail.mdn.disposition-notification "&ja.mail.mdn.disposition;通知">
+<!ENTITY ja.mail.mdn.Message-Disposition-Notification "メッセージ&ja.mail.mdn.disposition;通知">
+<!ENTITY ja.mail.mdn.message-disposition-notification "メッセージ&ja.mail.mdn.disposition;通知">
+<!ENTITY ja.mail.mdn.message-disposition-option "メッセージ&ja.mail.mdn.disposition;選択肢">
+<!ENTITY ja.mail.message "メッセージ">
+<!ENTITY ja.mail.message-data "メッセージ・データ">
+<!ENTITY ja.mail.mime.body-part "本体部分">
+<!ENTITY ja.mail.mime.content-type "内容型">
+<!ENTITY ja.mail.option "選択肢">
+<!ENTITY ja.mail.parameter "引数">
+<!ENTITY ja.mail.system "システム">
+<!ENTITY ja.media.feature "特徴">
+<!ENTITY ja.protocol "プロトコル">
+<!ENTITY ja.user-agent "利用者エージェント">
+
+Network Working Group                                           G. Klyne
+Request for Comments: 3297                        Clearswift Corporation
+Category: Standards Track                                     R. Iwazaki
+[PRE[
+                                                             Toshiba TEC
+                                                              D. Crocker
+                                             Brandenburg InternetWorking
+                                                               July 2002
+]PRE]
+
+[PRE[
+       Content Negotiation for Messaging Services based on Email
+電子メイルを基にしたメッセージ・サービス用内容折衝
+]PRE]
+
+Status of this Memo
+
+[PRE[
+   This document specifies an Internet standards track protocol for the
+   Internet community, and requests discussion and suggestions for
+   improvements.  Please refer to the current edition of the "Internet
+   Official Protocol Standards" (STD 1) for the standardization state
+   and status of this protocol.  Distribution of this memo is unlimited.
+]PRE]
+
+Copyright Notice
+
+[PRE[
+   Copyright (C) The Internet Society (2002).  All Rights Reserved.
+]PRE]
+
+Abstract
+
+[PRE[
+   This memo describes a content negotiation mechanism for facsimile,
+   voice and other messaging services that use Internet email.
+このメモは、 Internet 電子メイルを使うファクシミリ・音声・その他のメッセージ・サービスのための内容折衝機構を説明します。
+]PRE]
+
+[PRE[
+   Services such as facsimile and voice messaging need to cope with new
+   message content formats, yet need to ensure that the content of any
+   given message is renderable by the receiving agent.  The mechanism
+   described here aims to meet these needs in a fashion that is fully
+   compatible with the current behaviour and expectations of Internet
+   email.
+ファクシミリや音声メッセージのようなサービスは新しいメッセージ内容形式を処理する必要がありますが、一方でいかなるメッセージも受信&ja.agent;により確実に&ja.rendering;可能である必要があります。ここで説明する機構は、
+Internet 電子メイルの現在の所作や想定と完全に互換性のある方法でこうした需要に答える助けとするものです。
+]PRE]
+
+Table of Contents
+
+[PRE[
+   1. Introduction................................................... 3
+     1.1 Structure of this document ................................. 4
+     1.2 Document terminology and conventions ....................... 4
+        1.2.1 Terminology............................................ 4
+        1.2.2 Design goals........................................... 5
+        1.2.3 Other document conventions............................. 5
+   2. Background and goals........................................... 5
+     2.1 Background ................................................. 5
+        2.1.1 Fax and email.......................................... 5
+        2.1.2 Current facilities in Internet Fax..................... 6
+     2.2 Closing the loop ........................................... 6
+]PRE]
+
+Klyne, et. al.              Standards Track                     [Page 1]
+[PRE[
+
+RFC 3297      Content Negotiation for Messaging Services       July 2002
+]PRE]
+
+[PRE[
+     2.3 Goals for content negotiation .............................. 8
+   3. Framework for content negotiation..............................10
+     3.1 Send data with an indication of alternatives ...............11
+        3.1.1 Choice of default data format..........................12
+        3.1.2 MDN request indicating alternate data formats..........12
+        3.1.3 Information about alternative data formats.............13
+     3.2 Receiver options ...........................................14
+        3.2.1 Alternatives not recognized............................14
+        3.2.2 Alternative not desired................................14
+        3.2.3 Alternative preferred..................................14
+     3.3 Send alternative message data ..............................16
+     3.4 Confirm receipt of resent message data .....................17
+   4. The Content-alternative header.................................18
+   5. The Original-Message-ID message header.........................18
+   6. MDN extension for alternative data.............................19
+     6.1 Indicating readiness to send alternative data ..............19
+     6.2 Indicating a preference for alternative data ...............20
+     6.3 Indicating alternative data is no longer available .........21
+     6.4 Indicating loss of original data ...........................22
+     6.5 Automatic sending of MDN responses .........................22
+   7. Internet Fax Considerations....................................22
+   8. Examples.......................................................23
+     8.1 Sending enhanced Internet Fax image ........................23
+     8.2 Internet fax with initial data usable ......................27
+     8.3 Negotiate to lower receiver capability .....................28
+     8.4 Sending an alternative content type ........................32
+   9. IANA Considerations............................................36
+     9.1 New message headers ........................................36
+     9.2 MDN extensions .............................................36
+        9.2.1 Notification option 'Alternative-available'............36
+        9.2.2 Notification option 'Alternative-not-available'........36
+        9.2.3 Disposition modifier 'Alternative-preferred'...........37
+        9.2.4 Disposition modifier 'Original-lost'...................37
+   10. Internationalization considerations...........................37
+   11. Security Considerations.......................................37
+   12. Acknowledgements..............................................38
+   13. References....................................................38
+   Appendix A: Implementation issues.................................40
+     A.1 Receiver state .............................................40
+     A.2 Receiver buffering of message data .........................41
+     A.3 Sender state ...............................................42
+     A.4 Timeout of offer of alternatives ...........................42
+     A.5 Timeout of receiver capabilities ...........................42
+     A.6 Relationship to timely delivery ............................43
+     A.7 Ephemeral capabilities .....................................43
+     A.8 Situations where MDNs must not be auto-generated ...........44
+   Appendix B: Candidates for further enhancements...................44
+   Authors' Addresses................................................45
+]PRE]
+
+Klyne, et. al.              Standards Track                     [Page 2]
+[PRE[
+
+RFC 3297      Content Negotiation for Messaging Services       July 2002
+]PRE]
+
+[PRE[
+   Full Copyright Statement..........................................46
+]PRE]
+
+1. Introduction
+
+[PRE[
+   This memo describes a mechanism for email based content negotiation
+   which provides an Internet fax facility comparable to that of
+   traditional facsimile, which may be used by other messaging services
+   that need similar facilities.
+このメモは、旧来のファクシミリに匹敵する Internet fax
+機能を提供する電子メイルを基にした内容折衝機構を説明します。これは同様の機能を必要とするほかのメッセージ・サービスでも使用することが出来ます。
+]PRE]
+
+[PRE[
+   "Extended Facsimile using Internet Mail" [1] specifies the transfer
+   of image data using Internet email protocols.  "Indicating Supported
+   Media Features Using Extensions to DSN and MDN" [2] describes a
+   mechanism for providing the sender with the details of a receiver's
+   capabilities.  The capability information thus provided, if stored by
+   the sender, can be used in subsequent transfers between the same
+   sender and receiver.
+『Internet メイルを使う拡張ファクシミリ』は、 Internet
+電子メイル&ja.protocol;を使った画像データの転送を規定しています。『DSN
+および MDN の拡張を使った対応媒体&ja.conneg.feature;の指示』は、送信者に受信者の能力の詳細を提供する機構を説明しています。能力情報がこうして提供され、送信者により蓄積されたなら、同じ送受信者間の後の転送で使用することが出来ます。
+]PRE]
+
+[PRE[
+   Many communications are one-off or infrequent transfers between a
+   given sender and receiver, and cannot benefit from this "do better
+   next time" approach.
+多くの通信は特定の送受信間の1回限り<!-- ? -->とか稀な転送であって、この「次の時にもっと良くする」方法では有益たり得ません。
+]PRE]
+
+[PRE[
+   An alternative facility available in email (though not widely
+   implemented) is for the sender to use 'multipart/alternative' [15] to
+   send a message in several different formats, and allow the receiver
+   to choose.  Apart from the obvious drawback of network bandwidth use,
+   this approach does not of itself allow the sender to truly tailor its
+   message to a given receiver, or to obtain confirmation that any of
+   the alternatives sent was usable by the receiver.
+電子メイルで利用可能 (であるけどあまり実装されていない。) 
+な他の機能に、送信者が 'multipart/alternative' 
+を使って複数の異なる形式でメッセージを送り、受信者が選択可能にするというものがあります。使用するネットワーク帯域という明らかな欠点はおいておくにしても、この方法は送信者が特定の受信者にメッセージを真に仕立てることを可能にするものではありませんし、送信される選択肢のいずれかを受信者が利用可能であることを確認したわけでもありません。
+]PRE]
+
+[PRE[
+   This memo describes a mechanism that allows better-than-baseline data
+   formats to be sent in the first communication between a sender and
+   receiver.  The same mechanism can also achieve a usable message
+   transfer when the sender has based the initial transmission on
+   incorrect information about the receiver's capabilities.  It allows
+   the sender of a message to indicate availability of alternative
+   formats, and the receiver to indicate that an alternative format
+   should be provided to replace the message data originally
+   transmitted.
+このメモは、基線より上のデータ形式<ja:note>原文では
+better-than-baseline data formats</ja:note>を最初の送受信者間の通信で送信出来るようにする機構を説明します。同じ機構で、送信者が最初の転送を受信者の能力に関する間違った情報に基づいた時に利用可能なメッセージ転送をも達成出来ます。メッセージの送信者が他の形式の利用可能性を提示することが出来、受信者は元々転送されたメッセージ・データを置き換える他の形式を提供するよう提示出来ます。
+]PRE]
+
+[PRE[
+   When the sender does not have the correct information about a
+   receiver's capabilities, the mechanism described here may incur an
+   additional message round trip.  An important goal of this mechanism
+   is to allow enough information to be provided to determine whether or
+   not the extra round trip is required.
+送信者が受信者の能力についての正しい情報を持っていなかったときは、ここで説明する機構により追加のメッセージ往復が必要になるかもしれません。この機構の重要な目標は、余計な往復が必要になるかどうかを決定する十分な情報を提供可能にすることです。
+]PRE]
+
+1.1 Structure of this document
+この文書の構成
+
+[PRE[
+   The main part of this memo addresses the following areas:
+このメモの主要部は次の事柄を扱います。
+]PRE]
+
+[PRE[
+   Section 2 describes some of the background, and sets out some
+   specific goals that are addressed in this specification.
+第2章は背景やこの仕様書が扱う詳細な目標を述べます。
+]PRE]
+
+[PRE[
+   Section 3 describes the proposed content negotiation framework,
+   indicating the flow of information between a sender and receiver.
+第3章は提案する内容折衝の枠組みを送受信者間の情報の流れを示して説明します。
+]PRE]
+
+[PRE[
+   Section 4 contains a detailed description of the 
+   'Content-alternative' header that is used to convey information about
+   alternative available formats.  This description is intended to stand
+   independently of the rest of this specification, with a view to being
+   usable in conjunction with other content negotiation protocols.
+第4章は、代わりの利用可能な形式についての情報を伝えるのに使う
+'Content-alternative' 頭の詳しい説明をします。この説明はこの仕様の他の部分とは独立したもので、他の内容折衝プロトコルと組み合わせて利用することが出来ます。
+]PRE]
+
+[PRE[
+   Section 5 describes a new mail message header, 'Original-Message-ID',
+   which is used to correlate alternative data sent during negotiation
+   with the original message data, and to distinguish the continuation
+   of an old message transaction from the start of a new transaction.
+第5章は新しいメイル・メッセージ頭 'Original-Message-ID'
+を説明します。これは元のメッセージ・データと折衝の過程で送信された代替データを関連付け、古いメッセージ処理の続きと新しい処理を区別するのに使います。
+]PRE]
+
+[PRE[
+   Section 6 describes extensions to the Message Disposition
+   Notification (MDN) framework [4] that support negotiation between the
+   communicating parties.
+第6章は、通信当事者間の折衝を手助けする MDN
+の拡張を説明します。
+]PRE]
+
+1.2 Document terminology and conventions
+文書中の用語と記法
+
+1.2.1 Terminology
+用語
+
+[PRE[
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
+   document are to be interpreted as described in RFC 2119 [22].
+この文書中のキーワード ... は、 RFC 2119 で説明されているように解釈します。
+]PRE]
+
+[PRE[
+   Capability exchange
+      An exchange of information between communicating parties
+      indicating the kinds of information they can generate or consume.
+能力交換
+	通信当事者間の生成あるいは消費可能な情報の種類を表す情報の交換
+]PRE]
+
+[PRE[
+   Capability identification
+      Provision of information by the a receiving agent that indicates
+      the kinds of message data that it can accept for presentation to a
+      user.
+能力同定
+	利用者に表現出来るメッセージ・データの種類を示した受信代理者による情報により情報を用意すること
+]PRE]
+
+[PRE[
+   Content negotiation
+      An exchange of information (negotiation metadata) which leads to
+      selection of the appropriate representation (variant) when
+      transferring a data resource.
+内容折衝
+	データ資源の転送時の適切な表現 (変形) の選択のための情報 (メタ・データの折衝) の交換
+]PRE]
+
+[PRE[
+   Message transaction
+      A sequence of exchanges between a message sender and receiver that
+      accomplish the transfer of message data.
+メッセージ処理
+	メッセージ・データの転送を達成するためのメッセージの送受信者間の交換の連続
+]PRE]
+
+[PRE[
+   RFC 2703 [17] introduces several other terms related to content
+   negotiation.
+RFC 2703 は内容折衝に関わる他の用語を幾つか紹介しています。
+]PRE]
+
+1.2.2 Design goals
+設計目標
+
+[PRE[
+   In discussing the goals for content negotiation, {1}, {2}, {3}
+   notation is used, per RFC 2542, "Terminology and Goals for Internet
+   Fax" [3].  The meanings associated with these notations are:
+内容折衝の目標の議論の中で、 {1}, {2}, {3} という印を RFC 2542
+『Internet Fax の用語と目標』に則り使用します。これらの印の意味は次の通りです。
+]PRE]
+
+[PRE[
+   {1}   there is general agreement that this is a critical
+         characteristic of any definition of content negotiation for
+         Internet Fax.
+これは Internet Fax の内容折衝の定義の批判的性質であるという一般的合意がある。
+]PRE]
+
+[PRE[
+   {2}   most believe that this is an important characteristic of
+         content negotiation for Internet Fax.
+これは Internet Fax の内容折衝の重要な性質であるとほとんど信じられている。
+]PRE]
+
+[PRE[
+   {3}   there is general belief that this is a useful feature of
+         content negotiation for Internet Fax, but that other factors
+         might override;  a definition that does not provide this
+         element is acceptable.
+これは Internet Fax の内容折衝の便利な機能であると一般的に信じられていますが、他の要素が上書きされるかもしれません。この要素が提供されていない定義は認められます。
+]PRE]
+
+1.2.3 Other document conventions
+他のこの文書の記法
+
+[PRE[
+   NOTE:  Comments like this provide additional nonessential information
+   about the rationale behind this document.  Such information is not
+   needed for building a conformant implementation, but may help those
+   who wish to understand the design in greater depth.
+参考: このような注釈はこの文書の裏にある論理的根拠についての本質的でない追加の情報を提供します。こうした情報は適合する実装の設計には必要ではありませんが、より深く設計を理解したいと思う人の助けとなるでしょう。
+]PRE]
+
+2. Background and goals
+背景と目標
+
+2.1 Background
+背景
+
+2.1.1 Fax and email
+Fax と電子メイル
+
+[PRE[
+   One of the goals of the work to define a facsimile service using
+   Internet mail has been to deliver benefits of the traditional Group 3
+   Fax service in an email environment.  Traditional Group 3 Fax leans
+   heavily on the idea that an online exchange of information discloses
+   a receiver's capabilities to the sender before any message data is
+   transmitted.
+]PRE]
+
+&ja.mail.internet-mail;を使った&ja.fax.facsimile;&ja.service;を定義する作業の目標の一つは、旧来の&ja.fax.group3-fax;&ja.service;の利点を電子メイル環境に引き継ぐことです。旧来の&ja.fax.group3-fax;は、メッセージ・データが転送される前に&ja.net.online;での情報交換が受信者の能力を送信者に開示するという考えに強く依存しています。
+
+[PRE[
+   By contrast, Internet mail has been developed to operate in a
+   different fashion, without any expectation that the sender and
+   receiver will exchange information prior to message transfer.  One
+   consequence of this is that all mail messages must contain some kind
+   of meaningful message data:  messages that are sent simply to elicit
+   information from a receiving message handling agent are not generally
+   acceptable in the Internet mail environment.
+]PRE]
+
+対して&ja.mail.internet-mail;は違った様式で運行するように開発されたもので、例外無く送受信者がメッセージ転送の前に情報を交換することはありません。この結果の一つとして、全ての&ja.mail.mail-message;は何らかの形の意味のあるメッセージ・データを含んでいなければなりません。送信されるメッセージが単に受信メッセージ取り扱い&ja.mail.agent;から情報を取り出すだけというのは&ja.mail.internet-mail;環境では通常認められていません。
+
+[PRE[
+   To guarantee some level of interoperability, Group 3 Fax and Internet
+   mail rely on all receivers being able to deal with some baseline
+   format (i.e., a basic image format or plain ASCII text,
+   respectively).  The role of capability exchange or content
+   negotiation is to permit better-than baseline capabilities to be
+   employed where available.
+ある程度の相互通信性を保証するため、&ja.fax.group3-fax;と&ja.mail.internet-mail;は全ての受信者が基本的な形式
+(つまり、それぞれ基本画像形式と&ja.text.plain; ASCII
+&ja.text.text;) を処理出来ることを想定しています。能力交換,
+あるいは内容折衝の役割は基本的能力よりましなものを可能なら使用出来るようにすることです。
+]PRE]
+
+[PRE[
+   One of the challenges addressed by this specification is how to adapt
+   the email environment to provide a fax-like service.  A sender must
+   not make any a priori assumption that the receiver can recognize
+   anything other than a simple email message.  There are some important
+   uses of email that are fundamentally incompatible with the fax model
+   of message passing and content negotiation (notably mailing lists).
+   So we need to have a way of recognizing when content negotiation is
+   possible, without breaking the existing email model.
+この仕様書が取り上げる挑戦の一つは、電子メイル環境にどう&ja.fax.fax;的&ja.service;を適応させるかということです。送信者は、受信者が単純な電子メイル・メッセージ以外のものを認識出来るという事前の仮定をしてはなりません。電子メイルの重要な使用法で&ja.fax.fax;&ja.model;のメッセージの受け渡しや内容折衝と根本的に非互換なものもあります
+(とりわけ&ja.mail.mailing-list;)。ですから、内容折衝が可能な時を既存の電子メイル&ja.model;を壊すことなく判断出来る方法が必要になります。
+]PRE]
+
+2.1.2 Current facilities in Internet Fax
+&ja.fax.internet-fax;の現在の&ja.facility;
+
+[PRE[
+   "Extended Facsimile using Internet Mail" [1] provides for a limited
+   provision of receiver capability information to the sender of a
+   message, using an extension to Message Disposition Notifications
+   [2,4], employing media feature tags [5] and media feature expressions
+   [6].
+1 により、メッセージの送信者に受信者の&ja.capability;情報の一部を&ja.mail.mdn;と&ja.media.media-feature-tag;と&ja.media.media-feature-expression;を使って伝えることが出来ます。
+]PRE]
+
+[PRE[
+   This mechanism provides for receiver capabilities to be disclosed
+   after a message has been received and processed.  This information
+   can be used for subsequent transmissions to the same receiver.  But
+   many communications are one-off messages from a given sender to a
+   given receiver, and cannot benefit from this.
+この機構ではメッセージが受信されて処理された後に受信者の&ja.capability;を明かすことになります。この情報は同じ受信者に対する以降の&ja.mail.transmission;に使うことが出来ます。しかし多くの通信は当該送信者から当該受信者への1度切りのメッセージですから、ここから利益を得ることは出来ません。
+]PRE]
+
+2.2 Closing the loop
+環を閉じる
+
+[PRE[
+   Classic Internet mail is an "open loop" process:  no information is
+   returned back to the point from which the message is sent.  This has
+   been unkindly --but accurately-- characterized as "send and pray",
+   since it lacks confirmation.
+古典&ja.mail.internet-mail;は「開いた環」の過程です。メッセージが送られた場所には何の情報も戻ってきません。これは嫌味っぽく
+(でも正確に) 「送って祈れ」と言われます。確認を欠いていますから。
+]PRE]
+
+[PRE[
+   Sending a message and obtaining confirmation that the message has
+   been received is a "closed loop" process:  the confirmation sent back
+   to the sender creates a loop around which information is passed.
+メッセージを送って、メッセージを受け取ったという確認を得るのは「閉じた環」の過程です。確認が送信者に送り返されることにより、情報伝達の環が構成されます。
+]PRE]
+
+[PRE[
+   Many Internet email agents are not designed to participate in a
+   closed loop process, and thus have no responsibility to respond to
+   receipt of a message.  Later additions to Internet standards, notably
+   Delivery Service Notification [18] and Message Disposition
+   Notification [4], specify means for certain confirmation responses to
+   be sent back to the sender, thereby closing the loop.  However
+   conformance to these enhancements is optional and full deployment is
+   in the future.
+多くの&ja.mail.internet-email;&ja.mail.agent;は閉じた環の過程を構成するよう設計されてはおらず、従ってメッセージの受領に反応する責任は有しません。
+Internet 標準に後から追加されたもの、とりわけ&ja.mail.delivery-service-notification;と&ja.mail.message-disposition-notification;は、送信者に送り返される確認応答の手段を規定しており、これにより環は閉じられます。しかしこれらの増補への適合は任意であって、完全に配置されるのは将来のことでしょう。
+]PRE]
+
+[PRE[
+   DSN must be fully implemented by the entire infrastructure; further
+   when support is lacking, the message is still sent on in open-loop
+   fashion.  Sometimes, transmission and delivery should instead be
+   aborted and the fact be reported to the sender.
+DSN は基盤全体において完全に実装されなければなりません。対応が欠けている限り、メッセージは依然として開いた環状態で送信されます。時々、&ja.mail.transmission;と&ja.delivery;は代わりに中止してその事実を送信者に報告する&ja.should;。
+]PRE]
+
+[PRE[
+   Due to privacy considerations for end-users, MDN usage is entirely
+   voluntary.
+&ja.end-user;の&ja.privacy;を考慮し、 MDN
+の使用は完全に任意とします。
+]PRE]
+
+[PRE[
+   Content negotiation is a closed loop function (for the purposes of
+   this proposal -- see section 2.3, item (f)), and requires that the
+   recipient of a message make some response to the sender.  Since
+   content negotiation must retro-fit a closed-loop function over
+   Internet mail's voluntary and high-latency environment, a challenge
+   for content negotiation in email is to establish that consenting
+   parties can recognize a closed loop situation, and hence recognize
+   their responsibilities to close the loop.
+内容折衝は (この提案の目的のため。第2.3節項目(f)参照。)
+閉じた環機能で、メッセージの受信者が送信者に何らかの反応を返すことが必要です。内容折衝は閉じた環機能を&ja.mail.internet-mail;の自発的でとても遅延のある環境で
+retro-fit しなければならないので<ja:note>訳にとっても自信がありません。</ja:note>、電子メイルでの内容折衝の挑戦は当事者間の合意で閉じた環の状況を認識することが出来、それゆえに環を閉じる責任を認識することが出来ます。
+]PRE]
+
+[PRE[
+   Three different loops can be identified in a content negotiation:
+内容折衝では3つの異なる環を識別出来ます。
+]PRE]
+
+[PRE[
+              Sender                      Receiver
+                |                             |
+         Initial message ------>------------  v
+                |                             |
+               (1) ------------<--- Request alternative data
+                |                             |
+        Send alternative ------>------------ (2)
+                |                             |
+               (3) ------------<------ Confirm receipt
+                                       of usable data
+]PRE]
+
+[PRE[
+              送信者                        受信者
+                |                             |
+        最初のメッセージ ------>------------  v
+                |                             |
+               (1) ------------<--- 代替データ請求
+                |                             |
+            代替を送信 -------->------------ (2)
+                |                             |
+               (3) ------------<------ 利用可能データ
+                                       受信の確認
+]PRE]
+
+[PRE[
+   (1)   Sender receives acknowledgement that negotiable content has
+         been received
+送信者が折衝可能な内容を受信したかどうかの問合せを受信する
+]PRE]
+
+[PRE[
+   (2)   Receiver receives confirmation that its request for data has
+         been received.
+受信者がデータの請求が受信されたかの確認を受け取る
+]PRE]
+
+[PRE[
+   (3)   Sender receives confirmation that received data is processable,
+         or has been processed.
+送信者が受信したデータが処理可能か又は処理されたかの確認を受信する
+]PRE]
+
+[PRE[
+   Although the content negotiation process is initiated by the sender,
+   it is not established until loop (1) is closed with an indication
+   that the receiver desires alternative content.
+内容折衝過程は送信者により開始されますが、環 (1)
+が受信者の代替内容を希望するかの指示により閉じられるまでは確立されていません。
+]PRE]
+
+[PRE[
+   If content sent with the original message from the sender is
+   processable by the receiver, and a confirmation is sent, then the
+   entire process is reduced to a simple send/confirm loop:
+元のメッセージと共に送信者から送信される内容が受信者により処理可能で確認が送られた場合、全過程は単純な送信・確認の環に縮小されます。
+]PRE]
+
+[PRE[
+                  Sender                      Receiver
+                    |                             |
+             Initial message ------>------------  v
+                    |                             |
+                   (3) ------------<------ Confirm receipt
+                                           of usable data
+]PRE]
+
+[PRE[
+              送信者                        受信者
+                |                             |
+        最初のメッセージ ------>------------  v
+                |                             |
+               (3) ------------<------ 利用可能データ
+                                       受信の確認
+]PRE]
+
+2.3 Goals for content negotiation
+内容折衝の目標
+
+[PRE[
+   The primary goal {1} is to provide a mechanism that allows arbitrary
+   enhanced content features to be used with Internet fax systems.  The
+   mechanism should {2} support introduction of new features over time,
+   particularly those that are adopted for Group 3 fax.
+第1目標 {1} は任意の&ja.enhanced;内容機能を&ja.fax.internet-fax;体系で使用することが可能になる仕組みを整えることです。この仕組みは新しい機能,
+とりわけ&ja.fax.group3-fax;で採用されている機能を導入&ja.should; {2}。
+]PRE]
+
+[PRE[
+   Further goals are:
+更なる目標は次の通りです。
+]PRE]
+
+[PRE[
+   (a)   Must {1} interwork with existing simple mode Internet fax
+         systems.
+既存の単純状態&ja.fax.internet-fax;体系と相互運用出来&ja.must; {1}。
+]PRE]
+
+[PRE[
+   (b)   Must {1} interwork with existing email clients.
+既存の電子メイル&ja.mail.client;と相互運用出来&ja.must; {1}。
+]PRE]
+
+[PRE[
+         The term "interwork" used above means that the mechanism must
+         be introduced in a way that may be ignored by existing systems,
+         and systems enhanced to use the negotiation mechanisms will
+         behave in a fashion that is expected by existing systems.
+         (I.e., existing clients are not expected in any way to
+         participate in or be aware of content negotiation.)
+上で使った用語「相互運用」は、既存の体系が無視出来、折衝機構を用いるように拡張された体系は既存の体系が想定している様式で振舞うような
+(すなわち、既存の&ja.mail.clent;はいかなる形でも構成することを想定されていないし、内容折衝に気づかない)
+方法で仕組みを導入し&ja.must;ことを意味します。
+]PRE]
+
+[PRE[
+   (c)   Must {1} avoid transmission of "administrative non messages".
+         (I.e., only messages that contain meaningful content for the
+         end user may be sent unless it is known that the receiving
+         system will interpret them, and not attempt to display them.)
+         This requirement has been stated very strongly by the email
+         community.
+「管理用非メッセージ」の転送を避けなければならない {1}。
+(つまり、&ja.end-user;にとって意味のある内容を含んだメッセージだけが、受信処理系がこれを解釈して,
+かつ表示しようとしないと分かっている場合以外に送っても良い。)
+これは電子メイル&ja.community;からの非常に強い要求であります。
+]PRE]
+
+[PRE[
+         This means that a sender must not assume that a receiver can
+         understand the capability exchange protocol elements, so must
+         always start by sending some meaningful message data.
+これは受信者が能力交換&ja.protocol;要素を理解できると送信者が仮定してはならず、よって常に何らかの意味のあるメッセージ・データを送信することから始めなければならないことを意味します。
+]PRE]
+
+[PRE[
+   (d)   Avoid {1} multiple renderings of a message.  In situations
+         where multiple versions of a message are transferred, the
+         receiver must be able to reliably decide on a single version to
+         be displayed.
+1つのメッセージの複数の&ja.rendering;を避ける {1}。
+1つのメッセージの複数の版が転送された状況では、受信者は表示する版を1つ確実に決めることが出来なければなりません。
+]PRE]
+
+[PRE[
+   (e)   Minimize {2} round trips needed to complete a transmission.
+         Ideally {3} every enhanced transmission will result in simply
+         sending data that the recipient can process, and receiving a
+         confirmation response.
+転送を完了するのに必要な往復を最小化する {2}。理想的には {3}、
+各拡張転送は受信者が処理出来るデータを単純に送信し、確認応答を受信することになります。
+]PRE]
+
+[PRE[
+   (f)   The solution adopted should not {3} transmit multiple versions
+         of the same data.  In particular, it must not {1} rely on
+         routinely sending multiple instances of the same data in a
+         single message.
+採用される方策では同じデータの複数の版を転送しないのがよいです {3}。特に、単一メッセージ中に同じデータの複数の&ja.instance;を型通りに送ることに依存してはなりません {1}。
+]PRE]
+
+[PRE[
+         This does not prohibit sending multiple versions of the same
+         data, but it must not be a requirement to do so.  A sender may
+         choose to send multiple versions together (e.g., plain text and
+         some other format), but the capability exchange mechanism
+         selected must not depend on such behaviour.
+これは同じデータの複数の版を送信することを禁止するものではありませんが、そうすることを要求してはなりません。送信者は複数の版を一緒に
+(例えば&ja.plain-text;と他の何かの形式を)
+送信することを選んでも構いませんが、選択される能力交換&ja.mechanism;がそのような動作に依存してはなりません。
+]PRE]
+
+[PRE[
+   (g)   The solution adopted should {2} be consistent with and
+         applicable to other Internet email based applications; e.g.,
+         regular email, voice messaging, unified messaging, etc.
+採用される方策は他の&ja.mail.internet-email;を基にした応用,
+例えば普通の&ja.mail.email;や&ja.msg.voice-messaging;,
+&ja.msg.unified-messaging;などと一貫していて応用出来るのが良いです {2}。
+]PRE]
+
+[PRE[
+   (h)   Allow for a graceful recovery from stale cache information.  A
+         sender might use historic information to send non-baseline data
+         with an initial message.  If this turns out to be unusable by
+         the recipient, it should still be possible {3} for the baseline
+         data, or some other acceptable format, to be selected and
+         transferred.
+腐った&ja.cache;情報からの潔い回復を認める。送信者は最初のメッセージと共に&ja.baseline;でないデータを送信する歴史的な情報を使うかもしれません。もしこれが受信者にとって利用出来ない結果になったら、&ja.baseline;データか他の利用出来る形式が選ばれて転送されることが依然可能であるのが良いです {3}。
+]PRE]
+
+[PRE[
+   (i)   The mechanism defined should {2} operate cleanly in conjunction
+         with the mechanisms already defined for extended mode Internet
+         fax (extended DSN and MDN [2], etc.).
+定義される&ja.mechanism;は&ja.fax.extended-mode-internet-fax;用に既に定義された&ja.mechanism;
+(拡張された DSN と MDN など) と明確に連携して動作するのが良いです {2}。
+]PRE]
+
+[PRE[
+   (j)   As much as possible, existing email mechanisms should {3} be
+         used rather than inventing new ones.  (It is clear that some
+         new mechanisms will be needed, but they should be defined
+         cautiously.)
+可能な限り、新しい&ja.mail.email;&ja.mechanism;をつくるのではなく既存のものを使うのが良いです {3}。
+(何らかの新しい&ja.mechanism;が必要なのは明らかですが、慎重に定義するのが良いです。)
+]PRE]
+
+[PRE[
+   (k)   The mechanism should {2} be implementable in low memory
+         devices.  That is, it should not depend on any party being able
+         to buffer arbitrary amounts of message data.
+&ja.mechanisim;は&ja.hardware.memory;が少ない機器でも実装可能であるのが良いです {2}。すなわち、任意の量のメッセージ・データを&ja.buffer;出来るいかなる部品<!-- party ってこう訳していいですか? -->にも依存しないのが良いということです。
+]PRE]
+
+[PRE[
+         (It may not be possible to completely satisfy this goal in a
+         sending system.  But if the sender does not have enough memory
+         to buffer some given message, it can choose to not offer
+         content negotiation.)
+(送信&ja.mail.system;でこの目標を完全に満足するのは可能でないかもしれません。しかし送信者が与えられたメッセージを&ja.buffer;する十分な&ja.hardware.memory;を持っていなかったら、内容折衝を提供しないという選択も出来ます。)
+]PRE]
+
+3. Framework for content negotiation
+内容折衝の枠組み
+
+[PRE[
+   This section starts with an outline of the negotiation process, and
+   provides greater detail about each stage in following sub-sections.
+この節は折衝過程の概観から説明し、続く小節で各段階の詳細について説明します。
+]PRE]
+
+[PRE[
+   1. Sender sends initial message data with an indication of
+      alternative formats available (section 3.1).  Initial data MAY be
+      a baseline or some other guess of what the recipient can handle.
+送信者は最初のメッセージ・データを代替形式が利用可能であることの案内と共に送信します。最初のデータは、&ja.baseline;であっても他の受信者が取り扱えると推測されるものでも<KWD:MAY />。
+]PRE]
+
+[PRE[
+   2. The receiver has three main options:
+受信者は3つの主たる選択肢があります。
+]PRE]
+
+[PRE[
+      (a)   Does not recognize the optional alternative formats, and
+            passively accepts the data as sent (section 3.2.1).
+任意の代替形式を認識せず、送られたデータを受動的に受け入れる。
+]PRE]
+
+[PRE[
+      (b)   Does recognize the alternatives offered, and actively
+            accepts the data as sent (section 3.2.2).
+提供された代替選択肢を認識せず、能動的に送信されたデータを受け入れる。
+]PRE]
+
+[PRE[
+      (c)   Recognizes the alternatives offered, and determines that it
+            prefers to receive an alternative format.  An MDN response
+            is sent (i) indicating that the original data was not
+            processed, and (ii) containing receiver capability
+            information so that the sender may select a suitable
+            alternative (section 3.2.3).
+提供された代替選択肢を認識し、代替形式を受信する方が好ましいと決定する。
+MDN 応答が送りますが、ここで
+(i) 元のデータは処理されなかったことを示し、
+(ii) 受信者の能力情報を含めて送信者が適切な代替を選択出来るようにします。
+]PRE]
+
+[PRE[
+            Note that only recipients named in 'to:', 'cc:' or 'bcc:'
+            headers in the original message may request alternative data
+            formats in this way.  Recipients not named in the original
+            message headers MUST NOT attempt to initiate content
+            negotiation.
+元のメッセージで 'to:', 'cc:', 'bcc:' で名前を挙げられた受信者だけがこの方法で代替データ形式を要求しても良いことに注意して下さい。元のメッセージの&ja.mail.header;に名前が挙がっていない受信者は内容折衝を始めようと<KWD:MUSTNOT />。
+]PRE]
+
+[PRE[
+            NOTE: the prohibition on initiation of negotiation by
+            recipients other than those explicitly addressed is to avoid
+            the sender from having to deal with negotiation requests
+            from unexpected parties.
+参考: 明示的に記されていない受信者からの折衝の開始の禁止は、送信者が予期せぬ&ja.msg.party;からの折衝要求を処理しなければならなくなることを避けるためです。
+]PRE]
+
+[PRE[
+   3. On receipt of an MDN response indicating preference for an
+      alternative data format, the sender MUST select and transmit
+      message data matched to the receiver's declared capabilities, or
+      send an indication that the receiver's request cannot be honoured.
+      When sending alternative data, the sender suppresses the
+      indication that alternative data is available, so the negotiation
+      process cannot loop.
+代替データ形式の希望を示す MDN 
+応答を受信したら、送信者は受信者の述べる能力に相応しいメッセージ・データを選択・転送し、または受信者の要求を受理できなかったとの合図を送信し<KWD:MUST />。代替データを送信する時、送信者は代替データの利用可能性を示さず、これにより折衝過程が繰り返されることを防ぎます。
+]PRE]
+
+[PRE[
+   4. On receipt of final data from the sender, the receiver sends an
+      MDN response indicating acceptance (or otherwise) of the data
+      received.
+送信者からの最終データを受信したら、受信者は受信したデータの受領
+(またはその他) を示す MDN 応答を送信します。
+]PRE]
+
+[PRE[
+         NOTE:  the receiver does not choose the particular data format
+         to be received;  that choice rests with the sender.  We find
+         that this approach is simpler than having the receiver choose
+         an alternative, because it builds upon existing mechanisms in
+         email, and follows the same pattern as a traditional Group 3
+         fax.  Further, it deals with situations where the range of
+         alternatives may be difficult to describe.
+]PRE]
+
+参考: 受信者は特定の受信するデータ形式を選択しません。選択は送信者が行います。この方法の方が受信者が代替を選択するのより単純であると思います。この方法は&ja.mail.email;の既存の機構に拠っていますし、伝統的&ja.fax.group3fax;の同じパターンに倣うものです。更に、代替の範囲を記述するのが難しい場面にも対処できます。
+
+[PRE[
+         This approach is similar to server driven negotiation in HTTP
+         using "Accept" headers [13].  This is distinct to the agent-
+         driven style of negotiation provided for HTTP as part of
+         Transparent Content Negotiation [14], or which might be
+         constructed in email using "multipart/alternative" and
+         "message/external-body" MIME types [15].
+]PRE]
+
+この方法は HTTP での "Accept" 
+&ja.http.header;を使ったサーバー駆動型折衝と同様のものです。これは転送内容折衝の一部として
+HTTP で提供されている&ja.http.agent;駆動型折衝や&ja.mail.email;で
+"multipart/alternative" MIME 型や "message/external-body"
+MIME 型を使って構築されるものとは別個のものです。
+
+3.1 Send data with an indication of alternatives
+代替の案内と共にデータを送る
+
+[PRE[
+   A sender that is prepared to provide alternative message data formats
+   MUST send the following message elements:
+代替データ・メッセージ形式を提供する用意をしている送信者は、次のメッセージ要素を送ら<KWD:MUST />。
+]PRE]
+
+[PRE[
+   (a)   a default message data format,
+   (b)   message identification, in the form of a Message-ID header.
+   (c)   appropriate 'Content-features' header(s) [7] describing the
+         default message data sent,
+   (d)   a request for Message Disposition Notification [4],
+   (e)   an indication that it is prepared to send different message
+         data, using an 'Alternative-available' MDN option field [9],
+         and
+   (f)   an indication of the alternative data formats available, in the
+         form of 'Content-alternative' header(s) [8].  Note:  more than
+         one <!-- 原文で "'" 欠落 -->Content-alternative' header MAY be specified; see section
+         3.1.3 for more information.
+既定のメッセージ形式。
+メッセージ識別子。 Message-ID 頭の形式で。
+適切な「Content-features」頭。送られる既定のメッセージ・データを説明する。
+&ja.mail.Message-Disposition-Notification;の要求。
+異なるメッセージ・データを送信する準備があることの案内。 MDN の&ja.option;欄「Alternative-available」を使って。
+代替データ形式が利用可能なことの案内。「Content-alternative」頭を使って。&ja.note;:
+1つ以上の「Content-alternative」頭を指定しても<KWD:MAY />。詳しくは
+3.1.3 節をご覧下さい。
+]PRE]
+
+[PRE[
+   Having indicated the availability of alternative data formats, the
+   sender is expected to hold the necessary information for some time,
+   allowing the receiver an opportunity to request such data.  But,
+   unless it so indicates (see [9]), the sender is not expected to hold
+   this information indefinitely;  the exact length of time such
+   information should be held is not specified here.  Thus, the
+   possibility exists that a request for alternative information may
+   arrive too late, and the sender will then send an indication that the
+   data is no longer available.  If message transference is being
+   completed within a predetermined time interval (e.g., using [21]),
+   then the sender should normally maintain the data for at least that
+   period.
+代替データ形式の利用可能性を案内したら、受信者がそのデータを要求する機会を得るためにいずれ必要になる情報を保持しておくことが送信者には期待されます。しかし、そうした案内
+([9] 参照。) がない場合、送信者はこの情報を無期限に保持していることは期待されません。この情報を保持しているのがよい実際の期間はここでは規定しません。従って、代替情報の要求の到着が遅すぎて、送信者がデータはもう利用出来ないという案内を送ってくる可能性があります。
+(例えば [21] を使って) 予め予想された時間中にメッセージ転送が完了されるなら、送信者は通常データを最低この期間中は維持しておくのが良いです。
+]PRE]
+
+3.1.1 Choice of default data format
+既定データ形式の選択
+
+[PRE[
+   The normal default format is text/plain.  This is the format sent
+   unless the sender has prior knowledge or expectation of other content
+   formats supported by the recipient.  Some uses of email presume some
+   other default format (e.g. Intenet fax [1] has TIFF profile S [11] as
+   its default format;  see section 7 of this document).
+通常の既定形式は text/plain 
+です。これは前もって受信者が対応している他の内容形式についての知識や予想を送信者が必要としないで送る形式です。&ja.mail.email;の用法には他の既定の形式
+(例えば&ja.fax.Internet-fax;では TIFF &ja.fax.tiff.profile;S
+が既定形式。この文書の7章を参照。) が考えられるものもあります。
+]PRE]
+
+[PRE[
+   "Extended Facsimile Using Internet Mail" [1] and "Indicating
+   Supported Media Features Using Extensions to DSN and MDN" [2]
+   indicate a possible mechanism for a sender to have prior knowledge of
+   receiver capabilities.  This specification builds upon the mechanism
+   described there.
+「<TBD>」と「TBD」は送信者が受信者の能力についての知識を前もって持つための仕組みの可能性を示しています。この仕様はそちらで説明される仕組みを基にしています。
+]PRE]
+
+[PRE[
+   As always, the sender may gather information about the receiver in
+   other ways beyond the scope of this document (e.g., a directory
+   service or the suggested RESCAP protocol).
+例によって、送信者は他のこの文書の適用範囲外の方法
+(例えば&ja.mail.directory-service;や提案されている RESCAP
+&ja.protocol;) で受信者についての情報を集めても構いません。
+]PRE]
+
+3.1.2 MDN request indicating alternate data formats
+代替データ形式を案内する MDN 要求
+
+[PRE[
+   When a sender is indicating preparedness to send alternative message
+   data, it MUST request a Message Disposition Notification (MDN) [4].
+送信者が代替メッセージを送信する準備があることを案内する時は、&ja.mail.Message-Disposition-Notification;
+(MDN) を要求し<KWD:MUST />。
+]PRE]
+
+[PRE[
+   It indicates its readiness to send alternative message data by
+   including the MDN option 'Alternative-available' [9] with the MDN
+   request.  Presence of this MDN request option simply indicates that
+   the sender is prepared to send some different data format if it has
+   more accurate or up-to-date information about the receiver's
+   capabilities.  Of itself, this option does not indicate whether the
+   alternatives are likely to be better or worse than the default data
+   sent -- that information is provided by the "Content-alternative"
+   header(s) [8].
+MDN &ja.mail.mdn.option;「Alternative-available」を MDN
+要求で示すことで、代替メッセージ・データ送信の用意があることを示します。この
+MDN 要求&ja.mail.mdn.option;の存在は、送信者がより正確あるいは最新の受信者の能力についての情報があるなら単に送信者が何か違ったデータ形式で送信する準備があることを示します。従って、この&ja.mail.mdn.option;は代替物が送信された既定のデータより良いか悪いかは示しません。この情報は
+"Content-alternative" 頭で提供します。
+]PRE]
+
+[PRE[
+   When using the 'Alternative-available' option in an MDN request, the
+   message MUST also contain a 'Message-ID:' header with a unique
+   message identifier.
+MDN 要求で「Alternative-available」&ja.mail.mdn.option;を使う時、メッセージは固有メッセージ識別子の入った「Message-ID:」頭も持ってい<KWD:MUST />。
+]PRE]
+
+3.1.3 Information about alternative data formats
+代替データ形式についての情報
+
+[PRE[
+   A sender can provide information about the alternative message data
+   available by applying one or more 'Content-alternative' headers to
+   message body parts for which alternative data is available, each
+   indicating media features [5,6] of an available alternative.
+送信者は利用可能な代替メッセージ・データについての情報を、代替データが利用可能なメッセージ&ja.mail.mime.body-part;に「Content-alternative」頭を1つ以上適用することで提供出来ます。それぞれが利用可能な代替物の&ja.conneg.media-feature;を示します。
+]PRE]
+
+[PRE[
+   The purpose of this information is to allow a receiver to decide
+   whether any of the available alternatives are preferable, or likely
+   to be preferable, to the default message data provided.
+この情報の目的は、受信者が利用可能な代替物のいずれかが提供された既定メッセージ・データより好ましいか,
+あるいは好ましそうかを判断可能とすることです。
+]PRE]
+
+[PRE[
+   Not every available alternative is required to be described in this
+   way, but the sender should include enough information to allow a
+   receiver to determine whether or not it can expect more useful
+   message data if it chooses to indicate a preference for some
+   alternative that matches its capabilities.
+必ずしも全ての利用可能な代替物をこの方法で説明する必要はありませんが、送信者は、受信者がその能力に合う代替物の希望を示すことを選ぶなら、代替物がより有用なメッセージ・データかどうかを受信者が決定するのに十分な情報を含めるのが良いです。
+]PRE]
+
+[PRE[
+   Alternative formats will often be variations of the content-type
+   originally sent.  When different content-types can be provided, they
+   should be indicated in a corresponding content-alternative header
+   using the 'type' media feature tag [24].  (See example 8.4.)
+代替形式は元々送られた内容型の変化したものであることもよくあるでしょう。異なる内容型が提供され得る時は、「type」&ja.conneg.media-feature-tag;を使って対応する
+content-alternative 頭に示すのが良いです。 (例8.4参照。)
+]PRE]
+
+[PRE[
+      NOTE:  the sender is not necessarily expected to describe every
+      single alternative format that is available -- indeed, in cases
+      where content is generated on-the-fly rather than simply selected
+      from an enumeration of possibilities, this may be infeasible.  The
+      sender is expected to use one or more 'Content-alternative'
+      headers to reasonably indicate the range of alternative formats
+      available.
+参考: 送信者が各利用可能代替形式を記述することは必ずしも期待されません。
+単に利用可能な形式の列挙から選ぶのではなくその場で内容を生成する場合にはそれは実行不可能かもしれませんから。
+送信者には一つ以上の「Content-alternative」&ja.mail.header;を利用可能な代替形式の範囲をそれなりに示すのに使うことが期待されます。
+]PRE]
+
+[PRE[
+      The final format actually sent will always be selected by the
+      sender, based on the receiver's capabilities.  The 
+      'Content-alternative' headers are provided here simply to allow the
+      receiver to make a reasonable decision about whether to request an
+      alternative format that better matches its capabilities.
+実際に送信される最終形式は常に送信者により受信者の能力に基づき選択されます。
+「Content-alternative」&ja.mail.header;は、単に受信者がその能力により合った代替形式を要求するかどうかについての妥当な決定を可能にするためにここに提供するものです。
+]PRE]
+
+[PRE[
+      ALSO NOTE:  this header is intended to be usable independently of
+      the MDN extension that indicates the sender is prepared to send
+      alternative formats.  It could be used with a different protocol
+      having nothing to do with email or MDN.  Thus, the 
+      'Content-alternative' header provides information about alternative data
+      formats without actually indicating if or how they might be
+      obtained.
+もひとつ注意: この&ja.mail.header;は送信者が代替形式を送信する準備が出来ていることを示す MDN
+拡張とは独立して使用可能であることを意図しています。
+&ja.mail.email;又は MDN と関係のない違ったプロトコルで使うことも出来ます。
+従って、「Content-alternative」&ja.mail.header;は代替データ形式を得ることが可能かどうかやその方法を実際に示すこと無しにこれについての情報を提供するものです。
+]PRE]
+
+[PRE[
+      Further, the 'Content-alternative' header applies to a MIME body
+      part, where the MDN 'Alternative-available' option applies to the
+      message as a whole.
+更に、 MDN
+「Alternative-available」&ja.option;がメッセージ全体に適用されるのに対して「Content-alternative」&ja.mail.header;は
+MIME &ja.mail.mime.body-part;に適用されます。
+]PRE]
+
+[PRE[
+   The example sections of this memo show how the 'Content-features:'
+   and 'Content-alternative:' MIME headers may be used to describe the
+   content provided and available alternatives.
+このメモの例の節では「Content-features:」 MIME
+&ja.mail.header;及び「Content-alternative:」 MIME
+&ja.mail.header;が提供される内容及び利用可能な代替を記述するのにどう使われるのかを示します。
+]PRE]
+
+<!ENTITY ja.option "選択肢">
+3.2 Receiver options
+受信者&ja.option;
+
+[PRE[
+   A negotiation-aware system receiving message data without an
+   indication of alternative data formats MUST process that message in
+   the same way as a standard Internet fax system or email user agent.
+折衝を知っている&ja.mail.system;が、代替データ形式の案内のないメッセージ・データを受信した時には、このメッセージを標準の&ja.fax.Internet-fax;&ja.fax.system;又は&ja.mail.email;&ja.user-agent;と同じ方法で処理<KWD:MUST />。
+]PRE]
+
+[PRE[
+   Given an indication of alternative data format options, the receiver
+   has three primary options:
+代替データ形式選択肢の案内がある場合には、受信者には大きく分けて3つの選択肢があります。
+]PRE]
+
+[PRE[
+   (a)   do not recognize the alternatives:  passively accept what is
+         provided,
+代替を認識しない: 提供されたものを消極的に受け入れる
+]PRE]
+
+[PRE[
+   (b)   do not prefer the alternatives:  actively accept what is
+         provided, or
+代替を好まない: 提供されたものを積極的に受け入れる
+]PRE]
+
+[PRE[
+   (c)   prefer some alternative format.
+代替を好む
+]PRE]
+
+3.2.1 Alternatives not recognized
+代替を認識しない
+
+[PRE[
+   This corresponds to the case that the receiver is a simple mode
+   Internet fax recipient [12], or a traditional email user agent.
+これは受信者が&ja.fax.simple-mode;&ja.fax.Internet-fax;受信者又は伝統的な&ja.mail.email;&ja.user-agent;である場合に対応します。
+]PRE]
+
+[PRE[
+   The receiver does not recognize the alternatives offered, or chooses
+   not to recognize them, and simply accepts the data as sent.  A
+   standard MDN response [4] or an extended MDN response [2] MAY be
+   generated at the receiver's option.
+受信者は提供されている代替を認識しないか、又は認識しないことを選んでおり、単に送られたデータを受け入れます。
+受信者の選択で、標準 MDN 応答又は拡張 MDN 応答を生成しても<KWD:MAY/>。
+]PRE]
+
+3.2.2 Alternative not desired
+代替は不適当
+
+[PRE[
+   The receiver does recognize the alternatives offered, but
+   specifically chooses to accept the data originally offered.  An MDN
+   response SHOULD be sent indicating acceptance of the data and also
+   containing the receiver's capabilities.
+受信者は提供された代替を認識はするが、元々提供されたデータを受け入れることを特に選択した場合です。
+データを受け入れたことを示すと共に受信者の能力をも含めた MDN 応答を送る<KWD:SHOULD/>。
+]PRE]
+
+[PRE[
+   This is the same as the defined behaviour of an Extended Internet Fax
+   receiver [1,2].
+これは拡張&ja.fax.Internet-fax;受信者について定義された動作と同じです。
+]PRE]
+
+3.2.3 Alternative preferred
+代替を望む
+
+[PRE[
+   This case extends the behaviour of Extended Internet Fax [1,2] to
+   allow an alternative form of data for the current message to be
+   transferred.  This option may be followed ONLY if the original
+   message contains an 'Alternative-available' MDN option (alternative
+   data re-sends may not use this option).  Further, this option may be
+   followed ONLY if the recipient is explicitly addressed in the message
+   headers ('to:', 'cc:' or 'bcc:').
+この場合は拡張&ja.fax.Internet-fax;の動作を拡張し、現在のメッセージのデータの代替形式を転送することを可能とします。
+この選択肢は、元のメッセージが <h:code class="MDN">Alternative-available</h:code>
+MDN 選択肢を含んでいる場合<h:em>のみ</h:em>続けることが出来ます
+(代替データ再送はこの選択肢を使ってはいけません)。
+更に、この選択肢は受信者が明示的にメッセージの&ja.mail.header;
+(<h:code class="822">to:</h:code>, <h:code class="822">cc:</h:code>,
+<h:code class="822">bcc:</h:code>)
+<!-- 訳注: 普通 bcc: 欄は受信メッセージには含まれないと思うんだけどな。 -->
+に記載されている場合に<h:em>のみ</h:em>続けることが出来ます。
+]PRE]
+
+[PRE[
+   The receiver recognizes that alternative data is available, and based
+   on the information provided determines that an alternative format
+   would be preferable.  An MDN response [4] is sent, which MUST contain
+   the following:
+受信者は代替データが利用可能であることを認識し、提供された情報に基づき、代替形式を望むことを決定したとします。
+この時 MDN 応答を送りますが、これは次のものを含ま<KWD:MUST/>。
+]PRE]
+
+[PRE[
+   o  an 'Alternative-preferred' disposition modifier [9] indicating
+      that some data format other than that originally sent is
+      preferred,
+元々送られたもの以外の何らかのデータ形式を望むことを示す
+<h:code class="mdn">Alternative-preferred</h:code> &ja.mail.mdn.disposition;修飾子。
+]PRE]
+
+[PRE[
+   o  an 'Original-Message-ID:' field [4] with the message identifier
+      from the received message, and
+受信したメッセージのメッセージ識別子を入れた 
+<h:code class="mdn">Original-Message-ID:</h:code> &ja.mail.field;。
+]PRE]
+
+[PRE[
+   o  receiver capabilities, per RFC 2530 [2].
+RFC 2530 による受信者の能力
+]PRE]
+
+[PRE[
+   On sending such an MDN response, the receiver MAY discard the message
+   data provided, in the expectation that some alternative will be sent.
+   But if the sender has indicated a limited lifetime for the
+   alternative data, and the original data received is within the
+   receiver's capability to display, the receiver SHOULD NOT discard it.
+   Lacking sufficient memory to hold the original data for a period of
+   time within which alternative data would reasonably be received, the
+   receiver SHOULD accept and display the original data.  In the case
+   that the original data is not within the receiver's capability to
+   display then it SHOULD discard the original data and request an
+   alternative format.
+このような MDN 応答を送るに当たって、何らかの代替が送られるとの期待の元で、受信者は提供されたデータを捨てても<KWD:MAY/>。
+しかし送信者が代替データの有効期限を限定していることを示しており、元の受信したデータが受信者の表示能力の範囲内であるなら、受信者はこれを捨て<KWD:SHOULDNOT/>。
+代替データを受信するまでの期間元データを保管しておく十分な記憶域が無い場合、受信者は元のデータを受け入れて表示する<KWD:SHOULD/>。
+その場合で元のデータが受信者の表示能力の範囲外の場合は、元のデータを捨てて代替形式を要求する<KWD:SHOULD/>。
+]PRE]
+
+[PRE[
+      NOTE:  the above rules are meant to ensure that the content
+      negotiation framework does not result in the loss of data that
+      would otherwise be received and displayed.
+上記の規則は、内容折衝の枠組みによって通常なら受信及び表示していたであろうデータを損失しないことを確実にすることを意味します。
+]PRE]
+
+[PRE[
+   Having requested alternative data and not displayed the original
+   data, the receiver MUST remember this fact and be prepared to take
+   corrective action if alternative data is not received within a
+   reasonable time (e.g., if the MDN response or transmission of
+   alternative data is lost in transit).
+代替データを要求して元のデータを表示しなかった場合、受信者はこのことを記憶しておき、代替データを適当な時間内に受信できなかった
+(例えば MDN 応答又は代替データが転送中に失われた)
+場合に適当な動作をし<KWD:MUST/>。
+]PRE]
+
+[PRE[
+   Corrective action might be any of the following:
+適当な動作は次の内のいずれかです。
+]PRE]
+
+[PRE[
+   (a)   re-send the MDN response, and continue waiting for an
+         alternative,
+MDN 応答を再送し、代替を待ち続ける。
+]PRE]
+
+[PRE[
+   (b)   present the data originally supplied (if it is still
+         available), or
+元々供給されていたデータを (まだ利用可能であれば) 表示する。
+]PRE]
+
+[PRE[
+   (c)   generate an error response indicating loss of data.
+データの損失を示すエラー応答を生成する。
+]PRE]
+
+[PRE[
+   On concluding that alternative data is not forthcoming, the preferred
+   option is (b), but this may not be possible for receivers with
+   limited memory.
+代替データが届かないとはっきりした場合に好ましい選択肢は (b)
+ですが、受信者が限られた記憶域しか持ち合わせていない場合にはこれは可能でないかもしれません。
+]PRE]
+
+[PRE[
+   See Appendix A for further discussion of receiver behaviour options.
+受信者の動作の選択肢について詳しくは付属書 A をご覧下さい。
+]PRE]
+
+[PRE[
+      NOTE:  A cache control indicator on recipient capabilities has
+      been considered, but is not included in this specification.
+      (Sometimes, a recipient may want to offer certain capabilities
+      only under certain circumstances, and does not wish them to be
+      remembered for future use; e.g., not wanting to receive colour
+      images for routine communications.)
+受信者能力における&ja.cache;制御指示子が考えられましたが、この仕様書には含まれていません。
+(時々、受信者はある能力をある状態でのみ適用し、将来の利用のために記憶しないことを望むかもしれません。
+例えば、定型通信で多色画像を受信することを望まないとか。)
+]PRE]
+
+[PRE[
+      NOTE:  the receiver does not actually get to select any specific
+      data format offered by the sender.  The final choice of data
+      format is always made by the sender, based on the receiver's
+      declared capabilities.  This approach:
+受信者は送信者が提示したどのデータ形式も実際選択しないことになります。
+データ形式の最終選択は常に送信者により、受信者の申し立てた能力に基づき行われます。
+この方法は、
+]PRE]
+
+[PRE[
+      (a)   more closely matches the style of T.30 content negotiation,
+T.30 の内容折衝の方式に非常に一致します。
+]PRE]
+
+[PRE[
+      (b)   provides for clean integration with the current extended
+            mode Internet fax specification,
+&ja.fax.extended-mode;&ja.fax.Internet-fax;仕様との綺麗な統合を行います。
+]PRE]
+
+[PRE[
+      (c)   builds upon existing email mechanisms in a consistent
+            fashion, and
+首尾一貫して既存の&ja.mail.email;の機構に基づいたものです。
+]PRE]
+
+[PRE[
+      (d)   allows for cases (e.g., dynamically generated content) where
+            it is not feasible for the sender to enumerate the
+            alternatives available.
+送信者が利用可能な代替を列挙しづらい場合 (例えば動的に生成される内容の場合)
+も可能です。
+]PRE]
+
+3.3 Send alternative message data
+代替メッセージ・データの送信
+
+[PRE[
+   Having offered to provide alternative data by including an
+   'Alternative-available' option with the original MDN request, and on
+   receipt of an MDN response indicating 'Alternative-preferred', the
+   sender SHOULD transmit alternative message data that best matches the
+   receiver's declared capabilities.  (In the exceptional case that the
+   response requesting an alternative data format does not contain
+   receiver capabilities, a baseline format should be selected.)
+元の MDN 要求に <h:code class="mdn">Alternative-available</h:code>
+選択肢を示すことで代替データを提供することを提示し、
+<h:code class="mdn">Alternative-preferred</h:code>
+を示す MDN 応答を受信した時、送信者は受信者の申し立てた能力に最も良く一致する代替メッセージ・データを送信する<KWD:SHOULD/>。
+(例外的な場合として、代替データ形式を要求する応答が受信者の能力を含んでいなかった場合、&ja.conneg.baseline;形式を選択する&ja.kwd.should;。)
+]PRE]
+
+[PRE[
+   If any part of the best available message data matching the receiver
+   capabilities is the same as that originally sent, it MUST still be
+   re-transmitted because the receiver may have discarded the original
+   data.  Any data sent as a result of receiving an 'Alternative-preferred'
+   response should include an MDN request but SHOULD NOT
+   include an 'Alternative-available' disposition notification modifier.
+受信者の能力に一致する利用可能な最適のメッセージ・データのどの部分もが元の送ったものと同じであっても、受信者が元のデータを捨ててしまったかもしれないので、それを再送信し<KWD:MUST/>。
+受信した <h:code class="mdn">Alternative-preferred</h:code> 応答の結果として送信したデータは
+MDN 要求を含んでいる&ja.kwd.should;が、
+<h:code class="mdn">Alternative-available</h:code> 
+&ja.mail.mdn.disposition;通知修飾子を含め<KWD:SHOULDNOT><KWD:em>ないのがよい</KWD:em>です</KWD:SHOULDNOT>。
+]PRE]
+
+[PRE[
+   If the sender is no longer able to send message data for any reason,
+   it MUST send a message to the receiver indicating a failed transfer.
+   It SHOULD also generate a report for the receiver indicating the
+   failure, containing an MDN request and including an 
+   'Alternative-not-available' disposition notification modifier.
+送信者が何らかの理由で既にメッセージ・データを送信出来なくなっている場合は、送信失敗を示すメッセージを受信者に送信し<KWD:MUST/>。
+この時、 MDN 要求及び <h:code class="mdn">Alternative-not-available</h:code>
+&ja.mail.mdn.disposition;通知修飾子を含んだ、失敗を示す報告を受信者に対して生成する<KWD:SHOULD>。
+]PRE]
+
+[PRE[
+   Any message sent to a receiver in response to a request for
+   alternative data MUST include an 'Original-Message-ID:' header [23]
+   containing the Original-message-ID value from the received
+   disposition notification message (which is the 'Message-ID:' from the
+   original message).  This header serves to correlate the re-send (or
+   failure message) with the original message, and also to distinguish a
+   re-send from an original message.
+代替データの要求に対する応答として受信者に送られるメッセージには、受信した&ja.mail.mdn.disposition;通知メッセージの
+Original-message-ID
+値 (元のメッセージの <h:code class="822">Message-ID:</h:code> から来たもの)
+を持つ <h:code class="822">Original-Message-ID:</h:code> 
+&ja.mail.header;を含め<KWD:MUST/>。
+]PRE]
+
+3.4 Confirm receipt of resent message data
+再送メッセージ・データの受信の確認
+
+[PRE[
+   When resent data is received (indicated by presence of an 
+   'original-message-ID:' header field), the receiver processes that data and
+   generates an MDN response indicating the final disposition of the
+   data received, and also indicating capabilities that may be used for
+   future messages, per RFC 2530 [2] and RFC 2532 [1].
+再送データを受信した時 (<h:code class="822">original-message-ID:</h:code>
+&ja.mail.header-field;の出現で示される。)、受信者はこのデータを処理し、受信したデータの最終的な&ja.mail.mdn.disposition;を示すと共に将来のメッセージに使われ得る能力を
+RFC 2530 及び RFC 2532 の通りに示す
+MDN 応答を生成します。
+]PRE]
+
+[PRE[
+   If the re-send indicates that alternative data is no longer available
+   (by including an 'Alternative-not-available' disposition notification
+   modifier), and the receiver still holds the original data sent, it
+   should display or process the original data and send an MDN response
+   indicating the final disposition of that data.  Thus, the response to
+   an 'Alternative-not-available' indication may be a successful
+   disposition notification.
+代替データが既に利用不能であることを再送が 
+(<h:code class="mdn">Alternative-not-available</h:code> 
+&ja.mail.mdn.disposition;通知修飾子により) 示す場合、受信者がまだ元の送られたデータを持っているなら、この元のデータを表示又は処理し、そのデータの最終的な&ja.mail.mdn.disposition;を示す
+MDN 応答を送信します。
+従って、 <h:code class="mdn">Alternative-not-available</h:code>
+の案内への応答が成功の&ja.mail.mdn.disposition;となることがあります。
+]PRE]
+
+[PRE[
+   If the re-send indicates that alternative data is no longer available
+   (by including an 'Alternative-not-available' disposition notification
+   modifier), and the receiver has discarded the original data sent, it
+   SHOULD:
+代替データが既に利用不能であることを再送が 
+(<h:code class="mdn">Alternative-not-available</h:code> 
+&ja.mail.mdn.disposition;通知修飾子により) 示す場合で、受信者が元の送られたデータを捨ててしまっていた場合、
+]PRE]
+
+[PRE[
+   (a)   display or process the failure message received, OR
+受信した失敗メッセージを表示又は処理する
+]PRE]
+
+[PRE[
+   (b)   construct and display a message indicating that message data
+         has been lost, preferably indicating the sender, time, subject,
+         message identifier and other information that may help the
+         recipient user to identify the missing message.
+メッセージ・データが失われたことを示すメッセージを構築・表示する。
+このメッセージには、受信利用者が失われたメッセージを特定するための助けとなる,
+送信者, 時刻, 主題, メッセージ識別子及びその他の情報を示すのがよいでしょう。
+]PRE]
+
+[PRE[
+   and send a message disposition response indicating a final message
+   disposition of "deleted".
+]PRE]
+
+の<h:em>いずれか</h:em>を行い、最終メッセージ&ja.mail.mdn.disposition;
+<h:code class="abnf">&quot;deleted&quot;</h:code> 
+を示すメッセージ&ja.mail.mdn.disposition;応答を送信する<KWD:SHOULD/>。
+
+4. The Content-alternative header Content-alternative __&&header&&__
+
+> The 'Content-alternative:' header is a MIME header that can be
+attached to a MIME body part to indicate availability of some
+alternative form of the data it contains.  This header does not, of
+itself, indicate how the alternative form of data may be accessed.
+
+「Content-alternative:」__&&header&&__は、 MIME __&&body part&&__に添付して、
+その含むデータの何らかの代替形式が利用可能であることを示す MIME __&&header&&__です。
+この__&&header&&__は、これ自体では代替形式のデータにどう接触出来るかは示しません。
+
+> Using the ABNF notation of RFC 2234 [10], the syntax of a 
+'Content-alternative' header is defined as:
+
+RFC 2234 の ABNF 記法を使って、「Content-alternative」__&&header&&__を次のように定義します。
+
+[PRE[
+      Content-alternative-header =
+          "Content-alternative" ":" Alternative-feature-expression
+]PRE]
+
+[PRE[
+      Alternative-feature-expression =
+          <As defined for 'Filter' by RFC 2533 [6]>
+RFC 2533 で「Filter」として定義されたもの
+]PRE]
+
+[PRE[
+   More than one 'Content-alternative:' header may be applied to a MIME
+   body part, in which case each one is taken to describe a separate
+   alternative data format that is available.
+一つの MIME &ja.mail.mime.body-part;に複数の「Content-alternative:」__&&header&&__を適用させることができ、その場合はそれぞれに別々の利用可能なデータ形式を記述したものとします。
+]PRE]
+
+[PRE[
+   A content-alternative header is used with some MIME-encapsulated
+   data, and is interpreted in that context.  The intent is to indicate
+   possible variations of that data, and it is not necessarily expected
+   to be a complete free-standing description of a specific available
+   data.  Enough information should be provided for a receiver to be
+   able to decide whether or not the alternative thus described (a) is
+   likely to be an improvement over the actual data provided, and (b) is
+   likely to be processable by the receiver.
+content-alternative &ja.mail.header;は幾つかの MIME でカプセル化されたデータと共に使用し、その文脈で解釈します。
+意図するところはそのデータの可能な変種を示すことで、特定の利用可能なデータの完全に自由な状態の記述であることは必ずしも期待されません。
+受信者が記述された代替データが (a) 実際の提供されたデータを改善しそうなものかどうかや
+(b) 受信者が処理可能そうなものかどうかを決定することが可能な十分な情報を提供する&ja.kwd.should;。
+]PRE]
+
+[PRE[
+   Thus, when interpreting a Content-alternative header value, a
+   receiver may assume that features not explicitly mentioned are not
+   different in the indicated alternative from the supplied data.  For
+   example, if a Content-alternative header does not mention an
+   alternative MIME content-type, the receiver may assume that the
+   available alternative uses the same content-type as the supplied
+   data.
+従って、 Content-alternative &ja.mail.header;値を解釈する時には、受信者は陽に述べられていない特徴が代替物でも供給されたデータのものと変わりないと仮定して構いません。
+例えば、 Content-alternative &ja.mail.header;が代替 MIME 
+&ja.mail.mime.content-type;に触れていない場合、受信者は利用可能な代替物も供給されたデータと同じ&ja.mail.mime.content-type;を使うと仮定して構いません。
+]PRE]
+
+[PRE[
+   See also the example in section 8.4.
+8.4節の例もご覧下さい。
+]PRE]
+
+5. The Original-Message-ID message header
+Original-Message-ID &ja.mail.message;&ja.mail.header;
+
+[PRE[
+   The 'Original-Message-ID' header is used to correlate any message
+   response or re-send with the original message to which it relates
+   (see also sections 3.2.3,  3.3).  A re-send is distinct from the
+   original message, so it MUST have its own unique Message-ID value
+   (per RFC 2822, section 3.6.4).
+]PRE]
+
+<h:code>Original-Message-ID</h:code> &ja.mail.header;は、元の&ja.mail.message;と関係するどんな&ja.mail.message;応答や再送でも、これを関連付けるために使用します。
+再送は元の&ja.mail.message;とは異なりますから、固有の Message-ID
+値を<KWD:MUST>持たなければ&ja.kwd.MUST;</KWD:MUST>。
+
+The syntax for this header is:
+この&ja.mail.header;の構文は
+
+[PRE[
+      "Original-Message-ID" ":" msg-id
+]PRE]
+
+[PRE[
+   where 'msg-id' is defined by RFC 2822 as:
+で、ここで「msg-id」は RFC 2822 で次のように定義されています。
+]PRE]
+
+[PRE[
+      msg-id = "<" id-left "@" id-right ">"
+]PRE]
+
+[PRE[
+   The 'msg-id' value given must be identical to that supplied in the
+   Message-ID: header of the original message for which the current
+   message is a response or re-send.
+「msg-id」値は当該&ja.mail.message;が応答又は再送する元の&ja.mail.message;の
+Message-ID: &ja.mail.header;で供給されたものと同一でなければ&ja.kwd.must;。
+]PRE]
+
+6. MDN extension for alternative data
+代替データ向け MDN 拡張
+
+[PRE[
+   Here, we define two extensions to the Message Disposition
+   Notification (MDN) protocol [4] to allow a sender to indicate
+   readiness to send alternative message data formats, and to allow a
+   receiver to indicate a preference for some alternative format.
+ここで、2つの&ja.mail.mdn.Message-Disposition-Notification; (MDN)
+&ja.protocol;への2つの拡張を定義して、送信者が代替&ja.mail.message;データ形式の送信の準備があることを示すことや受信者が何らかの代替形式を好むことを示すことが出来るようにします。
+]PRE]
+
+[PRE[
+   Indication of what alternatives may be available or preferred are not
+   covered here.  This functionality is provided by the 
+   'Content-alternative' MIME header [8] and "Indicating Supported Media Features
+   Using Extensions to DSN and MDN" [2].
+どんな代替物が利用可能又は好むかの合図はここでは扱いません。
+この機能は「Content-alternative」 MIME &ja.mail.header;及び『&TBD;』が提供します。
+]PRE]
+
+6.1 Indicating readiness to send alternative data
+代替データ送信の準備があることを示す
+
+[PRE[
+   A sender wishing to indicate its readiness to send alternative
+   message data formats must request an MDN response using the MDN
+   'Disposition-Notification-To:' header [4].
+代替&ja.mail.message;データ形式を送信する準備があることを示したい送信者は、
+NDN 「Disposition-Notification-To:」&ja.mail.header;を使って MDN 応答を要求し&ja.kwd.must;。
+]PRE]
+
+[PRE[
+   The MDN request is accompanied by a 'Disposition-Notification-Options:' 
+   header containing the parameter 'Alternative-available'
+   with an importance value of 'optional'.  (The significance of
+   'optional' is that receiving agents unaware of this option do not
+   generate inappropriate failure responses.)
+MDN 要求には重要性値「optional」の&ja.mail.parameter;「Alternative-available」を含めた「Disposition-Notification-Options:」を併用します。
+(重要度「optional」は、この&ja.mail.option;を知らない受信&ja.mail.agent;が不適切な失敗応答を生成しないようにするためのものです。)
+]PRE]
+
+[PRE[
+   This specification defines a value for 'attribute' to be used in an
+   MDN 'Disposition-Notification-Options:' header [4]:
+この仕様は MDN 「Disposition-Notification-Options:」&ja.mail.header;で使う「attribute」の値を1つ定義します。
+]PRE]
+
+[PRE[
+      attribute =/ "Alternative-available"
+]PRE]
+
+[PRE[
+   Thus, a sender includes the following headers to indicate that
+   alternative message data is available:
+これにより、送信者は次の&ja.mail.header;を含めて代替&ja.mail.message-data;が利用可能なことを示します。
+]PRE]
+
+[PRE[
+      Disposition-Notification-To:
+          <sender-address>
+      Disposition-Notification-Options:
+          Alternative-available=optional,<lifetime>
+]PRE]
+
+[PRE[
+   where <lifetime> is "transient" or "permanent", indicating whether
+   the alternative data will be made available for just a short while,
+   or for an indefinite period.  A value of "permanent" indicates that
+   the data is held on long term storage and can be expected to be
+   available for at least several days, and probably weeks or months.  A
+   value of "transient" indicates that the alternative data may be
+   discarded at any time, though it would normally be held for the
+   expected duration of a message transaction.
+ここで、 <lifetime> は「transient」又は「permanent」で、代替データが短期間のみ利用可能であるのか又は不定期間利用可能であるのかを示します。
+「permanent」の値はデータが長期間保管されており最低でも数日間、おそらくは数週間や数ヶ月間利用可能であることが期待出来ることを示します。
+「transient」の値は代替データがいつ何時捨てられるかもしれないことを示します。
+とは言っても普通はメッセージ転送期間中は保持していることが期待されます。
+]PRE]
+
+[PRE[
+      NOTE: the <lifetime> parameter is provided to help low-memory
+      receivers (which are unable to store received data) avoid loss of
+      information through requesting an alternative data format that may
+      become unavailable.
+<lifetime> &ja.mail.parameter;は記憶量の小さい (受信データを保管することが不可能な)
+受信者が利用不可能になるかもしれない代替データ形式を要求することで情報を失うのを避けるのを助けるために提供します。
+]PRE]
+
+[PRE[
+   A message sent with a request for an MDN with an 
+   'Alternative-available' option MUST also contain a 'Message-ID:' header field [20].
+「Alternative-available」&ja.mail.option;付きの MDN 要求と共に送信される&ja.mail.message;は「Message-ID」&ja.mail.header-field;をも含めなければなりません。
+]PRE]
+
+6.2 Indicating a preference for alternative data
+代替データの好みを示す
+
+[PRE[
+   The MDN specification [4] defines a number of message disposition
+   options that may be reported by the receiver of a message:
+MDN 仕様は&ja.mail.message;の受信者から報告され得る沢山の&ja.mail.mdn.message-disposition-option;を定義しています。
+]PRE]
+
+[PRE[
+      disposition-type = "displayed"
+                       / "dispatched"
+                       / "processed"
+                       / "deleted"
+                       / "denied"
+                       / "failed"
+]PRE]
+
+[PRE[
+      disposition-modifier = ( "error" / "warning" )
+                           / ( "superseded" / "expired" /
+                               "mailbox-terminated" )
+                           / disposition-modifier-extension
+]PRE]
+
+[PRE[
+   This specification defines an additional value for 
+   'disposition-modifier-extension':
+この仕様書は「disposition-modifier-extension」の追加の値を定義します。
+]PRE]
+
+[PRE[
+      disposition-modifier-extension =/
+          "Alternative-preferred"
+]PRE]
+
+[PRE[
+   When a receiver requests that an alternative format be sent, it sends
+   a message disposition notification message containing the following
+   disposition field:
+受信者が代替形式を送信してもらうことを要求した時に、次の&ja.mail.mdn.disposition;&ja.mail.field;を含んだ&ja.mail.mdn.message-disposition-notification;&ja.mail.message;を送信します。
+]PRE]
+
+[PRE[
+      Disposition:
+        <action-mode>/<sending-mode>,
+        deleted/alternative-preferred
+]PRE]
+
+[PRE[
+   For example, an automatically generated response might contain:
+例えば、自動的に生成された応答は次の&ja.mail.header;を含むでしょう。
+]PRE]
+
+[PRE[
+      Disposition:
+        automatic-action/MDN-sent-automatically,
+        deleted/alternative-preferred
+]PRE]
+
+[PRE[
+   An MDN response containing an 'alternative-preferred' disposition
+   modifier MUST also contain an 'Original-message-ID:' field [4] with
+   the 'Message-ID:' value from the original message.
+「alternative-preferred」&ja.mail.mdn.disposition-modifier;を含む
+MDN 応答は元の&ja.mail.message;の「Message-ID:」値を入れた「Original-message-ID:」&ja.mail.field;をも<KWD:MUST>含めなければ&ja.kwd.MUST;</KWD:MUST>。
+]PRE]
+
+[PRE[
+   An MDN response containing an 'alternative-preferred' disposition
+   modifier SHOULD also contain a 'Media-accept-features:' field [2]
+   indicating the capabilities that the sender should use in selecting
+   an alternative form of message data.  If this field is not supplied,
+   the sender should assume some baseline feature capabilities.
+   Receiver capabilities supplied with an alternative-preferred
+   disposition notification MUST NOT be cached:  they may apply to the
+   current transaction only.
+「alternative-preferred」&ja.mail.mdn.disposition-modifier;を含む MDN
+応答は送信者が&ja.mail.message-data;の代替形式を選択するのに使う、能力を示す
+「Media-accept-features:」&ja.mail.field;をも<KWD:SHOULD>含める&ja.kwd.should;</KWD:SHOULD>。
+この&ja.mail.field;が供給されない場合には、送信者は&ja.baseline;&ja.media.feature;能力を仮定&ja.kwd.should;
+alternative-preferred &ja.mail.mdn.disposition-notification;と共に供給された受信者能力は&ja.cache;してはなりません。
+これは当該転送処理にのみ適用できます。
+]PRE]
+
+
+
+** 6.3 Indicating alternative data is no longer available
+
+> A sender that receives a request for alternative data that is no
+longer available, or is unable to provide alternative data matching
+the receiver's capabilities, MUST respond with an indication of this
+fact, sending a message containing data describing the failure.
+
+既に利用出来ない代替データへの要求を受信したまたは受信者の能力に一致する代替データを提供できない送信者は、
+失敗を記述する内容を含めたメッセージを送ることでこの事実を案内する応答をしなければ'''なりません'''。
+
+> Such a message MUST specify the MDN 'Disposition-Notification-To:'
+header [4], accompanied by a 'Disposition-Notification-Options:'
+header containing the parameter 'Alternative-not-available' with an
+importance value of 'required'.
+
+そのメッセージは、重要度値 [CODE(MDN)[[[required]]]] の引数
+[CODE(MDN)[[[Alternative-not-available]]]] を含んだ
+[CODE(822)[[[Disposition-Notification-Options]]:]] 頭を伴う
+[[MDN]] [CODE(822)[[[Disposition-Notification-To]]:]]
+を指定しなければ'''なりません'''。
+
+> This specification defines a value for 'attribute' to be used in an
+MDN 'Disposition-Notification-Options:' header [4]:
+
+この仕様書は、 MDN [CODE(822)[[[Disposition-Notification-Options]]:]]
+頭で使用する [CODE(ABNF)[attribute]] の値を定義します。
+
+>
+- attribute =/ "Alternative-not-available"
+
+> Thus, a sender includes the following headers to indicate that the
+alternative message data previously offered is no longer available:
+
+従って、送信者は以前提供していた代替メッセージ・データが既に利用可能でないことを示す次の頭を含めます。
+
+>
+[PRE[
+      Disposition-Notification-To:
+          <sender-address>
+      Disposition-Notification-Options:
+          Alternative-not-available=required,(TRUE)
+]PRE]
+
+> A message sent with a request for an MDN with an 'Alternative-not-available' option MUST also contain an 'Original-message-ID:'  header [23] containing the value from the 'Message-ID:' header of the
+original message.
+
+[CODE(MDN)[Alternative-not-available]] 選択肢つきの MDN
+への要求で送られるメッセージは元のメッセージの [CODE(822)[[[Message-ID]]:]]
+頭の値を含んだ [CODE(MDN)[[[Original-message-ID]]:]]
+頭をも含まなければ'''なりません'''。
+
+
+** 6.4 Indicating loss of original data
+
+> This specification defines an additional value for 'disposition-modifier-extension':
+
+この仕様書は [CODE(ABNF)[disposition-modifier-extension]]
+の追加の値を定義します。
+
+>
+- disposition-modifier-extension =/          "original-lost"
+
+> When a receiver loses message data because it lacks memory to store
+the original while waiting for an alternative to be sent, it sends a
+message disposition notification containing the following field:
+
+受信者が代替が送られるのを待つ間に元のメッセージを蓄積するための記憶に欠いているためにメッセージ・データを失った時には、
+次の欄を含んだメッセージ配置通知を送信します。
+
+>
+[PRE[
+      Disposition:
+        <action-mode>/<sending-mode>,
+        deleted/original-lost
+]PRE]
+
+> For example, an automatically generated response might contain:
+
+例えば、自動的に生成される応答は
+
+>
+[PRE[
+      Disposition:
+        automatic-action/MDN-sent-automatically,
+        deleted/original-lost
+]PRE]
+
+を含みます。
+
+> An MDN response containing an 'original-lost' disposition modifier
+MUST also contain an 'Original-message-ID:' field [4] with the
+'Message-ID:' value from the resent message, or from the original
+message (if no re-send has been received).
+
+[CODE(MDN)[original-lost]] 配置修飾子を含んだ MDN 応答は再送メッセージからの
+[CODE(822)[Message-ID:]] 値または (再送を受信していない場合) 元のメッセージからの
+[CODE(822)[Message-ID:]] 値の
+[CODE(MDN)[Original-message-ID:]] 欄をも含めなければ'''なりません'''。
+
+
+** 6.5 Automatic sending of MDN responses
+
+> In sending an MDN response that requests alternative data, the
+security concerns stated in RFC 2298 [4] (sections 2.1 and 6.2)
+regarding automatic MDN responses must be respected.  In particular,
+a system capable of performing content negotiation MUST have an
+option for its user to disable negotiation responses, either
+generally, on a per-message basis, or both.
+
+代替データを要求する MDN 応答を送信するに当たって、
+自動 MDN 応答に関する [[RFC2298]] (2.1節, 6.2節) の言明する安全性についての心配を尊重しなければなりません。
+特に、内容折衝を行う能力のあるシステムは利用者が一般に又はメッセージごとに、
+あるいはその両方で折衝応答を無効化する選択肢を有しなければ'''なりません'''。
+
+
+* 7. Internet Fax Considerations
+
+> Internet fax is an application that uses email to exchange document
+images (see RFC RFC 2305 [12] and RFC 2532 [1]).
+
+インターネット・ファックスは、文書画像を交換するのに電子メイルを使う応用です。
+
+> Both sender and receiver parts of this specification involve the use
+of media feature expressions.  In the context of Internet fax, any
+such expressions SHOULD employ feature tags defined by "Content
+feature schema for Internet fax" [16].  In a wider email context, any
+valid media features MAY be used.
+
+この仕様の一部である送信者と受信者の両方が媒体特徴式を使います。
+インターネット・ファックスの文脈では、その式は
+『インターネット・ファックスの内容特徴 schema』
+で定義されている[[特徴札]]を利用する'''べきです'''。
+より広く電子メイルの文脈では、任意の妥当な媒体特徴を使用して'''構いません'''。
+
+> For Internet fax [12], "image/tiff" is the assumed content-type for
+message data.  In particular, all Internet fax devices are presumed
+to be capable of sending and receiving the TIFF profile S
+capabilities (Section 3 of [11]).  When communication is between
+Internet fax devices, this capability may be assumed.  But when
+dealing with devices that go beyond these capabilities defined for
+Internet fax (e.g. generic email agents with fax capabilities) it
+would be better not to assume fax capabilities, and for the
+negotiating parties to be explicit with respect to all their capabilities.
+
+インターネット・ファックスでは、 [CODE(MIME)[[[image/tiff]]]]
+がメッセージ・データで想定される内容型です。
+特に、すべてのインターネット・ファックス機器は TIFF プロファイル S
+能力を送受信できる能力があることになっています。
+インターネット・ファックス機器間で通信するときには、
+この能力を仮定しても構いません。
+しかし、インターネット・ファックス用に定義されているこれらの能力を超えた機器
+(例えばファックス能力を持った一般電子メイルエージェント) に対処する時には、
+ファックス能力を過程しないほうが良いでしょうし、
+折衝当事者は陽にそのすべての能力を伝言するのがよいでしょう。
+
+> It would be better if even Internet fax devices do not assume that
+they are communicating with other such devices.  When using Internet
+email, there is no reliable way to establish this fact.  Therefore,
+for any Internet fax device that may reasonably be expected to
+exchange messages with any other email agent, it is RECOMMENDED that
+Internet fax capabilities (such as image/tiff baseline format
+handling) are not assumed but stated explicitly.
+
+これはインターネット・ファックス機器が他の機器と通信しないことを想定していても良いことでしょう。
+インターネット電子メイルを使うとき、この事実を確立する信頼できる方法はありません。
+従って、すべてのインターネット・ファックス機器は他の電子メイル・エージェントとメッセージを交換することが道理的に予期できるわけで、
+インターネット・ファックス能力 ([CODE(MIME)[image/tiff]] 基線書式取扱いなど) は仮定せずに陽に言明することを'''推奨します'''。
+
+> In particular, the 'Media-Accept-Features:' header in receiver MDN
+responses SHOULD explicitly indicate (type="image/tiff") and baseline
+TIFF capabilities, rather than just assuming that they are understood.
+
+特に、受信者の MDN 応答の [CODE(MDN)[[[Media-Accept-Features]]:]]
+頭は単に理解されることを仮定するのではなく
+[CODE(MDN)[(type="image/tiff")]] と基線 TIFF
+能力を陽に示す'''べきです'''。
+
+
+* 8. Examples
+
+
+** 8.1 Sending enhanced Internet Fax image
+
+> An Internet fax sender has a profile-F (A4, 400x400dpi, MMR) image to
+send to a receiver.  The baseline for Internet fax is 200x200dpi and
+MH image compression.
+
+インターネット・ファックス送信者はプロファイル F (A4, 400×400 dpi, MMR)
+画像を受信者に送信します。
+インターネット・ファックスの基線は 200×200 dpi と MH
+画像圧縮です。
+
+> Sender's initial message:
+
+送信者の初期メッセージ :
+
+[PRE[
+      Date: Wed,20 Sep 1995 00:18:00 (EDT)-0400
+      From: Jane Sender <Jane_Sender@example.com>
+      Message-Id: <199509200019.12345@example.com>
+      Subject: Internet FAX Full Mode Content Negotiation
+      To: Tom Recipient <Tom_Recipient@example.org>
+      Disposition-Notification-To: Jane_Sender@example.com
+      Disposition-Notification-Options:
+          Alternative-available=optional,permanent
+      MIME-Version: 1.0
+      Content-Type: multipart/mixed;
+                    boundary="RAA14128.773615765/ example.com"
+      --RAA14128.773615765/ example.com
+      Content-type: image/tiff
+      Content-Transfer-Encoding: base64
+      Content-features:
+          (& (color=Binary)
+             (image-file-structure=TIFF-minimal)
+             (dpi=200)
+             (dpi-xyratio=1)
+             (paper-size=A4)
+             (image-coding=MH)
+             (MRC-mode=0)
+             (ua-media=stationery) )
+      Content-alternative:
+          (& (color=Binary)
+             (image-file-structure=TIFF-limited)
+             (dpi=400)
+             (dpi-xyratio=1)
+             (paper-size=A4)
+             (image-coding=MMR)
+             (MRC-mode=0)
+             (ua-media=stationery) )
+      [TIFF-FX Profile-S message goes here]
+      --RAA14128.773615765/ example.com--
+]PRE]
+
+> Receiver sends MDN response to initial message:
+
+受信者は初期メッセージに対する MDN 応答を送ります :
+
+>
+[PRE[
+      Date: Wed,20 Sep 1995 00:19:00 (EDT)-0400
+      From: Tom Recipient <Tom_Recipient@example.org>
+      Message-Id: <199509200020.12345@example.org>
+      Subject: Re: Internet FAX Full Mode Content Negotiation
+      To: Jane Sender <Jane_Sender@example.com>
+      MIME-Version: 1.0
+      Content-Type: multipart/report;
+                    report-type=disposition-notification;
+                    boundary="RAA14128.773615766/example.org"
+      --RAA14128.773615766/example.org
+      The message sent on 1995 Sep 20 at 00:18:00 (EDT) -0400 to
+      Tom Recipient <Tom_Recipient@example.org> with subject "Internet
+      FAX Full Mode Content Negotiation" has been received.  An
+      alternative form of the message data is requested.
+      --RAA14128.773615766/example.org
+      Content-Type: message/disposition-notification
+      Reporting-UA: Toms-pc.cs.example.org; IFAX-FullMode
+      Original-Recipient: rfc822;Tom-Recipient@example.org
+      Final-Recipient: rfc822;Tom-Recipient@example.org
+      Original-Message-ID: <199509200019.12345@example.com>
+      Disposition: automatic-action/MDN-sent-automatically;
+                   deleted/alternative-preferred
+      Media-Accept-Features:
+          (& (type="image/tiff")
+             (color=Binary)
+             (image-file-structure=TIFF)
+             (| (& (dpi=200) (dpi-xyratio=200/100) )
+                (& (dpi=200) (dpi-xyratio=1) )
+                (& (dpi=400) (dpi-xyratio=1) ) )
+             (| (image-coding=[MH,MR,MMR])
+                (& (image-coding=JBIG)
+                   (image-coding-constraint=JBIG-T85)
+                   (JBIG-stripe-size=128) ) )
+             (MRC-mode=0)
+             (paper-size=[A4,B4])
+             (ua-media=stationery) )
+      --RAA14128.773615766/example.org--
+]PRE]
+
+> Sender's message with enhanced content:
+
+向上した内容の送信者のメッセージ :
+
+>
+[PRE[
+      Date: Wed,20 Sep 1995 00:21:00 (EDT)-0400
+      From: Jane Sender <Jane_Sender@example.com>
+      Message-Id: <199509200021.12345@example.com>
+      Original-Message-Id: <199509200019.12345@example.com>
+      Subject: Internet FAX Full Mode Image Transmission
+      To: Tom Recipient <Tom_Recipient@example.org>
+      Disposition-Notification-To: Jane_Sender@example.com
+      MIME-Version: 1.0
+      Content-Type: multipart/mixed;
+                    boundary="RAA14128.773615768/ example.com"
+      --RAA14128.773615768/ example.com
+      Content-type: image/tiff
+      Content-Transfer-Encoding: base64
+      [TIFF-FX profile-F message goes here]
+      --RAA14128.773615768/ example.com--
+]PRE]
+
+> Receiver sends MDN confirmation of enhanced message content:
+
+受信者は向上したメッセージ内容の MDN 確認を送信します :
+
+>
+[PRE[
+      Date: Wed,20 Sep 1995 00:22:00 (EDT)-0400
+      From: Tom Recipient <Tom_Recipient@example.org>
+      Message-Id: <199509200022.12345@example.org>
+      Subject: Re: Internet FAX Full Mode Image Transmission
+      To: Jane Sender <Jane_Sender@example.com>
+      MIME-Version: 1.0
+      Content-Type: multipart/report;
+                    report-type=disposition-notification;
+                    boundary="RAA14128.773615769/example.org"
+      --RAA14128.773615769/example.org
+      The message sent on 1995 Sep 20 at 00:21:00 (EDT) -0400 to Tom
+      Recipient <Tom_Recipient@example.org> with subject " Internet FAX
+      Full Mode Image Transmission" has been processed in Internet FAX
+      Full Mode.
+      --RAA14128.773615769/example.org
+      Content-Type: message/disposition-notification
+      Reporting-UA: Toms-pc.cs.example.org; IFAX-FullMode
+      Original-Recipient: rfc822;Tom-Recipient@example.org
+      Final-Recipient: rfc822;Tom-Recipient@example.org
+      Original-Message-ID: <199509200021.12345@example.com>
+      Disposition: automatic-action/MDN-sent-automatically; processed
+      Media-Accept-Features:
+          (& (type="image/tiff")
+             (color=Binary)
+             (image-file-structure=TIFF)
+             (| (& (dpi=200) (dpi-xyratio=200/100) )
+                (& (dpi=200) (dpi-xyratio=1) )
+                (& (dpi=400) (dpi-xyratio=1) ) )
+             (| (image-coding=[MH,MR,MMR])
+                (& (image-coding=JBIG)
+                   (image-coding-constraint=JBIG-T85)
+                   (JBIG-stripe-size=128) ) )
+             (MRC-mode=0)
+             (paper-size=[A4,B4])
+             (ua-media=stationery) )
+      --RAA14128.773615769/example.org--
+]PRE]
+
+
+** 8.2 Internet fax with initial data usable
+
+> This example shows how the second and subsequent transfers between
+the systems in the previous example might be conducted.  Using
+knowledge gained from the previous exchange, the sender includes
+profile-F data with its first contact.
+
+この例は前の例が執り行われたかもしれないシステム間での二番目とその後の転送をどう行うかを示します。
+前の交換で得た知識を使って、送信者は最初のないようにプロファイル F
+データを含めます。
+
+> Sender's initial message:
+
+送信者の初期メッセージ :
+
+>
+[PRE[
+      Date: Wed,20 Sep 1995 00:19:00 (EDT)-0400
+      From: Jane Sender <Jane_Sender@example.com>
+      Message-Id: <199509200019.12345@example.com>
+      Subject: Internet FAX Full Mode Content Negotiation
+      To: Tom Recipient <Tom_Recipient@example.org>
+      Disposition-Notification-To: Jane_Sender@example.com
+      Disposition-Notification-Options:
+          Alternative-available=optional,permanent
+      MIME-Version: 1.0
+      Content-Type: multipart/mixed;
+                    boundary="RAA14128.773615765/ example.com"
+      --RAA14128.773615765/ example.com
+      Content-type: image/tiff
+      Content-Transfer-Encoding: base64
+      Content-features:
+          (& (color=Binary)
+             (image-file-structure=TIFF-limited)
+             (dpi=400)
+             (dpi-xyratio=1)
+             (paper-size=A4)
+             (image-coding=MMR)
+             (MRC-mode=0)
+             (ua-media=stationery) )
+      Content-alternative:
+          (& (color=Binary)
+             (image-file-structure=TIFF-minimal)
+             (dpi=200)
+             (dpi-xyratio=1)
+             (paper-size=A4)
+             (image-coding=MH)
+             (MRC-mode=0)
+             (ua-media=stationery) )
+      [TIFF-FX Profile-F message goes here]
+      --RAA14128.773615765/ example.com--
+]PRE]
+
+> Receiver sends MDN confirmation of received message content:
+
+受信者は受信したメッセージ内容の MDN 確認を送信します :
+
+>
+[PRE[
+      Date: Wed,20 Sep 1995 00:22:00 (EDT)-0400
+      From: Tom Recipient <Tom_Recipient@example.org>
+      Message-Id: <199509200022.12345@example.org>
+      Subject: Re: Internet FAX Full Mode Image Transmission
+      To: Jane Sender <Jane_Sender@example.com>
+      MIME-Version: 1.0
+      Content-Type: multipart/report;
+                    report-type=disposition-notification;
+                    boundary="RAA14128.773615769/example.org"
+      --RAA14128.773615769/example.org
+      The message sent on 1995 Sep 20 at 00:19:00 (EDT) -0400 to Tom
+      Recipient <Tom_Recipient@example.org> with subject "Internet FAX
+      Full Mode Image Transmission" has been processed in Internet FAX
+      Full Mode.
+      --RAA14128.773615769/example.org
+      Content-Type: message/disposition-notification
+      Reporting-UA: Toms-pc.cs.example.org; IFAX-FullMode
+      Original-Recipient: rfc822;Tom-Recipient@example.org
+      Final-Recipient: rfc822;Tom-Recipient@example.org
+      Original-Message-ID: <199509200021.12345@example.com>
+      Disposition: automatic-action/MDN-sent-automatically; processed
+      Media-Accept-Features:
+          (& (type="image/tiff")
+             (color=Binary)
+             (image-file-structure=TIFF)
+             (| (& (dpi=200) (dpi-xyratio=200/100) )
+                (& (dpi=200) (dpi-xyratio=1) )
+                (& (dpi=400) (dpi-xyratio=1) ) )
+             (| (image-coding=[MH,MR,MMR])
+                (& (image-coding=JBIG)
+                   (image-coding-constraint=JBIG-T85)
+                   (JBIG-stripe-size=128) ) )
+             (MRC-mode=0)
+             (paper-size=[A4,B4])
+             (ua-media=stationery) )
+      --RAA14128.773615769/example.org--
+]PRE]
+
+
+* 8.3 Negotiate to lower receiver capability
+
+> In this example, the sender has incorrectly assumed that the receiver
+has a higher capability, and must re-send lower capability data in
+response to the receiver's response showing lesser capability.
+
+この例では、送信者は受信者が高い能力を持つと誤推測し、
+下等な能力を示した受信者の応答への応答で低い能力のデータを再送しなければなりません。
+
+> An Internet fax sends a profile-F (A4, 400x400dpi, MMR) image.  When
+the receiver cannot handle this, it falls back to baseline profile-S.
+As this is a baseline format, it is not necessary to declare that
+capability with the original message.  When a receiver is faced with
+data it cannot process from a negotiating sender, it can do no better
+than to respond with a description of its actual capabilities and let
+the sender determine the outcome.
+
+インターネット・ファックスはプロファイル F (A4, 400×400 dpi, MMR)
+画像を送信します。受信者がこれを扱えない時、基線プロファイル S
+に fallback します。これは基線書式なので、元のメッセージで能力を宣言する必要はありません。
+受信者が折衝送信者からの処理できないデータに直面した時は、
+その実際の能力の記述を応答して送信者に結果を決定させることができるに過ぎません。
+
+> Sender's initial message:
+
+送信者の初期メッセージ :
+
+>
+[PRE[
+      Date: Wed, 20 Sep 1995 00:18:00 (EDT)-0400
+      From: Jane Sender <Jane_Sender@example.com>
+      Message-Id: <199509200019.12345@example.com>
+      Subject: Internet FAX Full Mode Negotiate Down
+      To: Tom Recipient <Tom_Recipient@example.org>
+      Disposition-Notification-To: Jane_Sender@example.com
+      Disposition-Notification-Options:
+          Alternative-available=optional,permanent
+      MIME-Version: 1.0
+      Content-Type: multipart/mixed;
+                    boundary="RAA14128.773615765/ example.com"
+      --RAA14128.773615765/ example.com
+      Content-type: image/tiff
+      Content-Transfer-Encoding: base64
+      Content-features:
+          (& (color=Binary)
+             (image-file-structure=TIFF-limited)
+             (dpi=400)
+             (dpi-xyratio=1)
+             (paper-size=A4)
+             (image-coding=MMR)
+             (MRC-mode=0)
+             (ua-media=stationery) )
+      [TIFF-FX Profile-F message goes here]
+      --RAA14128.773615765/ example.com--
+]PRE]
+
+> Receiver sends MDN response to initial message:
+
+受信者は初期メッセージに対する MDN 応答を送信します :
+
+>
+[PRE[
+      Date: Wed,20 Sep 1995 00:19:00 (EDT)-0400
+      From: Tom Recipient <Tom_Recipient@example.org>
+      Message-Id: <199509200020.12345@example.org>
+      Subject: Re: Internet FAX Full Mode Negotiate Down
+      To: Jane Sender <Jane_Sender@example.com>
+      MIME-Version: 1.0
+      Content-Type: multipart/report;
+                    report-type=disposition-notification;
+                    boundary="RAA14128.773615766/example.org"
+      --RAA14128.773615766/example.org
+      The message sent on 1995 Sep 20 at 00:18:00 (EDT) -0400 to
+      Tom Recipient <Tom_Recipient@example.org> with subject "Internet
+      FAX Full Mode Content Negotiation" has been received.  An
+      alternative form of the message data is requested.
+      --RAA14128.773615766/example.org
+      Content-Type: message/disposition-notification
+      Reporting-UA: Toms-pc.cs.example.org; IFAX-FullMode
+      Original-Recipient: rfc822;Tom-Recipient@example.org
+      Final-Recipient: rfc822;Tom-Recipient@example.org
+      Original-Message-ID: <199509200019.12345@example.com>
+      Disposition: automatic-action/MDN-sent-automatically;
+                   deleted/alternative-preferred
+      Media-Accept-Features:
+          (& (type="image/tiff")
+             (color=Binary)
+             (image-file-structure=TIFF-minimal)
+             (dpi=200)
+             (dpi-xyratio=1)
+             (paper-size=A4)
+             (image-coding=MH)
+             (MRC-mode=0)
+             (ua-media=stationery) )
+      --RAA14128.773615766/example.org--
+]PRE]
+
+> Sender's message with baseline content:
+
+送信者の基線内容のメッセージ :
+
+>
+[PRE[
+      Date: Wed,20 Sep 1995 00:21:00 (EDT)-0400
+      From: Jane Sender <Jane_Sender@example.com>
+      Message-Id: <199509200021.12345@example.com>
+      Original-Message-Id: <199509200019.12345@example.com>
+      Subject: Internet FAX Full Mode Image Transmission
+      To: Tom Recipient <Tom_Recipient@example.org>
+      Disposition-Notification-To: Jane_Sender@example.com
+      MIME-Version: 1.0
+      Content-Type: multipart/mixed;
+                    boundary="RAA14128.773615768/ example.com"
+      --RAA14128.773615768/ example.com
+      Content-type: image/tiff
+      Content-Transfer-Encoding: base64
+      [TIFF-FX profile-S message goes here]
+      --RAA14128.773615768/ example.com--
+]PRE]
+
+> Receiver sends MDN confirmation of impoverished message content:
+
+受信者は低質化メッセージ内容の MDN 確認を送信します :
+
+>
+[PRE[
+      Date: Wed,20 Sep 1995 00:22:00 (EDT)-0400
+      From: Tom Recipient <Tom_Recipient@example.org>
+      Message-Id: <199509200022.12345@example.org>
+      Subject: Re: Internet FAX Full Mode Image Transmission
+      To: Jane Sender <Jane_Sender@example.com>
+      MIME-Version: 1.0
+      Content-Type: multipart/report;
+                    report-type=disposition-notification;
+                    boundary="RAA14128.773615769/example.org"
+      --RAA14128.773615769/example.org
+      The message sent on 1995 Sep 20 at 00:21:00 (EDT) -0400 to Tom
+      Recipient <Tom_Recipient@example.org> with subject " Internet FAX
+      Full Mode Image Transmission" has been processed in Internet FAX
+      Full Mode.
+      --RAA14128.773615769/example.org
+      Content-Type: message/disposition-notification
+      Reporting-UA: Toms-pc.cs.example.org; IFAX-FullMode
+      Original-Recipient: rfc822;Tom-Recipient@example.org
+      Final-Recipient: rfc822;Tom-Recipient@example.org
+      Original-Message-ID: <199509200021.12345@example.com>
+      Disposition: automatic-action/MDN-sent-automatically; processed
+      Media-Accept-Features:
+          (& (color=Binary)
+             (image-file-structure=TIFF-minimal)
+             (dpi=200)
+             (dpi-xyratio=1)
+             (paper-size=A4)
+             (image-coding=MH)
+             (MRC-mode=0)
+             (ua-media=stationery) )
+      --RAA14128.773615769/example.org--
+]PRE]
+
+
+** 8.4 Sending an alternative content type
+
+> As noted in section 4, the sender can offer the data using a
+different MIME content-type.  This example shows a profile-F (A4,
+400x400dpi, MMR) image and a limited-colour PDF document offered as
+alternatives to a baseline image/TIFF.
+
+4章で触れたように、送信者は異なる MIME 内容型を使ってデータを提供出来ます。
+この例はプロファイル F (A4, 400×400 dpi, MMR9 画像と色の限られた PDF
+文書を基線 [CODE(MIME)[image/TIFF]] の代替として提供するのを示します。
+
+> Sender's initial message:
+
+送信者の初期メッセージ :
+
+> (Note that the MIME content type is not specified for the
+image/tiff alternative, being the same as that provided, but
+is mentioned for the application/pdf alternative.)
+
+(MIME 内容型は提供したものと同じである [CODE(MIME)[image/tiff]] 代替には指定されていないのに [CODE(MIME)[[[application/pdf]]]] 代替では言及しているのに注意してください。)
+
+>
+[PRE[
+      Date: Wed,20 Sep 1995 00:18:00 (EDT)-0400
+      From: Jane Sender <Jane_Sender@example.com>
+      Message-Id: <199509200019.12345@example.com>
+      Subject: Internet FAX Full Mode Content Negotiation
+      To: Tom Recipient <Tom_Recipient@example.org>
+      Disposition-Notification-To: Jane_Sender@example.com
+      Disposition-Notification-Options:
+          Alternative-available=optional,permanent
+      MIME-Version: 1.0
+      Content-Type: multipart/mixed;
+                    boundary="RAA14128.773615765/ example.com"
+      --RAA14128.773615765/ example.com
+      Content-type: image/tiff
+      Content-Transfer-Encoding: base64
+      Content-features:
+          (& (color=Binary)
+             (image-file-structure=TIFF-minimal)
+             (dpi=200)
+             (dpi-xyratio=1)
+             (paper-size=A4)
+             (image-coding=MH)
+             (MRC-mode=0)
+             (ua-media=stationery) )
+      Content-alternative:
+          (& (color=Binary)
+             (image-file-structure=TIFF-limited)
+             (dpi=400)
+             (dpi-xyratio=1)
+             (paper-size=A4)
+             (image-coding=MMR)
+             (MRC-mode=0)
+             (ua-media=stationery) )
+      Content-alternative:
+          (& (type="application/pdf")
+             (color=Limited)
+             (dpi=400)
+             (paper-size=A4)
+             (ua-media=stationery) )
+      [TIFF-FX Profile-S message goes here]
+      --RAA14128.773615765/ example.com--
+]PRE]
+
+> Receiver sends MDN response to initial message:
+
+樹脂者は初期メッセージに対する MDN 応答を送ります :
+
+> (Note that this response indicates an ability to handle the
+PDF MIME content-types, but with only binary colour.)
+
+(この応答は PDF MIME 内容型を扱える能力があるが二色だけであると示していることに注意してください。)
+
+>
+[PRE[
+      Date: Wed,20 Sep 1995 00:19:00 (EDT)-0400
+      From: Tom Recipient <Tom_Recipient@example.org>
+      Message-Id: <199509200020.12345@example.org>
+      Subject: Re: Internet FAX Full Mode Content Negotiation
+      To: Jane Sender <Jane_Sender@example.com>
+      MIME-Version: 1.0
+      Content-Type: multipart/report;
+                    report-type=disposition-notification;
+                    boundary="RAA14128.773615766/example.org"
+      --RAA14128.773615766/example.org
+      The message sent on 1995 Sep 20 at 00:18:00 (EDT) -0400 to
+      Tom Recipient <Tom_Recipient@example.org> with subject "Internet
+      FAX Full Mode Content Negotiation" has been received.  An
+      alternative form of the message data is requested.
+      --RAA14128.773615766/example.org
+      Content-Type: message/disposition-notification
+      Reporting-UA: Toms-pc.cs.example.org; IFAX-FullMode
+      Original-Recipient: rfc822;Tom-Recipient@example.org
+      Final-Recipient: rfc822;Tom-Recipient@example.org
+      Original-Message-ID: <199509200019.12345@example.com>
+      Disposition: automatic-action/MDN-sent-automatically;
+                   deleted/alternative-preferred
+      Media-Accept-Features:
+          (| (& (type="image/tiff")
+                (color=Binary)
+                (image-file-structure=TIFF-minimal)
+                (dpi=200)
+                (dpi-xyratio=1)
+                (image-coding=MH)
+                (MRC-mode=0)
+                (paper-size=A4)
+                (ua-media=stationery) )
+             (& (type="application/pdf")
+                (color=Binary)
+                (dpi-xyratio=1)
+                (dpi=[200,400])
+                (paper-size=[A4,B4])
+                (ua-media=stationery) ) )
+      --RAA14128.773615766/example.org--
+]PRE]
+
+> Resend with alternative content-type:
+
+代替内容型で応答 :
+
+>
+[PRE[
+      Date: Wed,20 Sep 1995 00:21:00 (EDT)-0400
+      From: Jane Sender <Jane_Sender@example.com>
+      Message-Id: <199509200021.12345@example.com>
+      Original-Message-Id: <199509200019.12345@example.com>
+      Subject: Internet FAX Full Mode Image Transmission
+      To: Tom Recipient <Tom_Recipient@example.org>
+      Disposition-Notification-To: Jane_Sender@example.com
+      MIME-Version: 1.0
+      Content-Type: multipart/mixed;
+                    boundary="RAA14128.773615768/ example.com"
+      --RAA14128.773615768/ example.com
+      Content-type: application/pdf
+      Content-Transfer-Encoding: base64
+      [PDF data goes here]
+      --RAA14128.773615768/ example.com--
+]PRE]
+
+> Receiver sends MDN confirmation of enhanced message content:
+
+受信者は向上したメッセージ内容の MDN 確認を送信します :
+
+> (Also indicating the PDF capability for future messages.)
+
+(将来のメッセージでの PDF 能力も示しています)
+
+>
+[PRE[
+      Date: Wed,20 Sep 1995 00:22:00 (EDT)-0400
+      From: Tom Recipient <Tom_Recipient@example.org>
+      Message-Id: <199509200022.12345@example.org>
+      Subject: Re: Internet FAX Full Mode Image Transmission
+      To: Jane Sender <Jane_Sender@example.com>
+      MIME-Version: 1.0
+      Content-Type: multipart/report;
+                    report-type=disposition-notification;
+                    boundary="RAA14128.773615769/example.org"
+      --RAA14128.773615769/example.org
+      The message sent on 1995 Sep 20 at 00:21:00 (EDT) -0400 to Tom
+      Recipient <Tom_Recipient@example.org> with subject " Internet FAX
+      Full Mode Image Transmission" has been processed in Internet FAX
+      Full Mode.
+      --RAA14128.773615769/example.org
+      Content-Type: message/disposition-notification
+      Reporting-UA: Toms-pc.cs.example.org; IFAX-FullMode
+      Original-Recipient: rfc822;Tom-Recipient@example.org
+      Final-Recipient: rfc822;Tom-Recipient@example.org
+      Original-Message-ID: <199509200021.12345@example.com>
+      Disposition: automatic-action/MDN-sent-automatically; processed
+      Media-Accept-Features:
+          (| (& (type="image/tiff")
+                (color=Binary)
+                (image-file-structure=TIFF-minimal)
+                (dpi=200)
+                (dpi-xyratio=1)
+                (image-coding=MH)
+                (MRC-mode=0)
+                (paper-size=A4)
+                (ua-media=stationery) )
+             (& (type="application/pdf")
+                (color=Binary)
+                (dpi-xyratio=1)
+                (dpi=[200,400])
+                (paper-size=[A4,B4])
+                (ua-media=stationery) ) )
+      --RAA14128.773615769/example.org--
+]PRE]
+
+
+* 9. IANA Considerations
+
+
+** 9.1 New message headers
+
+> This specification defines new email/MIME message headers:
+
+この仕様書は二つの新しい電子メイル・MIME メッセージ頭を定義しています。
+
+>
+- Content-alternative
+- Original-Message-ID
+
+> As such, there being no registry of email headers, it is an update to
+the specifications of RFC 2822 and RFC 2045.
+
+電子メイル頭の登録簿はありませんから、 [[RFC2822]] 及び [[RFC2045]]
+の仕様の更新となります。
+
+
+* 9.2 MDN extensions
+
+> This specification defines extensions to the Message Disposition
+Notification (MDN) protocol.  The sections below are the registration
+templates for these extensions, as required by RFC 2298 [4], section 10.
+
+この仕様書はメッセージ配置通知 (MDN) プロトコルの拡張を定義しています。
+以降の節は [[RFC2298]] 10章が要求しているその拡張の登録雛形です。
+
+
+
+*** 9.2.1 Notification option 'Alternative-available'
+
+>
+:(a)   Disposition-notification-option name:
+Alternative-available
+:(b)   Syntax:
+(see this document, section 6.1)
+:(c)   Character-encoding:
+US-ASCII characters only are used
+:(d)   Semantics:
+(see this document, section 6.1)
+
+
+*** 9.2.2 Notification option 'Alternative-not-available'
+
+>
+:(a)   Disposition-notification-option name:
+Alternative-not-available
+:(b)   Syntax:
+(see this document, section 6.1)
+:(c)   Character-encoding:
+US-ASCII characters only are used
+:(d)   Semantics:
+(see this document, section 6.3)
+
+
+*** 9.2.3 Disposition modifier 'Alternative-preferred'
+
+:(a)   Disposition-modifier name:
+Alternative-preferred
+:(b)   Semantics:
+(see this document, section 6.2)
+
+
+*** 9.2.4 Disposition modifier 'Original-lost'
+
+:(a)   Disposition-modifier name:
+Original-lost
+:(b)   Semantics:
+(see this document, section 6.4)
+
+
+* 10.  Internationalization considerations
+
+> This specification deals with protocol exchanges between mail user
+agents, and as such does not deal primarily with human readable text.
+But not all user agents may automatically handle the protocol
+elements defined here, and may attempt to display text from the
+protocol elements to the user.
+
+この仕様書はメイル利用者エージェント間でのプロトコル交換を扱っており、
+人間可読文は主として扱っていません。
+しかしすべての利用者エージェントがここで定義したプロトコル要素を自動的に処理しないかもしれませんし、
+プロトコル要素の文を利用者に表示しようとするかもしれません。
+
+> The main candidate for this treatment is the text accompanying a
+disposition notification response that requests alternative
+information.  In normal use, the protocol design ensures that the
+recipient can process this response automatically; exceptionally, a
+receiving agent may display it to a user.
+
+この扱いの主たる候補は代替情報を要求する配置通知応答に付属する文です。
+通常の使用では、プロトコル設計によって受領者はこの応答を自動的に処理できるようにしています。
+例外的に、受信したエージェントは利用者にこれを表示するかもしれません。
+
+
+* 11.  Security Considerations
+
+> Security considerations of this specification can be divided into two
+main areas:
+
+この仕様書の安全性についての考察は2つの主領域に分けられます。
+
+[PRE[
+   o  Privacy concerns with automated MDN response generation:  see
+      section 6.5 of this document, and the security considerations
+      section of RFC 2298 [4].
+<!ENTITY ja.privacy " privacy ">
+MDN 応答自動生成に関する&ja.privacy;: この文書の6.5節及び
+RFC 2298 の<ja: (section-name:secure...) />を参照。
+]PRE]
+
+[PRE[
+   o  Risks of negotiation:  see the security considerations section
+      transaction.  If alternative data arrives subsequently, it may be
+      ignored or possibly also displayed or printed.  A successful
+      completion MDN may be sent to the sender.
+折衝の危険: &ja.transaction;の節の安全性に関しての考察を参照。
+代替データがその後到着したら、これは無視されるか或いはこちらも表示又は印刷される可能性があります。
+成功完了 MDN が送信者に送られるかもしれません。
+]PRE]
+
+12.  Acknowledgements
+
+[PRE[
+   The basic structure of the negotiation described here was first
+   documented in a draft by Mr. Toru Maeda of Canon.
+ここで説明した折衝の基本構造はキヤノンの前田徹氏の原案で最初に文書化されました。
+<!--前田徹
+キヤノン(株)
+映像事務機第3技術推進部-->
+   Helpful comments on earlier drafts were provided by Mr Hiroshi
+   Tamura, Ted Hardie and Larry Masinter.
+早期の原案に田村博氏, Ted Hardie 氏, Larry Masinter 
+氏が有益な意見を下さいました。
+]PRE]
+
+13.  References
+
+[PRE[
+   [1]   Masinter, L. and D. Wing, "Extended Facsimile using Internet
+         Mail", RFC 2532, March 1999.
+]PRE]
+
+[PRE[
+   [2]   Wing, D., "Indicating Supported Media Features Using Extensions
+         to DSN and MDN", RFC 2530, March 1999.
+]PRE]
+
+[PRE[
+   [3]   Masinter, L., "Terminology and Goals for Internet Fax", RFC
+         2542, March 1999.
+]PRE]
+
+[PRE[
+   [4]   Fajman, R., "An Extensible Message Format for Message
+         Disposition Notifications", RFC 2298, March 1998.
+]PRE]
+
+[PRE[
+   [5]   Holtman, K., Mutz, A. and T. Hardie, "Media Feature Tag
+         Registration Procedure", RFC 2506, March 1999.
+]PRE]
+
+[PRE[
+   [6]   Klyne, G., "A syntax for describing media feature sets", BCP
+         31, RFC 2533, March 1999.
+]PRE]
+
+[PRE[
+   [7]   Klyne, G., "Indicating media features for MIME content", RFC
+         2938, September 2000.
+]PRE]
+
+[PRE[
+   [8]  'Content-alternative' header (this memo, section 4)
+]PRE]
+
+[PRE[
+   [9]   MDN extension for alternative data (this memo, section 6)
+]PRE]
+
+[PRE[
+   [10]  Crocker, D. and P. Overell, "Augmented BNF for Syntax
+         Specifications: ABNF", RFC 2234, November 1997.
+]PRE]
+
+[PRE[
+   [11]  McIntyre, L.,  Buckley, R., Venable, D., Zilles, S., Parsons,
+         G. and J. Rafferty, "File format for Internet fax", RFC 2301,
+         March 1998.
+]PRE]
+
+[PRE[
+   [12]  Toyoda K., Ohno H., Murai, J. and D. Wing, "A Simple Mode of
+         Facsimile Using Internet Mail", RFC 2305, March 1998.
+]PRE]
+
+[PRE[
+   [13]  Fielding, R., Gettys, J., Mogul, J., Frystyk, H., Masinter, L.,
+         Leach, P. and T. Berners-Lee, "Hypertext Transfer Protocol --
+         HTTP/1.1", RFC 2616, June 1999.
+]PRE]
+
+[PRE[
+   [14]  Holtman, K. and A. Mutz, "Transparent Content Negotiation in
+         HTTP", RFC 2295, March 1998.
+]PRE]
+
+[PRE[
+   [15]  Freed, N. and N. Borenstein, "Multipurpose Internet Mail
+         Extensions (MIME) Part 2: Media types", RFC 2046, November
+         1996.
+]PRE]
+
+[PRE[
+   [16]  Klyne, G. and L. McIntyre, "Content feature schema for Internet
+         fax V2", RFC 2879, August 2000.
+]PRE]
+
+[PRE[
+   [17]  Klyne, G., "Protocol-independent Content Negotiation
+         Framework", RFC 2703, September 1999.
+]PRE]
+
+[PRE[
+   [18]  Moore, K., "SMTP Service Extension for Delivery Status
+         Notifications", RFC 1891, January 1996.
+]PRE]
+
+[PRE[
+   [19]  Klensin, J., "Simple Mail Transfer Protocol", RFC 2821, April
+         2001.
+]PRE]
+
+[PRE[
+   [20]  Resnick, P., "Internet Message Format", RFC 2822, April 2001.
+]PRE]
+
+[PRE[
+   [21]  Klyne, G. and D. Crocker, "Timely Delivery for Facsimile Using
+         Internet Mail", Work in Progress.
+]PRE]
+
+[PRE[
+   [22]  Bradner, S., "Key words for use in RFCs to Indicate Requirement
+         Levels", BCP 14, RFC 2119, March 1997.
+]PRE]
+
+[PRE[
+   [23] 'Original-Message-ID' header for mail messages (this memo,
+         section 5)
+]PRE]
+
+[PRE[
+   [24]  Klyne, G., "MIME Content Types in Media Feature Expressions",
+         RFC 2913, September 2000.
+]PRE]
+
+
+* Appendix A: Implementation issues
+
+実装問題
+
+> This section is not a normative part of this specification.  Rather,
+it discusses some of the issues that were considered during its
+design in a way that we hope will be useful to implementers.
+
+この章はこの仕様書の規定の一部ではありません。
+むしろ、設計の過程で考慮された問題の幾つかを実装者に有用であろうと思われえる形で取り上げます。
+
+
+** A.1 Receiver state
+
+> Probably the biggest implication for implementers of this proposal
+compared with standard mail user agents is the need to maintain some
+kind of state information at the receiver while content is being negotiated.
+
+標準メイル利用者エージェントと比較して、
+実装者にとってこの提案のおそらく最大の絡みは、
+内容を折衝する間に受信者が何らかの状態情報を維持する必要があることでしょう。
+
+> By "receiver state", we mean that a receiver needs to remember that
+it has received an initial message AND that it has requested an
+alternative form of data.  Without this, when a receiver responds
+with a request for an alternative data format there is a possibility
+(if the response does not reach the sender) that the message will be
+silently lost, despite its having been delivered to the receiving MTA.
+
+「受信者の状態」で、受信者が受信した初期メッセージ'''および'''データの代替形を要求したことを覚えておく必要があることを意味しています。
+これがなければ、代替データ書式の要求を応答したときに、 
+(応答が送信者に到達しなかったなら) メッセージが受信する MTA
+まで配送されたにもかかわらず黙って失われる可能性があります。
+
+> The matter of maintaining receiver state is particularly germane
+because of the requirement to allow low-memory systems to participate
+in the content negotiation.  Unlike traditional T.30 facsimile, where
+the negotiation takes place within the duration of a single
+connection, an extended time may be taken to complete a negotiation
+in email.  State information must be maintained for all negotiations
+outstanding at any time, and there is no theoretical upper bound on
+how many there may be.
+
+受信者の状態を維持する問題は低記憶システムが内容折衝に関わることを可能にするという要件のために特に関わってきます。
+単一の接続の間に折衝が行われる昔ながらの T.30 ファクシミリとは異なって、
+電子メイルでの内容折衝を完了するのにはより長い時間がかかるかもしれません。
+状態情報は実行中のすべての折衝について何時でも維持していなければなりませんで、
+理論的にはどれだけ維持しているかの上限はありません。
+
+> Keeping receiver state is probably not a problem for systems with
+high capacity storage devices to hold message data and state
+information.  The remainder of this section discusses strategies that
+small-system designers might employ to place an upper bound on memory
+that must be reserved for this information.  When a receiver is
+really memory constrained then message loss remains a possibility,
+but the mechanisms described here should ensure that it never happens silently.
+
+受信者の情報を保持することはメッセージ・データと状態情報を保持する大容量蓄積機器があるシステムではおそらく問題ではないでしょう。
+この章の以後の部分では小さなシステムの設計者がこの情報を保留しなければならない記憶域の上限をどこに置くのがよさげかの戦略を考えます。
+
+> So what is this "receiver state"?  It must contain, as a minimum:
+
+それではこの「受信者の状態」とはなんでしょう。
+これは少なくても、次のものを含まなければなりません。
+
+>
+- o  the fact that message data was received, and alternative data has been requested,
+- o  a unique message identifier, and
+- o  the time at which an alternative format request was sent.
+
+- メッセージ・データを受信し、代替データを要求したという事実
+- 固有メッセージ識別子
+- 代替書式要求を送った時刻
+
+> This allows the receiver to re-issue a request, or to report an
+error, if requested alternative data does not arrive in a reasonable time.
+
+これによって受信者が要求を再発行したり、
+合理的な時間内に要求した代替データが到着しなかったときに誤りを報告したりできます。
+
+> Receiver state may also include:
+
+受信者は次のものも含めることができます。
+
+>
+- o  a copy of the data originally received.  This allows the receiver
+to display the original data if an alternative is not received.
+- o  details of the data format supplied, and alternatives offered.
+This permits improved diagnostics if alternative data is not received.
+
+- 元々受信したデータの複製。これによって受信者が代替を受信しなかった時に元のデータを表示できます。
+- 供給したデータ書式の詳細と、提供した代替。
+これによって代替データを受信しなかった時により詳しく診断できます。
+
+> If a receiver of a message with alternative content available does
+not have enough memory to hold new negotiation state information, it
+may fall back to non-negotiation behaviour, accept the data received
+and send an MDN indicating disposition of that data (see sections 3.2.1, 3.2.2).
+
+代替内容が利用可能なメッセージの受信者が新しい状態情報を保持するのに十分な記憶域がないときには、
+非折衝動作に fallback して、受信したデータを受け入れてそのデータの配置を示す
+MDN を送っても構いません。
+
+> If a receiving system runs low on memory after entering into a
+negotiation, a number of options may be possible:
+
+受信したシステムが折衝に入った後に記憶域が少なくなった場合には、
+数々の可能な選択肢があります。
+
+>
+- o  display or print buffered data, if available, and complete the
+transaction.  If alternative data arrives subsequently, it may be
+ignored or possibly also displayed or printed.  A successful
+completion MDN may be sent to the sender.
+- o  discard any buffered data, and continue waiting for alternative
+data.  If alternative data does not subsequently arrive, a message
+transfer failure should be declared.
+- o  abort the transfer and declare a message transfer failure:  a
+diagnostic message must be displayed to the local user, and a
+failure notification sent to the sender.
+
+- バッファしたデータが利用可能であれば表示又は印刷し、通信を完了する。
+後から代替データが到着したら、それは無視しても構いませんし、
+また表示又は印刷しても構いません。成功完了 MDN
+を送信者に送って構いません。
+- バッファしたデータを捨てて、代替データの到着を待つ。
+代替データが後から到着しなければ、メッセージ転送失敗を宣言するべき。
+- 転送を止めてメッセージ転送失敗を宣言する。
+局所利用者には診断メッセージを表示しなければならず、
+失敗通知を送信者に表示する。
+
+
+** A.2 Receiver buffering of message data
+
+[PRE[
+   If a receiver is capable of buffering received message data while
+   waiting for an alternative, this is to be preferred because it
+   retains the option to display that data if an alternative is not
+   received (see above).
+]PRE]
+
+[PRE[
+   Partial message data should not be buffered for this purpose:
+   displaying part of the original message is not an allowable
+   substitute for displaying all of the received data.  (There may be
+   some value in keeping some of the original message data for
+   diagnostic purposes.)
+]PRE]
+
+[PRE[
+   If a receiver starts to buffer message data pending negotiation, then
+   finds that the entire message is too large to buffer, it may choose
+   to fall back to "extended mode" and display the incoming data as it
+   is received.
+]PRE]
+
+[PRE[
+   When a sender indicates availability of alternative data, it also
+   indicates whether it is permanently or transiently available.  The
+   intent of this is that if alternative data is transient, a receiver
+   should not discard original data received.  If necessary, it should
+   simply display the original data without requesting an alternative.
+]PRE]
+
+A.3 Sender state
+
+[PRE[
+   When a sender indicates that it can offer an alternative format of
+   message content, it accepts some responsibility for trying to ensure
+   that alternative is available if requested.  Thus, the message
+   content (both original and any alternative) should be stored for a
+   reasonable period, together with any corresponding Message-ID
+   value(s).
+]PRE]
+
+[PRE[
+   A request for retransmission must be accompanied by an Original-
+   Message-ID value that the sender can use to correlate with the
+   message data originally sent.
+]PRE]
+
+A.4 Timeout of offer of alternatives
+
+[PRE[
+   If the sender is operating with a high capacity message storage
+   device (e.g., a disk drive), and normally holds the data for extended
+   periods (several days or weeks) then it should indicate that the
+   alternative data is permanently available (see 6.1):  a recipient
+   seeing this may discard the original data, assuming that the sender
+   will most likely be able to re-transmit.
+]PRE]
+
+[PRE[
+   If the sender has limited memory capacity, and is likely to be able
+   to hold the data for no more than a few minutes or hours, it should
+   indicate that the alternative data is transiently available (see
+   6.1).  If there is doubt about a sender's ability to keep the message
+   content, it should indicate that availability of any alternative is
+   transient.
+]PRE]
+
+A.5 Timeout of receiver capabilities
+
+[PRE[
+   It should not be assumed that receiver capabilities declared during
+   negotiation are available indefinitely.
+]PRE]
+
+[PRE[
+   In particular, any receiver capabilities declared on a final message
+   confirmation should be regarded as definitive, even if they differ
+   from the capabilities associated with the message just accepted.
+   These may be stored for future use.
+]PRE]
+
+[PRE[
+   Any receiver capabilities declared when requesting an alternative
+   format should not be stored for future use, as the receiver might be
+   selective about the purposes for which those capabilities may be
+   used.
+]PRE]
+
+A.6 Relationship to timely delivery
+
+[PRE[
+   Some of the issues of sender state maintenance may be simplified if
+   content negotiation is used in conjunction with a facility for timely
+   delivery (e.g., [21]).  If there is a known time window within which
+   a response should be received, the sender may be less conservative
+   about keeping information about outstanding offers of alternative
+   data for extended periods.  A sender that exploits timely delivery in
+   this way should indicate that the alternative is transiently
+   available.
+]PRE]
+
+A.7 Ephemeral capabilities
+
+[PRE[
+   Ephemeral capabilities may present some special problems.  Consider
+   the case of selection of a particular content variant that may depend
+   on an ephemeral setting.
+]PRE]
+
+[PRE[
+   Imagine someone sending a basic fax to a color fax machine,
+   indicating that a color alternative is available.  The color fax
+   discards the content and sends an MDN which says
+   "deleted/alternative-preferred" to the originator.  It then runs out
+   of colored ink.  The originating fax then sends a new message which
+   the colored fax cannot print.
+]PRE]
+
+[PRE[
+   Or consider an the email client in a phone with sound on/off as a
+   related problem.  When sound is ON, the phone may be able to accept
+   voice messages by email.
+]PRE]
+
+[PRE[
+   This negotiation framework has not been designed with ephemeral
+   capabilities in mind, but, with care, may be adaptable to deal with
+   them.
+]PRE]
+
+A.8 Situations where MDNs must not be auto-generated
+
+[PRE[
+   Bearing in mind privacy concerns, implementers should be careful that
+   systems do not automatically enter into a negotiation exchange in a
+   way that may disclose the recipient's whereabouts without first
+   having obtained explicit permission.  For example, if receiving a
+   message depends in any way on the user's physical presence, automatic
+   negotiation should not be performed.
+]PRE]
+
+[PRE[
+   While it may be OK for an unattended fax machine to perform automated
+   negotiation, it is not OK for a PC software package to do so without
+   the users explicit permission as the PC may be switched on only when
+   the user is present.  This suggests that default settings in this
+   regard should take account of the type of system.
+]PRE]
+
+Appendix B: Candidates for further enhancements
+更なる増補の候補
+
+[PRE[
+   This appendix lists some possible features of content negotiation
+   that were considered, but not included in the current specification.
+   In most cases the reasons for exclusion were (a) that they could
+   introduce unanticipated additional complexities, and (b) no
+   compelling requirement was recognized.
+]PRE]
+
+[PRE[
+   o  Cache control indicator for recipient capabilities.  This would
+      instruct the sender, or other message system component, that
+      capability information in the current message is for the current
+      transaction only, and should NOT be remembered for future
+      transactions.  E.g., a recipient may not wish colour capability to
+      be used for routine communications.  (See also section A.5 above.)
+]PRE]
+
+[PRE[
+   o  Use of q-values [6] in media feature expressions for indicating
+      preference among alternatives available and/or receiver
+      preferences.
+]PRE]
+
+[PRE[
+   o  Partial re-sends.  There are proposals being developed for
+      "partial MDN" responses that can indicate disposition status on a
+      per-message-part basis.  This opens the possibility of partial
+      re-sends when alternative formats are requested for only some of
+      the message body parts.  The current specification assumes that
+      either none or all of message is re-sent when content negotiation
+      is used.
+]PRE]
+
+[PRE[
+   o  Allow negotiation with parties other than originally addressed
+      recipients of a message.
+]PRE]
+
+[PRE[
+   o  Negotiation response might indicate different receiver endpoint
+      with different capabilities.
+]PRE]
+
+Authors' Addresses
+
+[PRE[
+   Graham Klyne (editor)
+   Clearswift Corporation,
+   1310 Waterside,
+   Arlington Business Park
+   Theale
+   Reading, RG7 4SA
+   United Kingdom
+]PRE]
+
+[PRE[
+   Phone: +44 11 8903 8903
+   Fax:   +44 11 8903 9000
+   EMail: GK@ACM.ORG
+]PRE]
+
+[PRE[
+   Ryuji Iwazaki
+   TOSHIBA TEC CORPORATION
+   2-4-1, Shibakoen, Minato-ku,
+   Tokyo, 105-8524 Japan
+]PRE]
+
+[PRE[
+   Phone: +81 3 3438 6866
+   Fax:   +81 3 5402 6355
+   EMail:  iwa@rdl.toshibatec.co.jp
+]PRE]
+
+[PRE[
+   Dave Crocker
+   Brandenburg InternetWorking
+   675 Spruce Dr.
+   Sunnyvale, CA 94086 USA
+]PRE]
+
+[PRE[
+   Phone: +1 408 246 8253
+   Fax:   +1 408 249 6205
+   EMail: dcrocker@brandenburg.com
+]PRE]
+
+Full Copyright Statement
+[PRE[
+   Copyright (C) The Internet Society (2002).  All Rights Reserved.
+]PRE]
+
+[[RFCのライセンス]]を参照。
+
+Acknowledgement
+(原文参照)
+
+[1]
+[CITE[RFC ERRATA]] <http://www.rfc-editor.org/cgi-bin/errata.pl#rfc3297>
+
+訂正があります。日付の例の[[時間帯]]を表す[[注釈]]の位置が 
+[[RFC 2822]] にあわせて修正されています。

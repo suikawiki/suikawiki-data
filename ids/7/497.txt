@@ -1,0 +1,122 @@
+#?SuikaWiki/0.9
+[1] [[RFC1630]] は [[URI]]
+に関する最初の [[RFC]]
+ですが、 [CODE(URI)[[[file:]]]]
+URI [[方式]]を定義した最初の RFC
+でもあります。
+
+[[#comment]]
+
+*RFC 1630 file
+>The other URI schemes (except nntp) share the property that they are
+equally valid at any geographical place.
+
+他の URI 方式 
+([CODE(URI)[nntp]] を除く。)
+は地理的にどんな場所であっても等しく妥当な特性を共有しています。
+
+>There is however a real practical requirement to be able to generate
+a URL for an object in a machine's local file system.
+
+しかし現実の実際的な要件には機械の局部[[ファイル・システム]]中の物体の
+URL を生成できることがあります。
+
+>The syntax is similar to the ftp syntax, but in this case the slash
+is used to donate boundaries between directory levels of a
+hierarchical file system is used.  The "client" software converts the
+file URL into a file name in the local file name conventions.  This
+allows local files to be treated just as network objects without any
+necessity to use a network server for access.  This may be used for
+example for defining a user's "home" document in WWW.
+
+構文は [CODE(URI)[ftp]] のものと似ていますが、こちらの場合は[[斜線]]が使用されている階層ファイル・システムのディレクトリ水準の境界を示すのに使います。
+「クライアント」ソフトウェアは
+[CODE(URI)[file]] URL を局部ファイル名表記法によるファイル名に変換します。
+これによって、接続するためのネットワーク・サーバーを使う必要なしに局部ファイルをネットワーク物体のように扱うことが出来ます。
+これは例えば [[WWW]] で利用者の
+「家」文書を定義するのに使うかもしれません。
+
+>There is clearly a danger of confusion that a link made to a local
+file should be followed by someone on a different system, with
+unexpected and possibly harmful results.  Therefore, the convention
+is that even a "file" URL is provided with a host part.  This allows
+a client on another system to know that it cannot access the file
+system, or perhaps to use some other local mecahnism to access the
+file.
+
+明らかに、局部ファイルに対して作られたリンクが誰かに違ったシステムで辿られて、予期せぬ、もしかすると有害な結果になったりする混乱の危険があります。
+従って、この表記法では [CODE(URI)[file]]
+URL にもホスト部分が用意されているのです。
+これによって他のシステムのクライアントはこれがそのファイル・システムでは接続できないもので、おそらく接続するためには他の局部機構を使わなければならないのだと知ることが出来ます。
+
+>The special value "localhost" is used in the host field to indicate
+that the filename should really be used on whatever host one is.
+This for example allows links to be made to files which are
+distribted on many machines, or to "your unix local password file"
+subject of course to consistency across the users of the data.
+
+特別な値 [CODE(URI)[localhost]]
+は、ホスト欄で使用して、
+どこのホストであってもこのファイル名が本当に使用されるべきであることを示します。
+これによって、例えば多くの機械に配布されているファイルへのリンクやデータの利用者の間で当然一貫して利用可能な「お宅の unix 局部合言葉ファイル」へのリンクを作ることができます。
+
+>A void host field is equivalent to "localhost".
+
+空のホスト欄は [CODE(URI)[localhost]]
+と同等です。
+
+* BNF
+
+[2] なぜか、 RFC 1630 の [[BNF]]
+定義には [CODE(URI)[file:]] URI
+は載っていません。
+しかし、 >>1 で「構文は
+[CODE(URI)[[[ftp:]]]] と同じ」
+とされていることから推測してみます。
+
+- ftpaddress             f t p : / / login / path [  ftptype ]
+- login                  [ user [ : password ] @ ] hostport
+- hostport               host [ : port ]
+- host                   hostname | hostnumber
+- hostname               ialpha [  .  hostname ]
+- hostnumber             digits . digits . digits . digits
+- xalpha                 alpha | digit | safe | extra | escape
+-  xalphas                xalpha [ xalphas ]
+-  xpalpha                xalpha | +
+-  xpalphas               xpalpha [ xpalphas ]
+-  ialpha                 alpha [ xalphas ]
+- digits                 digit [ digits ]
+- path                   void |  xpalphas  [  / path ]
+
+[CODE[ftptype]] が [CODE(URI)[file:]]
+URI に不要なことは明らかです。
+
+[CODE[hostport]] でなくて
+[CODE[login]] を使うのかどうかも謎です。
+後の [[..//RFC1738]]
+の定義に従うなら、これは前者です。
+実際にも file access
+に user@password までわざわざ記述する必要はないと思われます。
+(ホスト名を指定可能にした理由は普遍性の確保ですが、 [[Un|x]]
+などで login する利用者によってファイルシステムの木まで変わってしまうことは ([CODE(file)[[[~]]]] を除いて)
+ありませんから。 remote file
+access は別の scheme が用意されているので対象外ですし。)
+
+更に、 local file access
+に port なんて存在しませんからこれも削ります。
+
+- fileaddress = 'file://' host "/" [ path ]
+- host = hostname / hostnumber
+- hostname = hostlabel *("." hostlabel)
+- hostnumber = 1*DIGIT 3("." 1*DIGIT)
+- hostlabel = ALPHA [ xalphas ]
+- path = xpalphas *("/" xpalphas)
+-- ;; [SAMP(URI)[file://localhost/bar''//''foo]] は駄目。
+- xalphas = 1*(ALPHA / DIGIT / <-$_@.&+!*"'(),> / [[escape]])
+- xpalphas = 1*("+" / xalphas)
+
+[[#comment]]
+
+*RFC の部分の License
+[[RFCのライセンス]]
+*メモ

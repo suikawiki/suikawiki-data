@@ -1,0 +1,145 @@
+#?SuikaWiki/0.9 page-icon="HTTP"
+[[#comment]]
+* 仕様書から
+**RFC 3229 (差分符号化) 10.5.3 A-IM
+> The A-IM request-header field is similar to Accept, but restricts the
+instance-manipulations (section 10.1) that are acceptable in the
+response.  As specified in section 10.5.2, a response may be the
+result of applying multiple instance-manipulations.
+
+[CODE(HTTP)[A-IM]] [[要求頭欄]]は、 [CODE(HTTP)[[[Accept]]]]
+と似ていますが、[[応答]]で受入れ可能な[[実現値操作]]を制限します。
+10.5.2 節で規定したように、応答は複数の実現値操作を適用した結果かもしれません。
+
+>
+-      A-IM = "A-IM" ":" #( instance-manipulation [ ";" "q" "=" qvalue ] )
+
+> When an A-IM request-header field includes one or more delta-coding
+values, the request MUST contain an If-None-Match header field,
+listing one or more entity tags from prior responses for the
+request-URI.
+
+[CODE(HTTP)[A-IM]] 要求頭欄が一つ以上の[[差分符号化]]値を含む時、
+要求は [CODE(HTTP)[[[If-None-Match]]]] 頭欄を、
+その要求 [[URI]] についての以前の応答からの一つ以上の[[実体札]]を列挙して含めなければ'''なりません'''。
+
+> A server tests whether an instance-manipulation (among the ones it is
+capable of employing) is acceptable, according to a given A-IM header
+field, using these rules:
+
+鯖は (使用することのできるもののうちの) ある実現値操作が受入れ可能かを、
+与えられた [CODE(HTTP)[A-IM]] 頭欄に従って次の規則を使って検査します。
+
+>
+- 1. If the instance-manipulation is listed in the A-IM field, then
+it is acceptable, unless it is accompanied by a qvalue of 0.
+(As defined in section 3.9 of the HTTP/1.1 specification [10],
+a qvalue of 0 means "not acceptable.")  A server MUST NOT use a
+non-identity instance-manipulation for a response unless the
+instance-manipulation is listed in an A-IM header in the request.
+- 2. If multiple but incompatible instance-manipulations are
+acceptable, then the acceptable instance-manipulation with the
+highest non-zero qvalue is preferred.
+- 3. The "identity" instance-manipulation is always acceptable,
+unless specifically refused because the A-IM field includes
+"identity;q=0".
+
+- 実現値操作が [CODE(HTTP)[A-IM]] 欄に列せられていれば、
+[CODE(ABNF)[qvalue]] が [CODE(HTTP)[0]] とされていない限り、
+受入れ可能です。 (HTTP/1.1 仕様書の3.9節で定義されている通り、
+[CODE(ABNF)[qvalue]] [CODE(HTTP)[0]] は「受入れ不能」を意味します。)
+鯖は実現値操作が要求の [CODE(HTTP)[A-IM]] 頭に列せられていない限り応答に非同一実現値操作を使用しては'''なりません'''。
+- 複数の非互換な実現値操作が受入れ可能な時は、
+最高の非零 [CODE(ABNF)[qvalue]] を持つ受入れ可能実現値操作を優先します。
+- [CODE(HTTP)[[[identity]]]] 実現値操作は、 [CODE(HTTP)[A-IM]]
+欄が [CODE(HTTP)[identity;q=0]] を含めて指定的に拒絶していない限り、
+常に受入れ可能です。
+
+> If an A-IM field is present in a request, and if the server cannot
+send a response which is acceptable according to the A-IM header,
+then the server SHOULD send an error response with the 406 (Not
+Acceptable) status code.
+
+要求に [CODE(HTTP)[A-IM]] 欄が存在し、鯖が [CODE(HTTP)[A-IM]]
+頭に従い受入れ可能な応答を送信できない場合には、
+鯖は [CODE(HTTP)[[[406]]]] (受入れ不能) [[状態符号]]で[[誤り応答]]を送信する'''べきです'''。
+
+> If a response uses more than one instance-manipulation, the
+instance-manipulations MUST be applied in the order in which they
+appear in the A-IM request-header field.
+
+応答が複数の実現値操作を使用する時は、
+実現値操作は [CODE(HTTP)[A-IM]] 要求頭欄に出現した順序で適用しなければ'''なりません'''。
+
+> The server's choice about whether to apply an instance-manipulation
+SHOULD be independent of its choice to apply any subsequent two-input
+instance-manipulations to the response.  (Two-input instance-manipulations include delta-codings, because they take two different
+values as input.  Compression and "range" instance-manipulations take
+only one input.  Other instance-manipulations may be defined in the future.)
+
+鯖が実現値操作を適用するかどうかについての選択は、
+応答にどの二入力実現値操作を次に適用するかの選択とは独立とする'''べきです'''。
+(二入力実現値操作は差分符号化も含みます。差分符号化は二つの異なる値を入力として取りますから。[[圧縮]]と [CODE(HTTP)[range]] の実現値操作は一つの入力だけを取ります。他の実現値操作が将来定義されるかもしれません。)
+
+> Note: the intent of this requirement is to prevent the server from
+generating a delta-encoded response that the client can only
+decode by first applying an instance-manipulation encoding to its
+cached base instance.  A server implementor might wish to consider
+what the client would logically have in its cache, when deciding
+which instance-manipulations to apply prior to a delta-coding.
+
+注意: この要件は、クライアントが最初にキャッシュした基底実現値に実現値操作符号化を適用しないと復号できない差分符号化応答を鯖が生成してしまうことを防ぐためのものです。鯖実装者はどの実現値操作を差分符号化の前に適用するかを決定する時にクライアントが論理的に何をキャッシュに持っているのかを考慮したいと思うかもしれません。
+
+> Examples:
+[PRE[
+A-IM: vcdiff, gdiff
+]PRE]
+
+> This example means that the client will accept a delta encoding in
+either vcdiff or gdiff format.
+
+この例はクライアントが [CODE(HTTP)[[[vcdiff]]]] 書式または
+[CODE(HTTP)[[[gdiff]]]] 書式のいずれかの差分符号化を受入れることを意味します。
+
+>
+[PRE[
+A-IM: vcdiff, gdiff;q=0.3
+]PRE]
+
+> This example means that the client will accept a delta encoding in
+either vcdiff or gdiff format, but prefers the vcdiff format.
+
+この例はクライアントが [CODE(HTTP)[vcdiff]] 書式または
+[CODE(HTTP)[gdiff]] 書式のいずれかの差分符号化を受入れるものの
+[CODE(HTTP)[vcdiff]] を優先することを意味します。
+
+>
+[PRE[
+A-IM: vcdiff, diffe, gzip
+]PRE]
+
+> This example means that the client will accept a delta encoding in
+either vcdiff or diffe format, and will accept the output of the
+delta encoding compressed with gzip.  It also means that the client
+will accept a gzip compression of the instance, without any delta
+encoding, because A-IM provides no way to insist that gzip be used
+only if diffe is used.
+
+この例はクライアントが [CODE(HTTP)[vcdiff]] 書式または
+[CODE(HTTP)[diffe]] 書式のいずれかの差分符号化を受入れ、
+[CODE(HTTP)[gzip]] で圧縮された差分符号化の出力を受入れることを意味します。
+[CODE(HTTP)[A-IM]] は [CODE(HTTP)[[[diffe]]]] が使用された時にだけ
+[CODE(HTTP)[gzip]] を使うことを主張する方法は提供していませんから、差分符号化されていなくても [CODE(HTTP)[gzip]] 圧縮を受入れることをも意味します。
+
+> It is left to the server implementor to choose useful combinations of
+acceptable instance-manipulations (for example, following diffe by
+gzip is useful, but following vcdiff by gzip probably is not useful).
+
+有用な受入れ可能な実現値操作 (例えば、 [CODE(HTTP)[diffe]]
+の後に [CODE(HTTP)[gzip]] は有用であるが、
+[CODE(HTTP)[vcdiff]] の後に [CODE(HTTP)[gzip]] はたぶん有用ではない。)
+を選択することは鯖実装者に委ねます。
+
+** RFC の部分の License
+[[RFCのライセンス]]
+* メモ

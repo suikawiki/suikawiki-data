@@ -1,0 +1,192 @@
+[2] [CITE@en[draft-wood-dtnrg-http-dtn-delivery-07 - Using HTTP for delivery in Delay/Disruption-Tolerant Networks]]
+( ([TIME[2012-02-26 11:11:35 +09:00]] 版))
+<http://tools.ietf.org/html/draft-wood-dtnrg-http-dtn-delivery-07#page-6>
+
+* 仕様書から
+
+
+** RFC 2068 14.17・RFC 2616 14.16 Content-Range
+
+> The Content-Range entity-header is sent with a partial entity-body to
+specify where in the full entity-body the partial body should be [INS[applied. Range units are defined in section 3.12.]] [DEL[inserted. It also indicates the total size of the full entity-body. When a server returns a partial response to a client, it must describe both the extent of the range covered by the response, and the length of the entire entity-body.]]
+
+[CODE(HTTP)[Content-Range]] 実体頭欄は、部分 [CODE(ABNF)[[[entity-body]]]]
+と共に送信して、その部分本体が完全 [CODE(ABNF)[entity-body]]
+のどこに適用されるべきかを指定します。 [INS[範囲単位は 3.12 節で定義しています。]] [DEL[この欄は完全 [CODE(ABNF)[entity-body]] の全体の寸法も示します。サーバーが部分応答をクライアントに返す時は、その応答により覆われる範囲と [CODE(ABNF)[entity-body]] 全体の長さを記述しなければなりません。]]
+
+>
+- [CODE(ABNF)[[DFN[Content-Range]]]] = "Content-Range" ":" content-range-spec]]
+- [CODE(ABNF)[[DFN[content-range-spec]] = byte-content-range-spec]]
+- [DEL[[CODE(ABNF)[[DFN[byte-content-range-spec]] = bytes-unit [[SP]] first-byte-pos "-" last-byte-pos "/" entity-length]]]]
+- [INS[[CODE(ABNF)[[DFN[byte-content-range-spec]] = bytes-unit SP byte-range-resp-spec "/" ( instance-length | "*" )]]]]
+- [INS[[CODE(ABNF)[[DFN[byte-range-resp-spec]] = (first-byte-pos "-" last-byte-pos) | "*"]]]]
+- [CODE(ABNF)[[DFN[[DEL[entity-length]] [INS[instance-length]]]] = 1*[[DIGIT]]]]
+
+[INS[
+
+> The header SHOULD indicate the total length of the full entity-body,
+unless this length is unknown or difficult to determine. The asterisk
+"*" character means that the instance-length is unknown at the time
+when the response was generated.
+
+この頭は完全な [CODE(ABNF)[entity-body]] の全体の長さが未知であるか、
+又は決定するのが難しい場合を除いては、この長さを示す'''べきです'''。
+星印 [CODE(HTTP)[*]] 文字は、その応答が生成された時点で
+[CODE(ABNF)[instance-length]] が未知であることを意味します。
+]INS]
+
+> Unlike byte-ranges-specifier values [INS[(see section 14.35.1)]], a [DEL[byte-content-range-spec may]] [INS[byte-range-resp-spec MUST]]
+only specify one range, and [DEL[must]] [INS[MUST]] contain absolute byte positions for
+both the first and last byte of the range.
+
+[CODE(ABNF)[byte-ranges-specifier]] 値とは異なり、 
+[CODE(ABNF)[byte-range-resp-spec]] は一つの範囲だけを指定しなければ'''ならず'''、
+範囲の最初と最後のバイトの絶対バイト位置を含まなければ'''なりません'''。
+
+> A byte-content-range-spec [INS[with a byte-range-resp-spec]] whose last-byte-pos value is less than its
+first-byte-pos value, or whose [DEL[entity-length]] [INS[instance-length]] value is less than or
+equal to its last-byte-pos value, is invalid. The recipient of an
+invalid byte-content-range-spec MUST ignore it and any content
+transferred along with it.
+
+[CODE(ABNF)[byte-range-resp-spec]] つきの [CODE(ABNF)[byte-content-range-spec]]
+であってその [CODE(ABNF)[last-byte-pos]] が
+[CODE(ABNF)[first-byte-pos]] 値よりも小さなものや、
+[CODE(ABNF)[instance-length]] 値が [CODE(ABNF)[last-byte-pos]]
+値以下のものは不当です。不当な [CODE(ABNF)[byte-content-range-spec]]
+の受信者は、この [CODE(ABNF)[byte-content-range-spec]]
+及びそれと共に転送された内容を全て無視しなければ'''なりません'''。
+
+[INS[
+
+> A server sending a response with status code 416 (Requested range not
+satisfiable) SHOULD include a Content-Range field with a byte-range-resp-spec 
+of "*". The instance-length specifies the current length of
+the selected resource. A response with status code 206 (Partial
+Content) MUST NOT include a Content-Range field with a byte-range-resp-spec 
+of "*".
+
+状態符号 [CODE(HTTP)[[[416]]]] (要求された範囲は満足されませんでした)
+の応答を送信するサーバーは、 [CODE(ABNF)[byte-range-resp-spec]]
+が [CODE(HTTP)[*]] の [CODE(HTTP)[Content-Range]]
+欄を含める'''べきです'''。 [CODE(ABNF)[instance-length]]
+が選択された資源の現在の長さを指定します。
+状態符号 [CODE(HTTP)[[[206]]]] (部分内容) の応答は
+[CODE(ABNF)[byte-range-resp-spec]]
+が [CODE(HTTP)[*]] の [CODE(HTTP)[Content-Range]] 欄を含んでいては'''なりません'''。
+]INS]
+
+> Examples of byte-content-range-spec values, assuming that the entity
+contains a total of 1234 bytes:
+
+実体が全部で 1234 バイトあるとして、 [CODE(ABNF)[byte-content-range-spec]]
+値の例を示します:
+
+>
+:[DEL[o]] [INS[.]] The first 500 bytes [INS[最初の500バイト]]:
+bytes 0-499/1234
+:[DEL[o]] [INS[.]] The second 500 bytes [INS[次の500バイト]]:
+bytes 500-999/1234
+:[DEL[o]] [INS[.]] All except for the first 500 bytes [INS[最初の500バイト以外全て]]:
+bytes 500-1233/1234
+:[DEL[o]] [INS[.]] The last 500 bytes [INS[最後の500バイト]]:
+bytes 734-1233/1234
+
+> When an HTTP message includes the content of a single range (for
+example, a response to a request for a single range, or to a request
+for a set of ranges that overlap without any holes), this content is
+transmitted with a Content-Range header, and a Content-Length header
+showing the number of bytes actually transferred. For example,
+
+単一の範囲の内容を含む HTTP メッセージ (例えば、
+単一の範囲の要求への応答又は穴なしに重なり合う範囲の集合の要求への応答)
+の場合は、この内容は [CODE(HTTP)[Content-Range]] 頭と共に転送され、
+[CODE(HTTP)[[[Content-Length]]]] 頭は実際に転送されるバイト数を示します。
+例えば、
+
+>
+[PRE[
+HTTP/1.1 206 Partial content
+Date: Wed, 15 Nov 1995 06:25:24 GMT
+Last-modified: Wed, 15 Nov 1995 04:58:08 GMT
+Content-Range: bytes 21010-47021/47022
+Content-Length: 26012
+Content-Type: image/gif
+]PRE]
+> When an HTTP message includes the content of multiple ranges (for
+example, a response to a request for multiple non-overlapping
+ranges), these are transmitted as a multipart [DEL[MIME]] message. The
+multipart [DEL[MIME content-type]] [INS[media type]] used for this purpose is [DEL[defined in this specification to be "multipart/byteranges"]] [INS["multipart/byteranges" as defined in appendix 19.2]]. See appendix [DEL[19.2 for its definition]] [INS[19.6.3 for a compatibility issue]].
+
+HTTP メッセージが複数の範囲を含む場合 (例えば、
+複数の重なり合わない範囲の要求への応答) には、
+複数部分メッセージとして転送されます。
+この目的で使う複数部分媒体型は附属書 19.2 節で定義している
+[CODE(MIME)[[[multipart/byterange]]]] です。互換性の問題については附属書
+19.6.3 節を参照してください。
+
+> [INS[A response to a request for a single range MUST NOT be sent using the multipart/byteranges media type.  A response to a request for multiple ranges, whose result is a single range, MAY be sent as a multipart/byteranges media type with one part.]] A client that cannot
+decode a [DEL[MIME]] multipart/byteranges message [DEL[should not]] [INS[MUST NOT]] ask for multiple
+byte-ranges in a single request.
+
+単一の範囲の要求への応答は [CODE(MIME)[multipart/byterange]]
+媒体型を使って送っては'''なりません'''。
+複数範囲の要求への応答であってその結果が単一範囲であるものは、
+1つの部分の [CODE(MIME)[multipart/byterange]]
+媒体型で送っても'''構いません'''。
+[CODE(MIME)[multipart/byterange]] メッセージを復号できないクライアントは、
+複数の [CODE(ABNF)[byte-range]] を単一の要求で依頼しては'''なりません'''。
+
+> When a client requests multiple byte-ranges in one request, the
+server SHOULD return them in the order that they appeared in the
+request.
+
+クライアントが複数の [CODE(ABNF)[byte-range]] 
+を1つの要求で要求した時は、サーバーは要求中に出現した順でこれを返す'''べきです'''。
+
+> If the server ignores a byte-range-spec because it is [INS[syntactically]] invalid, the
+server [DEL[should]] [INS[SHOULD]] treat the request as if the invalid Range header field
+did not exist. (Normally, this means return a 200 response containing
+the full entity). [DEL[The reason is that the only time a client will make such an invalid request is when the entity is smaller than the entity retrieved by a prior request.]]
+
+[CODE(ABNF)[byte-range-spec]] が構文的に不当であるためにサーバーがこれを無視する場合は、
+サーバーは要求に不当な [CODE(HTTP)[[[Range]]]] 頭欄が存在しなかったものとして扱う'''べきです'''。
+(通常、これは完全な実体を含んだ [CODE(HTTP)[[[200]]]]
+応答を返すことを意味します。) [DEL[理由は、クライアントがそのような不当な要求を作るのは実態が以前の要求で取り出された実体より小さい時だけだからです。]]
+
+[INS[
+
+> If the server receives a request (other than one including an 
+If-Range request-header field) with an unsatisfiable Range 
+request-header field (that is, all of whose byte-range-spec values have a
+first-byte-pos value greater than the current length of the selected
+resource), it SHOULD return a response code of 416 (Requested range
+not satisfiable) (section 10.4.17).
+
+サーバーが ([CODE(HTTP)[[[If-Range]]]] 要求頭欄を含んでいない) 
+満足されない [CODE(HTTP)[Range]] 要求頭欄
+(つまり、 [CODE(ABNF)[byte-range-spec]] 値の全てにおいて [CODE(ABNF)[first-byte-pos]] 値が選択された資源の現在の長さよりも大きいもの。) を持った要求を受け取ったときには、
+サーバーは応答符号 [CODE(HTTP)[416]] (要求された範囲は満足されませんでした)
+を返す'''べきです'''。
+
+> Note: clients cannot depend on servers to send a 416 (Requested
+range not satisfiable) response instead of a 200 (OK) response for
+an unsatisfiable Range request-header, since not all servers
+implement this request-header.
+
+注意 : 全てのサーバーはこの要求頭を実装しているわけではありませんから、
+クライアントは満足されない [CODE(HTTP)[Range]] 要求頭欄にサーバーが 
+[CODE(HTTP)[200]] (OK) 応答ではなく [CODE(HTTP)[416]]
+(要求された範囲は満足されませんでした)
+応答が送ることに依存することはできません。
+]INS]
+
+
+** RFC の部分の License
+
+[[RFCのライセンス]]
+
+
+* メモ
+
+- [1] 参照しろと書いてある  RFC 2616 19.6.3 (RFC 2068 からの変更点) にはたいして面白いことは書いてありませんでした。

@@ -1,0 +1,1469 @@
+
+[1] <!--
+
+RFC 3339 訳(仮)	2002年7月29日
+
+- >
+
+Network Working Group                                           G. Klyne
+Request for Comments: 3339                        Clearswift Corporation
+Category: Standards Track                                      C. Newman
+[PRE[
+                                                        Sun Microsystems
+                                                               July 2002
+]PRE]
+
+[PRE[
+               Date and Time on the Internet: Timestamps
+]PRE]
+
+Status of this Memo
+
+[PRE[
+   This document specifies an Internet standards track protocol for the
+   Internet community, and requests discussion and suggestions for
+   improvements.  Please refer to the current edition of the "Internet
+   Official Protocol Standards" (STD 1) for the standardization state
+   and status of this protocol.  Distribution of this memo is unlimited.
+]PRE]
+
+Copyright Notice
+
+[PRE[
+   Copyright (C) The Internet Society (2002).  All Rights Reserved.
+]PRE]
+
+Abstract
+
+[PRE[
+   This document defines a date and time format for use in Internet
+   protocols that is a profile of the ISO 8601 standard for
+   representation of dates and times using the Gregorian calendar.
+]PRE]
+
+この文書は、 Internet 
+プロトコルで使用する日付と時刻の形式を定義します。この形式は、 
+ISO 8601 
+規格の一つのプロファイルで、グレゴリオ暦を使って日付と時刻を表現します。
+
+Table of Contents
+
+[PRE[
+   1. Introduction ............................................ 2
+   2. Definitions ............................................. 3
+   3. Two Digit Years ......................................... 4
+   4. Local Time .............................................. 4
+   4.1. Coordinated Universal Time (UTC) ...................... 4
+   4.2. Local Offsets ......................................... 5
+   4.3. Unknown Local Offset Convention ....................... 5
+   4.4. Unqualified Local Time ................................ 5
+   5. Date and Time format .................................... 6
+   5.1. Ordering .............................................. 6
+   5.2. Human Readability ..................................... 6
+   5.3. Rarely Used Options ................................... 7
+   5.4. Redundant Information ................................. 7
+   5.5. Simplicity ............................................ 7
+   5.6. Internet Date/Time Format ............................. 8
+   5.7. Restrictions .......................................... 9
+   5.8. Examples ............................................. 10
+   6. References ............................................. 10
+   7. Security Considerations ................................ 11
+]PRE]
+
+Klyne, et. al.              Standards Track                     [Page 1]
+[PRE[
+
+RFC 3339       Date and Time on the Internet: Timestamps       July 2002
+]PRE]
+
+[PRE[
+   Appendix A. ISO 8601 Collected ABNF ....................... 12
+   Appendix B. Day of the Week ............................... 14
+   Appendix C. Leap Years .................................... 14
+   Appendix D. Leap Seconds ..............................,... 15
+   Acknowledgements .......................................... 17
+   Authors' Addresses ........................................ 17
+   Full Copyright Statement .................................. 18
+]PRE]
+
+<!-- 翻訳上の注意:
+
+・time は原則として時刻と訳す。
+・・でも daylight time は慣習により夏時間と訳す。
+
+- >
+
+1. Introduction
+
+[PRE[
+   Date and time formats cause a lot of confusion and interoperability
+   problems on the Internet.  This document addresses many of the
+   problems encountered and makes recommendations to improve consistency
+   and interoperability when representing and using date and time in
+   Internet protocols.
+]PRE]
+
+日付と時刻の形式は Internet 
+で沢山の混乱と相互通信性の問題を引き起こしています。このメモは、出会った問題の多くに触れるとともに, 
+Internet 
+プロトコル中で日付と時刻を表現・使用する際の一貫性と相互通信性を向上させるための勧告をします。
+
+[PRE[
+   This document includes an Internet profile of the ISO 8601 [ISO8601]
+   standard for representation of dates and times using the Gregorian
+   calendar.
+]PRE]
+
+この文書には、グレゴリオ暦を使って日付と時刻を表現する
+ISO 8601 規格の Internet プロファイルを含めました。
+
+[PRE[
+   There are many ways in which date and time values might appear in
+   Internet protocols:  this document focuses on just one common usage,
+   viz. timestamps for Internet protocol events.  This limited
+   consideration has the following consequences:
+]PRE]
+
+Internet プロトコル中で現れ得る日付と時刻の値の表現方法は沢山あります。この文書では、広く用いられている,
+Internet プロトコル催事の時刻印に焦点を当てます。この限定的考慮の結果は次の通りです。
+<!-- 訳がいまいち。 -->
+
+[PRE[
+   o  All dates and times are assumed to be in the "current era",
+      somewhere between 0000AD and 9999AD.
+]PRE]
+
+全ての日付と時刻は、「現在の紀元」にあって、 0000AD と
+9999AD の間にあるとします。
+
+<!--
+1. AD も訳そうと思った。
+2. 日時の話なんだから、折角(謎)だし正確(謎)に訳したい。
+3. AD = Anno Domini ≒ in the year of our Lord ≒ 主の年
+4. 主体暦とでも訳せってか?
+5. とりあえず保留。
+(まあ原文は深く考えずに、ふつーに慣習どおりに書いたんでしょう。)
+- >
+
+[PRE[
+   o  All times expressed have a stated relationship (offset) to
+      Coordinated Universal Time (UTC).  (This is distinct from some
+      usage in scheduling applications where a local time and location
+      may be known, but the actual relationship to UTC may be dependent
+      on the unknown or unknowable actions of politicians or
+      administrators.  The UTC time corresponding to 17:00 on 23rd March
+      2005 in New York may depend on administrative decisions about
+      daylight savings time.  This specification steers well clear of
+      such considerations.)
+]PRE]
+
+全ての表現された時刻は、協定世界時 (UTC) との関係 (時差)
+への言及がある。 (これは地方時と位置が分かり得る予定帳応用での使い方とは異なって、実際の
+UTC との関係は未知あるいは未知たり得る政治家や行政官の行動に依存しているかもしれません。
+New York での2005年3月23日の17:00に対応する UTC 
+時刻は夏時間調整時についての行政決定に依存し得ます。この仕様書はこうしたことへの考慮についても取り上げます。)
+
+[PRE[
+   o  Timestamps can express times that occurred before the introduction
+      of UTC.  Such timestamps are expressed relative to universal time,
+      using the best available practice at the stated time.
+]PRE]
+
+時刻印は UTC の導入以前の時刻を表現することも出来ます。こうした時刻印は、その当時の最善の慣習による共通時との関係を表現します。
+
+[PRE[
+   o  Date and time expressions indicate an instant in time.
+      Description of time periods, or intervals, is not covered here.
+]PRE]
+
+日付と時刻の表現は時刻の瞬間を示します。期間・間隔の記述はここでは取り上げません。
+
+2. Definitions
+
+[PRE[
+   The key words "<kwd:MUST />", "<kwd:MUST-NOT />", "<kwd:REQUIRED />", 
+"<kwd:SHALL />", "<kwd:SHALL-NOT />", "<kwd:SHOULD />", 
+"<kwd:SHOULD-NOT />", "<kwd:RECOMMENDED />", "<kwd:MAY />", 
+and "<kwd:OPTIONAL />" in this
+   document are to be interpreted as described in RFC 2119 [RFC2119].
+]PRE]
+
+この文書中の単語
+「<kwd:MUST />」, 「<kwd:MUST-NOT />」, 「<kwd:REQUIRED />」, 
+「<kwd:SHALL />」, 「<kwd:SHALL-NOT />」, 「<kwd:SHOULD />」, 
+「<kwd:SHOULD-NOT />」, 「<kwd:RECOMMENDED />」, 「<kwd:MAY />」, 
+「<kwd:OPTIONAL />」は、 RFC 2119 
+で説明されているように解釈するものとします。
+
+[PRE[
+      UTC         Coordinated Universal Time as maintained by the Bureau
+                  International des Poids et Mesures (BIPM).
+]PRE]
+
+<eref target="http://www.bipm.fr/">国際度量衡局
+(<h:span xml:lang="fr">Bureau International des Poids et Mesures</h:span>;
+<h:span xml:lang="en">International Bureau of Weights and Measures</h:span>;
+<h:abbr>BIPM</h:abbr>)</eref>
+の維持管理する協定世界時。
+
+<!-- 1972年 -->
+
+[PRE[
+      second      A basic unit of measurement of time in the
+                  International System of Units.  It is defined as the
+                  duration of 9,192,631,770 cycles of microwave light
+                  absorbed or emitted by the hyperfine transition of
+                  cesium-133 atoms in their ground state undisturbed by
+                  external fields.
+秒
+国際単位系 (<h:span xml:lang="en">International System of Units</h:span>; 
+<!--<h:span xml:lang="fr">Syst&egrave;me International d'Unit&egrave;s</h:span>;-->
+<h:abbr>SI</h:abbr>) の時刻測定の基本単位。
+セシウム133の原子の外界からの影響を受けない基底状態の二つの超微細準位の間の遷移により吸収または放射する
+9,192,631,770 周期のマイクロ波光線の継続時間により定義されます。
+<!--
+JIS Z 8203:2000 (ISO 1999:1992) 国際単位系 (SI) 及びその使い方
+附属書 B (参考) 国際単位系の基本単位の定義
+秒 (second)  秒は, セシウム133の原子の基底状態の二つの超微細準位の間の
+遷移に対応する放射の周期の 9 192 631 770 倍の継続時間である
+[第13回 CGPM (1967), 決議1]。
+-->
+]PRE]
+
+<!-- 1967年国際度量衡総会採択 -->
+<!-- 1956年定義 1900年1月1日12時(どこの?)における回帰年の
+31556925.9747分の1 -->
+
+[PRE[
+      minute      A period of time of 60 seconds.  However, see also the
+                  restrictions in section 5.7 and Appendix D for how
+                  leap seconds are denoted within minutes.
+分
+60秒の時間。但し、分の中で閏秒をどう示すかについて5.7節の制限と附属書Dを参照して下さい。
+]PRE]
+
+[PRE[
+      hour        A period of time of 60 minutes.
+時(時間)
+<ja:definition word="hour" translation-ja="時間 (hour)">60分の時間</ja:word>。
+]PRE]
+
+<ja:note>当然ですが、 <h:span xml:lang="en">period of time</h:span> 
+の時間と <h:span xml:lang="en">hour</h:span> 
+の時間は異なります。この訳文では原則として時間は 
+<h:span xml:lang="en">period of time</h:span> 
+を意味することとします。</ja:note>
+
+[PRE[
+      day         A period of time of 24 hours.
+日
+24<ja:word word="hour" />の時間。
+]PRE]
+
+[PRE[
+      leap year   In the Gregorian calendar, a year which has 366 days.
+                  A leap year is a year whose number is divisible by
+                  four an integral number of times, except that if it is
+                  a centennial year (i.e. divisible by one hundred) it
+                  shall also be divisible by four hundred an integral
+                  number of times.
+閏年
+グレゴリオ暦で、366日ある年。閏年は、その数が4で割り切れる年です。但し百年祭の年
+(つまり100で割り切れる年) では、400でも割り切れる年です。
+]PRE]
+
+[PRE[
+      ABNF        Augmented Backus-Naur Form, a format used to represent
+                  permissible strings in a protocol or language, as
+                  defined in [ABNF].
+]PRE]
+
+増補 Backus-Naur 形式。プロトコルや言語で認められる文字列を表すのに使われる形式。
+<xref target="ABNF" /> で定義されています。
+
+[PRE[
+      Email Date/Time Format
+                  The date/time format used by Internet Mail as defined
+                  by RFC 2822 [IMAIL-UPDATE].
+]PRE]
+
+電子メイルの日付・時刻形式
+Internet メイルで使われている日付・時刻形式。 RFC 2822
+で定義されています。
+
+[PRE[
+      Internet Date/Time Format
+                  The date format defined in section 5 of this document.
+Internet 日付・時刻形式
+この文書の5章で定義する日付形式。
+]PRE]
+
+[PRE[
+      Timestamp   This term is used in this document to refer to an
+                  unambiguous representation of some instant in time.
+時刻印
+この用語は、この文書ではある瞬間の時刻の曖昧でない表現を指すのに使います。
+]PRE]
+
+[PRE[
+      Z           A suffix which, when applied to a time, denotes a UTC
+                  offset of 00:00; often spoken "Zulu" from the ICAO
+                  phonetic alphabet representation of the letter "Z".
+]PRE]
+
+時刻で用いられる時には UTC との時差 00:00 を示す接尾辞。
+「Z」 の 
+<h:abbr title="International Civil Aviation Organisation; 国際民間航空機関" xml:lang="en">ICAO</h:abbr>
+音声字母表現から、よく「Zulu」(ズール)と読まれます。
+
+[PRE[
+      For more information about time scales, see Appendix E of [NTP],
+      Section 3 of [ISO8601], and the appropriate ITU documents [ITU-R-
+      TF].
+]PRE]
+
+時間計測についての更なる情報は、 <xref target="NTP" />
+の附属書 E, <xref target="ISO8601" /> の第3章,
+適当な ITU 文書 <xref target="ITU-R-TF" />
+をご覧下さい。
+
+3. Two Digit Years
+2桁年
+
+[PRE[
+   The following requirements are to address the problems of ambiguity
+   of 2-digit years:
+]PRE]
+
+2桁年号の曖昧性の問題について次の要件があります。
+
+[PRE[
+      o  Internet Protocols MUST generate four digit years in dates.
+]PRE]
+
+Internet プロトコルは4桁年年号を日付中に生成し<kwd:MUST />。
+
+[PRE[
+      o  The use of 2-digit years is deprecated.  If a 2-digit year is
+         received, it should be accepted ONLY if an incorrect
+         interpretation will not cause a protocol or processing failure
+         (e.g. if used only for logging or tracing purposes).
+]PRE]
+
+2桁年号の使用は非推奨です。2桁年を受け取った場合、不正な解釈でプロトコルや処理が失敗しない場合
+(例: 記録や追跡の目的にのみ使う場合) <kwd:ONLY />受け付けるべきです。
+
+[PRE[
+      o  It is possible that a program using two digit years will
+         represent years after 1999 as three digits.  This occurs if the
+         program simply subtracts 1900 from the year and doesn't check
+         the number of digits.  Programs wishing to robustly deal with
+         dates generated by such broken software may add 1900 to three
+         digit years.
+]PRE]
+
+2桁年号を使っているプログラムが1999年より後の年を3桁で表現するかもしれません。これはプログラムが単に年から
+1900 を引くだけで数値を確認しないと起こります。このような壊れたソフトウェアが生成した日付も頑張って処理しようとするプログラムは、3桁年号に
+1900 を加えても構いません。
+
+[PRE[
+      o  It is possible that a program using two digit years will
+         represent years after 1999 as ":0", ":1", ... ":9", ";0", ...
+         This occurs if the program simply subtracts 1900 from the year
+         and adds the decade to the US-ASCII character zero.  Programs
+         wishing to robustly deal with dates generated by such broken
+         software should detect non-numeric decades and interpret
+         appropriately.
+]PRE]
+
+2桁年号を使うプログラムは1999年より後の年を「:0」, 「:1」, ...,
+「:9」, 「;0」, ... と表現するかもしれません。これはプログラムが単に年から
+1900 を引いて US-ASCII 文字の零に10の位の数を加えていると起こります。このような壊れたソフトウェアが生成した日付も頑張って処理しようとするプログラムは、数値以外の10の位を見て適切に解釈するべきです。
+
+[PRE[
+   The problems with two digit years amply demonstrate why all dates and
+   times used in Internet protocols MUST be fully qualified.
+]PRE]
+
+2桁年号の問題は、 Internet 
+プロトコルで使う全ての日付と時刻が完全修飾したもので<kwd:MUST>ないといけない</kwd:MUST>ことを十分宣伝してくれました。
+
+4. Local Time
+地方時
+
+4.1. Coordinated Universal Time (UTC)
+協定世界時 (UTC)
+
+[PRE[
+   Because the daylight saving rules for local time zones are so
+   convoluted and can change based on local law at unpredictable times,
+   true interoperability is best achieved by using Coordinated Universal
+   Time (UTC).  This specification does not cater to local time zone
+   rules.
+]PRE]
+
+地方時の夏時間調整規則がごちゃごちゃしていて地方の法により予期せぬ時々に変わり得るので、本当の相互通信性の達成には協定世界時
+(UTC) の使用が最善です。この仕様は地方時間帯規則の要求は満たしません。
+
+4.2. Local Offsets
+地方時差
+
+[PRE[
+   The offset between local time and UTC is often useful information.
+   For example, in electronic mail (RFC2822, [IMAIL-UPDATE]) the local
+   offset provides a useful heuristic to determine the probability of a
+   prompt response.  Attempts to label local offsets with alphabetic
+   strings have resulted in poor interoperability in the past [IMAIL],
+   [HOST-REQ].  As a result, RFC2822 [IMAIL-UPDATE] has made numeric
+   offsets mandatory.
+]PRE]
+
+地方時と UTC の時差はしばしば有意な情報となります。例えば、電子メイル
+(RFC 2822) では地方時差で迅速に反応がある可能性を分かって便利です。<!-- やや意訳 -->地方時差を字母文字列で札付けしようとする試みは、かつて乏しい相互通信性という結果に終わりました。結果として、
+RFC 2822 は数値時差を強制しています。
+
+[PRE[
+   Numeric offsets are calculated as "local time minus UTC".  So the
+   equivalent time in UTC can be determined by subtracting the offset
+   from the local time.  For example, 18:50:00-04:00 is the same time as
+   22:50:00Z.  (This example shows negative offsets handled by adding
+   the absolute value of the offset.)
+]PRE]
+
+数値時差は「地方時引く UTC」で計算します。ですから UTC
+での相当する時刻は地方時から時差を引くことで決定出来ます。例えば、
+18:50:00-04:00 は 22:50:00Z と同じ時刻です。
+(この例は、負の時差は時差の絶対値を加えることで処理するのを示しています。)
+
+[PRE[
+      NOTE: Following ISO 8601, numeric offsets represent only time
+      zones that differ from UTC by an integral number of minutes.
+      However, many historical time zones differ from UTC by a non-
+      integral number of minutes.  To represent such historical time
+      stamps exactly, applications must convert them to a representable
+      time zone.
+]PRE]
+
+ISO 8601 に従えば、数値時差表現は UTC との差が整数分の時間帯しか表現出来ません。しかし、多くの歴史的な時間帯は
+UTC から非整数分の差があります。そのような歴史的な時刻印を正確に表現するには、応用は表現可能な時間帯に変換しなければなりません。
+
+4.3. Unknown Local Offset Convention
+未知の地方時差の表現
+
+[PRE[
+   If the time in UTC is known, but the offset to local time is unknown,
+   this can be represented with an offset of "-00:00".  This differs
+   semantically from an offset of "Z" or "+00:00", which imply that UTC
+   is the preferred reference point for the specified time.  RFC2822
+   [IMAIL-UPDATE] describes a similar convention for email.
+]PRE]
+
+UTC での時刻が不明で、地方時との時差も不明な場合、時差 "-00:00"
+として表現出来ます。これは、 UTC が指定時刻の良さげな参照点であることを示す
+"Z" や "+00:00" の時差とは意味的に異なります。 RFC 2822
+は電子メイルでの同様な表現を説明しています。
+
+4.4. Unqualified Local Time
+非修飾地方時
+
+[PRE[
+   A number of devices currently connected to the Internet run their
+   internal clocks in local time and are unaware of UTC.  While the
+   Internet does have a tradition of accepting reality when creating
+   specifications, this should not be done at the expense of
+   interoperability.  Since interpretation of an unqualified local time
+   zone will fail in approximately 23/24 of the globe, the
+   interoperability problems of unqualified local time are deemed
+   unacceptable for the Internet.  Systems that are configured with a
+   local time, are unaware of the corresponding UTC offset, and depend
+   on time synchronization with other Internet systems, MUST use a
+   mechanism that ensures correct synchronization with UTC.  Some
+   suitable mechanisms are:
+]PRE]
+
+Internet と現在接続されている機器で地方時の内部時計で動いていて
+UTC を知らないものがあります。 Internet 
+には仕様作成時の現実を受け入れる伝統がありますから、これは相互通信性のための経費とするべきではありません。このような非修飾地方時間帯の解釈は地球上のおおよそ24分の23では失敗しますから、非修飾地方時の相互通信性の問題は
+Internet では受け入れられないと考えられます。地方時に設定されていて対応する
+UTC の時差を知らず、他の Internet 処理系との時刻同期に依存している処理系は、
+UTC との正確な同期を確保する機構を使わ<kwd:MUST />。適切な機構は次の通りです。
+
+[PRE[
+   o  Use Network Time Protocol [NTP] to obtain the time in UTC.
+]PRE]
+
+UTC での時刻を得るのにネットワーク時刻プロトコル (Network Time Protocol)
+を使う。
+
+[PRE[
+   o  Use another host in the same local time zone as a gateway to the
+      Internet.  This host MUST correct unqualified local times that are
+      transmitted to other hosts.
+]PRE]
+
+同じ地方時間帯にある他のホストを Internet への関門として使用する。このホストは他のホストに伝送される非修飾地方時を正さ<kwd:MUST />。
+
+[PRE[
+   o  Prompt the user for the local time zone and daylight saving rule
+      settings.
+]PRE]
+
+利用者に地方時間帯と夏時間調整規則の設定を尋ねる。
+
+5. Date and Time format
+日付と時刻の形式
+
+[PRE[
+   This section discusses desirable qualities of date and time formats
+   and defines a profile of ISO 8601 for use in Internet protocols.
+]PRE]
+
+この章では望ましい品質の日付と時刻の形式について取り上げ、
+Intenret プロトコルで使う ISO 8601 のプロファイルを定義します。
+
+5.1. Ordering
+順序
+
+[PRE[
+   If date and time components are ordered from least precise to most
+   precise, then a useful property is achieved.  Assuming that the time
+   zones of the dates and times are the same (e.g., all in UTC),
+   expressed using the same string (e.g., all "Z" or all "+00:00"), and
+   all times have the same number of fractional second digits, then the
+   date and time strings may be sorted as strings (e.g., using the
+   strcmp() function in C) and a time-ordered sequence will result.  The
+   presence of optional punctuation would violate this characteristic.
+]PRE]
+
+日付と時刻の部品は一番細かくないものから一番細かいものへと並べていけば、有用な財産は達成されます。<!-- どういう意味? -->日付と時刻の時間帯が全て同じ
+(例えば全て UTC) で、同じ文字列 (例えば全て "Z"
+か全て "+00:00") を使って表現して、全ての時刻に同じ桁数の小数秒があれば、日付と時刻の文字列は文字列で (例えば C の strcmp() 関数を使って) 
+整列させれば、時刻順の結果が得られます。省略可能な記号があるとこの特性は失われます。
+
+5.2. Human Readability
+人間可読性
+
+[PRE[
+   Human readability has proved to be a valuable feature of Internet
+   protocols.  Human readable protocols greatly reduce the costs of
+   debugging since telnet often suffices as a test client and network
+   analyzers need not be modified with knowledge of the protocol.  On
+   the other hand, human readability sometimes results in
+   interoperability problems.  For example, the date format "10/11/1996"
+   is completely unsuitable for global interchange because it is
+   interpreted differently in different countries.  In addition, the
+   date format in [IMAIL] has resulted in interoperability problems when
+   people assumed any text string was permitted and translated the three
+   letter abbreviations to other languages or substituted date formats
+   which were easier to generate (e.g. the format used by the C function
+   ctime).  For this reason, a balance must be struck between human
+   readability and interoperability.
+人間可読性は Internet プロトコルには価値あることと証明されています。人間可読プロトコルは debug の経費を大幅に削減します。なぜなら telnet
+でふつう検査クライアントに十分ですし、ネットワーク分析器をプロトコルの知識で修正する必要がありません。他方で、人間可読性は時たま相互通信性の問題を起こします。例えば、日付形式
+「10/11/1996」は、地域によって解釈が異なるので、広範囲の交換には不適切です。また、
+<xref target="IMAIL" /> 
+の形式では、人々がどんな文字列も認められていると勘違いして3文字略語を他の言語に翻訳したり、生成しやすい日付形式
+(例えば、 C 関数 ctime で使われる形式) 
+にかえたりしたことで相互通信性の問題が起きています。この理由から、人間可読性と相互通信性の均衡が取れたものでなければなりません。
+]PRE]
+
+[PRE[
+   Because no date and time format is readable according to the
+   conventions of all countries, Internet clients SHOULD be prepared to
+   transform dates into a display format suitable for the locality.
+   This may include translating UTC to local time.
+]PRE]
+
+全ての地域の慣習で可読な日付と時刻の形式は無いので、
+Internet クライアントは日付を地方性に照らして適切な表示形式に変換する<kwd:SHOULD />。これに
+UTC から地方時への変換を含めても構いません。
+
+5.3. Rarely Used Options
+稀に使われる選択肢
+
+[PRE[
+   A format which includes rarely used options is likely to cause
+   interoperability problems.  This is because rarely used options are
+   less likely to be used in alpha or beta testing, so bugs in parsing
+   are less likely to be discovered.  Rarely used options should be made
+   mandatory or omitted for the sake of interoperability whenever
+   possible.
+稀に使われる選択肢を含んだ形式は相互通信性の問題を起こしやすいものです。これは、稀に使われる選択肢がα・β試験で使われにくく、解析上の不具合が発見されにくいことに起因します。稀に使われる選択肢は、可能な限り相互通信性のために強制又は廃止するべきです。
+]PRE]
+
+[PRE[
+   The format defined below includes only one rarely used option:
+   fractions of a second.  It is expected that this will be used only by
+   applications which require strict ordering of date/time stamps or
+   which have an unusual precision requirement.
+]PRE]
+
+下で定義する形式は、1つだけ稀に使われる選択肢を含んでいます。秒の小数部分です。これは正確な日付と時間の印の順序付け<!-- 照合の方が良い? -->が必要な応用や普通でない正確さが求められる応用でのみ使われることを意図したものです。
+
+5.4. Redundant Information
+余分な情報
+
+[PRE[
+   If a date/time format includes redundant information, that introduces
+   the possibility that the redundant information will not correlate.
+   For example, including the day of the week in a date/time format
+   introduces the possibility that the day of week is incorrect but the
+   date is correct, or vice versa.  Since it is not difficult to compute
+   the day of week from a date (see Appendix B), the day of week should
+   not be included in a date/time format.
+日付と時刻の形式が余分な情報を含んでいる場合、余分な情報は関係が無い可能性が出てきます。例えば、日付と時刻の形式に曜日を入れることで、曜日が正しくないけど日付は正しいことや、その逆の可能性が出てきます。日付から曜日を算出することは難しくない
+(附属書B参照) ので、曜日は日付と時刻の形式に含めるべきではありません。
+]PRE]
+
+5.5. Simplicity
+簡潔性
+
+[PRE[
+   The complete set of date and time formats specified in ISO 8601
+   [ISO8601] is quite complex in an attempt to provide multiple
+   representations and partial representations.  Appendix A contains an
+   attempt to translate the complete syntax of ISO 8601 into ABNF.
+   Internet protocols have somewhat different requirements and
+   simplicity has proved to be an important characteristic.  In
+   addition, Internet protocols usually need complete specification of
+   data in order to achieve true interoperability.  Therefore, the
+   complete grammar for ISO 8601 is deemed too complex for most Internet
+   protocols.
+ISO 8601 で規定されている日付と時刻の形式の完全な集合は、複数の表現や部分表現を提供しようとしているためとても複雑です。附属書Aは
+ISO 8601 の完全な構文を ABNF に翻訳してみたものです。
+Internet プロトコルにはやや異なる用件があって、簡潔性が重要な特徴であることが証明されています。加えて、
+Internet プロトコルは通常、本当の相互通信性の確保のために完全な日付の記述が必要です。従って、
+ISO 8601 の完全な文法はほとんどの Internet 
+プロトコルには複雑過ぎると考えられます。
+]PRE]
+
+[PRE[
+   The following section defines a profile of ISO 8601 for use on the
+   Internet.  It is a conformant subset of the ISO 8601 extended format.
+   Simplicity is achieved by making most fields and punctuation
+   mandatory.
+]PRE]
+
+次の節では、 Internet で使うための ISO 8601 のプロファイルを定義します。これは、
+ISO 8601 の拡張形式<!-- JIS の訳語ありますか? -->の適合部分集合<!-- JIS の訳語ありますか? -->です。簡潔性はほとんどの欄と句読点を強制することで達成されています。
+
+5.6. Internet Date/Time Format
+Internet 日付・時刻形式
+
+[PRE[
+   The following profile of ISO 8601 [ISO8601] dates SHOULD be used in
+   new protocols on the Internet.  This is specified using the syntax
+   description notation defined in [ABNF].
+次の ISO 8601 日付のプロファイルは、新しい Internet
+のプロトコルで使う<Kwd:SHOULD />。これは <xref target="ABNF" />
+の構文記述方法を使って規定します。
+]PRE]
+
+[PRE[
+   date-fullyear   = 4DIGIT
+   date-month      = 2DIGIT  ; 01-12
+   date-mday       = 2DIGIT  ; 01-28, 01-29, 01-30, 01-31 based on
+                             ; month/year
+月や年に拠る
+   time-hour       = 2DIGIT  ; 00-23
+   time-minute     = 2DIGIT  ; 00-59
+   time-second     = 2DIGIT  ; 00-58, 00-59, 00-60 based on leap second
+                             ; rules
+閏秒規則に拠る
+   time-secfrac    = "." 1*DIGIT
+   time-numoffset  = ("+" / "-") time-hour ":" time-minute
+   time-offset     = "Z" / time-numoffset
+]PRE]
+
+[PRE[
+   partial-time    = time-hour ":" time-minute ":" time-second
+                     [time-secfrac]
+   full-date       = date-fullyear "-" date-month "-" date-mday
+   full-time       = partial-time time-offset
+]PRE]
+
+[PRE[
+   date-time       = full-date "T" full-time
+]PRE]
+
+[PRE[
+      NOTE: Per [ABNF] and ISO8601, the "T" and "Z" characters in this
+      syntax may alternatively be lower case "t" or "z" respectively.
+<xref target="ABNF" /> と ISO 8601 に拠れば、この構文中の "T" と "Z" 
+の両文字はそれぞれ代わりに小文字の "t" と "z" でも構いません。
+]PRE]
+
+[PRE[
+      This date/time format may be used in some environments or contexts
+      that distinguish between the upper- and lower-case letters 'A'-'Z'
+      and 'a'-'z' (e.g. XML).  Specifications that use this format in
+      such environments MAY further limit the date/time syntax so that
+      the letters 'T' and 'Z' used in the date/time syntax must always
+      be upper case.  Applications that generate this format SHOULD use
+      upper case letters.
+]PRE]
+
+この日付・時刻形式は大文字の「A」〜「Z」と小文字の「a」〜「z」を区別する環境や文脈
+(例えば XML) で使われるかもしれません。この形式をその様な環境で使う仕様は、日付・時刻形式を更に制限して、構文中の文字「T」と「Z」は常に大文字で無ければならないことにしても<kwd:MAY />。この形式を生成する応用は、大文字を使う<kwd:SHOULD/>。
+
+[PRE[
+      NOTE: ISO 8601 defines date and time separated by "T".
+      Applications using this syntax may choose, for the sake of
+      readability, to specify a full-date and full-time separated by
+      (say) a space character.
+]PRE]
+
+ISO 8601 は "T" で区切る日付と時刻を定義しています。この構文を使う応用は可読性のために、
+full-date と full-time を (たとえば) 
+間隔文字で区切って指定することを選んでも構いません。
+
+5.7. Restrictions
+制限
+
+[PRE[
+   The grammar element date-mday represents the day number within the
+   current month.  The maximum value varies based on the month and year
+   as follows:
+文法要素 date-mday は当該月中の日の番号を表現します。最大値は月と年により次の通り変化します。
+]PRE]
+
+[PRE[
+      Month Number  Month/Year           Maximum value of date-mday
+      ------------  ----------           --------------------------
+      01            January              31
+      02            February, normal     28
+      02            February, leap year  29
+      03            March                31
+      04            April                30
+      05            May                  31
+      06            June                 30
+      07            July                 31
+      08            August               31
+      09            September            30
+      10            October              31
+      11            November             30
+      12            December             31
+]PRE]
+
+<h:table>
+<h:thead>
+<h:tr>
+[PRE[
+	<h:th>Month Number</h:th>
+	<h:th>Month/Year</h:th>
+	<h:th>Maximum value of date-mday</h:th>
+</h:tr>
+</h:thead>
+<h:tbody>
+<h:tr><h:td><h:th>01</h:th><h:td>January</h:td>	<h:td>31</h:td></h:tr>
+<h:tr><h:td><h:th>02</h:th><h:td>February, normal</h:td>	<h:td>28</h:td></h:tr>
+<h:tr><h:td><h:th>02</h:th><h:td>February, leap year</h:td>	<h:td>29</h:td></h:tr>
+<h:tr><h:td><h:th>03</h:th><h:td>March</h:td>	<h:td>31</h:td></h:tr>
+<h:tr><h:td><h:th>04</h:th><h:td>April</h:td>	<h:td>30</h:td></h:tr>
+<h:tr><h:td><h:th>05</h:th><h:td>May</h:td>	<h:td>31</h:td></h:tr>
+<h:tr><h:td><h:th>06</h:th><h:td>June</h:td>	<h:td>30</h:td></h:tr>
+<h:tr><h:td><h:th>07</h:th><h:td>July</h:td>	<h:td>31</h:td></h:tr>
+<h:tr><h:td><h:th>08</h:th><h:td>August</h:td>	<h:td>31</h:td></h:tr>
+<h:tr><h:td><h:th>09</h:th><h:td>September</h:td>	<h:td>30</h:td></h:tr>
+<h:tr><h:td><h:th>10</h:th><h:td>October</h:td>	<h:td>31</h:td></h:tr>
+<h:tr><h:td><h:th>11</h:th><h:td>November</h:td>	<h:td>30</h:td></h:tr>
+<h:tr><h:td><h:th>12</h:th><h:td>December</h:td>	<h:td>31</h:td></h:tr>
+</h:tbody>
+</h:table>
+]PRE]
+
+<h:table>
+<h:thead>
+<h:tr>
+[PRE[
+	<h:th>月番号</h:th>
+	<h:th>月・年</h:th>
+	<h:th>date-mday の最大値</h:th>
+</h:tr>
+</h:thead>
+<h:tbody>
+<h:tr><h:td><h:th>01</h:th><h:td>睦月</h:td>	<h:td>31</h:td></h:tr>
+<h:tr><h:td><h:th>02</h:th><h:td>如月 (平年)</h:td>	<h:td>28</h:td></h:tr>
+<h:tr><h:td><h:th>02</h:th><h:td>如月 (閏年)</h:td>	<h:td>29</h:td></h:tr>
+<h:tr><h:td><h:th>03</h:th><h:td>弥生</h:td>	<h:td>31</h:td></h:tr>
+<h:tr><h:td><h:th>04</h:th><h:td>卯月</h:td>	<h:td>30</h:td></h:tr>
+<h:tr><h:td><h:th>05</h:th><h:td>皐月</h:td>	<h:td>31</h:td></h:tr>
+<h:tr><h:td><h:th>06</h:th><h:td>水無月</h:td>	<h:td>30</h:td></h:tr>
+<h:tr><h:td><h:th>07</h:th><h:td>文月</h:td>	<h:td>31</h:td></h:tr>
+<h:tr><h:td><h:th>08</h:th><h:td>葉月</h:td>	<h:td>31</h:td></h:tr>
+<h:tr><h:td><h:th>09</h:th><h:td>長月</h:td>	<h:td>30</h:td></h:tr>
+<h:tr><h:td><h:th>10</h:th><h:td>神無月<!-- 出雲では神有月 --></h:td>	<h:td>31</h:td></h:tr>
+<h:tr><h:td><h:th>11</h:th><h:td>霜月</h:td>	<h:td>30</h:td></h:tr>
+<h:tr><h:td><h:th>12</h:th><h:td>師走</h:td>	<h:td>31</h:td></h:tr>
+</h:tbody>
+</h:table>
+]PRE]
+
+[PRE[
+   Appendix C contains sample C code to determine if a year is a leap
+   year.
+附属書Cには、ある年が閏年かどうか判定する C のコードの例を収録しました。
+]PRE]
+
+[PRE[
+   The grammar element time-second may have the value "60" at the end of
+   months in which a leap second occurs -- to date: June (XXXX-06-
+   30T23:59:60Z) or December (XXXX-12-31T23:59:60Z); see Appendix D for
+   a table of leap seconds.  It is also possible for a leap second to be
+   subtracted, at which times the maximum value of time-second is "58".
+   At all other times the maximum value of time-second is "59".
+   Further, in time zones other than "Z", the leap second point is
+   shifted by the zone offset (so it happens at the same instant around
+   the globe).
+文法要素 time-second は値 "60" を月の終わりで閏秒が挿入された時に取り得ます。6月
+(XXXX-06-30T23:59:60Z) や12月 (XXXX-12-31T23:59:69Z) です。附属書Dの閏秒の一覧を参照して下さい。閏秒は引かれることもあって、その時は
+time-second の最大値は "58" になります。それ以外の全ての場合、
+time-second の最大値は "59" です。また、時間帯が "Z" 
+以外である場合、閏秒の地点<!-- *地*点はへん? -->は時間帯の時差でずれます。
+(ですから世界中で同じ瞬間に起こります。)
+]PRE]
+
+[PRE[
+   Leap seconds cannot be predicted far into the future.  The
+   International Earth Rotation Service publishes bulletins [IERS] that
+   announce leap seconds with a few weeks' warning.  Applications should
+   not generate timestamps involving inserted leap seconds until after
+   the leap seconds are announced.
+将来の閏秒は予想出来ません。国際地球回転観測事業は数週間の警告と共に閏秒の告知を行う広報
+<xref target="IERS" /> を発行しています。実装は閏秒が告知されるまで、挿入される閏秒を含む時間印を生成するべきではありません。
+]PRE]
+
+<ja:note>国際地球回転観測事業 
+(<h:span xml:lang="en">International Earth Rotation Service</h:span>; 
+<h:abbr xml:lang="en">IERS</h:abbr>) は、慣用地球基準座標系の定義・保持や世界時の決定などを目的とする国際機関で、 
+国際測地学及び地球物理学連合 
+(<h:span xml:lang="en">International Union of Geodesy and Geophysics</h:abbr>; <h:abbr xml:lang="en">IUGG</h:abbr>)
+および国際測地学協会
+(<h:span xml:lang="en">International Association of Geodesy</h:abbr>;
+<h:abbr xml:lang="en">IAG</h:abbr>) を母体としています。</ja:note>
+
+[PRE[
+   Although ISO 8601 permits the hour to be "24", this profile of ISO
+   8601 only allows values between "00" and "23" for the hour in order
+   to reduce confusion.
+ISO 8601 は時間に "24" を認めていますが、この ISO 8601 
+のプロファイルは混乱を避けるため、時間には "00" と ""23"
+の間の値しか認めていません。
+]PRE]
+
+5.8. Examples
+例
+
+[PRE[
+   Here are some examples of Internet date/time format.
+ここに Internet 日付・時刻形式の例を幾つか示します。
+]PRE]
+
+[PRE[
+      1985-04-12T23:20:50.52Z
+]PRE]
+
+[PRE[
+   This represents 20 minutes and 50.52 seconds after the 23rd hour of
+   April 12th, 1985 in UTC.
+これは UTC で1985年8月12日の23時から20分と50.52秒後を表しています。
+]PRE]
+
+[PRE[
+      1996-12-19T16:39:57-08:00
+]PRE]
+
+[PRE[
+   This represents 39 minutes and 57 seconds after the 16th hour of
+   December 19th, 1996 with an offset of -08:00 from UTC (Pacific
+   Standard Time).  Note that this is equivalent to 1996-12-20T00:39:57Z
+   in UTC.
+これは UTC から -08:00 の時差 (北米太平洋標準時) 
+で1996年12月19日の16時から39分57秒後を表しています。
+]PRE]
+
+[PRE[
+      1990-12-31T23:59:60Z
+]PRE]
+
+[PRE[
+   This represents the leap second inserted at the end of 1990.
+これは1990年の終わりに挿入された閏秒を表しています。
+]PRE]
+
+[PRE[
+      1990-12-31T15:59:60-08:00
+]PRE]
+
+[PRE[
+   This represents the same leap second in Pacific Standard Time, 8
+   hours behind UTC.
+これは太平洋標準時 (UTC から8時間遅れ) での同じ閏秒を表しています。
+]PRE]
+
+[PRE[
+      1937-01-01T12:00:27.87+00:20
+]PRE]
+
+[PRE[
+   This represents the same instant of time as noon, January 1, 1937,
+   Netherlands time.  Standard time in the Netherlands was exactly 19
+   minutes and 32.13 seconds ahead of UTC by law from 1909-05-01 through
+   1937-06-30.  This time zone cannot be represented exactly using the
+   HH:MM format, and this timestamp uses the closest representable UTC
+   offset.
+これはオランダ時間1937年1月1日の正午と同じ瞬間の時刻を表しています。オランダの標準時は
+1909-05-01 から 1937-06-30 の間正確には、法により 
+UTC の 32.13 秒前とされていました。この時間帯は HH:MM 
+形式を用いては正確に表現出来ないので、この時間印では一番近い表現可能な
+UTC 時差を使用しています。
+]PRE]
+
+6. References
+
+7. Security Considerations
+
+[PRE[
+   Since the local time zone of a site may be useful for determining a
+   time when systems are less likely to be monitored and might be more
+   susceptible to a security probe, some sites may wish to emit times in
+   UTC only.  Others might consider this to be loss of useful
+   functionality at the hands of paranoia.
+サイトの地方時間帯は時刻を決定する時に有用かもしれませんから、系統が監視されそうに無くて保安調査により影響されやすいかもしれない時に、時刻を
+UTC でのみで送出したいと思うサイトがあるかもしれません。その他はこれが偏執病であって有用な機能性の喪失であると考えるかもしれません。
+<!-- 訳しづらい。 -->
+]PRE]
+
+<references>
+[PRE[
+   [ZELLER]       fZeller, C., "Kalender-Formeln", Acta Mathematica, Vol.
+                  9, Nov 1886.
+暦の公式<!-- 定訳はあるんですか? -->
+]PRE]
+
+[PRE[
+   [IMAIL]        Crocker, D., "Standard for the Format of Arpa Internet
+                  Text Messages", STD 11, RFC 822, August 1982.
+]PRE]
+
+[PRE[
+   [IMAIL-UPDATE] Resnick, P., "Internet Message Format", RFC 2822,
+                  April 2001.
+]PRE]
+
+[PRE[
+   [ABNF]         Crocker, D. and P. Overell, "Augmented BNF for Syntax
+                  Specifications: ABNF", RFC 2234, November 1997.
+構文仕様書用増補 BNF
+]PRE]
+
+[PRE[
+   [ISO8601]      "Data elements and interchange formats —— Information
+                  interchange —— Representation of dates and times", ISO
+                  8601:1988(E), International Organization for
+                  Standardization, June, 1988.
+データ要素と交換形式——情報交換——日付と時刻の表現
+]PRE]
+
+[PRE[
+   [ISO8601:2000] "Data elements and interchange formats -- Information
+                  interchange -- Representation of dates and times", ISO
+                  8601:2000, International Organization for
+                  Standardization, December, 2000.
+データ要素と交換形式——情報交換——日付と時刻の表現
+]PRE]
+
+[PRE[
+   [HOST-REQ]     Braden, R., "Requirements for Internet Hosts ——
+                  Application and Support", STD 3, RFC 1123, October
+                  1989.
+Internet ホストの要件——応用と対応
+]PRE]
+
+[PRE[
+   [IERS]         International Earth Rotation Service Bulletins,
+                  <http://hpiers.obspm.fr/eop-pc/products/bulletins.html>.
+国際地球回転観測事業広報
+]PRE]
+
+[PRE[
+   [NTP]          Mills, D, "Network Time Protocol (Version 3)
+                  Specification, Implementation and Analysis", RFC 1305,
+                  March 1992.
+ネットワーク時間プロトコル (第3版) 仕様・実装・分析
+]PRE]
+
+[PRE[
+   [ITU-R-TF]     International Telecommunication Union Recommendations
+                  for Time Signals and Frequency Standards Emissions.
+                  <http://www.itu.ch/publications/itu-r/iturtf.htm>
+国際電気通信連合勧告報時および周波数標準
+<!-- 報時及び〜 <http://www.ituaj.jp/book/itur2000.html> -->
+<!-- 2002年7月
+1. <http://www.itu.int/publications/itu-r/iturtf.htm> に飛ばされる
+2. “cannot be found (HTTP 404)”
+3. <http://www.itu.int/publibase/itu-r/ITURAllBySeries.asp?series=TF> が相当する内容か。
+]PRE]
+
+財団法人日本ITU協会 <http://www.ituaj.jp/>
+- >
+
+[PRE[
+   [RFC2119]      Bradner, S, "Key words for use in RFCs to Indicate
+                  Requirement Levels", BCP 14, RFC 2119, March 1997.
+RFC 中で要求水準を示すのに使われるキーワード
+</references>
+]PRE]
+
+Appendix A. ISO 8601 Collected ABNF
+ISO 8601 集積 ABNF
+
+[PRE[
+   This information is based on the 1988 version of ISO 8601.  There may
+   be some changes in the 2000 revision.
+この情報は ISO 8601 の1998年版に基づいています。2000年改訂で変更があったかもしれません。
+]PRE]
+
+[PRE[
+   ISO 8601 does not specify a formal grammar for the date and time
+   formats it defines.  The following is an attempt to create a formal
+   grammar from ISO 8601.  This is informational only and may contain
+   errors.  ISO 8601 remains the authoritative reference.
+ISO 8601 はその定義する日付と時刻の形式の正式な文法を規定していません。次に示すのは、
+ISO 8601 の正式な文法を作ろうとしたものです。これは参考として示すだけであって、誤りを含むかもしれません。
+ISO 8601 が依然として信頼すべき参照先です。
+]PRE]
+
+[PRE[
+   Note that due to ambiguities in ISO 8601, some interpretations had to
+   be made.  First, ISO 8601 is not clear if mixtures of basic and
+   extended format are permissible.  This grammar permits mixtures. ISO
+   8601 is not clear on whether an hour of 24 is permissible only if
+   minutes and seconds are 0.  This assumes that an hour of 24 is
+   permissible in any context.  Restrictions on date-mday in section 5.7
+   apply.  ISO 8601 states that the "T" may be omitted under some
+   circumstances.  This grammar requires the "T" to avoid ambiguity.
+   ISO 8601 also requires (in section 5.3.1.3) that a decimal fraction
+   be proceeded by a "0" if less than unity.  Annex B.2 of ISO 8601
+   gives examples where the decimal fractions are not preceded by a "0".
+   This grammar assumes section 5.3.1.3 is correct and that Annex B.2 is
+   in error.
+なお、 ISO 8601 の曖昧性により、複数の解釈が可能です。まず、
+ISO 8601 は基本形式と拡張形式の混合を認めているのか不明です。この文法は混合を認めています。
+ISO 8601 は24時(hour)を分と秒が0の時だけ認めているのかどうか不明です。これは24時(hour)がどんな場合でも認められていると仮定しています。5.7節の
+date-mday の制限が適用されます。 ISO 8601 は事情がある時は "T"
+を省いても良いと述べています。この文法は曖昧性を避けるため、 "T"
+を必須としています。 ISO 8601 は(5.3.1.3節で)一致<!-- unity ? -->より少ない時は "0"
+を小数部分に前置することも求めています。 ISO 8601 の附属書B.2は "0"
+が前置されていない例を示しています。この文法は5.3.1.3節が正しくて附属書B.2が誤っていると仮定しています。
+]PRE]
+
+[PRE[
+   date-century    = 2DIGIT  ; 00-99
+   date-decade     =  DIGIT  ; 0-9
+   date-subdecade  =  DIGIT  ; 0-9
+   date-year       = date-decade date-subdecade
+   date-fullyear   = date-century date-year
+   date-month      = 2DIGIT  ; 01-12
+   date-wday       =  DIGIT  ; 1-7  ; 1 is Monday, 7 is Sunday
+1 が月曜日, 7 が日曜日
+   date-mday       = 2DIGIT  ; 01-28, 01-29, 01-30, 01-31 based on
+                             ; month/year
+月・年に拠る
+   date-yday       = 3DIGIT  ; 001-365, 001-366 based on year
+年に拠る
+   date-week       = 2DIGIT  ; 01-52, 01-53 based on year
+年に拠る
+]PRE]
+
+[PRE[
+   datepart-fullyear = [date-century] date-year ["-"]
+   datepart-ptyear   = "-" [date-subdecade ["-"]]
+   datepart-wkyear   = datepart-ptyear / datepart-fullyear
+]PRE]
+
+[PRE[
+   dateopt-century   = "-" / date-century
+   dateopt-fullyear  = "-" / datepart-fullyear
+   dateopt-year      = "-" / (date-year ["-"])
+   dateopt-month     = "-" / (date-month ["-"])
+   dateopt-week      = "-" / (date-week ["-"])
+]PRE]
+
+[PRE[
+   datespec-full     = datepart-fullyear date-month ["-"] date-mday
+   datespec-year     = date-century / dateopt-century date-year
+   datespec-month    = "-" dateopt-year date-month [["-"] date-mday]]]
+   datespec-mday     = "--" dateopt-month date-mday
+   datespec-week     = datepart-wkyear "W"
+                       (date-week / dateopt-week date-wday)
+   datespec-wday     = "---" date-wday
+   datespec-yday     = dateopt-fullyear date-yday
+]PRE]
+
+[PRE[
+   date              = datespec-full / datespec-year
+                       / datespec-month /
+   datespec-mday / datespec-week / datespec-wday / datespec-yday
+]PRE]
+
+Time:
+時刻
+
+[PRE[
+   time-hour         = 2DIGIT ; 00-24
+   time-minute       = 2DIGIT ; 00-59
+   time-second       = 2DIGIT ; 00-58, 00-59, 00-60 based on
+                              ; leap-second rules
+閏秒規則による
+   time-fraction     = ("," / ".") 1*DIGIT
+   time-numoffset    = ("+" / "-") time-hour [[":"] time-minute]]]
+   time-zone         = "Z" / time-numoffset
+]PRE]
+
+[PRE[
+   timeopt-hour      = "-" / (time-hour [":"])
+   timeopt-minute    = "-" / (time-minute [":"])
+]PRE]
+
+[PRE[
+   timespec-hour     = time-hour [[":"] time-minute [[":"] time-second]]]]
+   timespec-minute   = timeopt-hour time-minute [[":"] time-second]]]
+   timespec-second   = "-" timeopt-minute time-second
+   timespec-base     = timespec-hour / timespec-minute / timespec-second
+]PRE]
+
+[PRE[
+   time              = timespec-base [time-fraction] [time-zone]
+]PRE]
+
+[PRE[
+   iso-date-time     = date "T" time
+]PRE]
+
+Durations:
+継続時間
+
+[PRE[
+   dur-second        = 1*DIGIT "S"
+   dur-minute        = 1*DIGIT "M" [dur-second]
+   dur-hour          = 1*DIGIT "H" [dur-minute]
+   dur-time          = "T" (dur-hour / dur-minute / dur-second)
+   dur-day           = 1*DIGIT "D"
+   dur-week          = 1*DIGIT "W"
+   dur-month         = 1*DIGIT "M" [dur-day]
+   dur-year          = 1*DIGIT "Y" [dur-month]
+   dur-date          = (dur-day / dur-month / dur-year) [dur-time]
+]PRE]
+
+[PRE[
+   duration          = "P" (dur-date / dur-time / dur-week)
+]PRE]
+
+Periods:
+期間
+
+[PRE[
+   period-explicit   = iso-date-time "/" iso-date-time
+   period-start      = iso-date-time "/" duration
+   period-end        = duration "/" iso-date-time
+]PRE]
+
+[PRE[
+   period            = period-explicit / period-start / period-end
+]PRE]
+
+Appendix B. Day of the Week
+曜日
+
+[PRE[
+   The following is a sample C subroutine loosely based on Zeller's
+   Congruence [Zeller] which may be used to obtain the day of the week
+   for dates on or after 0000-03-01:
+]PRE]
+
+<!-- ツェラーの公式; Congruence 合同(式) -->
+次に示すのは、 Zeller (ツェラー) の合同式に概ね基づいた C
+subroutine <!-- 小 routine -->の例です。これは 0000-03-01 
+及びそれ以降の曜日を得るのに使うことが出来ます。
+
+<!--
+1582年のグレゴリオ暦改暦以前(ユリウス暦)と日付はつながってないし
+閏年の規則が異なるので、この公式も使えないのではないか。
+もちろん、これと異なる暦体系 (日本の太陰太陽暦(最後は天保暦)や
+イスラム暦などはもちろん、グレゴリオ改暦が1582年以降に行われた
+地域も含む。) では計算が合うはずが無い。
+- >
+
+<!-- で、これは合ってるん? 結果が不正確なことが多い。 -->
+
+[PRE[
+   char *day_of_week(int day, int month, int year)
+   {
+      int cent;
+      char *dayofweek[] = {
+         "Sunday", "Monday", "Tuesday", "Wednesday",
+         "Thursday", "Friday", "Saturday"
+      };
+]PRE]
+
+[PRE[
+      /* adjust months so February is the last one */
+      month -= 2;
+      if (month < 1) {
+         month += 12;
+         --year;
+      }
+      /* split by century */
+      cent = year / 100;
+      year %= 100;
+      return (dayofweek[((26 * month - 2) / 10 + day + year
+                        + year / 4 + cent / 4 + 5 * cent) % 7]);
+   }
+月を調節して2月を最後にする
+世紀で区切る
+<!-- 年の上2桁を取り出しても、世紀にはならないかと。まあいいんか。 -->
+<!--
+<http://www.mogami-wire.co.jp/unix/isholiday.html>
+<http://www.ultraman.gr.jp/~momiyama/calender/calender.htm>
+-->
+]PRE]
+
+Appendix C. Leap Years
+閏年
+
+[PRE[
+   Here is a sample C subroutine to calculate if a year is a leap year:
+これはある年が閏年かどうか調べる<!-- 計算するってのは変だし -->
+C の&ja.program.subroutine;です。
+]PRE]
+
+その年が閏年なら0以外を返す。4桁年号を使わなければならない。
+
+[PRE[
+   /* This returns non-zero if year is a leap year.  Must use 4 digit
+      year.
+    */
+   int leap_year(int year)
+   {
+       return (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0));
+   }
+]PRE]
+
+Appendix D. Leap Seconds
+閏秒
+
+[PRE[
+   Information about leap seconds can be found at:
+   <http://tycho.usno.navy.mil/leapsec.html>.  In particular, it notes
+   that:
+閏秒についての情報は <> で入手出来ます。特に、次の点を書き留めておきます。
+]PRE]
+
+[PRE[
+      The decision to introduce a leap second in UTC is the
+      responsibility of the International Earth Rotation Service (IERS).
+      According to the CCIR Recommendation, first preference is given to
+      the opportunities at the end of December and June, and second
+      preference to those at the end of March and September.
+UTC に閏秒を導入する決定は国際地球回転観測事業 
+(<h:span xml:lang="en">International Earth Rotation Service</h:span>; 
+<h:abbr xml:lang="en">IERS</h:abbr>) の責任で行われます。
+CCIR 勧告によると優先順序1位は12月と6月の終わりの機会で優先順序2位は3月と9月の終わりの機会です。
+]PRE]
+
+<ja:note><h:abbr>CCIR</h:abbr> (国際無線通信諮問委員会; 
+<h:span xml:lang="fr">Comite Consultatif International des 
+Radio-communications</h:span>) は1993年の組織改変に伴い
+<h:abbr>ITU-RS</h:abbr> (国際電気通信連合無線通信部門;
+<h:span xml:lang="en">International Telecommunication 
+Union-Radiocommunication Sector</h:span>) と改称されました。</ja:note>
+
+[PRE[
+   When required, insertion of a leap second occurs as an extra second
+   at the end of a day in UTC, represented by a timestamp of the form
+   YYYY-MM-DDT23:59:60Z.  A leap second occurs simultaneously in all
+   time zones, so that time zone relationships are not affected.  See
+   section 5.8 for some examples of leap second times.
+必要な時, つまり UTC での一日の終わりに余分な秒を閏秒として挿入された時には、
+YYYY-MM-DDT23:59:60Z の形式の時刻印で表現します。閏秒は全ての時間帯で同時に起こりますから、時間帯関係には影響されません。5.8節の閏秒の例をご覧下さい。
+]PRE]
+
+[PRE[
+   The following table is an excerpt from the table maintained by the
+   United States Naval Observatory.  The source data is located at:
+次の表は<eref target="http://www.usno.navy.mil/">合衆国海軍天文台
+(<h:span xml:lang="en">United States Naval Observatory</h:span>)</eref>
+が維持管理している表から抜粋したものです。元データは次の場所にあります。
+]PRE]
+
+[PRE[
+      <ftp://maia.usno.navy.mil/ser7/tai-utc.dat>
+]PRE]
+
+[PRE[
+   This table shows the date of the leap second, and the difference
+   between the time standard TAI (which isn't adjusted by leap seconds)
+   and UTC after that leap second.
+この表は、閏秒の日付と TAI 時刻標準 
+(閏秒を調節しない) と閏秒挿入後の UTC の差を示しています。
+]PRE]
+
+<ja:note><h:abbr>TAI</h:abbr> (国際原子時;
+<h:span xml:lang="en"> </h:span>)
+は、1958年1月1日0時0分0秒 (UT2) 
+を原点として運用が開始された原子時です。世界中の原子時計の時刻を加重平均して決定されます。
+<!-- <http://jjy.crl.go.jp/Pamplet/pamp1.html>
+決定には1ヶ月以上かかる。各国の原子時と国際原子時の差は100万分の1秒以内
+になるように努めている。
+- >
+UT2 は恒星観測による時刻 (UT0) に極運動の補正を加え (UT1),
+地球の自転速度の季節変化を補正したものです。<!-- つまり天文時 -->
+</ja:note>
+
+[PRE[
+   UTC Date  TAI - UTC After Leap Second
+   --------  ---------------------------
+   1972-06-30     11
+   1972-12-31     12
+   1973-12-31     13
+   1974-12-31     14
+   1975-12-31     15
+   1976-12-31     16
+   1977-12-31     17
+   1978-12-31     18
+   1979-12-31     19
+   1981-06-30     20
+   1982-06-30     21
+   1983-06-30     22
+   1985-06-30     23
+   1987-12-31     24
+   1989-12-31     25
+   1990-12-31     26
+   1992-06-30     27
+   1993-06-30     28
+   1994-06-30     29
+   1995-12-31     30
+   1997-06-30     31
+   1998-12-31     32
+]PRE]
+
+<h:table>
+<h:thead>
+<h:tr>
+[PRE[
+	<h:th>UTC Date</t:th>
+	<h:th>TAI - UTC After Leap Second</h:th>
+</h:tr>
+</h:thead>
+<t:tbody>
+<!-- td と th, どっちが適切だろう? -->
+<h:tr><h:td>1972-06-30</h:td>	<h:td>11</h:td></h:tr>
+<h:tr><h:td>1972-12-31</h:td>	<h:td>12</h:td></h:tr>
+<h:tr><h:td>1973-12-31</h:td>	<h:td>13</h:td></h:tr>
+<h:tr><h:td>1974-12-31</h:td>	<h:td>14</h:td></h:tr>
+<h:tr><h:td>1975-12-31</h:td>	<h:td>15</h:td></h:tr>
+<h:tr><h:td>1976-12-31</h:td>	<h:td>16</h:td></h:tr>
+<h:tr><h:td>1977-12-31</h:td>	<h:td>17</h:td></h:tr>
+<h:tr><h:td>1978-12-31</h:td>	<h:td>18</h:td></h:tr>
+<h:tr><h:td>1979-12-31</h:td>	<h:td>19</h:td></h:tr>
+<h:tr><h:td>1981-06-30</h:td>	<h:td>20</h:td></h:tr>
+<h:tr><h:td>1982-06-30</h:td>	<h:td>21</h:td></h:tr>
+<h:tr><h:td>1983-06-30</h:td>	<h:td>22</h:td></h:tr>
+<h:tr><h:td>1985-06-30</h:td>	<h:td>23</h:td></h:tr>
+<h:tr><h:td>1987-12-31</h:td>	<h:td>24</h:td></h:tr>
+<h:tr><h:td>1989-12-31</h:td>	<h:td>25</h:td></h:tr>
+<h:tr><h:td>1990-12-31</h:td>	<h:td>26</h:td></h:tr>
+<h:tr><h:td>1992-06-30</h:td>	<h:td>27</h:td></h:tr>
+<h:tr><h:td>1993-06-30</h:td>	<h:td>28</h:td></h:tr>
+<h:tr><h:td>1994-06-30</h:td>	<h:td>29</h:td></h:tr>
+<h:tr><h:td>1995-12-31</h:td>	<h:td>30</h:td></h:tr>
+<h:tr><h:td>1997-06-30</h:td>	<h:td>31</h:td></h:tr>
+<h:tr><h:td>1998-12-31</h:td>	<h:td>32</h:td></h:tr>
+</h:tbody>
+</h:table>
+]PRE]
+
+Acknowledgements
+
+[PRE[
+   The following people provided helpful advice for an earlier
+   incarnation of this document:  Ned Freed, Neal McBurnett, David
+   Keegel, Markus Kuhn, Paul Eggert and Robert Elz.  Thanks are also due
+   to participants of the IETF Calendaring/Scheduling working group
+   mailing list, and participants of the time zone mailing list.
+次の方々はこの文書の早期においてその具体化に助言を頂きました:
+Ned Freed, Neal McBurnett, David Keegel, Markus Kuhn, Paul Eggert, 
+Robert Elz。 IETF 暦・予定 
+(<h:span xml:lang="en">Calendaring/Scheduling</h:span>) 
+<!-- 良訳キボンヌ -->作業部会メイル・リストの参加者と時間帯メイル・リストの参加者にも感謝します。
+]PRE]
+
+[PRE[
+   The following reviewers contributed helpful suggestions for the
+   present revision: Tom Harsch, Markus Kuhn, Pete Resnick, Dan Kohn.
+   Paul Eggert provided many careful observations regarding the
+   subtleties of leap seconds and time zone offsets.  The following
+   people noted corrections and improvements to earlier drafts: Dr John
+   Stockton, Jutta Degener, Joe Abley, and Dan Wing.
+次の批評家達には現在の版で助言<!-- 前段落と違う原語に同じ訳でいまいち。 -->を賜りました:
+Tom Harsch, Markus Kuhn, Pete Resnick, Dan Kohn。
+Paul Eggert は閏秒と時間帯時差の微妙な点を細かく確認してくれました。<!-- 意訳 -->次の方々は早期の原案で修正点・改良点を挙げてくれました:
+Dr John Stockton, Jutta Degener, Joe Abley, Dan Wing。
+]PRE]
+
+Authors' Addresses
+
+[PRE[
+   Chris Newman
+   Sun Microsystems
+   1050 Lakes Drive, Suite 250
+   West Covina, CA 91790 USA
+]PRE]
+
+[PRE[
+   EMail: chris.newman@sun.com
+]PRE]
+
+(編集者, この版)
+[PRE[
+   Graham Klyne (editor, this revision)
+   Clearswift Corporation
+   1310 Waterside
+   Arlington Business Park
+   Theale, Reading  RG7 4SA
+   UK
+]PRE]
+
+[PRE[
+   Phone: +44 11 8903 8903
+   Fax:   +44 11 8903 9000
+   EMail: GK@ACM.ORG
+]PRE]
+
+Full Copyright Statement
+(TBD; Copyright Internet Society)
+Acknowledgement
+(TBD)
+
+<ja:back>
+http://www.w3.org/TR/NOTE-datetime
+W3C NOTE-datetime
+Date and Time Formats
+Misha Wolf <misha.wolf@reuters.com>
+Charles Wicksteed <charles.wicksteed@reuters.com> 
+<!-- Chris Newman の I-D に拠ったと謝辞がある。 -->
+
+1万年問題
+RFC 2550
+</ja:back>
+
+other translatrion
+<http://www5d.biglobe.ne.jp/~stssk/rfc3339j.html>
+- [2] 追加参考文献 : 8601 改訂 draft (1万年対策)
+
+
+[3]
+[CITE[RFC ERRATA]] <http://www.rfc-editor.org/cgi-bin/errata.pl#rfc3339>
+([[名無しさん]])
+

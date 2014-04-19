@@ -1,0 +1,212 @@
+[35] [DFN[[RUBYB[[[マイクロタスク]]]@en[microtask]]]]は、 [[Webブラウザー]]における処理の単位で、
+[[変異観測器]]や[[表]]の[[整列]]などの処理で用いられています。
+
+* 仕様書
+
+[REFS[
+- [49] '''[CITE@en-US-x-hixie[HTML Standard]] ([TIME[2014-04-03 03:44:44 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#microtask>'''
+- [7] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2012-03-28 21:58:58 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#perform-a-microtask-checkpoint>
+]REFS]
+
+* マイクロタスク
+
+[50] [[マイクロタスク]]は、最初に[[タスクキュー]]ではなく[[マイクロタスクキュー]]に入れられた[[タスク]]です。
+[[マイクロタスク]]には[[ぼっちコールバックマイクロタスク]]と[[複合マイクロタスク]]の2種類があります。 [SRC[>>49]]
+
+[51] [[マイクロタスク]]が通常の[[タスク]]に比べて「マイクロ」であるのは、
+[[タスク]]が[[イベントループ]]の全体によって順次処理されていくのに対し、
+[[マイクロタスク]]のほとんどがその[[イベントループ]]の一度の繰り返しの内で順次実行されることを指しています。
+[[マイクロタスク]]自体も[[タスク]]の一種なのであって、
+[[マイクロタスク]]によって[[タスク]]が構成されるような階層構造には''ありません''。
+
+[42] [[マイクロタスク]]には、次のものがあります。
+[FIG[
+- [[ぼっちコールバックマイクロタスク]]
+-- [CODE(HTMLa)@en[[[sortable]]]] な[[表]]の[[整列]]
+- [[複合マイクロタスク]]
+-- [[変異観測器]]の[[コールバック]]の呼び出し
+
+@@
+- [[カスタム要素]]の[[コールバック]]の呼び出し
+- [[Promise]] の[[コールバック]]の呼び出し
+- [CODE(JS)@en[[[Object.observe]]]] の[[コールバック]]の呼び出し
+]FIG]
+
+@@ [76] 現時点で仕様の再編中で、仕様書間で規定の整合性が十分とれていません。
+
+** ぼっちコールバックマイクロタスク
+
+[61] [DFN[[RUBYB[[[ぼっちコールバックマイクロタスク]]]@en[solitary callback microtask]]]]は、
+それ自体が実行時の最小単位の[[タスク]]となるような[[マイクロタスク]]です。
+
+** 複合マイクロタスク
+
+[62] [DFN[[RUBYB[[[複合マイクロタスク]]]@en[compound microtask]]]]は、
+実行時に最小単位の[[タスク]]複数個に分割され得る[[マイクロタスク]]です。
+
+[78] [[複合マイクロタスク]]の一部として実行される[[タスク]]のことを、
+[DFN[[RUBYB[[[複合マイクロタスク部分タスク]]]@en[compound microtask subtask]]]]といいます。
+
+[EG[
+[77] 例えば [[mutation observer]] の[[マイクロタスク]]は、複数の [CODE(DOMi)@en[[[MutationObserver]]]]
+[[コールバック]]を呼び出す可能性があり、
+それぞれが[[複合マイクロタスク部分タスク]]であるような1つの[[複合マイクロタスク]]として定義されています。
+]EG]
+
+[66] [[複合マイクロタスク]]は、[[イベントループのスピン]]時の挙動を正しく扱えるように注意する必要があります。
+
+[67] 指定された手順について[DFN[[RUBYB[[[複合マイクロタスク部分タスクを実行する]]]@en[execute a compound microtask subtask]]]]とは次のような手順をいいます [SRC[>>7]]。
+[FIG[
+= [68] [VAR@en[parent]] を[[現在走っているタスク]]とします。
+== [69] これは本手順を呼び出している[[複合マイクロタスク]]となります。
+= [70] [VAR@en[subtask]] を指定された手順を実行する[[タスク]]とします。
+これが[[複合マイクロタスク部分タスク]]です。
+[[タスク源]]は[[マイクロタスクタスク源]]とします。
+= [71] [[現在走っているタスク]]を [VAR@en[subtask]] とします。
+= [72] [VAR@en[subtask]] を実行します。
+= [73] [[現在走っているタスク]]を [VAR@en[parent]] とします。
+]FIG]
+
+;; [79] この手順はすなわち、「ある手順をその場で[[タスク]]として実行する」ということになります。
+[[複合マイクロタスク]]はそれ自体の手順の中で、[[複合マイクロタスク部分タスク]]として実行したい部分を >>67
+の手順で“包んで”実行することになります。これは[[スピン]]の挙動を定義するためであり、
+ただの[[ぼっちコールバックタスク]]と[[複合マイクロタスク]]が異なるのは[[スピン]]に対する挙動だけです。
+[[スピン]]は実行中の[[タスク]]を終了させ、続きの実行を後回しにします。この後で実行する単位が、
+>>67 によって当該[[複合マイクロタスク部分タスク]]だけに限定されます。 [[mutation observer]]
+の場合だと、当該 [CODE(DOMi)@en[[[MutationObserver]]]] だけが中断され、他の [CODE(DOMi)@en[[[MutationObserver]]]]
+があればそれらは即座に実行されます。
+
+* マイクロタスクキュー
+
+[53] [[イベントループ]]は[DFN[[RUBYB[[[マイクロタスクキュー]]]@en[microtask queue]]]]を ([[タスクキュー]]とは別に) 
+持ちます。[DFN[[RUBYB[[[マイクロタスクをキューに入れる]]]@en[queue a microtask]]]]とは、
+[[マイクロタスク]]を自[[イベントループ]]の[[マイクロタスクキュー]]の末尾に追加することをいいます。
+[SRC[>>49]]
+
+* マイクロタスクタスク源
+
+[54] [[マイクロタスク]]の[[タスク源]]は[DFN[[RUBYB[[[マイクロタスクタスク源]]]@en[microtask task source]]]]となります。
+[SRC[>>49]] [[マイクロタスクキュー]]には[[タスク源]]は関係してこないので、ほとんどの[[マイクロタスク]]は[[タスク源]]と無関係ですが、
+[[マイクロタスク]]が[[タスクキュー]]に移されると[[タスク源]]が関係してきます。
+
+* マイクロタスクチェックポイント
+
+[12] [DFN[[RUBYB[[[マイクロタスクチェックポイントを行う]]]@en[perform a microtask checkpoint]]]]際には次のようにし[['''なければなりません''']] [SRC[>>7]]。
+[FIG[
+= [8] [[マイクロタスクチェックポイントを行っている]]フラグが[[偽]]なら、
+== [9] [[マイクロタスクチェックポイントを行っている]]フラグを[[真]]にします。
+== [38] [RUBYB[[[カスタム要素チェックポイントを行う]]]@en[perform a custom elements checkpoint]][[アルゴリズム]]を実行します。
+== [22] [RUBYB[[[未決の整列について表を整列]]]@en[sort the tables with pending sorts]]します。
+== [10] [[スクリプトの閲覧文脈]]が所属している[[関連する類似起源閲覧文脈の単位]]の[[[CODE(DOMi)@en[MutationObserver]]オブジェクトを呼び出し]]します。
+== [55] [[マイクロタスクキュー]]が空でないなら、
+=== [56] 最古の[[マイクロタスク]]を選びます。
+=== [63] 選んだ[[マイクロタスク]]を[[現在走っているタスク]]とします。
+=== [64] 選んだ[[マイクロタスク]]を実行します。
+=== [65] [[現在走っているタスク]]を [[null]] とします。
+=== [57] 本[[イベントループ]]が[[ストレージミューテックス]]を有していれば、これを解放します。
+=== [58] >>56 で実行した[[マイクロタスク]]を[[マイクロタスクキュー]]から削除します。
+=== [59] >>55 に戻ります。
+== [13] [[マイクロタスクチェックポイントを行っている]]フラグを[[偽]]にします。
+]FIG]
+
+[34] [[イベントループ]]は[DFN[[RUBYB[[[マイクロタスクチェックポイントを行っている]]]@en[performing a microtask checkpoint]]]]フラグを持っており、初期値は[[偽]]です。 [SRC[>>7]]
+
+;; [11] [[マイクロタスク]]によって[[コールバック]]の[[スクリプト]]が呼び出されたりするわけですが、
+その際 [[jump to a code entry-point]] [[アルゴリズム]]が呼ばれ、
+その中で再度[[マイクロタスクチェックポイント]]が呼ばれることになるので、
+[[マイクロタスクチェックポイントを行っている]]フラグでチェックして再実行しないようにしています。
+
+[15] [[マイクロタスクチェックポイントを行う]]のは次の場面です。
+[FIG[
+- [16] [[イベントループ]]の1ステップとして
+- [17] [[jump to a code entry-point]] ([[スクリプト]]実行) の1ステップとして
+- [18] [[HTML]] [CODE(HTMLe)@en[[[script]]]] [[要素]]の[[終了タグ]]の処理の1ステップとして
+
+;; [19] [[SVG]] [CODE(XMLe)@en[[[script]]]] [[要素]]でも同様に呼び出されるものと推察されますが、
+現時点で [[SVG]] [CODE(XMLe)@en[[[script]]]] [[要素]]の処理モデルを詳細に規定した仕様がありません。
+]FIG]
+
+* 歴史
+
+[37] [[マイクロタスク]]は[[変異観測器]]のための仕組みとして [[HTML Standard]] に導入されました。
+
+[REFS[
+- [33] [CITE@en[DOM Mutation Events Replacement: When to deliver mutations]] ([[Rafael Weinstein]] 著, [TIME[2011-08-11 09:44:32 +09:00]] 版) <http://lists.w3.org/Archives/Public/public-webapps/2011JulSep/0780.html>
+- [1] [CITE[IRC logs: freenode / #whatwg / 20120228]]
+( ([TIME[2012-03-08 00:01:17 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20120228>
+- [2] [CITE@en[Re: ''''''[''''''dom'''''']'''''' mutation observers and HTML]]
+( ([[Olli Pettay]] 著, [TIME[2012-02-18 00:51:23 +09:00]] 版))
+<http://lists.w3.org/Archives/Public/www-dom/2012JanMar/0066.html>
+- [3] [CITE[IRC logs: freenode / #whatwg / 20120320]]
+( ([TIME[2012-03-29 23:32:57 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20120320>
+- [14] [CITE[Bug 17988 – The term microtask should be defined]]
+( ([TIME[2012-07-21 17:51:05 +09:00]] 版))
+<https://www.w3.org/Bugs/Public/show_bug.cgi?id=17988>
+- [21] [CITE@en[Web Applications 1.0 r7597       New feature: sorting tables. The actual sort algorithm isn't done yet, but this should be a good start for first draft reviewers.]] ([TIME[2012-12-27 08:58:00 +09:00]] 版) <http://html5.org/tools/web-apps-tracker?from=7596&to=7597>
+- [20] [CITE@en[Web Applications 1.0 r7484     The parser should have mutation observers.]] ([TIME[2012-10-24 07:24:00 +09:00]] 版) <http://html5.org/tools/web-apps-tracker?from=7483&to=7484>
+-[24] [CITE[IRC logs: freenode / #whatwg / 20130528]]
+( ([TIME[2013-05-29 23:52:26 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20130528#l-1044>
+-[25] [CITE@en[Bug 22185 – Microtask checkpoint wording is wrong -- and needs abstracting]]
+( ([TIME[2013-06-09 01:40:24 +09:00]] 版))
+<https://www.w3.org/Bugs/Public/show_bug.cgi?id=22185>
+-[26] [CITE@en[Web Applications 1.0 r7950     Bring the 'microtask checkpoint' invocation at the end of scripts more into line with implementations, and unrelated editorial fixes.]]
+( ([TIME[2013-06-11 05:52:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=7949&to=7950>
+-[27] [CITE@en[Bug 22296 – Microtask and promises]]
+( ([TIME[2013-09-13 07:31:35 +09:00]] 版))
+<https://www.w3.org/Bugs/Public/show_bug.cgi?id=22296>
+-[29] [CITE[IRC logs: freenode / #whatwg / 20131107]]
+( ([TIME[2013-11-09 12:27:06 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20131107#l-600>
+-[40] [CITE@en[Web Applications 1.0 r8265 Provide integration hook for Custom Elements spec.]] ([TIME[2013-11-12 07:10:00 +09:00]] 版) <http://html5.org/tools/web-apps-tracker?from=8264&to=8265>
+]REFS]
+
+[39] [CODE(URI)@en[[[blob:]]]] についても[[マイクロタスクチェックポイント]]での処理が検討されましたが、
+[[global script clean-up jobs list]] という新しい仕組みになりました。
+
+[REFS[
+- [23] [CITE@en[Bug 19554 – Needed: An Algorithmic "Hook" For Culling URL.objectURLs with autoRevoke=true]]
+( ([TIME[2013-05-30 08:45:57 +09:00]] 版))
+<https://www.w3.org/Bugs/Public/show_bug.cgi?id=19554>
+]REFS]
+
+[41] ここまで仕様書上[[マイクロタスク]]と呼ばれるものはなく、
+[[マイクロタスクチェックポイント]]の一連の処理として定義されていました (>>12)。
+
+[52] しかし >>48 によって[[タスク]]の一種として[[マイクロタスク]]が定義されるようになりました。
+[[マイクロタスクキュー]]が導入され、[[マイクロタスク]]が後に通常の[[タスクキュー]]によって処理され得る単位となったのもこの時です。
+それに加えて >>60 により、[[複合マイクロタスク]]が導入され、
+[[マイクロタスク]]の一部分が[[複合マイクロタスク部分タスク]]として実行されるケースが生じました。
+
+[REFS[
+- [43] [CITE[IRC logs: freenode / #whatwg / 20140219]]
+( ([TIME[2014-02-20 21:02:47 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20140219#l-367>
+- [44] [CITE[IRC logs: freenode / #whatwg / 20140220]]
+( ([TIME[2014-02-22 00:03:19 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20140220>
+- [45] [CITE@en[Web Applications 1.0 r8507     Prevent microtasks from running reentrantly via the parser.]]
+( ([TIME[2014-02-22 08:02:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=8506&to=8507>
+- [46] [CITE[IRC logs: freenode / #whatwg / 20140303]]
+( ([TIME[2014-03-04 20:47:42 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20140303#l-550>
+- [47] [CITE[IRC logs: freenode / #whatwg / 20140331]]
+( ([TIME[2014-04-02 13:54:03 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20140331#l-653>
+- [48] [CITE@en[Web Applications 1.0 r8463     First attempt at speccing the generic microtask queue idea.]]
+( ([TIME[2014-02-05 10:00:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=8462&to=8463>
+- [60] [CITE@en[Web Applications 1.0 r8510     Lay the groundwork for interruptible microtasks, mutation-observer style.]] ([TIME[2014-02-25 12:53:00 +09:00]] 版) <http://html5.org/tools/web-apps-tracker?from=8509&to=8510>
+- [74] [CITE@en[Web Applications 1.0 r8553     Make microtasks work in workers too, since eventually we'll want the JavaScript stuff to hook into this]] ([TIME[2014-03-19 03:12:00 +09:00]] 版) <http://html5.org/tools/web-apps-tracker?from=8552&to=8553>
+]REFS]
+
+[75] >>74 で[[マイクロタスク]]はメインの[[イベントループ]]だけでなく、[[ワーカー]]でも実行可能となりました。
+
+* 関連
+
+[80] [[大域スクリプト片付けジョブ]]は[[マイクロタスク]]と似ていて同じようなタイミングで実行されますが、
+異なるタイミングで実行されることもあります。

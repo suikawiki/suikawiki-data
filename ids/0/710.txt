@@ -1,0 +1,203 @@
+
+[3] [[MIME]] の[[多部分実体]] ([CODE(MIME)[[[multipart/[VAR[*]]]]]] [[実体]])
+は複数の[[実体部分]]を1つにまとめて扱うことができます。
+各実体は境界文字列によって区切ります。
+その境界文字列は実体を構成する[[利用者エージェント]]が定められた構文的制限内で自由に決定できます。
+その境界文字列を指定するのが [DFN[[CODE(MIME)[boundary]] [[引数]]]]です。
+
+[CODE(MIME)[boundary]] 引数はすべての [CODE(MIME)[[[multipart/[VAR[*]]]]]]
+実体で'''必須'''です。
+
+[4] 仕様書:
+- [[MIME]]
+== 第1版: [[RFC 1340]]
+== 第2版: [[RFC 1521]]
+== 第3版: [[RFC 2046]]
+--- [CSECTION[5.1.1.  Common Syntax]]
+
+
+** 境界文字列の構文
+
+[5] [[MIME]] [SRC[RFC 2046]] によれば、境界文字列は次のように定義されています。
+
+- [CODE(ABNF)[[DFN[boundary]] := 0*69<bchars> bcharsnospace]]
+- [CODE(ABNF)[[DFN[bchars]] := bcharsnospace / " "]]
+- [CODE(ABNF)[[DFN[bcharsnospace]] := DIGIT / ALPHA / "'" / "(" / ")" / "+" / "_" / "," / "-" / "." / "/" / ":" / "=" / "?"]]
+
+つまり、境界にはここで示した文字を使うことができます。
+ただし最後の文字は[[間隔]]であってはなりません。
+また、境界文字列全体で1文字以上70文字以下でなければなりません。
+
+[6] ただし、ここに示された文字すべてが境界文字列として適切なわけではありません。
+境界文字列は [CODE(MIME)[[[Content-Type]]:]] 欄などにおいて
+[CODE(MIME)[boundary]] 引数の値として指定しますが、その際に引数値は
+[CODE(ABNF)[[[quoted-string]]]] を使って指定する方法 (つまり引用符で括る方法)
+と [CODE(ABNF)[[[token]]]] を使って指定する方法 (つまり括らない方法) 
+があります。しかし、いろいろな場面での使用を考えると引用符なしの方が安全です。
+[WEAK[(例えば [CODE(MIME)[[[multipart/byterange]]]] で引用符付きだと扱えない古い [[HTTP]] [[UA]] が存在します[SRC[[[RFC 2616]]]]。)]]
+
+そうなると、 [CODE(ABNF)[token]] で使用できない文字、すなわち
+[CODE(ABNF)["(" / ")" / "," / "/" / ":" / "=" / "?" / " "]] 
+は使う'''べきではない'''ということになります。
+
+特に[[間隔]]は [[822]] メッセージでは[[折返し]]など種々の問題がありますから、
+極力使わない'''べきです''' (でも現実には意外とよく使われていたりします
+[WEAK[(そしてたまに問題を起こします)]])。[[コロン]]も腐った [[MTA]]・[[MSA]]
+などでの転送時に[[頭欄]]の[[名前]]と[[本体]]を分けるコロンと誤認されて破壊される問題があることが知られていますから、
+使う'''べきではありません'''。
+
+[827] [[CGI.pm]] は [[quoted-string]] であったとしても [CODE(char)[[[,]]]] を[[境界文字列]]で使うことを認めていません。
+これはおそらく、 [[CGI]] では複数の同名の[[ヘッダー]]があったときに [CODE[[[,]]]]
+で連結されることから、 [WEAK[(複数 [CODE(MIME)@en[[[Content-Type:]]]] 欄が存在する[[要求]]は非妥当とはいえ)]]
+[CODE(char)[[[,]]]] は[[境界文字列]]に現れると解釈が曖昧になるという判断なのでしょう。
+
+;; [828] と思いましたが同じような構文でそうなっていないところもあるので、
+本当の意図はわかりません。
+
+[7] まとめると、境界文字列 [CODE(MIME)[boundary]] は
+[CODE(ABNF)[[[DIGIT]] / [[ALPHA]] / "'" / "+" / "_" / "-" / "."]]
+から1文字以上70文字で選ぶのがよさそうだということになります。
+
+[9] なお、構文で最後の文字に間隔を使ってはならないことになっているのは、
+古い[[関門]]が勝手に [[822]] 
+メッセージ本体の行末に[[空白]]を補うことがあることが知られていたからです
+[SRC[RFC 2046 5.1.1]]。
+
+** 境界文字列の選び方
+
+[8] 仕様上は >>5 の構文に反しない限りで自由に境界文字列を選ぶことができます。
+ただし、境界文字列が多部分実体の中に含まれる[[本体部分]]の一部として含まれていてはいけません。
+
+[9] 実際の MIME 利用者エージェントでよく使われている境界文字列は、
+無作為に選んだ文字列と日付など規則的に生成した (本体部分に含まれそうにない)
+文字列です。また、稀に定型メッセージなどで中身が分かりきっている場合には、
+[SAMP(MIME)[-]] などの簡単な文字列で済ませることもあります。
+
+どの方法を選ぶにせよ、
+生成した境界文字列が本体部分の中身に混じってしまうことがないように注意しなければなりません。
+絶対に中身と衝突し得ない文字列を生成する方法はありませんが、
+実際に中身を検査すれば含まれているかいないかは簡単に分かりますから、
+何度か生成して確認してみれば実用的には十分です
+[WEAK[(うまい生成方法を選べば普通は1度で衝突しない文字列が得られます)]]。
+
+ただし、 MIME 実体の生成方法や効率上の理由で中身の検査ができないこともあります。
+[CODE(MIME)[[[multipart/x-mixed-replace]]]] のように、
+その性質上あらかじめ絶対に衝突しない境界文字列を選ぶことが不可能なものまであります。
+このような場合には、使用する[[媒体型]]などの知識に基づき衝突しそうにない文字列を生成するように努力するしかありません。
+[WEAK[(本来そのような状況では、 [CODE(MIME)[[[application/vnd.pwg-multiplexed]]]] のような別の方法を採用するべきです。)]]
+
+[13] なお、 [CODE(MIME)[[[multipart/[VAR[*]]]]]] は何重にも[[入れ子]]にできます。
+当然、内側と外側では別の境界文字列を選ばなければなりません。
+日付などに基づき生成する方法を選んだ場合は同時に同じ境界文字列を生成してしまわないように注意しなければなりません。
+
+[[#comment]]
+
+
+** 多部分実体の境界文字列
+
+[10] 多部分実体は次のような構文と規定されています [SRC[RFC 2046 5.1.1]]。
+- [CODE(ABNF)[[DFN[dash-boundary]] := "--" boundary]]
+- [CODE(ABNF)[[DFN[multipart-body]] := [preamble CRLF] dash-boundary transport-padding CRLF body-part *encapsulation close-delimiter transport-padding [CRLF epilogue] ]]
+- [CODE(ABNF)[[DFN[transport-padding]] := *LWSP-char]]
+- [CODE(ABNF)[[DFN[encapsulation]] := delimiter transport-padding CRLF body-part]]
+- [CODE(ABNF)[[DFN[delimiter]] := CRLF dash-boundary]]
+- [CODE(ABNF)[[DFN[close-delimiter]] := delimiter "--"]]
+- [CODE(ABNF)[[DFN[preamble]] := discard-text]]
+- [CODE(ABNF)[[DFN[epilogue]] := discard-text]]
+- [CODE(ABNF)[[DFN[discard-text]] := *(*text CRLF) *text]]
+- [CODE(ABNF)[[DFN[body-part]] := MIME-part-headers [CRLF *OCTET] ]]
+
+(詳細は [CODE(MIME)[[[multipart/[VAR[*]]]]]] の項や [[RFC 2046]] を見てください。)
+
+[11]
+境界文字列に関係する部分をまとめると、次のようになります。
+- 一番最初の本体部分の前には、 [SAMP(MIME)[--[VAR[boundary]]]]
+と [CODE(ABNF)[CRLF]] からなる境界文字列を入れます。
+- 本体部分と本体部分の間には、 [CODE(ABNF)[CRLF]] と
+[SAMP(MIME)[--[VAR[boundary]]]] と [CODE(ABNF)[CRLF]]
+からなる境界文字列を入れます。
+- 一番最後の本体部分の後には、 [CODE(ABNF)[CRLF]] と 
+[SAMP(MIME)[--[VAR[boundary]]--]] と [CODE(ABNF)[CRLF]] からなる境界文字列を入れます。
+
+ただし、 [CODE(MIME)[[VAR[boundary]]]] というのは [CODE(MIME)[boundary]]
+引数で指定した文字列です。
+最後の境界文字列は [CODE(MIME)[[VAR[boundary]]]] の後にも
+[CODE(MIME)[--]] が付くことと、最初の境界文字列''以外''では
+[SAMP(MIME)[--[VAR[boundary]]]] の直前の [CODE(ABNF)[CRLF]]
+も境界の一部である (本体部分の一部ではない) ことに注意してください。
+
+[12] ただし、 >>9 のような腐った関門が勝手に[[空白]]を追加しても受信側が理解できるように、
+受信した側の MIME 利用者エージェントは [SAMP(MIME)[--[VAR[boundary]]]] や
+[SAMP(MIME)[--[VAR[boundary]]--]] の後に[[空白]]があっても無視することになっています
+(構文の [CODE(ABNF)[transport-padding]])。 
+[WEAK[(だからといって、送信側が意図的に空白をつけることは禁止されています)]]
+
+[17] なお、古い版の MIME では一番最初の本体部分の前の境界でも
+[SAMP(MIME)[--[VAR[boundary]]]] の前の [CODE(ABNF)[CRLF]]
+が必須とされていましたが、今日では不具合であったと考えられています。
+
+* [CODE(MIME)@en[multipart/form-data]] 境界文字列
+
+[824] [[HTML]] の[[フォーム提出算法]]において、 
+[DFN[[CODE(MIME)@en[multipart/form-data]] [RUBYB[境界文字列]@en[boundary string]]]]とは、
+[CODE(MIME)@en[[[multipart/form-data]]]] の[[実体本体]]を生成するに当たり使われた
+[CODE(MIME)@en[[[boundary]]]] の文字列のことをいいます。
+
+[REFS[
+- [825] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2012-03-19 22:29:46 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#multipart/form-data-boundary-string>
+]REFS]
+
+[826] [[[CODE(MIME)@en[multipart/form-data]]境界文字列]]は、 [CODE(MIME)@en[[[Content-Type:]]]]
+欄の値の生成に使われます。
+
+* 例
+
+[14] [[MIME]] の [CODE(MIME)[[[Content-Type]]:]] 欄で
+[CODE(MIME)[boundary]] 引数を指定する例 [SRC[RFC 2046]]:
+[PRE(MIME example)[
+Content-Type: multipart/mixed; boundary=gc0p4Jq0M2Yt08j34c0p
+]PRE]
+
+[15]
+間違った例 [SRC[RFC 2046]]:
+[PRE(MIME illegal example)[
+Content-Type: multipart/mixed; boundary=gc0pJq0M:08jU534c0p
+]PRE]
+
+[CODE(MIME)[boundary]] 引数の値に [CODE(char)[:]]
+が含まれていますが、この文字は [CODE(ABNF)[[[tspecials]]]]
+に含まれているので、 [CODE(ABNF)[[[quoted-string]]]] にしなければ
+(値全体を[[二重引用符]]で括らなければ) なりません。
+
+[16] [CODE(MIME)[[[multipart/alternative]]]] を使った[[電子メイル]]の完全なメッセージの例
+[SRC[RFC 2046, 改]]:
+[PRE(MIME example)[
+From: Nathaniel Borenstein <nsb@bellcore.com>
+To: Ned Freed <ned@innosoft.com>
+Date: Mon, 22 Mar 1993 09:41:09 -0800 (PST)
+Subject: Formatted text mail
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary=boundary42
+--boundary42
+Content-Type: text/plain; charset=us-ascii
+[VAR[  ... plain text version of message goes here ...]]
+--boundary42
+Content-Type: text/enriched; charset=us-ascii
+[VAR[  ... RFC 1896 text/enriched version of same message goes here ...]]
+--boundary42
+Content-Type: application/x-whatever
+[VAR[  ... fanciest version of same message goes here ...]]
+--boundary42--
+]PRE]
+
+* メモ
+
+[19]
+[CITE['''['''mew-dist 27367''']''' Re: < > を含むバウンダリでエラー]] ([CODE[2007-02-07 15:22:41 +09:00]] 版) <http://www.mew.org/pipermail/mew-dist/2006-October/027053.html>
+
+[20]
+[CITE[''''''[''''''mew-dist 27666'''''']'''''' MIME decoding error: No boundary parameter for	multipart]] ([[pegacorn]] 著, [TIME[2007-05-16 02:47:58 +09:00]] 版) <http://permalink.gmane.org/gmane.mail.mew.general.japanese/6020>
+
+[823] [CITE[Apache HTTP Server Project]]
+( ([TIME[2011-05-28 00:58:55 +09:00]] 版))
+<http://httpd.apache.org/docs/1.3/misc/known_client_problems.html#boundary-string>

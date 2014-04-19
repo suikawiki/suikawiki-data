@@ -1,0 +1,445 @@
+#?SuikaWiki/0.9
+[1] '''Use of the Content-Disposition header with HTTP.'''
+-Internet Draft                                       
+-draft-faerber-http-content-disp-00                            
+-Intends to Update: RFC 2068/draft-ietf-http-v11-rev  
+-Claus Andre Faerber
+-1998-09-25
+-Expires: 1999-04-25
+
+*Status of this Memo
+> This document is an Internet-Draft. Internet-Drafts are working
+documents of the Internet Engineering Task Force (IETF), its areas,
+and its working groups. Note that other groups may also distribute
+working documents as Internet-Drafts.
+Internet-Drafts are draft documents valid for a maximum of six months
+and may be updated, replaced, or made obsolete by other documents at
+any time.  It is inappropriate to use Internet-Drafts as reference
+material or to cite them other than as "work in progress."
+>To learn the current status of any Internet-Draft, please check the
+"1id-abstracts.txt" listing contained in the Internet-Drafts Shadow
+Directories on ftp.is.co.za (Africa), nic.nordu.net (Europe),
+munnari.oz.au (Pacific Rim), ftp.ietf.org (US East Coast), or
+ftp.isi.edu (US West Coast).
+>This memo is an individual submission and not a product of an IETF
+Working Group.
+
+*Copyright Notice
+>Copyright (C) The Internet Society (1998).  All Rights Reserved.
+*Abstract
+>[RFC2183] introduces a Content-Disposition header field for Internet
+Mail Messages to transmit presentation information as well as a
+suggested file name for saving the content to disk and the file's
+date information.
+
+RFC 2183 はインターネット・メイル・メッセージで表現情報や内容をディスクに保存する時のファイル名の提案やファイルの日付情報を伝送するための
+[CODE(MIME)[Content-Disposition]] 頭欄を導入しています。
+
+>All of this information is missing from HTTP entities [RFC2068].
+However, there is nothing that would prevent the use of the Content-Disposition header with this HTTP.
+
+これらの情報は全て HTTP 実体 からは欠けています。
+しかし、 HTTP で [CODE(MIME)[Content-Disposition]] 頭を使用することを妨げるものは特にありません。
+
+>Without being standard, the Content-Disposition header has already
+been introduced by some software products. [HTTP1.1-REV] documents
+this practice, based on [RFC1806].
+
+規格化されてはいないものの、 [CODE(HTTP)[Content-Disposition]
+頭は既に幾つかのソフトウェア製品で導入されています。 HTTP/1.1 改訂版文書 [INS[(後の RFC 2616)]]
+はこの慣習を RFC 1806 に基づき文書化しています。
+
+>This memo also extends the specification to cover [RFC2183] and
+corrects the common abuse of the Content-Type header to cover
+presentation information.
+
+このメモはまた、仕様を RFC 2183 を覆うように拡張し、
+広く行われている表現情報を覆うための [CODE(HTTP)[[[Content-Type]]]] 頭の濫用を正します。
+
+*Table of Contents
+= Status of this Memo
+= Copyright Notice
+= Abstract
+= Table of Contents
+= Definitions
+== 1 Format of the Content-Disposition Header
+== 2 Interpretation of the Disposition Types and Parameters
+=== 2.1 The Inline Disposition type
+=== 2.2  The Attachment Disposition Type
+=== 2.3 The Filename Parameter
+=== 2.4 The Creation-Date, Modification-Date, Read-Date and Size parameters
+==== 2.4.1 Relation of Modification-Date to Last-Modified
+==== 2.4.2 Relation of Size and Content-Length/Content-Range
+== 3 Use within HTTP Messages
+=== 3.1 Use within HTTP multipart messages.
+==== 3.1.1 Use on individual parts of the multipart messages
+==== 3.1.2 Use on the top level multipart message
+== 4 Security Considerations
+= Appendix
+== A Examples
+== B Acknowledgements
+= References
+= Author
+= Full Copyright Statement
+
+*Definitions
+> This memo uses the Augmented BNF defined in [RFC2234] as well as some
+definitions from [RFC822].
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+"SHOULD", "SHOULD NOT", "RECOMMENDED",  "MAY", and "OPTIONAL" in this
+document are to be interpreted as described in [RFC2119].
+>The reader should be familiar with [RFC2068] and [RFC2183].
+
+**1 Format of the Content-Disposition Header [INS[Content-Disposition 頭の書式]]
+>[RFC2183] defines the Content-Disposition header as follows (modified
+for HTTP and to align with [ABNF]):
+
+[[RFC2183]] は [CODE(MIME)[Content-Disposition]]
+頭を次のように定義しています (HTTP 向けに修正, [[ABNF]] に直しています)。
+
+     disposition  = "Content-Disposition" *WSP ":" LWSP
+                    disposition-type LWSP
+                    *( LWSP ";" LWSP disposition-parm LWSP )
+
+     disposition-type = "inline"
+                       / "attachment"
+                       / extension-token
+                       ; values are not case-sensitive
+
+     disposition-parm = filename-parm
+                       / creation-date-parm
+                       / modification-date-parm
+                       / read-date-parm
+                       / size-parm
+                       / parameter
+
+>See [RFC2183] for more details on definitions of the parameters
+defined. Please note that while in mail messages there MAY be CFWS
+within the header field, this is not true for HTTP headers, which
+only allows linear white space and line folding but no comments.
+
+定義されている引数の定義についての詳細は RFC 2183
+を参照して下さい。メイル・メッセージでは頭欄中に [CODE(ABNF)[[[CFWS]]]]
+を入れても'''構いません'''が、 HTTP 頭ではそうではなく、
+[[線形間隔]]と行[[折畳み]]だけを認めて[[注釈]]を認めていないことに注意して下さい。
+
+**2 Interpretation of the Disposition Types and Parameters [INS[配置型・引数の解釈]]
+>As HTTP differs from email, there are also small semantic differences
+for the meaning of the disposition-types.
+
+HTTP は電子メイルとは異なるので、 [CODE(ABNF)[dispotion-type]]
+の意味にも小さな意味上の違いがあります。
+
+>Future documents defining other disposition-types may also define
+whether and how they are to be interpreted within HTTP. Registration
+of new disposition-types SHOULD use the procedures described in
+[RFC2183, section 9]. HTTP disposition-types share the registry with MIME.
+
+他の [CODE(ABNF)[disposition-type]] を定義する将来の文書は、
+それが HTTP 中で解釈されるかどうか、どう解釈されるかをも定義しても構いません。
+新しい [CODE(ABNF)[disposition-type]] の登録には、 RFC 2183
+第9章で説明された手続きを使う'''べきです'''。 HTTP
+[CODE(ABNF)[disposition-type]] は MIME と登録簿を共有します。
+
+> Unknown types should be handled as "attachment". See [RFC2183,
+section 2.8] for details.
+
+未知の型は [CODE(MIME)[[[attachment]]]] として扱うべきです。
+詳しくは RFC 2183 2.8節を参照。
+
+***2.1 The Inline Disposition type
+> An HTTP entity should be marked "inline" if it is intended to be
+displayed automatically upon receipt of the HTTP message, e.g. in the
+web browser's window.
+
+HTTP 実体が HTTP メッセージの受信者により、例えば Web ブラウザーの窓に自動的に表示されることを意図しているなら、
+[CODE(MIME)[[[inline]]]] とマークするべきです。
+
+> This is the default. (However, the fall back mechanism described
+below MAY be implemented in a way that it is only used if the entity
+is not marked explicitly as "inline".)
+
+これは既定値です。 (しかし、後述の fall back 機構は実体が陽に [CODE(MIME)[inline]]
+とマークされていない時にのみ使うという方法で実装しても'''構いません'''。
+
+>User agents MAY fall back to "attachment" (see section 2.2) if they
+feel unable to display the entity received (e.g. because they can't
+handle the Content-Type). They MIGHT also use a generic viewer, such as a hex viewer.
+
+利用者エージェントは、その受信した実体を表示することが出来ないと思われる
+(例えばその [CODE(HTTP)[[[Content-Type]]]] を取り扱うことが出来ない) なら、
+[CODE(MIME)[attachment]] に fall back しても'''構いません'''。
+16進数ビューアーのような一般ビューアーを使っても'''よいでしょう'''。
+
+***2.2  The Attachment Disposition Type
+> Entities can be designated "attachment" to indicate that their
+display should not be automatic, but contingent upon some further
+action of the user. The HTTP user agent might instead present the
+user a request to save the entity as a file to disk ("download").
+
+実体が自動的に表示されるべきではなく、利用者の何らかの更なる動作によっては表示することを示すのに
+[CODE(MIME)[attachment]] を指示することができます。
+HTTP 利用者エージェントは代わりに利用者に実体をファイルとしてディスクに保存
+(「ダウンロード」) することを要求しても構いません。
+
+***2.3 The Filename Parameter
+> The sender of an entity-body may want to suggest a filename to be
+used if the entity is stored in a separate file. If the receiving
+HTTP User Agent writes the entity to a file, the suggested filename
+should be used as a basis for the actual filename, where possible.
+
+[CODE(ABNF)[[[entity-body]]]] の送信者が、その実体が分離されたファイルとして蓄積されるときに使われるファイル名を提案したいかもしれません。
+受信した HTTP 利用者エージェントが実体をファイルとして書き出すとき、
+提案されたファイル名を可能であれば実際のファイル名の基礎として使うべきです。
+
+>NOTE: This is particularly useful if an entity is transmitted by
+something like a CGI programme, as the request URL might not contain
+the actual or an appropriate filename in this case.
+
+注意 : これは実体が [[CGI]] プログラムのようなもので転送されたものであれば、
+要求 URL は実際のファイル名やこの場合で適当なファイル名を含んでいないかもしれないので、特に有用です。
+
+> It is important that the receiving HTTP user agent not blindly use
+the suggested filename. The suggested filename SHOULD be checked (and
+possibly changed) to see that it conforms to local filesystem
+conventions, does not overwrite an existing file, and does not
+present a security problem (see Security Considerations below).
+
+受信した HTTP 利用者エージェントは、提案されたファイル名を盲目的に使用しないことが重要です。
+提案するファイル名は、局部ファイルシステム表記法に適合するか、
+既存のファイルを上書きしないか、
+保安上の問題を引き起こさないか (後述の安全性に関してを参照。)
+をみて検査する (そして必要なら変更する) '''べきです'''。
+
+> On systems that determine file types as part of the file name (e.g.
+an "extension"), the filename SHOULD be modified according to the
+Content-Type header, so that the system will correctly determine the file type.
+
+ファイル型をファイル名の一部 (例えば「[[拡張子]]」) として決定するシステムでは、
+ファイル名は [CODE(HTTP)[Content-Type]] 頭に従って修正して、
+そのシステムがファイル型を正しく決定できるようにする'''べきです'''。
+
+> For a more complete discussion of the filename parameter, see [RFC2183, section 2.3].
+
+ファイル名引数についての完全な議論は、 RFC 2183 2.3節を参照して下さい。
+
+***2.4 The Creation-Date, Modification-Date, Read-Date and Size parameters
+> These headers have the same semantics as described in [RFC2182 [INS[(訳注 : 2183 の誤り)]],
+sections 2.4 to 2.7].
+
+これらの頭は、 RFC 2183 2.4〜2.7 節で説明されているのと同じ意味を持ちます・
+
+> For the relation to some "similar" HTTP headers, see the sections
+2.4.1 and 2.4.2 in this memo.
+
+「同様」の HTTP 頭との関係については、このメモの 2.4.1 節・2.4.2 節を参照して下さい。
+
+***2.4.1 Relation of Modification-Date to Last-Modified [INS[Modification-Date と Last-Modified の関係]]
+> The Modification-Date parameter has similar semantics to the Last-Modified HTTP message header.
+
+[CODE(MIME)[[[Modification-Date]]]] 引数は [CODE(HTTP)[[[Last-Modified]]]]
+HTTP メッセージ頭と同様の意味を持ちます。
+
+> As a general rule, Last-Modified is a generic HTTP modification date,
+possibly used for cache validation, while the Modification-date
+parameter is exclusively used to specify the modification date for a
+file created when the HTTP entity is saved to disk.
+
+一般的規則としては、 [CODE(HTTP)[Last-Modified]] は一般の HTTP
+修正日付であり、キャッシュ検証に使うことができ、一方
+[CODE(MIME)[Modification-date]] 引数はもっぱら HTTP
+実体をディスクに保存する時に作られるファイルの修正日付を指定するのに使います。
+
+> As a consequence, the date given in the Modification-Date parameter
+MAY be different from that in the Last-Modified header, e.g. if a
+file is presented for download, the Last-Modified header MAY contain
+the date at which the file was made available under this URL
+("upload"), while the Modification-Date parameter MAY contain the
+date at which the file was originally created.
+
+従って、 [CODE(MIME)[Modification-Date]] 引数に与えられる日付は
+[CODE(HTTP)[Last-Modified]] 頭のものとは違っていても'''構いません'''。
+例えばファイルがダウンロードのために提供されるものであれば、
+[CODE(HTTP)[Last-Modified]] はそのファイルがこの URL
+の元で提供されるようになった (「アップロード」された) 日付を含んでいて'''構いません'''。
+そのとき他方 [CODE(MIME)[Modification-Date]] 引数はそのファイルが元々作られた [INS[(訳注 : 修正されたの誤り?)]] 日付を含んでいて'''構いません'''。
+
+****2.4.2 Relation of Size and Content-Length/Content-Range [INS[Content-Length・Content-Range と Size の関係]]
+> Unlike the Content-Length and Content-Range header, which refer to
+the size of the encoded entity-body (or message-body), the Size
+parameter specifies the length in octets of the unencoded/decoded
+(if a Content-Encoding is used) entity transmitted, as a hint for the
+User Agent when saving the entity to a file.
+
+符号化された [CODE(ABNF)[[[entity-body]]]] (又は [CODE(ABNF)[[[mesasge-body]]]])
+の寸法を示す
+[CODE(HTTP)[[[Content-Length]]]] 頭・ [CODE(HTTP)[[[Content-Range]]]]
+頭とは異なり、 [CODE(MIME)[[[Size]]]] 引数は転送された実体の
+([CODE(HTTP)[[[Content-Encoding]]]] が使われていれば) 
+符号化されていない・復号されたオクテット並びの長さを、
+利用者エージェントが実体をファイルとして保存する時のヒントとして指定します。
+
+> For the difference of message-body and entity-body, see [RFC2068, section 4.3].
+
+[CODE(ABNF)[entity-body]] と [CODE(ABNF)[mesasge-body]] の違いについては、
+[[RFC2068]] の4.3節を参照。
+
+> As a result, the Size parameter MAY always be used, even if the
+Content-Length header MUST NOT.
+
+結果として、 [CODE(HTTP)[Content-Length]] 頭を使っては'''ならない'''場面であっても、 
+[CODE(MIME)[Size]] 引数は常に使っても'''構いません'''。
+
+**3 Use within HTTP Messages [INS[HTTP メッセージ中での使用]]
+> The Content-Disposition header MAY be used with any HTTP response or
+request that contains or references to entities as defined in [RFC2068, section 7].
+
+[CODE(HTTP)[Content-Disposition]] 頭は、 RFC 2068 の7章で定義されている実体を含む又は参照する任意の
+HTTP 要求・応答で使っても'''構いません'''。
+
+> The Content-Disposition header is an extension to the entity header
+list defined in section [RFC2068, section 7.1].
+
+[CODE(HTTP)[Content-Disposition]] 頭は、 RFC 2068 7.1節で定義されている実体頭並びの拡張です。
+
+> For POST and PUT requests, only the disposition-type "attachment" SHOULD be used.
+
+[CODE(HTTP)[[[POST]]]] 要求や [CODE(HTTP)[[[PUT]]]] 要求では、
+[CODE(ABNF)[disposition-type]] [CODE(MIME)[attachment]]
+を使う'''べきです'''。
+
+***3.1 Use within HTTP multipart messages. [INS[HTTP 複数部分メッセージ中での使用]]
+****3.1.1 Use on individual parts of the multipart messages [INS[複数部分メッセージの個々の部分での使用]]
+> If the Content-Disposition header is used on individual parts of a
+HTTP multipart/* response, the semantics of [RFC2183] should be used
+if the entity is displayed as a whole.
+
+[CODE(HTTP)[Content-Disposition]] 頭を HTTP [CODE[[[multipart/*]]]]
+応答の個々の部分として使うなら、その実体が全体として表示されるときは
+RFC 2183 の意味を使うべきです。
+
+> However, the semantics described in this memo apply if the definition
+of the multipart type suggest individual display of the individual
+parts as separate top-level entities (e.g. "server-push" [FIXME: reference]).
+
+しかし、複数部分型の定義が個々の部分を別々の最上位実体として個々に表示することを提案している (例 : 「サーバー・プッシュ」)
+なら、このメモで説明している意味が適用されます。
+
+[INS[
+訳注 : [CODE[[[multipart/x-mixed-replace]]]] のようなもののことでしょう。
+]INS]
+
+> The Content-Type header SHOULD NOT be used for multipart/byte-range messages.
+
+[CODE(HTTP)[Content-Type]] 頭は [CODE(MIME)[[[multipart/byte-range]]]]
+メッセージには使う'''べきではありません'''。
+
+[INS[
+訳注 : なんで CT のことなんか規定しているのか謎。 CD の書き間違いか?
+]INS]
+
+****3.1.2 Use on the top level multipart message [INS[複数部分メッセージの最上位部分としての使用]]
+> The Content-Disposition header can also be used on top level
+multipart entities. In this case, the header applies to the multipart
+message as a whole.
+
+[CODE(HTTP)[Content-Disposition]] 頭は複数部分実態の最上位でも使用することができます。
+この場合、この頭は複数部分メッセージ全体に適用されます。
+
+**4 Security Considerations
+> See [RFC2183, section 5] for a complete discussions for the security
+impacts of the Content-Disposition header.
+
+*Appendix
+**A Examples
+> In this sections, lines starting with C: are sent by the client,
+while those starting with S: are sent by the server.
+Only relevant headers are shown.
+
+***A.1 Downloading a file through a CGI URL.
+[PRE[
+   C: GET /cgi-bin/download.cgi?product=foo;ver=1.2;lang=de;pack=tgz HTTP/1.1
+   C: Host: www.example.com
+   C:
+   S: 200 HTTP/1.1 OK
+   S: Content-Type: application/tar
+   S: Content-Encoding: gzip
+   S: Content-Length: 123456
+   S: Content-Disposition: attachment; filename="foo-1.2.tar";
+   S:   modification-date="Sat, 01 Aug 1998 00:00:00 +0000"; size=234567
+   S: Last-Modified: Mon, 03 Aug 1998 08:23:23 +0200
+   S:
+   S: ...data
+]PRE]
+**B Acknowledgements
+> Many parts of these document are taken more or less literally from
+[RFC2183] by R. Troost, S. Dorner, and K. Moore.
+> This document has also been inspired by the discussion in the IETF HTTP-WG.
+
+*References
+:[HTTP1.1-REV]: Fielding, R., Gettys, J., Mogul, J. C., Frystyk, H.,
+Masinter, L., Leach, P., Berners-Lee, T., "Hypertext Transfer
+Protocol -- HTTP/1.1", September 1998 (Expires March 1999), Internet
+Draft <draft-ietf-http-v11-spec-rev-05>, WORK IN PROGRESS (Will
+Update RFC 2068). [INS[訳注 : 後の [[RFC2616]]。]]
+:[RFC822]: Crocker, D., "Standard for the Format of ARPA Internet Text
+Messages", August 1982, STD 11, RFC 822. [INS[訳注 : [[RFC2822]] により廃止。]]
+:[RFC1806]: Troost, R., Dorner, S. "Communicating Presentation Information
+in Internet Messages: The Content-Disposition Header", June 1995. RFC
+1806 (Updated by RFC 2183).
+:[RFC2068]: Fielding, R., Gettys, J., Mogul, J., Frystyk, H., Berners-Lee,
+T., "Hypertext Transfer Protocol -- HTTP/1.1", January 1997,
+RFC 2068. [INS[訳注 : RFC 2616 により廃止。]]
+:[RFC2183]: Troost, R., Dorner, S., Moore, K., "Communicating Presentation
+Information in Internet Messages: The Content-Disposition Header
+Field", August 1997. RFC 2183.
+:[RFC2119]: Bradner, S., "Key words for use in RFCs to Indicate
+Requirement Levels", March 1997, RFC 2119.
+:[RFC2234]: Crocker, D., Overell, P., "Augmented BNF for Syntax
+Specifications: ABNF", November 1997, RFC 2234.
+
+*Author
+[PRE[
+   Claus Andre Faerber
+   Mitterfeldstrasse 20
+   83043 Bad Aibling
+   Germany
+
+   Fax: +49-8061-3361
+
+   E-Mail: cfaerber@muc.de
+]PRE]
+
+> Note: Please write the author's name with the correct diacritic
+marks where possible, i.e. Claus Andr&eacute; F&auml;rber in HTML.
+
+*Full Copyright Statement
+
+   Copyright (C) The Internet Society (1998).  All Rights Reserved.
+
+   This document and translations of it may be copied and furnished to
+   others, and derivative works that comment on or otherwise explain it
+   or assist in its implementation may be prepared, copied, published
+   and distributed, in whole or in part, without restriction of any
+   kind, provided that the above copyright notice and this paragraph are
+   included on all such copies and derivative works.  However, this
+   document itself may not be modified in any way, such as by removing
+   the copyright notice or references to the Internet Society or other
+   Internet organisations, except as needed for the purpose of
+   developing Internet standards in which case the procedures for
+   copyrights defined in the Internet Standards process must be
+   followed, or as required to translate it into languages other than
+   English.
+
+   The limited permissions granted above are perpetual and will not be
+   revoked by the Internet Society or its successors or assigns.
+
+   This document and the information contained herein is provided on an
+   "AS IS" basis and THE INTERNET SOCIETY AND THE INTERNET ENGINEERING
+   TASK FORCE DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING
+   BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE INFORMATION
+   HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED WARRANTIES OF
+   MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+
+See also [[RFCのライセンス]]。
+* メモ

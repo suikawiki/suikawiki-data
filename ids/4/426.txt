@@ -1,0 +1,190 @@
+
+
+* [CODE(ABNF)[query]] (URI)
+
+[9]
+[[URI]] の仕様書で使われている規則 [DFN[[CODE(ABNF)@en[query]]]]
+は、 [[URI]] の[[照会]]部分
+[WEAK[(最初の [CODE(URI)[?]] より後で、 [CODE(URI)[#]] より前の部分)]]
+を表します。
+
+[10] '''定義の変遷''':
+= [1] [DEL[[CODE(ABNF)@en[[DFN[query]] :=  *( [[uchar]] / [[reserved]] ) ;; [[RFC 1808]]]]]]
+= [2] [DEL[[CODE(ABNF)@en[[DFN[query]] := *[[uric]] ;; [[RFC 2396]]]]]]
+= [6] [CODE(ABNF)@en[[DFN[query]] := *( pchar / "/" / "?" ) ;; [[RFC 3986]]]]
+
+[7] '''RFC 3986 の定義の詳細''':
+[[RFC 3986]] の [CODE(ABNF)@en[[[pchar]]]] は
+[CODE(ABNF)@en[[[unreserved]] / [[pct-encoded]] / [[sub-delims]] / ":" / "@"]]
+です。すなわち [[URI]] で使える[[文字]]のうち、
+[CODE(ABNF)["#" / "[" / "]"]] だけが使えません。
+定義としては [[RFC 2396]] と同じです。
+
+** より具体的な構文
+
+[11]
+[[照会]] ([CODE(ABNF)@en[query]]) 
+は非階層的方法で[[資源]]を識別するものとされています
+[SRC[[[RFC 3986]] 3.4.]] が、それ以上の構文や意味は各
+[[URI scheme]] に任されています。
+(そして scheme によっては更に下位の名前空間管理者に任されています。)
+しかし、実際の使われ方はおおむねいくつかのパターンに当てはまります。
+
+- [CODE(ABNF)@en[[[param]]]] 方式 >>12
+- [CODE(HTMLe)@en[[[isindex]]]] 方式 >>13
+
+[12] '''[CODE(ABNF)@en[param]] 方式''':
+名前と値の組を複数個列挙します。最もよく使われるのは名前と値の間に
+[CODE(URI)[=]] を挟み、名前・値の組同士の間に [CODE(URI)[&]]
+を挟んで [SAMP(URI)@en[name1=value1&name2=value2]]
+のようにします。
+
+- 名前と値の間の区切子 (普通は [CODE(URI)[=]])
+- 組同士の間の区切子 ([CODE(URI)[&]] と [CODE(URI)[;]]
+が多く、 [CODE(URI)[,]], [CODE(URI)[$]], [CODE(URI)[|]] (構文違反),
+[CODE(URI)[!]] などが使われることもあります。)
+- 使用できる名前の種類や値の種類
+- 同じ名前を複数回使っても良いか
+- 組の順序は意味を持つか
+- [[予約文字]]・[[非予約文字]]・[[百分率符号化]]の使用可否
+
+などにより、幾つかのバリエーションがあります。
+
+主な使用例:
+- [CODE(URI)@en[[[http]]:]] + [[HTML]] ([[Web Forms]])
+- [CODE(URI)@en[[[mailto]]:]]
+
+[13] '''[CODE(HTMLe)@en[isindex]] 方式''':
+複数の値を与える時に [CODE(URI)[+]] で区切ります。
+単純な一次元配列です。
+
+主な使用例:
+- [[HTML]] の [CODE(HTMLe)@en[[[isindex]]]] 要素
+
+[14]
+[CITE@en[Specifying time intervals in URI queries and fragments of time-based Web resources]] ([CODE[2006-05-06 10:39:46 +09:00]] 版) <http://annodex.net/TR/URI_fragments.html#rfc.section.3>
+
+** メモ
+
+[DEL[
+
+- [3] 2396 によれば、問い合わせでの予約文字は [CODE(regex)[ [;/?:@&=+,$] ]] です。 [CODE(URI)[?]] は問い合わせのそれ以前との分離のための予約。 [CODE(regex)[ [&$;=] ]] は [[HTTP]] などで問合せを[[引数]]的に解釈するのによく使われるもの。残る [CODE(regex)[ [/:@,] ]] はどうでしょうね? これらも [[CGIスクリプト]]なんかが意味を持たせて使っていたりするのかな。
+- [4] >>3 [CODE(URI)[+]] が抜けてました。これはよく[[間隔]]の意味で使いますね。で、これを含めた10文字が、丁度 2396 の [CODE(ABNF)[reserved]] でした。つまり、予約文字全部が予約ですと、ただそれだけの意味でした。
+- [5] >>3 [CODE(URI)[/]] はへたれ実装対策で escape encode した方が安全というのもあるでしょう。
+]DEL]
+
+[8] (>>3-5 の話は間違っていませんし [[RFC 3986]] でも変わっていませんが、
+[CODE(ABNF)[[[query]]]] 固有の話としては出てこなくなりました。
+このあたりの話については[[予約文字]]や[[百分率符号化]]の項を参照して下さい。)
+
+[194] [CITE@en[hypertext references and the query component]]
+([[Erik van der Poel]] 著, [TIME[2009-07-23 02:43:43 +09:00]] 版)
+<http://lists.w3.org/Archives/Public/public-iri/2009Jul/0008.html>
+
+[FIG[
+[REFS[
+- [209] [CITE@en-us[Media Fragments URI 1.0 (basic)]] ([TIME[2012-09-27 23:08:40 +09:00]] 版) <http://www.w3.org/TR/2012/REC-media-frags-20120925/#standardisation-terminology>
+]REFS]
+
+>URI query: The query component is indicated by the first question mark ("?") character and terminated by a number sign ("#") character or by the end of the URI.
+]FIG]
+
+* メタ変数 [CODE(CGI)@en[QUERY_STRING]] (CGI)
+
+[200] [[CGI]] の[[メタ変数]] [DFN[[CODE(CGI)@en[[[QUERY_STRING]]]]]] には[[要求]]された [[URL]]
+の [[query]] 部分が含まれます。
+
+** 仕様書
+
+[REFS[
+- [202] [CITE@en[RFC 3875 - The Common Gateway Interface (CGI) Version 1.1]] ([TIME[2011-11-20 06:09:05 +09:00]] 版) <http://tools.ietf.org/html/rfc3875#section-4.1.7>
+]REFS]
+
+** 構文
+
+[201] 構文は次のように定義されています [SRC[>>202]]。
+[PRE(ABNF code)[
+      QUERY_STRING = query-string
+      query-string = *uric
+      uric         = [[reserved]] | [[unreserved]] | [[escaped]]
+]PRE]
+
+;; [203] [CODE(CGI)@en[[[PATH_INFO]]]] とは違って勝手に[[パーセント復号]]されることはありません。
+
+*** NULL
+
+[204] [[鯖]]はこの値を必ず設定しなければ[['''なりません''']]。 [[URL]] に [[query]]
+が含まれていなければ[[空文字列]]としなければ[['''なりません''']]。 [SRC[>>202]]
+
+[205] >>204 の規定は [[CGI]] において一般に[[空文字列]]と値の未設定を区別しないこととどう関係するのか不明瞭です。
+この[[メタ変数]]に限って特別扱いしているとも読めますし、 [[query]]
+が[[空文字列]]であっても存在しなくても一貫して[[メタ変数]]を設定しないなら良いと解釈できないこともありません。
+
+[196] [[CGI]] の実装では [[Apache]] などは URI が [SAMP(URI)[/foo]] の場合も [SAMP(URI)[/foo?]] の場合も[[メタ変数]] [CODE(CGI)[QUERY_STRING]] は空文字列になりますが、サーバーによっては前者は変数未定義になることもあるようです。
+
+[197] >>196 [NCSA] 的には妥当だけど、 [COAR] 的には不当ですね。
+
+[199] >>196 [[IIS]] と [[iPlanet]] は [CODE(CGI)@en[[[QUERY_STRING]]]]
+をその場合設定しないそうです。
+
+** 歴史
+
+[195] [NCSA]:
+[FIG[
+> The information which follows the ? in the URL which referenced this script. This is the query information. It should not be decoded in any fashion. This variable should always be set when there is query information, regardless of command line decoding. 
+
+そのスクリプトを参照する URL 
+中で [CODE(URI)[[[?]]]]
+に続く情報です。
+これは問い合わせ情報です。
+これはどんな形でも復号するべきではありません。
+この変数は、問い合わせ情報があるときには常に設定するべきです。
+[[命令行]]復号にかかわらずです。
+]FIG]
+
+[3] [COAR 03]:
+[FIG[
+> A URL-encoded string; the <query> part of the Script-URI. (See section 3.2.) 
+
+URL 符号化文字列: [[Script-URI]]
+の [CODE[<query>]]
+部分です。
+
+>
+- QUERY_STRING = query-string
+- query-string = *uric
+> The URL syntax for a query string is described in section 3 of RFC 2396 [4]. 
+
+問合せ文字列の URL 構文は
+[[RFC2396]]の3章で説明されています。
+
+> Servers MUST supply this value to scripts. The QUERY_STRING value is case-sensitive. If the Script-URI does not include a query component, the QUERY_STRING metavariable MUST be defined as an empty string (""). 
+
+サーバーはこの値をスクリプトに供給し'''なければなりません ([[MUST]])'''。
+[CODE(CGI)[[[QUERY_STRING]]]]
+値は大文字・小文字を区別します。
+Script-URI が問合せ部品を含まないときは、
+[CODE(CGI)[QUERY_STRING]]
+メタ変数は空文字列 ("")
+として定義し'''なければなりません ([[MUST]])'''。
+]FIG]
+
+** 実装
+
+[198] PHP では (古い書き方では) [CODE(CGI)[QUERY_STRING]] の部分を構文解析して変数名 = 引数名で値に access できますね。 [SAMP(URI)[?foo=bar]] を [SAMP(PHP)[$foo]] とか。
+
+** 関連
+
+[206] [[query]] はこの[[メタ変数]]の他、[[スクリプト命令行]]として[[CGIスクリプト]]に引き渡されることがあります。
+
+[207] [CITE[Form of the GET method used with searches]]
+( ([TIME[1993-12-13 15:42:19 +09:00]] 版))
+<http://www.w3.org/Protocols/HTTP/Methods/GetSearches.html>
+
+[208] [CITE[Web Application Description Language]]
+( ([TIME[2009-09-10 03:59:24 +09:00]] 版))
+<http://www.w3.org/Submission/2009/SUBM-wadl-20090831/#x3-130002.6.1>
+
+[210] [CITE[IRC logs: freenode / #whatwg / 20131217]]
+( ([TIME[2013-12-19 00:39:12 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20131217>

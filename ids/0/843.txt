@@ -1,0 +1,386 @@
+
+[1] 希望言語を指定する欄です。元々
+[[HTTP]] ([[RFC 1945]], [[RFC 2068]], [[RFC 2616]]) 
+で定義されていたものですが、
+2002年5月末に [[RFC 3282]] により再定義されました。
+
+[6] 以前から [[NN]] の [[MUA]] などが
+[CODE(822)[[[X-Accept-Language]]:]] 欄を吐いていたのは有名ですが、
+RFC 3282 により[[電子メイル]]などの世界でもこの欄の使用が公式に認められたことになります。
+
+[7] RFC 3282 は現実の実装にあわせてやや解釈を変更するとしています。
+具体的には、要求度 ([CODE(ABNF)[[[qvalue]]]]) 
+が指定されていない場合に、左側 (先頭側)
+に指定された言語ほど要求度が高いと見なします。
+[[HTTP]] の実装も、この新しい解釈を採用して差し支えないでしょう。
+
+[WEAK[RFC 3282 には、 HTTP で [CODE(HTTP)[Accept-Language:]] 欄を使う場合の定義を更新するとは残念ながら明記されていません。[Q[Web 文書で使われる]]という曖昧に言及されているのみです。]]
+
+[12]
+>>6 電子メイルでの [CODE(822)[Accept-Language:]] の使用についての議論が [[ietf-822]] の [Q[Is Accept-language an email header field?]]
+<mid:5.1.0.14.2.20040406163449.0258c008@127.0.0.1>
+から始まるスレ (2004年4月)
+で議論されています。
+
+内容を要約すると、
+- 電子メイルで使用するには曖昧な点がある。
+たとえば、 [CODE(822)[[[From]]:]] や [CODE(822)[[[Cc]]:]] の宛先が複数ある時に、 [CODE(822)[Accept-Language:]] の適用対象が不明。
+- [[国際化]]は面倒だ。 [WEAK[(←それは関係なかろう)]]
+- [[言語札]]の[[部分札]]つきのは扱いが面倒だ。 [WEAK[(←それも事実だが関係なかろう)]]
+- [CODE(822)[Accept-Language:]] の実装はそれなりにある。 [CODE(822)[[[X-Accept-Language]]:]] や [CODE(822)[[[Preferred-Language]]:]] というのも使われている。 [CODE(822)[X-Accept-Language:]] が一番多い気がする。 [CODE(822)[q]] 引数は滅多に使われない。
+- 悪い設計でも市場で広がったらどうしようもない。 [WEAK[(← いまさら [[MIME]] の反省かよ)]]
+
+([[名無しさん]] [WEAK[2004-04-20 08:28:59 +00:00]])
+
+
+* 意味
+
+[25] [[Apache]] は [[q]] 値が同じ[[言語]]が複数指定されているとき、
+[CODE[[[LanguagePriority]]]] の順序に従って解釈します。
+
+;; 従って [[RFC 3287]] の >>7 の解釈とは異なります。
+
+* 構文
+
+** HTTP の場合
+
+[18] [[RFC 2616]] では[[空白]] ([[LWS]]) をどこに挿入可能か明確に言及されていません。
+
+[19] [[Apache]] は[[字句]]間どこにでも認めているようです。 
+
+[21] [CODE(HTTP)@en[[[q]]]] に構文上は [[quoted-string]] が使えないようにも見えますが、
+[[Apache]] は対応しているようです。
+
+[22] 構文上は [CODE(HTTP)@en[[[q]]]] 以外の[[引数]]を指定できないように見えますが、
+[[Apache]] は他の[[引数]]にも対応している (無視する) ようです。
+
+[23] [[quoted-string]] に [CODE(HTTP)[[[,]]]] が含まれていても、 [[Apache]]
+はちゃんと [[quoted-string]] として字句解析してるみたいです。しかし [[quoted-pair]]
+には対応していないようです。
+
+[24] [[Apache]] は [CODE(HTTP)[[[q]]]] の先頭の小数以外は無視するみたいです。
+[[整数]]部分が二桁以上あっても最初の一桁だけとみなすようです。
+小数点以下は3桁までで、それ以上あっても無視するようです。 [[1]]
+より大きな値は [[1]] とみなすようです。
+
+** 822 メッセージの場合
+
+[8] RFC 3282 の [[ABNF]] による構文規則によれば、
+
+- [CODE(ABNF)[[DFN[Accept-Language]] = "Accept-Language:" [CFWS] language-q *( "," [CFWS] language-q )]]
+- [CODE(ABNF)[[DFN[language-q]] = language-range [";" [CFWS] "q=" qvalue ] [CFWS] ]]
+- [CODE(ABNF)[[DFN[[[qvalue]]]] = ( "0" [ "." 0*3DIGIT ] ) / ( "1" [ "." 0*3("0") ] )]]
+- [CODE(ABNF)[[DFN[Obs-accept-language]] = "Accept-Language" *WSP ":" [CFWS] obs-language-q *( "," [CFWS] obs-language-q ) [CFWS] ]]
+- [CODE(ABNF)[[DFN[obs-language-q]] = language-range [ [CFWS] ";" [CFWS] "q" [CFWS] "=" qvalue ] ]]
+- [CODE(ABNF)[[DFN[language-tag]] := <[[BCP47]] / [[RFC3066]] language-tag (See [[言語札]])>]]
+
+[9] 読む側の実装は構文 [CODE(ABNF)[obs-Accept-Language]]
+を理解出来なければ'''なりません'''。
+出力側の実装は構文 [CODE(ABNF)[Accept-Language]]
+に沿わなければ'''なりません'''。
+
+[10] 一つの[[頭]]に複数の [CODE(HTTP)[Accept-Language:]]
+欄がある場合、 [[HTTP]] では[WEAK[一般的規則に基づき]]出現順に読点で結合して一つにしたものと同じ意味になります。
+[WEAK[RFC 3282 はこの話題に触れてません。なんにせよ、一つの頭には一つの [CODE[Accept-Language:]] 欄に限定して出力する方が安全です。]]
+
+[[#comment]]
+
+
+* 希望言語の適用先
+
+[11] [[RTSP]]/1.0 ([[RFC 2326]]) は、その適用先は内容ではなく[[プロトコル要素]]であるとしています。
+
+[[#comment]]
+
+
+* 仕様書から
+
+
+** RFC 1945 (HTTP/1.0) D.2.4; RFC 2068・2616 (HTTP/1.1) 14.4 Accept-Language
+
+> The Accept-Language request-header field is similar to Accept, but
+restricts the set of natural languages that are preferred as a
+response to the request. [INS[[INS[{2616}]] Language tags are defined in section 3.10.]]
+
+[CODE(HTTP)[Accept-Language]] 要求頭欄は、
+[CODE(HTTP)[Accept]] と同様ですが、要求に対する応答として優先させる自然言語の集合を制限します。 [INS[[[言語札]]は 3.10 節で定義しています。]]
+
+[INS[
+
+> [INS[{2068,2616}]]
+- Accept-Language = "Accept-Language" ":" 1#( language-range [ ";" "q" "=" qvalue ] )
+- language-range  = ( ( 1*8ALPHA *( "-" 1*8ALPHA ) ) | "*" )
+
+> Each language-range MAY be given an associated quality value which
+represents an estimate of the user's preference for the languages
+specified by that range. The quality value defaults to "q=1". For example,
+- Accept-Language: da, en-gb;q=0.8, en;q=0.7
+
+各 [CODE(ABNF)[language-range]] は、その範囲により指定される言語についての利用者の優先の見積もりを表現する、関連付ける品質値を与えても'''構いません'''。
+品質値の既定値は [CODE(HTTP)[q=1]] です。
+例えば、
+- Accept-Language: da, en-gb;q=0.8, en;q=0.7
+
+> would mean: "I prefer Danish, but will accept British English and
+other types of English." A language-range matches a language-tag if
+it exactly equals the tag, or if it exactly equals a prefix of the
+tag such that the first tag character following the prefix is "-".
+The special range "*", if present in the Accept-Language field,
+matches every tag not matched by any other range present in the
+Accept-Language field.
+
+は「私はデンマーク語を希望しますが、
+イギリス英語及びほかの種類の英語も受け付けます。」
+を意味します。 [CODE(ABNF)[language-range]]
+は、 language-tag と正確に等しいか、または tag
+の接頭辞と正確に等しく、その接頭辞に続く最初の tag 
+の文字が [CODE(char)[-]] である
+とき[[一致]]します。
+特殊な範囲 [CODE(HTTP)[*]] が [CODE(HTTP)[Accept-Language]]
+欄に示された時は、 [CODE(HTTP)[Accept-Language]]
+欄に示された他のどの範囲にも一致しない各 tag
+と一致します。
+
+> Note: This use of a prefix matching rule does not imply that
+language tags are assigned to languages in such a way that it is
+always true that if a user understands a language with a certain
+tag, then this user will also understand all languages with tags
+for which this tag is a prefix. The prefix rule simply allows the
+use of prefix tags if this is the case.
+
+注意 : 接頭辞一致規則をこのように使用するからといって、
+利用者がある tag の言語を理解するとしたらこの利用者がその tag
+を接頭辞とする tag の全ての言語をも理解するということが常に真であるように言語札が言語に割り当てられることを求めるものではありません。
+この接頭辞規則は、単にこれがそうである場合に接頭辞 tag の使用を認めるに過ぎません。
+
+> The language quality factor assigned to a language-tag by the
+Accept-Language field is the quality value of the longest language-range 
+in the field that matches the language-tag. If no language-range 
+in the field matches the tag, the language quality factor
+assigned is 0. If no Accept-Language header is present in the
+request, the server SHOULD assume that all languages are equally
+acceptable. If an Accept-Language header is present, then all
+languages which are assigned a quality factor greater than 0 are acceptable.
+
+[CODE(HTTP)[Accept-Language]] 欄により language-tag 
+に割り当てられる言語品質因子は、 language-tag
+に一致する欄中の最長の [CODE(ABNF)[language-range]]
+の品質値です。欄中のどの [CODE(ABNF)[language-range]]
+も tag に一致しなければ、割り当てられる言語品質因子は [CODE(HTTP)[0]]
+です。陽宮中に [CODE(HTTP)[Accept-Language]] 頭が示されていなければ、
+鯖は全ての言語が等しく受入れ可能と仮定する'''べきです'''。
+[CODE(HTTP)[Accept-Language]] 頭が示されていれば、
+[CODE(HTTP)[0]] より大きな品質因子が割り当てられている全ての言語が受入れ可能です。
+
+> It [DEL[[INS[{2068}]] may]] [INS[[INS[{2616}]] might]] be contrary to the privacy expectations of the user to send an
+Accept-Language header with the complete linguistic preferences of
+the user in every request. For a discussion of this issue, see
+section [DEL[[INS[{2068}]] 15.7]] [INS[[INS[{2616}]] 15.1.4]].
+
+利用者の完全な言語的好みを要求毎に [CODE(HTTP)[Accept-Language]]
+頭で送るのは、個人情報に関する利用者の期待と反対かもしれません。
+この問題についての議論は、 15.* 節をご覧下さい。
+
+> [DEL[Note:]]
+As intelligibility is highly dependent on the individual
+user, it is recommended that client applications make the choice of
+linguistic preference available to the user. If the choice is not
+made available, then the Accept-Language header field [DEL[must not]] [INS[MUST NOT]]
+be given in the request.
+
+了解度は個々の利用者に高く依存しているので、
+クライアント応用は利用者が利用可能な言語的好みの選択を行うことができるようにすることを推奨します。
+選択が利用可能にできない場合、 [CODE(HTTP)[Accept-Language]]
+頭欄は要求中に与えては'''なりません'''。
+
+[INS[
+
+> Note: When making the choice of linguistic preference available to
+the user, we remind implementors of  the fact that users are not
+familiar with the details of language matching as described above,
+and should provide appropriate guidance. As an example, users
+might assume that on selecting "en-gb", they will be served any
+kind of English document if British English is not available. A
+user agent might suggest in such a case to add "en" to get the
+best matching behavior.
+
+注意 : 利用者に利用可能な言語的好みの選択を行わせる時、
+利用者は前述の言語一致の詳細に詳しくないかもしれないことに利用者は注意し、
+適切な案内を提供するのがよいでしょう。例えば、
+利用者が [CODE(lang)[en-gb]] を選択していると仮定すると、
+イギリス英語が利用可能でないときに任意の種類の英語の文書を供給するでしょう。
+利用者エージェントはそのような場合に最善の一致動作が得られるように
+[CODE(lang)[en]] を追加することを勧めるといいでしょう。
+]INS]
+]INS]
+
+
+** RFC 2326 (RTSP) 12.3 Accept-Language
+
+> See [H14.4]. Note that the language specified applies to the
+presentation description and any reason phrases, not the media
+content.
+
+[2] [H14.4] を参照。
+なお、言語指定は表現説明及び理由語句に適用されるものであって、媒体内容に適用されるものではありません。
+
+
+** RFC 2068 15.7, RFC 2616 15.1.4 (HTTP/1.1) Privacy Issues Connected to Accept Headers
+
+> Accept request-headers can reveal information about the user to all
+servers which are accessed. The Accept-Language header in particular
+can reveal information the user would consider to be of a private
+nature, because the understanding of particular languages is often
+strongly correlated to the membership of a particular ethnic group.
+User agents which offer the option to configure the contents of an
+Accept-Language header to be sent in every request are strongly
+encouraged to let the configuration process include a message which
+makes the user aware of the loss of privacy involved.
+
+[CODE(HTTP)[[[Accept]]]] 要求頭群は、
+利用者についての情報をその接続したサーバーすべてに暴くことができます。
+[CODE(HTTP)[[[Accept-Language]]]] 頭は特に、利用者が私的な性質であると考えているかもしれない情報を晒し得ます。
+なぜなら、特定言語の理解はしばしば特定の民族集団の一員であることと強い関連があるからです。
+要求毎に送信する [CODE(HTTP)[Accept-Language]] 頭の内容を設定する選択肢を提供している[[利用者エージェント]]は、
+設定過程において利用者が個人情報の流出に気づくようなメッセージを含めることを強く推奨します。
+
+> An approach that limits the loss of privacy would be for a user agent
+to omit the sending of Accept-Language headers by default, and to ask
+the user whether [DEL[it should]] [INS[or not to]] start sending Accept-Language headers to a
+server if it detects, by looking for any Vary response-header fields
+generated by the server, that such sending could improve the quality of service.
+
+個人情報の流出を限定するために、利用者エージェントが既定では
+[CODE(HTTP)[Accept-Language]] 頭を送信せずに、
+サーバーによって生成される [CODE(HTTP)[[[Vary]]]] 応答頭欄を見て
+[CODE(HTTP)[Accept-Language]] 頭を送ることでサービスの質を向上できるだろうと判断した場合には利用者に [CODE(HTTP)[Accept-Language]] 頭を送信することを開始するかどうかをたずねるという方法もあるでしょう。
+
+> Elaborate user-customized accept header fields sent in every request,
+in particular if these include quality values, can be used by servers
+as relatively reliable and long-lived user identifiers. Such user
+identifiers would allow content providers to do click-trail tracking,
+and would allow collaborating content providers to match cross-server
+click-trails or form submissions of individual users. Note that for
+many users not behind a proxy, the network address of the host
+running the user agent will also serve as a long-lived user
+identifier. In environments where proxies are used to enhance
+privacy, user agents [DEL[should]] [INS[ought to]] be conservative in offering accept
+header configuration options to end users. As an extreme privacy measure,
+proxies could filter the accept headers in relayed requests. General
+purpose user agents which provide a high degree of header
+configurability [DEL[should]] [INS[SHOULD]] warn users about the loss of privacy which can be involved.
+
+利用者が緻密に調整した受入れ頭欄群を要求毎に送信すると、特に[[品質値]]が含まれている場合には、鯖がこれを比較的信頼でき長生きする利用者識別子として使うことができます。
+この利用者識別子で内容提供者は[[かちっ]]跡追跡を行ったり、共同内容提供者が個々の利用者のかちっ跡や入力欄提出をサーバー間で一致させたりすることができるでしょう。
+[[串]]に隠れていない多くの利用者については利用者エージェントが走っているホストのネットワーク番地も長生きする利用者識別子として供給されることに注意してください。
+個人情報保護向上のために串を使う環境では、
+利用者エージェントは末端利用者に受入れ可能頭設定選択肢を提供することに慎重になるべきです。極度の個人情報保護の観点から、
+串は中継する要求の受入れ可能頭群を濾過できるでしょう。
+高度な頭設定可能性を提供する一般目的利用者エージェントは、
+個人情報の流出があることを利用者に警告する'''べきです'''。
+
+
+** RFC 3282 (MIME 言語頭欄)
+
+→[CODE(WikiPage)[[[RFC 3282]]]] 参照。
+
+
+** RFC の部分の License
+
+[[RFCのライセンス]]
+
+* テスト・ケース
+
+[REFS[
+- [20] [CITE[Accept-Language parsing]] ([TIME[2012-02-26 18:26:03 +09:00]] 版) <http://suika.fam.cx/~wakaba/test/web/http/accept-language/conneg-1.html>
+]REFS]
+
+* メモ
+
+- [1] ''ブラウザの言語を自動認識'' <http://www.ybi.co.jp/koike/qa2000/qa2033.htm>: 色々な[[WWWブラウザ]]での [CODE(HTTP)[Accept-Language:]] 欄の実装状況
+
+[3] この [CODE(HTTP)[Accept-Language:]]
+欄ってクライアント側ではかなり昔、遅くても [[NN2]] 
+では実装されていたんですが、鯖では長く上手く使えていませんでした。せいぜい 
+[[CGI]] とかの鯖側スクリプト系の仕組みで利用する程度。
+
+[4] それが、数年前に [[Apache]] 
+が[[ファイル名]]の[[接尾辞]] base 
+の [[conneg]] を実装してから一変。
+利用者の言語に応じた資源を提供するのが楽になって、
+それを利用しているサーバーも激増中。
+
+[5] NN は昔から電子メイルでも [CODE(822)[[[X-Accept-Language]];]] 
+欄を出力していまして、内容は HTTP 
+のものと同じなんですが
+(ただし [CODE(HTTP)[q]] 引数は用いない)、
+こっちは未だに応用があるのか謎です。
+
+多言語化の時代ですから、
+人間相手の情報としても有用かもしれません。
+よくある[KBD[[[アドレス帳]]に追加]]みたいな機能を選んだらこの欄から自動的に情報を採って載せてくれるみたいな。
+
+[13]
+'''1つの言語を指定する例'''
+[PRE(HTTP example code)[
+[[Accept-Language]]: [[ja]]
+]PRE]
+
+[[日本語]]を希望することを示します。[CODE(HTTP)@en[[[q]]]]が省略されているので、[CODE(HTTP)@en[[[q]]=1]]とみなされます。
+
+([[名無しさん]] [sage])
+
+[14]
+'''複数の言語を指定する例'''
+[PRE(HTTP example code)[
+Accept-Language: ja, en
+]PRE]
+
+[[日本語]]と[[英語]]を希望することを示します。
+[CODE(HTTP)@en[[[q]]]]が省略されているので、[[日本語]]も[[英語]]も[CODE(HTTP)@en[[[q]]=1]]とみなします。
+
+[[RFC 2616]]までの規定だけでは[[日本語]]も[[英語]]も同じくらいの希望度であることがわかるだけで、両方がある場合どちらを提供するべきかは明らかではありませんが、
+[[RFC 3282]]の規定 (>>7) によれば[[日本語]]の方をより優先するものと理解するべきとなります。
+
+([[名無しさん]] [sage])
+
+[15]
+'''優先度付きで複数の言語を指定する例'''
+[PRE(HTTP example code)[
+Accept-Language: [[en]]; [[q]]=0.1, [[ja]]; [[q]]=1.0
+]PRE]
+
+[[日本語]]と[[英語]]を希望することを示します。その中でも特に[[日本語]]が好ましいことが[CODE(HTTP)@en[[[q]]]]値によって示されています。この場合、記述の順序は意味を持ちませんから、
+[PRE(HTTP example code)[
+Accept-Language: [[ja]]; [[q]]=1.0, [[en]]; [[q]]=0.1
+]PRE]
+
+でも同じ意味です。
+
+([[名無しさん]] [sage])
+
+[16] [CITE@ja[mod_negotiation - Apache HTTP サーバ]]
+([TIME[2009-10-04 03:10:28 +09:00]] 版)
+<http://httpd.apache.org/docs/2.2/ja/mod/mod_negotiation.html>
+
+[17] [CITE[Request Headers in the HTTP protocol]]
+( ([TIME[2001-11-29 11:01:38 +09:00]] 版))
+<http://www.w3.org/Protocols/HTTP/HTRQ_Headers.html#z12>
+
+[26] [CITE[''''''[''''''whatwg'''''']'''''' Accept-Language DOM API proposal]]
+( ([TIME[2012-06-12 07:46:21 +09:00]] 版))
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2012-June/036355.html>
+
+[27] [CITE@ja[Google ウェブマスター向け公式ブログ: 多言語ウェブサイトの作成について]]
+( ([TIME[2013-01-15 07:02:21 +09:00]] 版))
+<http://googlewebmastercentral-ja.blogspot.jp/2011/11/blog-post.html>
+
+[28] [CITE@en[Accept-Language Header for Internet Explorer 7 - IEBlog - Site Home - MSDN Blogs]]
+( ([TIME[2013-03-15 07:38:22 +09:00]] 版))
+<http://blogs.msdn.com/b/ie/archive/2006/10/17/accept-language-header-for-internet-explorer-7.aspx>
+
+[29] [CITE@en[Bug 23517 – Expose the user's preferred languages in a DOM API]]
+( ([TIME[2013-10-14 23:00:53 +09:00]] 版))
+<https://www.w3.org/Bugs/Public/show_bug.cgi?id=23517>
+
+[30] [CITE[Locale-Preferences-API/proposal.md at master · marcoscaceres/Locale-Preferences-API]] ([TIME[2013-10-14 23:01:21 +09:00]] 版) <https://github.com/marcoscaceres/Locale-Preferences-API/blob/master/proposal.md>

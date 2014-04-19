@@ -1,0 +1,569 @@
+[9] [[媒体型]] [DFN[[CODE(MIME)[application/x-www-form-urlencoded]]]]
+は、 [[HTML]] などの[[フォーム]]を提出するための書式の一つです。
+HTML にフォームが導入された際に開発され、 HTML
+以外の規格でもフォーム提出の方法などとして採用されています。
+仕様上の問題がいくつもあるにもかかわらず、
+実装が極めて単純であることや HTML の既定の提出書式であることから、
+非常によく用いられています。
+
+* 仕様
+
+[10] 独立して [CODE(MIME)[application/x-www-form-urlencoded]]
+を規定する仕様書はまだ存在しません。 HTML や [[XForms]]
+など、採用する規格の仕様書が個々に定義しています。
+なお、定義しようという Internet-Draft がでているので後述。
+
+- [[HTML 2.0]] ([[RFC 1866]]) ☆
+- [[HTML 2.x]] ([[RFC 2070]])
+- [[HTML 4]] ([[Web Forms 1.0]]) ☆
+-- [CITE[application/x-www-form-urlencoded]]
+<IW:HTML4:"interact/forms.html#didx-applicationx-www-form-urlencoded">
+- [[XForms 1.0]] ☆
+-- [CITE[11.6 Serialization as application/x-www-form-urlencoded]]
+<IW:XForms:"xforms/slice11.html#serialize-urlencode">
+- [[WML]]
+-- 
+<http://www.openmobilealliance.org/wapdocs/wap-191_105-wml-20020212-a.pdf>
+-- [CITE[WAP 日本仕様ガイドライン (日本語を用いたコンテンツ作成環境) — WAP June 2000 Conformance Release 対応版 —]],
+2000 年10 月25 日 1.0 版, モバイル・インターネット・アクセス・フォーラム
+第1技術部会 SPEC 作業班。
+- [[WSDL]]
+-- [CITE[Web Services Description Language (WSDL) Version 2.0 Part 3: Bindings 3.8.1 Serialization as "application/x-www-form-urlencoded"]]
+<http://www.w3.org/TR/wsdl20-bindings/#_http_x-www-form-urlencoded>
+- [[TAG Finding]]:
+[CITE[URIs, Addressability, and the use of HTTP GET and POST 5.1 Internationalization]] 
+<http://www.w3.org/2001/tag/doc/whenToUseGet.html#i18n>
+- [CITE[J‐スカイサービス向け HTML コンテンツ開発ガイド 2.4.2.2. 携帯端末⇒ウェブサーバ]]
+- [CITE[ボーダフォンライブ!向けウェブコンテンツ開発ガイド [HTML 編] 2.4.2.2. 端末⇒Web サーバ]]
+- [[RFC 3875]] ([[CGI/1.1]])
+-- [CODE[4.1.7 QUERY_STRING]]
+- [CITE@en-GB-x-Hixie[Web Forms 2.0]] ([TIME[2009-01-05 20:07:15 +09:00]] 版) <http://www.whatwg.org/specs/web-forms/current-work/#x-www-form-urlencoded>
+-The application/www-form-urlencoded format draft-hoehrmann-urlencoded-01 <http://tools.ietf.org/html/draft-hoehrmann-urlencoded-01>
+- [[RFC 5849]] ([[OAuth 1.0]]) <http://tools.ietf.org/html/rfc5849>
+
+[SAMP[☆]]を付けたのは、特に重要な規定を含むものです。
+その他は、補助的な規定や他の仕様を参照するものなどのうち、
+特に多く章を裂いているものを挙げています。この他単に
+[CODE(MIME)[application/x-www-form-urlencoded]]]] 
+を参照しているだけの仕様は枚挙に暇がありません。
+
+[53]
+[CITE@en[Web Services Description Language (WSDL) Version 2.0 Part 2: Adjuncts]] ([CODE[2007-06-23 05:33:39 +09:00]] 版) <http://www.w3.org/TR/2007/REC-wsdl20-adjuncts-20070626/#_http_x-www-form-urlencoded>
+([[名無しさん]])
+
+[[#comment]]
+
+
+* 構文
+
+[11] [CODE(MIME)[application/x-www-form-urlencoded]]
+形式の[[実体]]は、 [SAMP[name1=value1&name2=value2]]
+のように、名前と値の組を等号でつなげたものをアンド記号で結んでいます。
+名前と値は、必要に応じて [[URI符号化]]します。
+
+同じ名前の組が複数個あることもあります。また、
+順序は意味を持ちます。大文字・小文字の区別は、値においては存在します。
+名前における区別の有無は明らかではありませんが、
+一般には存在すると考えられています。
+
+文字の符号化の方法 ([[charset]]) は規定されていません。
+HTML 4 は [[ASCII]] 文字だけが使用できると述べています
+[SRC[HTML 4 17.13.1 Note]] が、現実には任意の符号化方式が使われています。
+(ASCII 非互換なものも含まれます。) URI 符号化を使うことからも明らかなように、
+任意のバイナリ・データの転送に使用するのには向いていませんが、
+稀にそのような用途でも使われます。 (但し、そのような場合であっても、
+フォームの他の文字的データと共に転送する目的であり、
+専らバイナリ・データを転送するために使用することは考えにくいです。)
+XForms はバイナリ内容には他の直列化方式を使うことを推奨しています
+[SRC[XForms 1.0 11.6]]。
+
+[12] [CODE(MIME)[application/x-www-form-urlencoded]]
+の書式を [[ABNF]] で表現してみたのが次の生成規則です。
+但し、すべての仕様・実装がこの規則に合致しているわけではありません。
+
+= body = field *(separator field) / obs-body
+= separator = "&" / obs-separator
+= field = name "=" value
+= name = 1*uchar / obs-name
+= value = 1*uchar / obs-value
+= uchar = ALPHA / DIGIT / "-" / "_" / "." / "," / ":" / joint / escaped / obs-uchar
+= joint = "+"
+= escaped = "%" escaped-code / "%0D%0A"
+= escaped-code = "0" ( "0" / .. / "9" / "B" / "C" / "E" / "F" ) / ( "1" / .. / "7" ) HEXDIGIT / obs-escaped-code
+= obs-escaped-code = 2HEXDIGIT
+= obs-separator = ";"
+= obs-body = *(separator field) [ separator ]
+= obs-name = *uchar
+= obs-value = *uchar
+= obs-uchar = "'" / "(" / ")" / ";" / "$" / "@" / "*" / "!"
+
+[42]
+−
+([[名無しさん]] [WEAK[2005-05-09 07:16:11 +00:00]])
+
+[52]
+hjhkhkkhj
+([[名無しさん]] [WEAK[2007-04-26 07:40:49 +00:00]])
+
+[[#comment]]
+
+
+** 分離子 &
+
+[13]
+区切文字は "&" です。
+
+一方、 HTML4 は、 CGI などの URI で x-www-form-urlencoded
+同様の形式の query-part を使うときに、 "&" でなくて
+";" を使うのが望ましい、としています。
+<http://www.w3.org/TR/html401/appendix/notes.html#h-B.2.2>
+
+もちろんこれは URI での話であって、 x-www-form-urlencoded
+の話は無いのですが、元々は同じ物ですし、 ";"
+に対応した CGI script では、両者(の復号処理)を一緒くたにして
+いるものが少なくありません。
+
+ですから、復号側は必要に応じて ";" も区切り文字として扱うようにし、
+符号化側は ";" を必ず URI escape して "%3B" とするのが
+望ましいと考えられます。
+
+また、幾つかの CGI script で区切り文字に使われている "$"
+も、同様に URI escape しておくのが望ましいでしょう。
+
+[[#comment]]
+
+
+** 文字の表現
+
+[14] 名前と値の部分は、任意の文字列 (あるいはオクテット列)
+が使用されています。
+
+HTML 4 は [[ASCII]] 文字だけが使用できると述べています
+[SRC[HTML 4 17.13.1 Note]]。しかし、現実には 
+[CODE(MIME)[application/x-www-form-urlencoded]] が使われ始めてすぐに、
+HTML で使われていたあらゆる文字・[[文字コード]]が使用されるようになっています。
+HTML 4 が勧告された当時は既に混乱が収拾のつかない状態に達していましたから、
+安全に使用できる ASCII に限定したのでしょうが、焼け石に水とでも申しましょうか、
+手軽に実装できる [CODE(MIME)[application/x-www-form-urlencoded]]
+がその後も使われ続けています。
+
+[15] HTML フォームの提出に際して [[UA]] が使用する charset
+は、 >>14 の通り、 HTML 4 は規定していません。
+実装は、
+- 文書の charset と同じものを使用する
+- UA の charset (UA の内部符号やその環境の符号) と同じものを使用する
+- [CODE(HTMLa)[[[accept-charset]]]] で指定されたものを使用する
+
+の3種類と、その混合があります。利用者によって編集されていないフォーム欄
+(例えば [[[CODE(HTMLe)[input]]//[CODE(HTML)[hidden]]]] による隠し制御子)
+は文書の charset で、編集された欄は UA の charset
+で符号化するという UA すらかつて存在しました。 (その名も
+[[WinIE 3]]。)
+
+[[XForms]] は、 [[UTF-8]] を使用すると規定しています [SRC[XForms 1.0 11.6]]。
+
+[[#comment]]
+
+
+*** 百分率符号化
+
+[37] [[文字]] (あるいは[[オクテット]]) を[[百分率符号化]]するかどうかについて、
+各仕様は次のように規定しています。
+
+:[[HTML 4]]:[[間隔]]は [CODE(URI)[+]] とします。
+それ以外の非[[英数字]]は [[RFC 1738]] 2.2節の方法で符号化
+(百分率符号化) します。 RFC 1738 によると、
+百分率符号化には大文字の[[十六進数字]]を使いますが、
+小文字を使っても構いません。[[改行]]は
+[CODE(URI)[%0D%0A]] とします。
+:[[XForms 1.0]]:[[間隔]]は [CODE(URI)[+]] とします。
+非 ASCII 文字と、 [[RFC 2396]]
+(または以後の改訂) の[[予約]]文字は百分率符号化します。
+百分率符号化には大文字の十六進数字を使います。
+改行は [CODE(URI)[%0D%0A]] とします。
+
+[38]
+XForms 1.0は RFC 2396 の予約文字を符号化しろとは言っていますが、
+[[非安全]]文字 ([[URI参照]]で使えない文字) を符号化しろとは言っていません。
+これはミスではないですかね?
+
+しかも URI の規格の最新版自動追尾になっております。
+従って、どの URI の規格に従うかによって現時点で
+3種類の方法があり得ます。
+
+:RFC 2396 による予約文字:[CODE(regex)['''[''';/?:@&=+$,''']''']]
+:[[RFC 2732]] による予約文字:[CODE(regex)['''[''';/?[]:@&=+$,''']''']]
+:[[RFC 3986]] による予約文字:[CODE(regex)['''[''':/?#[]@!$&'()*+,;=''']''']]
+
+[[#comment]]
+
+
+*** 表現できない文字の処理
+
+[43]
+−
+([[名無しさん]] [WEAK[2005-05-09 07:18:13 +00:00]])
+
+[[#comment]]
+
+
+** URI 符号化
+
+[16] 名前と値は、適当な charset によるオクテット表現を URI escape 符号化します。
+HTML 4 [SRC[HTML 4 17.13.4.1]] や XForms 1.0 [SRC[XForms 1.0 11.6]]
+によれば、
+
+- [[間隔]]文字は、 [CODE(URI)[+]] とします。
+- [[改行]]は、 [CODE(URI)[%0D%0A]] とします。
+- その他の URI 予約文字 ([CODE(ABNF)[[[reserved]]]])
+および非 ASCII 文字 (オクテット) は、 [CODE(URI)[%[VAR[HH]]]]
+とします。
+
+16進数表現 [VAR[HH]] は、 XForms によれば大文字を使います。
+HTML 4 はどちらとも述べていません。一般的には、
+どちらでもよいものと考えられていますが、
+多くの UA は大文字で出力し、多くのフォーム処理エージェントはどちらも認めるようです
+([[人に優しく自分に厳しく]])。
+
+[17] この URI escape 符号化は名前にも値にも適用されますが、
+[[制御子名]]に非 ASCII 文字や URI 予約文字を使うことはあまりないので、
+名前の URI escape 符号化を復号しないフォーム処理エージェントが少なくないと推測されます。
+
+[19] 改行の規定が正しく運用されているかは疑問です。
+
+[39]
+あいえう
+([[名無しさん]] [WEAK[2005-03-19 14:35:33 +00:00]])
+
+[[#comment]]
+
+
+** メモ
+
+[28] 誤って1文字目に [CODE(URI)[?]] をつける実装もあります。
+
+[[#comment]]
+
+
+* フォーム・データ集合からの生成
+
+[18] HTML 4 は、 [CODE(MIME)[application/x-www-form-urlencoded]]
+のデータは[[フォーム・データ集合]]から次のように生成しなければならないと規定しています
+[SRC[HTML 4 17.13.4.1]]。
+
+= 制御子の名前と値を escape します。
+== 間隔は [CODE(URI)[+]] に置換します。
+== 予約文字は [[RFC 1738]] 2.2 節の規定の通り escape します。
+== 改行は [CODE(URI)[%0D%0A]] で表現します。
+= 制御子の名前・値は[[文書順]]で並べます。
+名前と値は [CODE(URI)[=]] で分離し、
+名前・値の組は相互に [CODE(URI)[&]] で分離します。
+
+[21] XForms 1.0 は、 [CODE(MIME)[application/x-www-form-urlencoded]]
+による[[直列化]]を次の通り規定しています [SRC[XForms 1.0 11.6]]。
+
+= 各[[要素節]]を[[文書順]]に見ていきます。
+1つ[[文節]]を含む要素節を選びます。
+= 要素節毎に、 [SAMP(URI)[[VAR[EltName]]=[VAR[value]][VAR[{sep}]]]]
+という文字列を作ります。
+-- [VAR[EltName]] は要素節の[[局所名]]です。
+=== 間隔は [CODE(URI)[+]] で置換します。
+=== 非 ASCII 文字および予約文字 ([[RFC 2396]] およびその改訂によります。)
+を UTF-8 で URI escape します。16進数は大文字で表現します。
+=== 改行は [CODE(URI)[%0D%0A]] とします。
+-- [VAR[value]] は文節の内容です。
+-- [VAR[{sep}]] は [CODE(XMLe)[[[submission]]]] の [CODE(XMLa)[[[separator]]]]
+属性で指定された分離子文字です。
+-- なお、要素節の属性や名前空間など他の情報は使われません。
+= すべてを文書順に連結します。
+
+[20] HTML では、フォーム制御子ごとにフォーム・データ集合に何が含まれるのかが異なります。
+[[フォーム・データ集合]], [[成功]], [[現在値]]の説明をごらんください。
+特に、ファイル選択制御子 ([[[CODE(HTMLe)[input]]/[CODE(HTML)[file]]]])
+の現在値はファイル名の並びであり、ファイルの内容ではありません。
+また、画像提出ボタン制御子 ([[[CODE(HTMLe)[input]]/[CODE(HTML)[image]]]])
+では座標が含まれます。
+
+[[HTML 2.0]] では、[Q[値無し (null) な欄は省略しても構わない]<urn:ietf:rfc:1866>]
+などの規定が含まれていましたが、 HTML 4 
+では整理されて[[成功]]制御子の選択に関する規定に移動しています。
+
+[[#comment]]
+
+
+* Charset の識別
+
+[22] >>11, >>14- にあるように、 [CODE(MIME)[application/x-www-form-urlencoded]]
+では、文字の符号化の方法が定まっていません。ですから、
+判定のためにいくつもの方法が使われています。
+
+:決め打ち:特定の charset で提出されることが見込める環境のフォーム処理エージェントは、
+charset に関する判定・変換を行いません。例えば、欧米で利用されており、
+[[ASCII]] または [CODE(charset)[[[ISO-8859-1]]]] 
+などで提出する利用者ばかりであると見込めるなら、
+受け取ったデータをそのまま内部で使用していることがよくあります。
+また、[[iモード]]などの特定の機器から利用することを想定しているフォーム処理エージェントは、
+[[シフトJIS]] (iモード拡張版) でデータを受け取るものと想定していることがよくあります。
+:自動判別:複数の charset が混在することが普通な環境では、
+古くから自動判別によって内部用の charset に変換するなどしてから処理に使用するようにフォーム処理エージェントが設計されています。
+例えば、日本語圏では昔から3つの符号化方式が混在してきましたから、
+そのいずれであるかを判定し、どれかに統一するのが普通になっています。
+:識別情報の利用:自動判別は確実なものではなく、
+よく[[文字化け]]が起こっていました。そのため、
+外部や内部に識別情報を含め(させ)て、
+それを使って復号するという手法が提案されてきました。
+自動判別の手法も少しずつ改善されていますが、
+それでも完全ではないことや、判定にかかる経費の問題がありますし、
+識別情報を付加する UA が増えてきたこともあり、
+現在では識別情報によって判断するフォーム処理エージェントが増えてきています。
+
+[[#comment]]
+
+
+** 自動判別
+
+[23] [CODE(MIME)[application/x-www-form-urlencoded]] の文字列の符号化方式が不明な場合、
+自動判別算法によって決定することがよくあります。
+自動判別の方法は WWW でフォームが使われる以前から研究されてきましたが、
+フォームのデータは従来の判別対象と比べて非常に短いものが多く、
+より難しいものとなっています。
+
+[24] また、 [CODE(MIME)[application/x-www-form-urlencoded]]
+では判定の対象となる名前・値が複数個存在しますが、
+その一つに対する判定結果を他のすべてに対して使ってよいものかという問題もありました。
+現在の実装は一つの [CODE(MIME)[application/x-www-form-urlencoded]]
+[[実体]]で複数の符号化方式を混在させることはまずありませんが、
+過去にはそうではないものもありました (>>15)。
+ですから、ある欄がシフト JIS でも別の欄は日本語 EUC
+かもしれず、正確に処理するためにはすべての欄で別々に判定しなければなりませんから、
+判定の経費が増大し、しかも判定の材料が少なくなるという悲惨な状況でした。
+
+[[#comment]]
+
+
+** 識別情報の利用
+
+[25] 自動判別にできるだけ頼らず、 UA に識別情報を送らせたり、
+一度判定済みの情報を再度利用することによって自動判別の不確実性や経費を削減する方法が古くから考えられてきました。
+
+[5] '''隠し欄を使った方法''': 特定の文字を含めた隠し欄
+([[[CODE(HTMLe)[input]]//[CODE(HTML)[hidden]]]])
+をフォームに含めておき、提出されたデータの中のその値とあらかじめ用意しておいた
+charset ごとのその文字の表現を比較するという方法があります。
+たとえば、[SAMP(HTML)[<input type="hidden" name="dot" value="・">]]
+をフォームに含めておき、フォーム処理エージェントでは
+[SAMP[dot]] の値とあらかじめ用意しておいた [SAMP[・]]
+のシフト JIS や日本語 EUC などによる表現と比較します。
+
+この方法は、適当な文字を選べは確実に判定できる優れたものですが、
+その情報が他の欄にも通用するとは限らないという問題 (>>24)
+があります。この方法が考案された当時実際に欄ごとに別の charset
+を用いる実装がありました (>>15) から、
+かえって文字化けを誘発する虞がありました。
+
+[27] '''特別な名前を使った方法''':
+特定の名前・値の組を charset 名の識別として使います。
+例えば、 [[Google]] では [SAMP(URI)[ie=UTF-8]]
+のような組を含めることで、一度判別した情報を再利用しているようです。
+但し、この使い方はフォームの提出の時点では (UA が対応していないので)
+意味がありません。
+
+この方法に UA が対応したものとして、 [CODE(HTML)[[[_charset_]]]]
+hack と呼ばれるものがあります。フォームに特定の記述をしておくと、
+UA が提出する際に charset 名を [SAMP(URI)[_charset_=ISO-2022-JP]]
+のような組として送信してくれます。この方法は最近主要な UA
+に実装され、徐々にフォーム処理エージェントでも使われるようになってきています。
+
+[7] '''[CODE(MIME)[charset]] 引数を使った方法''':
+[CODE(HTTP)[[[POST]]]] で提出する場合など、
+媒体型の引数が利用できる時に、 [CODE(MIME)[[[charset]]]]
+引数を使って charset を指定します。
+
+この方法は [[RFC 2070]] や [[WAP]] 
+[SRC[[[WML]], [CITE[WAP 日本仕様ガイドライン]]]] 
+で提案・規定されていますし、 [[Opera]] などの UA が提出の際に使っています。
+
+[2]
+>>27 の方法と似ていますが、 >>27 は[[実体本体]]内の情報であるのに対し、
+こちらは実体本体外 ([[実体頭欄]]) の情報ですから、
+本体の構文解析より前に情報が得られます。その一方で、
+実体頭欄を利用できない [CODE(HTTP)[[[GET]]]] の HTTP URI
+のような場所では使えないという致命的な欠点があります。
+また、 MIME の定義する [CODE(MIME)[charset]] 引数とは意味的にやや差異があり、
+仕様上の問題はないとはいえ、一貫性に欠くとの批判もあります。
+(RFC 2070 は、 URI 符号化が 
+[ABBR[[[CTE]]] [[CODE(MIME)[[[Content-Transfer-Encoding]]]]]] 
+のようなものと考えれば問題なかろうという見解を示しています。)
+
+[[#comment]]
+
+
+* 実装
+
+[1] <http://openlab.ring.gr.jp/k16/htmllint/faq.html> によると、古い [[Lynx]] 
+は [CODE(MIME)[charset]] パラメーターを付けてしまうようです。 [[Perl]] の古い 
+[[CGI]] 用 library である [CODE(file)[[[cgi-lib.pl]]]] はこれに対応していません。
+
+この他にも、 [CODE(HTTP)[[[Content-Type]]:]] 
+欄に引数が含まれるとうまく処理できなくなってしまうフォーム処理エージェントがかなり多く存在している模様です。
+
+[6] [WEAK[2003-09-26 07:29:50 +00:00]] ''[[Mr.Anonymous]]'': 
+[[Opera]] 7.02 を使ってみましたが、こいつは 
+[SAMP(HTTP)[application/x-www-form-urlencoded; charset=utf-8]] 
+なんてのを送ってきます。。。
+
+
+[54]
+[CITE[豊島区立図書館のメモ - やればできる子の日記]] ([TIME[2008-10-05 11:21:13 +09:00]] 版) <http://d.hatena.ne.jp/matsuza/20080831/1220177018>
+([[名無しさん]])
+
+
+[[#comment]]
+
+
+* 転送符号化との関係
+
+[36] あまり見かけませんが、[[電子メイル]]でフォームを提出することもありますから、
+[CODE(MIME)[application/x-www-form-urlencoded]] が [[MIME]]
+で使われることもあります。
+
+MIME の [CODE(MIME)[[[Content-Transfer-Encoding]]]] は、普通は不要です
+([CODE(MIME)[[[7bit]]]] で十分です)。
+[WEAK[([CODE(MIME)[application/x-www-form-urlencoded]] 自体が転送符号化のようなものですから。)]]
+ただし、少しでもデータ量が多いと改行がない
+[WEAK[(あったとしても[[百分率符号化]]されている)]]
+ので、電子メイル / MIME の行長制限に引っかかることが容易に考えられます。
+その場合は CTE が必要になります。
+
+CTE は [CODE(MIME)[[[Quoted-Printable]]]] が適当です。
+元々7ビットのデータなのですから [CODE(MIME)[[[Base64]]]]
+は効率が悪すぎます。
+
+[[#comment]]
+
+
+* 他との関係
+
+[3] [[Lynx]] は [CODE(MIME)[[[application/sgml-form-urlencoded]]]] 
+に対応しています。これは [CODE(URI)[&]] の代わりに [CODE(URI)[;]] を使います。
+
+[[#comment]]
+
+
+* Q & A
+
+[29] '''Q: [CODE(MIME)[application/x-www-form-urlencoded]] で使う文字コードは何ですか?'''
+
+A: [CODE(MIME)[application/x-www-form-urlencoded]] 実体自体は [[US-ASCII]]
+で記述します。符号化されている内容の文字コードは不定です。
+(使用する場面の仕様や実装に依存します。)
+
+詳細: >>11, >>14-15, >>22-, [[提出]], [CODE(HTMLa)[[[accept-charset]]]]
+
+[30] '''Q: HTTP の [CODE(HTTP)[[[Content-Type]]:]] に [CODE(MIME)[[[charset]]]] を指定すればよいのではありませんか?'''
+
+A: そのような実装も存在しますが、標準化されてはいません。また、
+MIME の [CODE(MIME)[charset]] 
+の仕様と意味的に異なるので望ましくないという考え方もあります。
+
+詳細: >>7-, >>1-, [[[CODE(MIME)[charset]]パラメーター]]
+
+[31] '''Q: 非 ASCII 文字を使う時は [CODE(MIME)[[[multipart/form-data]]]] を使えと言うが、そんなブラウザはないのでは。'''
+
+A: 現代の実用的な Web ブラウザで [CODE(MIME)[multipart/form-data]]
+に対応していないなんて考えられません。 HTML の場合は [CODE(HTMLa)[[[enctype]]]]
+を [CODE(MIME)[multipart/form-data]] と''著者が''明示しておかないと
+[CODE(MIME)[multipart/form-data]] は使われませんよ。
+
+詳細: [CODE(MIME)[[[multipart/form-data]]]], [CODE(HTMLa)[[[enctype]]]], [[提出]]
+
+[32] '''Q: TrackBack は [CODE(MIME)[application/x-www-form-urlencoded]] を使っているが、文字コードを指定できないではないか。欠陥だ。'''
+
+A: そうですね。 [CODE(MIME)[application/x-www-form-urlencoded]]
+なんて使うからいけないのです。
+
+関連: [[TrackBack]]
+
+[33] '''Q: HTML 4 では [CODE(char)[&]] の代わりに [CODE(char)[;]] を使えと言っているが?'''
+
+A: [CODE(char)[;]] の使用を薦めているのは [[URI参照]]の中の[[照会]]の部分での話で、
+[CODE(MIME)[application/x-www-form-urlencoded]] とは [WEAK[(根は同じとは言え)]]
+別の問題です。
+
+関連: >>13-, [[照会]], [[文字実体参照]], [CODE(MIME)[[[application/sgml-form-urlencoded]]]]
+
+[34] '''Q: 鯖とやり取りするプログラムで、 [CODE(MIME)[application/x-www-form-urlencoded]] と書いてあった部分を [CODE(MIME)[application/x-www-form-urlencoded; charset=UTF-8]] にしたら文字化けが起こらなくなりましたよ。'''
+
+A: たまたまです。相性が良かったのです。
+次のときもうまくいくとは限らないこと、
+いつまでもうまく動き続けるとは限らないことを肝に銘じておいてください。
+
+関連: >>11, >>14-15, >>22-, [[提出]], [CODE(HTMLa)[[[accept-charset]]]],
+[[[CODE(MIME)[charset]]パラメーター]], 
+[CODE(MIME)[[[multipart/form-data]]]]
+
+[35] '''Q: ファイルをうpできません。ファイル名しか取得できません。'''
+
+A: HTML のフォームでは、ファイルをうpするためには
+[CODE(MIME)[application/x-www-form-urlencoded]] は使えません。
+[CODE(MIME)[[[multipart/form-data]]]] など他の形式をお使い下さい。
+
+関連: [[[CODE(HTMLe)[input]]//[CODE(HTML)[file]]]],
+[CODE(HTMLa)[[[enctype]]]], [CODE(MIME)[[[multipart/form-data]]]]
+
+[[#comment]]
+
+
+* メモ
+
+[4] 過去のしがらみが無い HTTP [CODE(HTTP)[[[POST]]]] を使うプロトコル・応用は、
+できればこんな時代遅れの形式は使わずに、 [CODE(MIME)[[[multipart/form-data]]]] 
+なり [CODE(MIME)[[[application/xml]]]] なり、
+他のきちんと標準化された[[媒体型]]を使うべきです。
+
+[55] [CITE@EN[XForms 1.1]]
+([TIME[2009-10-20 22:51:54 +09:00]] 版)
+<http://www.w3.org/TR/2009/REC-xforms-20091020/#serialize-urlencode>
+
+[56] [CITE[WWW-Talk Jul-Sep 1993: Submitting input-form data to server]]
+([TIME[2010-04-10 12:27:04 +09:00]] 版)
+<http://1997.webhistory.org/www.lists/www-talk.1993q3/0812.html>
+
+[57] [CITE[XProc: An XML Pipeline Language]]
+([TIME[2010-05-11 22:38:07 +09:00]] 版)
+<http://www.w3.org/TR/2010/REC-xproc-20100511/#c.www-form-urldecode>
+
+[58] [[OAuth 1.0]] ([[RFC 5849]]) は、 [[OAuth]] の認証という限られた条件においてですが、
+[CODE(MIME)@en[[[application/x-www-form-urlencoded]]]] の解釈の仕方や正規形といえる定義を含んでいます。
+
+[59] [CITE[IRC logs: freenode / #whatwg / 20100926]]
+( ([TIME[2010-10-10 13:13:29 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20100926>
+
+[60] [CITE@en[Web Applications 1.0 r6450 Define how to parse the various form submission formats. Register the legacy one. Some editorial tweaks for consistency.]]
+( ([TIME[2011-08-15 12:45:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=6449&to=6450>
+
+[61] [CITE@en[Web Applications 1.0 r6641 Mention that application/x-www-form-urlencoded;charset does nothing.]]
+( ([TIME[2011-10-06 08:08:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=6640&to=6641>
+
+[62] [CITE[''''''[''''''ietf-types'''''']'''''' Registration for application/x-www-form-urlencoded]]
+( ([TIME[2012-08-08 01:20:11 +09:00]] 版))
+<http://www.ietf.org/mail-archive/web/ietf-types/current/msg01711.html>
+
+[63] [CITE[IRC logs: freenode / #whatwg / 20121130]]
+( ([TIME[2012-12-12 00:49:30 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20121130#l-609>
+
+[64] [CITE[IRC logs: freenode / #whatwg / 20121130]]
+( ([TIME[2012-12-12 00:49:30 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20121130#l-1057>
+
+[65] [CITE@EN[SPARQL 1.1 Protocol]]
+( ([TIME[2013-03-21 20:27:52 +09:00]] 版))
+<http://www.w3.org/TR/2013/REC-sparql11-protocol-20130321/#query-via-post-urlencoded>
+
+[66] [CITE[IRC logs: freenode / #whatwg / 20131010]]
+( ([TIME[2013-10-14 00:14:43 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20131010#l-1183>

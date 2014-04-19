@@ -1,0 +1,116 @@
+#?SuikaWiki/0.9
+
+[1] [DFN[RequestLog [[WikiPlugin]] モジュール]]は、
+[[SuikaWiki]] を [[HTTP]] [[CGIスクリプト]]などとして使う時に、
+[[要求メッセージ]]の情報を記録するための機能を提供します。
+
+
+* 使い方
+
+[2] RequestLog モジュール ([CODE(file)[misc/plugins/request-log]])
+(<IW:SuikaCVS:"suikawiki/script/misc/plugins/request-log.wp2">)
+をコンパイルしておいてください。
+
+[CODE(file)[wikidata/suikawiki-config.ph]] で、
+記録のためのデータベースを用意します。
+
+最初の方の名前空間 URI の宣言のところに、
+[SAMP(perl)['log' => q<http://suika.fam.cx/~wakaba/-temp/2004/05/01/reqlog#>,]]
+を追加してください。
+
+Filesystem path 指定のところに
+[SAMP(perl)[ [db__request_log__dir    => q"./wikidata/rlog/"],]]
+を追加した上で、少しあとのデータベース登録で
+[PRE(perl)[
+      ## HTTP Request Logging Database (See RequestLog plugin module)
+      $wiki->{db}->_set_prop_db (log__http_request => {-db_open => sub {
+        require SuikaWiki::DB::FileSystem::Count;
+        SuikaWiki::DB::FileSystem::Count->new
+          (base_directory => $wiki->{config}->{path_to}->{db__request_log__dir},
+           directory_suffix => '.ns',
+           file_suffix    => '.rlog',
+           root_key => $wiki->{config}->{page}->{Default},
+           auto_mkdir => 1);
+      }, -db_close => sub {
+        my %opt = @_;
+        $opt{prop_info}->{-db}->close;
+        delete $opt{prop_info}->{-db};
+      }});
+]PRE]
+
+のように記述します。
+データベースは [CODE(perl)[[[SuikaWiki::DB::FileSystem::Count]]]]
+互換のものである必要があります。
+
+この設定では、 [CODE(file)[wikidata/rlog/]] 内に記録が保存されます。
+
+更に後の適当な部分に、
+[PRE(perl)[
+  push @{$WIKI->{event}->{input_close}}, sub {
+    my ($wiki, $event) = @_;
+    try {
+      SuikaWiki::Plugin->module_package ('RequestLog')
+                     ->http_request_log (wiki => $wiki,
+                                         prop => 'log__http_request');
+    } catch SuikaWiki::Plugin::error with {
+      my $err = shift;
+      $err->raise unless $err->{-type} eq 'PLUGIN_NOT_FOUND';
+    };
+  };
+]PRE]
+
+と記述します。 (これは外部情報の入力を捨てる直前に記録を行うことを意味しています。)
+
+更に、 WikiName の指定 ([CODE(perl)[$WIKI->{config}->{page}]])
+のところに、
+[SAMP(perl)[ExpandedURI q<log:root> => $WIKI->name ([]),]]
+のような設定を追加してください。
+
+実際の設定ファイルの例
+<IW:SuikaCVS:"suikawiki/wikidata/suikawiki-config.ph">
+を参考にしてください。
+
+
+* 記録を見る
+
+[3] [[SuikaWiki/0.9]] の場合、任意の WikiPage
+で、 [SAMP[''[''[#form:'%rl--log;':' ':'%output (form => 0);']'']'']]
+のように記述すると、記録が見られます。
+
+
+* 歴史
+
+このモジュールは [[SuikaWiki2]] では UserAgent モジュールと呼んでおり、
+[CODE(HTTP)[[[User-Agent]]]] 頭欄専用でした。
+
+SuikaWiki2 開発末期にとりあえず程度のいい加減な実装の
+RequestLog モジュールが用意されました。
+
+SuikaWiki3 の RequestLog モジュールは目的としては
+旧 RequestLog モジュールと UserAgent モジュールを統合したものですが、
+機能的に互換性はありません。
+
+
+* メモ
+
+[4]
+記録する情報の選択には [CODE(file)[request-log.wp2]] を直接編集して再コンパイルしてください。
+
+([[名無しさん]])
+
+[5]
+RequestLog WikiPlugin module の目的は、
+どのような HTTP 情報が世間で使われているかの情報を収集することにあります。
+個人情報その他の収集が目的ではないので、
+既定ではその種の欄は対象外としてあります。
+そのような欄をも記録したい場合は、
+その情報が任意の第三者から参照されることがないようにご注意ください。
+
+なお、 RequestLog の現在の仕様では、
+収集した情報は種類ごとに別々に管理されるので、ある種類の情報と別の種類の情報が同じクライアントからのものであるかどうかは知ることができません。
+([[名無しさん]])
+
+[6]
+>>2 の設定例は、データベースを lock していません。どうせ壊れてもいいデータだからということですが、大事だと思う人は適当に lock してください。
+([[名無しさん]])
+

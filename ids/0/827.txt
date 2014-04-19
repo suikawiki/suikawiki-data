@@ -1,0 +1,267 @@
+
+
+* Content-Style-Type: 欄 (HTTP)
+
+[1] [[HTTP]] の [DFN[[CODE(HTTP)[Content-Style-Type:]] [[実体頭欄]]]]は、
+その[[実体]]の既定の[[スタイル言語]]を指定します。
+
+[2] 仕様書:
+[[HTML 4]] 14.2.1 Setting the default style sheet language
+<IW:HTML4:"present/styles.html#default-style">
+
+[[#comment]]
+
+
+** 構文
+
+[3] HTML 4 仕様書では、 [[CSS]] を使う時に [CODE(MIME)[[[text/css]]]]
+という値を使うということだけが示されていて、
+[CODE(HTTP)[Content-Style-Type:]] 欄本体の構文には一切言及がありません。
+インターネット[[媒体型]]を指定するように見えますが、
+それすらはっきりしません。
+
+[28] 仕様書でははっきりしませんが、実際には媒体型を指定するものと理解されています。
+ただし、媒体型の[[引数]]が指定できるのかどうかは、
+(HTML で媒体型を使う他の場所と同様に) はっきりしません。
+(ただし、 [CODE(MIME)[[[charset]]]] 引数の用例はあります。)
+
+[29] >>7 の HTML 4 の規定より、 [CODE(HTTP)[Content-Style-Type]]
+欄は複数個指定できることがわかります。 HTTP の規定によれば、
+同じ名前の複数個の頭欄を使用できるのは読点区切りで複数個値を指定できるもの
+(HTTP RFC の [[ABNF]] でいう [CODE(ABNF)[#[VAR[something]]]])
+だけです。ですから、 HTML 4 
+仕様書には明記されていませんが読点区切りの指定も認めざるを得ません。
+
+複数個指定しても >>7 の通り最後のもの以外は無視されるのですが、
+鯖ソフトウェア内の処理の関係か複数個の [ABBR[CST] [[CODE(HTTP)[Content-Style-Type]]]]
+を吐いている例はしばしば見かけます。
+
+[30] >>3-29 より [CODE(HTTP)[Content-Style-Type:]] 
+欄の構文は次の通り推定できます。
+- [CODE(ABNF)[[DFN[Content-Style-Type]] := "Content-Style-Type" *[[WSP]] ":" Content-Style-Type-body]]
+- [CODE(ABNF)[[DFN[Content-Style-Type-body]] := [CST-content] *([ [[FWS]] ] ","  [CST-content])]]
+- [CODE(ABNF)[[DFN[CST-content]] := [FWS] <RFC 2616 type> "/" <RFC 2616 subtype> *([FWS] ";" <RFC 2616 parameter> [FWS]) [FWS] ]]
+
+[[#comment]]
+
+
+*** 媒体型引数
+
+[4] 稀に [CODE(MIME)[charset]] 引数が指定されていることがありますが、
+一般には不要と理解されています。 [CODE(HTTP)[[[Content-Type]]:]]
+欄のような場合とは異なり、対応する実体が直接存在しているわけではなく、
+[CODE(HTTP)[Content-Style-Type:]] の役割は
+単に書式 (媒体型) を識別するに過ぎないからです。
+
+[[#comment]]
+
+
+** 既定スタイル言語
+
+[7] UA は、文書の既定のスタイル言語を次の優先順位で決定するべきです。 
+[SUP[ [HTML 4] ]]
+= [CODE(HTMLe)[[[meta]]]] 要素を使った [CODE(HTTP)[Content-Style-Type]]
+指定のうち、[[文書順]]で最後のもの
+= HTTP 頭欄による [CODE(HTTP)[Content-Style-Type]]
+指定のうち、一番後のもの
+= 既定値: [CODE(MIME)[text/css]]
+
+[12] >>7 の順序は、 
+[Q[[CODE(HTMLe)[meta]] 要素内の HTTP 頭欄代替表現は、実際の HTTP 頭欄の後に続いて存在する]]と考えることで、
+[Q[一番最後の頭欄の、一番最後の項目]]と言い換えることが出来ます。
+
+[13] 一方で、 [CODE(HTMLa)[[[style]]]] 属性を使っていながらスタイル言語が明記されていない文書は[RUBYB[不正] [incorrect]]です。
+また、[[著述工具]]は既定スタイル言語情報を生成して
+UA が [CODE(MIME)[text/css]] という既定値を使わなくて済むようにするべきです。
+[SUP[ [HTML 4] ]]
+
+このように規定されていることから、 [CODE(MIME)[text/css]]
+を既定値とするのは従来の文書との互換のためだけであることがわかります。
+
+[26] >>13 もっとも、 HTTP 以外の転送プロトコルや local 
+のファイルなどで、 [CODE(HTTP)[Content-Style-Type]]
+相当の指定が無い場合にも 3 番目に行くかもしれません。
+
+それを考えると、 [CODE(MIME)[text/css]] 以外のスタイル言語を
+[CODE(HTMLa)[style]] 属性で使う時には [CODE(HTMLe)[meta]]
+要素でも指定する方が安全かもしれません。
+
+[31]
+[CITE[DTV A S E L 1 (DASE-1) P 2: D A E ATSC Standard]] <http://www.atsc.org/standards/a_100_2.pdf> は、 HTTP 頭欄を使わず、
+[CODE(HTMLe)[meta]] 要素の [CODE(HTMLa)[[[name]]]] 属性の値が [CODE[Content-Style-Type]] 属性であるものを使います。その [CODE(HTMLa)[[[content]]]] 属性の値は[[媒体型]]です。省略時の既定値は [CODE(MIME)[text/css]] です。
+[SRC[5.1.1.6.7.2 Default Style Content Type]]
+([[名無しさん]] [sage])
+
+[36]
+[[HTML 4]] の [CODE(HTTP)@en[[[Content-Style-Type]]]]
+に関わる要件は次の5つあります:
+
+= [Q@en[Authors must specify the style sheet language of style information associated with an HTML document.]]
+= [Q@en[Authors should use the META element to set the default style sheet language for a document.]]
+= [Q@en[The default style sheet language may also be set with HTTP headers.]]
+= [Q@en[Documents that include elements that set the style attribute but which don't define a default style sheet language are incorrect.]]
+= [Q@en[Authoring tools should generate default style sheet language information (typically a META declaration) so that user agents do not have to rely on a default of "text/css".]]
+
+([[名無しさん]])
+
+[37]
+>>36 文面通りに解釈すると、
+- [[HTML]] [[文書]]と関連付けられた[[スタイル]]情報に対しては、 (何らかの方法で) [[スタイル・シート言語]]を指定する必要がある。
+- [[文書]]の[[既定スタイル・シート言語]]を設定するためには
+[CODE(HTMLe)@en[[[meta]]]] [[要素]]を使うのが (通常は) よい。
+-- [[HTTP]] [[頭欄]]を用いて設定してもよい。
+- [CODE(HTMLa)@en[[[style]]]] [[属性]]を用いていて、[[既定スタイル・シート言語]]が定義されていないのは誤り。 (しかし
+[CODE(HTMLe)@en[[[link]]]] で[[参照]]された[[外部スタイル・シート]]や
+[CODE(HTMLe)@en[[[style]]]] [[要素]]には言及なし。)
+- [[著述工具]]は ([CODE(HTMLa)@en[[[style]]]] [[属性]]の有無はともかく) [[既定スタイル・シート言語]]の情報を生成するのがよい。
+
+([[名無しさん]])
+
+
+[38]
+[CITE@en[Setting the default style sheet language on your Web site - W3C Q&A Weblog]] ([TIME[2007-09-28 11:14:57 +09:00]] 版) <http://www.w3.org/QA/2007/09/setting-default-style-sheet.html>
+([[名無しさん]])
+
+
+[[#comment]]
+
+
+** 例
+
+- [5] [SAMP(HTTP)[Content-Style-Type: [CODE(MIME)[text/css]]]]
+- [6] [SAMP(HTML)[<[CODE(HTMLe)[meta]] [CODE(HTMLa)[[[http-equiv]]]]="[CODE(HTTP)[Content-Style-Type]]" [CODE(HTMLa)[[[content]]]]="[CODE(MIME)[text/css]]" />]]
+
+[22]
+[[Apache]] の [CODE(file)[[[.htaccess]]]] を使って >>5 を指定するためには、
+[PRE[
+<[[IfModule]] mod_headers.c>
+  [[Header]] set [CODE(HTTP)[Content-Style-Type]] "[CODE(MIME)[text/css]]"
+</IfModule>
+]PRE]
+
+と書きます。
+([CODE[mod_headers]] が組み込まれている時のみ有効。)
+
+[[#comment]]
+
+
+** 歴史
+
+[20] この欄の [[W3C]] draft
+初出は
+『HTML3 and Style Sheets』
+(1996年7月10日)
+<http://www.w3.org/TR/WD-style-960710#lang>
+です。
+[WEAK[(この WD はその後の HTML 4 のスタイル・シートの章の直接の祖先です。)]]
+
+この時点で既に HTML 4
+最終版とほぼ同じ規定ですが、
+[CODE(HTMLe)[[[style]]]] 要素型の
+[CODE(HTMLa)[[[type]]]] 属性は必須でありませんでしたし、
+[CODE(HTMLa)[style]] 属性を使っていても
+[CODE(HTTP)[[ABBR[CST] [Content-Style-Type]]:]] 欄は必須ではありませんでした。
+現在でも CSS が既定値になっている
+(>>7) のはこの時以来の名残でしょう。
+
+[21] この措置は当時の [[NN]] や
+[[IE]] の実装との互換性を考えれば妥当なものでした。
+それが HTML 4 では必須化されたのは[[未来との互換性]]を重視したとでも言えましょう。
+
+[24]
+[CODE(HTTP)[Content-Style-Type]] や [CODE(HTTP)[[[Content-Script-Type]]]] のような、 HTTP RFC で規定されていない HTTP 頭欄を使うことについては、 HTML 4 の策定中から批判はありました。また、 [CODE(HTMLa)[style]] 属性や[[事象属性]]の型を文書単位でしか指定できないことを指摘する意見もありました。 (たとえば [[www-html]] で何度か話題になっています。)
+
+そういう声を押し切って HTML 4 に残った理由は (HTML WG の議事録は公開されていないので) 分かりません。 (W3C WG の議事録は一定期間後に公開するべきだよね?)
+
+[[#comment]]
+
+
+** 参考文献
+
+- [14] ''XHTMLでのCSSスタイルシート・対応表'' <http://is.vis.ne.jp/charts/xhtml_styles/index.xhtml#meta_elt>
+- [15] ''HTMLでのCSSスタイルシート・対応表'' <http://is.vis.ne.jp/charts/html_styles/index.xhtml#meta_elt>
+[[#comment]]
+
+
+** メモ
+
+[16] [[SVG]] には [CODE(XMLe)[[[svg]]]] 要素に 
+[CODE(XMLa)[[[contentStyleType]]]] 属性があり、
+これを使って既定スタイル言語を指定します。 
+
+(''Styling - SVG'' <http://www.w3.org/TR/SVG/styling#ContentStyleTypeAttribute>)
+
+[17] >>16 ちなみにその既定値は [CODE(MIME)[text/css]] です。
+
+[18] >>16-17 古い [[WD]] では、 [CODE(HTTP)[Content-Style-Type:]] 
+を見ていましたが、削除されました。 
+
+(''Styling'' <http://www.w3.org/TR/1999/WD-SVG-19991203/styling.html#StyleAttribute>) 
+
+既定値はやはり [CODE(MIME)[text/css]] でした。
+
+[19] <http://www.w3.org/TR/css-style-attr> は[Q[実際には [CODE(MIME)[text/css]] 以外は [CODE(HTMLa)[[[style]]]] 属性では使われない]]と語ってます。
+
+[25]
+[CODE(HTTP)[Content-Style-Type]] や 
+[CODE(HTTP)[[[Content-Script-Type]]]] 
+の役割を実現する方法は幾つかあります。
+
+- HTTP の頭欄として指定する : HTML 4 の方法
+- 文書の大域的マークとして指定する : SVG の方法
+- 局所的マークとして指定する: 事象属性に対する [[WinIE]] 独自拡張の [CODE(HTMLa)[[[language]]]] 属性の方法
+- 属性値内で指定する : 事象属性についての WinIE 独自拡張の、属性値の最初の [CODE(JS)[javascript:]] や [CODE(VB)[vbscript:]] で判別する方法
+- 諦めて固定にする : 多くのブラウザの [CODE(HTMLa)[style]] 属性のように CSS に固定
+- そもそも [CODE(HTMLa)[style]] 属性や事象属性は使わない : [[表現と構造の分離]]原則的に正統な方法
+
+どれも一長一短で、結局全部乱立する羽目になったわけです。
+
+[32]
+[CITE[Content-Script- and Content-Style-Type from Bjoern Hoehrmann on 2004-05-28 (www-qa@w3.org from May 2004)]] <http://lists.w3.org/Archives/Public/www-qa/2004May/0045>
+([[名無しさん]])
+
+[33]
+[CITE@ja[無料動画:映画、海外ドラマ、アニメほか|パソコンテレビGyaO[ギャオ]]] ([CODE[2007-07-04 20:19:06 +09:00]] 版) <http://www.gyao.jp/>
+
+>
+[PRE(HTML invalid example code)[
+<meta http-equiv="Content-script-Type" content="text/javascript; charset=Shift_jis" />
+<meta http-equiv="Content-style-Type" content="text/css; charset=Shift_jis" />
+]PRE]
+
+([[名無しさん]])
+
+[34]
+[CITE@ja[無料動画:映画、海外ドラマ、アニメほか|パソコンテレビGyaO[ギャオ]]] ([CODE[2007-07-04 20:19:06 +09:00]] 版) <http://www.gyao.jp/>
+
+>
+[PRE(HTML invalid example code)[
+<meta http-equiv="Content-script-Type" content="text/javascript; charset=Shift_jis" />
+<meta http-equiv="Content-style-Type" content="text/css; charset=Shift_jis" />
+]PRE]
+
+([[名無しさん]])
+
+[35]
+[CITE@ja[マンション投資 : マンション投資・不動産投資物件、投資型/投資用マンション - 日経住宅サーチ]] ([CODE[2007-08-02 21:50:10 +09:00]] 版) <http://sumai.nikkei.co.jp/invest/>
+
+>
+[PRE(HTML bad example code)[
+<meta http-equiv="Content-Style-Type" content="text/css; charset=Shift_JIS">
+<meta http-equiv="Content-Script-Type" content="text/javascript; charset=Shift_JIS">
+]PRE]
+
+([[名無しさん]])
+
+[[#comment]]
+
+
+* メモ
+
+[39] [CITE[Styling – SVG 1.1 (Second Edition)]]
+( ([TIME[2011-08-10 12:35:27 +09:00]] 版))
+<http://www.w3.org/TR/2011/REC-SVG11-20110816/styling.html#DefaultStyleSheetLanguage>
+
+[40] [CITE[IRC logs: freenode / #whatwg / 20140121]]
+( ([TIME[2014-01-23 20:23:43 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20140121>

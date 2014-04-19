@@ -1,0 +1,222 @@
+
+
+* SuikaWiki 3 の導入
+
+[1] SuikaWiki 3 には、次のソフトウェアが必要です。
+- [[Perl]] 5.8.1 以上 
+-- <http://www.perl.com/>, <http://www.cpan.org/>
+-- 最近の大抵の [[Un*x]] 系システムには入っています
+(が、最新版に更新しないといけないかもしれません)。
+- Perl module [CODE(perl)[[[CGI::Carp]]]]
+-- 標準 module ですが、 1.27 以上か確認してください。
+-- 確認するには: [KBD[perl -MCGI::Carp -e "print $CGI::Carp::VERSION"]] (シェルによっては [CODE[$]] を [CODE[\$]] などと escape しないといけないかもしれません)
+-- 少々古い版でも動きますが、エラー発生時の原因究明がしづらくなるかもしれません。
+- Perl module [[Jcode.pm]]
+-- <http://openlab.ring.gr.jp/Jcode/>
+-- [[CPAN]] からも入れられます。
+=== [SAMP[$ [KBD[[[perl]] -M[[CPAN]] -e shell]]]]
+=== [CODE[cpan> [KBD[install Jcode]]]]
+- [DEL[Perl module [[BerkeleyDB]], [[MLDBM]]]] 
+-- CPAN から入れるには:
+=== [SAMP[$ [KBD[[[perl]] -M[[CPAN]] -e shell]]]]
+=== [CODE[cpan> [KBD[install BerkeleyDB]]]]
+=== [CODE[cpan> [KBD[install MLDBM]]]]
+-- これらの module は[DEL[既定 (初期状態) の [ABBR[SWHCS]] では使っていますが、]]
+本質的に必要ではありません。 [DEL[使いたくなければ [CODE(file)[wikidata/suikawiki-config.ph]] を修正してください。]]
+-- 現在の SuikaWiki3 では使用していませんが、
+将来の版では補助的に使用するかもしれません。
+- Perl module [[manakai]]
+-- Manakai のできるだけ新しい版を用意して下さい。
+詳しくは [[manakai]] を見て下さい。
+-- Manakai は更に Perl module [CODE(perl)[[[Char::Class]]]]
+に依存しているので、こちらも用意して下さい。
+
+[2]
+SuikaWiki を入手して適当なディレクトリに配置してください。
+最新の SuikaWiki 開発版は
+<http://suika.fam.cx/gate/cvs/suikawiki/script/>
+から入手できます。
+
+[3]
+[[WikiPlugin]] module を compile します。
+
+中核 plugin module をすべて compile:
+[CODE[$ [KBD[cd lib/SuikaWiki/Plugin/; make all]]]]
+
+その他の plugin module を compile:
+[SAMP[$ [KBD[cd misc/plugins/; make [VAR[modulename]].pm]]]]
+
+[CODE(file)[misc/plugins/]] 以下にある plugin
+module は、無くても動作しますので、必要に応じて
+compile して下さい。
+各 plugin module の提供する機能は file 名からおおよそ想像がつくはずです。
+
+[CODE(file)[misc/plugins/SuikaWiki09.pm]] と [CODE(file)[misc/plugins/format/SuikaWikiConst09.pm]] はとりあえず compile しておくことをお勧めします。
+(これがないとおそらく楽しくありません。)
+
+[4] 個々の wiki のデータベースおよび設定をまとめたディレクトリ [CODE(file)[wikidata/]] 
+を用意します。
+
+SuikaWiki を初めて使用する場合には、
+[CODE(file)[default/]] を [CODE(file)[wikidata/]]
+に名前変更してください。
+その後、 
+[CODE[$ [KBD[cd wikidata/; make all]]]]
+して下さい。
+
+[[SuikaWiki2]] を利用されていた場合は、
+[[..//SuikaWiki2からの移行]]もご覧下さい。
+
+
+* SWHCS の導入
+
+[5] [ABBR[SWHCS]] (SuikaWiki HTTP‐CGI‐Script Driver)
+は、 [[WWW]] から wiki に access するための
+[[CGIスクリプト]]です。
+
+[CODE(file)[wiki.cgi]] を WWW 鯖で公開されている適当なディレクトリに入れて、
+実行権限を与えて適当に鯖の設定をしてください。
+([[Apache]] 用の [CODE(file)[[[.htaccess]]]] 
+があるので参考にしてください。)
+
+SuikaWiki の他のディレクトリ ([CODE(file)[lib/]]
+や [CODE(file)[wikidata/]] など) は、
+[CODE(file)[wiki.cgi]] と同じディレクトリに入れればそのまま使えます。
+他の場所に置きたい時には、
+[CODE(file)[wiki.cgi]] と [CODE(file)[wikidata/suikawiki-config.ph]] の最初の方にあるディレクトリ・ファイル名を修正してください。
+
+
+* 設定ファイル
+
+[6] 設定ファイルは [CODE(file)[wikidata/]] にあります。
+現在のところ
+[CODE(file)[suikawiki-config.ph]] と [CODE(file)[config.ph]]
+の二種類があります。
+
+[CODE(file)[suikawiki-config.ph]] は Perl のスクリプトで、
+wiki の低レベルの静的な設定 (たとえばデータベースのファイル名) を記述します。
+
+[CODE(file)[config.ph]] は、 [CODE(file)[config.wp2]] から
+[KBD[make config.ph]] として作成します。
+[CODE(file)[config.wp2]] は、 SuikaWiki 3 の [[WikiPlugin]]
+の書式で記述します。内容は他の plugin module
+で書けることは何でも書けます。
+
+たとえば navigation panel に特定の WikiPage
+に飛ぶボタンを加えたり、
+特定のメッセージ (利用者への案内など。) 
+を本来の WikiPage の内容に加えて出力したりできます。
+
+
+* とにかく導入ガイド 
+
+[10] 十分整った環境(謎)で何も考えずに wiki.cgi
+を導入する手順は次の通りです (2004年4月30日現在)。
+
+= [CODE[[SAMP[$ ]][KBD[perl -MCPAN -eshell]]]]
+= [CODE[cpan> [KBD[install Jcode]]]]
+= [CODE[cpan> [KBD[q]]]]
+= [CODE[[SAMP[$ ]][KBD[wget http://suika.fam.cx/gate/cvs/suikawiki/script/script.tar.gz?tarball=1]]]]
+= [CODE[[SAMP[$ ]][KBD[tar zvxf script.tar.gz]]]]
+= [CODE[[SAMP[$ ]][KBD[rm script.tar.gz]]]]
+= [CODE[[SAMP[$ ]][KBD[mv script wiki]]]]
+= [CODE[[SAMP[$ ]][KBD[cd wiki/lib]]]]
+= [CODE[[SAMP[$ ]][KBD[wget http://suika.fam.cx/gate/cvs/messaging/manakai/lib/Message/Message.tar.gz?tarball=1]]]]
+= [CODE[[SAMP[$ ]][KBD[tar zvxf Message.tar.gz]]]]
+= [CODE[[SAMP[$ ]][KBD[wget http://suika.fam.cx/gate/cvs/perl/charclass/lib/Char/Char.tar.gz?tarball=1]]]]
+= [CODE[[SAMP[$ ]][KBD[rm Char.tar.gz]]]]
+= [CODE[[SAMP[$ ]][KBD[cd Char/Class]]]]
+= [CODE[[SAMP[$ ]][KBD[make]]]]
+= [CODE[[SAMP[$ ]][KBD[cd ../..]]]]
+= [CODE[[SAMP[$ ]][KBD[make]]]]
+= [CODE[[SAMP[$ ]][KBD[cd ../misc/plugins]]]]
+= [CODE[[SAMP[$ ]][KBD[make]]]]
+= [CODE[[SAMP[$ ]][KBD[rm request-log.pm]]]] ;; 他、要らない plugin の .pm を消す
+= [CODE[[SAMP[$ ]][KBD[cd ../..]]]]
+= [CODE[[SAMP[$ ]][KBD[mv default wikidata]]]]
+= [CODE[[SAMP[$ ]][KBD[cd wikidata]]]]
+= [CODE[[SAMP[$ ]][KBD[make]]]]
+
+これで (きっと) 動くようになります。
+
+
+* Q & A
+
+[11] Q: [[Win32]] でも動きますか?
+
+A: SuikaWiki3 の code は原則的に実行システム非依存ですので、
+Perl があるどんな環境でも動くはずです (但し、 [[EBCDIC]] 版 Perl
+を除きます)。
+
+手元で試した限りでは、 [[ActivePerl]] + Apache 2 で問題なく動作しました。
+[[Cygwin]] 版でもおそらく動くでしょう。
+
+但し、 [KBD[[[make]]]] などが用意されていない場合には
+[CODE(file)[[[Makefile]]]] に書かれている準備作業をすべて手動で行うことになりますから、
+多少の知識と手間が必要となります。 (Cygwin を入れておくとよいでしょう。)
+
+[14] Q: 他の wiki や CGI スクリプトでは関連ファイルのパスや URI
+を指定しなければならないものが多いですが、 SuikaWiki 
+でも必要ですか?
+
+A: 通常は SuikaWiki3 が自動的に決定しますので、
+そのような設定は不要です。
+
+ただし、好みでディレクトリ構成を変えたり、ウェブ鯖の redirect
+機能を使ったりする場合には、 [CODE(file)[wiki.cgi]]
+や [CODE(file)[wikidata/suikawiki-config.ph]] 
+を修正する必要があるかもしれません。
+
+[13] Q: 実行すると [CODE(file)[/main.0.0.0.lock]] 
+が作成できないというようなメッセージが出力されます。
+
+A: このエラーは [CODE(file)[wikidata/lock]] というディレクトリが存在しない時に発生します。
+ディレクトリを作成すれば解決します。
+
+(古い版を使っている場合以外は [KBD[make]] で自動的にディレクトリが作られますからこの問題は発生しません。)
+
+[12] Q: 実行すると WikiDB で致命的誤りが発生したというメッセージが出力されます。
+しかし誤りの詳細は出力されないか、または SuikaWikiConst/0.9
+の変換がなんちゃらというものだけしか出てきません。
+
+A: このエラーは [CODE(file)[wikidata/cache]]
+というディレクトリが存在しない時に発生するようです。
+ディレクトリを作成すれば解決するはずです。
+
+(古い版を使っている場合以外は [KBD[make]] で自動的にディレクトリが作られますからこの問題は発生しません。)
+
+[15] Q: この wiki (SuikaWiki @ suika.fam.cx) の設定を教えて下さい。
+
+A: この wiki の設定ファイルは
+<IW:SuikaCVS:"suikawiki/wikidata/suikawiki-config.ph">,
+<IW:SuikaCVS:"suikawiki/wikidata/config.wp2"> です。
+参考にして下さい。
+
+[[#comment]]
+
+
+* メモ
+
+[7] わからないことなどがあればお気軽にどうぞ。
+
+[13] Search plugin module ([CODE(file)[misc/plugins/link/search.wp2]])
+は、 WikiPage の数が多くなると処理に大変時間がかかるようになります。
+頻繁に access がある鯖で運用すると危険です。
+その場合、 Namazu plugin ([CODE(file)[misc/plugins/link/namazu.wp2]])
+を併用して下さい。 (別途 Namazu <http://www.namazu.org/>
+と Namazu を使用して作成した wiki の[RUBY[索引] [インデックス]]が必要です。)
+
+[DEL[
+
+[8]
+頻繁に access される site で Referer, RequestLog, Map plugin を使用されると危険なことになります。ご注意ください。
+
+この問題を回避した版は現在開発中です。
+([[名無しさん]] [WEAK[2004-03-14 13:57:49 +00:00]])
+
+[9]
+>>8 Referer plugin のこの問題は修正しました。
+RequestLog は準備中です。 Map plugin と Search plugin (旧 Map plugin) も基本的に修正しましたが、 Search plugin の部分は構造上修正が困難なので、頻繁に access される site では Namazu plugin と併用して回避してください。
+([[名無しさん]] [WEAK[2004-04-26 07:43:50 +00:00]])
+]DEL]
+

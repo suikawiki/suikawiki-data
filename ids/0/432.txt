@@ -1,0 +1,492 @@
+
+[1] [[HTTP]] などで使用される[[応答頭欄]]で、飛び先
+[[URI]] を指定します。
+細かい意味は仕様や[[応答符号]]により異なります。
+
+* 仕様書
+
+[REFS[
+- [313] [CITE@en[RFC 3875 - The Common Gateway Interface (CGI) Version 1.1]] ([TIME[2011-11-20 06:09:05 +09:00]] 版) <http://tools.ietf.org/html/rfc3875#section-6.3.2>
+]REFS]
+
+* 説明
+
+- [23] >>20 サーバー内 redirect を何度も繰り返し行うことも出来ます。 (HTTP Server は無限 loop にならないように対策する必要があるでしょう。)
+- [26] >>1,>>5 応答の種類 (応答符号) によっては、この欄が意味を持たず、指定できない (指定された場合の動作は未定義。何も起こらないこともある。) こともあります。例えば [[200]] (OK) 応答で [CODE[Location:]] 欄を返しても意味はありません。
+- [27] [CODE[Location:]] 欄はその意味を考えれば明白ですが、複数指定することはできません。
+
+[29] CGI で [CODE[Location:]] を使う時は、
+[[Content-Type:]] 欄は不要なら出力しなくて構いません。
+例えば、
+
+[PRE[
+ print <<EOH;
+ Location: http://foo.example/bar[INS[(改行)]]
+ [INS[(改行)]]
+ EOH
+]PRE]
+
+というだけの出力の CGI script では
+[SAMP[Content-Type: text/html]]
+とか出力しなくてもいいです。 
+(というかむしろ書いたら、1文字もない「空」では
+HTML として成立しませんから不適当な指定となります。)
+
+[34] CGI 欄は[[折り畳み]]が認められていないことにも注意が必要です。つまり
+
+[PRE[
+ Location:
+   http://foo.example/
+]PRE]
+
+は HTTP では可能ですが、 CGI では不正です。
+(まあ URI が値のこの欄ではしないとは思いますけどね。)
+
+
+
+* 素片識別子
+
+[41] <http://foo.example/bar#fragment1> を取り寄せる時に、次のようになったとします。
+
+[PRE[
+C: GET /bar HTTP/1.1
+C: Host: foo.example
+C: 
+S: 302 Found HTTP/1.1
+S: Location: http://foo.example/hoge
+S: 
+]PRE]
+
+この時、 [[UA]] の望ましい動作は、 ([[WWWブラウザ]]であれば)
+<http://foo.example/hoge> を要求し、その #fragment1 を表示することです。
+
+[42] 同じ例で、次のような応答があったとしましょう。
+[PRE[
+S: 302 Found HTTP/1.1
+S: Location: http://foo.example/hoge#fragment2
+S: 
+]PRE]
+
+この時 WWW ブラウザは、 <http://foo.example/hoge#fragment2>
+を表示し、 #fragment1 のことは忘れます。
+
+[44] >>42 で、「アドレス・バー」のような [[UI]] 部分をどうするかという問題がありますね。
+[[301]] なら新しい (#fragment2 の) URI にしてしまえばいいですが、 [[307]]
+の時はどうなんでしょう。元の #fragment1 にしておくのと、 #fragment*
+は削ってしまうのと2種類考えられますが。
+
+[43] 但し実際には、この #fragment の扱いについては仕様・実装がぐちゃぐちゃです。
+できることならば [CODE[Location]] 欄で素片識別子を使わないといけないようなことにならないようによく考えておくべきでしょう。[WEAK[それでも使わざるを得なくなったときは仕方ないですし、 UA の挙動なんて飾りです、偉い人には分からなくて結構と開き直るのも場合によってはありでしょう。]]
+
+
+** 仕様書の類の言及
+
+[24] >>20,>>5 [[RFC2396]] ([[URI]]) によると [CODE(ABNF)[absoluteURI]] は [CODE(ABNF)[fragment]] を含みません。従って [[HTTP/1.1]] と CGI で仕様が不整合な気がします。
+
+実際のところ [CODE[fragment]] つき URI を送っても多くの URI は解釈する気がしますが、仕様的には無理ということでいいですか?
+
+[35] >>24 ''HTTP/1.1 Specification Errata'' 
+[DEL[<http://world.std.com/~lawrence/http_errata.html#location-fragments>]] [INS[<http://purl.org/NET/http-errata#location-fragments>]]
+に載ってました。 (こんなの知らなかった。) >>6 
+の通り、 '''HTTP でも URI の後に #fragment をつけることが出来ます'''。
+
+[36] とはいえ、知らない実装者も居るだろうな。。。要注意ですね。
+
+[37] >>35 の文書から、該当部分の注記。
+
+> There are circumstances in which a fragment identifier in a Location URL would not be appropriate:
+- With a 201 Created response, because in this usage the Location header specifies the URL for the entire created resource.
+- With a 300 Multiple Choices, since the choice decision is intended to be made on resource characteristics and not fragment characteristics.
+- With 305 Use Proxy. 
+
+> At present, the behavior in the case where there was a fragment with the original URI, e.g.: http://host1.example.com/resource1#fragment1 where /resource1 redirects to http://host2.example.com/resource2#fragment2 is 'fragment1' discarded? Do you find fragment2 and then find fragment1 within it? We don't have fragment combination rules.
+
+[CODE[Location]] URL 中での素片識別子が適切でない場面があります。
+- [[201]] Created (作成しますた) 応答。 [CODE[Location]]
+頭を使用して作成された資源全体を URL を指定するものだから。
+- [[300]] Multiple Choices (複数選択肢)。選択決定は資源の性質についてなされるもので素片の性質についてではないから。
+- [[305]] Use Proxy (串使って)。
+
+現在、元の URI に素片がある場合、例えば 
+<http://host1.example.com/resource1#fragment1> で [SAMP[/resource1]]
+が <http://host2.example.com/resource2#fragment2>
+に redirect している時に「fragment1」は捨てられているのでしょうか?
+[SAMP[fragment2]] を探してそれから [SAMP[fragment2]] を探すのでしょうか?
+我々は素片組み合わせ規則は持っていません。
+
+[38] >>37 の後半の問題、実際のところどうなんだろう?
+どっちにしる!とも言いがたいよなあ。
+
+[39] ''Common User Agent Problems: Handle the fragment identifier of a URI when the HTTP request is redirected.'' <http://www.w3.org/TR/cuap#cp-fragment>
+
+この [[W3C]] [[NOTE]] は、 #fragment に対応していない UA
+があるけどちゃんとしる! と言うと共に、 >>37-38 問題について、 #fragment2 
+にしる! と言っています (小文字 must)。
+
+[310] [CITE@en[Web Applications 1.0 r6322     Make Facebook work. See http://blogs.msdn.com/b/ieinternals/archive/2011/05/17/url-fragments-and-redirects-anchor-hash-missing.aspx]]
+( ([TIME[2011-07-24 11:28:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=6321&to=6322>
+
+[311] [CITE@en[URL Fragments and Redirects - EricLaw's IEInternals - Site Home - MSDN Blogs]]
+( ([TIME[2011-07-24 12:07:00 +09:00]] 版))
+<http://blogs.msdn.com/b/ieinternals/archive/2011/05/17/url-fragments-and-redirects-anchor-hash-missing.aspx>
+
+[312] [CITE@en[[[draft-bos-http-redirect-00]] - Handling of fragment identifiers in redirected URLs]]
+([TIME[2011-08-17 18:10:19 +09:00]] 版)
+<http://tools.ietf.org/html/draft-bos-http-redirect-00>
+
+** 実装について
+
+[58]
+[[WinIE 6.0]] (もしかしたら以前の版も。) は redirect された時の [CODE(HTTP)[Location]] URI 参照に素片識別子がついていると直後の再要求時にその素片識別子ごと [CODE(ABNF)[Request-URI]] にして送ってしまうみたいです。
+([[名無しさん]] [WEAK[2004-05-03 04:37:14 +00:00]])
+
+* CGI
+
+[314] [[CGI]] では [CODE(HTTP)@en[[[Location:]]]] [[欄]]は [[CGI欄]]であり、[[CGIスクリプト]]が[[CGI応答]]に指定したものを[[鯖]]が解釈します。
+
+** 構文
+
+[315] [[CGI]] の [CODE(HTTP)@en[[[Location:]]]] 欄では
+- [[絶対URL]] ([[URL scheme]] からはじまり、最大で[[素片識別子]]まで)
+- [[絶対path]]と省略可能な[[query]]
+
+... のいずれかの値を指定できます。前者の場合は[[クライアント・リダイレクト応答]]となり、
+そのまま[[HTTP]] [CODE(HTTP)@en[[[Location:]]]] 欄となります。後者の場合は[[局所リダイレクト応答]]となり、
+[[鯖]]が指定された [[path]] (と [[query]]) で[[要求]]を受け取ったものとして再処理します。
+[SRC[>>313]]
+
+[316] 両者の場合それぞれで、他の[[頭欄]]や[[応答本体]]の有無、それを受け取った[[鯖]]の処理が異なります。
+詳しくはそれぞれの項をご参照ください。
+
+* 歴史
+
+** RFC 1945 (HTTP/1.0) 10.11; RFC 2068・2616 (HTTP/1.1) 14.30 Location
+
+> The Location response-header field [DEL[defines the exact location of the resource that was identified by the Request-URI]] [INS[is used to redirect the recipient to a location other than the Request-URI for completion of the request or identification of a new resource]]. [INS[For 201 (Created) responses, the Location is that of the new resource which was created by the request.]]
+> For 3xx responses, the location [DEL[must]] [INS[SHOULD]] indicate the
+server's preferred [DEL[[INS[{1945,2068}]] URL]] [INS[[INS[{2616}]] URI]] for automatic redirection to the resource. [DEL[Only one absolute URL is allowed.]] [INS[The field value consists of a single absolute [DEL[[INS[{1945,2068}]] URL]] [INS[[INS[{2616}]] URI]].]]
+
+[5] [CODE[Location]] 応答頭欄は、要求の完了又は新しい資源の特定のために
+[[Request-URI]] 以外の場所に受信者を[RUBY[再指向] [リダイレクト]]するのに使います。
+[[201]] (Created: 作成。) 応答では、 [CODE[Location]]
+は要求により作られた新しい資源の場所です。
+3[VAR[x]][VAR[x]] 要求では、この場所は、資源への自動誘導のための、サーバー側的により好ましい
+URI を示します。
+欄の値は単一の絶対 URI で構成します。
+
+>
+- Location       = "Location" ":" absoluteURI [INS[[INS[{Errata}]] [ "#" fragment ] ]]
+
+[INS[
+
+訳注: Errata の件について >>35 を参照。
+]INS]
+
+> An example is[INS[: [INS[{2616}]]]]
+
+例:
+
+>
+- [DEL[Location: http://www.w3.org/hypertext/WWW/NewLocation.html]]
+- [INS[Location: http://www.w3.org/pub/WWW/People.html]]
+
+[INS[
+
+> Note: The Content-Location header field (section [DEL[14.15]] [INS[14.14]]) differs
+from Location in that the Content-Location identifies the original
+location of the entity enclosed in the request. It is therefore
+possible for a response to contain header fields for both Location
+and Content-Location. Also see section 13.10 for cache requirements
+of some methods.
+
+[8] '''注意''': [CODE(HTTP)[[[Content-Location]]]]
+頭欄は [CODE[Location]] とは異なり、要求に同封された実体の場所を識別します。
+従って、応答に [CODE[Location]] と 
+[CODE[Content-Location]] の双方を含めることも可能です。
+幾つかの方式のキャッシュ要求について、 13.10
+節も参照。
+]INS]
+
+[INS[
+
+注: 注記のない修正は、 RFC 1945→2068 での変更箇所。
+]INS]
+
+
+** HTTP CGI/1.1 (draft 03) 7.2 (抜粋)
+
+> At least one CGI-Field
+MUST be supplied, but no CGI field name may be used more than
+once in a response. If a body is supplied, then a
+"Content-type" header field MUST be supplied by the script,
+otherwise the script MUST send a "Location" or "Status" header
+field. If a Location CGI-Field is returned, then the script
+MUST NOT supply any HTTP-Fields.
+
+[33] 最低1つの CGI 欄を供給しなければ'''なりません'''。
+但し同じ CGI 欄名を1つの応答中に複数使ってはいけません。
+[[本体]]を供給する場合、 script は「Content-type」
+頭欄を供給しなければ'''なりません'''。
+そうでない場合 [INS[(本体を供給しない場合)]] script は
+は「Location」頭欄か「Status」頭欄を送らなければ'''なりません'''。
+[CODE[Location]] CGI 欄を返す場合、 script はどの HTTP
+欄も供給しては'''いけません'''。
+
+
+** 7.2.1.2. Location
+
+> This is used to specify to the server that the script is
+returning a reference to a document rather than an actual
+document.
+
+[10] これは、サーバーに対してスクリプトが実際の文書ではなく文書への参照を返すことを指定するのに使います。   
+- [11] Location         = "Location" ":" ( fragment-URI | rel-URL-abs-path ) NL
+- [12] fragment-URI     = URI [ # fragmentid ]
+- [13] URI              = scheme ":" *qchar
+- [14] fragmentid       = *qchar
+- [15] rel-URL-abs-path = "/" [ hpath ] [ "?" query-string ]
+- [16] hpath            = fpsegment *( "/" psegment )
+- [17] fpsegment        = 1*hchar
+- [18] psegment         = *hchar
+- [19] hchar            = alpha | digit | safe | extra | ":" | "@" | "& | "="
+
+> The Location value is either an absolute URI with optional
+fragment, as defined in RFC 1630 [1], or an absolute path
+within the server's URI space (i.e., omitting the scheme and
+network-related fields) and optional query-string. If an
+absolute URI is returned by the script, then the server MUST
+generate a '302 redirect' HTTP response message unless the
+script has supplied an explicit Status response header field.
+Scripts returning an absolute URI MAY choose to provide a
+message-body. Servers MUST make any appropriate modifications
+to the script's output to ensure the response to the
+user-agent complies with the response protocol version. If the
+Location value is a path, then the server MUST generate the
+response that it would have produced in response to a request
+containing the URL
+[PRE[
+   
+-[21] scheme "://" SERVER_NAME ":" SERVER_PORT rel-URL-abs-path
+]PRE]
+
+[20] [CODE[Location]] 値は、 [[RFC1630]] で定義されている絶対
+URI 及び省略可能な[[断片]]か、又はサーバーの URI
+空間内の絶対経路 (すなわち、[[scheme]] とネットワーク関連欄を省略したもの。)
+及び省略可能な [[query-string]] のいずれかです。
+絶対 URI が script により返された場合、サーバーは、
+[CODE[Status]] 応答頭欄が明示的に指定されていない限り、
+「[[302]] redirect」 HTTP 応答メッセージを生成しなければ'''なりません'''。
+絶対 URI を返す script は [[message-body]]
+を提供することを選んでも'''構いません'''。
+サーバーは、[[利用者エージェント]]への応答が応答のプロトコルの版に合致することを確実にするため、
+script の出力を適当に修正しなければ'''なりません'''。
+[VAR[Location]] 値が経路である場合、サーバーは >>21 の [[URL]]
+を含む要求への応答であるとして応答を生成しなければ'''なりません'''。
+
+> Note: If the request was accompanied by a message-body (such
+as for a POST request), and the script redirects the request
+with a Location field, the message-body may not be available
+to the resource that is the target of the redirect.
+
+[22] '''注意''': 要求が [CODE(ABNF)[message-body]]
+を伴っていて ([[POST]] 要求の場合など)、
+script が要求を [CODE[Location]] 欄で redirect
+した場合、 redirect の対象の資源には [CODE(ABNF)[message-body]]
+は利用可能でないかもしれません。
+
+
+** RFC・I‐D の部分の License
+
+[[RFCのライセンス]]
+
+
+* 個々の実装について
+
+[45] 噂によると [[tok2]] では広告の関係で CGI header [CODE(CGI)[Location:]] が使えないらしいです。
+
+[46] >>45 トクトクは CGI 使えますと宣伝していましたよね。本当だとしたら虚偽広告ということになります。やめていただきたいね。
+
+[28] サーバーによっては [[Cookie]] と相性が悪いようです。 (''CGIでクッキーセットした後にLocationで他のURLに飛ばしたいんですが・・・'' <http://tohoho.wakusei.ne.jp/lng/199908/99080130.htm>) (([CODE[200]] の [[HTML]] 文書以外では Cookie は使わない方が良いですね。色々の実装状況的に。))
+
+[50] >>28 これ、 [CODE(CGI)[Location]] と [CODE(HTTP)[[[Set-Cookie]]]] を併用すると
+[[IIS]] 3.0 や [[PWS]] では上手くいかない、 [[Apache]]
+では上手くいく、ということですけど、こんなことってあり得ますかね?
+
+Redirect 前と redirect 後の扱いで UA 側で不具合 (あるいは仕様)
+によって上手くいかない可能性は大いにあると思うのですけど、
+それならどのサーバーでも上手くいかないはずです。 [CODE(CGI)[Location]]
+あるいは [CODE(HTTP)[[[3xx]]]] 使用時に [CODE(HTTP)[Set-Cookie]]
+を捨てるような設計に IIS がなっているとすればこの挙動になるのでしょうけど、
+そんな設計するような根拠が思いつかない。
+
+もっとも、 >>28 のやりとりは話してる内容が大雑把過ぎて何ともいえませんよね。
+誰かがちゃんと確かめた方がいいと思いますけど、今時 IIS なんて使ってる人いますか?
+
+[59]
+修正パッチなしの[[なつみかん]]には[CODE(HTTP)@en[[[Content-Location]]:]] 欄
+(など[CODE(HTTP)@en[Location]]が含まれる[[頭欄]]を[CODE(HTTP)@en[[[Location]]:]]
+欄と誤認する不具合があります。
+
+[CITE[ねこめしにっき(2006年1月)]] 
+<http://www.remus.dti.ne.jp/~a-satomi/nikki/2006/01a.html?01090700#d08n01>
+
+([[名無しさん]] [WEAK[2006-01-09 08:22:59 +00:00]])
+
+
+** 飛び先で文字化け問題
+
+[30] 古い [[NC]]4 などで、
+
+[PRE[
+ Content-Type: text/html; charset=iso-8859-1
+ Location: http://foo.example/bar/
+]PRE]
+
+と言われて、 [SAMP[http://foo.example/bar/]] を取り寄せると
+
+[PRE[
+ Content-Type: text/html
+]PRE]
+
+であって中身が日本語の漢字かな混じり文とかの時に、[[文字コード]]自動判別が行われずにそのまま
+[[ISO-8859-1]] と認識され、[[文字化け]]するという問題が起きました。
+
+[31] この問題で一番悪いのは、 [[ISO-8859-1]] 以外の文書に
+[[charsetパラメーター]]を付けずに送り出す相手サーバーです。
+
+[[Apache]] 1.3.12 で >>30 の上の例のように、エラー・メッセージで必ず
+[CODE[charset]] パラメーターをつけるように修正された
+(安全性の問題への対処のため。) ことで、正しい [CODE[charset]]
+パラメーターを HTML 
+文書につけて送らない日本語文書が主のサーバーで広範囲で問題が起こりました。
+問題の直接的な原因となった 1.3.12 の修正を元に戻すことで対策を行ったところやそれを薦める人もいましたが、それは'''間違っています'''。
+
+[55] きっとこの問題って、リンク先の頁もきっとリンク元の頁と同じ
+[CODE(MIME)[charset]] であることが多いだろうなあ、
+利用者のために補完したるか、っていう親切心で実装したんでしょうねぇ。
+
+だとしたら Netscape の開発者を責めるのは可哀想かもしれない。
+
+もちろん責められるべきは [CODE(MIME)[charset]] 引数の値を正しく設定できないサーバー管理者のあなたです。20世紀にはそれが許されましたが、21世紀には許されませんよ。
+
+
+
+** ブラウザのアドレス表示
+
+[56] [CODE(HTTP)[Location:]] 欄に不正な文字列を指定したとします。
+例えば、
+[SAMP(HTTP)[Location: http://invalid%3A80/]]
+を含む redirect 応答を返したとします。
+
+[57] このとき、 [[WinIE6]] では、
+サーバーに接続できませんという画面になりますが、
+そのアドレス棒の URI は redirect
+前のものになったままです。
+飛ぼうとした redirect 先 URI
+は画面のどこにも出てきません。
+
+つまり、 redirect 元の鯖には正しく接続できて応答ももらっているくせに、
+その応答がいかれているがために、
+その鯖にすら接続できなかったかのような紛らわしいメッセージが表示されてしまうのです。
+
+* 処理モデル
+
+** リダイレクトの開始
+
+[309] [[WinIE8]]、[[Opera]]、[[Chrome]]、[[Firefox]] のどの [[Webブラウザー]]も、
+[[リダイレクト]]している [[HTTPメッセージ]]全体が到着するのを待たず、
+[[頭部]]を受け取り次第すぐに[[リダイレクト]]先の [[URL]]
+の取得をはじめるようです。
+
+;; <http://suika.fam.cx/~wakaba/-temp/test/http/redirect/delayed.cgi> ([[頭部]]はすぐに返すものの、[[応答本体]]の生成が終わるまで100秒かかる例)。
+
+;; [CODE(HTTP)@en[[[Location:]]]] [[頭欄]]を受け取り次第すぐに次に進むのか、
+[[頭部]]をすべて受け取り終わるまで進まないのかは未検証です。
+
+* 関連プロトコル要素
+
+[49] [[HTTP]] で、関連するプロトコル要素:
+- [CODE(ABNF)[[[Request-URI]]]]
+- [CODE(HTTP)[[[Content-Location]]:]] 欄
+- 状態符号 [CODE(HTTP)[[[201]] (Created)]]
+- 状態符号群 [CODE(HTTP)[[[3xx]]]]
+
+[32] [[w3m]] の [[LocalCGI]] 機能で似たようなものとして 
+[CODE(CGI)[[[w3m-Control]]:]] 欄 + [CODE[GOTO]] があります。
+[SAMP[w3m-control: GOTO file:///cgi-bin/foo.cgi]] のように使います。
+
+
+[317] [CITE[WWW-Talk Jan-Mar 1994: Re: Redirection: "Location" or "Uri" ?]]
+( ([TIME[2012-07-10 14:40:22 +09:00]] 版))
+<http://1997.webhistory.org/www.lists/www-talk.1994q1/0216.html>
+
+[318] [CITE[#185 (Location header payload handling) – httpbis]]
+( ([TIME[2012-07-10 14:44:09 +09:00]] 版))
+<http://trac.tools.ietf.org/wg/httpbis/trac/ticket/185>
+
+[319] [CITE[''''''[''''''whatwg'''''']'''''' Spec for location object needs to make some properties unforgeable; need supporting WebIDL changes]]
+( ([TIME[2012-11-20 02:38:08 +09:00]] 版))
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2012-November/038015.html>
+
+[320] [CITE[''''''[''''''whatwg'''''']'''''' Location object identity and navigation behavior]]
+( ([TIME[2012-11-20 01:38:05 +09:00]] 版))
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2012-November/038014.html>
+
+[321] [CITE[''''''[''''''whatwg'''''']'''''' Proposal: location.parentOrigin]]
+( ([TIME[2012-11-20 06:25:14 +09:00]] 版))
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2012-November/038019.html>
+
+[322] [CITE@en[Web Applications 1.0 r7513     Update Location's members to point to the right document.]]
+( ([TIME[2012-11-20 09:15:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=7512&to=7513>
+
+[323] [CITE@en[Web Applications 1.0 r7514     Make Location be protected from cross-origin access like Window.]]
+( ([TIME[2012-11-20 10:14:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=7513&to=7514>
+
+[324] [CITE@en[Web Applications 1.0 r7515     More security fixes: Location is now entirely Unforgeable, and wording for some other security paragraphs is now consistent.]]
+( ([TIME[2012-11-20 10:42:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=7514&to=7515>
+
+[325] [CITE@en[Web Applications 1.0 r7516     Location's security model is actually different than Window's.]]
+( ([TIME[2012-11-20 16:45:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=7515&to=7516>
+
+[326] [CITE@en-US[Window Object 1.0]]
+( ([TIME[2006-04-08 02:19:28 +09:00]] 版))
+<http://www.w3.org/TR/Window/#location>
+
+[327] [CITE@en[Web Applications 1.0 r7758     Allow custom properties on Location objects to work for the Document whose Location object it originally was.]]
+( ([TIME[2013-03-16 08:00:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=7757&to=7758>
+
+[328] [CITE@en[Web Applications 1.0 r7846     Try to match reality better for dynamic location.hash navigation.]]
+( ([TIME[2013-04-23 03:01:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=7845&to=7846>
+
+[329] [CITE@en[draft-ietf-httpbis-p2-semantics-22 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]]
+( ([TIME[2013-05-03 02:04:10 +09:00]] 版))
+<http://tools.ietf.org/html/draft-ietf-httpbis-p2-semantics-22#section-7.1.2>
+
+[330] [[au]] の[[ガラケー]]だと[[素片識別子]]が入っていると [CODE(HTTP)@en[[[404]]]] になります。
+
+[405] [CITE[IRC logs: freenode / #whatwg / 20131010]]
+( ([TIME[2013-10-14 00:14:43 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20131010>
+
+[406] [CITE[Location: javascript:alert(1) が返ってきた時のブラウザの動作 - Qiita ''''''[''''''キータ'''''']'''''']]
+( ([TIME[2013-10-31 03:05:25 +09:00]] 版))
+<http://qiita.com/ooooooo_q/items/1f0c2c64413495c46e6b>
+
+[407] [CITE[IRC logs: freenode / #whatwg / 20131213]]
+( ([TIME[2013-12-15 23:01:08 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20131213>
+
+[408] [CITE[IRC logs: freenode / #whatwg / 20140205]]
+( ([TIME[2014-02-08 12:44:05 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20140205#l-961>
+
+[409] [CITE@en[Cross-origin windows and how to explain them in ECMAScript semantics]]
+( ([[David Bruant]] 著, [TIME[2014-02-08 21:16:11 +09:00]] 版))
+<http://lists.w3.org/Archives/Public/public-script-coord/2014JanMar/0140.html>

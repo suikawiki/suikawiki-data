@@ -1,0 +1,322 @@
+[2] [DFN[Punycode]] は、[[DNS]] で [[Unicode]] 
+の[[文字]]を[[符号化]]するために使われている[RUBY[[[算法]]][アルゴリズム]]です。
+[[Punycode]] は任意の [[Unicode文字]]を [[ASCII文字]]に転写し、旧来の [[DNS]]
+で扱える形にします。
+
+;; Punycode は「プニコード」「ピュニコード」などと発音されます。
+
+* 仕様書
+
+[REFS[
+- [1] '''[CITE@en[RFC 3492 - Punycode: A Bootstring encoding of Unicode for Internationalized Domain Names in Applications (IDNA)]] <http://tools.ietf.org/html/rfc3492>'''
+- [58] [CITE@en[RFC 5890 - Internationalized Domain Names for Applications (IDNA): Definitions and Document Framework]]
+-- [57] <http://tools.ietf.org/html/rfc5890#page-8>
+-- [59] <http://tools.ietf.org/html/rfc5890#section-2.3.4>
+]REFS]
+
+* 語法
+
+[60] [[RFC 5890]] は、「[[Punycode]] [[文字列]]」のような表現はその意図が不明確なため、
+「[[Punycode]]」は[RUBY[[[算法]]][アルゴリズム]]であり、
+それ以外の用法は[RUBYB[[[非推奨]]]@en[discourage]]とすると述べています [SRC[>>59]]。
+
+[77] [[Punycode]] は [[Nameprep]] や「[CODE[[[xn--]]]]」を付加した[[XNラベル]]など、 [[IDNA]]
+における他の処理も含めた総称として使われることがありますが、この用法は言及対象が不明瞭になってしまうので不適切です。
+[[Punycode]] はあくまで [[Unicode]] [[文字列]]を [[ASCII]] [[文字列]]に変換する方法のみを指して言うべきです。
+
+* 算法
+
+[4] [[Punycode]] は、 [[Bootstring]] の[[実現値]]です。
+
+** 引数
+
+[9] [[Punycode]] は、 [[Bootstring]] の[[引数]]を次のように設定したものです [SRC[>>1 5.]]。
+
+- [10] [VAR[base]] 36
+- [11] [VAR[t[SUB[min]]]] 1
+- [12] [VAR[t[SUB[max]]]] 26
+- [13] [VAR[skew]] 38
+- [14] [VAR[damp]] 700
+- [15] [VAR[initial[SUB[bias]]]] 72
+- [16] [VAR[initial[SUB[n]]]] 128 (0x80)
+
+[17] これは [[Unicode]] の[[符号位置]]に対して有効に機能するような[[引数]]の設定となっています。
+([[算法]]としての制約は[[非負整数]]の列が入力となることであり、 [[Unicode]]
+である必要はありません。) [SRC[>>1 5.]]
+
+- [18] [[基本符号位置]]は [[0x00]] ... [[0x7F]] の [[ASCII]] の[[符号位置]]です。 [SRC[>>1 5.]]
+- [19] [CODE(char)[[[-]]]] が[[区切子]]です。 [SRC[>>1 5.]]
+- [20] [[0x41]] ([CODE(char)[[[A]]]]) ... [[0x5A]] ([CODE(char)[[[Z]]]]) が 0 ... 25 を表します。 [SRC[>>1 5.]]
+- [21] [[0x61]] ([CODE(char)[[[a]]]]) ... [[0x7A]] ([CODE(char)[[[z]]]]) が 0 ... 25 を表します。 [SRC[>>1 5.]]
+- [22] [[0x30]] ([CODE(char)[[[0]]]]) ... [[0x39]] ([CODE(char)[[[9]]]]) が 26 ... 35 を表します。 [SRC[>>1 5.]]
+- [23] その他の[[基本符号位置]]は[[数字]]や[[区切子]]として使いません。
+
+[28] [[復号器]]は[[大文字]]と[[小文字]]、その混合のいずれも認識しなければ[['''なりません''']]。
+[[符号化器]]は[[大文字・小文字混合注釈]]を使う場合を除き、[[大文字]]のみ、または[[小文字]]のみを出力する[['''べきです''']]。 [SRC[>>1 5.]]
+
+** 型の大きさ
+
+[32] [[IDNA]] 用途では、 26ビット[[符号無し整数]]を使うと (正当な入出力に対して)
+[[桁溢れ]]なく処理できます。26ビットあれば [[U+10FFFF]] まで、
+63[[文字]]までの[[ラベル]]を正しく扱えます。 [SRC[>>1 6.4]]
+
+[33] [[IDNA]] 以外でより長い[[文字列]]を扱いたい時、 [[U+10FFFF]] より先が含まれる
+[[ISO/IEC 10646]] [[文字列]] (やそれ以外の[[文字コード]]の[[文字列]]) を扱いたい時には
+26ビットでは足りないかもしれません。
+
+** 大文字・小文字混合注釈
+
+[29] [[Punycode]] は[[大文字・小文字混合注釈]]が使えるようになっています。 [SRC[>>1 5.]]
+([VAR(math)[t[SUB[max]]]] が 26 で、25 以下は[[ラテン文字]]なので、[[差分]]の最後の1文字は常に[[大文字]]と[[小文字]]が存在する[[ラテン文字]]になります。)
+
+[30] ただし、[[ドメイン名]]では[[大文字・小文字不区別]]なので、[[大文字・小文字混合注釈]]も使われません。 
+[SRC[>>1 5.]]
+
+;; [55] 正確には、使わないというか、使う必要性がないという感じです。使っても構いません。
+
+[56] [[IDNA2008]] では[[Uラベル]]の定義上[[大文字]]と[[小文字]]を混在させることに意味がなく、
+[[Aラベル]]で使う [[Punycode]] で[[符号化]]した文字列は[[小文字]]にするべきとされています [SRC[>>57]]。
+
+* ACE 接頭辞
+
+[3] [[Punycode]] を表す [[ACE接頭辞]]は、 [DFN[[CODE@en[[[xn--]]]]]] です
+[SRC[[[RFC 3490]] 5.]]。
+
+* 文字コードとしての Punycode
+
+[61] [[Punycode]] は [[DNS]] の[[ラベル]]での[[文字]]の[[符号化]]に特化した[[算法]]であり、
+汎用の[[文字コード]]よりはむしろ[[符号理論]]的な[[符号化]]や[[情報圧縮]]の延長にある技術です。
+汎用の[[文字コード]]は大抵の場合、[[文字]]の順序と[[符号化]]された[[ビット組合せ]]の列の順序が同じである、
+とある[[符号位置]]を表す[[ビット組合せ]]の列が前後の文脈によって著しく変化することがない、
+任意の長さの[[文字列]]を[[符号化]]・[[復号]]することが容易である、
+[[文字列]]の連結や一部分の取り出しが容易であるといった性質を備えていますが、
+[[Punycode]] はこれらの性質を持っていません。
+
+* 実装
+
+[53] 
+[[RFC 3492]] には [[C言語]]による実装例があります。通常の [[RFC]] の[[ライセンス]]よりも緩く、
+自由な利用・改変・再配布が認められています (詳しくは [[RFC]] の附属書 B を参照)。
+<http://tools.ietf.org/html/rfc3492#appendix-B>
+
+[54] 実際に多くの言語による実装はこの実装例 (や本文中の擬似コード) を移植したもののようです。
+
+[6] [CITE[Net::IDN::Punycode - search.cpan.org]]
+<http://search.cpan.org/dist/Net-IDN-Encode/lib/Net/IDN/Punycode.pm>
+
+[65] >>6 のバージョン 1.0 は [[XS]] も [[PP]] も結果が変です。例えば
+U+0061 (a) U+1F62 (ὢ) U+03B9 (ι) U+0062 (b) の結果は ab-09b734z であるべきところ、
+ab-ymt になります。
+
+[5] [CITE[Encode::Punycode - search.cpan.org]]
+<http://search.cpan.org/dist/Encode-Punycode/lib/Encode/Punycode.pm>
+
+;; >>6 の単なるラッパーです。
+
+[74] [CITE[Mojo::Util - search.cpan.org]] ([TIME[2011-04-16 14:39:27 +09:00]] 版) <http://search.cpan.org/dist/Mojolicious/lib/Mojo/Util.pm#punycode_decode>
+
+[75] >>74 は >>65 と同じ現象が発生します。
+
+[66] [CITE[Claus Färber / IDNA-Punycode - search.cpan.org]] ([TIME[2011-04-16 14:14:47 +09:00]] 版) <http://search.cpan.org/dist/IDNA-Punycode/>
+
+[67] >>66 はバージョン1系は [[Net::IDN::Punycode]] や [[Net::IDN::Encode]]
+のラッパーです。バージョン0系は独自の実装です。バージョン0系は[[基本符号位置]]と[[拡張符号位置]]を結ぶ
+「-」の扱いが (どちらかが空文字列の時) 変です。
+
+[70] [CITE[URI::_punycode - search.cpan.org]] ([TIME[2011-04-16 14:19:55 +09:00]] 版) <http://search.cpan.org/dist/URI/URI/_punycode.pm>
+
+[71] これも「-」の扱いが変です。
+
+[68] [CITE[Twinkle Computing / URI-UTF8-Punycode - search.cpan.org]] ([TIME[2011-04-16 14:28:40 +09:00]] 版) <http://search.cpan.org/dist/URI-UTF8-Punycode/>
+
+[69] >>68 は[[復号]]結果の [[utf8フラグ]]を立てません。
+
+[72] [CITE[Thomas Jacob / Net-LibIDN-0.12 - search.cpan.org]] ([TIME[2011-04-16 14:37:20 +09:00]] 版) <http://search.cpan.org/dist/Net-LibIDN/>
+
+[73] >>72 は入出力が[[バイト列]]で、 [[charset]] を明示的に指定しないといけません。
+[[utf8フラグ]]を立てません。
+
+[76] [[Encode::Bootstring]] は[[基本符号位置]]の設定方法がおかしく、
+[[Punycode]] には使えません・・・。
+
+* 歴史
+
+[7] [[Punycode]] は当初 [DFN[[[AMC-ACE-Z]]]] と呼ばれていました。
+
+[8] [[IETF]] で [[Punycode]] を用いることが決定するまでは、 [[RACE]]
+が [[ACE]] として採用される可能性が高いと考えられており、
+実際に [CODE@en[[[.com]]]] や [CODE@en[[[.jp]]]] など一部の [[TLD]]
+が [[RACE]] を用いて [[IDN]] を運用していました。
+
+[62] [[Punycode]] と同時に [[RFC]] 化された [[IDNA2003]] は公式には [[IDNA2008]]
+によって置き換えられましたが、 [[Punycode]] は [[IDNA2008]]
+でも引き続きそのまま採用されています。
+
+* 関連
+
+** Unicode との関係
+
+[64] [[Punycode]] は ([[整数]]の[[型]]が十分大きいことを前提に) 任意の [[Unicode]]
+の[[符号位置]]を扱えます。 [[Punycode]] は [[Unicode]] 用として定義されており、
+各種[[引数]]の設定もそれに最適化されていますが、 [[Punycode]] (や [[Bootstring]])
+の仕組み上は[[符号位置]]を[[整数]]で表現可能な任意の[[符号化文字集合]]に適用できます。
+
+** Stringprep との関係
+
+[63] [[IDNA2003]] では [[Stringprep]] と [[Punycode]] が併用されますが、
+両者には依存関係がありません。 [[IDNA]] 以外の用途で [[Stringprep]] 
+を使わずに [[Punycode]] を使うことも理論上は可能です。
+
+** ラベルとの関係
+
+[24] [[Bootstring]] の[[算法]]と [[Punycode]] の[[引数]]の組み合わせからは、
+[[ドメイン名]]の[[ラベル]]で認められていない出力が得られることがあります。
+あらゆる [[ASCII]] の[[符号位置]]が[[基本符号位置]]なのでそのまま結果に含まれていますし、
+先頭や末尾が [CODE(char)[[[-]]]] になることもあります。ですが、
+- [25] [[ラテン文字]]、[[数字]]、[CODE(char)[[[-]]]] 以外の [[ASCII文字]]は、 [[IDNA]] の処理で [[Punycode]] の[[符号化]]の前に[[失敗]]を引き起こすか ([[UseSTD3ASCIIRules]] が真のとき)、あるいは[[失敗]]にならずにそのまま素通しとなりますが、これは [[IDNA]] が実装されてなくても同じなので、問題とはなりません。
+- [26] 先頭が [CODE(char)[[[-]]]] になったとしても、[[ラベル]]として使うときはその前に [[ACE接頭辞]]が付加されるので、問題とはなりません。 [SRC[>>1 5.]]
+- [27] 末尾が [CODE(char)[[[-]]]] になるのは[[基本符号位置]]のみ ([[ASCII文字]]のみ) で構成されるときですが、その時は [[IDNA]] の処理 ([[ToASCII]]) で [[Punycode]] の[[符号化]]を行わないことになっているので、問題となりません。 [SRC[>>1 5.]]
+
+* 例
+
+[34] [[エジプト語]] [SRC[[[RFC 3492]] 7.1 (A)]]
+
+- U+0644 U+064A U+0647 U+0645 U+0627 U+0628 U+062A U+0643 U+0644 U+0645 U+0648
+U+0634 U+0639 U+0631 U+0628 U+064A U+061F
+- [CODE[egbpdaj6bu4bxfgehfvwxn]]
+
+[35] [[簡化字中国語]] [SRC[[[RFC 3492]] 7.1 (B)]]
+
+- U+4ED6 U+4EEC U+4E3A U+4EC0 U+4E48 U+4E0D U+8BF4 U+4E2D U+6587
+- [CODE[ihqwcrb4cv8a8dqg056pqjye]]
+
+[36] [[伝統字中国語]] [SRC[[[RFC 3492]] 7.1 (C)]]
+
+- U+4ED6 U+5011 U+7232 U+4EC0 U+9EBD U+4E0D U+8AAA U+4E2D U+6587
+- [CODE[ihqwctvzc91f659drss3x8bo0yb]]
+
+[37] [[チェコ語]] [SRC[[[RFC 3492]] 7.1 (D)]]
+
+- Pro<ccaron>prost<ecaron>nemluv<iacute><ccaron>esky
+- U+0050 u+0072 u+006F u+010D u+0070 u+0072 u+006F u+0073 u+0074
+u+011B u+006E u+0065 u+006D u+006C u+0075 u+0076 u+00ED u+010D
+u+0065 u+0073 u+006B u+0079
+- [CODE[Proprostnemluvesky-uyb24dma41a]]
+
+[38] [[ヘブライ語]] [SRC[[[RFC 3492]] 7.1 (E)]]
+
+- U+05DC u+05DE u+05D4 u+05D4 u+05DD u+05E4 u+05E9 u+05D5 u+05D8
+U+05DC u+05D0 u+05DE u+05D3 u+05D1 u+05E8 u+05D9 u+05DD u+05E2
+U+05D1 u+05E8 u+05D9 u+05EA
+- [CODE[4dbcagdahymbxekheh6e0a7fei0b]]
+
+[39] [[ヒンディー語]] ([[デバナガリ文字]]) [SRC[[[RFC 3492]] 7.1 (F)]]
+
+- U+092F u+0939 u+0932 u+094B u+0917 u+0939 u+093F u+0928 u+094D
+U+0926 u+0940 u+0915 u+094D u+092F u+094B u+0902 u+0928 u+0939
+U+0940 u+0902 u+092C u+094B u+0932 u+0938 u+0915 u+0924 u+0947
+U+0939 u+0948 u+0902
+- [CODE[i1baa7eci9glrd9b2ae1bj0hfcgg6iyaf8o0a1dig0cd]]
+
+[40] [[日本語]] [SRC[[[RFC 3492]] 7.1 (G)]]
+
+- なぜみんな日本語を話してくれないのか
+- U+306A u+305C u+307F u+3093 u+306A u+65E5 u+672C u+8A9E u+3092
+U+8A71 u+3057 u+3066 u+304F u+308C u+306A u+3044 u+306E u+304B
+- [CODE[n8jok5ay5dzabd5bym9f0cm5685rrjetr6pdxa]]
+
+[41] [[韓国語]] [SRC[[[RFC 3492]] 7.1 (H)]]
+
+- U+C138 u+ACC4 u+C758 u+BAA8 u+B4E0 u+C0AC u+B78C u+B4E4 u+C774
+U+D55C u+AD6D u+C5B4 u+B97C u+C774 u+D574 u+D55C u+B2E4 u+BA74
+U+C5BC u+B9C8 u+B098 u+C88B u+C744 u+AE4C
+- [CODE[989aomsvi5e83db1d2a355cv1e0vak1dwrv93d5xbh15a0dt30a5jpsd879ccm6fea98c]]
+
+[42] [[ロシア語]] [SRC[[[RFC 3492]] 7.1 (I)]]
+
+- U+043F u+043E u+0447 u+0435 u+043C u+0443 u+0436 u+0435 u+043E
+U+043D u+0438 u+043D u+0435 u+0433 u+043E u+0432 u+043E u+0440
+U+044F u+0442 u+043F u+043E u+0440 u+0443 u+0441 u+0441 u+043A U+0438
+- [CODE[b1abfaaepdrnnbgefbaDotcwatmq2g4]]
+
+[43] [[スペイン語]] [SRC[[[RFC 3492]] 7.1 (J)]]
+
+- Porqu<eacute>nopuedensimplementehablarenEspa<ntilde>ol
+-U+0050 u+006F u+0072 u+0071 u+0075 u+00E9 u+006E u+006F u+0070
+U+0075 u+0065 u+0064 u+0065 u+006E u+0073 u+0069 u+006D u+0070
+U+006C u+0065 u+006D u+0065 u+006E u+0074 u+0065 u+0068 u+0061
+U+0062 u+006C u+0061 u+0072 u+0065 u+006E U+0045 u+0073 u+0070
+U+0061 u+00F1 u+006F u+006C
+- [CODE[PorqunopuedensimplementehablarenEspaol-fmd56a]]
+
+[44] [[越南語]] [SRC[[[RFC 3492]] 7.1 (K)]]
+
+- T<adotbelow>isaoh<odotbelow>kh<ocirc>ngth<ecirchookabove>ch<ihookabove>n<oacute>iti<ecircacute>ngVi<ecircdotbelow>t
+- U+0054 u+1EA1 u+0069 u+0073 u+0061 u+006F u+0068 u+1ECD u+006B
+U+0068 u+00F4 u+006E u+0067 u+0074 u+0068 u+1EC3 u+0063 u+0068
+U+1EC9 u+006E u+00F3 u+0069 u+0074 u+0069 u+1EBF u+006E u+0067
+U+0056 u+0069 u+1EC7 u+0074
+- [CODE[TisaohkhngthchnitingVit-kjcr8268qyxafd2f1b9g]]
+
+[45] [SRC[[[RFC 3492]] 7.1 (L)]]
+
+- 3年B組金八先生
+- U+0033 u+5E74 U+0042 u+7D44 u+91D1 u+516B u+5148 u+751F
+- [CODE[3B-ww4c5e180e575a65lsy2b]]
+
+[46] [SRC[[[RFC 3492]] 7.1 (M)]]
+
+- 安室奈美恵-with-SUPER-MONKEYS
+- U+5B89 u+5BA4 u+5948 u+7F8E u+6075 u+002D u+0077 u+0069 u+0074
+U+0068 u+002D U+0053 U+0055 U+0050 U+0045 U+0052 u+002D U+004D
+U+004F U+004E U+004B U+0045 U+0059 U+0053
+- [CODE[-with-SUPER-MONKEYS-pc58ag80a8qai00g7n9n]]
+
+[47] [SRC[[[RFC 3492]] 7.1 (N)]]
+
+- Hello-Another-Way-それぞれの場所
+- U+0048 u+0065 u+006C u+006C u+006F u+002D U+0041 u+006E u+006F
+U+0074 u+0068 u+0065 u+0072 u+002D U+0057 u+0061 u+0079 u+002D
+U+305D u+308C u+305E u+308C u+306E u+5834 u+6240
+- [CODE[Hello-Another-Way--fc4qua05auwb3674vfr0b]]
+
+[48] [SRC[[[RFC 3492]] 7.1 (O)]]
+
+- ひとつ屋根の下2
+- U+3072 u+3068 u+3064 u+5C4B u+6839 u+306E u+4E0B u+0032
+- [CODE[2-u9tlzr9756bt3uc0v]]
+
+[49] [SRC[[[RFC 3492]] 7.1 (P)]]
+
+- MajiでKoiする5秒前
+- U+004D u+0061 u+006A u+0069 u+3067 U+004B u+006F u+0069 u+3059
+U+308B u+0035 u+79D2 u+524D
+- [CODE[MajiKoi5-783gue6qz075azm5e]]
+
+[50] [SRC[[[RFC 3492]] 7.1 (Q)]]
+
+- パフィーdeルンバ
+- U+30D1 u+30D5 u+30A3 u+30FC u+0064 u+0065 u+30EB u+30F3 u+30D0
+- [CODE[de-jg4avhby1noc0d]]
+
+[51] [SRC[[[RFC 3492]] 7.1 (R)]]
+
+- そのスピードで
+- U+305D u+306E u+30B9 u+30D4 u+30FC u+30C9 u+3067
+- [CODE[d9juau41awczczp]]
+
+[52] [SRC[[[RFC 3492]] 7.1 (S)]]
+
+- -> $1.00 <-
+- U+002D u+003E u+0020 u+0024 u+0031 u+002E u+0030 u+0030 u+0020 U+003C u+002D
+- [CODE[-> $1.00 <--]]
+
+* メモ
+
+[31] [CITE@ja[@IT:DNS Tips:Punycodeって小さなコード?]]
+<http://www.atmarkit.co.jp/fnetwork/dnstips/022.html>
+
+
+[78] [CITE[Punycodeのjavascript実装と変換テスト - Qiita]]
+( ([TIME[2014-02-21 03:31:21 +09:00]] 版))
+<http://qiita.com/weal/items/5c0ffefc44cfe7525cbe>

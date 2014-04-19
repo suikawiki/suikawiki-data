@@ -1,0 +1,346 @@
+
+[2] [[HTML]] の [CODE(HTMLe)[[[a]]]] 要素・[CODE(HTMLe)[[[link]]]]
+要素の [DFN[[CODE(HTMLa)[rel]] 属性]]は、
+現在の文書から [CODE(HTMLa)[[[href]]]] 
+属性で指定された[[アンカー]]への関係を指定します。
+
+* 仕様書
+
+[REFS[
+- [35] [[HTML Living Standard]]
+-[26] [[RFC 4287]]
+-- '''<http://tools.ietf.org/html/rfc4287#section-4.2.7.2>'''
+- [34] '''[CITE@en[RFC 5988 - Web Linking]] ([TIME[2012-03-22 09:19:11 +09:00]] 版) <http://tools.ietf.org/html/rfc5988#section-5.3>'''
+]REFS]
+
+* 意味
+
+** HTML
+
+[3] [CODE(HTMLe)[a]] 要素の [CODE(HTMLa)[rel]] 属性であっても、
+[[始点アンカー]]からではなく現在の文書からの関係と定義されているのですね。
+[CODE(HTML)[[CODE(HTMLa)[rel]]=next]] のような関係を考えれば妥当な定義だと思います。
+
+** Atom
+
+[27] [CODE(XMLe)@en[[[atom:link]]]] [[要素]]の [CODE(XMLa)@en[[[rel]]]]
+[[属性]]は[[リンク関係型]]を表します [SRC[[[RFC 4287]] 4.2.7.2.]]。
+
+[32] [CODE(XMLe)@en[[[atom:link]]]] [[要素]]の [CODE(XMLa)@en[[[rel]]]]
+[[属性]]は[[リンク]]の[[意味]]を説明するものであって、 [[Atom処理器]]に特定の動作を求めるものではありません
+[SRC[[[RFC 4287]] 4.2.7.2.]]。
+
+** HTTP
+
+[41] [CODE(HTTP)@en[[[Link:]]]] 欄の [CODE(HTTP)@en[[[rel]]]] [[引数]]は、
+[[Web Linking]] [[リンク]]における[[関係型]]を表します。 [SRC[>>34]]
+
+* 構文
+
+** HTTP
+
+[42] [CODE(HTTP)@en[[[Link:]]]] 欄では同じ名前の[[引数]]を複数指定することもできますが、
+[CODE(HTTP)@en[[[rel]]]] [[引数]]は複数使っては[['''なりません''']] [SRC[>>34]]。
+2つ目以降は構文解析時に無視されます [SRC[>>34]]。
+
+[43] [CODE(HTTP)[[[;]]]] や
+[CODE(HTTP)[[[,]]]] を含むなら、 [CODE(char)[[["]]]] で括って[[引用文字列]]としなければ[['''なりません''']]
+[SRC[>>34]]。
+
+[44] 複数の値を含む場合も、構文上、[[引用文字列]]とする必要があります。
+
+[FIG[
+[FIGCAPTION[
+[45] 値の構文 [SRC[>>34]]
+]FIGCAPTION]
+
+[PRE(ABNF code)[
+  relation-types = relation-type
+                 | <"> relation-type *( 1*SP relation-type ) <">
+  relation-type  = reg-rel-type | ext-rel-type
+  reg-rel-type   = LOALPHA *( LOALPHA | DIGIT | "." | "-" )
+  ext-rel-type   = URI
+]PRE]
+]FIG]
+
+;; [46] [CODE(char)[[[=]]]] や [CODE(char)[[['''#''']]]] などは引用符なしでも使えるようです。
+
+[47] [[拡張関係型]]を使う時は、[[絶対URL]]として表さなければなりません [SRC[>>34]]。
+
+* データ型
+
+** HTML4 の定義
+
+[4] この属性の値は [CODE(HTML)[%[[LinkTypes]]]]
+([[間隔]]で分離した[[連結型]]の並び) です。
+[[SGML]] 的には [CODE(SGML)[[[CDATA]]]] です。
+
+この属性の値は大文字・小文字を区別しません。
+(が、小文字で使われることが多いようです。)
+
+** Atom
+
+[30] [CODE(XMLe)@en[[[atom:link]]]] [[要素]]の [CODE(XMLa)@en[[[rel]]]]
+[[属性値]]は、 [[RFC 3987]] の [CODE(ABNF)@en[[[isegment-nz-nc]]]] または
+[CODE(ABNF)@en[[[IRI]]]] いずれかの[[生成規則]]に[[一致]]する[[文字列]]でなければ[['''なりません''']]
+[SRC[[[RFC 4287]] 4.2.7.2.]]。
+
+[31] 値の[[意味]]については[[リンク関係型]]の項をご覧ください。
+
+** HTTP
+
+[48] [CODE(HTTP)@en[[[Link:]]]] 欄では、 [[Web Linking]] における[[リンク関係型]]を1つ以上含めることができます。
+区切り文字は [CODE(charname)[[[SP]]]] 1文字でなければならないとされています。
+
+* 既定値
+
+** HTML4 の場合
+
+[5] この属性は省略可能です。
+[CODE(HTMLa)[rel]] も [CODE(HTMLa)[[[rev]]]] もない[[連結]]は、
+単純に関係する資源を指している程度の意味合いになります。
+(詳しくは [[HTML//連結]]を参照してください。)
+
+** Atom
+
+[28] この[[属性]]は[[必須]]ではありません。
+
+[29] この[[属性]]が省略された場合、[[リンク関係型]]が [CODE(XML)@en[[[alternate]]]]
+であるかのように扱わなければ[['''なりません''']] [SRC[[[RFC 4287]] 4.2.7.2.]]。
+
+** HTTP
+
+[49] [CODE(HTTP)@en[[[Link:]]]] 欄の [CODE(HTTP)@en[[[rel]]]] 引数は構文上必須ではなく、
+省略された場合当該 [[Web Linking]] [[リンク]]は[[リンク関係型]]を有しないことになります。
+しかし一方で [[Web Linking]] における[[リンク]]の定義で[[リンク関係型]]が存在しないケースは考慮されておらず、
+どのような意味を持ち、どう処理されるべきなのかは明確になっていません。
+
+* レンダリング
+
+[8] ([CODE(HTMLe)[[[link]]]] 要素だけでなく [CODE(HTMLe)[a]]
+要素であっても) [CODE(HTMLa)[rel]] 属性のついた
+[CODE(HTMLe)[[[a]]]] 要素によるリンクの情報も誘導棒などの誘導情報として UA
+により特別に扱われることがあります。
+
+[[#comment]]
+
+
+** 歴史
+
+[1] ''WWW-Talk 1992: OO WWW: Re: indexes as links rather than documents'' <http://www.webhistory.org/www.lists/www-talk.1992/0292.html>: 
+[[HTML]] における [Q[[CODE(HTMLa)[rel]]]] という属性名の誕生の瞬間。
+
+[9] >>1 以前から (遅くても1992年1月には) [CODE(HTMLe)[a]]
+要素には [CODE(HTMLa)[[[type]]]] 属性が定義されていました。
+この属性は[[連結型]]を指定するもので、
+1993年1月ごろまで残っていましたが、1992年末〜1993年の議論の結果
+Tim は [CODE(HTMLa)[rel]] という名前を選んだようです。
+
+もっとも、1992年の [CODE(HTMLa)[type]] も 1993年の [CODE(HTMLa)[rel]]
+も、連結型 (関係) を指定するのだという意味と、
+登録制にするのが良かろうということが決まっていただけで、
+実際に指定できる値はまったく決まっていませんでした。
+(経験が少なすぎて決め兼ねるということだったようです。)
+
+** HTML4
+
+[REFS[
+-[9] [[HTML 4]]
+-- [CODE(HTMLa)[rel]] 属性
+<http://www.w3.org/TR/html4/struct/links.html#adef-rel>
+-- [CSECTION@en[12.1.2 ther link relationships]] <http://www.w3.org/TR/html4/struct/links.html#idx-link-2>
+-- [CSECTION@en[12.3.1 Forward and reverse links]] <http://www.w3.org/TR/html4/struct/links.html#rev-link>
+]REFS]
+
+** XHTML2
+
+[24] [[XHTML2]] の最初の[[作業原案]]で [CODE(HTMLa)@en[[[href]]]] [[属性]]は[[大域属性]]に昇格しましたが、
+[CODE(HTMLa)@en[[[rel]]]] や [CODE(HTMLa)@en[[[rev]]]] は放置されていました。
+しかし、2つ目の[[作業原案]]で両者も[[大域属性]]となりました。
+
+[REFS[
+- [36] [CITE@en[- XHTML Attribute Collections]] ([TIME[2002-12-12 23:58:38 +09:00]] 版) <http://www.w3.org/TR/2002/WD-xhtml2-20021211/mod-attribute-collections.html#adef_attribute-collections_rel>
+]REFS]
+
+[25] [[XHTML2]] の第6次案で [[RDFa]] の一部とされ、[[属性値]]も1つの [[QName]]
+に変更されました。
+
+[REFS[
+- [37] [CITE@en[- XHTML Metainformation Attributes Module]] ([TIME[2004-07-22 23:25:19 +09:00]] 版) <http://www.w3.org/TR/2004/WD-xhtml2-20040722/mod-metaAttributes.html#adef_metaAttributes_rel>
+]REFS]
+
+** HTML5
+
+[REFS[
+- [13]
+[CITE[Re: rel/rev for <form> ?]] ([[Ian Hickson <ian@...>]] 著, [CODE[2007-11-01 01:12:49 +09:00]] 版) <http://permalink.gmane.org/gmane.org.w3c.whatwg.discuss/12299>
+- [14]
+[CITE[Re: hrefclass attribute ? -- semantics token reuse]] ([[Ian Hickson <ian@...>]] 著, [TIME[2007-11-01 01:34:07 +09:00]] 版) <http://permalink.gmane.org/gmane.org.w3c.whatwg.discuss/12300>
+]REFS]
+
+* 関連
+
+[6] 逆の (相補的な) 意味を持った [CODE(HTMLa)[[[rev]]]] 属性があります。
+
+例えば
+- 文書 A [SAMP(HTML)[<[CODE(HTMLe)[link]] [CODE(HTMLa)[href]]="docB" [CODE(HTMLa)[rel]]="[VAR[foo]]" />]]
+
+と
+
+- 文書 B [SAMP(HTML)[<[CODE(HTMLe)[link]] [CODE(HTMLa)[href]]="docA" [CODE(HTMLa)[rev]]="[VAR[foo]]">]]
+
+は同義です。
+
+[7] 値である[[連結型]]の意味は [CODE(HTMLa)[[[profile]]]]
+の支配下にあると一般に考えられています。
+
+* 統計
+
+[REFS[
+- [20] [CITE@en[MAMA: Hyperlinks - Opera Developer Community]] ([TIME[2008-11-25 20:43:54 +09:00]] 版) <http://dev.opera.com/articles/view/mama-hyperlinks/#a>
+- [21] [CITE@en[MAMA: HEAD structure - Opera Developer Community]] ([TIME[2008-11-25 20:44:45 +09:00]] 版) <http://dev.opera.com/articles/view/mama-head-structure/#link>
+]REFS]
+
+* 例
+
+[FIG[
+[REFS[
+- [11]
+[CITE@ja[気象庁 Japan Meteorological Agency]] ([[気象庁 Japan Meteorological Agency]] 著, [CODE[2007-07-16 21:39:02 +09:00]] 版) <http://www.jma.go.jp/jma/index.html>
+]REFS]
+
+>
+[PRE(HTML bad example code)[
+<link rel="気象庁ホーム" href="http://www.jma.go.jp/">
+]PRE]
+]FIG]
+
+;; [38] [CODE(HTMLa)@en[[[title]]]] の誤り?
+
+[FIG[
+[REFS[
+-[12]
+[CITE@ja[Adobe: アドビの教育ソリューション:CS3 Web Premium]] ([CODE[2007-08-02 21:53:04 +09:00]] 版) <http://www.adobe.com/jp/education/products/creativesuite/web/?xNavEdu=jpWS>
+]REFS]
+
+>
+[PRE(HTML bad example code)[
+
+		<div id="fma" class="fma" >
+			<img src="http://wwwimages.adobe.com/www.adobe.com/jp/education/products/creativesuite/images/95603_edu_web_editions.jpg" width="754" height="290" alt="Adobe Creative Suite 3 Web Premiumは、Webサイトやアプリケーション、モバイルコンテンツの開発・管理のためのトータルソリューションを教職員や学生に提供します。" />			
+		</div>
+		<ul id="cs3nav" class="tab menu compact">
+			<li class="on" id="n141"><a name="higher_ed" rel="higher_ed" href="/jp/education/products/creativesuite/web/ssi/iframe/higher_education.html" target="cs3-messaging">大学</a></li>
+			<li class="off" id="q529"><a name="k12" rel="k12" href="/jp/education/products/creativesuite/web/ssi/iframe/k12.html" target="cs3-messaging">小・中・高等学校</a></li>
+			<li class="off" id="f230"><a name="students" rel="students" href="/jp/education/products/creativesuite/web/ssi/iframe/students.html" target="cs3-messaging">学生</a></li>
+			<li class="off" id="h852"><a name="pre_vs_std" rel="pre_vs_std" href="/jp/education/products/creativesuite/web/ssi/iframe/premium_vs_standard.html" target="cs3-messaging">PremiumとStandardを比較</a></li>
+			<li class="off"><a name="featuretour" rel="featuretour" href="/jp/education/products/creativesuite/web/ssi/iframe/feature_tour.html" target="cs3-messaging">機能ツアー</a></li>
+			<li class="off" id="s718"><a name="details" rel="details" href="/jp/education/products/creativesuite/web/ssi/iframe/product_overview.html" target="cs3-messaging">製品の詳細</a></li>
+		</ul>
+]PRE]
+]FIG]
+
+;; [39] なぜ [CODE(HTMLa)@en[[[rel]]]] を使っているのかわからない。
+
+[FIG[
+[REFS[
+- [22] [[livedoor Reader]]
+]REFS]
+
+><img src="/img/icon/text_small.gif" rel="Control:font(-1)">
+]FIG]
+
+[FIG[
+[23] 
+[PRE(XML example code)[
+<link rel='http://schemas.google.com/g/2005#batch' type='application/atom+xml' href='http://www.google.com/calendar/feeds/japanese__ja%40holiday.calendar.google.com/public/basic/batch'/>
+]PRE]
+
+[REFS[
+- [40] [CITE[日本の祝日]] ([TIME[2008-12-08 14:27:28 +09:00]] 版) <http://www.google.com/calendar/feeds/japanese__ja%40holiday.calendar.google.com/public/basic>
+]REFS]
+]FIG]
+
+* メモ
+
+[10]
+[CITE[rel-faq - Microformats]] <http://microformats.org/wiki/RelFAQ>
+
+* [CODE(XMLa)@en[rel]] 属性 (Atom 0.3)
+
+[15] [[Atom 0.3]] の [[Link construct]] の 
+[DFN[[CODE(XMLa)@en[[[rel]]]] [[属性]]]]は、
+[[リンク]]が表現する[[関係]]の[[型]]を表します [SRC@en[[[Atom 0.3]]]]。
+
+:状態:[[廃止]] → [[Atom 1.0]] [CODE(XMLe)@en[atom:[[link]]]] [CODE(XMLa)@en[[[rel]]]]
+:[[要素]]:[[Link construct]] な[[要素]]
+:[[局所名]]:[CODE(XMLa)@en[[[rel]]]]
+:[[データ型]]:
+:[[既定値]]:(必須)
+
+[REFS[
+- [33] [CITE[The Atom Syndication Format 0.3 (PRE-DRAFT)]] ([TIME[2006-12-22 17:03:44 +09:00]] 版) <http://www.mnot.net/drafts/draft-nottingham-atom-format-02.html#rfc.section.3.4.1>
+]REFS]
+
+** 属性値
+
+[16] この[[属性]]の値は [[Atom API]] 仕様案
+<http://bitworking.org/projects/atom/draft-gregorio-09.html>
+に列挙された値の1つでなければ[['''なりません''']]。
+
+[19] [[Atom API]] 案によると:
+:[DFN[[CODE(XML)@en[[[alternate]]]]]]:
+これを含んでいる[[資源]]の[[代替表現]]を指します。
+:[DFN[[CODE(XML)@en[[[start]]]]]]:
+[[エントリー]]群の[[線形]]な列における最初の [[Atom]] [[フィード]]を指します。
+:[CODE(XML)@en[[[next]]]]:
+[[エントリー]]群の[[線形]]な列における次の [VAR[N]] 個の[[エントリー]]が含まれる
+[[Atom]] [[フィード]]を指します。
+:[CODE(XML)@en[[[prev]]]]:
+[[エントリー]]群の[[線形]]な列における前の [VAR[N]] 個の[[エントリー]]が含まれる
+[[Atom]] [[フィード]]を指します。
+:[DFN[[CODE(XML)@en[[[service.edit]]]]]]:
+参照されている[[資源]]の[[表現]]を編集するために使う [[URI]] であることを示します。
+:[DFN[[CODE(XML)@en[[[service.post]]]]]]:
+新しい[[資源]]を使うために使う [[URI]] であることを示します。
+:[DFN[[CODE(XML)@en[[[service.feed]]]]]]:
+[[内容]]と[[サービス]]を[[ナビゲート]]するための開始店の [[URI]]
+であることを示します。
+
+** 既定値
+
+[17] この[[属性]]は必須です [SRC@en[[[Atom 0.3]]]]。
+
+** 関連
+
+[18] [CODE(XMLa)@en[[[rel]]]] が [CODE(XMLe)@en[[[alternate]]]] な [CODE(XMLe)@en[[[link]]]]
+[[要素]]は特別で、 [CODE(XMLe)@en[atom:[[feed]]]] や
+[CODE(XMLe)@en[atom:[[entry]]]] の[[子要素]]として使わなければならない回数が決まっています。
+
+[50] [CITE@en[RDFa Core 1.1 - Second Edition]]
+( ([TIME[2013-08-15 17:12:47 +09:00]] 版))
+<http://www.w3.org/TR/rdfa-core/#A-rel>
+
+[51] [CITE@en[RDFa Core 1.1 - Second Edition]]
+( ([TIME[2013-08-15 17:12:47 +09:00]] 版))
+<http://www.w3.org/TR/rdfa-core/#h4_use-of-curies-in-specific-attributes>
+
+[52] [CITE@en[RDFa Core 1.1 - Second Edition]]
+( ([TIME[2013-08-15 17:12:47 +09:00]] 版))
+<http://www.w3.org/TR/rdfa-core/#h4_use-of-curies-in-specific-attributes>
+
+[53] [CITE@en[XHTML+RDFa 1.1 - Second Edition]]
+( ([TIME[2013-08-15 17:11:45 +09:00]] 版))
+<http://www.w3.org/TR/2013/REC-xhtml-rdfa-20130822/#A_rel>
+
+[54] [CITE@en[HTML+RDFa 1.1]]
+( ([TIME[2013-08-20 15:49:04 +09:00]] 版))
+<http://www.w3.org/TR/2013/REC-html-rdfa-20130822/#extensions-to-the-html5-syntax>
+
+[55] [CITE@en[Web Applications 1.0 r4515  Allow <link itemprop> without rel=''.]]
+( ([TIME[2010-01-06 18:04:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=4514&to=4515>
+
+[56] [CITE@en[Web Applications 1.0 r6388   Disallow <link> from having both rel='' and itemprop=''. This might change back if there are compelling use cases, but in the meantime it seems like this is likely to catch errors. This also effectively disallows rel='' on <link>s in <body>.]]
+( ([TIME[2011-08-10 05:08:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=6387&to=6388>

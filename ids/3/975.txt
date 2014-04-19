@@ -1,0 +1,584 @@
+
+
+* 1.  Introduction
+
+> A Uniform Resource Identifier (URI) provides a simple and extensible
+means for identifying a resource.  This specification of URI syntax
+and semantics is derived from concepts introduced by the World Wide
+Web global information initiative, whose use of these identifiers
+dates from 1990 and is described in "Universal Resource Identifiers
+in WWW" [RFC1630].  The syntax is designed to meet the
+recommendations laid out in "Functional Recommendations for Internet
+Resource Locators" [RFC1736] and "Functional Requirements for Uniform
+Resource Names" [RFC1737].
+
+統一資源識別子 (URI) は資源を識別するための単純で拡張可能な手段を提供します。
+この URI 構文と意味の仕様は World Wide Web 大域情報活動によって導入された概念から出発しており、
+Web で URI が使用され始めたのは1990年に遡り、
+[CITE[WWW の統一資源識別子]] [SRC[[[RFC 1630]]]] で説明されました。
+その構文は[CITE[インターネット資源位置子の機能的要件]] [SRC[[[RFC 1736]]]]
+と[CITE[統一資源名の機能的要件]] [SRC[[[RFC 1737]]]]
+に示された要件を満たすように設計されました。
+
+> This document obsoletes [RFC2396], which merged "Uniform Resource
+Locators" [RFC1738] and "Relative Uniform Resource Locators"
+[RFC1808] in order to define a single, generic syntax for all URIs.
+It obsoletes [RFC2732], which introduced syntax for an IPv6 address.
+It excludes portions of RFC 1738 that defined the specific syntax of
+individual URI schemes; those portions will be updated as separate
+documents.  The process for registration of new URI schemes is
+defined separately by [BCP35].  Advice for designers of new URI
+schemes can be found in [RFC2718].  All significant changes from RFC
+2396 are noted in Appendix D.
+
+この文書は[CITE[統一資源位置子]] [SRC[[[RFC 1738]]]] と
+[CITE[相対統一資源位置子]] [SRC[[[RFC 1808]]]] を併合してすべての URI
+の単一の一般的な構文を定義した [[RFC 2386]] を廃止します。
+この文書は IPv6 番地の構文を導入した [[RFC 2732]] を廃止します。
+[[RFC 1738]] の一部の個々の URI scheme の構文を定義した部分は除外します。
+その部分は別の文書で更新します。新しい URI scheme
+の登録手続きは別途 [[BCP 35]] で定義します。新しい URI scheme
+の設計者への助言が [[RFC 2718]] にあります。 RFC 2396
+からの重要な変更はすべて附属書 D に記述してあります。
+
+> This specification uses the terms "character" and "coded character
+set" in accordance with the definitions provided in [BCP19], and
+"character encoding" in place of what [BCP19] refers to as a "charset".
+
+この仕様書は[Q[文字]]や[Q[符号化文字集合]]という用語を [[BCP 19]]
+の定義に従って使用し、 BCP 19 の [Q[charset]]
+という用語の代わりに[Q[文字符号化]]という用語を使います。
+
+
+** 1.1.  Overview of URIs
+
+> URIs are characterized as follows:
+
+URI は次のような特徴があります。
+
+>
+:Uniform:
+Uniformity provides several benefits.  It allows different types
+of resource identifiers to be used in the same context, even when
+the mechanisms used to access those resources may differ.  It
+allows uniform semantic interpretation of common syntactic
+conventions across different types of resource identifiers.  It
+allows introduction of new types of resource identifiers without
+interfering with the way that existing identifiers are used.  It
+allows the identifiers to be reused in many different contexts,
+thus permitting new applications or protocols to leverage a 
+pre-existing, large, and widely used set of resource identifiers.
+
+:統一:
+統一性にはいくつもの利点があります。
+統一されていれば色々な種類の資源識別子を資源にアクセスするための仕組みが異なっていたとしても同じ文脈で使うことができます。
+違った種類の資源識別子でも共通の構文的表記法の統一された意味的解釈ができます。
+新しい種類の資源識別子を既存の識別子の使われ方と干渉せずに導入できます。
+識別子を色々な文脈で再利用できますから、新しい応用やプロトコルが既存の幅広く使われている資源識別子を利用できます。
+
+>
+:Resource:
+This specification does not limit the scope of what might be a
+resource; rather, the term "resource" is used in a general sense
+for whatever might be identified by a URI.  Familiar examples
+include an electronic document, an image, a source of information
+with a consistent purpose (e.g., "today's weather report for Los
+Angeles"), a service (e.g., an HTTP-to-SMS gateway), and a
+collection of other resources.  A resource is not necessarily
+accessible via the Internet; e.g., human beings, corporations, and
+bound books in a library can also be resources.  Likewise,
+abstract concepts can be resources, such as the operators and
+operands of a mathematical equation, the types of a relationship
+(e.g., "parent" or "employee"), or numeric values (e.g., zero,
+one, and infinity).
+
+:資源:
+この仕様は何が資源であるかの範囲を制限していません。むしろ、[Q[資源]]という用語は
+URI で識別されるものすべてという一般的な意味で使っています。
+よくある例は電子文書、画像、一貫した目的の情報源 (例えば[Q[ロサンゼルスの今日の天気]])、
+サービス (例えば HTTP から SMS への関門)、他の資源の集成などです。
+資源は必ずしもインターネットでアクセス可能である必要はありません。
+例えば人間、会社、図書館の書籍なども資源となります。同様に、
+抽象的な概念、例えば数式の演算子や被演算子、関係の種類
+(例えば[Q[親]]や[Q[従業員]])、数値 (例えば零、一、無限大) なども資源となり得ます。
+
+>
+:Identifier:
+An identifier embodies the information required to distinguish
+what is being identified from all other things within its scope of
+identification.  Our use of the terms "identify" and "identifying"
+refer to this purpose of distinguishing one resource from all
+other resources, regardless of how that purpose is accomplished
+(e.g., by name, address, or context).  These terms should not be
+mistaken as an assumption that an identifier defines or embodies
+the identity of what is referenced, though that may be the case
+for some identifiers.  Nor should it be assumed that a system
+using URIs will access the resource identified: in many cases,
+URIs are used to denote resources without any intention that they
+be accessed.  Likewise, the "one" resource identified might not be
+singular in nature (e.g., a resource might be a named set or a
+mapping that varies over time).
+
+識別子は識別されるものを識別の範囲内の他のものすべてから区別するために必要な情報を具現化します。
+[Q[識別]]とか[Q[識別する]]とかの用語は、ある資源を他のすべての資源から区別するという目的を指し、その目的をどう達成するか 
+(名前により、番地により、文脈により、など) は考えません。
+この用語は識別子が参照されるものの自己同一性であるとの仮定であると誤解してはいけません。
+識別子によってはそうである場合もあり得ますが、必ずしもそうではありません。
+また、 URI を使うシステムが識別された資源にアクセスすると仮定するべきでもありません。
+多くの場合 URI はアクセスするという意図とは別に資源を示すために使われます。
+同様に、識別される[Q[ある]]資源は一つのものではないかもしれません
+(例えば資源は名前付き集合かもしれませんし、時により変わる写像かもしれません)。
+
+> A URI is an identifier consisting of a sequence of characters
+matching the syntax rule named <URI> in Section 3.  It enables
+uniform identification of resources via a separately defined
+extensible set of naming schemes (Section 3.1).  How that
+identification is accomplished, assigned, or enabled is delegated to
+each scheme specification.
+
+URI は3章の [CODE(ABNF)[URI]] という名前の構文規則に一致する文字列から成る識別子です。
+URI は別に定義された拡張可能な命名方法を介して統一的に資源を識別することができます。
+その識別がどう行われるのか、割当てられるのか、可能となるのかはそれぞれの
+scheme の仕様に委任します。
+
+> This specification does not place any limits on the nature of a
+resource, the reasons why an application might seek to refer to a
+resource, or the kinds of systems that might use URIs for the sake of
+identifying resources.  This specification does not require that a
+URI persists in identifying the same resource over time, though that
+is a common goal of all URI schemes.  Nevertheless, nothing in this
+specification prevents an application from limiting itself to
+particular types of resources, or to a subset of URIs that maintains
+characteristics desired by that application.
+
+この仕様は資源の性質やなぜ応用が資源への参照を探すのかや資源を識別するために
+URI を使うシステムの種類は制限しません。 URI が時を越えて同じ資源を識別し続けることはすべての
+URI scheme の共通の目標ではありますが、この仕様はそれを要求はしません。
+それでも、応用が自身を特定の種類の資源に制限したり、
+その応用が望む性質を持った URI の部分集合に制限したりすることをこの仕様は特に制限していません。
+
+> URIs have a global scope and are interpreted consistently regardless
+of context, though the result of that interpretation may be in
+relation to the end-user's context.  For example, "http://localhost/"
+has the same interpretation for every user of that reference, even
+though the network interface corresponding to "localhost" may be
+different for each end-user: interpretation is independent of access.
+However, an action made on the basis of that reference will take
+place in relation to the end-user's context, which implies that an
+action intended to refer to a globally unique thing must use a URI
+that distinguishes that resource from all other things.  URIs that
+identify in relation to the end-user's local context should only be
+used when the context itself is a defining aspect of the resource,
+such as when an on-line help manual refers to a file on the 
+end-user's file system (e.g., "file:///etc/hosts").
+
+URI は大域的適用範囲を持ち、文脈にかかわらず一貫した解釈を持ちます。
+但し、解釈の結果は末端利用者の文脈と関係するかもしれません。
+例えば、 [SAMP(URI)[http://localhost/]] はこの参照のすべての利用者にとって同じ解釈を持ちます。
+但し、 [SAMP[localhost]] に対応するネットワーク界面は末端利用者それぞれによって異なっているかもしれません。
+解釈はアクセスとは独立のものです。しかし、参照に基づき行われる動作は末端利用者の文脈に関係して行われ、
+大域的に固有なものを参照しようとする動作はその資源を他のすべてのものから区別する
+URI を使わなければなりません。末端利用者の局所的文脈に相対的に識別する URI
+は文脈自体が資源の定義的側面である、線上補助説明書が末端利用者のファイル・システムを指すような場合にのみ使うべきです
+(例: [SAMP(URI)[file:///etc/hosts]])。
+
+
+*** 1.1.1.  Generic Syntax
+
+> Each URI begins with a scheme name, as defined in Section 3.1, that
+refers to a specification for assigning identifiers within that
+scheme.  As such, the URI syntax is a federated and extensible naming
+system wherein each scheme's specification may further restrict the
+syntax and semantics of identifiers using that scheme.
+
+URI は3.1節で定義する scheme 名で始まり、 scheme 名はその scheme
+内で識別子を割り当てる仕様を参照します。ですから、 URI 
+構文は連合的で拡張可能な命名システムであり、
+各 scheme の仕様はその scheme で使う識別子の構文と意味を更に制限しても構いません。
+
+> This specification defines those elements of the URI syntax that are
+required of all URI schemes or are common to many URI schemes.  It
+thus defines the syntax and semantics needed to implement a 
+scheme-independent parsing mechanism for URI references, by which the
+scheme-dependent handling of a URI can be postponed until the
+scheme-dependent semantics are needed.  Likewise, protocols and data
+formats that make use of URI references can refer to this
+specification as a definition for the range of syntax allowed for all
+URIs, including those schemes that have yet to be defined.  This
+decouples the evolution of identification schemes from the evolution
+of protocols, data formats, and implementations that make use of URIs.
+
+この仕様はすべての URI scheme で必要であったり、多くの URI scheme
+で共通であったりする URI 構文の要素を定義します。つまりこの仕様は
+scheme 非依存の URI 参照の構文解析法を実装するために必要な構文と意味を定義しており、
+それによって scheme 依存の意味が必要となるまで URI
+の scheme 依存の取扱いを遅らせることができます。同様に、
+URI 参照を利用するプロトコルやデータ書式はまだ定義されていない scheme
+も含めてすべての URI で認められている構文の範囲の定義としてこの仕様を参照することができます。
+これによって識別 scheme の発展は URI を利用するプロトコルやデータ書式や実装の発展から分離できます。
+
+> A parser of the generic URI syntax can parse any URI reference into
+its major components.  Once the scheme is determined, further
+scheme-specific parsing can be performed on the components.  In other
+words, the URI generic syntax is a superset of the syntax of all URI schemes.
+
+一般 URI 構文の構文解析器は URI 参照を大きな部品に分離できます。
+Scheme が決まれば、更に scheme 規定の構文解析処理を部品に対して行うことができます。
+言い換えれば、 URI 一般構文はすべての URI scheme
+の構文の超集合です。
+
+
+*** 1.1.2.  Examples
+
+> The following example URIs illustrate several URI schemes and
+variations in their common syntax components:
+
+次の URI は幾つかの URI scheme で共通な構文部品を色々に使った例です。
+
+>
+- [SAMP(URI)[ftp://ftp.is.co.za/rfc/rfc1808.txt]]
+- [SAMP(URI)[http://www.ietf.org/rfc/rfc2396.txt]]
+- [SAMP(URI)[ldap://[2001:db8::7]/c=GB?objectClass?one]]
+- [SAMP(URI)[mailto:John.Doe@example.com]]
+- [SAMP(URI)[news:comp.infosystems.www.servers.unix]]
+- [SAMP(URI)[tel:+1-816-555-1212]]
+- [SAMP(URI)[telnet://192.0.2.16:80/]]
+- [SAMP(URI)[urn:oasis:names:specification:docbook:dtd:xml:4.1.2]]
+
+
+*** 1.1.3.  URI, URL, and URN
+
+> A URI can be further classified as a locator, a name, or both.  The
+term "Uniform Resource Locator" (URL) refers to the subset of URIs
+that, in addition to identifying a resource, provide a means of
+locating the resource by describing its primary access mechanism
+(e.g., its network "location").  The term "Uniform Resource Name"
+(URN) has been used historically to refer to both URIs under the
+"urn" scheme [RFC2141], which are required to remain globally unique
+and persistent even when the resource ceases to exist or becomes
+unavailable, and to any other URI with the properties of a name.
+
+URI は更に位置付け子、名前、その両方に分類できます。
+[Q[統一資源位置子]] (URL) という用語は URI の部分集合で資源を識別するだけでなく資源をその一次アクセス機構を記述することによって位置付ける手段
+(例えばネットワーク[Q[位置]]) を提供しているものを指します。
+用語[Q[統一資源名]] (URN) は歴史的に [CODE(URI)[urn]] scheme
+の元にある、大域的に固有であり続け、資源が存在しなくなったり利用できなくなったりしたとしても持続し続ける必要があるという
+URI を指すものとしても、名前という特性を持つ他の任意の URI
+を指すものとしても使われています。
+
+> An individual scheme does not have to be classified as being just one
+of "name" or "locator".  Instances of URIs from any given scheme may
+have the characteristics of names or locators or both, often
+depending on the persistence and care in the assignment of
+identifiers by the naming authority, rather than on any quality of
+the scheme.  Future specifications and related documentation should
+use the general term "URI" rather than the more restrictive terms
+"URL" and "URN" [RFC3305].
+
+個々の scheme を[Q[名前]]と[Q[位置付け子]]のどちらか1つだけに分類する必要はありません。
+任意の scheme のある URI は名前としての性質も位置付け子としての性質も両方の性質も持ち得ます。
+それは時に scheme の品質などよりも命名権者の識別子の割当ての配慮と持続性に依存します。
+将来の仕様や関係する文書は狭い意味の言葉である [Q[URL]] や [Q[URN]]
+よりも一般的な用語である [Q[URI]] を使うべきです。
+
+
+** 1.2.  Design Considerations
+
+
+*** 1.2.1.  Transcription
+
+> The URI syntax has been designed with global transcription as one of
+its main considerations.  A URI is a sequence of characters from a
+very limited set: the letters of the basic Latin alphabet, digits,
+and a few special characters.  A URI may be represented in a variety
+of ways; e.g., ink on paper, pixels on a screen, or a sequence of
+character encoding octets.  The interpretation of a URI depends only
+on the characters used and not on how those characters are
+represented in a network protocol.
+
+URI 構文は大域的転写性を主要な考慮点の一つとして設計されています。
+URI は非常に限られた基本ラテン字母の文字、数字、
+わずかな特殊文字の集合による文字列です。 URI
+は紙上のインク、画面の画素、文字符号化オクテット列など色々な方法で表現されることがあります。
+URI の解釈は使用されている文字のみにより、
+ネットワーク・プロトコルでどう文字が表現されているかには依存しません。
+
+> The goal of transcription can be described by a simple scenario.
+Imagine two colleagues, Sam and Kim, sitting in a pub at an
+international conference and exchanging research ideas.  Sam asks Kim
+for a location to get more information, so Kim writes the URI for the
+research site on a napkin.  Upon returning home, Sam takes out the
+napkin and types the URI into a computer, which then retrieves the
+information to which Kim referred.
+
+転写性の目標は簡単な筋書きで説明できます。同職の Sam と Kim
+が国際会議の酒屋で座って研究のアイデアを話し合っているところを想像して下さい。
+Sam は Kim に詳しい情報の場所を尋ね、 Kim は研究サイトの URI
+を布巾に書きます。 Sam は家に帰って布巾を取り出し、 URI
+を計算機に打鍵し、 Kim が参照した情報が取出されます。
+
+> There are several design considerations revealed by the scenario:
+- o  A URI is a sequence of characters that is not always represented
+as a sequence of octets.
+- o  A URI might be transcribed from a non-network source and thus
+should consist of characters that are most likely able to be
+entered into a computer, within the constraints imposed by
+keyboards (and related input devices) across languages and locales.
+- o  A URI often has to be remembered by people, and it is easier for
+people to remember a URI when it consists of meaningful or
+familiar components.
+
+この筋書きで明らかになった設計上の考慮点が幾つかあります。
+- URI は文字の列であり、必ずしもオクテット列では表現されない。
+- URI はネットワーク以外から転記されることがあり、
+色々な言語やロケールの鍵盤 (や他の入力装置) 
+の制約内で計算機に入力できそうな文字で構成されているべきである。
+- URI は人が覚えなければならないこともあり、意味があるような部品で構成されていれば
+URI を覚えるのは簡単である。
+
+> These design considerations are not always in alignment.  For
+example, it is often the case that the most meaningful name for a URI
+component would require characters that cannot be typed into some
+systems.  The ability to transcribe a resource identifier from one
+medium to another has been considered more important than having a
+URI consist of the most meaningful of components.
+
+これらの設計の考慮点は必ずしも満たされません。例えば URI
+部品としてもっとも意味のある名前はシステムによっては入力できない文字が必要かもしれません。
+資源識別子のある媒体から他の媒体への転記能力は URI
+の部品がもっとも意味深きことよりも重要と考えられます。
+
+> In local or regional contexts and with improving technology, users
+might benefit from being able to use a wider range of characters;
+such use is not defined by this specification.  Percent-encoded
+octets (Section 2.1) may be used within a URI to represent characters
+outside the range of the US-ASCII coded character set if this
+representation is allowed by the scheme or by the protocol element in
+which the URI is referenced.  Such a definition should specify the
+character encoding used to map those characters to octets prior to
+being percent-encoded for the URI.
+
+局所的・地域的な文脈では技術が向上していれば利用者はより広範囲の文字を使うことができるかもしれません。
+そうした使い方はこの仕様では定義しません。 Scheme や URI
+を参照するプロトコル要素が認めていれば、 URI
+で US-ASCII 符号化文字集合の範囲外の文字を表現するためには百分率符号化を使うことがで来ます。
+そうした定義は URI で百分率符号化する前にオクテットを文字に写像するのに使用する文字符号化を規定するべきです。
+
+
+*** 1.2.2.  Separating Identification from Interaction
+
+> A common misunderstanding of URIs is that they are only used to refer
+to accessible resources.  The URI itself only provides
+identification; access to the resource is neither guaranteed nor
+implied by the presence of a URI.  Instead, any operation associated
+with a URI reference is defined by the protocol element, data format
+attribute, or natural language text in which it appears.
+
+URI のよくある誤解はアクセス可能な資源を参照するためだけに使うというものです。
+URI 自体は識別の手段を提供しているだけです。資源へのアクセスは 
+URI が示されただけでは保証も暗示もされません。実際、
+URI 参照に関連付けられた操作は URI
+が出現するプロトコル、データ書式属性、自然言語文で定義されます。
+
+> Given a URI, a system may attempt to perform a variety of operations
+on the resource, as might be characterized by words such as "access",
+"update", "replace", or "find attributes".  Such operations are
+defined by the protocols that make use of URIs, not by this
+specification.  However, we do use a few general terms for describing
+common operations on URIs.  URI "resolution" is the process of
+determining an access mechanism and the appropriate parameters
+necessary to dereference a URI; this resolution may require several
+iterations.  To use that access mechanism to perform an action on the
+URI's resource is to "dereference" the URI.
+
+ある URI が与えられると、システムは資源に対して
+[Q[アクセス]], [Q[更新]], [Q[属性を探す]]などの言葉で特徴付けられる様々な操作を行うことができます。
+このような操作は URI を利用するプロトコルで定義されるものであり、
+この仕様では定義しません。しかし、 URI の共通な操作を説明するために幾つかの一般的な用語を使うことにします。
+URI [Q[解決]]はアクセス方法と URI の参照を解くために必要な適切な引数を決定するための処理です。
+この解決は何度かの反復が必要かもしれません。 URI の資源に動作を行うためにそのアクセス方法を使うことを
+URI の[Q[参照を解く]]と言います。
+
+> When URIs are used within information retrieval systems to identify
+sources of information, the most common form of URI dereference is
+"retrieval": making use of a URI in order to retrieve a
+representation of its associated resource.  A "representation" is a
+sequence of octets, along with representation metadata describing
+those octets, that constitutes a record of the state of the resource
+at the time when the representation is generated.  Retrieval is
+achieved by a process that might include using the URI as a cache key
+to check for a locally cached representation, resolution of the URI
+to determine an appropriate access mechanism (if any), and
+dereference of the URI for the sake of applying a retrieval
+operation.  Depending on the protocols used to perform the retrieval,
+additional information might be supplied about the resource (resource
+metadata) and its relation to other resources.
+
+URI を情報取出しシステムで情報源の識別に使う時の最も一般的な URI
+の解き方は[Q[取出し]]です。取出しは URI を使って関連付けられた資源の表現を取出します。
+[Q[表現]]はオクテットの列で、そのオクテット列を説明する表現メタデータと共に、
+その表現が生成された時点での資源の状態の記録を構成します。
+取出しは URI をキャッシュの鍵として使って局所的にキャッシュされた表現を調べたり、
+適切なアクセス方法を (あれば) 調べるために URI を解決したり、
+取出し動作を適用するために URI の参照を解いたりの過程を含み得る処理により達成されます。
+取出しを行うのに使用するプロトコルに依存して資源 (資源メタデータ)
+と他の資源との関係についての追加情報が供給されるかもしれません。
+
+> URI references in information retrieval systems are designed to be
+late-binding: the result of an access is generally determined when it
+is accessed and may vary over time or due to other aspects of the
+interaction.  These references are created in order to be used in the
+future: what is being identified is not some specific result that was
+obtained in the past, but rather some characteristic that is expected
+to be true for future results.  In such cases, the resource referred
+to by the URI is actually a sameness of characteristics as observed
+over time, perhaps elucidated by additional comments or assertions
+made by the resource provider.
+
+情報取出しシステムにおける URI 参照は遅延束縛たるよう設計されています。
+アクセスの結果は通常アクセスした時点で決定され、時間や対話の他の側面によって変わり得ます。
+URI 参照は将来使用するために作成されるかもしれません。
+識別されるものはかつて得られた特定の結果ではなく、
+将来の結果で真となることが期待される何らかの性質であるかもしれません。
+このような場合、 URI によって参照される資源は実際には時によって見られる性質の同一性、
+おそらく資源の提供者によって更に説明されたり表明されたりしているものです。
+
+> Although many URI schemes are named after protocols, this does not
+imply that use of these URIs will result in access to the resource
+via the named protocol.  URIs are often used simply for the sake of
+identification.  Even when a URI is used to retrieve a representation
+of a resource, that access might be through gateways, proxies,
+caches, and name resolution services that are independent of the
+protocol associated with the scheme name.  The resolution of some
+URIs may require the use of more than one protocol (e.g., both DNS
+and HTTP are typically used to access an "http" URI's origin server
+when a representation isn't found in a local cache).
+
+多くの URI scheme はプロトコルにちなんで命名されていますが、
+その URI を使用したらその名前のプロトコルで資源にアクセスすることとなるとは限りません。
+URI は時々識別のためだけに使われます。 URI が資源の表現の取出しに使われる場合であっても、
+アクセスは scheme 名に関連付けられたプロトコルとは独立の関門、串、キャッシュ、
+名前解決システムを通じてかもしれません。 URI の解決には複数のプロトコルを使用することが必要な場合もあります
+(例えば普通 [SAMP(URI)[http]] URI にアクセスする時は局所キャッシュに表現が見つからなければ起点鯖に
+DNS と HTTP を両方使ってアクセスします)。
+
+
+*** 1.2.3.  Hierarchical Identifiers
+
+> The URI syntax is organized hierarchically, with components listed in
+order of decreasing significance from left to right.  For some URI
+schemes, the visible hierarchy is limited to the scheme itself:
+everything after the scheme component delimiter (":") is considered
+opaque to URI processing.  Other URI schemes make the hierarchy
+explicit and visible to generic parsing algorithms.
+
+URI の構文は階層的に整備されており、部品は左から右へと重みが減っていくように並べられています。
+URI scheme によっては目に見える階層は scheme 自体だけかもしれません。
+その場合 [CODE(ABNF)[scheme]] 部品の区切子 ([CODE(URI)[:]])
+の後のすべてが URI 処理に対して不透明を考えます。他の URI scheme
+は一般構文解析法に対して明示的で可視的に階層を設けています。
+
+> The generic syntax uses the slash ("/"), question mark ("?"), and
+number sign ("#") characters to delimit components that are
+significant to the generic parser's hierarchical interpretation of an
+identifier.  In addition to aiding the readability of such
+identifiers through the consistent use of familiar syntax, this
+uniform representation of hierarchy across naming schemes allows
+scheme-independent references to be made relative to that hierarchy.
+
+一般構文は斜線文字 ([CODE(URI)[/]])、疑問符 ([CODE(URI)[?]])、
+数字符 ([CODE(URI)[#]]) を一般構文解析器による識別子の階層解釈に意味のある部品を区切るために使っています。
+こうして命名方法を越えて統一的な階層の表現を使うのは似た構文を一貫して使って識別子の可読性を上げることもありますが、
+scheme 独立の階層に対して相対な識別子のためもあります。
+
+> It is often the case that a group or "tree" of documents has been
+constructed to serve a common purpose, wherein the vast majority of
+URI references in these documents point to resources within the tree
+rather than outside it.  Similarly, documents located at a particular
+site are much more likely to refer to other resources at that site
+than to resources at remote sites.  Relative referencing of URIs
+allows document trees to be partially independent of their location
+and access scheme.  For instance, it is possible for a single set of
+hypertext documents to be simultaneously accessible and traversable
+via each of the "file", "http", and "ftp" schemes if the documents
+refer to each other with relative references.  Furthermore, such
+document trees can be moved, as a whole, without changing any of the
+relative references.
+
+共通の目的で提供するべく構築されている文書の群や[Q[木]]では URI
+参照の大部分がその木の外ではなく中の資源を指している場合がよくあります。
+同様に特定のサイトに位置付けられた文書は遠隔サイトの資源よりもそのサイトの資源を多く参照していそうです。
+URI の相対参照を使うと文書木を位置やアクセス方法と独立にできます。
+例えば、文書が互いに相対参照で山荘していれば一つのハイパーテキスト文書を同時に 
+[CODE(URI)[file]], [CODE(URI)[http]], [CODE(URI)[ftp]] の各 scheme でアクセス可能・
+探索可能にできます。更に、文書木全体を相対参照は変更せずに移動できます。
+
+> A relative reference (Section 4.2) refers to a resource by describing
+the difference within a hierarchical name space between the reference
+context and the target URI.  The reference resolution algorithm,
+presented in Section 5, defines how such a reference is transformed
+to the target URI.  As relative references can only be used within
+the context of a hierarchical URI, designers of new URI schemes
+should use a syntax consistent with the generic syntax's hierarchical
+components unless there are compelling reasons to forbid relative
+referencing within that scheme.
+
+相対参照は参照文脈と対象 URI の階層的な前空間内での差分を記述することによって資源を参照します。
+5章で述べる参照解決法は相対参照をどう対象 URI に変形するかを定義しています。
+相対参照は階層的 URI の文脈でのみ使用することができますから、
+新しい URI scheme の設計者はその scheme で相対参照を禁じる動かしがたい理由がない限り一般構文の階層的部品と整合した構文を使用するべきです。
+
+> NOTE: Previous specifications used the terms "partial URI" and
+"relative URI" to denote a relative reference to a URI.  As some
+readers misunderstood those terms to mean that relative URIs are a
+subset of URIs rather than a method of referencing URIs, this
+specification simply refers to them as relative references.
+
+注意: 以前の仕様は URI への相対参照を示すために[Q[部分 URI]]
+とか[Q[相対 URI]] とかの用語を使用していました。相対 URI
+は URI を参照する方法ではなく URI の部分集合であると誤解する読者がいたので、
+この仕様では単純に相対参照と呼んでいます。
+
+> All URI references are parsed by generic syntax parsers when used.
+However, because hierarchical processing has no effect on an absolute
+URI used in a reference unless it contains one or more dot-segments
+(complete path segments of "." or "..", as described in Section 3.3),
+URI scheme specifications can define opaque identifiers by
+disallowing use of slash characters, question mark characters, and
+the URIs "scheme:." and "scheme:..".
+
+すべての URI 参照は使用される時に一般構文解析器で構文解析されます。
+しかし、参照で使われている絶対 URI に階層的処理を行うのは点部分
+([SAMP(URI)[.]] や [SAMP(URI)[..]] だけの [CODE(ABNF)[path]]
+[CODE(ABNF)[segment]]) を含む場合を除き意味がありませんから、
+URI scheme 仕様は斜線文字、疑問符、 [SAMP(URI)[[VAR[scheme]]:.]] や
+[SAMP(URI)[[VAR[scheme]]:..]] のような URI の使用を禁じた不透明な識別子を定義できます。
+
+
+** 1.3.  Syntax Notation
+
+> This specification uses the Augmented Backus-Naur Form (ABNF)
+notation of [RFC2234], including the following core ABNF syntax rules
+defined by that specification: ALPHA (letters), CR (carriage return),
+DIGIT (decimal digits), DQUOTE (double quote), HEXDIG (hexadecimal
+digits), LF (line feed), and SP (space).  The complete URI syntax is
+collected in Appendix A.
+
+この仕様書は [[RFC 2234]] の増補 Backus‐Naur 式 (ABNF)
+と同仕様書の ABNF 中核構文規則 [CODE(ABNF)[[[ALPHA]]]] (文字),
+[CODE(ABNF)[[[CR]]]] (復帰), [CODE(ABNF)[[[DIGIT]]]] (十進数字),
+[CODE(ABNF)[[[DQUOTE]]]] (二重引用符), [CODE(ABNF)[[[HEXDIG]]]]
+(十六進数字), [CODE(ABNF)[[[LF]]]] (行送り),
+[CODE(ABNF)[[[SP]]]] (間隔) を使用します。完全な URI
+構文は附属書 A に集めています。
+
+
+* メモ
+
+[1]
+I present to you this site:
+<a href="http://ecarisoprodol.org">carisoprodol</a>
+[url=http://ecarisoprodol.org][/url]
+http://ecarisoprodol.org
+([[SysAdmin]] [teamfirms@yahoo.com])
+

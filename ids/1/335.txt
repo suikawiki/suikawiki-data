@@ -1,0 +1,264 @@
+#?SuikaWiki/0.9 page-icon="メイル"
+[1] '''Recommendations for generating Message IDs [INS[Message ID 生成についての推奨]]'''
+-Internet Draft                                              
+-draft-ietf-usefor-message-id-01.txt           
+-Category-to-be: Informational                            
+-Matt Curtin
+-The Ohio State University
+-Jamie Zawinski
+-                                                 Netscape Communications
+-                                                               July 1998
+-                                     Expires: Six Months from above date
+*Status of this Memo [INS[このメモの位置付け]]
+>This document is an Internet-Draft. Internet-Drafts are working
+documents of the Internet Engineering Task Force (IETF), its areas, and
+its working groups. Note that other groups may also distribute working
+documents as Internet-Drafts.
+>Internet-Drafts are draft documents valid for a maximum of six months
+and may be updated, replaced, or obsoleted by other documents at any
+time. It is inappropriate to use Internet- Drafts as reference material
+or to cite them other than as ``work in progress.''
+>To view the entire list of current Internet-Drafts, please check the
+"1id-abstracts.txt" listing contained in the Internet-Drafts Shadow
+Directories on ftp.is.co.za (Africa), ftp.nordu.net (Northern Europe),
+ftp.nis.garr.it (Southern Europe), munnari.oz.au (Pacific Rim),
+ftp.ietf.org (US East Coast), or ftp.isi.edu (US West Coast).
+*Abstract [INS[要約]]
+>This draft provides recommendations on how to generate globally unique
+Message IDs in client software.
+
+この文書は、世界的に固有のメッセージ ID 
+をクライアント・ソフトウェアで生成する方法の推奨の原案です。
+*Table of Contents [INS[目次]]
+=Introduction
+=Message-ID formatting
+=Message-ID generation
+=="Domain part"
+=="Local part"
+===Sequence number
+===Using a pseudorandom number generator
+===Using a hash
+==Bringing it all together
+=Acknowledgments
+=References
+=Authors' addresses
+*1. Introduction [INS[はじめに]]
+>Message-ID headers are used to uniquely identify Internet messages.
+Having a unique identifier for each message has many benefits,
+including ease in the following of threads and intelligent scoring of
+messages based on threads to which they belong.
+
+Message-ID ヘッダーは Internet メッセージの固有識別子として使われています。
+固有識別子を持つことは各メッセージにとって、
+スレッドに返信することとその属するスレッドに基づくメッセージの高性能記録が
+楽になることを含み、多くの利点があります。
+
+>It has been suggested that it is impossible for client software to be
+able to generate globally-unique Message-IDs.  We believe this to be
+incorrect, and herein to offer suggestions for generating unique
+Message-IDs.
+
+クライアント・ソフトウェアが世界的に固有の Message-ID を生成するのは
+不可能だという意見があります。しかしこれは間違いだと信じており、
+ここに固有 Message-ID を生成する方法を提案するものであります。
+
+*2. Message-ID formatting [INS[Message-ID 書式]]
+>As defined in [NEWS], a message ID consists of two parts, a local part
+and a domain, separated by an at-sign and enclosed in angle brackets:
+
+[NEWS] で定義されたように、メッセージの ID は2つの部分、
+地方部分とドメインからなり、アット記号により分けられ、
+角括弧で囲まれています。
+
+-   message-id = "<" local-part "@" domain ">"
+
+>Practically, news message IDs are a restricted subset of mail message
+IDs.  In particular, no existing news software copes properly with mail
+quoting conventions within the local part, so software generating a
+Message-ID would be well-advised to avoid this pitfall.
+
+実際的に、ニュース・メッセージ ID はメイル・メッセージ ID の
+制限された部分集合です。特に、メイルの地方部分で引用符で囲む書き方を
+正しく処理できるニュースのソフトウェアは無いので、
+Message-ID を生成するソフトウェアはこの落とし穴を避けるよう
+熟慮して下さい。
+
+>It is also noted that some buggy software considers message IDs
+completely case-insensitive, in violation of the standards.  It is
+therefore advised that one not generate IDs such that two IDs so
+generated can differ only in character case.
+
+また、規格に反してメッセージ ID は完全に大文字・小文字を区別しない
+と考えている間違ったソフトウェアがあります。ですから二つの ID が
+大文字・小文字の違いでのみ区別できるというような ID を生成しない
+ことをお勧めします。
+
+*3. Message-ID generation [INS[Message-ID 生成]]
+>As shown above, the Message-ID is made up of two sections.  We'll
+consider each seperately.
+
+上に挙げた様に、 Message-ID は2つの部分から構成されます。
+それぞれ別に観て行きます。
+
+**3.1. "Domain part" [INS[「ドメイン部分」]]
+>On many client systems, it is not always possible to get the
+fully-qualified domain name (FQDN) of the local host.  In that
+situation, a reasonable fallback course of action would be to use the
+domain-part of the user's return address.  (Use of an unqualified
+hostname for the domain part of the Message-ID header would be
+foolish, and should never be done.)
+
+多くのクライアントソフトウェアで、地方ホストの
+完全修飾ドメイン名 (FQDN) を必ずしも取得できるとは限りません。
+このような状況で、適切な代替手段は利用者の返信アドレスの
+ドメイン部分を使用することでしょう。 (非修飾ホスト名を
+Message-ID ヘッダーのドメイン部分に使用するのは愚かなことで、
+してはいけません。)
+
+>Using the domain-part of the user's return address makes the
+generation of the "local part" be more important; in particular, it
+means that a process ID is probably not sufficient.
+
+利用者の返信アドレスをドメイン部分に使用することで
+「地方部分」の生成がより重要になります。
+更に言うと、プロセス ID はおそらく十分ではないということです。
+**3.2. "Local part" [INS[「地方部分」]]
+>The most popular method of generating local parts is to use the date and
+time, plus some way of distinguishing between simultaneous postings on
+the same host (e.g. a process number), and encode them in a suitably-
+restricted alphabet.
+
+地方部分を生成する最も良くある方法は日時を使い、
+同じホストでの同時の投稿を区別する方法 (例えばプロセス番号)
+を加えてこれを適切な範囲の字母で符号化するというものです。
+
+>A number of approaches here are possible.  Each has its advantages and
+drawbacks.  The importance of the local part's uniqueness increases
+with the frequency of messages being generated in a given domain.
+Using several of these methods together will produce a Message-ID that
+is longer, but significantly less likely to collide.
+
+これには沢山の方法が考えられます。それぞれ長短があります。
+地方部分の固有性の重要度はドメインでメッセージの生成される
+頻度と共に高まります。幾つかの方法をあわせて使うことで
+生成される Message-ID は長くなりますが、
+衝突の虞が少なくなるという意義があります。
+
+***3.2.1. Sequence number [INS[連番]]
+>An older but now less-popular alternative is to use a sequence number,
+incremented each time the host generates a new message ID; this is
+workable for servers, but requires careful design to cope properly
+with simultaneous posting attempts, and is not as robust in the
+presence of crashes and other malfunctions.  For client Message-ID
+generation, particularly on hosts where the exact FQDN cannot be
+obtained, or is subject to change, this might not even be workable.
+
+古くからあるが今ではあまり使われない別の方法として、
+ホストが新しいメッセージ ID を生成する度に増えていく連番を使う
+というものがあります。これはサーバーで運用可能ですが、
+同時投稿攻撃に適切に対処できるように慎重に設計する必要があり、
+クラッシュなどの不調の前には脆弱です。クライアントの Message-ID 生成には、
+特に FQDN が取得できなかったり変わったりするホストでは、
+この方法は運用もできないかもしれません。
+
+***3.2.2. Using a psuedorandom number generator [INS[擬似乱数発生器]]
+>One could take 64 bits from a good, well-seeded pseudorandom number
+generator [PRNG] in order to significantly increase the uniqueness of
+the Message-ID.  The advantage of this method is that it is fast and
+generally effective.  The disadvantage is that in a perfect random
+number generation scheme, the possibility of getting the same number
+twice in a row is exactly the same probability as getting any two
+numbers.
+
+Message-ID の固有性をより増やすために良い、よく種をまいた
+擬似乱数発生器 [PRNG] から64ビットとることが出来ます。
+この方法の長所は速く効果的に生成できることです。短所は完全な無作為番号
+発生方法では、列から同じ番号を二度取り出す可能性が確実に
+どの二つの番号を取り出すのと同じだけあるということです。
+***3.2.3. Using a hash [INS[ハッシュの使用]]
+>Another approach would be to generate a hash of the message and use
+that after the timestamp.  If this is done well, this can also
+significantly reduce the opportunity for collision, and will generate
+a value that is relatively unique.  Note that, in practice, this is
+more difficult than it sounds.  It is recommended that a
+cryptographically secure hash function [SHA1, MD5] be used, as
+others, such as CRC, are likely to have higher instances of collision.
+
+他の手段はメッセージのハッシュを作って時間印の後に使うという方法です。
+これが上手く行われれば、衝突の可能性を減らす点でも有意義で、
+より固有な値を生成できましょう。ただし、実際には言うほど簡単ではありません。
+暗号安全ハッシュ関数 [SHA1, MD5] を使うことを推奨します。
+他の CRC のようなものはおそらく衝突割合が高いでしょう。
+
+**3.3. Bringing it all together [INS[まとめ]]
+>In summary, the approaches to generating a Message-ID that we'll
+consider here are in the following format:
+
+まとめると、ここで考慮する Message-ID を生成する方法は次のような書式のものです。
+
+=Append "<". [INS[「<」をつける。]]
+=Get the current time in the highest resolution to which you have
+access (at least seconds, though most systems will give you
+milliseconds) and generate a timestamp in the format
+yyyymmddHHMMSS.ss; [INS[現在時刻をできる限り細かく (最低でも秒まで、ほとんどのシステムではミリ秒まで取れるでしょう) 取得して時間印を yyyymmddHHMMSS.ss の書式で生成する。]]
+=Generate additional data to prevent Message-ID collision on two
+messages processed by the same host at precisely the same
+moment.  (See section 3.2.) Convert these two numbers to base 36
+(0-9 and A-Z), and write the first number, then additional parts,
+each section seperated by a ".", and an "@". [INS[全く同じ瞬間に同じホストで生成された2つのメッセージの Message-ID が衝突するのを防ぐ追加のデータを生成する。 (第3.2節参照) 2つの番号を36進数 (0〜9 と A〜Z) に直し、最初の番号を書き、それから追加の部分を、各部を「.」と「@」で区切って書く。]]
+=[INS[編註: 4 なし。]]
+=Append the FQDN of the local host, or the host name in the user's
+return address. [INS[地方ホストの FQDN または利用者の返信アドレスのホスト名をつける。]]
+=Append ">". [INS[「>」をつける。]]
+*4. Acknowledgments [INS[謝辞]]
+>This document is partially derived from an earlier, unrelated draft by
+Henry Spencer.
+
+この文書は部分的に以前の Henry Spencer による関係のない原案から派生しました。
+
+*5. References [INS[参考文献]]
+
+  Ref.          Author, title                         IETF status (June 1998)
+                                                      ----------------------
+  ---           -------------
+  
+  [NEWS]        M.R. Horton, R. Adams: "Standard      Non-standard (but still
+                for interchange of USENET             widely used as a de-facto
+                messages", RFC 1036, December         standard).
+                1987.
+  
+  [SHA1]        National Institute of Standards
+                and Technology (NIST), "Announcement
+                of Weakness in the Secure Hash
+                Standard", May 1994.  (Update of
+                FIPS 180:  "Secure Hash Standard".)
+  
+  [MD5]         R. Rivest: "The MD5 Message-Digest    Informational (but
+                Algorithm", RFC 1321, April 1992.     (widely used as a
+                                                      de-facto standard).
+  
+  [PRNG]        D. Eastlake, 3rd, S. Crocker,         Informational.
+                J. Schiller: "Randomness
+                Recommendations for Security",
+                RFC 1750, December 1994.
+
+
+*6. Authors' Addresses [INS[著者の連絡先]]
+
+  Matt Curtin
+  The Ohio State University
+  791 Dreese Laboratories
+  2015 Neil Ave
+  Columbus OH 43210
+  +1 614 292 7352
+  cmcurtin@cis.ohio-state.edu
+
+  Jamie Zawinski
+  Netscape Communications Corporation
+  501 East Middlefield Road
+  Mountain View, CA 94043
+  (650) 937-2620
+  jwz@netscape.com
+*License
+[[RFCのライセンス]]
+*メモ

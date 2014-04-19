@@ -1,0 +1,52 @@
+#?SuikaWiki/0.9
+
+[1] [CODE(perl)[Yuki::YukiWikiDBNS]]
+は、 [CODE(perl)[Yuki::YukiWikiDB2]]
+を拡張 (改悪)
+して無理矢理[[名前空間]]に対応させたものです。
+その名に反して、 [[YukiWiki]]
+とは関係ありません。
+
+[2] ここで名前空間とは、
+key の名前に応じてかってに
+directory を作ってその中に key
+の file を突っ込む仕組みです。
+[[WikiName]] における名前空間に対応して木構造が出来るようになっています。
+もっとも、 WikiName に名前空間があるかないかと
+WikiDB の木構造は SuikaWiki
+の実装的には無関係です。
+WikiName の名前空間を使うのに
+YukiWikiDBNS を使わないといけないわけではありません。
+逆に YukiWikiDBNS を使うからといって
+WikiName の名前空間を使う必要もありません。
+(もっとも、 WikiName 名前空間なしで
+SuikaWiki が動くかは怪しいです。)
+
+[3] key 名に [CODE(perl)[//]]
+が含まれていると、これを名前空間区切子とみなします。
+これが directory 区切りに置換えられます。
+(今の実装では hardcode 
+されているので、この区切子をかえることは出来ません。)
+
+例えば [SAMP[a//b]] という key
+は、 [SAMP[a]] の directory
+のしたの [SAMP[b]] という file
+に格納されます。
+実際には file の名前は encode
+された上に接尾辞がつきますから、
+[SAMP(file)[62.ns/63.txt]]
+になります。
+このうち [SAMP(file)[.txt]]
+の部分は変更可能ですが、
+[SAMP(file)[.ns]] の部分は 
+hardcode されていてかえることが出来ません。
+- [4] 今の実装では、空になった directory を消しません。これは改善するべき点でしょう。
+- [5] 部分 directory を別の DB として運用することもできると便利なこともあるかもしれませんが、今のところは実質的に出来ません。まずは lock file の問題。今の実装では任意の場所に作れませんから。次に、 [[Yuki::YukiWikiDBMeta]] として使う場合。この場合はメタ情報が根 directory に収納されるので、部分 directory DB からは access できません。最後に、DB とは別次元の問題ですが、 [[SuikaWiki/0.9]] でのリンク先の WikiName 指定方法で部分 DB を運用すると不便です。
+- [6] 名前に [CODE[////]] のような部分を含むとあまり嬉しくありません。 ([CODE(file)[.]] で始まる directory や file が出来たりしますし)。今の実装ではそういうのはデータベースに与える前に正規化することになってるのでチェックしてませんが、これはちょっと SuikaWiki の今の WikiName の名前空間実装にべったりしすぎかもしれません。
+
+
+[7]
+と、ここに書いてあるのは、 SuikaWiki 2 版の [CODE(perl)[Yuki::YukiWikiDBNS]] の実装の話です。
+SuikaWiki 3.0 では、 [CODE(perl)[[[SuikaWiki::DB::FileSystem::YukiWikiDBNS]]]] を [[WikiDB]] 界面の wrapper としていて、間接的に access しているので、表面的には幾つかの問題 (名前空間区切子が固定であるとか) は解決されています。
+もっとも、 SuikaWiki 2 の場当たり的な YukiWikiDBNS の code を適当に包んでいるだけの現状の code は綺麗ではないので、いずれ書き直すつもりではいます。
+([[名無しさん]] [WEAK[2004-03-19 11:56:10 +00:00]])

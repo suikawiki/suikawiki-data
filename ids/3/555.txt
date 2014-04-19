@@ -1,0 +1,177 @@
+[10] [[CGI]] の[[メタ変数]] [DFN[[CODE(CGI)@en[AUTH_TYPE]]]] は、
+[[鯖]]が[[利用者]]を[[認証]]するのに使った仕組みを識別します。 [SRC[>>9]]
+
+* 仕様書
+
+[REFS[
+- [9] [CITE@en[RFC 3875 - The Common Gateway Interface (CGI) Version 1.1]] ([TIME[2011-11-20 06:09:05 +09:00]] 版) <http://tools.ietf.org/html/rfc3875#section-4.1.1>
+]REFS]
+
+* 値
+
+[11] [[メタ変数]] [CODE(CGI)@en[[[AUTH_TYPE]]]] の値は、[[鯖]]が[[利用者]]の[[認証]]に使った仕組みを示します
+[SRC[>>9]]。
+
+[12] [[クライアント]]との[[プロトコル]]や[[鯖]]の実装によって定義される、
+[[大文字・小文字不区別]]の値を持ちます。 [SRC[>>9]]
+
+[13] [[HTTP]] では、[[クライアント]]からの[[要求]]が[[認証]]を必要としている場合には、
+[[鯖]]は、[CODE(HTTP)@en[[[Authorization]]]] [[頭欄]]の [CODE(ABNF)@en[[[auth-scheme]]]]
+[[字句]]からの値を設定しなければ[['''なりません''']]。 [SRC[>>9]]
+
+** 構文
+
+[14] 構文は次のように定義されています [SRC[>>9]]。
+[PRE(ABNF code)[
+      AUTH_TYPE      = "" | [[auth-scheme]]
+      [[auth-scheme]]    = "[[Basic]]" | "[[Digest]]" | extension-auth
+      extension-auth = [[token]]
+]PRE]
+
+* 歴史
+
+** HTTP CGI
+
+[2] [NCSA]:
+
+> If the server supports user authentication, and the script is protects, this is the protocol-specific authentication method used to validate the user. 
+
+サーバーが利用者認証に対応していれば、
+そしてスクリプトが保護されていれば、
+この変数の値は利用者の認証に使用したプロトコル規定の認証方式です。
+
+*** 6.1.1. AUTH_TYPE (CGI/1.1 draft 03)
+
+> This variable is specific to requests made via the "http"
+> scheme.
+
+この変数は「http」方式を介してなされた要求について設定します。
+
+> If the Script-URI required access authentication for external
+> access, then the server MUST set the value of this variable
+> from the 'auth-scheme' token in the request's "Authorization"
+> header field. Otherwise it is set to NULL.
+
+[[Script-URI]]が外部からの接続に接続認証が必要な場合、
+サーバーはこの変数の値を要求の「Authorization」(認証)頭領域の
+「auth-scheme」字句から設定し''なければなりません''。
+それ以外の場合は NULL を設定します。
+
+[PRE[
+  AUTH_TYPE   = "" | auth-scheme
+  auth-scheme = "Basic" | "Digest" | token
+]PRE]
+
+> HTTP access authentication schemes are described in section 11
+> of the HTTP/1.1 specification [8]. The auth-scheme is not
+> case-sensitive.
+
+HTTP 接続認証方式は HTTP/1.1 仕様書の第11章で説明されています。
+auth-scheme は大文字・小文字を区別しません。
+
+> Servers MUST provide this metavariable to scripts if the
+> request header included an "Authorization" field that was
+> authenticated.
+
+サーバーは、要求頭に「Authorization」領域が含まれていて、
+それを認証した場合、
+このメタ変数をスクリプトに提供し''なければなりません''。
+
+*** memo
+
+- [1] 大文字・小文字を区別''する''が正しいね。
+- [3] [NCSA] の当時は HTTP 認証がまだ標準化されていなかったので、かなりあいまいな表現になっていますのです。
+- [4] [NCSA] ではスクリプトが保護されていることを要求していました。 (この要求は [CODE(CGI)[[[REMOTE_USER]]]] にもありました。認証についての情報は安全じゃないといけないってことですな。 [COAR] では省かれてますが。
+
+** SIP CGI
+
+[5] [RFC 3050] 5.5.1.1:
+
+> If the target of the message required access authentication for
+external access, then the server MUST set the value of this variable
+from the auth-scheme token in the message's Authorization header
+field.  Otherwise it is not defined.
+
+メッセージの対象が外部接続に対する接続認証を必須としているなら、
+サーバーはこの変数の値をメッセージの
+[CODE(SIP)[Authorization]] 頭欄の
+[CODE(SIP)[auth-scheme]]
+字句から設定しなければ'''なりません (MUST)'''。
+そうでなければこれは定義されません。
+
+>
+- AUTH_TYPE    =  "" | auth-scheme
+- auth-scheme  =  "Basic" | "Digest" | "PGP" | token
+
+> SIP access authentication schemes are described in sections 14 and 15
+of the SIP/2.0 specification [2].  The auth-scheme is not case-
+sensitive.
+
+SIP 接続認証方式は [[SIP/2.0]]
+仕様書の14章と15章で説明されています。
+[CODE(SIP)[auth-scheme]]
+は大文字・小文字を区別しません。
+
+> Servers MUST provide this metavariable to scripts if the message
+header included an Authorization field that was authenticated.
+
+サーバーはこのメタ変数をメッセージ頭が認証された
+[CODE(CGI)[Authorization]]
+欄を含んでいる場合に提供しなければ'''なりません (MUST)'''。
+
+> For the complex authentication schemes, the server SHOULD perform the
+authentication checking itself.  If the authentication failed, this
+metavariable SHOULD NOT be set.
+
+複雑な認証方式の場合は、
+サーバーは認証検査を自信で行う'''べきです (SHOULD)'''。
+認証が失敗した場合には、
+このメタ変数は設定する'''べきではありません ([[SHOULDNOT]])'''。
+
+> If several authentication credentials, with multiple schemes, are
+present in the message, this variable SHOULD be set to correspond to
+the authenticated credentials with the strongest scheme the server
+supports.  If credentials are present for several domains, the server
+SHOULD NOT perform any action on credentials from domains external to it.
+
+メッセージ中に複数の方式での認証が用意されていたなら、
+この変数はそのサーバーが対応している最強の認証に対応して設定する'''べきです (SHOULD)'''。
+認証が複数の範囲に対して用意されていたなら、
+そのサーバーから外側の範囲の認証には何の動作も行う'''べきではありません (SHOULD NOT)'''。
+
+> If both Authorization and Proxy-Authorization headers are present,
+the server SHOULD perform the authorizations based on the appropriate
+header for the context in which it is running.  For example, a server
+which is a proxy server and a registrar would use Authorization
+headers for REGISTER messages aimed at its local domains, and Proxy-Authorization headers for all other messages.
+
+[CODE(SIP)[Authorization]],
+[CODE(SIP)[Proxy-Authorization]]
+両欄が用意されていた場合、
+サーバーはその動作している場面に適切な頭を用いて認証する'''べきです (SHOULD)'''。
+例えば、串サーバー及び registrar
+は局部ドメインの [CODE(SIP)[[[REGISTER]]]]
+メッセージに [CODE(SIP)[Authorization]]
+頭を使い、他の全てのメッセージには
+[CODE(SIP)[Proxy-Authorization]]
+頭を使います。
+
+** RFC/I-D の部分の License
+
+[[RFCのライセンス]]
+
+* テスト・ケース
+
+[REFS[
+- [8] <http://suika.fam.cx/~wakaba/test/web/cgi/var-auth/auth.cgi>
+]REFS]
+
+* 関連
+
+[15] [CODE(CGI)@en[[[AUTH_TYPE]]]] が設定されている場合、その認証方式で[[利用者]]名が提供されていれば、
+[CODE(CGI)@en[[[REMOTE_USER]]]] [[メタ変数]]によりアクセスできます。
+
+* メモ
+
+- [6] 結局このメタ変数の値になり得る値については、 [CODE(HTTP)[[[Authorization:]]]] 欄の説明を参照。
+- [7] [[Apache]] の実装では、サーバー側で認証が設定されていない (のに CGI スクリプトが勝手に [CODE(HTTP)[[[WWW-Authenticate]]]] を送った) 時にも (サーバーとしては認証の設定がされてないから、認証は素通しして) [CODE(CGI)[AUTH_TYPE]] は設定しないんですけど、 [CODE(CGI)[HTTP_AUTHORIZATION]] はこの場合でも設定してくれないので、結局どうしても認証することができないんですよね。ちょっと不便かもー。

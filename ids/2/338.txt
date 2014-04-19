@@ -1,0 +1,148 @@
+#?SuikaWiki/0.9
+[1] [[統計学C‐I]] の課題用に作った [[WikiPlugin]]
+です(w。さすがにこんなのを [[CVS]]
+に入れてしまうのは気が引けるので(藁
+
+[PRE[
+Name:
+	Toukei
+FullName:
+	(統計学の宿題のためのモジュール:-)
+URI:
+	IW:SuikaWiki:"SandBox//WikiPlugin//統計学の宿題用(謎)"
+Initialize:
+	my $NS_XHTML1 = 'http://www.w3.org/1999/xhtml';
+
+{
+Name:
+	wikiform-input/sample-mean
+FullName:
+	Return sample mean of given data
+Format:
+	$p->{data} =~ s/^\s+//;  $p->{data} =~ s/\s+$//;
+	my @data = split /\s+/, $p->{data};
+	$r = SuikaWiki::Markup::XML->new (type => '#text', value => (
+		scalar @data ?
+			do { my $i = $data[0]; for (1..$#data) { $i += $data[$_] }; $i }
+				/ scalar @data
+		: 0
+	));
+}
+
+{
+Name:
+	wikiform-input/sample-variance
+FullName:
+	Return sample variance of given data
+Format:
+	$p->{data} =~ s/^\s+//;  $p->{data} =~ s/\s+$//;
+	my @data = split /\s+/, $p->{data};
+	@data = (0) unless scalar @data;
+	$r = variance (\@data);
+}
+
+{
+Name:
+	wikiform-input/sample-variance2
+FullName:
+	Return sample variance of given data
+Format:
+	$p->{data} =~ s/^\s+//;  $p->{data} =~ s/\s+$//;
+	my @data = split /\s+/, $p->{data};
+	@data = (0) unless scalar @data;
+	$r = variance2 (\@data);
+}
+
+{
+Name:
+	wikiform-input/sample-covariance
+FullName:
+	Return sample covariance of given data
+Format:
+	$p->{data1} =~ s/^\s+//;  $p->{data1} =~ s/\s+$//;
+	my @data1 = split /\s+/, $p->{data1};
+	$p->{data2} =~ s/^\s+//;  $p->{data2} =~ s/\s+$//;
+	my @data2 = split /\s+/, $p->{data2};
+	@data1 = (0) unless scalar @data1;
+	@data2 = (0) unless scalar @data2;
+	$r = covariance (\@data1, \@data2);
+}
+
+{
+Name:
+	wikiform-input/sample-correlation-coefficient
+FullName:
+	Return sample correlation coefficient of given data
+Format:
+	$p->{data1} =~ s/^\s+//;  $p->{data1} =~ s/\s+$//;
+	my @data1 = split /\s+/, $p->{data1};
+	$p->{data2} =~ s/^\s+//;  $p->{data2} =~ s/\s+$//;
+	my @data2 = split /\s+/, $p->{data2};
+	@data1 = (0) unless scalar @data1;
+	@data2 = (0) unless scalar @data2;
+	my $sx = sqrt variance (\@data1);
+	my $sy = sqrt variance (\@data2);
+	return 0 if $sx * $sy == 0;
+	$r = covariance (\@data1, \@data2) / ($sx * $sy);
+}
+
+{
+Name:
+	wikiform-input/sample-mean-of-squared-data
+FullName:
+	Return sample mean of squareds of given data
+Format:
+	$p->{data} =~ s/^\s+//;  $p->{data} =~ s/\s+$//;
+	my @data = split /\s+/, $p->{data};
+	@data = (0) unless scalar @data;
+	my $mean_of_squared = do { my $i = ($data[0]**2);
+	                           for (1..$#data) { $i += ($data[$_]**2) }; $i }
+				/ scalar @data;
+	$r = 0+($mean_of_squared);
+}
+
+{
+Name:
+	wikiform-input/square
+FullName:
+	Returns square of given data
+Format:
+	$r = $p->{data} ** 2;
+}
+
+MODULE:
+	sub variance ($) {
+	  my ($data) = @_;
+	  my $mean = do { my $i = $$data[0]; for (1..$#$data) { $i += $$data[$_] }; $i }
+	             / scalar @$data;
+	  my $mean_of_squared = do { my $i = ($$data[0]**2);
+	                             for (1..$#$data) { $i += ($$data[$_]**2) }; $i }
+	                        / scalar @$data;
+	  return $mean_of_squared - ($mean ** 2);
+	}
+	sub variance2 ($) {
+	  my ($data) = @_;
+	  my $mean = do { my $i = $$data[0]; for (1..$#$data) { $i += $$data[$_] }; $i }
+	             / scalar @$data;
+	  return do { my $i = 0;
+	              for (0..$#$data) { $i += ($$data[$_] - $mean)**2 }; $i }
+	                                 / scalar @$data;
+	}
+	sub covariance ($$) {
+	  my ($data1, $data2) = @_;
+	  my $xy = do { my $i = $$data1[0]*$$data2[0];
+	                for (1..$#$data1) { $i += $$data1[$_]*$$data2[$_] }; $i }
+	           / scalar @$data1;
+	  my $x_mean = do { my $i = $$data1[0];
+	                    for (1..$#$data1) { $i += $$data1[$_] }; $i }
+	               / scalar @$data1;
+	  my $y_mean = do { my $i = $$data2[0];
+	                    for (1..$#$data1) { $i += $$data2[$_] }; $i }
+	               / scalar @$data1;
+	  return $xy - $x_mean * $y_mean;
+	}
+POD:LICENSE:
+	Copyright 2003 Wakaba <w@suika.fam.cx>
+	
+	%%GNUGPL2%%
+]PRE]

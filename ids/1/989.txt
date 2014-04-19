@@ -1,0 +1,73 @@
+*BNF
+
+;; RFC 2965 を元に、 FWS を補うなど修正した
+
+ http-response  /= Set-Cookie
+ http-request   /= Cookie / Cookie2
+ Set-Cookie      = "Set-Cookie2:" [FWS] cookies [FWS]
+ Cookie          = "Cookie:" [FWS] cookie-version
+                   1*([FWS] cookie-separator [FWS] cookie-value) [FWS]
+ Cookie2         = "Cookie2:" cookie-version
+ cookie-separator = ";"  ;; 過去との互換性のためこちらを使用する
+                  / ","  ;; 将来との互換性のためサーバーは認識'''すべし'''
+
+ cookies         = a-cookie *([FWS] "," [FWS] a-cookie)
+ a-cookie        = NAME [FWS] "=" [FWS] VALUE *([FWS] ";" [FWS] cookie-av)
+ cookie-av       = comment-av / domain-av / max-age-av / path-av
+                 / secure-av / version-av / commenturl-av / discard-av
+                 / port-av
+ cookie-value    = NAME [FWS] "=" [FWS] VALUE [[FWS] ";" [FWS] path]
+                   [[FWS] ";" [FWS] domain] [[FWS] ";" [FWS] port]
+
+ NAME            = attr  ;; 「$」で始まる名前は予約
+ VALUE           = value
+ comment-av      = "Comment" [FWS] "=" [FWS] utf-8-value
+ domain-av       = "Domain" [FWS] "=" [FWS] domain-value
+ max-age-av      = "Max-Age" [FWS] "=" [FWS] delta-value
+ path-av         = "Path" [FWS] "=" [FWS] path-value
+ secure-av       = "Secure"
+ version-av      = "Version" [FWS] "=" [FWS] version
+ path            = "$Path" [FWS] "=" [FWS] path-value
+ domain          = "$Domain" [FWS] "=" [FWS] domain-value
+ cookie-version  = "$Version" [FWS] "=" [FWS] version-value
+ commenturl-av   = "CommentURL" [FWS] "=" [FWS] <"> http_URL <">
+ discard-av      = "Discard"
+ port-av         = "Port" [ [FWS] "=" [FWS] <"> portlist <"> ]
+ port            = "$Port" [ [FWS] "=" [FWS] <"> portlist <"> ]
+
+ attr            = http-token
+ value           = http-token / quoted-string
+ domain-value    = ["."] dot-http-token / <"> ["."] dot-atom <">
+ path-value      = abs_path / <"> abs_path <">
+ delta-value     = delta-seconds / <"> delta-seconds <">
+ delta-seconds   = 1*DIGIT
+ this-version    = "1"   ;; 1*DIGIT
+ version         = 1*DIGIT
+ version-value   = version / <"> version <">
+ portlist        = portnum *([FWS] "," [FWS] portnum)
+ portnum         = 1*DIGIT
+ utf-8           = <a UTF-8 [RFC 2279] character>
+ utf-8-value     = *token / <"> *utf-8 <">
+
+*例
+
+-Set-Cookie2: Customer="WILE_E_COYOTE"; Version="1"; Path="/acme"
+-Cookie: $Version="1"; Customer="WILE_E_COYOTE"; $Path="/acme"
+-Set-Cookie2: Part_Number="Rocket_Launcher_0001"; Version="1"; Path="/acme"
+-Cookie: $Version="1"; Customer="WILE_E_COYOTE"; $Path="/acme"; Part_Number="Rocket_Launcher_0001"; $Path="/acme"
+-Cookie2: $Version="1"
+
+*See also
+-<urn:ietf:rfc:2965>
+-[[Cookie]]
+--[[NetscapeのCookie仕様]]
+--[[RFC2109のCookie仕様]]
+-[[HTTP]]
+-[[RFC822と仲間達の頭領域名]]
+--[[Set-Cookie:領域]]
+--[[Cookie:領域]]
+-[[CGI]]
+-[[HTML]]
+--[[META要素]]
+--[[Script要素]]
+---[[JavaScript]]

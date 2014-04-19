@@ -1,0 +1,1036 @@
+[4] [CODE[mailto:]] は、[[電子メイル]]の[[宛先]]を表す [[URI scheme]]
+です。 現在の定義では宛先だけでなく作成されるメイルの雛形の
+[CODE(822)[[[Subject]]:]] 欄などの内容 ([[欄本体]]) 
+を指定することもできます。
+
+[5] 特定の[Q[場所]]を表さないという意味で、 [CODE(URI)[[[http]]:]]
+などのほかの URI scheme とは趣が異なります。
+あくまで'''宛先を示す'''ものであって、電子メイル・アドレスそのものの
+URI 的表現では [WEAK[(基本的には)]] ありませんし、
+電子メイルの作成という動作を表すものでもありません。
+
+* 仕様書
+
+- [70] [CITE@en[RFC 6068 - The 'mailto' URI Scheme]]
+([TIME[2010-10-05 09:50:43 +09:00]] 版)
+<http://tools.ietf.org/html/rfc6068>
+
+* 意味
+
+[842] [CODE(URI)@en[[[mailto:]]]] [[URL]] は、[[メール・アドレス]]により指定される[[メール箱]]という
+「[[インターネット資源]]」を表します。 [[query]] が記述されている時には、
+その[[メール・アドレス]]と [[query]] によって指定された方法でアクセスできる[[資源]]を表します。
+[SRC[>>70 3.]]
+
+[843] [CODE(URI)@en[[[http:]]]] [[URL]] など他の多くの [[URL scheme]] とは違って、
+[CODE(URI)@en[[[mailto:]]]] [[URL]] を「[RUBYB[[[解決]]]@en[resolve]]」
+してもすぐに[[鯖]]へのアクセスが発生するわけではありません。
+指定された[[メール・アドレス]]や[[頭欄]]が[[既定値]]となった[[メッセージ]]が作られ、
+それを[[利用者]]が編集し、または編集せずに送信したり、送信しないことにしたりできます。
+[CODE(URI)@en[[[mailto:]]]] [[URL]] は[[電子メール]]によって''自動的''に[[インターネット資源]]にアクセスすることを意図したものでは''ありません''。
+[SRC[>>70 3.]]
+
+** 隠しメッセージ欄、制御命令欄としての用法
+
+[65] [[2ch]] など一部の [[Web]] 上の[[掲示板]]システムでは、[[メッセージ]] ([[レス]]などと呼ばれます。)
+に[[題名]]や[[本文]]などと並んで[[電子メイル・アドレス]]を記述することができます。
+[[電子メイル・アドレス]]は [[HTML]] として出力される際に [CODE(URI)@en[[[mailto:]]]] [[URL]]
+として [CODE(HTMLe)@en[[[a]]]] [[要素]]の [CODE(HTMLa)@en[[[href]]]] [[属性]]に指定されます。
+
+[66] [[2ch]] のような[[匿名掲示板]]では実際にこの欄に[[電子メイル・アドレス]]が入力されることはほとんどありません。
+[CODE(HTMLa)@en[[[href]]]] [[属性]]の値は [CODE(HTMLa)@en[[[onmouseover]]]] 時に
+[[Webブラウザ]]の[[状態棒]]などに表示されることから、隠しメッセージ的な存在としてしばしば濫用されています。
+
+[67] また、 [[2ch]] では[[掲示板]]一覧における当該[[スレ]]の表示順序の制御のための「[[sage]]」
+という指定が[[電子メイル・アドレス]]欄で可能になっています。そのため、「[[sage]]」やその対義語の
+「[[age]]」がしばしば [CODE(URI)@en[[[mailto:]]]] [[URL]]
+「[CODE(URI)@en[[[mailto:sage]]]]」、「[CODE(URI)@en[[[mailto:age]]]]」
+として出現します。
+
+* 構文
+
+** ABNF 構文
+
+[74] [[RFC 6068]] には次の [[ABNF]] [[生成規則]]が示されています。 [SRC[[[RFC 6068]] 2.]]
+
+[PRE(ABNF code)[
+      mailtoURI    = "mailto:" [ to ] [ hfields ]
+      to           = addr-spec *("," addr-spec )
+      hfields      = "?" hfield *( "&" hfield )
+      hfield       = hfname "=" hfvalue
+      hfname       = *qchar
+      hfvalue      = *qchar
+      addr-spec    = local-part "@" domain
+      local-part   = dot-atom-text / quoted-string
+      domain       = dot-atom-text / "[" *dtext-no-obs "]"
+      dtext-no-obs = %d33-90 / ; Printable US-ASCII
+                     %d94-126  ; characters not including
+                               ; "[", "]", or "\"
+      qchar        = unreserved / pct-encoded / some-delims
+      some-delims  = "!" / "$" / "'" / "(" / ")" / "*"
+                   / "+" / "," / ";" / ":" / "@"
+]PRE]
+
+;; [94] 仕様書本文中に別途[[百分率符号化]]についての規定 (>>86) があるため、
+厳密ではありません。
+
+** 百分率符号化と予約文字
+
+[86] 次の[[文字]]は[[百分率符号化]]しなければ[['''なりません''']] [SRC[>>70 2.]]。
+- [[URI]] で使えない[[文字]]
+- [CODE(char)[[[%]]]]
+- ほとんどの [CODE(ABNF)@en[[[gen-delims]]]]: [CODE(char)[[[/]]]],
+[CODE(char)[[[?]]]], [CODE(char)[[['''#''']]]], [CODE(char)[[['''[''']]]],
+[CODE(char)[[[''']''']]]]
+- 一部の [CODE(ABNF)@en[[[sub-delimis]]]]: [CODE(char)[[[&]]]],
+[CODE(char)[[[;]]]], [CODE(char)[[[=]]]]
+
+[107] [CODE(URI)@en[[[mailto:]]]] [[URL]] では [CODE(char)[[[?]]]],
+[CODE(char)[[[&]]]], [CODE(char)[[[=]]]] が[[予約文字]]であり、
+[[区切子]]''以外''として用いるときは[[百分率符号化]]し[['''なければなりません''']] [SRC[>>70 2., 5.]]。
+
+;; [108] [[path]] 部分で [CODE(char)[[[&]]]], [CODE(char)[[[=]]]]
+を[[予約]]する必要はないのでは... 簡略化のためでしょうか...
+
+[108] [[メッセージ]]を作成する時は[[復号]]しなければ[['''なりません''']]。
+[[利用者]]に対して[[メッセージ]]を提示する前に復号する[['''べきです''']]。
+[SRC[>>70 5.]]
+
+[50]
+[[RFC 3696]] ([[情報提供]] [[RFC]]) では、
+[[URI]] で使えない文字の他、
+[CODE(URI)@en[[['''#''']]]]、[CODE(URI)@en[[[%]]]]、
+[CODE(URI)@en[[[~]]]]、[CODE(URI)@en[[[:]]]]、
+[CODE(URI)@en[[[/]]]] を[[百分率符号化]]しなければならず、
+[CODE(URI)@en[[[+]]]] は[[百分率符号化]]した方が安全で、
+[CODE(URI)@en[[[$]]]]、[CODE(URI)@en[[[!]]]]、
+[CODE(URI)@en[[[_]]]]、[CODE(URI)@en[[[@]]]]
+は[[百分率符号化]]する必要はないという見解を示しています。
+[[path]] 部分で [CODE(URI)@en[[[=]]]] を[[百分率符号化]]していない例もでてきます。
+
+*** [CODE(char)[+]]
+
+[858] [[HTML]] の[[フォーム]]の[[提出]]では、実装によっては [CODE(char)[[[SPACE]]]]
+を [CODE(char)[[[+]]]] に[[符号化]]します。しかし [CODE(URI)@en[[[mailto:]]]] [[URL]]
+の仕様上は [CODE(char)[[[+]]]] は特別な意味を持たず、[[文字]]そのものとしての [CODE(char)[[[+]]]]
+を表します。従って [CODE(char)[[[SPACE]]]] は [CODE(URI)[[[%20]]]] として[[符号化]]する[['''べきであり''']]、
+[CODE(char)[[[+]]]] は [CODE(URI)@en[[[%2B]]]] として[[符号化]]して[['''構いません''']]。
+[SRC[>>70 5.]]
+
+[71] [[au]] の携帯のブラウザ (の一部?) は、  [CODE(ABNF)@en[[[local-part]]]] の「[CODE(char)[[[+]]]]」
+を[[間隔]]とみなします。一方、[[Softbank]] の携帯のブラウザ (の一部?) は、
+「[CODE(char)[[[%2B]]]]」を「[CODE(char)[[[+]]]]」の意味だと理解できません
+([[percent-decode]] しません)。
+
+** path
+
+[77] [CODE(URI)@en[[[mailto:]]]] [[URL]] の [[path]] 部分
+([[生成規則]] [CODE(ABNF)@en[[[to]]]]) は宛先[[メール・アドレス]]を表します。
+
+[78] この部分の[[構文]]は [CODE(ABNF)@en[[[addr-spec]]]] となっています。
+[[RFC 2368]] のときは [[RFC 822]] の [CODE(ABNF)@en[[[mailbox]]]] でしたが、より限定的になっています。
+また、 [[RFC 2368]] は [[RFC 822のABNF]] の [CODE(ABNF)[[['''#''']]]] を使っていて、
+複数の [CODE(ABNF)@en[[[mailbox]]]] の間の [CODE(char)[[[,]]]] の前後に [CODE(ABNF)[[[FWS]]]]
+を入れることが認められていましたが、 [[RFC 6068]] は認めていません。
+
+;; [82] といっても、 [[FWS]] が使えたとしても[[百分率符号化]]しなければ [[URI]]
+共通の構文に反しますがね。
+
+;;
+[81] [[RFC 1123]] で [CODE(ABNF)@en[[[mailbox]]]] の定義が改訂されているのですが、
+そっちの定義を使った方が良いのではないでしょうか。
+と思っていたら、 [[RFC 6068]] で [CODE(ABNF)@en[[[mailbox]]]] ではなくなりました。
+
+[857] [CODE(char)[[[/]]]] は[[百分率符号化]]しなければならないとされている (>>86) ので、
+[[authority]] と解釈されてしまうことはありません。
+
+*** [CODE(ABNF)@en[addr-spec]]
+
+[83] [[RFC 6068]] は [DFN[[CODE(ABNF)@en[[[addr-spec]]]]]] を次のように定義しています
+[SRC[[[RFC 6068]] 2.]]。
+
+- [84] [[RFC 5322]] [[メール・アドレス]]です。
+- [85] [CODE(ABNF)@en[[[comment]]]] は除外します。
+- [87] [CODE(ABNF)@en[[[obs-local-part]]]], [CODE(ABNF)[[[NO-WS-CTL]]]]
+は使っては[['''なりません''']]。
+- [88] [CODE(ABNF)@en[[[local-part]]]], [CODE(ABNF)@en[[[domain]]]]
+で[[空白]]と[[注釈]]を使っては[['''なりません''']]。
+- [856] 一部の[[文字]]は[[百分率符号化]]が必要です (>>86)。
+- [89] [CODE(ABNF)@en[[[domain]]]] では [[IDN]]
+を表すために[[百分率符号化]]を使うことができます。 [[RFC 3986]]
+の [CODE(ABNF)@en[[[reg-name]]]] についての規定を適用します。特に、
+[[非ASCII文字]]は [[UTF-8]] で[[符号化]]して[[百分率符号化]]しなければ[['''なりません''']]。
+[[UTF-8]] でなければ[[百分率符号化]]を使っては[['''なりません''']]。
+[[IDN]] を[[メッセージ]]作成に使う時は [[RFC 5891]] [[IDNA2008]]
+に従って変形しなければ[['''なりません''']]。
+旧来の [[URI]] 解釈器との[[相互運用性]]を最大化したいなら、
+[[百分率符号化]]ではなく [[IDNA]] 符号化を使う[['''べきです''']]。
+- [90] [CODE(ABNF)@en[[[local-part]]]] における[[非ASCIIオクテット]]の[[百分率符号化]]は、
+[CODE(ABNF)@en[[[local-part]]]] の[[国際化]]のために予約します。
+[[非ASCII文字]]は [[UTF-8]] で[[符号化]]して[[百分率符号化]]しなければ[['''なりません''']]。
+それ以外に[[非ASCII文字]]を[[百分率符号化]]することは禁止します。
+[[非ASCII文字]]を含む [CODE(ABNF)@en[[[local-part]]]] を[[メッセージ]]作成に使う時は
+将来の仕様に従って変形しなければ[['''なりません''']]。
+
+;; [91] 存在しない仕様に従わないといけないことを [[MUST]]
+にしても現時点で検証できない要件なわけで、どうなんですかね。。。
+
+;; [92] >>89 のような条件付きの [[SHOULD]] も、適合するかどうかを一意に決められないわけで、
+如何なものでしょう。
+
+[93] この要件のほとんどは構文的に冗長な形式を認めないということに限られますが、
+>>88 により [CODE(ABNF)@en[[[local-part]]]] が [CODE(ABNF)@en[[[quoted-string]]]]
+のときに[[空白]]が認められず、これについては表現できない[[メール・アドレス]]が生じることになりますが、
+良いのでしょうか。そんなアドレスはほとんどないから良いということなのでしょうかね。
+
+[888] >>93 でも >>887 のような例が [[RFC 6068]] にはあって [CODE(ABNF)@en[[[quoted-string]]]]
+内で [CODE(charname)@en[[[SPACE]]]] が使われているので、これは仕様書本文が間違ってるのではないでしょうかね。。。
+
+**** IDNA
+
+[36] 制定時期の関係から [[IDNA]] による[[非ASCII文字]]を含む[[ドメイン名]]をどう扱うかは [[RFC 2368]]
+の頃までは明記されておらず、 [[IDNA]] [[RFC]] の規定により[[IDN未対応ドメイン名スロット]]であることから
+[[Punycode]] [[符号化]]したものでなければならないと解釈されていました。 [[RFC 6068]]
+でそれに加えて直接表記したものを[[百分率符号化]]してもよいことになっています。
+
+*** path と宛先
+
+[109] [[path]] 部分に指定する宛先が [[RFC 2368]] のときは [[RFC 822]] の [CODE(ABNF)@en[[[mailbox]]]] でしたが、
+[[RFC 6068]] では [CODE(ABNF)@en[[[addr-spec]]]] とより限定的になっています。
+
+[110] [[電子メール]]では [CODE(ABNF)@en[[[mailbox]]]] よりも更に広い [CODE(ABNF)@en[[[address]]]]
+を記述できます。つまり [CODE(ABNF)@en[[[group]]]] があるのですが、 [CODE(ABNF)@en[[[mailbox]]]]
+や [CODE(ABNF)@en[[[addr-spec]]]] では使うことが出来ません。 [CODE(ABNF)@en[[[group]]]] を使う時は
+[[query]] の中で [CODE(example URI)@en[?[[to]]=foo:abc@bar.example;]] とするのでしょう。
+
+[111] [CODE(ABNF)@en[[[address-list]]]] ([CODE(ABNF)@en[[[address]] = [[mailbox]] / [[group]]]])
+にすると parse がやや面倒に
+なることはあるのですが、どのみち [[query]] の中で使えてしまうのですから、
+あまり意味がありません。そもそも、 [[RFC 822]] ([[RFC 5322]]) [[MUA]] は [CODE(ABNF)@en[[[group]]]]
+を扱えなければなりません。 (URI parser は単に分解して % 復号したものを
+そのまま [[MUA]] に渡せばいいだけです。 [[RFC 822]] 的な parse
+はする必要が無いはずです。)
+
+[19] >>6 1997年くらい [WEAK[([[NN3]], [[WinIE 3]] の時代。)]] には、 IE だと 
+[SAMP(URI)[mailto:foo@bar.example,bar@foo.example]] のような URI だと IE 
+では [SAMP[foo@bar.example]] だけが宛先になってしまうというのがちょっと問題になっていました。
+これは [[MSIM]] が対応していなかったせいらしいです。
+
+;; [20] もっとも、 >>19 のような複数指定や [CODE(URI)[?]] を使った複雑指定は、元々は Netscape の独自拡張で、もうちょっと前の時代には邪悪なものと考えられていました。 (結局 RFC になって誰も文句を言わなくなりましたが。)
+
+** query
+
+[95] [[query]] 部分は [[URL]] ではありがちな「[VAR[名前]]=[VAR[値]]&[VAR[名前]]=[VAR[値]]&...」
+の形式で、[[メッセージ]]を作成する時の[[頭欄]]の[[名前]]と[[本体]]を表します。
+
+[96] [CODE(ABNF)@en[[[hfname]]]], [CODE(ABNF)@en[[[hfvalue]]]] がそれぞれ [[RFC 5322]]
+[[メッセージ]][[頭部]]の[[欄名]]と[[欄値]]を示しています。 [SRC[>>70 2.]]
+
+[98] [CODE(ABNF)@en[[[hfname]]]] は[[大文字・小文字不区別]]です。
+[CODE(ABNF)@en[[[hfvalue]]]] は一般に[[大文字・小文字を区別します]]。
+[SRC[>>70 2.]]
+
+[99] 値についての制約、例えば [CODE(ABNF)@en[[[hfname]]]] が [[IANA]] に登録されていないといけないとか、
+[CODE(ABNF)@en[[[hfvalue]]]] が当該 [CODE(ABNF)@en[[[hfname]]]] に対して妥当な値でなければならなないとか、
+そういった制約はないようです。というかそういう観点の言及が全然ありません。
+
+*** 符号化
+
+[97] [CODE(ABNF)@en[[[addr-spec]]]] 同様に (>>86 のことか?) [[百分率符号化]]が必要です。
+[SRC[>>70 2.]]
+
+[823] [CODE(ABNF)@en[[[hfvalue]]]] では [[encoded-word]] を使って構いませんし、
+[[UTF-8]] を[[百分率符号化]]しても構いません。 [SRC[>>70 2.]]
+
+;; [824] 現実には [[UTF-8]] 以外、例えば [[EUC-JP]] で[[百分率符号化]]されていることや、
+[[百分率符号化]]せずに[[非ASCII文字]]が含まれていることもあります。
+
+[825] [[822]] [[メッセージ]]では[[非ASCII文字]]は [[encoded-word]]
+しか使えないわけですから、 [CODE(URI)@en[[[mailto:]]]] [[URL]]
+の処理のためには [[822]] 用の[[構文解析器]]とは別に[[非ASCII文字]]と 
+[[encoded-word]] の混合を扱える[[構文解析器]]が必要ということになります。
+
+;; [826] [CODE(URI)@en[[[mailto:]]]] [[URL]] から[[メッセージ]]を作成する際には、
+[[UTF-8]] 以外を使っても[['''構いません''']]。 [SRC[>>70 2.]]
+
+*** 改行
+
+[853] [CODE(URI)@en[[[body]]]] の [CODE(ABNF)@en[[[hvalue]]]] では、[[改行]]は
+[CODE(URI)@en[%0D%0A]] で表さなければなりません。 [SRC[>>70 5.]]
+
+[854] [[メッセージ]]の作成時には [CODE(URI)@en[[[body]]]] の最後に改行を補っても[['''構いません''']]。
+[SRC[>>70 5.]]
+
+[855] それ以外の [CODE(ABNF)@en[[[hfvalue]]]] では[[改行]]を使う[['''べきではありません''']]。
+[SRC[>>70 5.]]
+
+*** [CODE(URI)@en[to]]
+
+[832] [CODE(ABNF)@en[[[addr-spec]]]] 部分に宛先[[メール・アドレス]]を指定することができ、
+[[メッセージ]]作成時には [CODE(822)@en[[[To:]]]] [[頭欄]]で使われるのですが、
+[CODE(ABNF)@en[[[hfname]]]] として [CODE(822)@en[[[to]]]] を使い、
+[CODE(822)@en[[[To:]]]] [[頭欄]]を指定することも認められています。
+
+[833] 従って [CODE(ABNF)@en[[[addr-spec]]]] でだけ指定、 [CODE(ABNF)@en[[[query]]]]
+でだけ指定、どちらでも指定の3通りがあり得ます。このうち両方指定する形式については、
+実装によって扱いが違うことを利用に使用する[['''べきではない''']] [SRC[>>70 2.]] とされています。
+
+[845] [[メッセージ]]作成時には、[CODE(822)@en[[[To:]]]], [CODE(822)@en[[[Cc:]]]], [CODE(822)@en[[[Bcc:]]]]
+には必ずしも [CODE(URI)@en[[[to]]]], [CODE(URI)@en[[[cc]]]], [CODE(URI)@en[[[bcc]]]]
+で指定されたものをそのまま使う必要はありません。[[メール・アドレス]]の重複は削除して[['''構いません''']]。
+[CODE(URI)@en[[[mailto:]]]] [[URL]] には重複した[[メール・アドレス]]が含まれる[['''べきではありません''']]。
+[SRC[>>70 3.]]
+
+*** 無視するべき頭欄
+
+[848] [[メッセージ]]作成時には、危険と考えられる[[頭欄]]が含まれていれば、
+作成を行う[['''べきではありません''']]。
+あるいは、一部の[[頭欄]]だけから[[メッセージ]]を作成しても[['''構いません''']]。
+[SRC[>>70 4.]]
+
+;; [849] 前半が [[SHOULD]] ということは原則として前半の動作でなければならないのですが、
+本当にそれでよいのでしょうか。どちらかといえば後半の方が現実的な動作なきがしますが・・・。
+
+[850] [CODE(822)@en[[[subject]]]], [CODE(822)@en[[[keywords]]]], [CODE(822)@en[[[body]]]]
+あたりの限られた[[頭欄]]だけが一般に安全でかつ有用と考えられています。
+[CODE(URI)@en[[[mailto:]]]] [[URL]] の出所が明らかな場合であったり、
+特定の[[頭欄]]が特定の既知の値だけに限定されている場合であったりすれば、
+それ以外の[[頭欄]]も安全であるとみなして[['''構いません''']]。
+[SRC[>>70 4.]]
+
+[851] [[メッセージ]]の作成時には [CODE(822)@en[[[subject]]]] と [CODE(822)@en[[[body]]]]
+を使った [[RFC 5322]] に適合する[[電子メール・メッセージ]]を正しく作れなければ[['''なりません''']]。
+[SRC[>>70 4.]]
+
+[846] [[メッセージ]]作成時には、[[Originator field]] ([CODE(822)@en[[[From]]]], [CODE(822)@en[[[Date]]]] など)、
+[[経路制御]]関連の[[頭欄]] ([CODE(822)@en[[[Apparently-To]]]],
+[CODE(822)@en[[[Recent-[VAR[*]]]]]] など)、
+[[trace field]],
+[[MIME頭欄]] ([CODE(822)@en[[[MIME-Version]]]], [CODE(822)@en[[[Content-[VAR[*]]]]]])
+は無視しなければ[['''なりません''']]。 [SRC[>>70 3.]]
+
+;; [899] [[RFC 2368]] では [CODE(822)@en[[[Bcc]]]] も無視することになっていましたが、
+[[RFC 6068]] でリストから削除されています。 [[RFC 6068]] の方がより実情に即しています。
+
+[847] [[メッセージ]]作成時には、 [[MUA]] が知らない[[頭欄]]や通常の値とは違うものに気をつける[['''べきです''']]。
+実際には安全であっても [[MUA]] が知らない[[頭欄]]があったりもするでしょうから、
+[[利用者]]に対して表示するようにしても[['''構いません''']]。 [SRC[>>70 3.]]
+
+[852] [CODE(URI)@en[[[mailto:]]]] [[URL]] の[[著者]]としては、
+[CODE(822)@en[[[subject]]]] と [CODE(822)@en[[[body]]]] 以外が意図通りに解釈されることは必ずしも期待できません。
+[SRC[>>70 4.]]
+
+*** 複数の指定
+
+[834] [[メッセージ]]を作成するときに [CODE(822)@en[[[To:]]]] [[頭欄]]を2つ生成しては[['''なりません''']]。
+[SRC[>>70 2.]]
+
+;; [835] [[RFC 5322]] の要件がなぜか [[RFC 6068]] でも重ねて要件となっています。
+
+[836] [CODE(822)@en[[[To:]]]] 以外の[[頭欄]]について、[[メッセージ]]中に1回だけ使えるものを
+[CODE(URI)@en[[[mailto:]]]] [[URL]] で複数回使っては[['''なりません''']]。 [SRC[>>70 2.]]
+
+[837] [[相互運用性]]の問題を避けるため ([[利用者エージェント]]によって挙動が異なるため)、
+同じ [CODE(ABNF)@en[[[hfname]]]] を複数回使う[['''べきではありません''']]。 [SRC[>>70 2.]]
+
+;; [839] 最後だけ使うもの、複数の[[頭欄]]を作るもの、連結して1つにするものなどいろいろあるようです。
+[SRC[>>70 2.]]
+
+;; [838] なぜか [CODE(822)@en[[[To:]]]] については禁止されていません。
+<mailto:1@example?to=2@example> は >>833 で原則禁止されていますが、
+<mailto:?to=1@example&to=2@example> はなぜか >>836 で禁止されていません (>>837 で原則禁止されていますが)。
+
+*** [CODE(URI)@en[body]]
+
+[100] 特別な [CODE(ABNF)@en[[[hfname]]]] [DFN[[CODE(822)@en[[[body]]]]]] を使うと、
+作成する[[メッセージ]]の[[本文]]を指定できます。
+[CODE(822)@en[[[body]]]] の値は、[[メッセージ]]の最初の [CODE(MIME)@en[[[text/plain]]]]
+[[本体部分]]の内容を表します。 [SRC[>>70 2.]]
+
+[101] [CODE(822)@en[[[body]]]] という[[頭欄]]の名前はこの目的に予約されている [SRC[>>70 8.2.]] ため、
+[[822]] [[メッセージ]]の[[頭部]]に [CODE(822)@en[[[Body:]]]] [[頭欄]]が出現することは、
+仕様上はありません。
+
+;; [102] 最初の [CODE(MIME)@en[[[text/plain]]]] [[本体部分]]ということで、最初でさえあればよく、
+[[多部分メッセージ]]でなかったり、前に別の[[本体部分]]があったりしてもよいのでしょうね。
+
+[103] この指定は自動処理用の短いテキスト・メッセージ (たとえばありがちな[[メーリング・リスト]]の
+「subscribe」命令) を生成することが主な目的であって、一般の [[MIME]]
+[[本体]]を生成することは考えていません。 [SRC[>>70 2.]]
+
+;; [104] 現実には、自動処理用に限らず、人間宛メッセージの雛形だったり、
+[[placeholder]] 的な文言を挿し込むために使われたりします。
+
+[105] [[百分率符号化]]することにより、 [[UTF-8]] の任意の文字列を指定できます (>>97)。
+[[MIME]] では [[Quoted-Printable]] や [[Base64]] で[[内容転送符号化]]することができますが、
+[CODE(URI)@en[[[mailto:]]]] [[URL]] では認められておらず、
+[CODE(MIME)@en[[[Content-Transfer-Encoding]]]] のような[[符号化]]の指定があっても無視しなければ[['''なりません''']]
+[SRC[>>70 2.]]。 >>823 のように [[encoded-word]] を使うことは認められていません [SRC[>>70 2.]]。
+
+[106] 現実には、[[非ASCII文字]]が[[百分率符号化]]せずに用いられていたり、
+[[シフトJIS]]など [[UTF-8]] 以外で[[百分率符号化]]されていたりします。
+
+;; [827] [CODE(URI)@en[[[mailto:]]]] [[URL]] から[[メッセージ]]を作成する際には、
+[[UTF-8]] 以外を使っても[['''構いません''']]。 [SRC[>>70 2.]]
+
+** 空の [CODE(URI)@en[mailto:]] URL
+
+[79] [[path]] も [[query]] も省略可能なので、 
+[PRE(code URI)[
+mailto:
+]PRE]
+... だけの [[URL]] も構文上正しいことになります。意図的なのかどうかはわかりませんが、
+[[RFC 6068]] でもこれは変更されていません。
+
+[80] この [[URL]] は [[MUA]] を起動するために使われることがあります。
+
+** 素片識別子
+
+[840] [[RFC 6068]] は、[[素片識別子]]は[[取出し]]した[[資源]]の[[表現]]に依存する故、
+[[URL scheme]] として[[素片識別子]]は規定しない、としつつも、 [CODE(URI)@en[[[mailto:]]]]
+[[URL]] は[[取出し]]には使われないことから、[[素片識別子]]は使う[['''べきではなく''']]、
+[[解決]]の際には無視する[['''べきである''']]とされています。 [SRC[>>70 2.]]
+
+;; [841] この規定は [[layering violation]] だと思いますが・・・。
+
+;; [844] [CODE(URI)@en[[[mailto:]]]] [[URL]] の「[[解決]]」は >>843 
+ですから、[[素片識別子]]を解釈するとしたら意味がよくわかりませんね。
+
+[905] 
+実際には、 [CODE(char)[[['''#''']]]] は [CODE(URI)@en[[[body]]]] の中身に使われることがあったりします。
+[[IE]] 以外の[[Webブラウザー]]は[[素片識別子]]ではなく、 [[path]] や [[query]]
+の一部であると解釈します。
+
+;; [906] これは[[分解属性]]における処理での話なので、
+[[メッセージ]]の作成のために [[MUA]] に渡すときはきっと[[素片識別子]]まで含んだ [[URL]]
+全体を使うでしょうから、むしろ [[MUA]] 側に解釈が委ねられると思います。
+
+** [CODE(URI)[mailto:]] URL の長さ
+
+[34] URI や [CODE(URI)[mailto:]] URI や RFC 822 
+電子メイル・アドレスの長さに仕様上の制限はありません。
+しかし、 URI を使用するプロトコルや実装などで長さの制限が課されている場合もあります。
+
+[30] [CODE(URI)[mailto:]] URI では [CODE(URI)[[[body]]]] 
+を使って電子メイルの本文を指定することができます。ですから、
+本文が長くなると当然 URI も長くなってしまいます。しかし、
+[WEAK[RFC に書いてあったかどうかは忘れましたが、 RFC の著者によれば]]
+[CODE(URI)[mailto:]] URI はどんな電子メイルでも作成できるようなものなのではなく、
+ごくごく短いメッセージの作成にしか使わないものです。
+
+[31] [CODE(URI)[mailto:]] URI を WWW ブラウザから電子メイルのプログラムに受け渡すというのはありそうな使い方です。
+ブラウザとメイラーの情報伝達方法は様々ですが、
+[[OS]] その他の制限により、一定以上の [[URL]] を引き渡せないことがよくあります。
+例えば[[コマンドライン・オプション]]として[[シェル]]を経由して別のプログラムに渡すなら、
+[[シェル]]の課している長さ制限の対象となります。
+
+* 処理モデル
+
+** メッセージ作成
+
+[867] [[RFC 6068]] は、 [CODE(URI)@en[[[mailto:]]]] [[URL]] の「[RUBYB[[[解決]]]@en[resolve]]」
+は通常 [[MUA]] によって[[メッセージ]]を作成して、[[利用者]]が送信や編集を選択できるようにすることだとしています。
+(>>843 参照。)
+
+[892] [[利用者]]が意図せず[[電子メール]]を送ってしまうと様々な不利益を被ることが予想されます。
+従って、 [[MUA]] は[[メール]]を送信しようとしていること、
+そしてその内容の[[頭欄]]も含めた全体を[[復号]]した状態で[[利用者]]に提示する[['''べきです''']]。
+[SRC[>>70 7.]]
+
+** フォーム提出
+
+[868] [[HTML]] では、 [CODE(HTMLe)@en[[[form]]]] 要素の [CODE(HTMLa)@en[[[action]]]]
+[[属性]]により、[[フォーム]]の[[提出]]先として [CODE(URI)@en[[[mailto:]]]] [[URL]]
+を指定することができます。
+
+*** 仕様書
+
+- [869] [[Web Applications 1.0]]
+<http://www.whatwg.org/specs/web-apps/current-work/complete.html#form-submission-algorithm>
+
+** 正準化
+
+[903] [[Webブラウザー]]は [CODE(URI)@en[[[mailto:]]]] [[URL]] に対してほとんど[[正準化]]しません。
+([CODE(URI)@en[[[mailto:]]]] [[URL]] に限らず行われる) [[URL]] で使えない[[文字]]の[[パーセント符号化]]が一部行われるくらいです。
+[[IE]] と [[Opera]] は[[復号]]しがちで、[[Firefox]] と [[Chrome]] は[[符号化]]しがちです。
+ただ [CODE(URI)@en[[[http:]]]] [[URL]] とは違って [[URL]] で使えない [[ASCII]]
+[[文字]]について [[IE]] は[[パーセント符号化]]しがちで [[Chrome]] は元のまま放置しがちです。
+
+[904] 
+[[Chrome]] は [[query]] に [CODE(URI)@en[[['''#''']]]] が含まれていると[[パーセント符号化]]しますが、
+他の[[Webブラウザー]]はしません。 [[Chrome]] であっても [[path]] に含まれているときにはしません。
+
+;; [902] [CITE[Results for url-canon-mailto-20110605]] ([TIME[2011-06-04 14:58:30 +09:00]] 版) <http://suika.fam.cx/gate/test-results/list/url-canon-mailto-20110606/all>
+
+* 歴史
+
+** RFC 1630
+
+[23] [CODE(URI)@en[[[mailto:]]]] は [[RFC]] としては、 [[URI]] の最初の [[RFC]]
+である [[RFC 1630]] で初めて規定されました。
+
+*** Mailto
+
+> This allows a URL to specify an RFC822 addr-spec mail address.  Note
+that use of % , for example as used in forming a gatewayed mail
+address, requires conversion to %25 in a URL.
+
+>
+[7] これは URL で RFC 822 [[addr-spec]] 
+メイル・アドレスを指定可能にします。
+例えば関門を挟んだメイル・アドレスで使われる [CODE[%]]
+は、 URL 中では [CODE[%25]] に変換する必要があることに注意して下さい。
+
+
+*** BNF for specific URL schemes (抜粋)
+
+>
+- [8] mailtoaddress          m a i l t o : xalphas @ hostname
+- [9] xalpha                 alpha | digit | safe | extra | escape
+- [10] xalphas                xalpha [ xalphas ]
+- [11] safe                   $ | - | _ | @ | . | &  | + | -
+- [12] extra                  ! | * |  " |  ' | ( | )  | ,
+- [13] hostname               ialpha [  .  hostname ]
+- [14] ialpha                 alpha [ xalphas ]
+
+** RFC 1738
+
+[863] [[IETF]] [[Standard Track]] としては最初の [[URL]] の仕様である [[RFC 1738]] には次の様に書かれています。
+
+> mailto:<rfc822-addr-spec>
+
+> where <rfc822-addr-spec> is (the encoding of an) addr-spec, as
+> specified in RFC 822 [6]. Within mailto URLs, there are no reserved
+> characters.
+
+[864] [[RFC 1738]] から [[BNF]] を抜粋すると次の通り。
+
+= ; MAILTO (see also RFC822)
+= mailtourl      = "mailto:" encoded822addr
+= encoded822addr = 1*xchar               ; further defined in RFC822
+= xchar          = unreserved | reserved | escape
+= reserved       = ";" | "/" | "?" | ":" | "@" | "&" | "="
+= escape         = "%" hex hex
+= safe           = "$" | "-" | "_" | "." | "+"
+= extra          = "!" | "*" | "'" | "(" | ")" | ","
+
+[865] 次の [[RFC 1738]] と非互換なのは明らかです。
+
+[866] ところで、これなら "mailto:" を取り去って % を復号すれば
+そのままメイル・アドレスになりそうな気がします。そのまま
+RFC 822 メッセージに突っ込んで使えるという意味ではその通りですが、
+一般的な意味では間違いです。
+
+RFC 822 addr-spec では構成要素間に注釈が挿入出来ますから、
+「mailto:foo(comment)@bar.example」というのもありですが、
+(comment) はメイル・アドレスの一部ではありません。
+(なお、このアドレスは RFC 2368 的には不正のようです。括弧は
+%28 %29 にしないといけません。 (注釈の挿入自体は、 2368
+でも認められています。というか本文に明記されています。))
+
+** RFC 2368
+
+[860] [[RFC 2396]] 世代になって単独の [[RFC]] となったのが第3次仕様 [DFN[[[RFC 2368]]]]
+<http://tools.ietf.org/html/rfc2368>
+です。
+
+;; [861] 厳密には [[RFC 2396]] より先に出版されているので [[RFC 1738]] に従っています。
+
+[6] [[RFC 2368]] では [CODE(URI)@en[[[mailto:]]]] [[URL]] の [[ABNF]]
+構文は次の様に説明されていました。
+
+= mailtoURL  =  "mailto:" [ to ] [ headers ]
+= to         =  #mailbox
+= headers    =  "?" header *( "&" header )
+= header     =  hname "=" hvalue
+= hname      =  *urlc
+= hvalue     =  *urlc
+
+;; [76] [[RFC 6068]] で [[RFC 2368]] よりずっと明確化されていることがわかりますね。
+
+;; [859] いずれの定義も、仕様書本文中に別途[[百分率符号化]]についての規定があるため、
+厳密ではありません。
+
+[75] [[Another HTML‐Lint]] の覚書 <http://openlab.ring.gr.jp/k16/htmllint/notice.html#rfc2368>
+に幾つか突っ込みがあります。
+
+> この構文はRFC1738から引用したように書かれていますが、RFC1738には urlc という構文要素は出てきません。RFC822にも出てきません(当然)。RFC2396の uric のことでしょうか。そもそもRFC1738にこのような構文は書かれていません。話の流れから言うと、uric から ? = & を取り除いたもののようです。 
+> 構文では hname と hvalue が共に空になり得るので、= だけのheader部が許されることになりますが、本当にそれでいいのでしょうか。 
+
+
+[862] RFC 2368 の第2章には
+
+> Note that all URL reserved characters in "to" must be encoded: 
+> in particular,parentheses, commas, and the percent sign ("%"), 
+> which commonly occur in the "mailbox" syntax. 
+
+と書いてあります。では URL reserved characters とは何でしょうか。
+URI / URL の BNF にある「reserved」だとしたら、 "@" とかも使ってはいけなく
+なりますが、例をみればそうでないことが分かります。
+とりあえず、 "(" / ")" / "," は「to」の文字から除外する必要があることだけは
+確かです。また、次の段落には
+「As with "to", all URL reserved characters must be encoded. 」
+とあるので、 hname や hvalue からも除外されることが分かります。
+
+[24]
+
+> 8-bit characters in mailto URLs are forbidden. 
+
+と2章の終わりに書いてあります。[DEL[そのまま解釈すると]] URI ではそもそも8ビット文字は使えません。[DEL[きっと、 % 符号化で符号化されたオクテットが8ビットのでは駄目、って言いたかったのでしょう。]]
+
+[26] >>24 [[ietf-imaa]] で著者の [[PaulHoffman]]
+が、前者の意味で、 URI の仕様書にも書いてあるけど繰り返して注意を促したのだと述べています
+<mid:p05210301ba74ba668b2d@[63.202.92.157]>。
+
+** RFC 6068
+
+[73] [[RFC 6068]] は [[RFC 3986]] ([[URI]]), [[RFC 3987]] ([[IRI]]) に対応した、 [[RFC]]
+としては第4世代の [CODE(URI)@en[[[mailto:]]]] [[URL]] の仕様書です。
+
+[42]
+[CITE[Re: I-D ACTION:draft-duerst-mailto-bis-00.txt]]
+<mid:200504081455.19877.blilly@erols.com>
+
+この記事では、 [CODE(URI)[[[mailto]]:]]
+仕様書の (ありすぎる) 問題点に
+[[Bruce Lilly]] が突っ込んでいます。
+大変素晴らしいまとめです。
+
+(この記事自体は [[Martin Duerst]] の
+(多文字化以外まったくやる気がない)
+[[Internet Draft]] に対するものですが、
+[[RFC 2368]] に対してほとんどまったくそのまま同じことが言えます。)
+
+[900] >>42 は最終的に >>73 となりましたが、結局 [[RFC 2368]] からの変更点はほとんど
+[[UTF-8]] を使えることにしたくらいで、あとは[[百分率符号化]]に関する要件が若干明確になった程度です。
+処理モデルが不明瞭であるとか、何が要件で何がそうでないのかが不明であるとか、
+現実世界の混沌とした状況をほとんど無視しているとかといった
+([[IETF]] ではよくある) 問題は基本的に解決していません。
+
+;; [901] 現実世界で[[非ASCII文字]]の取り扱いについて互換性の問題が絶望的なレベルで存在しているにも関わらず、
+「[[UTF-8]] を使う方式は比較的相互運用性が低い」 [SRC[>>70 8.1.]] という程度の言及しかしてませんしw
+
+** HTML4
+
+@@ ...
+
+** HTML5
+
+[69] [CITE@en-GB-x-Hixie[Web Forms 2.0]] ([TIME[2009-01-05 20:07:15 +09:00]] 版) <http://www.whatwg.org/specs/web-forms/current-work/#for-mailto>
+
+@@ [870] [[WA1]] との統合
+
+* 実装
+
+** WWW ブラウザの実装
+
+[16] 歴史的には、 1630/1738 的な、なんとなくメイル・アドレス1個。な実装がされてきました。今でもそういう実装は結構あるでしょう。
+
+[17] 2368 のように複数指定したり頭欄を指定したりできるのは [[Netscape]] の拡張が最初だそうです (裏は取ってませんが, そう認識されていたことがあるのは事実っぽい)。
+
+[18] 2368 の仕様が確定・実装される以前には、 ([CODE(URI)[mailto:]] URI の主な応用場面である) [[HTML]] の [[a]] 要素に、独自拡張として [[subject]] 属性や [[title]] 属性が設けられ、作成するメイルの [[Subject]] 欄の値を指定するのに使われていました。 ([[Lynx]] のように今でもこれを残す実装もあります。)
+
+[29] [CODE(URI)[mailto]] URI
+がどれだけ正確に確実に扱えるかは、
+WWW ブラウザと MUA, それに場合によっては [[OS]] など環境に強く依存します。
+統合製品群の中のブラウザと MUA
+のような特定の組み合わせではまともだけど他の MUA と組み合わせるとうまくいかないとかがざらにあります。
+
+[CODE(HTMLe)[a]] 要素のような完全に
+URI だけの場合の実装は少しずつ良くなってきていますが、
+[CODE(HTMLe)[[[form]]]] 要素の
+[CODE(HTMLa)[[[action]]]]
+として使われた場合に上手く動くかどうかは、
+[[Mozilla]] や [[WinIE]] + [[OE]]
+のような場合でも未知数です。
+[WEAK[(そもそも[[フォーム]] + [CODE(URI)[mailto]] をちゃんと規定した規格がまったくないのが痛い。)]]
+
+[32]
+[[Lynx]] などは実装しているけど [[NCSA Mosaic]] が実装していなくて、
+早く実装してくれよーと思われていた時代もあったそうです。
+
+[52]
+[CITE@en[IEBlog : International Mailto URIs in IE7]] ([CODE[2007-02-13 09:15:19 +09:00]] 版) <http://blogs.msdn.com/ie/archive/2007/02/12/International-Mailto-URIs-in-IE7.aspx>
+([[名無しさん]] [WEAK[2007-02-13 00:19:11 +00:00]])
+
+[54]
+[CITE@ja[2006年6月の戯言 (kuruman.org > 過去の戯言)]] ([CODE[2006-06-29 23:59:59 +09:00]] 版) <http://kuruman.org/old_diary/200606#D19-01>
+([[名無しさん]])
+
+[57]
+[CITE[EMail Msg <9307122305.AA40433@stat1.cc.ukans.edu>]] ([CODE[2007-07-01 04:58:23 +09:00]] 版) <http://ksi.cpsc.ucalgary.ca/archives/WWW-TALK/www-talk-1993q3.messages/117.html>
+([[名無しさん]])
+
+[58]
+[CITE[EMail Msg <9307122305.AA40433@stat1.cc.ukans.edu>]] ([CODE[2007-07-01 04:58:23 +09:00]] 版) <http://ksi.cpsc.ucalgary.ca/archives/WWW-TALK/www-talk-1993q3.messages/117.html>
+([[名無しさん]])
+
+[[#comment]]
+
+
+*** MUA の実装
+
+[27] [[M$OE]] では、
+[KBD[[VAR[path/to/]]msimn.exe /mailurl:mailto:[VAR[foo@bar.example]]]]
+とすると、その宛先へのメッセージ作成画面になります。
+[SAMP(URI)[mailto:1]] のような不正なアドレスを指定すると、
+新規メッセージ作成画面になるようです。
+
+[[#comment]]
+
+
+*** 実装一般・その他の実装
+
+[28] [SAMP(URI)[mailto:foo@bar.example?subject=foo&cc=bar@foo.example]]
+を、 [CODE(822)[[[Subject]]]]
+が [SAMP[foo&cc=bar@foo.example]]
+だと思ってしまう実装が歴史的にかなりあったようです。 (今でもかなりあるかもしれません。)
+1999年の時点で Windoze の実装の半数がそうだとの報告 (詳細未発表) もあります。
+
+
+[53]
+[CITE@en[Mailto URIs - Compose Form Data]] ([CODE[2007-02-10 01:24:35 +09:00]] 版) <http://shadow2531.com/opera/testcases/mailto/rfc2368-1.html>
+([[名無しさん]] [WEAK[2007-02-14 11:13:24 +00:00]])
+
+* 安全性
+
+** 意図しないメールの送信
+
+[895] [CODE(URI)@en[[[mailto:]]]] [[URL]] が[[利用者]]の意図しない[[メール]]の送信に使われることを防ぐため、
+[[利用者エージェント]]は[[利用者]]に[[メッセージ]]全体を提示して[[利用者]]の意思に基づき送信させることが要求されています
+(>>892 参照)。
+
+[897] [[MUA]] によっては指定された [CODE(822)@en[[[Bcc:]]]] を表示せず、
+[[利用者]]が意図しない[[メール・アドレス]]に知らないうちに[[メール]]を送ってしまう問題がありました。
+
+;;
+- [43] [CITE[JP Vendor Status Notes]] <http://jvn.jp/jp/JVN%23FCAD9BD8/index.html>
+- [896] [CITE[「mailto: URL で Bcc: が指定できてしまう問題」@水無月ばけらのえび日記]] <http://bakera.jp/hatomaru.aspx/ebi/topic/2329>
+([[名無しさん]] [WEAK[2005-05-26 22:25:04 +00:00]])
+
+** メール・アドレスの漏洩
+
+[893] 公開された [[Webページ]]で [CODE(URI)@en[[[mailto:]]]] [[URL]] を使うと、
+そのページにアクセスしたあらゆる人達に対して[[メール・アドレス]]を公開することとなります。
+これはたとえその[[メール・アドレス]]が [CODE(822)@en[[[bcc]]]] に指定されていたとしてもです。
+[SRC[>>70 7.]]
+
+[894] [CODE(822)@en[[[bcc]]]] として指定することによって [CODE(822)@en[[[to]]]] や [CODE(822)@en[[[cc]]]]
+の人達からは[[メール・アドレス]]を隠すことができるかもしれませんが、 [[MUA]]
+によっては [CODE(822)@en[[[bcc]]]] に同時に指定した他の人にも見えてしまうことがありますし、
+その他の方法で漏洩する可能性もありますから、注意する必要があります。 [SRC[>>70 7.]]
+当然、[[利用者]]が手動で [[Bcc]] から [[To]] や [[Cc]] に変更する可能性もあります。
+
+[39] [[spam]] などのために[[メイル・アドレス]]を収集する[[ロボット]]は
+[[HTML]] [[文書]]などに含まれる [CODE(URI)[[[mailto]]:]]
+[[URI]] も収集の対象とします。
+
+これへの対策として、 [SAMP(HTML)[[[&#64;]]]]
+など [[HTML]] の[[文字参照]]を使うのが2003年頃を中心に流行しましたが、
+その後のロボット側の進歩でこのような対策は無意味となってしまいました。
+
+[40] 他に古くから spam 対策で行われている方法に、
+[[メイル・アドレス]]中に不正な文字列を混入し、
+本来の[[利用者]]にはその文字列を削除するように[[自然言語]]で要求するもの
+[WEAK[([SAMP[.[[nospam]]]] など)]] や記号を
+[SAMP[at]] や [SAMP[dot]] のように置き換えるものが古くから
+[WEAK[(単なる[[メイル・アドレス]]の記述においても、 [CODE(URI)[[[mailto]]:]] [[URI]] の記述においても)]]
+行われてきました。 [[spam]] の被害が益々深刻になっている現在では、
+[[メイリング・リスト]]の[[保管庫]]に記録する際に[[メイル・アドレス]]
+[WEAK[(のようなもの)]] の一部又は全部をそもそも消去してしまうという方法まで普通に行われるようになっています。
+
+[72] [[IANA]] は登録簿で[[メール・アドレス]]の [CODE(char)[[[@]]]]
+のかわりに [CODE(char)[[[&]]]] を使っていて、 [CODE(URI)@en[[[mailto:]]]]
+[[URL]] でもそのまま [CODE(char)[[[&]]]] になっています。
+
+** [CODE(URI)[mailto:]] URL の受渡し時の安全化
+
+[41] [[WWWブラウザ]]から [[MUA]] へなど、
+[CODE(URI)[[[mailto]]:]] [[URI]] は他の種類の [[URI]]
+に比べて[[プログラム]]間で受渡しされることがよくあります。
+その受渡しの方法によっては危険が生じることがあり得ますから、
+[[プログラム]]の実装者は注意が必要です。
+
+例えば、 [SAMP(C)[sprintf ("mua --new-message [VAR[%s]]", [VAR[mailto_uri]])]]
+のように得た[[文字列]]を[[シェル]]に渡して外部プログラムを起動していると、
+仮に  [CODE(C)[[VAR[mailto_uri]]]] が 
+[SAMP(URI)[mailto:?subject=;another]] だと [SAMP[another]]
+という勝手な[[プログラム]]を起動できてしまうかもしれません。
+
+** [CODE(URI)@en[mailto:]] ブラクラ
+
+[46] [[利用者エージェント]]の正当な機能が、
+[[スクリプト]]による自動処理などのために[[利用者]]を妨害することがあります。
+[CODE(URI)@en[[[mailto]]:]] [[URI]] 
+への[[リンク]]の[[活性化]]や[[フォーム]]の[[提出]]の際の新しい[[メイル]]の作成画面や確認画面も、
+[[ブラクラ]]や迷惑広告に使われる可能性があります。
+
+[[Web Forms 2.0]] は、(連続する) 
+[[フォーム]][[提出]]で毎回[[メイル]]作成画面を出さないなどの対策が必要ではないかと指摘しています。
+
+;; <IW:WF2:"#security">
+
+[898] 古い [[Webブラウザー]]では [CODE(HTMLe)@en[[[img]]]] [[要素]]の [CODE(HTMLa)@en[[[src]]]]
+[[属性]]に [CODE(URI)@en[[[mailto:]]]] [[URL]] を指定するとページの表示の際に[[メール]]の作成画面が開くことがあります。
+
+* 例
+
+** 単純な例
+
+[33] [SRC[>>70 6.1.]]
+[PRE(URI example code)[
+mailto:chris@example.com
+]PRE]
+
+** 頭欄を指定した例
+
+[871] [SRC[>>70 6.1.]]
+[PRE(URI example code)[
+mailto:infobot@example.com?subject=current-issue
+]PRE]
+
+[875] [SRC[>>70 6.1.]]
+[PRE(URI example code)[
+mailto:list@example.org?In-Reply-To=%3C3469A91.D10AF4C@example.com%3E
+]PRE]
+
+;; [876] [CODE(822)@en[[[In-Reply-To]]]] で返信先を指定しています。
+[[メーリング・リスト]]のアーカイブのページで使うと便利そうです。
+
+[878] [SRC[>>70 6.1.]]
+[PRE(URI example code)[
+mailto:joe@example.com?cc=bob@example.com&body=hello
+]PRE]
+
+[3] '''誤った例''' [SRC[>>70 6.1.]]
+[PRE(URI bad example code)[
+mailto:joe@example.com?cc=bob@example.com''?''body=hello
+]PRE]
+
+[1] 古い [[Netscape]] の資料 (<http://developer.netscape.com/docs/manuals/htmlguid/tags17.htm#1428618>)
+は不正な例 >>3 のような URI を正当化(?)してます。 
+
+;; [2] >>1 のようにお茶目なところもありますが、この資料は指定されても無視する[[頭欄]]が挙がっていて参考になります。
+
+- [828] <mailto:addr1@an.example,addr2@an.example>
+- [829] <mailto:?to=addr1@an.example,addr2@an.example>
+- [830] <mailto:addr1@an.example?to=addr2@an.example>
+
+[831] この3例は等価ですが、 >>830 は[[利用者エージェント]]によって解釈が異なるので使用するべきではありません。
+[SRC[>>70 2.]]
+
+** 本文を指定した例
+
+[872] [SRC[>>70 6.1.]]
+[PRE(URI example code)[
+mailto:infobot@example.com?body=send%20current-issue
+]PRE]
+
+[877] [SRC[>>70 6.1.]] 
+[PRE(URI example code)[
+mailto:majordomo@example.com?body=subscribe%20bamboo-l
+]PRE]
+
+[873] [SRC[>>70 6.1.]]
+[PRE(URI example code)[
+mailto:infobot@example.com?body=send%20current-issue%0D%0Asend%20index
+]PRE]
+
+;; [874] [[改行]]が [CODE(URI)[%0D%0A]] となっています。
+
+** 符号化の例
+
+[879] [SRC[>>70 6.1.]]
+[PRE(URI example code)[
+mailto:gorby%25kremvax@example.com
+]PRE]
+
+;; [881] 文字としての「[CODE(char)[[[%]]]]」そのものを表すために
+[CODE(URI)[%25]] と表記しています。
+
+[880] [SRC[>>70 6.1.]]
+[PRE(URI example code)[
+mailto:unlikely%3Faddress@example.com?blat=foop
+]PRE]
+
+;; [882] 文字としての「[CODE(char)[[[?]]]]」そのものを表すために
+[CODE(URI)[%3F]] と表記しています。
+
+[883] [SRC[>>70 6.1.]]
+[PRE(URI example code)[
+mailto:Mike%26family@example.org
+]PRE]
+
+;; [884] 文字としての「[CODE(char)[[[&]]]]」そのものを表すために
+[CODE(URI)[%26]] と表記しています。
+
+[885] [SRC[>>70 6.2.]]
+[PRE(URI example code)[
+mailto:%22not%40me%22@example.org
+]PRE]
+
+[CODE(mail)["not@me"@example.org]] を表します。
+
+[886] [SRC[>>70 6.2.]]
+[PRE(URI example code)[
+mailto:%22oh%5C%5Cno%22@example.org
+]PRE]
+
+[CODE(mail)["oh\\no"@example.org]] を表します。
+
+[887] [SRC[>>70 6.2.]]
+[PRE(URI example code)[
+mailto:%22%5C%5C%5C%22it's%5C%20ugly%5C%5C%5C%22%22@example.org
+]PRE]
+
+[CODE(mail)["\\\"it's\ ugly\\\""@example.org]] を表します。
+
+[889] [SRC[>>70 6.3.]]
+[PRE(URI example code)[
+mailto:user@example.org?subject=caf%C3%A9
+mailto:user@example.org?subject=%3D%3Futf-8%3FQ%3Fcaf%3DC3%3DA9%3F%3D
+mailto:user@example.org?subject=%3D%3Fiso-8859-1%3FQ%3Fcaf%3DE9%3F%3D
+]PRE]
+
+[CODE(822)@en[[[Subject]]]] に[[非ASCII文字]]を含めています。いずれも同じ文字列を表していますが、
+1つ目は [[UTF-8]] で直接記述、2つ目は [[UTF-8]] の [[encoded-word]]、
+3つ目は [[ISO-8859-1]] の [[encoded-word]] となっています。
+
+[890] [SRC[>>70 6.3.]]
+[PRE(URI example code)[
+mailto:user@example.org?subject=caf%C3%A9&body=caf%C3%A9
+]PRE]
+
+[CODE(822)@en[[[Subject]]]] と[[本文]]に[[非ASCII文字]]を含めています。この [[URL]]
+から作成される[[メッセージ]]の例を2つ示します。このどちらでも、
+あるいはこれ以外でも同等な表現はいろいろあり得ます。
+
+[PRE(822 example code)[
+From: sender@example.net
+To: user@example.org
+Subject: =?utf-8?Q?caf=C3=A9?=
+Content-Type: text/plain;charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+caf=C3=A9
+]PRE]
+
+[PRE(822 example code)[
+From: sender@example.net
+To: user@example.org
+Subject: =?iso-8859-1?Q?caf=E9?=
+Content-Type: text/plain;charset=iso-8859-1
+Content-Transfer-Encoding: quoted-printable
+
+caf=E9
+]PRE]
+
+[891] [SRC[>>70 6.3.]]
+[PRE(URI example code)[
+mailto:user@%E7%B4%8D%E8%B1%86.example.org?subject=Test&body=NATTO
+]PRE]
+
+こちらは[[ドメイン名]]に生の [[UTF-8]] が使われています。この [[URL]]
+から[[メッセージ]]を作成した例を次に示します。
+
+[PRE(822 example code)[
+From: sender@example.net
+To: user@xn--99zt52a.example.org
+Subject: Test
+Content-Type: text/plain
+Content-Transfer-Encoding: 7bit
+
+NATTO
+]PRE]
+
+[[RFC 5322]] は[[ドメイン名]]に [[ASCII]] [[文字]]しか認めていないので、
+作成された[[メッセージ]]では [[Punycode]] になっています。
+
+** HTML フォームの例
+
+[35]
+[[Web Forms 1.0]] で電子メイルで[[提出]]させる例
+[SRC[HTML 4.0 17.3]]
+[PRE(HTML example code)[
+ <FORM action="mailto:Kligor.T@gee.whiz.com" method="post">
+ [INS[...form contents...]]
+ </FORM>
+]PRE]
+
+[38]
+[[HTML]] の[[フォーム]]で電子メイルで[[提出]]させる例 ([CODE(822)[[[Subject]]]] を指定):
+[PRE(HTML example code)[
+<[CODE(HTMLe)[[[form]]]] [CODE(HTMLa)[[[action]]]]="[CODE(URI)[mailto:foo@example.com?Subject=Form%20Submittion]]" [CODE(HTMLa)[[[method]]]]="[CODE(HTML)[[[post]]]]">
+[INS[(略)]]
+</[CODE(HTMLe)@en[[[form]]]]>
+]PRE]
+
+* 関連
+
+[64] [CITE[Sieve Notification Mechanism: mailto]] ([TIME[2009-02-01 12:21:14 +09:00]] 版) <http://www.ietf.org/rfc/rfc5436.txt>
+
+[[RFC 5436]] では、 [[Sieve]] における[[通知]]の宛先として [CODE(URI)@en[[[mailto:]]]] [[URL]]
+を使う場合の記述方法と、[[通知]]の送信方法が定義されています。
+
+* メモ
+
+- [15] >>6 によれば、 [SAMP(URI)[mailto:foo1@bar.example%2Cfoo2@example.com%2Cbar@bar.example]] みたいに読点区切りで指定できるんですね。知らんかった。
+- [21] [[メイル・アドレス]]の部分は古き良き [[Un*x]] 的流儀(謎)では [[local-part]] だけになることがありますが ([[sendmail]] なりなんなりが補完する。)、 [CODE(URI)[mailto:]] URI でもそうすることがあるようです。 (Global じゃないし、あまり好ましい使い方ではありませんが。)
+- [22] [[HTML]] のリンクで、「友達にこの頁を知らせる」などと銘打って [SAMP(URI)[mailto:?body=[VAR[URI]]]] ってな感じのを使うことがあるようです。 (構文的には不正じゃないですけど、なんだかなあ。でもまあ許容範囲ではあるな。)
+
+[37]
+[[RFC 822]] の仕様によれば、1つのメッセージに同じ名前の頭欄が複数存在し得ます。
+[CODE(URI)[mailto:]] URI scheme の仕様上も特に禁止されていないようです。
+つまり、 [CODE(ABNF)[[[query]]]] の部分で引数名が同じものが複数存在し得ます。
+なお、同名の頭欄が複数存在する場合の意味は頭欄に依存します。
+RFC 822 では曖昧な部分がありますが、
+[[RFC 2822]] には詳しく書かれています。
+
+構文上は [CODE(URI)[body]] も複数指定できてしまいます。
+多分これは想定外でしょう。[[著者]]はそのような URI を使用しないように、
+実装はそのような URI でおかしなことが起こらないように注意するべきです。
+
+[59]
+[CITE[TRANS - あなたのサイトの「お問い合わせ」、本当にクリックされていますか?]] ([CODE[2007-06-30 22:54:38 +09:00]] 版) <http://d.hatena.ne.jp/aratako0/20070630/p1>
+([[名無しさん]] [WEAK[2007-07-01 13:50:53 +00:00]])
+
+[61]
+[CITE[A blog? with Σαιτω - 件名の文字化け]] ([CODE[2007-10-10 09:12:16 +09:00]] 版) <http://d.hatena.ne.jp/saiton/20071008/1191828919>
+([[名無しさん]])
+
+[62]
+[CITE@ja[Mozilla-gumi Forum '''['''One Topic All View / Re[2''']''': 件名の文字化け / Page: 0]]] ([[Mozilla-gumi]] 著, [CODE[2007-10-10 21:05:58 +09:00]] 版) <http://forum.mozilla.gr.jp/?mode=al2&namber=12811&no=0&KLOG=84>
+([[名無しさん]])
+
+[63]
+[CITE@ja[Mozilla-gumi Forum '''['''One Topic All View / Re[4''']''': mailto の日本語subject / Page: 0]]] ([[Mozilla-gumi]] 著, [CODE[2007-10-10 21:06:57 +09:00]] 版) <http://forum.mozilla.gr.jp/?mode=al2&namber=10520&no=0&KLOG=70>
+
+[68] [CITE@ja[mailto:について]] ([TIME[2008-08-20 11:21:24 +09:00]] 版) <http://www.wap2.jp/wap/mailto.html>
+
+>
+WILLCOM以外では、メール題名・本文に半角英数字以外を含む場合はURLエスケープしなければなりません。
+>
+※メール本文に改行を含めたい時は、改行位置に¥n(%0A)を記述します。
+
+>KDDI・DoCoMoでは、mailto:が記載されているHTMLファイルの文字コードでURLエスケープします。
+通常は、Shift_JISとなります。
+
+>
+SoftBank3GC端末では、UTF-8でURLエスケープしなければなりません。
+Shift_JISでURLエスケープした場合、メーラーが起動した時、題名・本文に2バイト文字があると文字化けします。
+mailto:リンクが記載されているHTMLファイルがUTF-8以外で書かれていても、UTF-8でURLエスケープする必要があります。
+>
+※SoftBank技術情報[XHTML編]P.19には、『本文は、ISO-2022-JPをエスケープせよ』という旨の記述がありますが、同P.68のサンプルはUTF-8でエスケープされています。
+
+
+[907] [CITE[WWW-Talk Apr-Jun 1993: Mail addresses as URLs]]
+( ([TIME[2013-03-05 12:54:42 +09:00]] 版))
+<http://1997.webhistory.org/www.lists/www-talk.1993q2/0276.html>
+
+[908] [CITE[mailto リンクの落とし穴(Android編) - Qiita ''''''[''''''キータ'''''']'''''']]
+( ([TIME[2013-12-11 03:41:23 +09:00]] 版))
+<http://qiita.com/rch850/items/72e83222efcecaf4f626>
+
+[909] [CITE[ncsa-mosaic/CHANGES at master · alandipert/ncsa-mosaic]]
+( ([TIME[2014-04-07 05:25:10 +09:00]] 版))
+<https://github.com/alandipert/ncsa-mosaic/blob/master/CHANGES#L7>

@@ -1,0 +1,165 @@
+* 仕様書
+
+[REFS[
+- [902] [CITE@en[CSS Fonts Module Level 3]] ([TIME[2013-09-05 07:49:16 +09:00]] 版) <http://dev.w3.org/csswg/css-fonts/#font-weight-prop>
+]REFS]
+
+* 構文
+
+** 正符号
+
+[21]
+[[Firefox]] 2 や [[Opera]] 9 では
+[CODE(CSS)@en[[[font-weight]]]] や
+[CODE(CSS)@en[[[font]]]] 内の [CODE(CSS)@en[<'[[font-weight]]'>]]
+の[[整数]]の前に [CODE(CSS)[[[+]]]] をつけても[[構文解析]]時に無視されたものが 
+[[CSSOM]] 上の値になりますが、
+[[WinIE 6]] では[[宣言]]ごと[[無視]]します。
+
+;; <http://suika.fam.cx/gate/2007/cssom/viewer?c=p%20%7B%0A%20%20font-weight%3A%20%2B800%3B%0A%7D%0Ap%20%7B%0A%20%20font%3A%20%2B800%201px%20serif%3B%0A%7D%0A;h=;p=n;x=style-element;i=html-div>
+
+[903] [[Chrome]] も [[Firefox]] も、[[正符号]]ありに対応しています。 [TIME[2013-09-05T14:08:30.500Z]]
+
+** 十の位未満の数値や値域外の数値の扱い
+
+[7]
+[CODE(CSS)@en[[[font-weight]]: 200.0]]
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=p%20%7B%0A%20%20font-weight%3A%20200.0%3B%0A%7D;h=;p=n;x=style-element>
+
+([[名無しさん]])
+
+[8]
+>>7 [[Opera]] 9 は[[小数部]]だけ無視してくれますが、
+[[Firefox]] 2 と [[WinIE 6]] は[[宣言]]ごと[[無視]]します。
+([[名無しさん]])
+
+[9]
+[CODE(CSS)@en[[[font-weight]]: 200.4]]
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=p%20%7B%0D%0A%20%20font-weight%3A%20200.5%3B%0D%0A%7D;h=;p=n;x=style-element>
+
+[10]
+[CODE(CSS)@en[[[font-weight]]: 210]]
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=p%20%7B%0D%0A%20%20font-weight%3A%20210%3B%0D%0A%7D;h=;p=n;x=style-element>
+
+([[名無しさん]])
+
+[11]
+>>9-10 [[Opera]] 9 は[[十の位]][[以下]]を[[切り捨て]]るようです。
+ただし、 [CODE(CSS)[[[100]]]] [[未満]]の場合や [CODE(CSS)[[[900]]]] より大きい場合には[[宣言]]ごと[[無視]]するようです。
+([[名無しさん]])
+
+[12]
+>>11 [[Firefox]] 2 や [[WinIE 6]] はちょうどの値でなければ[[宣言]]ごと[[無視]]します。
+([[名無しさん]])
+
+[13]
+[[先導0]]つき
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=p%20%7B%0A%20%20font-weight%3A%20000000500%3B%0A%7D%0A;h=;p=n;x=style-element>
+
+([[名無しさん]])
+
+[14]
+>>13 [[Firefox]] 2 や [[Opera]] 9 は[[先導0]]を無視するようですが、
+[[WinIE 6]] は[[宣言]]ごと[[無視]]します。
+
+[904] [[Firefox]] も [[Chrome]] も、 [CODE(CSS)@en[[[<integer>]]]] でないといけません。また[[先導0]]はあってもOKです。
+百単位のちょうどの値でないといけません。 [TIME[2013-09-05T14:10:06.800Z]]
+
+[906] [[Firefox]] でも [[Chrome]] でも、 [[CSSOM]] 上には正規形で現れます。 [TIME[2013-09-05T14:10:55.300Z]]
+
+** キーワード
+
+[905] [[Firefox]] でも [[Chrome]] でも [[CSSOM]] 上にはそのままの値が現れます。 (整数形には変換されません。)
+[TIME[2013-09-05T14:11:18.500Z]]
+
+* 算出値
+
+[1]
+[CODE(DOMm)@en[[[getComputedStyle]]]] を使った検証用
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=p%20%7B%0A%20%20font-weight%3A%20100%3B%0A%7D%0Aspan%20%7B%0A%20%20font-weight%3A%20bolder%3B%0A%7D;h=%3Cp%3Ezzzzzzzzzzz%3Cspan%20onclick%3D%22%0A%20%20w%20(getComputedStyle%20(document.getElementsByTagName%20('span')%5B0%5D%2C%20null).fontWeight)%3B%0A%22%3Exxxxxxxxxxxxxxxxxx;p=n;x=style-element>
+
+[3]
+[CODE(DOMa)@en[[[currentStyle]]]] を使った検証用
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=p%20%7B%0D%0A%20%20font-weight%3A%20900%3B%0D%0A%7D%0D%0Aspan%20%7B%0D%0A%20%20font-weight%3A%20bolder%3B%0D%0A%7D;h=%3Cp%3Ezzzzzzzzzzz%3Cspan%20onclick%3D%22%0D%0A%20%20w%20(document.getElementsByTagName%20('span')%5B0%5D.currentStyle.fontWeight)%3B%0D%0A%22%3Exxxxxxxxxxxxxxxxxx;p=n;x=style-element>
+
+** 相対値
+
+*** [CODE(DOMm)@en[getComputedStyle]]
+
+[2]
+[CODE(CSS)@en[[[bolder]]]] を使った場合の [CODE(DOMm)@en[[[getComputedStyle]]]]
+で得られる値は、
+[[Firefox]] 2 では 1 を足した値 ([CODE(CSS)[[[301]]]] とか) になるようです
+(もちろん普通に[[スタイル・シート]]中に書いても[[宣言]]ごと[[無視]]されます)。
+ただし [CODE(CSS)[[[900]]]] なら [CODE(CSS)[[[900]]]] のままです。
+[CODE(CSS)@en[[[lighter]]]] なら逆 (1 引く、
+[CODE(CSS)@en[[[100]]]] より小さくならない)。
+
+[[Opera]] 9 では実際に使われる値になるようです。
+
+[18]
+[[Firefox]] で[[算出値]]の -1 が積算される例
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=html%20%7B%0A%20%20font-weight%3A%20lighter%3B%0A%7D%0Abody%20%7B%0A%20%20font-weight%3A%20lighter%3B%0A%7D%0Ap%20%7B%0A%20%20font-weight%3A%20lighter%3B%0A%7D;h=%3Cp%20onclick%3D%22%0A%20%20w%20(getComputedStyle%20(this%2C%20null).fontWeight)%3B%0A%22%3EXXXXXXXXXX%0A;p=n;x=style-element>
+
+[19]
+>>18 どうも、無限に減っていくわけではないらしい
+,元々の値	,[CODE(CSS)@en[[[lighter]]]] の限界値	,[CODE(CSS)@en[[[bolder]]]] の限界値
+,[CODE(CSS)[[[100]]]]	,[CODE(CSS)[[[100]]]]	,[CODE(CSS)[[[108]]]]
+,[CODE(CSS)[[[200]]]]	,[CODE(CSS)[[[199]]]]	,[CODE(CSS)[[[207]]]]
+,[CODE(CSS)[[[300]]]]	,[CODE(CSS)[[[298]]]]	,[CODE(CSS)[[[306]]]]
+,[CODE(CSS)[[[400]]]]	,[CODE(CSS)[[[397]]]]	,[CODE(CSS)[[[405]]]]
+,[CODE(CSS)[[[500]]]]	,[CODE(CSS)[[[496]]]]	,[CODE(CSS)[[[504]]]]
+,[CODE(CSS)[[[600]]]]	,[CODE(CSS)[[[595]]]]	,[CODE(CSS)[[[603]]]]
+,[CODE(CSS)[[[700]]]]	,[CODE(CSS)[[[694]]]]	,[CODE(CSS)[[[702]]]]
+,[CODE(CSS)[[[800]]]]	,[CODE(CSS)[[[793]]]]	,[CODE(CSS)[[[801]]]]
+,[CODE(CSS)[[[900]]]]	,[CODE(CSS)[[[892]]]]	,[CODE(CSS)[[[900]]]]
+
+[20]
+>>18 [CODE(CSS)@en[[[lighter]]]] と [CODE(CSS)@en[[[bolder]]]] を組み合わせればちゃんと元に戻るみたいです。
+
+*** [CODE(DOMa)@en[currentStyle]]
+
+[4]
+>>3 [[Opera]] 9 は、 [CODE(CSS)@en[[[lighter]]]] か
+[CODE(CSS)@en[[[normal]]]] なら常に [CODE(CSS)@en[[[normal]]]]、
+[CODE(CSS)@en[[[bolder]]]] か [CODE(CSS)@en[[[bold]]]] なら常に
+[CODE(CSS)@en[[[bold]]]]、数なら常に数になるようです。
+([[名無しさん]])
+
+[5]
+>>3 [[WinIE 6]] では、[CODE(CSS)@en[[[bolder]]]] なら親の値に 300 を足した値、
+[CODE(CSS)@en[[[lighter]]]] なら親の値から 300 を引いた値、
+それ以外なら対応する数になるようです。ただし、[CODE(CSS)[[[100]]]] [[未満]]になったり
+[CODE(CSS)[[[900]]]] より大きくなったりはしません。
+([[名無しさん]])
+
+[6]
+>>3 どちらのブラウザも、常に数になるようです。
+
+*** 根要素における扱い
+
+[15]
+[[根要素]]に [CODE(CSS)@en[[[bolder]]]] を指定してみた ([CODE(DOMm)@en[[[getComputedStyle]]]])
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=html%20%7B%0A%20%20font-weight%3A%20bolder%3B%0A%7D%0A;h=%3Cp%20onclick%3D%22%0A%20%20w%20(getComputedStyle%20(document.documentElement%2C%20null).fontWeight)%3B%0A%22%3EXXXXXXXXX%0A;p=n;x=style-element>
+
+[16]
+>>15 ([CODE(DOMa)@en[[[currentStyle]]]] 版)
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=html%20%7B%0D%0A%20%20font-weight%3A%20bolder%3B%0D%0A%7D%0D%0A;h=%3Cp%20onclick%3D%22%0D%0A%20%20w%20(document.documentElement.currentStyle.fontWeight)%3B%0D%0A%22%3EXXXXXXXXX%0D%0A;p=n;x=style-element>
+
+[17]
+>>15-16 3ブラウザとも、[[根要素]]の[[親]]が [CODE(CSS)[[[400]]]]
+であるかのような動作をするようです。
+
+* 実装
+
+** 端末でのレンダリング
+
+[901] [CITE@en[GNU `gettext' utilities]] ([TIME[2009-03-20 11:59:11 +09:00]] 版) <http://www.gnu.org/software/gettext/manual/gettext.html#Style-rules>
+
+>This property is supported, but most terminals can only render two different weights: normal and bold. Values >= 600 are rendered as bold. 
+
+;; [CODE@en[[[msgcat]]]] [[命令]]。
+
+[907] [CITE[游書体をCSSで指定しよう - Qiita ''''''[''''''キータ'''''']'''''']]
+( ([TIME[2013-11-01 06:18:16 +09:00]] 版))
+<http://qiita.com/llsmrsll/items/f019b8daadf798066001>

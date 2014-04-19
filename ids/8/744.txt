@@ -1,0 +1,60 @@
+#?SuikaWiki/0.9
+[1] [[SuikaWiki]] 実装における [[WikiName]]
+と[[ハイパーリンク]]について。
+
+-[[.//名前空間]]
+
+[[#form:'%submit(label=>書込む); %text(label=>"名前:",id=>name,size=>6); %text(description=>"メイル",id=>mail,size=>5); [WEAK[%check(default,id=>record-date,label=>日付を記録);]]%n;%textarea(id=>msg,size=>20,lines=>3);':'[%index;]  %text(source=>msg);%n;(%name;%text(source=>mail,prefix=>" [",suffix=>"]");%iif(source=>record-date,true=>" [WEAK[%date;]]");)%n;':'%require(msg);']]
+
+*現実装に対する意見
+-名前空間については[[.//名前空間]]へ。
+-名前・リンク以外については [[SuikaWikiについての意見はここに書け]]へ。
+-解決済みの意見は原則的に[[.//解決済み意見]]へ。
+
+[37]  [[InterWiki]] みたいなものの内部 WikiPage 専用版を実装 (ある意味別名みたいなものとも言えるか)。つまり、
+{DOM:window.title} (書式は仮。) で[[window//title]] へのリンクになるようなもの。
+
+現状の InterWiki 実装でも可能だけど、あくまでも外部リンクとしての扱いだから、例えば要約を [[title]] 属性で提供したり出来ない。 (頑張れば出来なくも無いけど。)
+([[わかば]] [WEAK[2003-04-17 17:32]])
+
+[38]  <IW:YukiWiki:WikiNameIdea> の中の、
+[SAMP[Perl::Like::Name]] や [[1900-01-01]] を [[WikiName]] として拾おうというアイデア。
+問題の表れ方や接近法が違いますけど、本質的には >>37 と同じ問題かなあと。
+(>>37)
+
+[39]  >>37-38 以後この問題は [[SuikaWiki//名前とリンク]]で扱いましょう。
+([[名無しさん]])
+- 2002-08-30 (Fri) 11:27:11 ''[[名無しさん]]'' : WikiName に [[SPACE]] 入れられるようにして
+
+[26] : [[わかば]] : 2003-02-10 19:19
+
+''AutomaticLink - ページとページが魔法のようにリンクする仕組み'' <http://coffeepo.hp.infoseek.co.jp/cgi-bin/cafewiki/cafewiki.cgi?mycmd=read&mypage=AutomaticLink&mynavi=folder>
+
+のような自動リンクをなんとか実装したいと前々から思ってますが、どういう風に実装するのがいいのかわからなくて棚上げ中。
+[34] : [[わかば]] [sage] : 2003-03-17 19:26
+
+[[Referer]] による双方向リンク機能は URI しか示しませんけど、リンク先の題とか概要とかを示せたらよさげ。
+=誰かがリンクを辿ってきた結果、 Referer が残り、それを記録。
+=誰かが Referer 記録のある WikiPage を要求。 (この時は URI しか提示できない。)
+=その時に URI を情報取得候補リストに入れる。
+=[[cron]] かなにかで、情報取得候補リストの URI を順に検査。
+=検査結果を期限2〜6ヶ月くらい (要検討) の時限データベースに記録。
+=以上の作業を経た Referer URI 提示時には、リンク先情報も共に示す。
+
+Referer だけじゃなく、普通の文中のリンクにも同様の作業をしたらよさそう。
+
+実際の検査内容は、 (とりあえず [[http:]] と [[https:]] 位を想定し、)
+=URI を [[HTTP]] [[GET]] する。
+==[[Accept:]] は [CODE(HTTP)[application/xhtml+xml, text/html, application/xml, text/xml, */*+xml]] 辺りか。 (でも [CODE(HTTP)[*/*+xml]] って書けなかったっけ?)
+==[[Accept-Language:]] は、無指定にするのが無難。利用者の情報に応じて・・・だと情報が無限に膨らむ。
+=入手した情報が [[HTML]] なら、次の情報を取得。
+==題: [CODE(XPath)[/html/head/title]]
+==要約: [CODE(XPath)[/html/head/meta[@name=description]/@content]]
+==著者: /html/head/meta[@name=author]/@content or /html/head/link[@rev=made]/@title or /html/head/link[@rev=made]/@href or //address
+
+こんなような具合。
+
+[40]  リンク系は [[..//Linking]] が新設されました。
+([[名無しさん]] [WEAK[2003-08-03 00:27:43 +00:00]])
+
+[[#form:'%submit(label=>書込む); %text(label=>"名前:",id=>name,size=>6); %text(description=>"メイル",id=>mail,size=>5); [WEAK[%check(default,id=>record-date,label=>日付を記録);]]%n;%textarea(id=>msg,size=>20,lines=>3);':'[%index;]  %text(source=>msg);%n;(%name;%text(source=>mail,prefix=>" [",suffix=>"]");%iif(source=>record-date,true=>" [WEAK[%date;]]");)%n;':'%require(msg);']]

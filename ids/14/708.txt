@@ -1,0 +1,144 @@
+[18] [[HTTP]] の [CODE(HTTP)@en[[[WWW-Authenticate:]]]] 欄などで使われる[[誰何]]の
+[DFN[[CODE(HTTP)@en[[[realm]]]] [[引数]]]]は、[[認証]]が適用される範囲を表す短い文字列を表します。
+
+* 仕様書
+
+[REFS[
+- [24] [CITE@en[RFC 2616 - Hypertext Transfer Protocol -- HTTP/1.1]] ([TIME[2012-01-09 20:55:20 +09:00]] 版) <http://tools.ietf.org/html/rfc2616#section-14.8>
+- [28] '''[CITE@en[RFC 2617 - HTTP Authentication: Basic and Digest Access Authentication]] ([TIME[2012-01-09 21:04:30 +09:00]] 版) <http://tools.ietf.org/html/rfc2617#section-1.2>'''
+- [32] [CITE@en[RFC 5849 - The OAuth 1.0 Protocol]] ([TIME[2012-03-04 10:51:49 +09:00]] 版) <http://tools.ietf.org/html/rfc5849#section-3.5.1>
+]REFS]
+
+* 意味
+
+[16] [CODE(HTTP)@en[[[realm]]]] [[引数]]の値は、[[起源鯖]]の[RUBYB[正準根]@en[canonical root]] [[URL]]
+と共に、保護された空間を定義します。 [CODE(HTTP)@en[[[realm]]]] を使うことによって、
+1つの[[鯖]]の名前空間を分割して、複数の別個に保護された空間を作ることができます。 [SRC[>>11, >>21, >>28]]
+
+[17] [CODE(HTTP)@en[[[realm]]]] は、通常[[起源鯖]]によって割り当てられる[[文字列]]であり、
+[[auth-scheme]] によっては更に何らかの意味を与えているかもしれません。 [SRC[>>11, >>21, >>28]]
+
+[12] [[要求]]が[[認証]]された場合であって、 [[realm]] が指定されていた場合にあっては、
+同じ [[credentials]] が同一の [[realm]] を共有するすべての[[要求]]に対しても妥当であるべきです。
+[SRC[>>11, >>22, >>24]]
+
+[19] しばしば、「パスワードを入力してください」のような[[利用者]]に対するメッセージを含める場所として使われます。
+
+* 構文
+
+[3] >>1 によると[[空文字列]]も特に制限されていないみたいですね。
+
+[15] [CODE(HTTP)@en[[[realm]]]] [[引数]]の値は[[大文字・小文字を区別します]] [SRC[>>11, >>21, >>28]]。
+
+** 非 ASCII 文字
+
+[20] [[RFC]] 上は認められていませんが、[[シフトJIS]]や[[UTF-8]]など任意の[[charset]]
+による[[非ASCII文字]]が含まれることがあります。
+
+* 文脈
+
+[13] [CODE(HTTP)@en[[[realm]]]] [[引数]]は [[challenge]] で指定します。
+
+;; [30] [[RFC 1945]] と [[RFC 2068]] では他の [CODE(HTTP)@en[[[realm-param]]]]
+よりも前に1つだけ指定する構文になっていましたが、[[RFC 2617]] では特にそういう制限はなくなっています。
+(元から制限する意図が無かったのでしょう。)
+
+[14] [CODE(HTTP)@en[[[realm]]]] [[引数]]は必須です [SRC[>>11, >>21, >>28]]。
+
+[33] [[OAuth 1.0]] は [CODE(HTTP)@en[[[realm]]]] [[引数]]を追加して[['''構わない''']]としています
+[SRC[>>30]]。逆に言えば省略しても構わないということで、 >>14 と矛盾しています。
+
+* Digest 認証の場合
+
+[26] [[Digest認証]]では、認証を行う[[ホスト]]の名前と、アクセスできるであろう[[利用者]]の集合を含んでいる文字列とするべきです
+[SRC[>>25]]。
+
+[EG[
+[27] 例えば [CODE[registered_users@gotham.news.com]] という文字列になるかもしれません。 [SRC[>>26]]
+]EG]
+
+* 歴史
+
+** RFC
+
+[REFS[
+- [11] [CITE@en[RFC 1945 - Hypertext Transfer Protocol -- HTTP/1.0]] ([TIME[2012-02-18 23:25:56 +09:00]] 版) <http://tools.ietf.org/html/rfc1945#section-10.2>
+- [21] [CITE@en[RFC 2068 - Hypertext Transfer Protocol -- HTTP/1.1]] ([TIME[2012-02-18 23:30:14 +09:00]] 版) <http://tools.ietf.org/html/rfc2068#section-11>
+- [22] [CITE@en[RFC 2068 - Hypertext Transfer Protocol -- HTTP/1.1]] ([TIME[2012-02-18 23:30:14 +09:00]] 版) <http://tools.ietf.org/html/rfc2068#section-14.8>
+- [23] [CITE@en[RFC 2616 - Hypertext Transfer Protocol -- HTTP/1.1]] ([TIME[2012-01-09 20:55:20 +09:00]] 版) <http://tools.ietf.org/html/rfc2616#section-14.8>
+- [29] [CITE@en[RFC 2617 - HTTP Authentication: Basic and Digest Access Authentication]] ([TIME[2012-01-09 21:04:30 +09:00]] 版) <http://tools.ietf.org/html/rfc2617#section-1.2>
+]REFS]
+
+[FIG[
+[FIGCAPTION[
+[1] RFC 2617 での定義
+]FIGCAPTION]
+
+>
+[PRE(ABNF code)[
+      realm       = "realm" "=" realm-value
+      realm-value = quoted-string
+]PRE]
+>   The realm directive (case-insensitive) is required for all
+authentication schemes that issue a challenge. The realm value
+(case-sensitive), in combination with the canonical root URL (the
+absoluteURI for the server whose abs_path is empty; see section 5.1.2
+of [2]) of the server being accessed, defines the protection space.
+These realms allow the protected resources on a server to be
+partitioned into a set of protection spaces, each with its own
+authentication scheme and/or authorization database. The realm value
+is a string, generally assigned by the origin server, which may have
+additional semantics specific to the authentication scheme. Note that
+there may be multiple challenges with the same auth-scheme but
+different realms.
+]FIG]
+
+** Digest 認証での用法
+
+[REFS[
+- [25] [CITE@en[RFC 2069 - An Extension to HTTP : Digest Access Authentication]] ([TIME[2012-02-26 10:05:21 +09:00]] 版) <http://tools.ietf.org/html/rfc2069#section-2.1.1>
+- [31] [CITE@en[RFC 2617 - HTTP Authentication: Basic and Digest Access Authentication]] ([TIME[2012-01-09 21:04:30 +09:00]] 版) <http://tools.ietf.org/html/rfc2617#section-3.2.1>
+]REFS]
+
+* 統計
+
+[4] [CITE@en[HTTP/1.1 WWW-Authenticate header]] ([TIME[2009-07-19 11:05:40 +09:00]] 版) <http://www.http-stats.com/WWW-Authenticate>
+
+* 例
+
+[5]  >>4 より
+>
+[PRE(HTTP example code)[
+WWW-Authenticate: Basic realm=""
+]PRE]
+
+[6]  >>4 より
+>
+[PRE(HTTP example code)[
+WWW-Authenticate: Basic
+]PRE]
+
+[7] >>4 より
+>
+[PRE(HTTP example code)[
+WWW-Authenticate: Basic realm = "You need ID",
+]PRE]
+
+[8] >>4 より
+[PRE(HTTP example code)[
+WWW-Authenticate: Basic realm= /
+]PRE]
+
+[9] >>4 より
+[PRE(HTTP example code)[
+WWW-Authenticate: Basic realm=BSI SkimmerPlus Server 1.0.0.20 / 1.0.0.30
+]PRE]
+
+* メモ
+
+[10] [[OAuth]] だと [CODE(HTTP)@en[[[realm]]]] は意味が無いのですが、指定することは認められています。
+特に意味が無いので[[空文字列]]が指定されたりすることもあります。
+
+[34] [[OAuth1]] では [CODE(HTTP)@en[[[realm]]]] を省略することができますが、
+[[Apple]] のライブラリー [CODE[[[NSURLProtectionSpace]]]] を使っている [[Safari]] や [[iOS]]
+アプリケーションは [CODE(HTTP)@en[[[realm]]]] が存在しないとクラッシュします。 [TIME[2012-12-19T05:49:25.300Z]]

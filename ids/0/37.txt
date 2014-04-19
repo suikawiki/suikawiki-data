@@ -1,0 +1,880 @@
+
+[PRE[
+  Claus
+  
+  Internet Draft                                       Claus Andre Faerber
+  draft-ietf-usefor-msg-id-alt-00                               1998-09-06
+                                                       Expires: 1999-03-06
+]PRE]
+
+
+* Guidelines for the Generation of Message IDs and Similar Unique Identifiers
+
+
+* メッセージ ID や同様な固有識別子の生成の指針
+
+
+** Status of this Memo
+
+
+** このメモの位置付け
+
+[PRE[
+   This document is an Internet-Draft. Internet-Drafts are working
+   documents of the Internet Engineering Task Force (IETF), its areas,
+   and its working groups. Note that other groups may also distribute
+   working documents as Internet-Drafts.
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or made obsolete by other documents at
+   any time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+]PRE]
+
+[PRE[
+   To learn the current status of any Internet-Draft, please check the
+   "1id-abstracts.txt" listing contained in the Internet-Drafts Shadow
+   Directories on ftp.is.co.za (Africa), nic.nordu.net (Europe),
+   munnari.oz.au (Pacific Rim), ds.internic.net (US East Coast), or
+   ftp.isi.edu (US West Coast).
+]PRE]
+
+
+** Copyright Notice
+
+
+** 著作権注釈
+
+[PRE[
+   Copyright (C) The Internet Society (1998).  All Rights Reserved.
+]PRE]
+
+
+** Abstract
+
+
+** 要約
+
+[PRE[
+   [RFC822] and [RFC1036] define so-called 'Message-IDs' that represent
+   a unique identifier for email and netnews messages. A similar
+   identifier is also used by [RFC2045] for the 'Content-ID' label.
+]PRE]
+
+[PRE[
+   For each of these protocols, uniqueness of the identifiers generated
+   is more or less essential. Unfortunately, the original Message-ID
+   specification requires that the generator have an own, non-temporary
+   full qualified domain name available, which does not allow hosts that
+   are connected via dialup lines and get dynamically assigned IP
+   addresses (and hostnames) to generate unique IDs offline.
+]PRE]
+
+[PRE[
+   This memo provides recommendations for the generation of such IDs
+   without risking non-uniqueness.
+]PRE]
+
+
+** Table of Contents
+
+
+** 目次
+
+[PRE[
+  1 Format And Use of Message-IDs
+     1.1 The Message-ID and Content-ID headers
+     1.2 Syntax for IDs
+     1.3 Uniqueness of Message-IDs and Content-IDs
+]PRE]
+
+[PRE[
+  2 Message ID format
+     2.1 Message ID namespaces
+        2.1.1 Based on the Host's Full Qualified Domain Name
+        2.1.2 Based on an Email Address
+        2.1.3 Based on Login Name and FQDN
+        2.1.4 Obsolete methods
+           2.1.4.1 Based on a UUCP name
+           2.1.4.2 Based on an IP Address
+        2.1.5 Non-Acceptable Methods
+]PRE]
+
+[PRE[
+     2.2 Generating the "unique" part
+        2.2.1 Current Date and Time
+        2.2.2 Process and Thread ID
+        2.2.3 Sequence Number
+        2.2.4 Software name
+        2.2.5 Other Unique Data Sources
+]PRE]
+
+[PRE[
+  3 Security considerations
+     3.1 Namespace Invasions
+     3.2 Revealing Information about the Generating system
+]PRE]
+
+
+** Definitions
+
+
+** 定義
+
+[PRE[
+   This memo uses the Augmented BNF defined in [RFC2234] as well as some
+   definitions from [RFC822].
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED",  "MAY", and "OPTIONAL" in this
+   document are to be interpreted as described in [RFC2119].
+]PRE]
+
+
+** 1 Format And Use of Message-IDs
+
+
+** 1 Message-ID の書式と利用
+
+
+*** 1.1 The Message-ID and Content-ID headers
+
+
+*** 1.1 Message-ID, Content-ID 両ヘッダー
+
+[PRE[
+   The Message-ID is defined in [RFC822], to which [RFC1036] and
+   [RFC2045] reference, as follows:
+]PRE]
+
+[PRE[
+     msg-id      =  "<" addr-spec ">"            ; Unique message id
+]PRE]
+
+[PRE[
+   NOTE: These IDs are used in special message headers, whose format is
+   not important for this specification, which only deals with the part
+   between the "<>"s.
+]PRE]
+
+[PRE[
+   In this specification, the terms "Message-ID" and "Content-ID" or
+   just "ID" refer to the part between the "<" and ">", which are
+   considered delimiters.
+]PRE]
+
+[PRE[
+   NOTE: This differs from [RFC822] and [RFC1036], where the angle
+   brackets are considered part of the ID. However, the definition used
+   herein is consistent with the use of such identifiers in other
+   protocols, such as URIs.
+]PRE]
+
+
+*** 1.2 Syntax for IDs
+
+
+*** 1.2 ID の構文
+
+[PRE[
+   The syntax of IDs is defined in [RFC822] as being the same as that of
+   domain-based Internet email addresses:
+]PRE]
+
+[PRE[
+     addr-spec   =  local-part "@" domain
+]PRE]
+
+
+*** 1.3 Uniqueness of Message-IDs and Content-IDs
+
+
+*** 1.3 Message-ID と Content-ID の固有性
+
+[PRE[
+   According to [RFC822], Message-IDs "are" unique, i.e. not reused for
+   other email messages.
+]PRE]
+
+[PRE[
+   [RFC1036] RECOMMENDS Message-IDs to be unique for at least two years.
+]PRE]
+
+[PRE[
+   [RFC2045] says Content-IDs are world-unique "like Message-ID values".
+]PRE]
+
+[PRE[
+   This memo RECOMMENDS that IDs are generated in a way that guarantees
+   uniqueness for an unlimited period of time. The methods presented
+   here fulfil this recommendation.
+]PRE]
+
+[PRE[
+   None of the specifications above says whether reusing an IDs of one
+   type as the ID of another type (e.g. using the same ID as a Message-
+   ID and as a Content-ID) is allowed. As any ID generator must be able
+   to generate an arbitrary number of unique IDs, reusing IDs of one
+   type for other types of IDs is PROHIBITED.
+]PRE]
+
+[PRE[
+   As a special exception, for messages sent via both email and news,
+   both copies may use the same Message-ID, provided both copies are
+   considered the same.
+]PRE]
+
+[PRE[
+   NOTE: The exact definition of being "the same" is beyond the scope of
+   this memo.
+]PRE]
+
+
+** 2 Message ID format
+
+
+** 2 メッセージ ID 書式
+
+To guarantee uniqueness, IDs consist of two elements:
+
+固有性を保証するために、 ID は2つの要素からなります。
+
+namespace: An identifier derived from managed databases such as the
+DNS. The owner of an ID namespace is the owner of the identifier
+assigned by that database.
+
+名前空間: DNS のような管理されたデータベースから派生した識別子。
+ID 名前空間の所有者はそのデータベースにより割り当てられる識別子の所有者です。
+
+unique: A more or less arbitrary string, whose uniqueness is
+guaranteed by the owner of the ID namespace.
+
+unique (固有): 多少自由度のある文字列で、その固有性は
+ID 名前空間の所有者により保証されます。
+
+Traditionally, the namespace was the right hand side of message ID.
+This is no longer true. See sections 2.1.2 and 2.1.3 for details.
+
+伝統的には、名前空間はメッセージ ID の右側でした。これはもはや真ではありません。
+詳しくは第2.1.2節と第2.1.3節を参照して下さい。
+
+
+*** 2.1 Message ID namespaces
+
+
+*** 2.1 メッセージ ID 名前空間
+
+
+**** 2.1.1 Based on the Host's Full Qualified Domain Name
+
+
+**** 2.1.1 ホストの完全修飾ドメイン名に基づく
+
+[PRE[
+   If the host generating the ID has an own, not dynamically assigned
+   host name, this name MAY be used:
+]PRE]
+
+[PRE[
+     fqdn-id      := unique "@" fqdn
+     fqdn         := <name of the host generating the id>
+]PRE]
+
+[PRE[
+   The host name MUST be a full qualified domain name of the host.
+   CNAMEs are ALLOWED. It is not required (OPTIONAL) that the FQDN be
+   visible in the DNS as long as it has been assigned to a host owner by
+   the authority of the domain it belongs to and it is syntactically
+   valid.
+]PRE]
+
+[PRE[
+   NOTE: This allows providers that use dialup lines to assign "host
+   names" solely for the purpose of offline ID creation to their
+   customers.
+]PRE]
+
+[PRE[
+   The person who is responsible for running software that creates IDs
+   of this type SHOULD have the explicit permission of the host owner.
+   This may be the owner him/herself, the administrator or a privileged
+   user.
+]PRE]
+
+[PRE[
+   Examples:
+      <6$klsd0kfdl@mail.example.com>
+      <A2D634B3.432534C0.9392@news0.example.com>
+      <6334C0.9A4B3.4325392@j.smith.example.com>
+]PRE]
+
+[PRE[
+   Illegal Examples:                   Reason:
+      <A23DF2343409@mycomputer>           Not full qualified.
+      <fslkd0394lkdf0i203kl@dialup-23.example.com> Not static (assuming
+                                          that dialup-23.example.com is
+                                          a name assigned to one of the
+                                          IP addresses for dynamic
+                                          allocation).
+]PRE]
+
+:間違った例:理由
+:<A23DF2343409@mycomputer>:完全修飾でない
+:<fslkd0394lkdf0i203kl@dialup-23.example.com>:静的でない (dialup-23.example.com は動的に割り当てられる IP アドレスに割り当てられた名前と仮定)
+
+
+**** 2.1.2 Based on an Email Address
+
+
+**** 2.1.2 電子メイル・アドレスに基づく
+
+[PRE[
+   If messages are prepared offline, a static FQDN or IP address may not
+   be available. For this case, IDs may be generated from the owner's
+   email address:
+]PRE]
+
+[PRE[
+     email-id     := unique "%" addr-spec
+]PRE]
+
+[PRE[
+   NOTE that addr-spec contains the required "@".
+]PRE]
+
+The local part MAY be passed through a non-reversible hash function,
+such as the standard POSIX crypt(). In this case, the delimiter
+SHOULD be "%%" or "%<hash function>%" instead of "%":
+
+地方部分は標準 POSIX crypt() のような非可逆ハッシュ関数を通しても''良い''。
+この場合、区切りは「%%」または「%<ハッシュ関数>%」を「%」の代わりに
+使う''べき''です。
+
+[PRE[
+     emailhash-id := unique "%" [hash-name] "%" local-part "@" domain
+     hash-name    := "crypt" / "md5" / "sha1" / ...
+]PRE]
+
+NOTE that hash functions do not guarantee uniqueness. Account
+managers should warn users if two local-parts in the same domain
+produce the same result with one commonly used hash function.
+
+参考 ハッシュ関数は固有性を保証しません。
+アカウント管理者は同じドメインの2つの local-part が
+ある共通に使われているハッシュ関数で同じ結果が得られた時
+利用者に警告するべきです。
+
+NOTE There is currently no registry for hash function names. This
+is not a problem as the name is only used to avoid clashes.
+
+参考 現在ハッシュ関数名の登録簿はありません。
+これは名前が衝突を避けるためだけに使われているので問題ではありません。
+
+[PRE[
+   Examples:
+      <dfsxl3kc03kl%claus@faerber.muc.de>
+      <dkfskflskf%md5%4e32df22da@faerber.muc.de>
+]PRE]
+
+
+**** 2.1.3 Based on Login Name and FQDN
+
+
+**** 2.1.3 ログイン名と FQDN に基づく
+
+[PRE[
+   Similar to based on email address (section 2.1.2), however the email
+   address is replaced by the login name of the current user and the
+   FQDN of the host. This MAY or MAY NOT be a valid email address.
+]PRE]
+
+[PRE[
+     login-id     := unique "%" login "@" fqdn
+     login        := <login name of the current user
+                     or numeric user id>
+]PRE]
+
+[PRE[
+   For the full qualified domain names, the rules from section 2.1.1
+   apply except that the generator need not be under the control of the
+   host owner, but MUST be run by or on behalf of by the person owning
+   the login name used.
+]PRE]
+
+[PRE[
+   This method is preferred over using the FQDN only (section 2.1.1) for
+   implementations not run by the host administrator or owner.
+]PRE]
+
+[PRE[
+   Hash functions MAY be used as for email addresses:
+]PRE]
+
+[PRE[
+     loginhash-id := unique "%" [hash-name] "%" login "@" fqdn
+]PRE]
+
+
+**** 2.1.4 Obsolete methods
+
+
+**** 2.1.4 古い方法
+
+[PRE[
+   These methods for obtaining a unique identifier are still valid but
+   deprecated. One of the methods above SHOULD be used instead.
+]PRE]
+
+
+***** 2.1.4.1 Based on a UUCP name
+
+
+***** 2.1.4.1 UUCP 名に基づく
+
+[PRE[
+   Similar to based on the FQDN (section 2.1.1), however the FQDN is
+   replaced by the UUCP name of the host in the top level domain "uucp".
+]PRE]
+
+[PRE[
+   The UUCP name MUST be reserved in the UUCP Worldmap. UUCP names MUST
+   NOT be used without the trailing ".uucp".
+]PRE]
+
+[PRE[
+   Examples:
+      <kdkfjlsfjsdjf@uunet.uucp>
+]PRE]
+
+[PRE[
+   Illegal Examples:                   Reason:
+      <slskdfdfslfld@uunet>               No ".uucp" suffix.
+      <lkflklfksldkf@mycomputer>          Not a valid UUCP name / not
+                                          reserved in the Worldmap.
+]PRE]
+
+
+***** 2.1.4.2 Based on an IP Address
+
+
+***** 2.1.4.2 IP アドレスに基づく
+
+[PRE[
+   Similar to based on the FQDN (section 2.1.1), however the FQDN is
+   replaced by the IP address of the host in square brackets.
+]PRE]
+
+[PRE[
+      ip-id       := unique "@" ip-literal
+      ip-literal  := "[" <the numeric IP-address> "]"
+]PRE]
+
+[PRE[
+   The IP address used MUST be static, i.e. it MUST NOT be assigned
+   dynamically (cf. section 2.1 about static host names).
+]PRE]
+
+[PRE[
+   The IP address MUST NOT be from on of the areas reserved for private
+   use (e.g. 192.168.*.*).
+]PRE]
+
+[PRE[
+   Example:
+      <6ASDFLKF3409SFKLDK@[123.45.67.89]>
+]PRE]
+
+[PRE[
+   Illegal Example:                    Reason:
+      <23043klksf034sdfs@[10.0.0.1]>      Private IP
+]PRE]
+
+
+**** 2.1.5 Non-Acceptable Methods
+
+
+**** 2.1.5 認められない方法
+
+The following methods are not acceptable and SHOULD NOT be used:
+
+次の方法は認められず、使用する''べきではありません''。
+
+- Using only the domain part of the email address.
+- Using a computer name that is for use in private networks (LANs) and not guaranteed to be world-unique.
+- Methods that violate one or more of the restrictions introduced in sections 2.1.1 to 2.1.4.
+
+- 電子メイル・アドレスのドメイン部分のみ使用する
+- 私的網 (LAN) 内で使われている世界的に固有性が保証されない計算機名を使用する
+- 第2.1.1節から第2.1.4節で述べた制限に1つ以上反する
+
+
+*** 2.2 Generating the "unique" part
+
+
+*** 2.2 「固有」部分を生成する
+
+[PRE[
+   The "unique" part is the part that changes from ID to ID generated
+   by the same entity. The uniqueness is guaranteed by the owner of the
+   ID namespace it is used in. It is important to use a scheme that
+   makes it very unlikely, better impossible, that the same "unique"
+   string will be generated twice.
+]PRE]
+
+[PRE[
+   The "unique" part is often derived from a combination of the
+   following data:
+]PRE]
+
+[PRE[
+   * the current date and time
+   * the process and thread id of the generating service
+   * a sequence number
+   * the name of the software generating the ID
+]PRE]
+
+[PRE[
+   The data MAY be encoded in some way, to make IDs shorter and to
+   make clear that the unique part of IDs SHOULD NOT be interpreted.
+   Examples for such encodings are MIME Base64 [RFC2045] (preferably
+   of the binary representation of the data), Hex (Base 16), etc.
+]PRE]
+
+[PRE[
+   Because IDs can occur very frequently in some protocols, particuarly
+   in References lines of mail and news messages, all efforts should be
+   made to make them compact, as long as they remain unique.
+]PRE]
+
+[PRE[
+   The full set of characters that MAY be freely used for the encoded
+   form is:
+]PRE]
+
+[PRE[
+      unique-chars := "A".."Z" / "a".."z" / "1".."9"
+                     / "!" / "#" / "$" / "&" / "'" / "*" / "+" / "-"
+                     / "/" / "=" / "?" / "^" / "_" / "`" / "{" / "|"
+                     / "}" / "~"                         ; 80 characters
+]PRE]
+
+[PRE[
+   The dot (".") MAY be used everywhere except the beginning and the
+   end, e.g. as a field separator.
+]PRE]
+
+[PRE[
+      unique-word := 1*unique-chars
+      unique      := unique-word *( "." unique-word )
+]PRE]
+
+[PRE[
+   The percent sign ("%") is NOT RECOMMENDED due to its use as a
+   separator for the email and login+FQDN namespaces (sections 2.1.3 and
+   2.1.4). The use of "quoted-string"s is NOT RECOMMENDED for
+   compatibiliby with buggy software.
+]PRE]
+
+[PRE[
+   NOTE that protocols that use IDs MAY allow additional syntax elements
+   within the IDs, such as comments or line breaks. These are not
+   considered part of the ID.
+]PRE]
+
+[PRE[
+   Generators MAY encrypt IDs with reversible methods. Non-reversible
+   hash functions SHOULD NOT be used, as they usually do not guarantee
+   uniqueness.
+]PRE]
+
+[PRE[
+   Example for ID generating schemes:
+      <microseconds since 1970-01-01, base 36-encoded> "." <process id,
+      base 36-encoded>
+]PRE]
+
+[PRE[
+      <seconds since 1960-01-01, hex-encoded> "." <internal counter>
+]PRE]
+
+[PRE[
+      <number of 100ns intervals since 1600-01-01, base 80-encoded> "."
+      <process and thread id, base 80-encoded> "." <LAN computer name>
+]PRE]
+
+[PRE[
+   (These are provided as examples, not as a recommendation.)
+]PRE]
+
+
+**** 2.2.1 Current Date and Time
+
+
+**** 2.2.1 現在日時
+
+[PRE[
+   The current date and time MUST be used, as it is the only data that
+   changes regularly and most reliably. The highest available resolution
+   is RECOMMENDED.
+]PRE]
+
+[PRE[
+   To make it impossible that two IDs are generated by the same process
+   within the lowest measurable time on the system, the generating
+   process may either sleep until the system time changes or simulate a
+   higher resolution by incrementing an internal counter.
+]PRE]
+
+
+**** 2.2.2 Process and Thread ID
+
+
+**** 2.2.2 プロセスおよびスレッドの ID
+
+[PRE[
+   As different processes might generate IDs at exactly the same time,
+   the time alone may not be sufficient on multitasking systems. To
+   avoid clashes, the process ID and - if the generating process is
+   multithreaded - the thread ID MAY be used.
+]PRE]
+
+
+**** 2.2.3 Sequence Number
+
+
+**** 2.2.3 連番
+
+[PRE[
+   A sequence number that is incremented for every ID and stored in a
+   file MAY be used to make clashes less likely.
+]PRE]
+
+[PRE[
+   However, an ID generator MUST NOT, repeat MUST NOT use such counters
+   as the only source for the generation of the unique part, as this
+   will result in clashes in case the file is deleted and/or restored
+   from a backup.
+]PRE]
+
+
+**** 2.2.4 Software name
+
+
+**** 2.2.4 ソフトウェア名
+
+[PRE[
+   The name of the software MAY be used to avoid that users switching
+   their software will accidentally have the same "unique" string
+   created from different input data processed differently.
+]PRE]
+
+[PRE[
+   Note: The software name should be as short as possible, there should
+   not be a version number of the software, unless the generation
+   algorithm changes in a way that would make clashes possible.
+]PRE]
+
+
+**** 2.2.5 Other Unique Data Sources
+
+
+**** 2.2.5 他の固有データ源
+
+[PRE[
+   Other sources that may be used to guarantee or further enhance the
+   probability of uniqueness include:
+]PRE]
+
+[PRE[
+   * The host's Ethernet MAC address.
+   * The host's LAN name (not full qualified).
+   * Data entered by the user told to enter a unique string.
+]PRE]
+
+[PRE[
+   It might be wise to use these together with email based (section
+   2.1.2) namespaces, as the same user can work on different machines.
+]PRE]
+
+
+** 3 Security considerations
+
+
+** 3 安全性に関して
+
+
+*** 3.1 Namespace Invasions
+
+
+*** 3.1 名前空間侵犯
+
+[PRE[
+   Message IDs are traditionally insecure. There is currently no method
+   to prevent Message IDs from being faked.
+]PRE]
+
+[PRE[
+   Accidental or intentional clashes of IDs have different impact
+   depending on the protocol they are used for. Each protocol
+   specification using IDs MUST address the security issues raised and
+   SHOULD provide methods to prevent abuse of ID namespaces owned by
+   others.
+]PRE]
+
+[PRE[
+   Future standards MAY associate ID namespaces with public/private key
+   pairs and require authentication on a per-namespace basis.
+]PRE]
+
+[PRE[
+   Using encryption of the unique part (see section 2.2) makes it harder
+   to guess the next IDs generated for denial of service attacks.
+]PRE]
+
+
+*** 3.2 Revealing Information about the Generating system
+
+
+*** 3.2 生成系の情報を見せる
+
+[PRE[
+   Implementers and users are warned that the following information
+   might be derived by the analysis of message IDs:
+]PRE]
+
+[PRE[
+   * host the ID was generated on
+   * email address of the user (also as combination of login@fqdn)
+   * date and time when the ID was generated
+   * resolution of the system's clock
+   * operating system (from thread and process IDs)
+   * software used (also from structure of the unique string)
+]PRE]
+
+[PRE[
+   By encrypting the unique part (see section 2.2) or using hash
+   functions (see section 2.1.2), this can be made nearly impossible.
+]PRE]
+
+
+** References
+
+
+** 参考文献
+
+[RFC822] Crocker, D., "Standard for the Format of ARPA Internet Text
+[PRE[
+   Messages", August 1982, STD 11, RFC 822.
+]PRE]
+
+[RFC1036] Horton, M.R., Adams, R., "Standard for interchange of USENET
+[PRE[
+   messages", December 1987, RFC 1036.
+]PRE]
+
+[RFC2045] N. Borenstein, N. Freed, "Multipurpose Internet Mail
+[PRE[
+   Extensions (MIME) Part One: Format of Internet Message Bodies,"
+   November 1996, RFC 2045.
+]PRE]
+
+[RFC2111] Levinson, E., "Content-ID and Message-ID Uniform Resource
+[PRE[
+   Locators," March 1997, RFC 2111.
+]PRE]
+
+[RFC2119] Bradner, S., "Key words for use in RFCs to Indicate
+[PRE[
+   Requirement Levels", March 1997, RFC 2119.
+]PRE]
+
+[RFC2234] Crocker, D., Overell, P., "Augmented BNF for Syntax
+[PRE[
+   Specifications: ABNF", November 1997, RFC 2234.
+]PRE]
+
+
+** Author
+
+
+** 著者
+
+[PRE[
+   Claus Andre Faerber
+   Mitterfeldstrasse 20
+   83043 Bad Aibling
+   Germany
+]PRE]
+
+[PRE[
+   Fax: +49-8061-3361
+]PRE]
+
+[PRE[
+   E-Mail: cfaerber@muc.de
+]PRE]
+
+[PRE[
+   Note: Please write the author's name with the correct diacritic
+   marks where possible, i.e. Claus Andr&eacute; F&auml;rber in HTML.
+]PRE]
+
+
+** Full Copyright Statement
+
+
+** 完全な著作権宣言
+
+[PRE[
+   Copyright (C) The Internet Society (1998).  All Rights Reserved.
+]PRE]
+
+[PRE[
+   This document and translations of it may be copied and furnished to
+   others, and derivative works that comment on or otherwise explain it
+   or assist in its implementation may be prepared, copied, published
+   and distributed, in whole or in part, without restriction of any
+   kind, provided that the above copyright notice and this paragraph are
+   included on all such copies and derivative works.  However, this
+   document itself may not be modified in any way, such as by removing
+   the copyright notice or references to the Internet Society or other
+   Internet organisations, except as needed for the purpose of
+   developing Internet standards in which case the procedures for
+   copyrights defined in the Internet Standards process must be
+   followed, or as required to translate it into languages other than
+   English.
+]PRE]
+
+[PRE[
+   The limited permissions granted above are perpetual and will not be
+   revoked by the Internet Society or its successors or assigns.
+]PRE]
+
+[PRE[
+   This document and the information contained herein is provided on an
+   "AS IS" basis and THE INTERNET SOCIETY AND THE INTERNET ENGINEERING
+   TASK FORCE DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING
+   BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE INFORMATION
+   HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED WARRANTIES OF
+   MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+]PRE]
+
+Internet Draft
+Expires 1999-03-06
+
+
+* SEE ALSO
+
+- RFC 822 <urn:ietf:rfc:822>
+- RFC 1036 <urn:ietf:rfc:1036>
+- [[son-of-RFC1036]]
+- RFC 2822 <urn:ietf:rfc:2822>
+- [[記事の識別子]]
+-- [[Message-ID:領域]]
+-- [[References:領域]]
+-- [[In-Reply-To:領域]]
+
+
+* LICENSE
+
+See [[RFCのライセンス]]
+
+

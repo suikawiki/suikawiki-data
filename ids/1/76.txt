@@ -1,0 +1,355 @@
+
+- RFC1945.Request-URI    = absoluteURI | abs_path
+- RFC2068.Request-URI    = "*" | absoluteURI | abs_path
+- RFC2616.Request-URI    = "*" | absoluteURI | abs_path | authority
+- RFC2616-Errata.Request-URI    = "*" | absoluteURI | abs_path [ "?" query ] | authority
+- RTSP.Request-URI = "*" | absolute_URI ;; RFC 2326 6.1
+
+- [4] 新しい規格が出るたびに選択肢が増えていきますね!
+
+[5]
+HTTP で[[素片識別子]]を送ってくる糞ロボットもたまにいます。
+([[名無しさん]] [WEAK[2004-03-16 07:53:34 +00:00]])
+
+[6]
+>>5 ロボットだけじゃなくて [[WinIE 6.0]] だったりするから藁えん。
+([[名無しさん]] [WEAK[2004-05-17 12:39:12 +00:00]])
+
+
+[7]
+>>5-6 素片識別子つきで送ってくる困った UA
+は古今絶えたことのないのでございますが、
+それに対応していない鯖は素片識別子をちゃんと捨てないので利用者からすればまったく困ったこととなってしまいます。
+(本来鯖としては別にあえて対応する必要もないのですけど、[[人に優しく自分に厳しく]]の原則からして、対応しておいても悪くないでしょう。)
+
+ちょっと古いですけど、実際に問題になった例:
+[CITE[CyberDogの不具合]] <http://mtlab.ecn.fpu.ac.jp/WSM_1996/960823202241.html>
+
+[8002] 
+[[WinIE]] は (いつもなのか条件付なのか知りませんが) [[IRI]] を[[百分率符号化]]せずに
+[CODE(ABNF)@en[[[Request-URI]]]] に使って送ってきます。
+
+* エラー処理
+
+[8011] [[Request-URI]] に [[URL scheme]] や [[authority]] が含まれている場合で、それがその[[起源鯖]]が提供している[[資源]]の
+[[URL scheme]] と [[authority]] でないとき、 [CODE(HTTP)[[[400]]]] [[応答]]を返すのが良さそうです。
+
+;; [8012] [[RFC]] には [[authority]] が正しくない時に [CODE(HTTP)[[[400]]]] を返すと規定があります。
+[[URL scheme]] については言及がありません。
+
+* 仕様書から
+
+
+** RFC 1945 (HTTP/1.0); RFC 2068・2616 (HTTP/1.1) 5.1.2 Request-URI
+
+> The Request-URI is a Uniform Resource Identifier ([DEL[Section]] [INS[section]] 3.2) and
+identifies the resource upon which to apply the request.
+
+[DFN[[CODE(ABNF)[Request-URI]]]] は統一資源識別子で、
+[[要求]]を適用する[[資源]]を識別します。
+
+>
+- [INS[{1945:}]] Request-URI    = absoluteURI | abs_path
+- [INS[{2068:}]] Request-URI    = "*" | absoluteURI | abs_path
+- [INS[{2616:}]] Request-URI    = "*" | absoluteURI | abs_path | authority
+- [INS[{Errata:}]] Request-URI    = "*" | absoluteURI | abs_path [ "?" query ] | authority
+
+> The [DEL[[DEL[two]] [INS[three]]]] [INS[four]] options for Request-URI are dependent on the nature of the request. [INS[The asterisk "*" means that the request does not apply to a particular resource, but to the server itself, and is only allowed when the method used does not necessarily apply to a resource. One example would be]]
+
+[CODE(ABNF)[Request-URI]] の4つの選択肢は要求の性質に依存します。[INS[星印 [CODE(HTTP)[*]] は、要求が特定の資源に適用するのではなく、サーバー自体に適用することを意味し、方式が必ずしも資源に適用する必要が無いときにだけ認めます。一つの例は]]
+
+[INS[
+
+> [INS[{2068,2616}]]
+- [SAMP(HTTP)[OPTIONS * HTTP/1.1]]
+]INS]
+
+> The absoluteURI form is [DEL[only allowed]] [INS[required]] when the request is being made to a proxy.
+The proxy is [DEL[[DEL[[INS[{1945}]] requested]] [INS[[INS[{2068}]] required]]]] [INS[[INS[{2616}]] REQUIRED]] to forward the request [INS[or service it from a valid cache,]] and return the response. [DEL[If the request is GET or HEAD and a prior response is cached, the proxy may use the cached message if it passes any restrictions in the Expires header field.]]
+Note that the proxy [DEL[may]] [INS[MAY]]
+forward the request on to another proxy or directly to the server
+specified by the absoluteURI. In order to avoid request loops, a
+proxy [DEL[must]] [INS[MUST]] be able to recognize all of its server names, including
+any aliases, local variations, and the numeric IP address. An example
+Request-Line would be:
+
+[CODE(ABNF)[[[absoluteURI]]]] (絶対 URI) 書式は、[[串]]に対して要求を行う時に[DEL[だけ認めます]][INS[は必須です]]。
+串は要求を転送[INS[するかまたは[[妥当]]な[[キャッシュ]]から供出]]して応答を返す'''必要があります'''。[DEL[要求が [CODE(HTTP)[[[GET]]]] または [CODE(HTTP)[[[HEAD]]]] で、前の応答がキャッシュされているときは、 [CODE(HTTP)[[[Expires]]]] 頭欄の制限を満たしていれば、串はそのキャッシュしたメッセージを使っても構いません。]]
+串は要求を他の串に転送しても'''構いません''し [CODE(ABNF)[absoluteURI]]'''''''''''''''''''''''
+で指定されたサーバーに直接転送しても'''構わない'''ことに注意してください。
+要求の循環を避けるため、串は別名, 局所変名, 数値 IP 番地を含めたすべてのサーバー名を認識することができなければ'''なりません'''。
+[CODE(ABNF)[[[Request-Line]]]] の例:
+
+>
+- [DEL[ GET http://www.w3.org/pub/WWW/TheProject.html HTTP/1.0 ]]
+- [DEL[ GET http://www.w3.org/pub/WWW/TheProject.html HTTP/1.1 ]]
+
+[INS[
+
+> To allow for transition to absoluteURIs in all requests in future
+versions of HTTP, all HTTP/1.1 servers MUST accept the absoluteURI
+form in requests, even though HTTP/1.1 clients will only generate
+them in requests to proxies.
+
+将来の版の HTTP ですべての要求を [CODE(ABNF)[absoluteURI]]
+に移行することができるように、すべての HTTP/1.1 [[サーバー]]は要求中の
+[CODE(ABNF)[absoluteURI]] 形式を受け入れなければ'''なりません'''。
+たとえ HTTP/1.1 [[クライアント]]が串に対する要求でのみそれを生成するとしてもです。
+
+[INS[
+
+> The authority form is only used by the CONNECT method (section 9.9).
+
+[CODE(ABNF)[[[authority]]]] 書式は [CODE(HTTP)[[[CONNECT]]]]
+方式でのみ使用します。
+]INS]
+]INS]
+
+> The most common form of Request-URI is that used to identify a
+resource on an origin server or gateway. In this case[DEL[, only]]
+the absolute path of the URI [DEL[is]] [INS[MUST be]] transmitted (see [DEL[Section]] [INS[section]] 3.2.1, abs_path) [INS[as the Request-URI, and the network location of the URI ([DEL[net_loc]] [INS[authority]]) MUST be transmitted in a Host header field]].
+For example, a client wishing to retrieve the resource
+above directly from the origin server would create a TCP connection
+to port 80 of the host "www.w3.org" and send the lines:
+
+[CODE(ABNF)[Request-URI]]]] の最も広く行われている書式は、
+[[起源サーバー]]または[[関門]]の[[資源]]を識別するのに使います。
+この場合、 URI の[[絶対経路]][DEL[のみ]]を[INS[[CODE(ABNF)[Request-URI]] として]]転送し'''なければなりません'''[INS[で、 URI のネットワーク部分 ([CODE(ABNF)[authority]] は [CODE(HTTP)[[[Host]]]] 頭欄で転送しなければ'''なりません''']]。
+
+[DEL[
+
+>
+- 
+[PRE[
+GET /pub/WWW/TheProject.html HTTP/1.0
+]PRE]
+]DEL]
+
+[INS[
+
+>
+- 
+[PRE[
+GET /pub/WWW/TheProject.html HTTP/1.1
+Host: www.w3.org
+]PRE]
+]INS]
+
+> followed by the remainder of the [DEL[Full-]]Request.
+Note that the absolute path cannot be empty; if none is present in the original URI, it [DEL[must]] [INS[MUST]]
+be given as "/" (the server root).
+
+に要求の残りが続きます。
+絶対経路は空になり得ないことに注意してください。元の URI
+になにもないときには [CODE(URI)[/]] (サーバー根)
+を与えなければ'''なりません'''。
+
+[DEL[
+
+[INS[
+
+> [INS[{2068}]] If a proxy receives a request without any path in the Request-URI and
+the method specified is capable of supporting the asterisk form of
+request, then the last proxy on the request chain MUST forward the
+request with "*" as the final Request-URI. For example, the request
+
+串が[[経路]]のない [CODE(ABNF)[Request-URI]] の要求を受信し、指定されていた干す域が星印書式の要求に対応することのできるものであるなら、
+要求鎖の最後の串は [CODE(HTTP)[*]] を最後の [CODE(ABNF)[Request-URI]]
+として要求を転送しなければ'''なりません'''。
+例えば、要求
+
+>
+- OPTIONS http://www.ics.uci.edu:8001 HTTP/1.1
+
+> would be forwarded by the proxy as
+
+はホスト [CODE[www.ics.uci.edu]] のポート [CODE[8001]]
+に接続した後、串によって転送されて
+
+>
+- 
+[PRE[
+OPTIONS * HTTP/1.1
+Host: www.ics.uci.edu:8001
+]PRE]
+
+> after connecting to port 8001 of host "www.ics.uci.edu".
+
+となります。
+]INS]
+]DEL]
+
+> [DEL[[INS[{1945,2068}]] The Request-URI is transmitted [DEL[as an encoded string, where some characters may be escaped using the "% HEX HEX" encoding defined by RFC 1738 [4]]] [INS[in the format specified in section 3.2.1]].]] [INS[[INS[{2616}]] If the Request-URI is encoded using the "% HEX HEX" encoding [42], the]] [DEL[[INS[{1945,2068}]] The]] origin server [DEL[must]] [INS[[INS[{2068,2616}]] MUST]] decode the Request-URI in order
+to properly interpret the request. [INS[[INS[{2068,2616}]] Servers SHOULD respond to invalid Request-URIs with an appropriate status code.]]
+
+[CODE(ABNF)[Request-URI]] が [CODE[% [[HEX]] HEX]] 符号化を使って符号化されている場合には、
+起源サーバーは要求を適切に解釈するために
+[CODE(ABNF)[Request-URI]] を復号しなければなりません。
+サーバーは不当な [CODE(ABNF)[Request-URI]] に対して適当な状態符号で応答する'''べきです'''。
+
+[INS[
+
+> [INS[{2068,2616}]] [DEL[In requests that they forward, proxies]] [INS[A transparent proxy]] MUST NOT rewrite the
+"abs_path" part of [DEL[a]] [INS[the received]] Request-URI [INS[when forwarding it to the next inbound server,]] [DEL[in any way]] except as noted above to
+replace a null abs_path with "*"[DEL[, no matter what the proxy does in its internal implementation]].
+
+;[INS[次の[[上り]]サーバーに]]転送する要求中では、[INS[透過]]串は、上で触れた null [CODE(ABNF)[abs_path]] を
+[CODE(URI)[*]] で置換する場合を除いて、 [DEL[(その内部実装で串が何をしていようと、)]] [INS[受信した]]
+[CODE(ABNF)[Request-URI]]
+中の [CODE(ABNF)[[[abs_path]]]] 部分を書き換えては'''なりません'''。
+]INS]
+
+> [INS[{2068,2616}]] Note: The "no rewrite" rule prevents the proxy from changing the
+meaning of the request when the origin server is improperly using a
+non-reserved [DEL[[INS[{1945,2068}]] URL]] [INS[URI]] character for a reserved purpose. Implementers
+should be aware that some pre-HTTP/1.1 proxies have been known to
+rewrite the Request-URI.
+
+注意: 「書き換えしない」規則によって、起源サーバーが[[非予約]] URI
+文字を不適切に[[予約]]目的に使っているときに串が要求の意味を変えてしまうことを防ぎます。
+実装者は、 HTTP/1.1 以前の串で [CODE(ABNF)[Request-URI]] を書き換えるものがあると分かっていることに注意するべきです。
+
+[INS[
+
+注: 注記なき修正は 1945→2068 の変更点。
+]INS]
+
+
+** RFC 2068・2616 (HTTP/1.1) 5.2 The Resource Identified by a Request
+
+> [DEL[HTTP/1.1 origin servers SHOULD be aware that the]] [INS[The]] exact resource
+identified by an Internet request is determined by examining both the
+Request-URI and the Host header field.
+
+インターネット要求で識別される正確な資源は [CODE(ABNF)[Request-URI]]
+と [CODE(HTTP)[[[Host]]]] 頭欄の両方の検査で決定します。
+
+> An origin server that does not allow resources to differ by the
+requested host MAY ignore the Host header field value [INS[when determining the resource identified by an HTTP/1.1 request]]. (But see
+section [DEL[19.5.1]] [INS[19.6.1.1]] for other requirements on Host support in HTTP/1.1.)
+
+要求されたホストによって資源を変えることを認めない起源サーバーは、[INS[HTTP/1.1 要求により識別される資源を決定する時に]] 
+[CODE(HTTP)[Host]] 頭欄値を無視しても'''構いません'''。
+(しかし HTTP/1.1 での [CODE(HTTP)[Host]] 対応の他の要件について 19.6.1.1 節を参照。)
+
+> An origin server that does differentiate resources based on the host
+requested (sometimes referred to as virtual hosts or vanity
+host[INS[ ]]names) MUST use the following rules for determining the requested
+resource on an HTTP/1.1 request:
+
+要求されたホストによって資源を区別する起源サーバー
+(時たま[[仮想ホスト]]とか変化ホスト名とか言われます。)
+は、 HTTP/1.1 要求の要求している資源を決定するのに次の規則を使わなければ'''なりません'''。
+
+>
+= 1. If Request-URI is an absoluteURI, the host is part of the
+Request-URI. Any Host header field value in the request MUST be ignored.
+= 2. If the Request-URI is not an absoluteURI, and the request
+includes a Host header field, the host is determined by the Host
+header field value.
+= 3. If the host as determined by rule 1 or 2 is not a valid host on
+the server, the response MUST be a 400 (Bad Request) error message.
+
+= [CODE(ABNF)[Request-URI]] が [CODE(ABNF)[absoluteURI]] なら、
+ホストは [CODE(ABNF)[absoluteURI]] の一部。
+要求中の [CODE(HTTP)[Host]] 頭欄値は無視しなければ'''なりません'''。
+= [CODE(ABNF)[Request-URI]] が [CODE(ABNF)[absoluteURI]]
+でなく、要求が [CODE(HTTP)[Host]] 頭欄を含んでいれば、
+ホストは [CODE(HTTP)[Host]] 頭欄値で決定します。
+= 規則 1・2 で決定したホストがそのサーバーで妥当なホストでなければ、
+応答は [CODE(HTTP)[[[400]]]] (悪い要求) 誤りメッセージでなければ'''なりません'''。
+
+> Recipients of an HTTP/1.0 request that lacks a Host header field MAY
+attempt to use heuristics (e.g., examination of the URI path for
+something unique to a particular host) in order to determine what
+exact resource is being requested.
+
+[CODE(HTTP)[Host]] 頭欄を欠いた HTTP/1.0 要求の受信者は、
+どの資源が要求されているのかを決定するために発見的方法 (例えば特定ホストに固有の URI 経路を検査するとか)
+を使うことを試みても'''構いません'''。
+
+
+** RFC 2326 (RTSP) 6.2 Request Header Fields
+
+>
+[PRE[
+  request-header  =          Accept                   ; Section 12.1
+                  |          Accept-Encoding          ; Section 12.2
+                  |          Accept-Language          ; Section 12.3
+                  |          Authorization            ; Section 12.5
+                  |          From                     ; Section 12.20
+                  |          If-Modified-Since        ; Section 12.23
+                  |          Range                    ; Section 12.29
+                  |          Referer                  ; Section 12.30
+                  |          User-Agent               ; Section 12.41
+]PRE]
+
+> Note that in contrast to HTTP/1.1 [2], RTSP requests always contain
+the absolute URL (that is, including the scheme, host and port)
+rather than just the absolute path.
+
+[1] [[HTTP/1.1]] とは異なり、 [[RTSP]] [[要求]]は常に[[絶対経路]]だけではなくて絶対 [[URL]] を
+(つまり、 [[scheme]], [[host]], [[port]] を含めて)
+指定することに注意して下さい。
+
+> HTTP/1.1 requires servers to understand the absolute URL, but
+clients are supposed to use the Host request header. This is purely
+needed for backward-compatibility with HTTP/1.0 servers, a
+consideration that does not apply to RTSP.
+
+[2] HTTP/1.1 はサーバーが絶対 URL
+を理解することを要求していますが、
+クライアントは [CODE(HTTP)[Host]] 頭を使うことを想定しています。
+これは単に [[HTTP/1.0]] サーバーとの後方互換性からの必要であって、
+RTSP では考慮する必要はないのです。
+
+> The asterisk "*" in the Request-URI means that the request does not
+apply to a particular resource, but to the server itself, and is only
+allowed when the method used does not necessarily apply to a
+resource.  One example would be:
+
+[3] Request-URI での星印 [CODE(char)[[[*]]]]
+は、要求が特定の資源には適用されるのではなく、
+サーバー自体に適用され、使用している [[method]]
+が必ずしも資源に適用される物ではない時にのみ認められます。
+一つの例を次に示します。
+
+> OPTIONS * RTSP/1.0
+
+
+** RFC の部分の License
+
+[[RFCのライセンス]]
+
+* RFC 2109、RFC 2965 における定義
+
+[8003] [[RFC 2109]]、[[RFC 2965]] における[DFN[request-URI]]
+は、[[クライアント]]が[[鯖]]に[[要求行]]の一部として送る [CODE(ABNF)@en[[[absoluteURI]]]]
+のうちの [CODE(ABNF)@en[[[abs_path]]]] の部分です。 [SRC[>>8004, >>8005]]
+
+** 仕様書
+
+- [8004] [DEL[[[RFC 2109]]]] ([[廃止]]済み)
+-- [CSECTION@en[2. TERMINOLOGY]]
+- [8005] [[RFC 2965]]
+-- [CSECTION@en[1. TERMINOLOGY]]
+
+** 関連
+
+[8007] 関連して [[request-host]] という用語があります。
+
+** メモ
+
+[8006] つまり、[[RFC 2109]]、[[RFC 2965]] における [[request-URI]]
+は [[URL]] の [[path]] の部分だけ ([[scheme]] や [[host]] や [[query]] は含まない)
+ということですね。
+
+* 関連
+
+[8009] [[Digest認証]]で使われる [CODE(HTTP)@en[[[uri]]]] [[引数]]には [[request-URI]]
+と同じ値を指定することになっています。
+
+[REFS[
+- [8008] [CITE@en[RFC 2069 - An Extension to HTTP : Digest Access Authentication]] ([TIME[2012-02-26 10:05:21 +09:00]] 版) <http://tools.ietf.org/html/rfc2069#page-7>
+- [8010] [CITE@en[RFC 2617 - HTTP Authentication: Basic and Digest Access Authentication]] ([TIME[2012-01-09 21:04:30 +09:00]] 版) <http://tools.ietf.org/html/rfc2617#page-12>
+]REFS]

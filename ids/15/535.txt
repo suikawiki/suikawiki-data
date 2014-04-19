@@ -1,0 +1,137 @@
+[14] [[DOM]] の[[関数]] [DFN[[CODE(JS)@en[[[alert()]]]]]], [DFN[[CODE(JS)@en[[[confirm()]]]]]],
+[DFN[[CODE(JS)@en[[[prompt()]]]]]] は、[[モーダルダイアログ]]を表示します。
+
+* 仕様書
+
+[REFS[
+- [13] '''[CITE@en-US-x-hixie[HTML Standard]] ([TIME[2014-04-03 03:44:44 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#simple-dialogs>'''
+- [33] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2014-04-03 03:44:44 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#the-window-object>
+- [36] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2014-04-03 03:44:44 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#killing-scripts>
+- [24] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2014-04-03 03:44:44 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#text-rendered-in-native-user-interfaces>
+]REFS]
+
+* 定義
+
+[32] [CODE(DOMm)@en[[[alert]]]]、[CODE(DOMm)@en[[[confirm]]]]、[CODE(DOMm)@en[[[prompt]]]]
+は、 [CODE(DOMi)@en[[[Window]]]] [[インターフェイス]]の[[メソッド]]です [SRC[>>33]]。
+
+;; [35] [[ワーカー]]には存在しません。
+
+[34] [CODE(DOMm)@en[[[prompt]]]] は2つ、それ以外は1つの [CODE(DOMi)@en[[[DOMString]]]]
+[[引数]]をとりますが、いずれも省略可能で、その既定値は[[空文字列]]です [SRC[>>33]]。
+第1引数はメッセージ、第2引数は既定値を表します。
+
+* 動作
+
+[15] [[イベントループ]]の [[termination nesting level]] が零でないなら、
+なにもしないで終わって構いません [SRC[>>13]]。つまり、 [CODE(DOMe)@en[[[beforeunload]]]]
+の処理中に再帰的に [CODE(DOMe)@en[[[beforeunload]]]] が呼ばれるケースでは、何もしないで構いません。
+
+[16] 実行されると[[ストレージミューテックス]]を解放します [SRC[>>13]]。
+
+;; [17] ただし[[ストレージミューテックス]]を実装している[[Webブラウザー]]はありません。
+
+[18] >>16 の後、何もしないで終わっても構いません [SRC[>>13]]。
+
+;; [19] [[モーダルダイアログ]]は[[利用者]]の操作を妨害する使い方もできるので、
+[[利用者]]の指示により、あるいは[[利用者エージェント]]の判断により何もしないことが認められているようです。
+
+[20] いずれもダイアログを表示しますが、 [CODE(JS)@en[[[alert()]]]] はメッセージを示す [SRC[>>13]] だけ、
+[CODE(JS)@en[[[confirm()]]]] はメッセージを示して肯定的または否定的な返答を[[利用者]]に選ばせる [SRC[>>13]]、
+[CODE(JS)@en[[[prompt()]]]] はメッセージと既定値を示して文字列を[[利用者]]に与えさせる 
+(または[RUBYB[中止]@en[abort]]させる) [SRC[>>13]] という違いがあります。
+
+[21] [CODE(JS)@en[[[confirm()]]]] と [CODE(JS)@en[[[prompt()]]]] では、
+ダイアログに対して[[利用者]]が返答するまで、[[イベントループ]]は [[pause]] しなければ[['''なりません''']]。
+[CODE(JS)@en[[[alert()]]]] では [[pause]] してもしなくても構いません。 [SRC[>>13]]
+
+;; [22] 現行 [[Webブラウザー]]は [CODE(JS)@en[[[alert()]]]] でも [[pause]] するようです。
+しかしどちらの挙動か[[著者]]には厳密には判定できません。
+
+[23] [CODE(JS)@en[[[alert()]]]] は何も返さず、 [CODE(JS)@en[[[confirm()]]]] は返答を[[真偽値]]で返し、
+[CODE(JS)@en[[[prompt()]]]] は返答を[[文字列]]で返します。 >>15 や >>18
+で何もしなかった場合や >>20 で中止された場合にはそれぞれ[[偽]]と [[null]] を返します。 [SRC[>>13]]
+
+* レンダリング
+
+[25] [[文字列]]や[[既定値]]の[[レンダリング]]の際には [[bidi]] アルゴリズムにおいては[[段落]]群の独立した集合であって、
+[CODE(char)[[[U+000A]]]] の[[改段落]]挙動などを含むものとして扱うことが[[期待されます]]。
+[[段落レベル]]の決定においては [[P2]]、[[P3]] の[[高級override]]はありません。 [SRC[>>24]]
+
+[26] かつては指定された文字列だけが[[プラットフォーム]]側の対応するダイアログ API
+に渡されていた時代もありましたが、現在の [[Webブラウザー]]では[[フィッシング]]防止などの理由でページの[[題名]]や[[起源]]などの表示を付け加えた文字列がレンダリングされるようになっています。
+
+[27] また並行する他の処理や異なる[[起源]]の[[タブ]]や[[窓]]の扱いと[[モーダル]]性の両立のためか、
+[[プラットフォーム]]側のダイアログ [[API]] を使わず、独自の方法でレンダリングする実装も増えています。
+
+[28] [[ボタン]]は「OK」と「キャンセル」に相当する文字列 ([[プラットフォーム]]によって[[地域化]]されたもの)
+を使うのが普通です。また[[ボタン]]の順序やメッセージとの位置関係も、[[プラットフォーム]]の慣習によります。
+
+;; [29] [CODE(JS)@en[[[confirm()]]]] の[[ボタン]]は「はい」「いいえ」ではありませんが、
+「はい」「いいえ」が回答になるような質問文がメッセージとして指定されることがよくあります。
+一方で「○○ならOK、××ならキャンセル」のように「OK」や「キャンセル」のような特定のボタンのラベルを期待した質問文が使われることもあります。
+
+[37] これらの[[ダイアログ]]には、[[スクリプト]]を停止させるオプションも用意することがすすめられています [SRC[>>36]]。
+
+* 用法
+
+[30] これらのダイアログは[[プラットフォーム]]または [[Webブラウザー]]の提供するごく基本的な [[UI]]
+によりそのまま[[レンダリング]]するだけのもので、表現力に乏しく、
+[[Webサイト]]の視覚的デザインとの統合性にも欠けることから、
+積極的に使うものではないと一般的には考えられています。その一方でその簡便さから、
+機能の利用頻度や [[Webサイト]]における視覚的デザインの重要性その他の判断次第で、
+これらのダイアログがそのまま採用されている場合も数多く存在します。
+
+[31] [CODE(JS)@en[[[alert()]]]] は、いわゆる [[printデバッグ]]の手法としても非常によく用いられています。
+ただし呼び出し回数が多い場合はダイアログを閉じる手間がかかることや、
+[[イベントループ]]との総合作用を[[副作用]]として与えてしまうことから、
+[CODE(JS)@en[[[console.log]]]] を使うことも最近は増えてきています。
+[[Webブラウザー]]によっては [CODE(JS)@en[[[console.log]]]] 
+で指定されたオブジェクトの内容をデバッグツールにより調べられるなど、
+より便利になっています。
+
+* 歴史
+
+[1] [CITE[Opera が唯一 javascript:for(;;)alert([SPAN['][SPAN[']]); に対抗できるブラウザ - 冬通りに消え行く制服ガールは、夢物語にリアルを求めない。 - subtech]]
+([TIME[2010-01-01 12:17:22 +09:00]] 版)
+<http://subtech.g.hatena.ne.jp/cho45/20091224/1261585798>
+
+[2] [CITE[Issue 68780 - chromium - Disallow alert/confirm/prompt/showModalDialog calls issued from within an unload handler - Project Hosting on Google Code]]
+([TIME[2011-03-01 14:55:59 +09:00]] 版)
+<http://code.google.com/p/chromium/issues/detail?id=68780>
+
+[3] [CITE@ja[javascript初心者なのですが、alert関数に設定できる文字数は何.. - 人力検索はてな]]
+([TIME[2011-06-01 17:09:38 +09:00]] 版)
+<http://q.hatena.ne.jp/1306857041>
+
+[4] [CITE['''['''whatwg''']''' Can we deprecate alert(), confirm(), prompt() ?]]
+([TIME[2011-06-09 16:52:01 +09:00]] 版)
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2011-June/031979.html>
+
+[5] [CITE[''''''[''''''whatwg'''''']'''''' Can we deprecate alert(), confirm(), prompt() ?]]
+( ([TIME[2012-02-07 19:19:19 +09:00]] 版))
+<http://lists.whatwg.org/htdig.cgi/whatwg-whatwg.org/2012-February/034695.html>
+
+[6] [CITE@en[Web Applications 1.0 r6966     Allow browsers to bail early for showModalDialog, alert, confirm, and prompt during pagehide, beforeunload, and unload events.]]
+( ([TIME[2012-02-07 07:54:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=6965&to=6966>
+
+[7] [CITE[''''''[''''''whatwg'''''']'''''' Can we deprecate alert(), confirm(), prompt() ?]]
+( ([TIME[2012-06-09 06:50:21 +09:00]] 版))
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2012-June/036332.html>
+
+[8] [CITE@en[Web Applications 1.0 r7431     Allow UAs to implement abuse protection in alert() and company.]]
+( ([TIME[2012-10-03 07:52:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=7430&to=7431>
+
+[9] [CITE@en[Web Applications 1.0 r7832     Make alert() and company match more browsers, and some internal notes. Sorry, lost track of which bugs this fixes due to build process issues.]]
+( ([TIME[2013-04-14 16:26:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=7831&to=7832>
+
+[11] [CITE[Bug 563556 – Cleanup nsGlobalWindow's alert/confirm/prompt]]
+([TIME[2011-02-28 10:55:20 +09:00]] 版)
+<https://bugzilla.mozilla.org/show_bug.cgi?id=563556>
+
+[12] [CITE['''['''whatwg''']''' Optional non-blocking mode for simple dialogs (alert, confirm, prompt).]]
+([TIME[2011-02-28 04:50:36 +09:00]] 版)
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2011-February/030670.html>

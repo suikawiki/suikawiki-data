@@ -1,0 +1,117 @@
+[3] [DFN[[[UTF-1]]]] ([DFN[UCS Transformation Format One]]) は、 [[ISO/IEC 10646]]
+の[[符号化方式]]の一種です。
+
+[4] [[ISO/IEC2022]] の CL, SP, DEL, CR の符号位置の意味を変えない
+ってのが売りだったらしい。
+
+ISO/IEC 10646-1:1993 の附属書 G に載ってた。
+だけどすぐに、 ISO/IEC 10646 からは削除されちまった。
+
+もう誰にも相手してもらえない。かわいそうに。
+
+[[UCS-4]] の文字を1〜5オクテットの可変長で表現。
+[[UTF-8]] が1〜6オクテットなのに比べると、少し短くなるんだ。
+
+割算を使うのが嫌われたらしい。
+それから、 ASCII 非互換 (下記参照) なのとか、
+[[UTF-8]] とは違って途中から文字区切りを探せないとか。
+
+[[IANA]] 登録簿の名前: ISO-10646-UTF-1, csISO10646UTF1
+
+[[ISO-IR]] の登録番号は 178。登録簿には UTF-1 の仕様が載ってます。
+<http://www.itscj.ipsj.or.jp/ISO-IR/178.pdf>
+ESC 2/5 4/2 (%B)
+
+
+* ASCII の上位互換なの?
+
+[[ASCII]] の文書はそのまま UTF-1 に持ってこれるけど、
+[[シフトJIS]] みたいに2オクテット目以降に
+0x00-7F のどれかが来るって意味では、 ASCII 互換じゃない。
+(これはイタいね。)
+
+
+* UCS-4 → UTF-1
+
+[PRE[
+ sub u4code2u1code ($) {
+   my $U = shift;
+   return ($U) if $U <= 0x9F;
+   return (0xA0, $U) if $U <= 0xFF;
+   return (0xA1 + ( $U - 0x100 ) / 0xBE,
+           T(     ( $U - 0x100 ) % 0xBE)) if $U <= 0x4015;
+   return (0xF6 + ( $U - 0x4016 ) / ( 0xBE**2 ),
+           T(     ( $U - 0x4016 ) / 0xBE % 0xBE),
+           T(     ( $U - 0x4016 ) % 0xBE      )) if $U <= 0x38E2D;
+   return (0xFC + ( $U - 0x38E2E ) / ( 0xBE**4 ),
+           T(     ( $U - 0x38E2E ) / ( 0xBE**3 ) % 0xBE),
+           T(     ( $U - 0x38E2E ) / ( 0xBE**2 ) % 0xBE),
+           T(     ( $U - 0x38E2E ) /   0xBE      % 0xBE),
+           T(     ( $U - 0x38E2E ) %   0xBE      ));
+ }
+]PRE]
+
+[PRE[
+ sub utf1code2ucs4code (@) {
+   my ($x, $y, $z, $v, $w) = @_;
+   return $x if @_ == 1 && $x <= 0x9F;
+   return $y if $x == 0xA0;
+   return ($x - 0xA1) * 0xBE + U($y) + 0x100
+     if 0xA1 <= $x && $x <= 0xF5;
+   return ($x - 0xF6) * ( 0xBE**2 ) + U($y) * 0xBE + U($z) + 0x4016
+     if 0xF6 <= $x && $x <= 0xFB;
+   return ($x - 0xFC) * ( 0xBE**4 ) + U($y) * ( 0xBE**3 )
+              + U($z) * ( 0xBE**2 ) + U($v) * 0xBE
+              + U($w) + 0x38E2E;
+ }
+]PRE]
+
+[PRE[
+ sub T ($) {
+   my $z = shift;
+   return $z + 0x21 if $z <= 0x5D;
+   return $z + 0x42 if $z <= 0xBD;
+   return $z - 0xBE if $z <= 0xDE;
+   return $z - 0x60;
+ }
+]PRE]
+
+[PRE[
+ ## T(z) の逆関数
+ sub U ($) {
+   my $z = shift;
+   return $z + 0xBE if $z <= 0x20;
+   return $z - 0x21 if $z <= 0x7E;
+   return $z + 0x60 if $z <= 0x9F;
+   return $z - 0x42;
+ }
+]PRE]
+
+
+* UTF-1 の正規表現 (手抜き)
+
+[PRE[
+ qr/[\x00-\x9F]|[\xA0-\xF5].|[\xF6-\xFB]..|[\xFC-\xFF]..../
+]PRE]
+
+
+* Perl 実装
+
+そもそも UTF-1 の実装なんて見たことないんですが(笑)、
+面白そうだし RFC 1808 の追悼(謎)の意をこめて、
+作ってみました。
+
+Encode::Unicode::UTF1
+<http://suika.fam.cx/gate/cvs/perl/lib/Encode/Unicode/UTF1.pm>
+
+perl 5.8 とかの、 Encode module が動く perl でないと駄目です。
+
+* 関連
+
+[2] 昔の資料だと単に ''UTF'' と書かれていることもある。まさか今のように数多の [[UTF]] が登場するとは思ってもいなかったでしょうな。 ([[Unicode]] は既に UTF しか存在しないし。藁)
+
+[5] [[UTF-8]] は当初は [[UTF-1]] とは別の [[UTF]] という意味で [[UTF-2]] とも呼ばれていました。
+
+* メモ
+
+- [1] [[ビット組合せ]]についての ISO/IEC 2022 との親和性もあって、 [[IETF]] はメイル規格とかに採用する案もあったらしいが・・・。丸ごとぽしゃった。

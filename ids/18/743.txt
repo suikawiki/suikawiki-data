@@ -1,0 +1,195 @@
+* 仕様書
+
+[REFS[
+- [405] [CITE@en[CSS Cascading and Inheritance Level 3]] ([TIME[2013-06-17 13:55:07 +09:00]] 版) <http://dev.w3.org/csswg/css-cascade/#at-import>
+]REFS]
+
+* 歴史
+
+[406] 2009年頃の [[CSS3]] を見ると[[代替スタイル・シート]]の名前を指定することができたようです。
+
+[REFS[
+-[1] [CITE@en[Web Applications 1.0 r7111 Remove incorrect non-normative sentence.]]
+( ([TIME[2012-05-31 08:42:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=7110&to=7111>
+]REFS]
+
+* 実装
+
+[3]
+''Complex @import rules'' <http://hail2u.net/documents/cairs.html>
+
+[CODE(CSS)[@import]] の各 UA の対応表。たしかに IE の対応状況は複雑怪奇。
+([[名無しさん]] [WEAK[2004-03-30 08:15:47 +00:00]])
+
+[4]
+[CITE[New Internet Explorer @import hack - Anne’s Weblog about Markup & Style]] <http://annevankesteren.nl/2005/10/ie-import-hack>
+([[名無しさん]] [WEAK[2005-10-17 23:42:31 +00:00]])
+
+[7]
+[CITE@en[Useful CSS Snippets - webSemantics]] ([[Mike Foskett]] 著, [CODE[2007-01-13 16:06:46 +09:00]] 版) <http://www.websemantics.co.uk/tutorials/useful_css_snippets/#flashing>
+
+[18]
+[CODE(DOMa)@en[[[cssRules]]]] が[[スタイル・シート]]の読み込まれていない
+[CODE(CSS)@en[@[[import]]]] ([CODE(DOMi)@en[[[CSSImportRules]]]])
+を含んでいる ([[スタイル・シート]]の読み込みの途中の場合や、
+[CODE(HTTP)[[[404]]]] 等の場合、あるいは[[無奇癖モード]]で
+[CODE(MIME)@en[[[text/css]]]] 以外の場合。) と、[[Firefox]] 2 では
+[CODE(DOMa)@en[[[cssRules]]]] 自体へのアクセスが拒否されます。
+
+;; [[Opera]] 9 や [[WinIE 6]] では、単にその参照されている[[スタイル・シート]]が空になるだけです。
+
+[19]
+[[Firefox]] 2 では、[[絶対URI]]や
+[[相対参照]] ([[空文字列]]) で自分自身
+(または[[素片識別子]]だけ違う [[URI]]) を指定しても、
+特別な扱いはされません。
+
+[[Opera]] 9 では、[[絶対URI]]または[[相対参照]]で自分自身
+(または[[素片識別子]]だけ違う [[URI]]) を指定すると、
+[[@規則]]全体が[[無視]]されます ([[CSSOM]] に現れず、
+[[レンダリング]]にも影響しません)。
+
+[[WinIE 6]] では、[[絶対URI]] で自分自身
+(または[[素片識別子]]だけ異なる [[URI]]) 
+を指定しても、特別な扱いはされません。
+[[空文字列]]を指定すると、[[CSSOM]] には反映されますが、
+[CODE(DOMa)@en[[[imports]]]] からその[[スタイル・シート]]にアクセスしようとすると、エラーが出て拒否されます。[[レンダリング]]にも影響しません。
+[[素片識別子]]だけを指定すると、エラーは出ないのですが、空の[[スタイル・シート]]を指定したかのような結果になります
+([[CSSOM]] 上、[[レンダリング]]上)。
+
+;; [[URI]] として[[空文字列]]を指定:
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%40import%20url()%3B;h=%3Cp%20class%3Dstyle-in-myself%3Exxxxxxxxxxxxxxxxxxxxxxxx;p=q;x=style-element;i=html-div>
+
+([[名無しさん]])
+
+[20]
+>>19 以外の場合について、
+[[素片識別子]]のついた [[URI]] を指定すると、
+3ブラウザとも[[素片識別子]]のない [[URI]]
+が指定された場合と同じように処理します。
+
+[[Firefox]] 2 と [[WinIE 6]] では [[CSSOM]] 上の [[URI]]
+にも[[素片識別子]]がついたままですが、
+[[Opera]] 9 では[[素片識別子]]部が除去されたものになります。
+
+;; [[Opera]] 9 では
+[CODE(CSS)@en[[[background-image]]]] でも[[素片識別子]]が除去されます。
+
+([[名無しさん]])
+
+[21]
+3ブラウザとも、 [CODE(CSS)[[["]]]] で括られていたとしても、
+[[URI]] の先頭と末尾の[[空白]]を除去して処理します。
+
+[[Opera]] 9 と [[WinIE 6]] では、
+[[CSSOM]] 上の [[URI]] も[[空白]]を除去したものになります。
+
+;; [[Opera]] 9 では[[絶対URI]]に[[解決]]されたものになります。
+
+[[Firefox]] 2 では [[CSSOM]] 上の
+[[URI]] も[[空白]]が残ったものになります。
+
+;; >>19-20 は[[空白]]を除去した結果に適用されます。
+
+([[名無しさん]])
+
+[22]
+3ブラウザとも、 [CODE(CSS)[[["]]]] で括られていたとしても、
+[[URI]] の先頭と末尾の[[空白]]を除去して処理します。
+
+[[Opera]] 9 と [[WinIE 6]] では、
+[[CSSOM]] 上の [[URI]] も[[空白]]を除去したものになります。
+
+;; [[Opera]] 9 では[[絶対URI]]に[[解決]]されたものになります。
+
+[[Firefox]] 2 では [[CSSOM]] 上の
+[[URI]] も[[空白]]が残ったものになります。
+
+;; >>19-20 は[[空白]]を除去した結果に適用されます。
+
+([[名無しさん]])
+
+[23]
+>>18 訂正:
+- 読み込み中の場合は、 [CODE(DOMa)@en[[[cssRules]]]] そのものへのアクセスが拒否されます。
+- [CODE(HTTP)[[[404]]]] や [CODE(MIME)@en[[[text/css]]]]
+以外の場合には、空の[[スタイル・シート]]として扱われます
+(前者は要検証)。
+- ただし、読み込み済みでも、[[same-origin policy]]
+に反する場合には、当該[[外部スタイル・シート]]に関して、
+セキュリティ例外が発生します。
+
+([[名無しさん]])
+
+[24]
+[[Firefox]] 2 では、[[輸入]]された[[スタイル・シート]]の中の
+[CODE(DOMa)@en[[[selectorText]]]] に、なぜか
+[CODE(CSS)@en[@[[namespace]]]] がなくても
+[CODE(CSS)[*|]] が補完されることがあるようです。
+(詳しい再現条件は不明。一旦読み込んだ[[スタイル・シート]]を再度読み込んだとき?)
+
+([[名無しさん]])
+
+[25]
+[[WinIE 6]] は[[媒体照会]]の指定に対応しておらず、
+[[URI]] の一部として無理矢理解釈しようとします。
+([[名無しさん]])
+
+[26]
+[[Opera]] 9 や [[Firefox]] 2 は[[構文解析]]や[[直列化]]で
+[CODE(CSS)@en[@[[media]]]] と同じように[[媒体照会]]を処理するようです。
+([[名無しさん]])
+
+[27]
+>>26 [CODE(DOMa)@en[[[mediaText]]]] は [CODE(CSS)@en[[[all]]]]
+が明示的に指定されたときだけ [CODE(CSS)@en[[[all]]] となり、]]
+省略されたときには[[空文字列]]になるようです。
+([[名無しさん]])
+
+[28]
+[[WinIE 6]] では [CODE(CSS)@en[@[[media]]]] 内でも
+[CODE(CSS)@en[@[[import]]]] が使えますが、
+[[媒体型]]に関係なく適用されるようです。
+([[名無しさん]])
+
+[29]
+>>21 のテスト用
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%40import%20url(%22%20style%20%22)%3B%0D%0A;h=%3Cp%3EThis%20paragraph%20should%20not%20be%20blue.%3C%2Fp%3E;p=n;x=style-element;i=html-div>
+
+[407] [CODE(CSS)@en[[[@import]]]] は [CODE(CSS)@en[[[@charset]]]] 以外の他の[[規則]]より前になければなりませんが、
+[[Gecko]] でも [[Chrome]] でも、[[非妥当]]な[[規則]]が前にあっても問題ないようです。 [TIME[2013-08-11T08:11:05.00Z]]
+
+* 不思議解釈
+
+[15]
+[CITE@ja[XHTML BasicとCSS Mobile Profileを徹底マスターする]] ([CODE[2007-06-10 21:04:09 +09:00]] 版) <http://www.atmarkit.co.jp/fmobile/rensai/xhtml03/xhtml03.html>
+
+> ※リンクとインポートの違い
+> 一見すると、リンクとインポートには違いがないように見える。実はスタイルを1 つだけ定義する場合には、どちらを使っても同じ結果になるのだ。ところが、1つのドキュメントに複数のスタイルを次々にリンクした場合、またはインポートした場合には事情が変わってくる。複数のリンクでは、次々と定義を上書きしていってしまう。これに対して、インポートではスタイルはマージされる。設定したスタイルで矛盾が発生する場合は、より後方で設定されたスタイルが使用される。
+
+意味がわからない。
+
+[408] [CITE[IRC logs: freenode / #whatwg / 20130820]]
+( ([TIME[2013-08-23 21:56:41 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20130820#l-472>
+
+[409] [CITE[IRC logs: freenode / #whatwg / 20130823]]
+( ([TIME[2013-08-26 12:15:51 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20130823#l-706>
+
+[410] [CITE@en[Re: ''''''[''''''webcomponents'''''']'''''' Seeking status and plans]]
+( ([[Dimitri Glazkov]] 著, [TIME[2013-10-03 02:58:19 +09:00]] 版))
+<http://lists.w3.org/Archives/Public/public-webapps/2013OctDec/0042.html>
+
+[411] [CITE@en[Parsing (Windows)]]
+( ([TIME[2013-11-13 13:55:16 +09:00]] 版))
+<http://msdn.microsoft.com/en-us/library/ie/hh673554(v=vs.85).aspx>
+
+[412] [CITE[Flash of Unstyled Content (FOUC)]]
+( ([TIME[2013-11-22 07:02:37 +09:00]] 版))
+<http://bluerobot.com/web/css/fouc.asp/>
+
+[413] [CITE@en[HTML Imports]]
+( ([TIME[2014-03-06 04:56:38 +09:00]] 版))
+<http://www.w3.org/TR/2014/WD-html-imports-20140311/>

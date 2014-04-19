@@ -1,0 +1,106 @@
+[1] [[SIP]] では[[contact URI]]の処理などのために[[URLの比較]]の方法を定めています。
+
+* 仕様書
+
+- [2] [[RFC 3261]] [CITE@en[SIP: Session Initiation Protocol]]
+-- [6] '''[CSECTION@en[19.1.4 URI Comparison]]'''
+<http://tools.ietf.org/html/rfc3261#section-19.1.4>
+- [5061] [[RFC 5954]] [CITE@en[Essential Correction for IPv6 ABNF and URI Comparison in RFC 3261]] 
+<http://tools.ietf.org/html/rfc5954>
+
+* 定義
+
+[7] [SRC[>>6]]
+- [8] [[SIP]] と [[SIPS]] は必ず等しくありません。
+- [9] [CODE(ABNF)@en[[[userinfo]]]] は[[大文字・小文字を区別する]]比較を行い、それ以外は原則として[[大文字・小文字を区別しない]]比較を行います。
+- [10] [RUBYB[[[引数]]]@en[parameter]]と[RUBYB[[[頭欄]]]@en[header field]]の順序は [[SIP]] や [[SIPS]] では意味を持ちません。
+- [11] [CODE(ABNF)@en[[[reserved]]]] に含まれる[[文字]]''以外''は[[百分率符号化]]してもしなくても同じです。
+- [12] [[ホスト名]]とそれを [[DNS]] で引いた [[IPアドレス]]は一致しません。
+- [13] 2つの[[URL]]が等しいためには、 [CODE(ABNF)@en[[[user]]]], [CODE(ABNF)@en[[[password]]]], [CODE(ABNF)@en[[[host]]]], [CODE(ABNF)@en[[[port]]]] が一致しなければなりません。
+-- [14] [CODE(ABNF)@en[[[user]]]] や [CODE(ABNF)@en[[[password]]]]
+を含む [[URL]] と含まない [[URL]] は一致しません。
+-- [15] [[既定値]]が省略された [[URL]] と明示された [[URL]] は一致しません。
+-- [5062] [CODE(ABNF)@en[[[host]]]] が[[IPアドレス]]の場合、文字列ではなく、それが表す[[バイナリー]]が等しいかどうかで考えます。 [SRC[>>5061]]
+- [16] [CODE(ABNF)@en[[[uri-parameter]]]] はそれぞれ一致しなければなりません。
+-- [17] [CODE@en[[[user]]]], [CODE@en[[[ttl]]]], [CODE@en[[[method]]]] が片方だけに現れる場合は、
+その値が[[既定値]]であるとしても、一致しません。
+-- [18] [CODE@en[[[maddr]]]] を含む [[URL]] と含まない [[URL]] は一致しません。
+-- [19] その他の [CODE(ABNF)@en[[[uri-parameter]]]] は片方だけに現れる場合は無視します。
+- [20] [CODE(ABNF)@en[[[header]]]] は無視せず、それぞれ一致しなければ[['''なりません''']]。
+一致の規則はそれぞれ個別に規定されています。
+
+* 歴史
+
+[21] この [[URL]] の一致の定義は単独で章立てされたのは [[RFC 3261]]
+からですが、仕組み上、同様の機能は存在していました。[[RFC 2543]]
+では[[ポート番号]]の省略は [[5060]] 番ポートと指定されたのと等価とされていましたが、
+[[RFC 3261]] では [[DNS SRV]] の利用を想定して等価とはしないと変更されています
+[SRC[>>6]]。
+
+[5063] 元々 [[IPアドレス]]の一致については規定が特にありませんでしたが、 [[RFC 5954]]
+[SRC[>>5061]] で文字列表現ではなくバイナリー表現の一致とするとされています。
+
+* 例
+
+[22] 以下はそれぞれ等しいです [SRC[>>6]]。
+
+[23] 
+- sip:%61lice@atlanta.com;transport=TCP
+- sip:alice@AtLanTa.CoM;Transport=tcp
+
+[24]
+- sip:carol@chicago.com
+- sip:carol@chicago.com;newparam=5
+- sip:carol@chicago.com;security=on
+
+[25]
+- sip:biloxi.com;transport=tcp;method=REGISTER?to=sip:bob%40biloxi.com
+- sip:biloxi.com;method=REGISTER;transport=tcp?to=sip:bob%40biloxi.com
+
+[26]
+- sip:alice@atlanta.com?subject=project%20x&priority=urgent
+- sip:alice@atlanta.com?priority=urgent&subject=project%20x
+
+[5064] [SRC[>>5061]]
+- sip:bob@[::ffff:192.0.2.128]
+- sip:bob@[::ffff:c000:280]
+
+[5065] [SRC[>>5061]]
+- sip:bob@[2001:db8::9:1]
+- sip:bob@[2001:db8::9:01]
+
+[5066] [SRC[>>5061]]
+- sip:bob@[0:0:0:0:0:FFFF:129.144.52.38]
+- sip:bob@[::FFFF:129.144.52.38]
+
+[27] 以下は等しく''ありません'' [SRC[>>6]]。
+
+[28] [CODE(ABNF)@en[[[user]]]] が違います。
+-   SIP:ALICE@AtLanTa.CoM;Transport=udp
+-   sip:alice@AtLanTa.CoM;Transport=UDP
+
+[29] [[ポート番号]]が違います。
+- sip:bob@biloxi.com
+- sip:bob@biloxi.com:5060
+
+[30] [CODE(URI)@en[[[transport]]]] が違います。
+- sip:bob@biloxi.com
+- sip:bob@biloxi.com;transport=udp
+
+[31] [[ポート番号]]と [CODE(URI)@en[[[transport]]]] が違います。
+- sip:bob@biloxi.com
+- sip:bob@biloxi.com:6000;transport=tcp
+
+[32] [CODE(ABNF)@en[[[header]]]] が違います。
+- sip:carol@chicago.com
+- sip:carol@chicago.com?Subject=next%20meeting
+
+[33] [[ドメイン名]]と[[IPアドレス]]は違います。
+- sip:bob@phone21.boxesbybob.com
+- sip:bob@192.0.2.4
+
+[34] 注意! [[等しさ]]は[[推移的]]では''ありません''。 [SRC[>>6]]
+
+- [CODE(URI)@en[sip:carol@chicago.com]] と [CODE(URI)@en[sip:carol@chicago.com;security=on]] は等価
+- [CODE(URI)@en[sip:carol@chicago.com]] と [CODE(URI)@en[sip:carol@chicago.com;security=off]] は等価
+- [CODE(URI)@en[sip:carol@chicago.com;security=on]] と [CODE(URI)@en[sip:carol@chicago.com;security=off]] は等価では''ない''

@@ -1,0 +1,265 @@
+[45] [DFN[[CODE(DOMm)@en[[[setTimeout()]]]]]] と [DFN[[CODE(DOMm)@en[[[setInterval()]]]]]]
+は、一定時間後、あるいは一定時間ごとに指定した処理を実行するものです。
+
+* 仕様書
+
+[REFS[
+- [33] '''[CITE@en-US-x-hixie[HTML Standard]] ([TIME[2013-07-27 01:56:00 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#timers>'''
+- [47] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2014-04-03 03:44:44 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#apis-available-to-workers>
+]REFS]
+
+* 定義
+
+[46] [DFN[[CODE(DOMi)@en[[[WindowTimer]]]]]] [[インターフェイス]]は、[[メソッド]]
+[DFN[[CODE(DOMm)@en[[[setTimeout]]]]]], [DFN[[CODE(DOMm)@en[[[setInterval]]]]]],
+[DFN[[CODE(DOMm)@en[[[clearTimeout]]]]]], [DFN[[CODE(DOMm)@en[[[clearInterval]]]]]]
+を持ちます [SRC[>>33]]。 [CODE(DOMi)@en[[[WindowTimer]]]] は [CODE(IDL)@en[[[NoInterfaceObject]]]]
+であり、 [CODE(DOMi)@en[[[Window]]]] [SRC[>>33]] と [CODE(DOMi)@en[[[WorkerGlobalScope]]]] [SRC[>>47]]
+が[[実装]]しています。
+
+* タイマー設定メソッド
+
+[48] [CODE(DOMm)@en[[[setTimeout]]]] と [CODE(DOMm)@en[[[setInterval]]]] は、
+1つ以上の[[引数]]が必要です [SRC[>>33]]。いずれも[[タイマー初期化手順]]を実行するものです [SRC[>>33]]。
+
+[49] 第1引数は、一定時間後に実行されるべきコードを指定します。[[データ型]]は
+[CODE(DOMi)@en[[[Function]]]] または [CODE(DOMi)@en[[[DOMString]]]] です [SRC[>>33]]。
+
+[50] 第2引数は、コードが実行されるまでの時間です。[[データ型]]は [CODE(IDL)@en[[[long]]]]
+で、省略した場合の[[既定値]]は [CODE[[[0]]]] です [SRC[>>33]]。
+
+[51] 第3引数以降は、任意の値を指定でき [SRC[>>33]]、コードへの[[引数]]として使われます。
+
+[52] [[メソッド]]の返り値は、 [CODE(IDL)@en[[[long]]]] です [SRC[>>33]]。
+
+* タイマー消去メソッド
+
+[53] [CODE(DOMm)@en[[[clearTimeout]]]] と [CODE(DOMm)@en[[[clearInterval]]]]
+には [[long]] の[[引数]]を1つ指定できます [SRC[>>33]]。省略した場合の[[既定値]]は
+[CODE[[[0]]]] です [SRC[>>33]]。
+
+[54] [[メソッド]]の返り値はありません [SRC[>>33]]。
+
+[57] いずれも、[[活性タイマーのリスト]]から[[引数]]で指定された[[数]]により識別される項目があれば、
+これを消去します。該当するものがなければ、何もしません。 [SRC[>>33]]
+
+;; [58] どちらのメソッドも、同じように動作します。 [VAR@en[repeat]] フラグは無視されます。
+
+* 待ち時間
+
+[87] 与えられたコードは、 >>66、>>72、>>32 を待った後、実行されます。
+
+[66] 基本となる待ち時間は、第2引数で指定された値です。ただしその値が4より小さく、
+[[タイマー入れ子水準]] (なければ0) が5より大きいなら、4とします。 [SRC[>>33]]
+
+[75] [DFN[[RUBYB[[[タイマー入れ子水準]]]@en[timer nesting level]]]] [SRC[>>33]] は、
+入れ子回数の管理のための値です。[[タイマー初期化手順]]により追加された[[タスク]]に存在します。
+追加された[[タスク]]の[[タイマー入れ子水準]]は、元の[[タスク]]の[[タイマー入れ子水準]]よりも1大きな値です [SRCD[>>33]]。
+
+;; [31] 元々は最小でも 10ms とされていましたが、後に実装によっては最小 4ms となり、 >>27
+で仕様もそれに揃いました。更に入れ子回数 (タイマーによる処理によって更にタイマー処理を予定した回数)
+が4回までは 4ms の制限すらも撤廃されるようになり、仕様も  >>24 で追随しています。
+
+[70] [[文脈オブジェクト]]が [CODE(DOMi)@en[[[Window]]]] なら、
+関連付けられている[[文書]]が[[完全に活性]]な状態の[[ミリ秒]]数として解釈されます [SRC[>>33]]。
+
+[71] [[文脈オブジェクト]]が [CODE(DOMi)@en[[[WorkerGlobalScope]]]] なら、[[ワーカー]]が [[suspend]]
+されていない状態の[[ミリ秒]]数として解釈されます [SRC[>>33]]。
+
+;; [86] いずれも、連続的な秒数ではなく、合計の秒数です。
+
+[72] 同じ[[文脈オブジェクト]]について[[タイマー初期化手順]]が何度も呼ばれている場合、
+呼び出しのタイミングがより早く、待ち時間 (>>66) が等しいか小さいものが実行完了 ([[タスク]]が追加完了)
+されるまで、待つことになっています [SRC[>>33]]。
+
+[32] [[利用者エージェント]]は更に加えて任意の時間待っても構いません [SRC[>>33]]。
+[[電力]]等利用できる資源の制約や性能上の限界その他の要因により処理を遅らせることができます。
+
+* 活性タイマーのリスト
+
+[55] [CODE(DOMi)@en[[[WindowTimer]]]] [[オブジェクト]] ([CODE(DOMi)@en[[[Window]]]] や
+[CODE(DOMi)@en[[[WorkerGlobalScope]]]]) は[DFN[[RUBYB[[[活性タイマーのリスト]]]@en[list of active timers]]]]を持ちます
+[SRC[>>33]]。[[活性タイマーのリスト]]には、 [CODE(DOMm)@en[[[setTimeout]]]] や
+[CODE(DOMm)@en[[[setInterval]]]] で指定された[[タイマー]]が含まれます。
+
+[60] [[活性タイマーのリスト]]内の各項目は、[[非負整数]]により識別されます [SRC[>>33]]。
+この[[非負整数]]は[[ハンドル]]と呼ばれています。
+
+[88] [[ハンドル]]は、 [CODE(DOMi)@en[[[WindowTimer]]]] 
+[[オブジェクト]]の生存期間内において固有でなければ[['''なりません''']] [SRC[>>33]]。
+
+;; [56] ということは [CODE(IDL)@en[[[long]]]] で表せる[[数]]の回数以上はタイマーを使えないことになります。
+
+[89] [[ハンドル]]は[[タイマー初期化手順]]の実行時 ([CODE(DOMm)@en[[[setInterval]]]] の場合は、初回のみ)
+に[[利用者エージェント]]定義の方法で決定されます [SRC[>>33]]。
+[[タイマー初期化手順]]はこの[[ハンドル]]を使って[[活性タイマーのリスト]]に新しい項目を追加し、
+その[[ハンドル]]を返します [SRC[>>33]]。
+
+* タイマーの実行
+
+[59] [DFN[[RUBYB[タイマー初期化手順]@en[timer initialization steps]]]]は、
+ハンドル (>>60) を返し、[[非同期的]]に待って (>>87) から、タイマー[[タスク]] (>>77)
+を[[タスクキュー]]に追加するものです [SRC[>>33]]。
+
+[77] タイマー[[タスク]]は次のようなものです [SRC[>>33]]。
+[[タスク源]]は[DFN[[RUBYB[[[タイマータスク源]]]@en[timer task source]]]]です [SRC[>>33]]。
+[FIG[
+= [63] 本タイマー項目が[[活性タイマーのリスト]]から既に消去されていれば、何もしません。
+= [78] 第1引数が [CODE(JS)@en[[[Function]]]] の場合、これを呼び出します。
+-- [79] [CODE(JS)@en[[[thisArg]]]] は[[文脈オブジェクト]]を使います。ただし [CODE(DOMi)@en[[[Window]]]]
+であれば、対応する [CODE(DOMi)@en[[[WindowProxy]]]] を使います。
+= [80] 第1引数が [CODE(DOMi)@en[[[DOMString]]]] の場合、[[スクリプトを作成]]します。
+-- [81] スクリプト源は指定された [CODE(DOMi)@en[[[DOMString]]]] とします。
+-- [82] [[スクリプト言語]]は [[JavaScript]] とします。
+-- [83] [[設定オブジェクト]]は[[文脈オブジェクト]]の[[スクリプト設定群オブジェクト]]とします。
+= [65] [CODE(DOMm)@en[[[setInterval]]]] だった場合は、[[タイマー初期化手順]]を呼び出します。
+]FIG]
+
+;; [84] [[スクリプトの作成]]の手順は、[[スクリプト]]を作って実行します。
+
+;; [85] [CODE(DOMm)@en[[[setInterval]]]] の場合、毎回[[スクリプト]]のコンパイルから行われることになります。
+
+* 歴史
+
+[2]
+[CITE[IRC logs: freenode / #whatwg / 20070409]] ([CODE[2007-04-12 00:04:42 +09:00]] 版) <http://krijnhoetmer.nl/irc-logs/whatwg/20070409#l-233>
+([[名無しさん]] [WEAK[2007-04-11 15:37:28 +00:00]])
+
+[6]
+[CITE@en[Re: Proposal: High resolution (and otherwise improved) timer API]] ([[Maciej Stachowiak]] 著, [CODE[2008-10-04 06:21:35 +09:00]] 版) <http://lists.w3.org/Archives/Public/public-webapps/2008OctDec/0031.html>
+
+>I cannot state with certainty that nothing lower than  
+10ms is safe. Chrome shipped with a 1ms delay and that was found to  
+create problems on a number of sites, including nytimes. They are  
+planning to try 4ms next. We would consider using a lower limit in the  
+official webkit.org version of WebKit, not not as low as 1ms.
+
+[9] [CITE[IRC logs: freenode / #whatwg / 20090504]]
+([TIME[2009-08-05 07:43:45 +09:00]] 版)
+<http://krijnhoetmer.nl/irc-logs/whatwg/20090504#l-24>
+
+[10] [CITE['''['''webkit-dev''']''' setTimeout as browser speed throttle]]
+([TIME[2008-10-01 15:56:01 +09:00]] 版)
+<http://lists.macosforge.org/pipermail/webkit-dev/2008-September/005093.html>
+
+[12] [CITE@en[Web Applications 1.0 r5535     Allow timers to be delayed when power usage is an issue.Fixing http://www.w3.org/Bugs/Public/show_bug.cgi?id=10633]]
+( ([TIME[2010-09-29 07:08:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=5534&to=5535>
+
+[13] [CITE[Bug 10633 – Minimums for timer granularity should be left to the user agent - different form factors have different power requirements]]
+( ([TIME[2010-09-29 07:19:30 +09:00]] 版))
+<http://www.w3.org/Bugs/Public/show_bug.cgi?id=10633>
+
+[14] [CITE[''''''[''''''whatwg'''''']'''''' Timeouts and monotonic vs clock time]]
+( ([TIME[2011-01-09 13:44:38 +09:00]] 版))
+<http://lists.whatwg.org/htdig.cgi/whatwg-whatwg.org/2011-January/029734.html>
+
+[15] [CITE['''['''whatwg''']''' setTimeout clamps]]
+([TIME[2011-01-16 12:00:52 +09:00]] 版)
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2011-January/029886.html>
+
+[16] [CITE@en[Web Applications 1.0 r5879     Define 'this' for setTimeout functions]]
+( ([TIME[2011-02-12 08:50:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=5878&to=5879>
+
+[17] [CITE@en[Web Applications 1.0 r6492 Explain ordering of setTimeout() calls better]]
+( ([TIME[2011-08-18 06:36:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=6491&to=6492>
+
+[18] [CITE@en[Web Applications 1.0 r6899     Make setTimeout() not be well-ordered across multiple browsing contexts, so as to allow user agents to e.g. throttle setTimeout()s in background tabs.]]
+( ([TIME[2012-01-18 07:13:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=6898&to=6899>
+
+[19] [CITE@en[Web Applications 1.0 r6949     Turns out clearTimeout() and clearInterval() are synonyms! Who knew? Oh what a tangled Web we weave.Fixing https://www.w3.org/Bugs/Public/show_bug.cgi?id=14907]]
+( ([TIME[2012-02-01 05:20:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=6948&to=6949>
+
+[20] [CITE[IRC logs: freenode / #whatwg / 20120626]]
+( ([TIME[2012-07-12 23:44:39 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20120626#l-1008>
+
+[21] [CITE@en-US[Window Object 1.0]]
+( ([TIME[2006-04-08 02:19:28 +09:00]] 版))
+<http://www.w3.org/TR/Window/#timers>
+
+[22] [CITE@en[Bug 15007 – Add an API to queue a task]]
+( ([TIME[2013-02-09 22:45:48 +09:00]] 版))
+<https://www.w3.org/Bugs/Public/show_bug.cgi?id=15007>
+
+[23] [CITE@en[Web Applications 1.0 r7737     Try to more closely match reality.]]
+( ([TIME[2013-03-07 08:03:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=7736&to=7737>
+
+[24] [CITE@en[Web Applications 1.0 r8095     Refactor the timer code to match current practice in WebKit, Gecko, and Blink (the ones whose source I could examine)]]
+( ([TIME[2013-07-27 08:27:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=8094&to=8095>
+
+[25] [CITE[Bug 376643 &#8211; setInterval fires repeatedly with incorrectly small delays if machine is suspend/resumed, hibernate/resumed or process is SIGSTOP/SIGCONT]] ([CODE[2007-06-23 10:13:26 +09:00]] 版) <https://bugzilla.mozilla.org/show_bug.cgi?id=376643>
+
+[26] [CITE[HTML5 IRC logs: freenode / #whatwg / 20070622]] ([TIME[2007-06-23 10:17:05 +09:00]] 版) <http://krijnhoetmer.nl/irc-logs/whatwg/20070622#l-608>
+([[名無しさん]] [WEAK[2007-06-23 01:21:49 +00:00]])
+
+[27] [CITE@en[Web Applications 1.0 r6362     Make setInterval() clamp at 4ms as well.]]
+( ([TIME[2011-08-04 08:54:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=6361&to=6362>
+
+[34] [CITE@en[Efficient Script Yielding]] ([TIME[2013-07-23 11:06:32 +09:00]] 版) <http://w3c-test.org/webperf/specs/setImmediate/>
+
+* メモ
+
+[1]
+[CITE[Scope of setTimeout Method]] <http://www2u.biglobe.ne.jp/~oz-07ams/prog/js-notes/setTimeout.html>
+
+[7] [CITE[for 文を setTimeout に変換する - IT戦記]] ([TIME[2009-02-02 01:57:56 +09:00]] 版) <http://d.hatena.ne.jp/amachang/20071108/1194501306>
+
+[8]
+[CITE[JSDeferred を高速化する (試し中) - 冬通りに消え行く制服ガールは、夢物語にリアルを求めない。 - subtech]] ([TIME[2009-03-31 08:34:10 +09:00]] 版) <http://subtech.g.hatena.ne.jp/cho45/20090125/1232831437>
+
+[28] [CITE[zarame.com/zide/ 日記(2005-11-24)]] <http://zarame.com/zide/diary/20051124.html#p01>
+([[名無しさん]] [WEAK[2005-12-07 11:45:55 +00:00]])
+
+[29] [CITE[ぷろじぇくと、みすじら。]] <http://www.fastwave.gr.jp/diarysrv/misuzilla/200511c.html#20051126-4>
+([[名無しさん]] [WEAK[2005-12-07 11:46:42 +00:00]])
+
+[30] [CITE[zarame.com/zide/ 日記(2005-11-28)]] <http://zarame.com/zide/diary/20051128.html#p01>
+([[名無しさん]] [WEAK[2005-12-07 11:46:56 +00:00]])
+
+[35] [CITE[setIntervalとsetTimeoutを調べた結果余分なことになった - 三等兵]]
+( ([TIME[2013-07-24 01:30:24 +09:00]] 版))
+<http://d.hatena.ne.jp/sandai/20100513/p1>
+
+[36] [CITE@en-US[window.setTimeout - Web API reference | MDN]]
+( ([TIME[2013-07-10 02:55:41 +09:00]] 版))
+<https://developer.mozilla.org/en/docs/Web/API/window.setTimeout>
+
+[37] [CITE[Issue 792 - chromium - TRACKING: Chrome does not implement the Webkit 10ms setTimeout clamp. - An open-source project to help move the web forward. - Google Project Hosting]]
+( ([TIME[2013-07-27 05:59:41 +09:00]] 版))
+<https://code.google.com/p/chromium/issues/detail?id=792>
+
+[38] [CITE@en-US[David Baron's weblog: setTimeout with a shorter delay]]
+( ([TIME[2013-07-27 05:59:54 +09:00]] 版))
+<http://dbaron.org/log/20100309-faster-timeouts>
+
+[39] [CITE@en[123273 – setTimeout(something, 0) causes 100% CPU constant]]
+( ([TIME[2013-07-27 06:07:25 +09:00]] 版))
+<https://bugzilla.mozilla.org/show_bug.cgi?id=123273>
+
+[40] [CITE@en[686201 – implementation: setImmediate API]]
+( ([TIME[2013-07-27 06:16:49 +09:00]] 版))
+<https://bugzilla.mozilla.org/show_bug.cgi?id=686201>
+
+[41] [CITE@en[839816 – Make next-tick mechanisms like postMessage faster]]
+( ([TIME[2013-07-27 06:36:50 +09:00]] 版))
+<https://bugzilla.mozilla.org/show_bug.cgi?id=839816>
+
+[42] [CITE[''''''[''''''whatwg'''''']'''''' Proposal: requestBackgroundProcessing()]]
+( ([TIME[2014-02-20 21:38:44 +09:00]] 版))
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2014-February/042075.html>
+
+[43] [CITE@en[Web Applications 1.0 r8535 Move a setTimeout() requirement from prose to IDL.]]
+( ([TIME[2014-03-08 07:55:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=8534&to=8535>
+
+[44] [CITE@en[Web Applications 1.0 r8508     Make clearTimeout()/clearInterval() (with no arguments) into no-ops; change the <table> role mapping so that tables aren't interactive.]]
+( ([TIME[2014-02-25 03:44:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=8507&to=8508>

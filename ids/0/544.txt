@@ -1,0 +1,2531 @@
+'''The Common Gateway Interface (CGI) Version 1.1'''
+-Network Working Group                                       
+-Request for Comments: 3875                                      
+-Category: Informational                  
+- D. Robinson
+- K. Coar
+- The Apache Software Foundation
+-                                                            October 2004
+
+*Status of this Memo
+>   This memo provides information for the Internet community.  It does
+not specify an Internet standard of any kind.  Distribution of this
+memo is unlimited.
+
+*Copyright Notice
+>   Copyright (C) The Internet Society (2004).
+
+*IESG Note
+>   This document is not a candidate for any level of Internet Standard.
+The IETF disclaims any knowledge of the fitness of this document for
+any purpose, and in particular notes that it has not had IETF review
+for such things as security, congestion control or inappropriate
+interaction with deployed protocols.  The RFC Editor has chosen to
+publish this document at its discretion.  Readers of this document
+should exercise caution in evaluating its value for implementation
+and deployment.
+
+この文書は、いかなる水準のインターネット標準の候補でもありません。
+IETF はこの文書のいかなる目的への適合性の知識も否認しますと共に、
+特に、 IETF が安全性、渋滞制御や既存のプロトコルとの不適切な相互作用などについて
+IETF が評価していないことを注記しておきます。
+RFC 編集者は自らの裁量でこの文書を出版することとしました。
+この文書の読者は、実装および採用の価値を注意して評価するべきであります。
+
+* Abstract
+>   The Common Gateway Interface (CGI) is a simple interface for running
+external programs, software or gateways under an information server
+in a platform-independent manner.  Currently, the supported
+information servers are HTTP servers.
+
+共通開門界面 (CGI) は、環境に独立な方法で情報鯖から外部プログラム、
+ソフトウェア、関門を動作させるための単純な界面です。
+現在、対応している情報鯖には HTTP 鯖があります。
+
+>   The interface has been in use by the World-Wide Web (WWW) since 1993.
+This specification defines the 'current practice' parameters of the
+'CGI/1.1' interface developed and documented at the U.S. National
+Centre for Supercomputing Applications.  This document also defines
+the use of the CGI/1.1 interface on UNIX(R) and other, similar systems.
+
+この界面は1993年より World Wide Web (WWW) で使われています。
+この仕様書は合衆国国立超計算応用中央で開発され、
+文書化された [Q[CGI/1.1]] 界面の[Q[現在の慣習]]の引数を定義します。
+この文書は CGI/1.1 界面の UNIX (R) システムや他の似たシステムでの使用方法も定義します。
+
+*Table of Contents
+>
+   1.  Introduction. . . . . . . . . . . . . . . . . . . . . . . . .   4
+       1.1. Purpose  . . . . . . . . . . . . . . . . . . . . . . . .   4
+       1.2. Requirements . . . . . . . . . . . . . . . . . . . . . .   4
+       1.3. Specifications . . . . . . . . . . . . . . . . . . . . .   4
+       1.4. Terminology  . . . . . . . . . . . . . . . . . . . . . .   5
+
+   2.  Notational Conventions and Generic Grammar. . . . . . . . . .   5
+       2.1. Augmented BNF  . . . . . . . . . . . . . . . . . . . . .   5
+       2.2. Basic Rules  . . . . . . . . . . . . . . . . . . . . . .   6
+       2.3. URL Encoding . . . . . . . . . . . . . . . . . . . . . .   7
+
+   3.  Invoking the Script . . . . . . . . . . . . . . . . . . . . .   8
+       3.1. Server Responsibilities  . . . . . . . . . . . . . . . .   8
+       3.2. Script Selection . . . . . . . . . . . . . . . . . . . .   9
+       3.3. The Script-URI . . . . . . . . . . . . . . . . . . . . .   9
+       3.4. Execution  . . . . . . . . . . . . . . . . . . . . . . .  10
+
+   4.  The CGI Request . . . . . . . . . . . . . . . . . . . . . . .  10
+       4.1. Request Meta-Variables . . . . . . . . . . . . . . . . .  10
+            4.1.1.  AUTH_TYPE. . . . . . . . . . . . . . . . . . . .  11
+            4.1.2.  CONTENT_LENGTH . . . . . . . . . . . . . . . . .  12
+            4.1.3.  CONTENT_TYPE . . . . . . . . . . . . . . . . . .  12
+            4.1.4.  GATEWAY_INTERFACE. . . . . . . . . . . . . . . .  13
+            4.1.5.  PATH_INFO. . . . . . . . . . . . . . . . . . . .  13
+            4.1.6.  PATH_TRANSLATED. . . . . . . . . . . . . . . . .  14
+            4.1.7.  QUERY_STRING . . . . . . . . . . . . . . . . . .  15
+            4.1.8.  REMOTE_ADDR. . . . . . . . . . . . . . . . . . .  15
+            4.1.9.  REMOTE_HOST. . . . . . . . . . . . . . . . . . .  16
+            4.1.10. REMOTE_IDENT . . . . . . . . . . . . . . . . . .  16
+            4.1.11. REMOTE_USER. . . . . . . . . . . . . . . . . . .  16
+            4.1.12. REQUEST_METHOD . . . . . . . . . . . . . . . . .  17
+            4.1.13. SCRIPT_NAME. . . . . . . . . . . . . . . . . . .  17
+            4.1.14. SERVER_NAME. . . . . . . . . . . . . . . . . . .  17
+            4.1.15. SERVER_PORT. . . . . . . . . . . . . . . . . . .  18
+            4.1.16. SERVER_PROTOCOL. . . . . . . . . . . . . . . . .  18
+            4.1.17. SERVER_SOFTWARE. . . . . . . . . . . . . . . . .  19
+            4.1.18. Protocol-Specific Meta-Variables . . . . . . . .  19
+       4.2. Request Message-Body . . . . . . . . . . . . . . . . . .  20
+       4.3. Request Methods  . . . . . . . . . . . . . . . . . . . .  20
+            4.3.1.  GET. . . . . . . . . . . . . . . . . . . . . . .  20
+            4.3.2.  POST . . . . . . . . . . . . . . . . . . . . . .  21
+            4.3.3.  HEAD . . . . . . . . . . . . . . . . . . . . . .  21
+            4.3.4.  Protocol-Specific Methods. . . . . . . . . . . .  21
+       4.4. The Script Command Line. . . . . . . . . . . . . . . . .  21
+
+   5.  NPH Scripts . . . . . . . . . . . . . . . . . . . . . . . . .  22
+       5.1. Identification . . . . . . . . . . . . . . . . . . . . .  22
+       5.2. NPH Response . . . . . . . . . . . . . . . . . . . . . .  22
+
+   6.  CGI Response. . . . . . . . . . . . . . . . . . . . . . . . .  23
+       6.1. Response Handling. . . . . . . . . . . . . . . . . . . .  23
+       6.2. Response Types . . . . . . . . . . . . . . . . . . . . .  23
+            6.2.1.  Document Response. . . . . . . . . . . . . . . .  23
+            6.2.2.  Local Redirect Response. . . . . . . . . . . . .  24
+            6.2.3.  Client Redirect Response . . . . . . . . . . . .  24
+            6.2.4.  Client Redirect Response with Document . . . . .  24
+       6.3. Response Header Fields . . . . . . . . . . . . . . . . .  25
+            6.3.1.  Content-Type . . . . . . . . . . . . . . . . . .  25
+            6.3.2.  Location . . . . . . . . . . . . . . . . . . . .  26
+            6.3.3.  Status . . . . . . . . . . . . . . . . . . . . .  26
+            6.3.4.  Protocol-Specific Header Fields. . . . . . . . .  27
+            6.3.5.  Extension Header Fields. . . . . . . . . . . . .  27
+       6.4. Response Message-Body. . . . . . . . . . . . . . . . . .  28
+
+   7.  System Specifications . . . . . . . . . . . . . . . . . . . .  28
+       7.1. AmigaDOS . . . . . . . . . . . . . . . . . . . . . . . .  28
+       7.2. UNIX . . . . . . . . . . . . . . . . . . . . . . . . . .  28
+       7.3. EBCDIC/POSIX . . . . . . . . . . . . . . . . . . . . . .  29
+
+   8.  Implementation. . . . . . . . . . . . . . . . . . . . . . . .  29
+       8.1. Recommendations for Servers. . . . . . . . . . . . . . .  29
+       8.2. Recommendations for Scripts. . . . . . . . . . . . . . .  30
+
+   9.  Security Considerations . . . . . . . . . . . . . . . . . . .  30
+       9.1. Safe Methods . . . . . . . . . . . . . . . . . . . . . .  30
+       9.2. Header Fields Containing Sensitive Information . . . . .  31
+       9.3. Data Privacy . . . . . . . . . . . . . . . . . . . . . .  31
+       9.4. Information Security Model . . . . . . . . . . . . . . .  31
+       9.5. Script Interference with the Server. . . . . . . . . . .  31
+       9.6. Data Length and Buffering Considerations . . . . . . . .  32
+       9.7. Stateless Processing . . . . . . . . . . . . . . . . . .  32
+       9.8. Relative Paths . . . . . . . . . . . . . . . . . . . . .  33
+       9.9. Non-parsed Header Output . . . . . . . . . . . . . . . .  33
+
+   10. Acknowledgements. . . . . . . . . . . . . . . . . . . . . . .  33
+
+   11. References. . . . . . . . . . . . . . . . . . . . . . . . . .  33
+       11.1. Normative References. . . . . . . . . . . . . . . . . .  33
+       11.2. Informative References. . . . . . . . . . . . . . . . .  34
+
+   12. Authors' Addresses. . . . . . . . . . . . . . . . . . . . . .  35
+
+   13. Full Copyright Statement. . . . . . . . . . . . . . . . . . .  36
+
+*1.  Introduction
+**1.1.  Purpose
+>   The Common Gateway Interface (CGI) [22] allows an HTTP [1], [4]
+server and a CGI script to share responsibility for responding to
+client requests.  The client request comprises a Uniform Resource
+Identifier (URI) [11], a request method and various ancillary
+information about the request provided by the transport protocol.
+
+[DFN[共通関門界面]] ([DFN[CGI]]) を使うと、 [[HTTP]] [[鯖]]と 
+[[CGIスクリプト]]が[[クライアント]][[要求]]への[[応答]]の責任を共有することができます。
+クライアント要求は、統一資源識別子 ([[URI]])、要求方式と転送プロトコルが提供する要求についての色々な補助情報を含んでいます。
+
+>   The CGI defines the abstract parameters, known as meta-variables,
+which describe a client's request.  Together with a concrete
+programmer interface this specifies a platform-independent interface
+between the script and the HTTP server.
+
+CGI は、メタ変数と呼ばれる、クライアントの要求を記述する抽象引数を定義します。
+これは、具象プログラム界面とあわせてスクリプトと HTTP
+鯖の間の環境独立な界面を規定します。
+
+>   The server is responsible for managing connection, data transfer,
+transport and network issues related to the client request, whereas
+the CGI script handles the application issues, such as data access
+and document processing.
+
+鯖はクライアント要求に関係する接続、出たー転送、輸送、
+ネットワークの問題を管理する責任があります。一方で CGI
+スクリプトはデータ接続や文書処理のような応用の問題を扱います。
+
+** 1.2.  Requirements
+>   The key words 'MUST', 'MUST NOT', 'REQUIRED', 'SHALL', 'SHALL NOT',
+'SHOULD', 'SHOULD NOT', 'RECOMMENDED', 'MAY' and 'OPTIONAL' in this
+document are to be interpreted as described in BCP 14, RFC 2119 [3].
+
+この文書の'''強調した語'''は、 [[BCP 14]], [[RFC 2119]]
+で説明されているように解釈します。
+
+>   An implementation is not compliant if it fails to satisfy one or more
+of the 'must' requirements for the protocols it implements.  An
+implementation that satisfies all of the 'must' and all of the
+'should' requirements for its features is said to be 'unconditionally
+compliant'; one that satisfies all of the 'must' requirements but not
+all of the 'should' requirements for its features is said to be
+'conditionally compliant'.
+
+ある実装は、その実装するプロトコルの[Q[なければならない]]要件を
+1つ以上満足しなければ、適合しません。
+すべての[Q[なければならない]]要件とすべての[Q[するべきである]]要件を満たす実装は、
+[Q{無条件に適合]]すると言います。すべての[Q[するべきである]]要件は満たすものの、
+[Q{するべきである]]要件をすべて満たしてはいない実装は、
+[Q{条件的に適合]]すると言います。
+
+** 1.3.  Specifications
+>   Not all of the functions and features of the CGI are defined in the
+main part of this specification.  The following phrases are used to
+describe the features that are not specified:
+
+CGI のすべての機能がこの仕様書の主部分で定義されているわけではありません。
+規定されていない機能を説明するために次の語句を使います。
+
+>
+:   'system-defined':
+The feature may differ between systems, but must be the same for
+different implementations using the same system.  A system will
+usually identify a class of operating systems.  Some systems are
+defined in section 7 of this document.  New systems may be defined
+by new specifications without revision of this document.
+
+:システム定義:システム間で異なるかもしれないが、
+同じシステムを使った異なる実装では同じでなければならない機能。
+システムは通常オペレーティング・システムの種別を識別します。
+ある種のシステムはこの文書の7章で定義しています。
+新しいシステムはこの文書を改訂せずに新しい仕様書で定義するかもしれません。
+
+>
+:   'implementation-defined':
+The behaviour of the feature may vary from implementation to
+implementation; a particular implementation must document its behaviour.
+
+:実装定義:その機能の動作は実装ごとに異なるかもしれません。
+個々の実装はその動作を文書化しなければなりません。
+
+** 1.4.  Terminology
+>   This specification uses many terms defined in the HTTP/1.1
+specification [4]; however, the following terms are used here in a
+sense which may not accord with their definitions in that document,
+or with their common meaning.
+
+この仕様書は、 HTTP/1.1 仕様書で定義されている語を多く使います。
+しかし、次の語は、ここでは HTTP/1.1 
+仕様書の定義や一般的な意味とは違った意味で使います。
+
+>
+:   'meta-variable':
+A named parameter which carries information from the server to the
+script.  It is not necessarily a variable in the operating
+system's environment, although that is the most common implementation.
+
+:メタ変数:
+鯖からスクリプトへ情報を運ぶ名前付き引数。
+多くの共通な実装ではオペレーティング・システムの環境の変数とされていますが、
+そうである必要はありません。
+
+>
+:   'script':
+The software that is invoked by the server according to this
+interface.  It need not be a standalone program, but could be a
+dynamically-loaded or shared library, or even a subroutine in the
+server.  It might be a set of statements interpreted at run-time,
+as the term 'script' is frequently understood, but that is not a
+requirement and within the context of this specification the term
+has the broader definition stated.
+
+:スクリプト:鯖がこの界面に従って呼び出すソフトウェア。
+単独のプログラムである必要はなく、動的に読込まれるものや共有ライブラリや、
+果ては鯖の部分ルーチンであっても構いません。[Q[スクリプト]]
+という語はよく実行時に解釈される文の集合と解釈されますが、
+別にそうである必要は無く、この仕様書の文脈ではこの語はここでのより広い定義によります。
+
+>
+:   'server':
+The application program that invokes the script in order to
+service requests from the client.
+
+:鯖:クライアントからの要求に応えるためにスクリプトを呼び出す応用プログラム。
+
+* 2.  Notational Conventions and Generic Grammar
+
+** 2.1.  Augmented BNF
+>   All of the mechanisms specified in this document are described in
+both prose and an augmented Backus-Naur Form (BNF) similar to that
+used by RFC 822 [13].  Unless stated otherwise, the elements are
+case-sensitive.  This augmented BNF contains the following constructs:
+
+この文書で規定する仕組みはすべて、普通の文章と [[RFC 822]]
+で使われているものに似た増補 Backus・Naur 式 (BNF) で記述します。
+特に指定のない限り、要素は大文字・小文字を区別します。
+この増補 BNF は次の構造を持ちます。
+
+>
+:   name = definition:
+The name of a rule and its definition are separated by the equals
+character ('=').  Whitespace is only significant in that
+continuation lines of a definition are indented.
+
+:[SAMP[[VAR[名前]] = [VAR[定義]]]]:
+規則の名前と定義は等号 ([SAMP[=]]) で区切ります。
+[[空白]]は、定義の継続行が字下げされる時にのみ意味を持ちます。
+
+>
+:   "literal":
+Double quotation marks (") surround literal text, except for a
+literal quotation mark, which is surrounded by angle-brackets ('<' and '>').
+
+:[SAMP["[VAR[表記]]"]]:
+生の文章を二重引用符 ([SAMP["]]) で括ったもの。例外として生の二重引用符は、
+角括弧 ([SAMP[<]] と [SAMP[>]]) で括ります。
+
+>
+:   rule1 | rule2:
+Alternative rules are separated by a vertical bar ('|').
+
+:[SAMP[[VAR[規則1]] | [VAR[規則2]]]]:
+代替の規則は垂直線 ([SAMP[|]]) で区切ります。
+
+>
+:   (rule1 rule2 rule3):
+Elements enclosed in parentheses are treated as a single element.
+
+:[SAMP[([VAR[規則1]] [VAR[規則2]] [VAR[規則3]])]]:
+括弧で囲んだ要素は1つの要素として扱います。
+
+>
+:   *rule:
+A rule preceded by an asterisk ('*') may have zero or more
+occurrences.  The full form is 'n*m rule' indicating at least n
+and at most m occurrences of the rule.  n and m are optional
+decimal values with default values of 0 and infinity respectively.
+
+:[SAMP[*規則]]:
+規則の前に星印 ([SAMP[*]]) をつけると、零個以上出現できることを表します。
+完全形は [SAMP[[VAR[n]]*[VAR[m]]規則]] で、最低 [VAR[n]] 回,
+最高 [VAR[m]] 回出現することを表します。 [VAR[n]] と [VAR[m]]
+は省略可能な十進数値で、既定値はそれぞれ 0 と無限大です。
+
+>
+:   [rule]:
+An element enclosed in square brackets ('[' and ']') is optional,
+and is equivalent to '*1 rule'.
+
+:[SAMP['''['''[VAR[規則]]''']''']]:
+四角括弧 ([SAMP['''[''']] と [SAMP[''']''']]) で囲まれた要素は省略可能で、
+[SAMP[*1[VAR[規則]]]] と同値です。
+
+>
+:   N rule:
+A rule preceded by a decimal number represents exactly N
+occurrences of the rule.  It is equivalent to 'N*N rule'.
+
+:[SAMP[[VAR[N]][VAR[規則]]]]:
+十進数が前にある規則は、丁度 [VAR[N]] 回規則が出現することを表します。
+[SAMP[[VAR[N]]*[VAR[N]][VAR[規則]]]] と同値です。
+
+** 2.2.  Basic Rules
+>   This specification uses a BNF-like grammar defined in terms of
+characters.  Unlike many specifications which define the bytes
+allowed by a protocol, here each literal in the grammar corresponds
+to the character it represents.  How these characters are represented
+in terms of bits and bytes within a system are either system-defined
+or specified in the particular context.  The single exception is the
+rule 'OCTET', defined below.
+
+この仕様書は文字を終端として定義される BNF 的文法を使います。
+多くの仕様書がプロトコルで認められるバイト列を定義するのとは異なり、
+ここでは文法中のそれぞれの表記がその表現する文字に対応します。
+文字があるシステムでどうビットやバイトで表現されるかは、
+システム定義または特定の文脈によって規定します。
+1つの例外は規則 [CODE(ABNF)[OCTET]] で、次に定義します。
+
+>   The following rules are used throughout this specification to
+describe basic parsing constructs.
+
+次に示す規則は基本的な構文解析構造を記述するためにこの仕様書を通じて使います。
+
+>
+[PRE(ABNF)[
+      alpha         = lowalpha | hialpha
+      lowalpha      = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" |
+                      "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" |
+                      "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" |
+                      "y" | "z"
+      hialpha       = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" |
+                      "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" |
+                      "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" |
+                      "Y" | "Z"
+      digit         = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" |
+                      "8" | "9"
+      alphanum      = alpha | digit
+      OCTET         = <any 8-bit byte>
+      CHAR          = alpha | digit | separator | "!" | "#" | "$" |
+                      "%" | "&" | "'" | "*" | "+" | "-" | "." | "`" |
+                      "^" | "_" | "{" | "|" | "}" | "~" | CTL
+      CTL           = <any control character>
+      SP            = <space character>
+      HT            = <horizontal tab character>
+      NL            = <newline>
+      LWSP          = SP | HT | NL
+      separator     = "(" | ")" | "<" | ">" | "@" | "," | ";" | ":" |
+                      "\" | <"> | "/" | "[" | "]" | "?" | "=" | "{" |
+                      "}" | SP | HT
+      token         = 1*<any CHAR except CTLs or separators>
+      quoted-string = <"> *qdtext <">
+      qdtext        = <any CHAR except <"> and CTLs but including LWSP>
+      TEXT          = <any printable character>
+]PRE]
+
+>   Note that newline (NL) need not be a single control character, but
+can be a sequence of control characters.  A system MAY define TEXT to
+be a larger set of characters than <any CHAR excluding CTLs but
+including LWSP>.
+
+改行 ([CODE(ABNF)[NL]]) は1つの制御文字である必要はありません。
+制御文字の列であっても構いません。システムは
+[CODE(ABNF)[TEXT]] を [CODE(ABNF)[<[CODE(ABNF)[CTL]] を除き、 [CODE(ABNF)[LWSP]] を含む任意の [CODE(ABNF)[CHAR]]>]]
+よりも大きな文字集合と定義しても'''構いません'''。
+
+**2.3.  URL Encoding
+>   Some variables and constructs used here are described as being
+'URL-encoded'.  This encoding is described in section 2 of RFC 2396 [2].  
+In a URL-encoded string an escape sequence consists of a
+percent character ("%") followed by two hexadecimal digits, where the
+two hexadecimal digits form an octet.  An escape sequence represents
+the graphic character that has the octet as its code within the
+US-ASCII [9] coded character set, if it exists.  Currently there is
+no provision within the URI syntax to identify which character set
+non-ASCII codes represent, so CGI handles this issue on an ad-hoc basis.
+
+ここで使う変数と構造の一部は [Q[URL 符号化]]されると説明しています。
+この符号化は [[RFC 2396]] の2章で説明されています。
+URL 符号化文字列では逃避列は百分率文字 ([CODE(char)[%]])
+とそれに続く2つの十六進数字から成り、その2つの十六進数字が
+1つのオクテットとなります。1つの逃避列は、 [[US-ASCII]]
+[[符号化文字集合]]の中にその符号のオクテットで表される[[図形文字]]があれば、
+それを表現します。現在 URI 構文内で非 ASCII 
+符号がどの文字集合を表現するか識別する方法がありませんから、 CGI
+はこの問題に場当たり的に対応します。
+
+>   Note that some unsafe (reserved) characters may have different
+semantics when encoded.  The definition of which characters are
+unsafe depends on the context; see section 2 of RFC 2396 [2], updated
+by RFC 2732 [7], for an authoritative treatment.  These reserved
+characters are generally used to provide syntactic structure to the
+character string, for example as field separators.  In all cases, the
+string is first processed with regard to any reserved characters
+present, and then the resulting data can be URL-decoded by replacing
+"%" escape sequences by their character values.
+
+[[非安全]] ([[予約]]) 
+文字は符号化すると異なる意味を持つかもしれないことに注意してください。
+どの文字が非安全かは文脈に依存します。規範的な扱いは [[RFC 2396]]
+の2章 ([[RFC 2732]] により更新) をご覧下さい。これら予約文字は通常文字列を構文的に構造付けるため
+(例えば欄を分離するため) に使います。どんな場合でも、
+文字列は最初に存在している予約文字に関して処理し、それから得られたデータを
+URL 復号 ([CODE(char)[%]] 逃避列を文字値で置換) することができます。
+
+>   To encode a character string, all reserved and forbidden characters
+are replaced by the corresponding "%" escape sequences.  The string
+can then be used in assembling a URI.  The reserved characters will
+vary from context to context, but will always be drawn from this set:
+
+文字列を符号化するには、すべての予約文字と禁止文字は対応する
+[CODE(char)[%]] 逃避列に置換します。文字列はそれから URI
+を組立てるために使うことができます。予約文字は文脈によって色々異なりますが、
+常に次の集合から採ります。
+
+>
+      reserved = ";" | "/" | "?" | ":" | "@" | "&" | "=" | "+" | "$" |
+                 "," | "[" | "]"
+
+>   The last two characters were added by RFC 2732 [7].  In any
+particular context, a sub-set of these characters will be reserved;
+the other characters from this set MUST NOT be encoded when a string
+is URL-encoded in that context.  Other basic rules used to describe
+URI syntax are:
+
+最後の2文字は [[RFC 2732]] で追加されました。どんな文脈でも、
+これらの文字の部分集合が予約されます。この集合のその他の文字はその文脈で文字列が
+URL 符号化される時に符号化しては'''なりません'''。 URL
+構文を記述するために使う他の基本規則は、次の通りです。
+
+>
+      hex        = digit | "A" | "B" | "C" | "D" | "E" | "F" | "a" | "b"
+                   | "c" | "d" | "e" | "f"
+      escaped    = "%" hex hex
+      unreserved = alpha | digit | mark
+      mark       = "-" | "_" | "." | "!" | "~" | "*" | "'" | "(" | ")"
+
+* 3.  Invoking the Script
+** 3.1.  Server Responsibilities
+>   The server acts as an application gateway.  It receives the request
+from the client, selects a CGI script to handle the request, converts
+the client request to a CGI request, executes the script and converts
+the CGI response into a response for the client.  When processing the
+client request, it is responsible for implementing any protocol or
+transport level authentication and security.  The server MAY also
+function in a 'non-transparent' manner, modifying the request or
+response in order to provide some additional service, such as media
+type transformation or protocol reduction.
+
+鯖は、応用関門のように働きます。鯖はクライアントから要求を受信し、
+その要求を扱う CGI スクリプトを選択肢、クライアント要求を
+CGI 要求に変換し、スクリプトを実行し、 CGI 
+応答をクライアントへの応答に変換します。
+クライアント要求を処理する時、
+プロトコルや輸送層認証や保安を実装するのは鯖の責任です。
+鯖は、更に[Q[非等価]]な方法で、
+追加のサービス (例えば、媒体型変形やプロトコル変換) 
+を提供するために要求や応答を修正しても'''構いません'''。
+
+>   The server MUST perform translations and protocol conversions on the
+client request data required by this specification.  Furthermore, the
+server retains its responsibility to the client to conform to the
+relevant network protocol even if the CGI script fails to conform to
+this specification.
+
+鯖は、クライアント要求データをこの仕様書が要求するように翻訳・プロトコル変換しなければ'''なりません'''。
+更に鯖は、 CGI スクリプトがたとえこの仕様書に適合しなかったとしても関係するネットワーク・プロトコルに適合する責任をなおもクライアントに対して持っています。
+
+>   If the server is applying authentication to the request, then it MUST
+NOT execute the script unless the request passes all defined access controls.
+
+鯖が要求に対して[[認証]]を行い場合には、定義されているすべての接続制御を通過しない限りスクリプトを実行しては'''なりません'''。
+
+** 3.2.  Script Selection
+>   The server determines which CGI is script to be executed based on a
+generic-form URI supplied by the client.  This URI includes a
+hierarchical path with components separated by "/".  For any
+particular request, the server will identify all or a leading part of
+this path with an individual script, thus placing the script at a
+particular point in the path hierarchy.  The remainder of the path,
+if any, is a resource or sub-resource identifier to be interpreted by the script.
+
+鯖は、クライアントが供給する一般形 URI に基づきどの CGI
+スクリプトを実行するか決定します。この URI は [CODE(URI)[/]]
+で[[部品]]が分離されている[[階層経路]]を含みます。
+鯖は、要求について、この経路の全体または先頭と1つのスクリプトを一致させます。
+つまり、スクリプトを経路階層の特定の位置に配置します。
+経路で残った部分があれば、スクリプトが解釈する資源・部分資源の識別子となります。
+
+>   Information about this split of the path is available to the script
+in the meta-variables, described below.  Support for non-hierarchical
+URI schemes is outside the scope of this specification.
+
+この経路の分割についての情報は、後述のめた変数としてスクリプトから利用できます。
+非階層的 [[URI scheme]] への対応はこの仕様書の適用範囲外とします。
+
+** 3.3.  The Script-URI
+>   The mapping from client request URI to choice of script is defined by
+the particular server implementation and its configuration.  The
+server may allow the script to be identified with a set of several
+different URI path hierarchies, and therefore is permitted to replace
+the URI by other members of this set during processing and generation
+of the meta-variables.  The server
+
+クライアント要求 URI からスクリプトを選ぶ写像は鯖の実装と設定により定義されます。
+鯖はスクリプトが複数の異なる URI 経路階層の集合によって識別されるようにしても構いませんし、
+従って、処理とメタ変数の生成の間はその集合の他の URI で元の URI
+を置換えることが認められます。鯖は、
+
+>
+-      1. MAY preserve the URI in the particular client request; or
+-      2. it MAY select a canonical URI from the set of possible values
+for each script; or
+-      3. it can implement any other selection of URI from the set.
+
+- ある特定のクライアント要求における URI を保持して'''構いません'''。
+- 各スクリプトが取り得る URI の集合の中から正準 URI
+を選択して'''構いません'''。
+- URI の集合からの他の選択を実装することができます。
+
+>   From the meta-variables thus generated, a URI, the 'Script-URI', can
+be constructed.  This MUST have the property that if the client had
+accessed this URI instead, then the script would have been executed
+with the same values for the SCRIPT_NAME, PATH_INFO and QUERY_STRING
+meta-variables.  The Script-URI has the structure of a generic URI as
+defined in section 3 of RFC 2396 [2], with the exception that object
+parameters and fragment identifiers are not permitted.  The various
+components of the Script-URI are defined by some of the
+meta-variables (see below);
+
+そうして生成されたメタ変数から、 [DFN[[CODE(ABNF)[Script-URI]]]] という URI
+を構築することができます。この URI は、クライアントが代わりにこの URI
+を使って接触していてもそのスクリプトが同じ [CODE(CGI)[[[SCRIPT_NAME]]]],
+[CODE(CGI)[[[PATH_INFO]]]], [CODE(CGI)[[[QUERY_STRING]]]] 
+メタ変数で実行されるであろうという特性を持たなければ'''なりません'''。
+[CODE(ABNF)[Script-URI]] は RFC 2396 の3章で定義されている一般 URI
+の構造を持ちますが、物体引数と素片識別子は認められません。
+[CODE(ABNF)[Script-URI]] の各々の部品はメタ変数の幾つかで定義されます。
+
+>
+      script-URI = <scheme> "://" <server-name> ":" <server-port>
+                   <script-path> <extra-path> "?" <query-string>
+
+>   where <scheme> is found from SERVER_PROTOCOL, <server-name>,
+<server-port> and <query-string> are the values of the respective
+meta-variables.  The SCRIPT_NAME and PATH_INFO values, URL-encoded
+with ";", "=" and "?"  reserved, give <script-path> and <extra-path>.
+
+ここで、 [VAR[scheme]] は [CODE(CGI)[[[SERVER_PROTOCOL]]]]
+からわかり、 [VAR[server-name]] と [VAR[server-port]] と
+[VAR[query-string]] はそれぞれのめた変数の値です。
+[CODE(CGI)[[[SCRIPT_NAME]]]] と [CODE(CGI)[[[PATH_INFO]]]] の値は、
+予約されている [CODE(URI)[;]], [CODE(URI)[=]], [CODE(URI)[?]]
+を URI 符号化すると [VAR[script-path]] と [VAR[extra-path]]
+になります。
+
+>   See section 4.1.5 for more information about the PATH_INFO meta-variable.
+
+[CODE(CGI)[PATH_INFO]] メタ変数についての詳しい情報は4.1.5節を見てください。
+
+>   The scheme and the protocol are not identical as the scheme
+identifies the access method in addition to the application protocol.
+For example, a resource accessed using Transport Layer Security (TLS) [14] 
+would have a request URI with a scheme of https when using the
+HTTP protocol [19].  CGI/1.1 provides no generic means for the script
+to reconstruct this, and therefore the Script-URI as defined includes
+the base protocol used.  However, a script MAY make use of
+scheme-specific meta-variables to better deduce the URI scheme.
+
+Scheme とプロトコルは同一ではありません。 Scheme 
+は応用プロトコルに加えてアクセス方式も識別します。
+例えば、輸送層保安 ([[TLS]]) を使ってアクセスされた資源は HTTP
+を使った時 [CODE(URI)[[[https]]]] scheme を持つ要求 URI
+になります。 CGI/1.1 はスクリプトがこれを再構築する一般的な手段を提供していませんから、
+ここで定義した [CODE(ABNF)[Script-URI]] は使用されている基底プロトコルを含むことになります。
+しかし、スクリプトは URI scheme をよりよく推定するために scheme
+依存のめた変数を使用して'''構いません'''。
+
+>   Note that this definition also allows URIs to be constructed which
+would invoke the script with any permitted values for the path-info
+or query-string, by modifying the appropriate components.
+
+この定義は適切な部品を修正することによって、任意の認められる [VAR[path-info]] や
+[VAR[query-string]] の値でスクリプトを呼び出す URI
+を構築することもできることに注意してください。
+
+** 3.4.  Execution
+>   The script is invoked in a system-defined manner.  Unless specified
+otherwise, the file containing the script will be invoked as an
+executable program.  The server prepares the CGI request as described
+in section 4; this comprises the request meta-variables (immediately
+available to the script on execution) and request message data.  The
+request data need not be immediately available to the script; the
+script can be executed before all this data has been received by the
+server from the client.  The response from the script is returned to
+the server as described in sections 5 and 6.
+
+スクリプトはシステム定義の方法で呼び出します。別途規定されていない限り、
+スクリプトを含んでいるファイルは実行可能プログラムとして呼び出します。
+鯖は CGI 要求を4章で説明するようにして準備します。
+これには要求メタ変数 (起動時すぐにスクリプトから利用可能。)
+と要求メッセージ・データが含まれます。要求データはスクリプトにすぐに利用可能である必要はありません。
+鯖がクライアントからすべてのデータを受信する前にスクリプトを実行しても構いません。
+スクリプトからの応答は5章と6章で説明するようにして鯖に返します。
+
+>   In the event of an error condition, the server can interrupt or
+terminate script execution at any time and without warning.  That
+could occur, for example, in the event of a transport failure between
+the server and the client; so the script SHOULD be prepared to handle
+abnormal termination.
+
+誤り状況の場合には、鯖はいつでも警告なしにスクリプトの実行を中断・終了できます。
+これには例えば鯖とクライアントの間の輸送の失敗の場合があります。
+ですから、スクリプトは異常終了に対処する用意をする'''べきです'''。
+
+* 4.  The CGI Request
+>   Information about a request comes from two different sources; the
+request meta-variables and any associated message-body.
+
+要求についての情報は2つの情報源から来ます。1つは要求メタ変数で、
+もう1つは関連付けられたメッセージ本体 ([CODE(ABNF)[[[message-body]]]]) です。
+
+** 4.1.  Request Meta-Variables
+>   Meta-variables contain data about the request passed from the server
+to the script, and are accessed by the script in a system-defined
+manner.  Meta-variables are identified by case-insensitive names;
+there cannot be two different variables whose names differ in case
+only.  Here they are shown using a canonical representation of
+capitals plus underscore ("_").  A particular system can define a
+different representation.
+
+メタ変数は、鯖からスクリプトへ渡される要求についてのデータを含んでおり、
+スクリプトはシステム定義の方法でアクセスします。メタ変数は大文字・
+小文字を区別しない名前で識別します 
+(2つの変数の名前を大文字・小文字だけを違わせることはできません)。
+ここでは大文字と下線 ([CODE(char)[_]]) を使って示します。
+システムによって異なる表現を定義することができます。
+
+>
+[PRE(ABNF)[
+      meta-variable-name = "AUTH_TYPE" | "CONTENT_LENGTH" |
+                           "CONTENT_TYPE" | "GATEWAY_INTERFACE" |
+                           "PATH_INFO" | "PATH_TRANSLATED" |
+                           "QUERY_STRING" | "REMOTE_ADDR" |
+                           "REMOTE_HOST" | "REMOTE_IDENT" |
+                           "REMOTE_USER" | "REQUEST_METHOD" |
+                           "SCRIPT_NAME" | "SERVER_NAME" |
+                           "SERVER_PORT" | "SERVER_PROTOCOL" |
+                           "SERVER_SOFTWARE" | scheme |
+                           protocol-var-name | extension-var-name
+      protocol-var-name  = ( protocol | scheme ) "_" var-name
+      scheme             = alpha *( alpha | digit | "+" | "-" | "." )
+      var-name           = token
+      extension-var-name = token
+]PRE]
+
+>   Meta-variables with the same name as a scheme, and names beginning
+with the name of a protocol or scheme (e.g., HTTP_ACCEPT) are also
+defined.  The number and meaning of these variables may change
+independently of this specification.  (See also section 4.1.18.)
+
+Scheme と同じ名前のメタ変数やプロトコルまたは scheme
+の名前で始まる名前 (例えば [SAMP(CGI)[HTTP_ACCEPT]]) 
+も定義します。このような変数の名前と意味はこの仕様書とは独立に変わり得ます。
+
+>   The server MAY set additional implementation-defined extension 
+meta-variables, whose names SHOULD be prefixed with "X_".
+
+鯖は実装定義の追加の拡張メタ変数を設定して'''構いません'''。
+その名前は [CODE(CGI)[X_]] ではじめる'''べきです'''。
+
+>   This specification does not distinguish between zero-length (NULL)
+values and missing values.  For example, a script cannot distinguish
+between the two requests http://host/script and http://host/script?
+as in both cases the QUERY_STRING meta-variable would be NULL.
+
+この仕様書は長さ零 (NULL) 値と値なしを区別しません。例えば、
+[SAMP(URI)[http://host/script]] と [SAMP(URI)[http://host/script?]]
+の2つの要求は共に [CODE(CGI)[[[QUERY_STRING]]]] メタ変数が NULL
+になるので、スクリプトはこれらを区別することができません。
+
+>
+      meta-variable-value = "" | 1*<TEXT, CHAR or tokens of value>
+
+>   An optional meta-variable may be omitted (left unset) if its value is
+NULL.  Meta-variable values MUST be considered case-sensitive except
+as noted otherwise.  The representation of the characters in the
+meta-variables is system-defined; the server MUST convert values to
+that representation.
+
+省略可能なメタ変数は、値が NULL であれば省略して (設定しないでおいて)
+構いません。メタ変数値は特に注記しない限り大文字・
+小文字を区別するものと考えなければ'''なりません'''。
+メタ変数における文字の表現はシステム定義です。
+鯖は値をその表現に変換しなければ'''なりません'''。
+
+***4.1.1.  AUTH_TYPE
+>   The AUTH_TYPE variable identifies any mechanism used by the server to
+authenticate the user.  It contains a case-insensitive value defined
+by the client protocol or server implementation.
+
+変数 [DFN[[CODE(CGI)[AUTH_TYPE]]]] 
+は[[鯖]]が[[利用者]]を[[認証]]するために使用した仕組みを識別します。
+クライアント・プロトコルや鯖実装によって定義された、
+大文字・小文字を区別しない値を含みます。
+
+>   For HTTP, if the client request required authentication for external
+access, then the server MUST set the value of this variable from the
+'auth-scheme' token in the request Authorization header field.
+
+HTTP では、クライアント要求が外部アクセスの認証を要求していれば、
+鯖はこの変数の値を要求 [CODE(HTTP)[[[Authorization]]]] 頭欄の
+[CODE(ABNF)[[[auth-scheme]]]] 字句から設定しなければ'''なりません'''。
+
+>
+      AUTH_TYPE      = "" | auth-scheme
+      auth-scheme    = "Basic" | "Digest" | extension-auth
+      extension-auth = token
+
+>   HTTP access authentication schemes are described in RFC 2617 [5].
+
+HTTP 接続認証方式は [[RFC 2617]] で説明されています。
+
+*** 4.1.2.  CONTENT_LENGTH
+
+>   The CONTENT_LENGTH variable contains the size of the message-body
+attached to the request, if any, in decimal number of octets.  If no
+data is attached, then NULL (or unset).
+
+変数 [CODE(CGI)[[[CONTENT_LENGTH]]]] は要求に付された
+[CODE(ABNF)[[[message-body]]]] があれば、その大きさをオクテット単位で十進数で含みます。
+データが付されていなければ、 NULL (または未設定) です。
+
+>
+      CONTENT_LENGTH = "" | 1*digit
+
+>   The server MUST set this meta-variable if and only if the request is
+accompanied by a message-body entity.  The CONTENT_LENGTH value must
+reflect the length of the message-body after the server has removed
+any transfer-codings or content-codings.
+
+鯖は、要求に [CODE(ABNF)[message-body]] 実体が付属している場合、
+その場合に限ってこのメタ変数を設定しなければ'''なりません'''。
+[CODE(CGI)[CONTENT_LENGTH]] 値は鯖が[[転送符号化]]や[[内容符号化]]を除去した後の長さを反映していなければなりません。
+
+*** 4.1.3.  CONTENT_TYPE
+>   If the request includes a message-body, the CONTENT_TYPE variable is
+set to the Internet Media Type [6] of the message-body.
+
+要求が [CODE(ABNF)[[[message-body]]]] を含んでいる場合、
+[CODE(CGI)[[[CONTENT_TYPE]]]] 変数は [CODE(ABNF)[message-body]]
+のインターネット[[媒体型]]に設定されます。
+
+>
+      CONTENT_TYPE = "" | media-type
+      media-type   = type "/" subtype *( ";" parameter )
+      type         = token
+      subtype      = token
+      parameter    = attribute "=" value
+      attribute    = token
+      value        = token | quoted-string
+
+>   The type, subtype and parameter attribute names are not
+case-sensitive.  Parameter values may be case sensitive.  Media types
+and their use in HTTP are described section 3.7 of the HTTP/1.1
+specification [4].
+
+[CODE(ABNF)[type]], [CODE(ABNF)[subtype]], ODE(ABNF)[parameter]]
+[CODE(ABNF)[attribute]] 名は大文字・小文字を区別しません。
+[CODE(ABNF)[parameter]] [CODE(ABNF)[value]] は大文字・
+小文字を区別するかもしれません。 HTTP における媒体型とその用法は
+HTTP/1.1]] 仕様書の 3.7 章で説明されています。
+
+>   There is no default value for this variable.  If and only if it is
+unset, then the script MAY attempt to determine the media type from
+the data received.  If the type remains unknown, then the script MAY
+choose to assume a type of application/octet-stream or it may reject
+the request with an error (as described in section 6.3.3).
+
+この変数に既定値はありません。この変数が設定されていない場合には、
+その場合に限り、スクリプトは受信したデータの[[媒体型]]を決定しようと試みて'''構いません'''。
+型が未知のままであれば、スクリプトは型を [CODE(MIME)[[[application/octet-stream]]]]
+とみなして'''構いません'''し、その要求を誤りとして拒絶しても構いません。
+
+>   Each media-type defines a set of optional and mandatory parameters.
+This may include a charset parameter with a case-insensitive value
+defining the coded character set for the message-body.  If the
+charset parameter is omitted, then the default value should be
+derived according to whichever of the following rules is the first to apply:
+
+それぞれの媒体型で必須または省略可能の引数の集合が定義されています。
+その中には、 [CODE(ABNF)[message-body]] の[[符号化文字集合]]を定義する、
+[CODE(MIME)[[[charset]]]] 引数の大文字・小文字を区別しない値も含まれるかもしれません。
+[CODE(MIME)[charset]] 引数が省略されている場合、既定値は次のいずれかの方法を最初に適用して決定するべきです。
+
+>
+-      1. There MAY be a system-defined default charset for some media-types.
+-      2. The default for media-types of type "text" is ISO-8859-1 [4].
+-      3. Any default defined in the media-type specification.
+-      4. The default is US-ASCII.
+
+- 媒体型によりシステム定義の既定 charset があっても'''構いません'''。
+- [CODE(MIME)[text]] の媒体型の既定値は [CODE(charset)[[[ISO-8859-1]]]] です。
+- 媒体型の仕様書で定義されている既定値。
+- 既定値は [CODE(charset)[[[US-ASCII]]]]。
+
+>   The server MUST set this meta-variable if an HTTP Content-Type field
+is present in the client request header.  If the server receives a
+request with an attached entity but no Content-Type header field, it
+MAY attempt to determine the correct content type, otherwise it
+should omit this meta-variable.
+
+鯖は HTTP [CODE(HTTP)[[[Content-Type]]]] 
+欄がクライアント要求頭に存在していれば好めた変数を設定しなければ'''なりません'''。
+鯖が[[実体]]は付されているにもかかわらず [CODE(HTTP)[Content-Type]]
+頭欄のない要求を受信したら、正しい内容型を決定しようと試みて'''構いません'''が、
+そうでなければこのメタ変数は省略するべきです。
+
+*** 4.1.4.  GATEWAY_INTERFACE
+>   The GATEWAY_INTERFACE variable MUST be set to the dialect of CGI
+being used by the server to communicate with the script.  Syntax:
+
+変数 [DFN[[CODE(CGI)[[[GATEWAY_INTERFACE]]]]]] は、
+鯖がスクリプトと通信するのに使用する CGI
+の種類を設定しなければ'''なりません'''。
+
+>
+      GATEWAY_INTERFACE = "CGI" "/" 1*digit "." 1*digit
+
+>   Note that the major and minor numbers are treated as separate
+integers and hence each may be incremented higher than a single
+digit.  Thus CGI/2.4 is a lower version than CGI/2.13 which in turn
+is lower than CGI/12.3.  Leading zeros MUST be ignored by the script
+and MUST NOT be generated by the server.
+
+大版番号と小版番号は別個の整数として扱い、それぞれが複数桁になるかもしれません。
+ですから [SAMP(CGI)[CGI/2.4]] は [SAMP(CGI)[CGI/2.13]] 
+より小さな版ですし、 [SAMP(CGI)[CGI/2.13]] は
+[SAMP{CGI/12.3]] よりも小さな版です。スクリプトは、
+先導零を無視しなければ'''なりません'''。鯖は、
+先導零を生成しては'''なりません'''。
+
+>   This document defines the 1.1 version of the CGI interface.
+
+この文書は CGI 界面の 1.1 版を定義します。
+
+*** 4.1.5.  PATH_INFO
+>   The PATH_INFO variable specifies a path to be interpreted by the CGI
+script.  It identifies the resource or sub-resource to be returned by
+the CGI script, and is derived from the portion of the URI path
+hierarchy following the part that identifies the script itself.
+Unlike a URI path, the PATH_INFO is not URL-encoded, and cannot
+contain path-segment parameters.  A PATH_INFO of "/" represents a
+single void path segment.
+
+変数 [DFN[[CODE(CGI)[[[PATH_INFO]]]]]] は、 CGI
+スクリプトによって解釈される経路を指定します。
+これは CGI スクリプトが返す資源または部分資源を識別するものであり、
+URI の経路階層のうちのスクリプト自体を識別する部分の後の部分に由来します。
+URI の経路とは異なり、 [CODE(CGI)[PATH_INFO]] は URL
+符号化されず、経路の部分の引数を含むことができません。
+[CODE(CGI)[PATH_INFO]] が [SAMP(CGI)[/]] であれば、
+1つの空の経路部品を表します。
+
+>
+      PATH_INFO = "" | ( "/" path )
+      path      = lsegment *( "/" lsegment )
+      lsegment  = *lchar
+      lchar     = <any TEXT or CTL except "/">
+
+>   The value is considered case-sensitive and the server MUST preserve
+the case of the path as presented in the request URI.  The server MAY
+impose restrictions and limitations on what values it permits for
+PATH_INFO, and MAY reject the request with an error if it encounters
+any values considered objectionable.  That MAY include any requests
+that would result in an encoded "/" being decoded into PATH_INFO, as
+this might represent a loss of information to the script.  Similarly,
+treatment of non US-ASCII characters in the path is system-defined.
+
+値は大文字・小文字を区別すると考えられ、鯖は要求 URI
+に示されている通りの経路の大文字・小文字を保存しなければ'''なりません'''。
+鯖は [CODE(CGI)[PATH_INFO]] でどのような値が認められるかについて制限を課しても'''構いません'''し、
+問題があると思われる値が現れた場合は要求を誤りとして拒絶しても'''構いません'''。
+例えば、符号化された [CODE(char)[/]] が ODE(CGI)[PATH_INFO]]
+で復号されるとスクリプトへの情報が失われてしまいますから、
+符号化された [CODE(char)[/]] が含まれた要求はそうして'''構いません'''。
+同様に、経路中の非 US-ASCII 文字の扱いもシステム定義とします。
+
+>   URL-encoded, the PATH_INFO string forms the extra-path component of
+the Script-URI (see section 3.3) which follows the SCRIPT_NAME part
+of that path.
+
+[CODE(CGI)[PATH_INFO]] 文字列は、 URL 符号化して
+[CODE(ABNF)[[[Script-URI]]]] の経路の [CODE(CGI)[[[SCRIPT_NAME]]]]
+に続く部分となります。
+
+*** 4.1.6.  PATH_TRANSLATED
+>   The PATH_TRANSLATED variable is derived by taking the PATH_INFO
+value, parsing it as a local URI in its own right, and performing any
+virtual-to-physical translation appropriate to map it onto the
+server's document repository structure.  The set of characters
+permitted in the result is system-defined.
+
+変数 [CODE(CGI)[[[PATH_TRANSLATED]]]] は、 [CODE(CGI)[[[PATH_INFO]]]]
+値を用意し、局所 URI として構文解析し、
+鯖の文書庫構造にあわせて仮想名から物理名に適切に変換を行った値とします。
+変換結果の値で認められる文字の集合はシステム定義です。
+
+>      PATH_TRANSLATED = *<any character>
+
+>   This is the file location that would be accessed by a request for
+
+これは、
+
+>      <scheme> "://" <server-name> ":" <server-port> <extra-path>
+
+>   where <scheme> is the scheme for the original client request and
+<extra-path> is a URL-encoded version of PATH_INFO, with ";", "=" and
+"?"  reserved.  For example, a request such as the following:
+
+で、 [VAR[scheme]] を元のクライアント要求の scheme、
+[VAR[extra-path]] を [CODE(CGI)[PATH_INFO]] の URI 符号化版
+([CODE(char)[;]]、[CODE(char)[=]], [CODE(char)[?]] は[[予約]])
+とした時の URI への要求でアクセスされることになるファイル位置です。
+例えば、
+
+>      http://somehost.com/cgi-bin/somescript/this%2eis%2epath%3binfo
+
+>   would result in a PATH_INFO value of
+
+への要求では [CODE(CGI)[PATH_INFO]] 値は
+
+>      /this.is.the.path;info
+
+>   An internal URI is constructed from the scheme, server location and
+the URL-encoded PATH_INFO:
+
+となり、 schema, 鯖位置、 URL 符号化した [CODE(CGI)[PATH_INFO]]
+から構築した内部 URI は
+
+>      http://somehost.com/this.is.the.path%3binfo
+
+>   This would then be translated to a location in the server's document
+repository, perhaps a filesystem path something like this:
+
+です。ですから、これを鯖の文書庫における位置に翻訳すると、
+おそらくはファイルシステム経路
+
+>      /usr/local/www/htdocs/this.is.the.path;info
+
+>   The value of PATH_TRANSLATED is the result of the translation.
+
+のような値となるでしょう。 [CODE(CGI)[PATH_TRANSLATED]]
+の値はこの変換の結果です。
+
+>   The value is derived in this way irrespective of whether it maps to a
+valid repository location.  The server MUST preserve the case of the
+extra-path segment unless the underlying repository supports 
+case-insensitive names.  If the repository is only case-aware, 
+case-preserving, or case-blind with regard to document names, the server
+is not required to preserve the case of the original segment through
+the translation.
+
+値は、実際に文書庫での妥当な位置に写像されるかどうかとは無関係にこの方法で得ます。
+鯖は、使われている文書庫が名前の大文字・小文字を区別しないのでなければ
+[VAR[extra-path]] の大文字・小文字を保存しなければ'''なりません'''。
+文書庫が文書名に関してのみ大文字・小文字を区別したり、
+保存したり、盲目であったりするのであれば、
+翻訳を通じて元の[RUBYB[部分][segment]]の大文字・小文字を保存する必要はありません。
+
+>   The translation algorithm the server uses to derive PATH_TRANSLATED
+is implementation-defined; CGI scripts which use this variable may
+suffer limited portability.
+
+鯖が [CODE(CGI)[PATH_TRANSLATED]] を得るために使う翻訳の方法は実装定義とします。
+この変数を使用する CGI スクリプトは可搬性が制限されるかもしれません。
+
+>   The server SHOULD set this meta-variable if the request URI includes
+a path-info component.  If PATH_INFO is NULL, then the
+PATH_TRANSLATED variable MUST be set to NULL (or unset).
+
+鯖は、要求 URI が [VAR[path-info]] [RUBYB[部品][component]]を含んでいれば、
+このメタ変数を設定する'''べきです'''。 [CODE(CGI)[PATH_INFO]]
+が [CODE(CGI)[NULL]] であれば、 [CODE(CGI)[PATH_TRANSLATED]] も
+[CODE(CGI)[NULL]] に設定 (または未設定と) しなければ'''なりません'''。
+
+*** 4.1.7.  QUERY_STRING
+>   The QUERY_STRING variable contains a URL-encoded search or parameter
+string; it provides information to the CGI script to affect or refine
+the document to be returned by the script.
+
+変数 [CODE(CGI)[QUERY_STRING]] は URL 符号化された検索・引数文字列を含みます。
+CGI スクリプトはこの情報を使った返す文書を変えたり直したりすることができます。
+
+>   The URL syntax for a search string is described in section 3 of RFC
+2396 [2].  The QUERY_STRING value is case-sensitive.
+
+検索文字列の URL 構文は [[RFC 2396]] の3章で説明されています。
+[CODE(CGI)[QUERY_STRING]] 値は大文字・小文字を区別します。
+
+>
+      QUERY_STRING = query-string
+      query-string = *uric
+      uric         = reserved | unreserved | escaped
+
+>   When parsing and decoding the query string, the details of the
+parsing, reserved characters and support for non US-ASCII characters
+depends on the context.  For example, form submission from an HTML
+document [18] uses application/x-www-form-urlencoded encoding, in
+which the characters "+", "&" and "=" are reserved, and the ISO
+8859-1 encoding may be used for non US-ASCII characters.
+
+照会文字列を解析・復号する時、解析の詳細、予約文字、非 US-ASCII
+文字への対応は文脈に依存します。例えば、 HTML 文書からの[[フォーム]][[提出]]は
+[CODE(MIME)[[[application/x-www-form-urlencoded]]]] 符号化を使います。
+その場合文字 [CODE(char)[+]], [CODE(char)[&]], [CODE(char)[=]]
+が[[予約]]されており、非 US-ASCII 文字には [[ISO 8859]]‐1
+符号化を使うことができます。
+
+>   The QUERY_STRING value provides the query-string part of the
+Script-URI.  (See section 3.3).
+
+[CODE(CGI)[QUERY_STRING]] 値は [CODE(CGI)[Script-URI]] の
+[VAR[query-string]] 部を提供します。
+
+>   The server MUST set this variable; if the Script-URI does not include
+a query component, the QUERY_STRING MUST be defined as an empty
+string ("").
+
+鯖はこの変数を設定しなければ'''なりません'''。 [CODE(ABNF)[Script-URI]]
+が照会部を含まなければ、 [CODE(CGI)[QUERY_STRING]]
+は空文字列 ([SAMP["]]) で定義しなければ'''なりません'''。
+
+*** 4.1.8.  REMOTE_ADDR
+>   The REMOTE_ADDR variable MUST be set to the network address of the
+client sending the request to the server.
+
+変数 [CODE(CGI)[REMOTE_ADDR]] は鯖へ要求を送信しているクライアントのネットワーク番地を設定しなければ'''なりません'''。
+
+>
+      REMOTE_ADDR  = hostnumber
+      hostnumber   = ipv4-address | ipv6-address
+      ipv4-address = 1*3digit "." 1*3digit "." 1*3digit "." 1*3digit
+      ipv6-address = hexpart [ ":" ipv4-address ]
+      hexpart      = hexseq | ( [ hexseq ] "::" [ hexseq ] )
+      hexseq       = 1*4hex *( ":" 1*4hex )
+
+>   The format of an IPv6 address is described in RFC 3513 [15].
+
+[[IPv6]] 番地の書式は [[RFC 3513]] で説明されています。
+
+*** 4.1.9.  REMOTE_HOST
+>   The REMOTE_HOST variable contains the fully qualified domain name of
+the client sending the request to the server, if available, otherwise
+NULL.  Fully qualified domain names take the form as described in
+section 3.5 of RFC 1034 [17] and section 2.1 of RFC 1123 [12].
+Domain names are not case sensitive.
+
+変数 [CODE(CGI)[REMOTE_HOST]] は要求を鯖に送信しているクライアントの[[完全修飾ドメイン名]]の情報があればそれを、
+なければ [CODE(CGI)[NULL]] を値として含みます。
+完全修飾ドメイン名は [[RFC 1034]] の3.5節や [[RFC 1123]]
+の2.1節の形式を取ります。ドメイン名は大文字・小文字を区別しません。
+
+>
+      REMOTE_HOST   = "" | hostname | hostnumber
+      hostname      = *( domainlabel "." ) toplabel [ "." ]
+      domainlabel   = alphanum [ *alphahypdigit alphanum ]
+      toplabel      = alpha [ *alphahypdigit alphanum ]
+      alphahypdigit = alphanum | "-"
+
+>   The server SHOULD set this variable.  If the hostname is not
+available for performance reasons or otherwise, the server MAY
+substitute the REMOTE_ADDR value.
+
+鯖はこの変数を設定する'''べきです'''。鯖は、効率その他の理由で [CODE(ABNF)[hostname]]
+が利用できなければ、 [CODE(CGI)[[[REMOTE_ADDR]]]]
+値をもって代えても'''構いません'''。
+
+*** 4.1.10.  REMOTE_IDENT
+>   The REMOTE_IDENT variable MAY be used to provide identity information
+reported about the connection by an RFC 1413 [20] request to the
+remote agent, if available.  The server may choose not to support
+this feature, or not to request the data for efficiency reasons, or
+not to return available identity data.
+
+変数 [CODE(CGI)[REMOTE_IDENT]] は、遠隔エージェントに対する [[RFC 1413]]
+要求で接続について報告された識別情報があれば、
+これを提供するために使用して'''構いません'''。鯖はこの機能を提供しないことにしても、
+効率上の理由によりデータを要求しないことにしても、
+あるいは利用可能な識別情報を返さないことにしても構いません。
+
+>      REMOTE_IDENT = *TEXT
+
+>   The data returned may be used for authentication purposes, but the
+level of trust reposed in it should be minimal.
+
+返されるデータは[[認証]]のために使用しても構いませんが、
+信頼度は最小限とするべきです。
+
+*** 4.1.11.  REMOTE_USER
+>   The REMOTE_USER variable provides a user identification string
+supplied by client as part of user authentication.
+
+変数 [CODE(CGI)[REMOTE_USER]] は利用者[[認証]]の一部としてクライアントから供給された利用者識別文字列を提供します。
+
+>      REMOTE_USER = *TEXT
+
+>   If the client request required HTTP Authentication [5] (e.g., the
+AUTH_TYPE meta-variable is set to "Basic" or "Digest"), then the
+value of the REMOTE_USER meta-variable MUST be set to the user-ID supplied.
+
+クライアント要求が HTTP 認証を要求していれば
+(例えば [CODE(CGI)[[[AUTH_TYPE]]]] メタ変数が [SAMP(HTTP)[[[Basic]]]]
+や [SAMP(HTTP)[[[Digest]]]] に設定されていれば)、
+[CODE(CGI)[REMOTE_USER]] メタ変数の値は供給された利用者識別子に設定しなければ'''なりません'''。
+
+*** 4.1.12.  REQUEST_METHOD
+>   The REQUEST_METHOD meta-variable MUST be set to the method which
+should be used by the script to process the request, as described in section 4.3.
+
+メタ変数 [CODE(CGI)[REQUEST_METHOD]] は[RUBYB[方式][method]]を設定しなければ'''なりません'''。
+スクリプトは、この方式を要求を処理するために4.3節の通り使用するべきです。
+
+>
+      REQUEST_METHOD   = method
+      method           = "GET" | "POST" | "HEAD" | extension-method
+      extension-method = "PUT" | "DELETE" | token
+
+>   The method is case sensitive.  The HTTP methods are described in
+section 5.1.1 of the HTTP/1.0 specification [1] and section 5.1.1 of
+the HTTP/1.1 specification [4].
+
+方式は大文字・小文字を区別します。 HTTP 方式は [[HTTP/1.0]]
+仕様書の5.1.1節と [[HTTP/1.1]] 仕様書の 5.1.1 節で説明されています。
+
+*** 4.1.13.  SCRIPT_NAME
+>   The SCRIPT_NAME variable MUST be set to a URI path (not URL-encoded)
+which could identify the CGI script (rather than the script's
+output).  The syntax is the same as for PATH_INFO (section 4.1.5)
+
+変数 [CODE(CGI)[SCRIPT_NAME]] は CGI スクリプト
+(スクリプトの出力ではなく。) を識別することができる
+(URL 符号化されていない) URL 経路を設定しなければ'''なりません'''。
+構文は [CODE(CGI)[[[PATH_INFO]]]] のものと同じです。
+
+>      SCRIPT_NAME = "" | ( "/" path )
+
+>   The leading "/" is not part of the path.  It is optional if the path
+is NULL; however, the variable MUST still be set in that case.
+
+先頭の [CODE(URI)[/]] は経路の一部ではありません。
+経路が [CODE(CGI)[NULL]] の時は省略可能です。しかし、
+その場合であっても変数は設定しなければ'''なりません'''。
+
+>   The SCRIPT_NAME string forms some leading part of the path component
+of the Script-URI derived in some implementation-defined manner.  No
+PATH_INFO segment (see section 4.1.5) is included in the SCRIPT_NAME value.
+
+[CODE(CGI)[SCRIPT_NAME]] 文字列は、何らかの実装依存の方法で作ることができる
+[CODE(CGI)[[[Script-URI]]]]
+の経路[RUBYB[部品][component]]の幾分前の方を形成します。
+[CODE(CGI)[PATH_INFO]] 部は [CODE(CGI)[SCRIPT_NAME]]
+値にはまったく含まれません。
+
+*** 4.1.14.  SERVER_NAME
+>   The SERVER_NAME variable MUST be set to the name of the server host
+to which the client request is directed.  It is a case-insensitive
+hostname or network address.  It forms the host part of the
+Script-URI.
+
+変数 [CODE(CGI)[SERVER_NAME]] はクライアント要求が向けられている鯖の名前を設定しなければ'''なりません'''。
+この値は大文字・小文字を区別しない [CODE(ABNF)[hostname]]
+またはネットワーク番地です。これは [CODE(CGI)[Script-URI]]
+のホスト部を形成します。
+
+>
+      SERVER_NAME = server-name
+      server-name = hostname | ipv4-address | ( "[" ipv6-address "]" )
+
+>   A deployed server can have more than one possible value for this
+variable, where several HTTP virtual hosts share the same IP address.
+In that case, the server would use the contents of the request's Host
+header field to select the correct virtual host.
+
+一つの鯖でも、複数の HTTP [[仮想ホスト]]が同じ IP
+番地を共有していれば、この変数の値が複数あり得ます。
+その場合、鯖は正しい仮想ホストを選択するために要求の
+[CODE(HTTP)[[[Host]]]] 頭欄の内容を使うことになります。
+
+*** 4.1.15.  SERVER_PORT
+>   The SERVER_PORT variable MUST be set to the TCP/IP port number on
+which this request is received from the client.  This value is used
+in the port part of the Script-URI.
+
+変数 [CODE(CGI)[SERVER_PORT]] はクライアントから要求を受信した
+[[TCP/IP]] ポート番号を設定しなければ'''なりません'''。
+この値は [CODE(ABNF)[Script-URI]] のポート部に使われます。
+
+>
+      SERVER_PORT = server-port
+      server-port = 1*digit
+
+>   Note that this variable MUST be set, even if the port is the default
+port for the scheme and could otherwise be omitted from a URI.
+
+注意: たとえポートが scheme の既定のポートであって URI 
+から省略できるとしてもこの変数は設定しなければ'''なりません'''。
+
+*** 4.1.16.  SERVER_PROTOCOL
+>   The SERVER_PROTOCOL variable MUST be set to the name and version of
+the application protocol used for this CGI request.  This MAY differ
+from the protocol version used by the server in its communication
+with the client.
+
+変数 [CODE(CGI)[SERVER_PROTOCOL]] はこの CGI
+要求に使われる応用プロトコルの名前と版を設定しなければ'''なりません'''。
+これは鯖がクライアントと通信するプロトコルの版と異なっていても'''構いません'''。
+
+>
+      SERVER_PROTOCOL   = HTTP-Version | "INCLUDED" | extension-version
+      HTTP-Version      = "HTTP" "/" 1*digit "." 1*digit
+      extension-version = protocol [ "/" 1*digit "." 1*digit ]
+      protocol          = token
+
+>   Here, 'protocol' defines the syntax of some of the information
+passing between the server and the script (the 'protocol-specific'
+features).  It is not case sensitive and is usually presented in
+upper case.  The protocol is not the same as the scheme part of the
+script URI, which defines the overall access mechanism used by the
+client to communicate with the server.  For example, a request that
+reaches the script with a protocol of "HTTP" may have used an "https" scheme.
+
+ここで、 [CODE(ABNF)[protocol]] は鯖とスクリプトの間で受け渡しされる情報の幾つか
+([Q[プロトコル特有]]機能) の構文を定義します。これは大文字・
+小文字を区別せず、通常は大文字とします。プロトコルはスクリプト URI
+の scheme 部とは異なります。 URI の scheme は鯖と通信するためにクライアントが使うアクセス機構全体を定義します。
+例えば、プロトコル [SAMP(CGI)[HTTP]] を使ってスクリプトまで到達する要求は
+[SAMP(URI)[[[https]]]] scheme を使っているかもしれません。
+
+>   A well-known value for SERVER_PROTOCOL which the server MAY use is
+"INCLUDED", which signals that the current document is being included
+as part of a composite document, rather than being the direct target
+of the client request.  The script should treat this as an HTTP/1.0
+request.
+
+鯖が使っても'''構わない'''よく知られている値の1つは
+[CODE(CGI)[INCLUDED]] で、現在の文書がクライアント要求の直接の対象ではなく、
+合成文書の一部として取込まれることを表しています。
+スクリプトはこれを HTTP/1.0 要求として扱うべきです。
+
+*** 4.1.17.  SERVER_SOFTWARE
+>   The SERVER_SOFTWARE meta-variable MUST be set to the name and version
+of the information server software making the CGI request (and
+running the gateway).  It SHOULD be the same as the server
+description reported to the client, if any.
+
+メタ変数 [CODE(CGI)[SERVER_SOFTWARE]] は [[CGI要求]]を作成している
+(そして[[関門]]を走らせている) 鯖ソフトウェアの名前と版を設定しなければ'''なりません'''。これは、クライアントに報告する鯖の説明があれば、
+それと同じである'''べきです'''。
+
+>
+      SERVER_SOFTWARE = 1*( product | comment )
+      product         = token [ "/" product-version ]
+      product-version = token
+      comment         = "(" *( ctext | comment ) ")"
+      ctext           = <any TEXT excluding "(" and ")">
+
+*** 4.1.18.  Protocol-Specific Meta-Variables
+>   The server SHOULD set meta-variables specific to the protocol and
+scheme for the request.  Interpretation of protocol-specific
+variables depends on the protocol version in SERVER_PROTOCOL.  The
+server MAY set a meta-variable with the name of the scheme to a
+non-NULL value if the scheme is not the same as the protocol.  The
+presence of such a variable indicates to a script which scheme is
+used by the request.
+
+鯖は要求のプロトコルや scheme に特有のメタ変数を設定する'''べきです'''。
+プロトコル特有の変数の解釈は [CODE(CGI)[[[SERVER_PROTOCOL]]]]
+中のプロトコルの版に依存します。鯖は、 scheme
+がプロトコルと同じでなければ、 scheme の名前のメタ変数に
+[CODE(CGI)[NULL]] でない値を設定しても'''構いません'''。
+このような変数の存在により、スクリプトはどの scheme が要求で使われているのか知ることができます。
+
+>   Meta-variables with names beginning with "HTTP_" contain values read
+from the client request header fields, if the protocol used is HTTP.
+The HTTP header field name is converted to upper case, has all
+occurrences of "-" replaced with "_" and has "HTTP_" prepended to
+give the meta-variable name.  The header data can be presented as
+sent by the client, or can be rewritten in ways which do not change
+its semantics.  If multiple header fields with the same field-name
+are received then the server MUST rewrite them as a single value
+having the same semantics.  Similarly, a header field that spans
+multiple lines MUST be merged onto a single line.  The server MUST,
+if necessary, change the representation of the data (for example, the
+character set) to be appropriate for a CGI meta-variable.
+
+名前が [CODE(CGI)[HTTP_]] で始まるメタ変数は、
+使用されているプロトコルが HTTP であれば、
+クライアント要求頭欄から読んだ値を含みます。 HTTP
+頭欄名は大文字に変換し、 [CODE(char)[-]] をすべて [CODE(char)[_]]
+に置換し、頭に [CODE(CGI)[HTTP_]] をつけてメタ変数名とします。
+頭データはクライアントが送った通りに提示することもできますし、
+意味を変えないように書き換えることもできます。
+同じ名前の頭欄を複数受信した場合には、鯖は同じ意味の1つの値に書き換えなければ'''なりません'''。
+同様に、複数行にまたがる頭欄は一行に併合しなければ'''なりません'''。
+鯖は、必要であれば、データの表現 (例えば[[文字集合]])
+を CGI メタ変数で適切なように変更しなければ'''なりません'''。
+
+>   The server is not required to create meta-variables for all the
+header fields that it receives.  In particular, it SHOULD remove any
+header fields carrying authentication information, such as
+'Authorization'; or that are available to the script in other
+variables, such as 'Content-Length' and 'Content-Type'.  The server
+MAY remove header fields that relate solely to client-side
+communication issues, such as 'Connection'.
+
+鯖は受信したすべての頭欄のメタ変数を作成する必要はありません。
+特に、認証情報を伝播する頭欄、例えば [SAMP(HTTP)[[[Authorization]]]]
+や、他の変数がスクリプトから利用可能なもの、例えば
+[SAMP(HJTP)[[[Content-Length]]]] や [SAMP(HTTP)[[[Content-Type]]]]
+は削除する'''べきです'''。鯖は [SAMP(HTTP)[[[Connection]]]]
+などのクライアントとの通信に関係するだけの頭欄を削除して'''構いません'''。
+
+** 4.2.  Request Message-Body
+>   Request data is accessed by the script in a system-defined method;
+unless defined otherwise, this will be by reading the 'standard
+input' file descriptor or file handle.
+
+要求データはシステム定義の方法でスクリプトからアクセスできます。
+その方法は、別途定義されていない限り、[Q[標準入力]]
+の[[ファイル記述子]]または[[ファイル取扱子]]からの読込みとなります。
+
+>
+      Request-Data   = [ request-body ] [ extension-data ]
+      request-body   = <CONTENT_LENGTH>OCTET
+      extension-data = *OCTET
+
+>   A request-body is supplied with the request if the CONTENT_LENGTH is
+not NULL.  The server MUST make at least that many bytes available
+for the script to read.  The server MAY signal an end-of-file
+condition after CONTENT_LENGTH bytes have been read or it MAY supply
+extension data.  Therefore, the script MUST NOT attempt to read more
+than CONTENT_LENGTH bytes, even if more data is available.  However,
+it is not obliged to read any of the data.
+
+[CODE(ABNF)[request-body]] は [CODE(CGI)[[[CONTENT_LENGTH]]]]
+が [CODE(CGI)[NULL]] でない時に供給されます。鯖は最低それだけ分のバイト数をスクリプトから読めるようにしなければ'''なりません'''。
+鯖は、 [CODE(CGI)[CONTENT_LENGTH]] バイト読まれた後にファイル末状態を通知しても'''構いません'''し、
+拡張データを供給しても'''構いません'''。従って、
+スクリプトは [CODE(CGI)[CONTENT_LENGTH]] バイト以上のデータが利用可能であっても、
+それ以上読もうとしては'''なりません'''。しかし、
+データを幾らか読まなければならないわけではありません。
+
+>   For non-parsed header (NPH) scripts (section 5), the server SHOULD
+attempt to ensure that the data supplied to the script is precisely
+as supplied by the client and is unaltered by the server.
+
+頭部非解析スクリプトでは、鯖はスクリプトに供給するデータがクライアントに供給されたもののままであって鯖によって変更されていないことを保証しようとする'''べきです'''。
+
+>   As transfer-codings are not supported on the request-body, the server
+MUST remove any such codings from the message-body, and recalculate
+the CONTENT_LENGTH.  If this is not possible (for example, because of
+large buffering requirements), the server SHOULD reject the client
+request.  It MAY also remove content-codings from the message-body.
+
+[CODE(ABNF)[request-body]] は[[転送符号化]]に対応していませんから、
+鯖は [CODE(ABNF)[[[message-body]]]] から転送符号化を除去し、
+[CODE(CGI)[[[CONTENT_LENGTH]]]] を再計算しなければ'''なりません'''。
+これが不可能な場合 (例えばバッファ要件が大きい場合) には、
+鯖はクライアント要求を拒絶する'''べきです'''。
+鯖は [CODE(ABNF)[message-body]] から[[内容符号化]]も除去しても'''構いません'''。
+
+** 4.3.  Request Methods
+>   The Request Method, as supplied in the REQUEST_METHOD meta-variable,
+identifies the processing method to be applied by the script in
+producing a response.  The script author can choose to implement the
+methods most appropriate for the particular application.  If the
+script receives a request with a method it does not support it SHOULD
+reject it with an error (see section 6.3.3).
+
+要求方式は、  [CODE(CGI)[[[REQUEST_METHOD]]]]
+メタ変数で供給されますが、スクリプトが応答を生産するにあたって適用する処理方式を識別します。
+スクリプトの著者は特定の応用にもっとも適当な方式を実装することを選べます。
+スクリプトが対応していない方式の要求を受信した時には、
+誤りをもって拒絶する'''べきです'''。
+
+***4.3.1.  GET
+>   The GET method indicates that the script should produce a document
+based on the meta-variable values.  By convention, the GET method is
+'safe' and 'idempotent' and SHOULD NOT have the significance of
+taking an action other than producing a document.
+
+[CODE(CGI)[[[GET]]]] 方式はスクリプトがメタ変数値に基づいて文書を生産するべきことを示します。
+慣習上、 [CODE(CGI)[GET]] 方式は[Q[[[安全]]]]で[Q[[[冪等]]]]であり、
+文書の生産以外の動作を行うことに意味を持たせる'''べきではありません'''。
+
+>  The meaning of the GET method may be modified and refined by
+protocol-specific meta-variables.
+
+[CODE(CGI)[GET]] 方式の意味はプロトコル規定のメタ変数で修正・
+再定義されるかもしれません。
+
+*** 4.3.2.  POST
+>   The POST method is used to request the script perform processing and
+produce a document based on the data in the request message-body, in
+addition to meta-variable values.  A common use is form submission in
+HTML [18], intended to initiate processing by the script that has a
+permanent affect, such a change in a database.
+
+[CODE(CGI)[[[POST]]]] 方式はスクリプトが要求 [CODE(ABNF)[[[message-body]]]]
+に基づいて処理を行い文書を生産することを要求するために使います。
+HTML のフォーム提出に広く使われており、
+データベースにおける変更のような恒久的な影響がある処理をスクリプトにより初期化することを意図しています。
+
+>   The script MUST check the value of the CONTENT_LENGTH variable before
+reading the attached message-body, and SHOULD check the CONTENT_TYPE
+value before processing it.
+
+スクリプトは添付された [CODE(ABNF)[[[message-body]]]]
+を読む前に [CODE(CGI)[[[CONTENT_LENGTH]]]] の値を確認しなければ'''なりません'''し、
+処理する前に [CODE(CGI)[[[CONTENT_TYPE]]]] 値を確認する'''べきです'''。
+
+*** 4.3.3.  HEAD
+>   The HEAD method requests the script to do sufficient processing to
+return the response header fields, without providing a response
+message-body.  The script MUST NOT provide a response message-body
+for a HEAD request.  If it does, then the server MUST discard the
+message-body when reading the response from the script.
+
+[CODE(CGI)[HEAD]] 方式は応答 [CODE(ABNF)[message-body]]
+は生産せずに、[[応答頭欄]]を返すために十分な処理をするようスクリプトに要求します。
+スクリプトは [CODE(CGI)[[[HEAD]]]] 要求に対する応答 [CODE(ABNF)[message-body]]
+を提供しては'''なりません'''。もし提供されている場合は、
+鯖はスクリプトからの応答を読む時に [CODE(ABNF)[message-body]]
+を捨てなければ'''なりません'''。
+
+*** 4.3.4.  Protocol-Specific Methods
+>   The script MAY implement any protocol-specific method, such as
+HTTP/1.1 PUT and DELETE; it SHOULD check the value of SERVER_PROTOCOL
+when doing so.
+
+スクリプトは HTTP/1.1 の [SAMP(HTTP)[[[PUT]]]], [SAMP(HTTP)[[[DELETE]]]]
+など任意のプロトコル規定の方式を実装して'''構いません'''。
+そうする場合は [CODE(CGI)[[[SERVER_PROTOCOL]]]] 値を確認する'''べきです'''。
+
+>   The server MAY decide that some methods are not appropriate or
+permitted for a script, and may handle the methods itself or return
+an error to the client.
+
+鯖は、ある方式がスクリプトに渡すのは適切でない、あるいは認められないと決定して'''構いません'''し、
+その方式を鯖自体で扱ったり、クライアントに誤りとして返したりしても構いません。
+
+** 4.4.  The Script Command Line
+>  Some systems support a method for supplying an array of strings to
+the CGI script.  This is only used in the case of an 'indexed' HTTP
+query, which is identified by a 'GET' or 'HEAD' request with a URI
+query string that does not contain any unencoded "=" characters.  For
+such a request, the server SHOULD treat the query-string as a
+search-string and parse it into words, using the rules
+
+システムによっては CGI スクリプトに文字列の配列を供給する方法に対応しています。
+これは[Q[索引付けされた]] HTTP 照会の場合にのみ使われます。
+索引付けされた照会というのは、 [CODE(CGI)[GET]] または
+[CODE(CGI)[HEAD]] の要求で、 URI 照会文字列が符号化されていない文字
+[CODE(char)[=]] を含まないものです。このような要求では、
+鯖は照会文字列を
+
+>
+      search-string = search-word *( "+" search-word )
+      search-word   = 1*schar
+      schar         = unreserved | escaped | xreserved
+      xreserved     = ";" | "/" | "?" | ":" | "@" | "&" | "=" | "," |
+                      "$"
+
+という規則で [CODE(ABNF)[search-string]] として扱い、
+構文解析して語に分ける'''べきです'''。
+
+>   After parsing, each search-word is URL-decoded, optionally encoded in
+a system-defined manner and then added to the command line argument list.
+
+構文解析の後、 [CODE(ABNF)[search-word]] をそれぞれ URL
+復号し、場合によってはシステム定義の方法で符号化し、
+それから命令行引数並びに加えます。
+
+>   If the server cannot create any part of the argument list, then the
+server MUST NOT generate any command line information.  For example,
+the number of arguments may be greater than operating system or
+server limits, or one of the words may not be representable as an argument.
+
+鯖が引数並びの一部を作成できない時には、
+命令行情報をまったく生成しては'''なりません'''。例えば、
+引数の数がオペレーティング・システムや鯖の制限を超えている場合や、
+語の1つが引数として表現できない場合です。
+
+>   The script SHOULD check to see if the QUERY_STRING value contains an
+unencoded "=" character, and SHOULD NOT use the command line
+arguments if it does.
+
+スクリプトは [CODE(CGI)[[[QUERY_STRING]]]] 値が符号化されていない文字
+[CODE(char)[=]] を含んでいるかどうかを見て確認する'''べきであり'''、
+もしそうであるなら命令行引数を使う'''べきではありません'''。
+
+*5.  NPH Scripts
+
+** 5.1.  Identification
+
+>   The server MAY support NPH (Non-Parsed Header) scripts; these are
+scripts to which the server passes all responsibility for response processing.
+
+鯖は NPH (頭部非解析) スクリプトに対応して'''構いません'''。
+NPH スクリプトは、鯖が応答処理の全責任をスクリプトに渡します。
+
+>   This specification provides no mechanism for an NPH script to be
+identified on the basis of its output data alone.  By convention,
+therefore, any particular script can only ever provide output of one
+type (NPH or CGI) and hence the script itself is described as an 'NPH
+script'.  A server with NPH support MUST provide an implementation-defined 
+mechanism for identifying NPH scripts, perhaps based on the
+name or location of the script.
+
+この仕様書はスクリプトの出力データだけで NPH スクリプトを識別する仕組みを提供しません。
+しかし、慣習上、ある特定のスクリプトは一つの種類 (NPH か CGI か)
+の出力しか提供することができないので、スクリプト自体を
+[Q[NPH スクリプト]]と記述します。 NPH スクリプトに対応する鯖は NPH
+スクリプトを識別する実装定義の仕組みを、おそらくはスクリプトの名前や位置に基づいて、
+提供しなければ'''なりません'''。
+
+** 5.2.  NPH Response
+>   There MUST be a system-defined method for the script to send data
+back to the server or client; a script MUST always return some data.
+Unless defined otherwise, this will be the same as for conventional
+CGI scripts.
+
+スクリプトがデータを鯖やクライアントに送り返すシステム定義の方法が何か存在しなければ'''なりません'''。
+スクリプトは常に何らかのデータを返さなければ'''なりません'''。
+そう定義しないと、通常の CGI スクリプトと同じになってしまいます。
+
+>   Currently, NPH scripts are only defined for HTTP client requests.  An
+(HTTP) NPH script MUST return a complete HTTP response message,
+currently described in section 6 of the HTTP specifications [1], [4].
+The script MUST use the SERVER_PROTOCOL variable to determine the
+appropriate format for a response.  It MUST also take account of any
+generic or protocol-specific meta-variables in the request as might
+be mandated by the particular protocol specification.
+
+現在、 NPH スクリプトは HTTP クライアント要求にのみ定義されています。
+(HTTP) NPH スクリプトは完全な HTTP 応答メッセージを返さなければ'''なりません'''。
+HTTP 応答メッセージは現在のところ HTTP 仕様書の6章で説明されています。
+スクリプトは応答の適当な書式を決定するために [CODE(CGI)[[[SERVER_PROTOCOL]]]]
+変数を使わなければ'''なりません'''。また、
+一般やスクリプト規定のメタ変数で、特定のプロトコル仕様書で強制されているものも考慮に入れなければ'''なりません'''。
+
+>   The server MUST ensure that the script output is sent to the client
+unmodified.  Note that this requires the script to use the correct
+character set (US-ASCII [9] and ISO 8859-1 [10] for HTTP) in the
+header fields.  The server SHOULD attempt to ensure that the script
+output is sent directly to the client, with minimal internal and no
+transport-visible buffering.
+
+鯖はスクリプトの出力がクライアントに修正せずに送られることを保証しなければ'''なりません'''。
+そのためスクリプトは正しい文字集合 (HTTP では [[US-ASCII]] と
+[[ISO 8859]]‐1) を頭欄で使わなければ成らないことに注意して下さい。
+鯖は最小限で輸送路可視のバッファ付けでクライアントに直接スクリプトの出力を送るようにするように試みる'''べきです'''。
+
+>   Unless the implementation defines otherwise, the script MUST NOT
+indicate in its response that the client can send further requests
+over the same connection.
+
+実装が別途定義しない限り、クライアントが同じ接続で要求を更に送ることができるとスクリプトが応答中で示しては'''なりません'''。
+
+* 6.  CGI Response
+
+**6.1.  Response Handling
+>   A script MUST always provide a non-empty response, and so there is a
+system-defined method for it to send this data back to the server.
+Unless defined otherwise, this will be via the 'standard output' file
+descriptor.
+
+スクリプトは常に空でない応答を提供しなければ'''なりません'''から、
+鯖にデータを送り返すシステム定義のほうほうがあることになります。
+別途定義しない限り、これは[Q[標準出力]]ファイル記述子経由となります。
+
+>   The script MUST check the REQUEST_METHOD variable when processing the
+request and preparing its response.
+
+スクリプトは要求を処理して応答を用意する時に [CODE(CGI)[[[REQUEST_METHOD]]]]
+変数を確認しなければ'''なりません'''。
+
+>   The server MAY implement a timeout period within which data must be
+received from the script.  If a server implementation defines such a
+timeout and receives no data from a script within the timeout period,
+the server MAY terminate the script process.
+
+鯖は、その間にスクリプトからデータを受信しなければらならないという時間切れまでの時間を決めて'''構いません'''。
+鯖実装が時間切れを定義しており、それまでにスクリプトからデータを受信しなければ、
+鯖はスクリプト処理を終止して'''構いません'''。
+
+** 6.2.  Response Types
+>   The response comprises a message-header and a message-body, separated
+by a blank line.  The message-header contains one or more header
+fields.  The body may be NULL.
+
+応答は、 [CODE(ABNF)[message-header]] と [CODE(ABNF)[message-body]]
+で構成され、両者は空行で分離します。 [CODE(ABNF)[message-header]]
+は頭欄を1つ以上含みます。本体は NULL でも構いません。
+
+>      generic-response = 1*header-field NL [ response-body ]
+
+>   The script MUST return one of either a document response, a local
+redirect response or a client redirect (with optional document)
+response.  In the response definitions below, the order of header
+fields in a response is not significant (despite appearing so in the
+BNF).  The header fields are defined in section 6.3.
+
+スクリプトは文書応答か局所再指向応答かクライアント再指向応答
+(文書応答つきであっても構いません。) のいずれかを返さなければ'''なりません'''。
+次の応答定義において、応答中での頭欄の順序は
+(BNF では意味があるように見えますが) 重要ではありません。
+頭欄は6.3節で定義します。
+
+>
+      CGI-Response = document-response | local-redir-response |
+                     client-redir-response | client-redirdoc-response
+
+*** 6.2.1.  Document Response
+>   The CGI script can return a document to the user in a document
+response, with an optional error code indicating the success status
+of the response.
+
+CGI スクリプトは、文書応答において利用者に対する文書を返すことができます。
+任意選択で応答が成功状態を表す誤り符号も返すことができます。
+
+>
+      document-response = Content-Type [ Status ] *other-field NL
+                          response-body
+
+>   The script MUST return a Content-Type header field.  A Status header
+field is optional, and status 200 'OK' is assumed if it is omitted.
+The server MUST make any appropriate modifications to the script's
+output to ensure that the response to the client complies with the
+response protocol version.
+
+スクリプトは [CODE(CGI)[[[Content-Type]]]] 頭欄を返さなければ'''なりません'''。
+[CODE(CGI)[[[Status]]]] 頭欄は省略可能であり、
+省略された場合には状態 [CODE(CGI)[[[200]]]] (了解) とみなされます。
+鯖は、応答がクライアントに対する応答が応答プロトコルの版に適合するようにスクリプトの出力を適切に修正しなければ'''なりません'''。
+
+*** 6.2.2.  Local Redirect Response
+>   The CGI script can return a URI path and query-string
+('local-pathquery') for a local resource in a Location header field.
+This indicates to the server that it should reprocess the request
+using the path specified.
+
+CGI スクリプトは、 [CODE(CGI)[[[Location]]]] 頭欄で局所資源の URI 
+経路と照会文字列 ([CODE(ABNF)[local-pathquery]]) を返すことができます。
+これは、鯖に指定された経路を使って要求を再処理するように指示します。
+
+>      local-redir-response = local-Location NL
+
+>   The script MUST NOT return any other header fields or a message-body,
+and the server MUST generate the response that it would have produced
+in response to a request containing the URL
+
+スクリプトは他の頭欄や [CODE(ABNF)[message-body]] を返しては'''なりません'''。
+鯖は、 URL
+
+>      scheme "://" server-name ":" server-port local-pathquery
+
+を含む要求に対する応答を生産する場合と同じように応答を生成しなければ'''なりません'''。
+
+*** 6.2.3.  Client Redirect Response
+>   The CGI script can return an absolute URI path in a Location header
+field, to indicate to the client that it should reprocess the request
+using the URI specified.
+
+CGI スクリプトは [CODE(CGI)[Location]] 頭欄に絶対 URI 経路を返して、
+クライアントに指定された URI を使って要求を再処理するように指示できます。
+
+>      client-redir-response = client-Location *extension-field NL
+
+>   The script MUST not provide any other header fields, except for
+server-defined CGI extension fields.  For an HTTP client request, the
+server MUST generate a 302 'Found' HTTP response message.
+
+スクリプトは鯖定義の CGI 拡張頭以外の頭欄を提供しては'''なりません'''。
+HTTP クライアント要求では、鯖は [CODE(HTTP)[[[302]]]] (見つかりました)
+HTTP 応答メッセージを生成しなければ'''なりません'''。
+
+*** 6.2.4.  Client Redirect Response with Document
+>   The CGI script can return an absolute URI path in a Location header
+field together with an attached document, to indicate to the client
+that it should reprocess the request using the URI specified.
+
+CGI スクリプトは [CODE(CGI)[[[Location]]]] 頭欄に絶対 URI
+経路を指定すると共に文書を付属させ、クライアントに指定された URI
+を使って要求を再処理するよう指示できます。
+
+>
+      client-redirdoc-response = client-Location Status Content-Type
+                                 *other-field NL response-body
+
+>   The Status header field MUST be supplied and MUST contain a status
+value of 302 'Found', or it MAY contain an extension-code, that is,
+another valid status code that means client redirection.  The server
+MUST make any appropriate modifications to the script's output to
+ensure that the response to the client complies with the response
+protocol version.
+
+CGI スクリプトは、 [CODE(CGI)[[[Status]]]] 頭欄を提供して状態値を含めなければ'''なりません'''。
+状態値は [CODE(CGI)[[[302]]]] (見つかりました) か、あるいは他の妥当な[[状態符号]]であってクライアント再指向を意味する
+[CODE(ABNF)[extension-code]] を含めても'''構いません'''。
+鯖は、応答がクライアントに対する応答が応答プロトコルの版に適合するようにスクリプトの出力を適切に修正しなければ'''なりません'''。
+
+** 6.3.  Response Header Fields
+>   The response header fields are either CGI or extension header fields
+to be interpreted by the server, or protocol-specific header fields
+to be included in the response returned to the client.  At least one
+CGI field MUST be supplied; each CGI field MUST NOT appear more than
+once in the response.  The response header fields have the syntax:
+
+応答頭欄は、鯖が解釈する CGI 頭欄や拡張頭欄か、
+クライアントに返される応答に含まれるプロトコル規定頭欄です。
+最低1つの CGI 欄を供給しなければ'''なりません'''。各 CGI
+欄はある応答中に複数出現しては'''なりません'''。
+応答頭欄の構文は次の通りです。
+
+>
+      header-field    = CGI-field | other-field
+      CGI-field       = Content-Type | Location | Status
+      other-field     = protocol-field | extension-field
+      protocol-field  = generic-field
+      extension-field = generic-field
+      generic-field   = field-name ":" [ field-value ] NL
+      field-name      = token
+      field-value     = *( field-content | LWSP )
+      field-content   = *( token | separator | quoted-string )
+
+>   The field-name is not case sensitive.  A NULL field value is
+equivalent to a field not being sent.  Note that each header field in
+a CGI-Response MUST be specified on a single line; CGI/1.1 does not
+support continuation lines.  Whitespace is permitted between the ":"
+and the field-value (but not between the field-name and the ":"), and
+also between tokens in the field-value.
+
+[CODE(ABNF)[field-name]] は大文字・小文字を区別しません。 NULL
+欄値は欄を送信しないのと同値です。 [CODE(ABNF)[CGI-Response]]
+中の頭欄それぞれは一行で指定しなければ'''ならない'''ことに注意してください。
+CGI/1.1 は継続行に対応していません。[[空白]]は [CODE(char)[:]]
+と [CODE(ABNF)[field-value]] の間と、 [CODE(ABNF)[field-value]]
+内の字句の間で認められます (が、 [CODE(ABNF)[field-name]] と [CODE(char)[:]]
+の間では認められません)。
+
+[INS[
+訳注: [[HTTP]] 頭欄の中には、 [CODE(HTTP)[[[Ext]]:]] 
+欄のように[[欄本体]]が空であることにも意味を持たせているものがあります。
+しかし、ここでの規定によれば、そのような欄を扱うことは CGI/1.1
+ではできません。
+]INS]
+
+*** 6.3.1.  Content-Type
+>   The Content-Type response field sets the Internet Media Type [6] of
+the entity body.
+
+[CODE(CGI)[[[Content-Type]]]] 応答欄は実体本体のインターネット媒体型を設定します。
+
+>      Content-Type = "Content-Type:" media-type NL
+
+>   If an entity body is returned, the script MUST supply a Content-Type
+field in the response.  If it fails to do so, the server SHOULD NOT
+attempt to determine the correct content type.  The value SHOULD be
+sent unmodified to the client, except for any charset parameter changes.
+
+スクリプトは実体本体を返す場合 [CODE(CGI)[Content-Type]]
+欄を応答に含めなければ'''なりません'''。そうでない場合、鯖は正しい内容型を決定しようとする'''べきではありません'''。
+値は、 [CODE(MIME)[[[charset]]]] 引数の変更を除き、修正せずにクライアントに送信する'''べきです'''。
+
+>   Unless it is otherwise system-defined, the default charset assumed by
+the client for text media-types is ISO-8859-1 if the protocol is HTTP
+and US-ASCII otherwise.  Hence the script SHOULD include a charset
+parameter.  See section 3.4.1 of the HTTP/1.1 specification [4] for a
+discussion of this issue.
+
+既定の charset は別途システムで定義されていない限り [CODE(MIME)[text]]
+媒体型では HTTP の場合 [CODE(charset)[[[ISO-8859-1]]]],
+それ以外では [CODE(charset)[[[US-ASCII]]]] とクライアントは仮定します。
+ですからスクリプトは charset 引数を含める'''べきです'''。
+この問題については HTTP/1.1 仕様書の3.4.1節をご覧ください。
+
+*** 6.3.2.  Location
+>   The Location header field is used to specify to the server that the
+script is returning a reference to a document rather than an actual
+document (see sections 6.2.3 and 6.2.4).  It is either an absolute
+URI (optionally with a fragment identifier), indicating that the
+client is to fetch the referenced document, or a local URI path
+(optionally with a query string), indicating that the server is to
+fetch the referenced document and return it to the client as the response.
+
+[CODE(CGI)[Location]] 頭欄は鯖にスクリプトが実際の文書ではなく文書の参照を返していることを指定するために使います。
+参照は絶対 URI ([[素片識別子]]付きでも構いません。)
+か、局所 URI 経路 (照会文字列付きでも構いません。) です。
+前者はクライアントが参照された文書を入手することを示し、
+後者は鯖が参照された文書を入手してクライアントに応答として返すことを示します。
+
+>
+      Location        = local-Location | client-Location
+      client-Location = "Location:" fragment-URI NL
+      local-Location  = "Location:" local-pathquery NL
+      fragment-URI    = absoluteURI [ "#" fragment ]
+      fragment        = *uric
+      local-pathquery = abs-path [ "?" query-string ]
+      abs-path        = "/" path-segments
+      path-segments   = segment *( "/" segment )
+      segment         = *pchar
+      pchar           = unreserved | escaped | extra
+      extra           = ":" | "@" | "&" | "=" | "+" | "$" | ","
+
+>   The syntax of an absoluteURI is incorporated into this document from
+that specified in RFC 2396 [2] and RFC 2732 [7].  A valid absoluteURI
+always starts with the name of scheme followed by ":"; scheme names
+start with a letter and continue with alphanumerics, "+", "-" or ".".
+The local URI path and query must be an absolute path, and not a
+relative path or NULL, and hence must start with a "/".
+
+[CODE(ABNF)[[[absoluteURI]]]] の構文は [[RFC 2396]] と [[RFC 2732]]
+からこの文書に取込みました。妥当な [CODE(ABNF)[absoluteURI]]
+は常に scheme 名と [CODE(URI)[:]] から始まります。 Scheme 名は[RUBYB[文字][letter]]から始まり、
+英数字、 [CODE(char)[+]]. [CODE(char)[-]], [CODE(char)[.]] が続きます。
+局所 URI 経路・照会は絶対経路でなければならず、
+相対経路や NULL であってはなりませんから、 [CODE(URI)[/]]
+から始まります。
+
+>   Note that any message-body attached to the request (such as for a
+POST request) may not be available to the resource that is the target
+of the redirect.
+
+要求 (例えば [CODE(CGI)[[[POST]]]] 要求) に添付された [CODE(ABNF)[[[message-body]]]]
+は再指向の対象の[[資源]]には利用可能でないかもしれないことに注意してください。
+
+*** 6.3.3.  Status
+>   The Status header field contains a 3-digit integer result code that
+indicates the level of success of the script's attempt to handle the request.
+
+[CODE(CGI)[[[Status]]]] 頭欄はスクリプトが要求を処理しようとした結果の成功度を示す
+3桁整数結果符号を含みます。
+
+>
+      Status         = "Status:" status-code SP reason-phrase NL
+      status-code    = "200" | "302" | "400" | "501" | extension-code
+      extension-code = 3digit
+      reason-phrase  = *TEXT
+
+>   Status code 200 'OK' indicates success, and is the default value
+assumed for a document response.  Status code 302 'Found' is used
+with a Location header field and response message-body.  Status code
+400 'Bad Request' may be used for an unknown request format, such as
+a missing CONTENT_TYPE.  Status code 501 'Not Implemented' may be
+returned by a script if it receives an unsupported REQUEST_METHOD.
+
+状態符号 [CODE(CGI)[200]] (了解) は成功を示し、
+文書応答では既定値となっています。状態符号 [CODE(CGI)[302]]
+(見つかりました) は [CODE(CGI)[[[Location]]]] 頭欄および応答
+[CODE(ABNF)[[[message-body]]]] と併用します。
+状態符号 [CODE(CGI)[[[400]]]] (問題のある要求) は未知の要求書式、
+例えば [CODE(CGI)[[[CONTENT_TYPE]]]] の欠けたる時に使うことができます。
+状態符号 [CODE(CGI)[[[501]]]] (未実装) はスクリプトが未対応の
+[CODE(CGI)[[[REQUEST_METHOD]]]] を受信した時に返すことができます。
+
+>  Other valid status codes are listed in section 6.1.1 of the HTTP
+specifications [1], [4], and also the IANA HTTP Status Code Registry [8] 
+and MAY be used in addition to or instead of the ones listed
+above.  The script SHOULD check the value of SERVER_PROTOCOL before
+using HTTP/1.1 status codes.  The script MAY reject with error 405
+'Method Not Allowed' HTTP/1.1 requests made using a method it does
+not support.
+
+他の妥当な状態符号は HTTP 仕様書の6.1.1節や IANA HTTP
+状態符号登録簿に挙げられており、前掲の状態符号に加えて、
+あるいは前掲の状態符号の代わりに用いて'''構いません'''。
+スクリプトは HTTP/1.1 の状態符号を使う前に [CODE(CGI)[[[SERVER_PROTOCOL]]]]
+の値を調べる'''べきです'''。スクリプトは対応していない方式を使って行われた
+HTTP/1.1 要求を誤り [CODE(HTTP)[[[405]]]] (方式不認可)
+で拒絶しても'''構いません'''。
+
+>   Note that returning an error status code does not have to mean an
+error condition with the script itself.  For example, a script that
+is invoked as an error handler by the server should return the code
+appropriate to the server's error condition.
+
+誤り状態符号を返すことは必ずしもスクリプト自体の誤り状況を意味しないことに注意してください。
+例えば、鯖の誤り取扱い器として呼出されたスクリプトは鯖の誤り状況に応じた状態符号を返すべきです。
+
+>   The reason-phrase is a textual description of the error to be
+returned to the client for human consumption.
+
+[CODE(ABNF)[reason-phrase]] は人間が読むものとしてクライアントに返される、
+文章による誤りの説明です。
+
+*** 6.3.4.  Protocol-Specific Header Fields
+>   The script MAY return any other header fields that relate to the
+response message defined by the specification for the SERVER_PROTOCOL
+(HTTP/1.0 [1] or HTTP/1.1 [4]).  The server MUST translate the header
+data from the CGI header syntax to the HTTP header syntax if these
+differ.  For example, the character sequence for newline (such as
+UNIX's US-ASCII LF) used by CGI scripts may not be the same as that
+used by HTTP (US-ASCII CR followed by LF).
+
+スクリプトは [CODE(CGI)[[[SERVER_PROTOCOL]]]] の仕様書で定義される応答メッセージに関係する他の頭欄を返しても'''構いません'''。
+鯖は CGI 頭構文の頭データが HTTP 頭構文と異なっていれば、
+翻訳しなければ'''なりません'''。例えば、 CGI スクリプトが使う改行の文字列
+(例えば [[UNIX]] の [CODE(charset)[[[US-ASCII]]]] [CODE(char)[[[LF]]]])
+は HTTP が使うもの ([CODE(charset)[US-ASCII]] の [CODE(char)[[[CR]]]]
+の後に [CODE(char)[[[LF]]]]) と同じでないかもしれません。
+
+>   The script MUST NOT return any header fields that relate to
+client-side communication issues and could affect the server's
+ability to send the response to the client.  The server MAY remove
+any such header fields returned by the client.  It SHOULD resolve any
+conflicts between header fields returned by the script and header
+fields that it would otherwise send itself.
+
+スクリプトはクライアント側通信に関係し、
+鯖がクライアントに応答を送る能力に影響するような頭欄を返しては'''なりません'''。
+鯖はそのような頭欄を削除して'''構いません'''。鯖はスクリプトが返した頭欄と鯖が本来送信する頭欄との衝突を解決する'''べきです'''。
+
+*** 6.3.5.  Extension Header Fields
+>   There may be additional implementation-defined CGI header fields,
+whose field names SHOULD begin with "X-CGI-".  The server MAY ignore
+(and delete) any unrecognised header fields with names beginning 
+"X-CGI-" that are received from the script.
+
+追加の実装定義の CGI 頭欄があるかもしれませんが、その欄名は
+[CODE(CGI)[X-CGI-]] で始める'''べきです'''。
+鯖は認識できない頭欄で名前が [CODE(CGI)[X-CGI-]] で始まるものをスクリプトから受信したら、
+これを無視して (削除して) '''構いません'''。
+
+** 6.4.  Response Message-Body
+>   The response message-body is an attached document to be returned to
+the client by the server.  The server MUST read all the data provided
+by the script, until the script signals the end of the message-body
+by way of an end-of-file condition.  The message-body SHOULD be sent
+unmodified to the client, except for HEAD requests or any required
+transfer-codings, content-codings or charset conversions.
+
+応答 [CODE(ABNF)[message-body]] は鯖がクライアントに返す添付文書です。
+鯖は、スクリプトがファイル末尾であるとして [CODE(ABNF)[message-body]]
+の終端を通知するまでスクリプトが提供するデータをすべて読まなければ'''なりません'''。
+[CODE(ABNF)[message-body]] は [CODE(CGI)[[[HEAD]]]]
+要求の場合や必要な[[転送符号化]]・[[内容符号化]]・[[charset]]
+変換を除いて修正せずにクライアントに送信する'''べきです'''。
+
+>      response-body = *OCTET
+
+* 7.  System Specifications
+** 7.1.  AmigaDOS
+>
+:   Meta-Variables:
+Meta-variables are passed to the script in identically named
+environment variables.  These are accessed by the DOS library
+routine GetVar().  The flags argument SHOULD be 0.  Case is
+ignored, but upper case is recommended for compatibility with
+case-sensitive systems.
+:   The current working directory:
+The current working directory for the script is set to the
+directory containing the script.
+:   Character set:
+The US-ASCII character set [9] is used for the definition of
+meta-variables, header fields and values; the newline (NL)
+sequence is LF; servers SHOULD also accept CR LF as a newline.
+
+:メタ変数:メタ変数はスクリプトに同じ名前の[[環境変数]]で渡します。
+環境変数は [[DOS]] ライブラリ・ルーチン [CODE[[[GetVar]]()]]
+でアクセスできます。 [CODE[flags]] 引数は [CODE[0]] とする'''べきです'''。
+大文字・小文字は区別しませんが、区別するシステムとの互換性のために大文字を推奨します。
+:現在作業ディレクトリ:
+スクリプトの現在作業ディレクトリはスクリプトが含まれる[[ディレクトリ]]に設定します。
+:文字集合:メタ変数、頭欄、値の定義には [CODE(charset)[[[US-ASCII]]]]
+文字集合を使います。改行 ([CODE(ABNF)[[[NL]]]]) 列は [CODE(char)[[[LF]]]]
+です。鯖は [CODE(ABNF)[CR LF]] も改行として受付ける'''べきです'''。
+
+** 7.2.  UNIX
+>   For UNIX compatible operating systems, the following are defined:
+
+UNIX 互換オペレーティング・システムについては、次のように定義します。
+
+>
+:   Meta-Variables:
+Meta-variables are passed to the script in identically named
+environment variables.  These are accessed by the C library
+routine getenv() or variable environ.
+:   The command line:
+This is accessed using the argc and argv arguments to main().  The
+words have any characters which are 'active' in the Bourne shell
+escaped with a backslash.
+:   The current working directory:
+The current working directory for the script SHOULD be set to the
+directory containing the script.
+:   Character set:
+The US-ASCII character set [9], excluding NUL, is used for the
+definition of meta-variables, header fields and CHAR values; TEXT
+values use ISO-8859-1.  The PATH_TRANSLATED value can contain any
+8-bit byte except NUL.  The newline (NL) sequence is LF; servers
+should also accept CR LF as a newline.
+
+:メタ変数:メタ変数はスクリプトに同じ名前の[[環境変数]]として渡します。
+環境変数は [[C]] ライブラリ・ルーチン [CODE(C)[[[getenv]]()]] や変数取巻きでアクセスできます。
+:命令行:命令行は [CODE(C)[[[main]]()]] の引数 [CODE(C)[[argc]]]]・
+[CODE(C)[[[argv]]]] でアクセスします。語は [[Bourne]] シェルで
+[Q[活性]]な文字は[[逆斜線]]で[[逃避]]して表します。
+:現在作業ディレクトリ:スクリプトの現在作業ディレクトリはスクリプトを含むディレクトリに設定する'''べきです'''。
+:文字集合:[CODE(char)[[[NUL]]]] を除く US-ASCII 文字集合をメタ変数、
+頭欄、 [CODE(ABNF)[[[CHAR]]]] 値の定義に使います。 [CODE(ABNF)[[[TEXT]]]]
+値は [CODE(charset)[[[ISO-8859-1]]]] を使います。
+[CODE(CGI)[[[PATH_TRANSLATED]]]] 値は [CODE(char)[NUL]]
+以外の任意の8ビット・バイトを含むことができます。改行 ([CODE(ABNF)[[[NL]]]])
+列は [CODE(char)[[[LF]]]] です。鯖は [CODE(ABNF)[CR LF]] も改行として受入れる'''べきです'''。
+
+** 7.3.  EBCDIC/POSIX
+>   For POSIX compatible operating systems using the EBCDIC character
+set, the following are defined:
+
+[[EBCDIC]] 文字集合を使う [[POSIX]] 互換オペレーティング・システムについては、
+次のように定義します。
+
+>
+:   Meta-Variables:
+Meta-variables are passed to the script in identically named
+environment variables.  These are accessed by the C library
+routine getenv().
+:   The command line:
+This is accessed using the argc and argv arguments to main().  The
+words have any characters which are 'active' in the Bourne shell
+escaped with a backslash.
+:   The current working directory:
+The current working directory for the script SHOULD be set to the
+directory containing the script.
+:   Character set:
+The IBM1047 character set [21], excluding NUL, is used for the
+definition of meta-variables, header fields, values, TEXT strings
+and the PATH_TRANSLATED value.  The newline (NL) sequence is LF;
+servers should also accept CR LF as a newline.
+:   media-type charset default:
+The default charset value for text (and other implementation-
+defined) media types is IBM1047.
+
+:メタ変数:メタ変数はスクリプトに同じ名前の[[環境変数]]として渡します。
+環境変数は [[C]] ライブラリ・ルーチン [CODE(C)[[[getenv]]()]] や変数取巻きでアクセスできます。
+:命令行:命令行は [CODE(C)[[[main]]()]] の引数 [CODE(C)[[argc]]]]・
+[CODE(C)[[[argv]]]] でアクセスします。語は [[Bourne]] シェルで
+[Q[活性]]な文字は[[逆斜線]]で[[逃避]]して表します。
+:現在作業ディレクトリ:スクリプトの現在作業ディレクトリはスクリプトを含むディレクトリに設定する'''べきです'''。
+:文字集合:[CODE(char)[[[NUL]]]] を除く [CODE(charset)[[[IBM1047]]]] 文字集合をメタ変数、頭欄、値、 [CODE(ABNF)[[[TEXT]]]] 文字列、 [CODE(CGI)[[[PATH_TRANSLATED]]]] 値の定義に使います。改行 ([CODE(ABNF)[[[NL]]]]) 列は [CODE(cahr)[LF]] です。
+鯖は [CODE(ABNF)[CR LF]] も改行として受付ける'''べきです'''。
+:媒体型 [CODE(MIME)[charset]] 既定値:[CODE(MIME)[text]] 媒体型
+(および他の実装定義媒体型) の既定の [CODE(MIME)[[[charset]]]] 値は
+[CODE(charset)[[[IBM1047]]]] です。
+
+* 8.  Implementation
+**8.1.  Recommendations for Servers
+>   Although the server and the CGI script need not be consistent in
+their handling of URL paths (client URLs and the PATH_INFO data,
+respectively), server authors may wish to impose consistency.  So the
+server implementation should specify its behaviour for the following cases:
+
+鯖と CGI スクリプトは URL 経路 (それぞれ、クライアント URL
+と [CODE(CGI)[[[PATH_INFO]]]] データ) の扱いが一貫している必要はありませんが、
+鯖の著者は一貫性条件を課したいと思うかもしれません。ですから、
+鯖実装は次の場合の動作を規定するべきです。
+
+>
+-      1. define any restrictions on allowed path segments, in particular
+whether non-terminal NULL segments are permitted;
+-      2. define the behaviour for "." or ".." path segments; i.e.,
+whether they are prohibited, treated as ordinary path segments
+or interpreted in accordance with the relative URL
+specification [2];
+-      3. define any limits of the implementation, including limits on
+path or search string lengths, and limits on the volume of
+header fields the server will parse.
+
+- [RUBYB[経路断片][path segment]]での制限の定義。特に、末端以外で NULL 断片が認められるのかどうか。
+- 経路断片 [SAMP(URI)[.]], [SAMP(URI)[..]] の動作の定義。
+すなわち、この2つが禁止されるのか、普通の経路断片として扱われるのか、
+相対 URL 仕様書に従って解釈されるのか。
+- 実装の限界の定義。経路や検索文字列の長さの制限や、
+鯖が構文解析する頭欄の量の制限を含みます。
+
+** 8.2.  Recommendations for Scripts
+>   If the script does not intend processing the PATH_INFO data, then it
+should reject the request with 404 Not Found if PATH_INFO is not NULL.
+
+スクリプトが [CODE(CGI)[[[PATH_INFO]]]] データを処理することを想定していないなら、
+[CODE(CGI)[PATH_INFO]] が NULL でない場合に [CODE(HTTP)[[[404]]]]
+(見つかりません) で要求を拒絶するべきです。
+
+>   If the output of a form is being processed, check that CONTENT_TYPE
+is "application/x-www-form-urlencoded" [18] or "multipart/form-data" [16].  
+If CONTENT_TYPE is blank, the script can reject the request
+with a 415 'Unsupported Media Type' error, where supported by the protocol.
+
+フォームの出力を処理するなら、 [CODE(CGI)[[[CONTENT_TYPE]]]] が
+[CODE(MIME)[[[application/x-www-form-urlencoded]]]] か
+[CODE(MIME)[[[multipart/form-data]]]] であるかを検査してください。
+[CODE(CGI)[CONTENT_TYPE]] が空白であれば、スクリプトは要求を
+[CODE(HTTP)[[[415]]]] (未対応媒体型) 誤りで
+(プロトコルが対応していれば) 拒絶できます。
+
+>   When parsing PATH_INFO, PATH_TRANSLATED or SCRIPT_NAME the script
+should be careful of void path segments ("//") and special path
+segments ("." and "..").  They should either be removed from the path
+before use in OS system calls, or the request should be rejected with
+404 'Not Found'.
+
+スクリプトは [CODE(CGI)[[[PATH_INFO]]]], [CODE(CGI)[[[PATH_TRANSLATED]]]],
+[CODE(CGI)[[[SCRIPT_NAME]]]] を構文解析する時に空の経路断片
+([SAMP(URI)[//]]) や特殊な経路断片 ([SAMP(URI)[.]] や [SAMP(URI)[..]])
+に注意するべきです。これらは OS システム呼出しで使う前に経路から削除するか、
+要求を [CODE(HTTP)[[[404]]]] (見つかりません) で拒絶するかするべきです。
+
+>   When returning header fields, the script should try to send the CGI
+header fields as soon as possible, and should send them before any
+HTTP header fields.  This may help reduce the server's memory
+requirements.
+
+スクリプトは頭欄を返す時に CGI 頭欄をできる限り早く、 HTTP
+頭欄よりも前に返すよう試みるべきです。こうすれば必要な鯖の記憶量を削減するのを助けられます。
+
+>   Script authors should be aware that the REMOTE_ADDR and REMOTE_HOST
+meta-variables (see sections 4.1.8 and 4.1.9) may not identify the
+ultimate source of the request.  They identify the client for the
+immediate request to the server; that client may be a proxy, gateway,
+or other intermediary acting on behalf of the actual source client.
+
+スクリプトの著者はメタ変数 [CODE(CGI)[[[REMOTE_ADDR]]]] や
+[CODE(CGI)[[[REMOTE_HOST]]]] が要求の根本の出典をあらわしていないかもしれないことに注意するべきです。
+これらは鯖に直接要求したクライアントを識別します。
+そのクライアントは実際のはじめのクライアントの代わりに動作する[[串]]、
+[[関門]]、その他の媒介者かもしれません。
+
+* 9.  Security Considerations
+** 9.1.  Safe Methods
+>   As discussed in the security considerations of the HTTP
+specifications [1], [4], the convention has been established that the
+GET and HEAD methods should be 'safe' and 'idempotent' (repeated
+requests have the same effect as a single request).  See section 9.1
+of RFC 2616 [4] for a full discussion.
+
+HTTP 仕様書の安全性に関しての章で議論されているように、
+[CODE(CGI)[[[GET]]]] 方式と [CODE(CGI)[[[HEAD]]]] 方式は
+[Q[[[安全]]]]で[Q[[[同効]]]]である (要求を繰り返しても一度の要求と同じ効果を持つ) 
+べきとの慣習が確立しています。
+
+** 9.2.  Header Fields Containing Sensitive Information
+>   Some HTTP header fields may carry sensitive information which the
+server should not pass on to the script unless explicitly configured
+to do so.  For example, if the server protects the script by using
+the Basic authentication scheme, then the client will send an
+Authorization header field containing a username and password.  The
+server validates this information and so it should not pass on the
+password via the HTTP_AUTHORIZATION meta-variable without careful
+consideration.  This also applies to the Proxy-Authorization header
+field and the corresponding HTTP_PROXY_AUTHORIZATION meta-variable.
+
+幾つかの HTTP 頭欄は、あえてそう設定していない限りスクリプトに渡すべきではない繊細な情報を伝送するかもしれません。
+例えば、鯖がスクリプトを基本認証方式によって保護していれば、
+クライアントは利用者名と合言葉を含んだ [CODE(HTTP)[[[Authorization]]]]
+頭欄を送ることになります。鯖がこの情報を検証しますから、
+十分注意せずに [CODE(CGI)[[[HTTP_AUTHORIZATION]]]] メタ変数で合言葉を渡すべきではありません。
+これは [CODE(HTTP)[[[Proxy-Authorization]]]] 頭欄と対応する
+[CODE(CGI)[[[HTTP_PROXY_AUTHORIZATION]]]] メタ変数についても言えます。
+
+** 9.3.  Data Privacy
+>   Confidential data in a request should be placed in a message-body as
+part of a POST request, and not placed in the URI or message headers.
+On some systems, the environment used to pass meta-variables to a
+script may be visible to other scripts or users.  In addition, many
+existing servers, proxies and clients will permanently record the URI
+where it might be visible to third parties.
+
+要求で機密データは [CODE(CGI)[[[POST]]]] 要求の一部である
+[CODE(ABNF)[[[message-body]]]] に配置するべきであって、
+URI やメッセージ頭に配置するべきではありません。
+システムによっては、メタ変数をスクリプトに渡す環境が他のスクリプトや利用者に可視であるかもしれません。
+加えて、多くの既存の鯖、串、クライアントは第3者に可視たり得るところに
+URI を永続的に記録しています。
+
+** 9.4.  Information Security Model
+>   For a client connection using TLS, the security model applies between
+the client and the server, and not between the client and the script.
+It is the server's responsibility to handle the TLS session, and thus
+it is the server which is authenticated to the client, not the CGI script.
+
+[[TLS]] を使って接続するクライアントについては、
+クライアントと鯖の間に安全模型が適用されますが、
+クライアントとスクリプトの間に適用されてはいません。
+TLS セッションを扱うのは鯖の責任であり、
+従ってクライアントに証明されているのは鯖であって、
+CGI スクリプトではありません。
+
+>   This specification provides no mechanism for the script to
+authenticate the server which invoked it.  There is no enforced
+integrity on the CGI request and response messages.
+
+この仕様書はスクリプトが呼出した鯖に証明する仕組みを提供していません。
+CGI 要求・応答メッセージの整合性も強制されていません。
+
+** 9.5.  Script Interference with the Server
+>   The most common implementation of CGI invokes the script as a child
+process using the same user and group as the server process.  It
+should therefore be ensured that the script cannot interfere with the
+server process, its configuration, documents or log files.
+
+ほとんどの CGI の実装はスクリプトを鯖処理と同じ利用者・群を使った子処理として呼出します。
+ですから、鯖はスクリプトが鯖の処理、設定、文書、記録ファイルに干渉できないようにするべきです。
+
+>   If the script is executed by calling a function linked in to the
+server software (either at compile-time or run-time) then precautions
+should be taken to protect the core memory of the server, or to
+ensure that untrusted code cannot be executed.
+
+スクリプトが鯖ソフトウェアに (コンパイル時または実行時に)
+連結される関数の呼出しによって実行されるのであれば、
+鯖の中核記憶を保護するか、信頼できない符号を実行できないようにするような予防策を取るべきです。
+
+** 9.6.  Data Length and Buffering Considerations
+>   This specification places no limits on the length of the message-body
+presented to the script.  The script should not assume that
+statically allocated buffers of any size are sufficient to contain
+the entire submission at one time.  Use of a fixed length buffer
+without careful overflow checking may result in an attacker
+exploiting 'stack-smashing' or 'stack-overflow' vulnerabilities of
+the operating system.  The script may spool large submissions to disk
+or other buffering media, but a rapid succession of large submissions
+may result in denial of service conditions.  If the CONTENT_LENGTH of
+a message-body is larger than resource considerations allow, scripts
+should respond with an error status appropriate for the protocol
+version; potentially applicable status codes include 503 'Service
+Unavailable' (HTTP/1.0 and HTTP/1.1), 413 'Request Entity Too Large'
+(HTTP/1.1), and 414 'Request-URI Too Large' (HTTP/1.1).
+
+この仕様書はスクリプトに提示される [CODE(ABNF)[[[message-body]]]] の長さに制限を課していません。スクリプトはどんな大きさであっても静的に割当てられた[[バッファー]]が[[提出]]されたもの全体を一度に含めるのに十分であると仮定するべきではありません。
+固定長バッファーを注意して溢れ検査せずに使用すると、
+攻撃者にオペレーティング・システムの[Q[スタック粉砕]]・[Q[スタック溢れ]]脆弱性を突かれることになります。
+スクリプトは大きな提出物をディスクその他のバッファ付け媒体に溜めて構いませんが、
+大きな提出を素早く成功させると[[サービス拒否]]状態になり得ます。
+[CODE(ABNF)[message-body]] の [CODE(CGI)[[[CONTENT_LENGTH]]]]
+が認められると考えられる資源の大きさよりも大きければ、
+スクリプトはプロトコルの版に応じた誤り状態で応答するべきです。
+利用できそうな状態符号は例えば [CODE(HTTP)[[[503]]]] (サービス利用不能)、
+[CODE(HTTP)[[[413]]]] (要求実体が大き過ぎます。。。)、
+[CODE(HTTP)[[[414]]]] ([CODE(ABNF)[[[Request-URI]]]] が大き過ぎます。。。)
+があります。
+
+>   Similar considerations apply to the server's handling of the CGI
+response from the script.  There is no limit on the length of the
+header or message-body returned by the script; the server should not
+assume that statically allocated buffers of any size are sufficient
+to contain the entire response.
+
+同様のことが鯖によるスクリプトからの CGI 応答の扱いにも言えます。
+スクリプトが返す頭や [CODE(ABNF)[[[message-body]]]]
+の長さに限界はありません。鯖はどんな大きさであっても静的に割当てられたバッファーが応答全体を含めるのに十分であると仮定するべきではありません。
+
+** 9.7.  Stateless Processing
+>   The stateless nature of the Web makes each script execution and
+resource retrieval independent of all others even when multiple
+requests constitute a single conceptual Web transaction.  Because of
+this, a script should not make any assumptions about the context of
+the user-agent submitting a request.  In particular, scripts should
+examine data obtained from the client and verify that they are valid,
+both in form and content, before allowing them to be used for
+sensitive purposes such as input to other applications, commands, or
+operating system services.  These uses include (but are not limited
+to) system call arguments, database writes, dynamically evaluated
+source code, and input to billing or other secure processes.  It is
+important that applications be protected from invalid input
+regardless of whether the invalidity is the result of user error,
+logic error, or malicious action.
+
+Web の状態を持たないという性質のため、複数の要求が概念的に1つの Web
+のやり取りであっても、それぞれのスクリプトの実行や資源の[[取出し]]が独立したものとなります。
+このため、スクリプトは要求を提出する利用者エージェントの文脈についての仮定を行うべきではありません。
+特にスクリプトはクライアントから得たデータを他の応用や命令やオペレーティング・システムのサービスへの入力など繊細な目的に使う前に検査し、
+形式も内容も妥当であるかを検証するべきです。繊細な用途にはシステム呼出しの引数、
+データベース書込み、原始符号の動的評価、証書やその他安全な処理への入力を含みますが、
+それに限りません。非妥当性が利用者の誤り、論理誤り、
+不正な動作の結果であるかどうかにかかわらず不当な入力から応用が保護されることが重要です。
+
+>   Authors of scripts involved in multi-request transactions should be
+particularly cautious about validating the state information;
+undesirable effects may result from the substitution of dangerous
+values for portions of the submission which might otherwise be
+presumed safe.  Subversion of this type occurs when alterations are
+made to data from a prior stage of the transaction that were not
+meant to be controlled by the client (e.g., hidden HTML form
+elements, cookies, embedded URLs, etc.).
+
+多くの要求によるやり取りにかかわるスクリプトの著者は、
+状態情報の検証に特に注意するべきです。提出物の中の本来安全である場所を危険な値で置き換えることで望ましからぬ影響が出ることがあります。
+この種の破壊はクライアントが制御することと意図していないやり取りの前段階からのデータ
+(例えば隠し [[HTML]] フォーム要素、 [[Cookie]], 埋込み URL など) 
+を変更することによって起こります。
+
+** 9.8.  Relative Paths
+>   The server should be careful of ".." path segments in the request
+URI.  These should be removed or resolved in the request URI before
+it is split into the script-path and extra-path.  Alternatively, when
+the extra-path is used to find the PATH_TRANSLATED, care should be
+taken to avoid the path resolution from providing translated paths
+outside an expected path hierarchy.
+
+鯖は要求 URI 中の [SAMP(URI)[..]] 経路断片に注意するべきです。
+これは要求 URI を [CODE(ABNF)[script-path]] と [CODE(ABNF)[extra-path]]
+に分割する前に削除するか解決するべきです。あるいは、
+[CODE(CGI)[[[PATH_TRANSLATED]]]] を探すために [CODE(ABNF)[extra-path]]
+を使う時、経路を翻訳して解決した経路が予期している経路階層の外に出ることを避けるように注意するべきです。
+
+** 9.9.  Non-parsed Header Output
+>   If a script returns a non-parsed header output, to be interpreted by
+the client in its native protocol, then the script must address all
+security considerations relating to that protocol.
+
+スクリプトがクライアントが自分のプロトコルで解釈する非解析対象頭出力を返す場合には、
+スクリプトはそのプロトコルに関するすべての安全に関する考察に言及しなければなりません。
+
+* 10.  Acknowledgements
+>   This work is based on the original CGI interface that arose out of
+discussions on the 'www-talk' mailing list.  In particular, Rob
+McCool, John Franks, Ari Luotonen, George Phillips and Tony Sanders
+deserve special recognition for their efforts in defining and
+implementing the early versions of this interface.
+
+この仕様書は [[www-talk]] メイリング・リストでの議論により生まれた元の CGI
+の界面を基にしています。特に、この界面の初期の版の定義と実装には特に Rob
+McCool, John Franks, Ari Luotonen, George Phillips, Tony Sanders
+のご尽力がありました。
+
+>   This document has also greatly benefited from the comments and
+suggestions made Chris Adie, Dave Kristol and Mike Meyer; also David
+Morris, Jeremy Madea, Patrick McManus, Adam Donahue, Ross Patterson
+and Harald Alvestrand.
+
+この文書も Chris Adie, Dave Kristol, Mike Meyer それに David
+Morris, Jeremy Madea, Patrick McManus, Adam Donahue, Ross Patterson,
+Harald Alvestrand のご助言から多くのものを得ています。
+
+* 11.  References
+** 11.1  Normative References
+
+   [1]  Berners-Lee, T., Fielding, R. and H. Frystyk, "Hypertext
+        Transfer Protocol -- HTTP/1.0", RFC 1945, May 1996.
+
+   [2]  Berners-Lee, T., Fielding, R. and L. Masinter, "Uniform Resource
+        Identifiers (URI) : Generic Syntax", RFC 2396, August 1998.
+
+   [3]  Bradner, S., "Key words for use in RFCs to Indicate Requirements
+        Levels", BCP 14, RFC 2119, March 1997.
+
+   [4]  Fielding, R., Gettys, J., Mogul, J., Frystyk, H., Masinter, L.,
+        Leach, P., and T. Berners-Lee, "Hypertext Transfer Protocol --
+        HTTP/1.1", RFC 2616, June 1999.
+
+   [5]  Franks, J., Hallam-Baker, P., Hostetler, J., Lawrence, S.,
+        Leach, P., Luotonen, A., and L. Stewart, "HTTP Authentication:
+        Basic and Digest Access Authentication", RFC 2617, June 1999.
+
+   [6]  Freed, N. and N. Borenstein, "Multipurpose Internet Mail
+        Extensions (MIME) Part Two: Media Types", RFC 2046, November
+        1996.
+
+   [7]  Hinden, R., Carpenter, B., and L. Masinter, "Format for Literal
+        IPv6 Addresses in URL's", RFC 2732, December 1999.
+
+   [8]  "HTTP Status Code Registry",
+        http://www.iana.org/assignments/http-status-codes, IANA.
+
+   [9]  "Information Systems -- Coded Character Sets -- 7-bit American
+        Standard Code for Information Interchange (7-Bit ASCII)", ANSI
+        INCITS.4-1986 (R2002).
+
+   [10] "Information technology -- 8-bit single-byte coded graphic
+        character sets -- Part 1: Latin alphabet No. 1", ISO/IEC
+        8859-1:1998.
+
+** 11.2.  Informative References
+
+   [11] Berners-Lee, T., "Universal Resource Identifiers in WWW: A
+        Unifying Syntax for the Expression of Names and Addresses of
+        Objects on the Network as used in the World-Wide Web", RFC 1630,
+        June 1994.
+
+   [12] Braden, R., Ed., "Requirements for Internet Hosts -- Application
+        and Support", STD 3, RFC 1123, October 1989.
+
+   [13] Crocker, D., "Standard for the Format of ARPA Internet Text
+        Messages", STD 11, RFC 822, August 1982.
+
+   [14] Dierks, T. and C. Allen, "The TLS Protocol Version 1.0", RFC
+        2246, January 1999.
+
+   [15] Hinden R. and S. Deering, "Internet Protocol Version 6 (IPv6)
+        Addressing Architecture", RFC 3513, April 2003.
+
+   [16] Masinter, L., "Returning Values from Forms:
+        multipart/form-data", RFC 2388, August 1998.
+
+   [17] Mockapetris, P., "Domain Names - Concepts and Facilities", STD
+        13, RFC 1034, November 1987.
+
+   [18] Raggett, D., Le Hors, A., and I. Jacobs, Eds., "HTML 4.01
+        Specification", W3C Recommendation December 1999,
+        http://www.w3.org/TR/html401/.
+
+   [19] Rescola, E. "HTTP Over TLS", RFC 2818, May 2000.
+
+   [20] St. Johns, M., "Identification Protocol", RFC 1413, February
+        1993.
+
+   [21] IBM National Language Support Reference Manual Volume 2,
+        SE09-8002-01, March 1990.
+
+   [22] "The Common Gateway Interface",
+        http://hoohoo.ncsa.uiuc.edu/cgi/, NCSA, University of Illinois.
+
+* 12.  Authors' Addresses
+>   David Robinson
+> The Apache Software Foundation
+
+>   EMail: drtr@apache.org
+
+>   Ken A. L. Coar
+>   The Apache Software Foundation
+
+>   EMail: coar@apache.org
+
+* 13.  Full Copyright Statement
+
+   Copyright (C) The Internet Society (2004).  This document is subject
+   to the rights, licenses and restrictions contained in BCP 78 and at
+   www.rfc-editor.org, and except as set forth therein, the authors
+   retain all their rights.
+
+   This document and the information contained herein are provided on an
+   "AS IS" basis and THE CONTRIBUTOR, THE ORGANIZATION HE/SHE REPRESENTS
+   OR IS SPONSORED BY (IF ANY), THE INTERNET SOCIETY AND THE INTERNET
+   ENGINEERING TASK FORCE DISCLAIM ALL WARRANTIES, EXPRESS OR IMPLIED,
+   INCLUDING BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE
+   INFORMATION HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED
+   WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+
+   Intellectual Property
+
+   The IETF takes no position regarding the validity or scope of any
+   Intellectual Property Rights or other rights that might be claimed to
+   pertain to the implementation or use of the technology described in
+   this document or the extent to which any license under such rights
+   might or might not be available; nor does it represent that it has
+   made any independent effort to identify any such rights.  Information
+   on the ISOC's procedures with respect to rights in ISOC Documents can
+   be found in BCP 78 and BCP 79.
+
+   Copies of IPR disclosures made to the IETF Secretariat and any
+   assurances of licenses to be made available, or the result of an
+   attempt made to obtain a general license or permission for the use of
+   such proprietary rights by implementers or users of this
+   specification can be obtained from the IETF on-line IPR repository at
+   http://www.ietf.org/ipr.
+
+   The IETF invites any interested party to bring to its attention any
+   copyrights, patents or patent applications, or other proprietary
+   rights that may cover technology that may be required to implement
+   this standard.  Please address the information to the IETF at 
+   ietf-ipr@ietf.org.
+
+* Acknowledgement
+>   Funding for the RFC Editor function is currently provided by the
+Internet Society.
+
+
+* メモ

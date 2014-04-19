@@ -1,0 +1,579 @@
+
+
+* [CODE(MIME)[Content-Type:]] 頭欄 (MIME, HTTP, RTSP, SIP)
+
+[14] [CODE(MIME)[Content-Type:]] 欄は、
+その[RUBYB[[[実体]]] [entity]]の型を指定する欄です。
+[DFN[[RUBYB[型] [type]]]]とは文章 ([SAMP(MIME)[[[text/plain]]]]) 
+か画像 ([SAMP(MIME)[[[image/png]]]], [SAMP(MIME)[[[image/jpeg]]]] 
+など) か [ABBR[[[XHTML]]] [Extensible Hypertext Markup Language]] 
+([SAMP(MIME)[[[application/xhtml+xml]]]]) か、
+はたまた・・・というようなものです。
+この型を、[DFN[[RUBYB[[[媒体型]]] [media type]]]]と呼びます。
+
+[15] 初め [[RFC 1049]] が定義していましたが、これと互換性のない 
+[ABBR[[[MIME]]] [Multipurpose Internet Mail Extensions]] 
+が再定義した形式が普及し、 
+[ABBR[[[HTTP]]] [Hypertext Transfer Protocol]] 
+など他のプロトコルでも採用されています。
+
+
+** 構文
+
+
+*** RFC 1049 の構文
+
+@@ 
+
+[[#comment]]
+
+
+*** MIME の構文
+
+[22] 
+[CODE(MIME)[Content-Type:]] 
+欄の[RUBYB[[[欄本体]]] [field body]]には、
+[[媒体型]]を指定します。媒体型は、
+[RUBYB[型] [type]] [WEAK[(例: [SAMP(MIME)[text]])]] 
+と[RUBYB[亜型] [subtype]] [WEAK[(例: [SAMP(MIME)[plain]])]] 
+の組で表します
+[WEAK[(例: [SAMP(MIME)[text/plain]])]]。
+より詳細な指定を行う[DFN[[RUBYB[引数] [parameter]]]]の指定も可能
+[WEAK[(例: [SAMP(MIME)[text/plain; format=flowed]])]] で、
+広義には引数の指定も含めて媒体型と呼びます。
+
+構文の子細は規格によって異なりますが、
+おおむね次のように表せます。
+
+- [CODE(ABNF)[[DFN[Content-Type 欄]] := "Content-Type" ":" Content-Type 欄本体]]
+- [CODE(ABNF)[[DFN[Content-Type 欄本体]] := 媒体型]]
+- [CODE(ABNF)[[DFN[媒体型]] := 型 "/" 亜型 *(";" 引数指定)]]
+- [CODE(ABNF)[[DFN[引数指定]] := 引数名 "=" 引数値)]]
+
+[23] 例えば [[MIME]] では、 >>22 の構文字句間に
+[CODE(ABNF)[[ABBR[[[LWS]]] [linear white space]]]] を挿入できます。
+[CODE(ABNF)[型]]・[CODE(ABNF)[亜型]]・[CODE(ABNF)[引数名]]の大文字・
+小文字や[CODE(ABNF)[引数指定]]の順序は意味を持ちません。
+[[HTTP]] は MIME とほぼ同じですが、 
+[CODE(ABNF)[型]]や[CODE(ABNF)[引数値]]の定義
+[WEAK[(>>22 では省略しています。)]] に使われている
+[CODE(ABNF)[[[token]]]] の定義が少々異なります。
+
+[24] また、 MIME は [[RFC 2231]] で改訂され、
+実際に[[実体]]の頭部に出現する構文で >>22
+よりも複雑な指定方法が使えるようになっています。
+[WEAK[(長い引数値を[[電子メイル]]で使う場合の対策や[[言語指定]]を含める手段が用意されています。)]]
+しかし、 [[HTTP]] など MIME 
+から派生したプロトコルにまでこの改訂が及ぶのかどうかは曖昧になっています。
+[WEAK[(HTTP のように仕様書で構文を再定義している仕様は影響しないという説が有力です。)]]
+
+@@ MIME/HTTP/CGI/RTSP/SIP/son-of-1036/Usefor の構文の差異の詳細
+
+[[#comment]]
+
+
+** 既定値
+
+@@ MIME の既定値: 
+[CODE(MIME)@en[[[text/plain]]; [[charset]]=[[US-ASCII]]]]
+
+[27]
+'''BEEP'''
+
+[[BEEP]] における [[MIME]] [[実体]]で 
+[CODE(MIME)@en[[[Content-Type]]:]] [[頭欄]]が省略された場合の[[既定値]]は
+[CODE(MIME)@en[[[application/octet-stream]]]]
+です。
+[SRC@en[[[RFC 3080]] 2.2]]
+
+[[#comment]]
+
+
+** 解釈の変え方
+
+@@ 既定値の章と統合する
+
+[21] [[電子メイル]] ([[822]]) の
+[CODE(822)[Content-Type:]] 欄の規定は [[RFC 1049]]
+と [[MIME]] の2種類があります。両者の構文は全然違います。
+
+同じメッセージに [CODE(822)[[[MIME-Version]]:]] 欄があれば
+MIME によって解釈し、なければ RFC 1049
+で解釈するのが正しいそうです。 
+[WEAK[(という話は仕様書には載っていなくて、[[ietf-822]] かどこかでそう聞きました。)]]
+
+(もっとも、構文が全然違うのでどちらの構文も扱えるようにするのは難しくありませんし、
+古いメッセージを扱わないのであれば RFC 1049
+の構文は無視しても良いかもしれません。)
+
+[31]
+asasa
+([[aaa]])
+
+[[#comment]]
+
+
+** 引数
+
+[8] [CODE(MIME)[Content-Type:]] 欄には狭義の[[媒体型]]に加えて、
+任意の個数の[DFN[[RUBYB[引数] [parameter]]]]を指定できます。
+引数は、名前と値の組からなります。値の解釈は名前に依存します。
+そして引数の解釈は、[WEAK[(狭義の)]] 媒体型に依存します。
+(引数は媒体型の[[属性]]であり、 [CODE(MIME)[Content-Type:]]
+欄の属性ではありません。)
+
+[11] 引数名は、大文字・小文字の区別なしで定義されています。
+[[MIME]] など多くの規格では、頭欄に大文字・
+小文字どちらで書いても同じ意味です。引数名として使用できる文字は、
+規格によって異なります。 MIME と [[HTTP]] では共に
+[CODE(ABNF)[[[token]]]] ですが、その [CODE(ABNF)[token]]
+の定義が両規格で異なります。現実に使われている文字は
+[CODE(ABNF)[token]] で使える文字の共通集合の更に小さな部分集合です。
+
+[18] 引数値では、大文字・小文字を区別するかどうかは
+引数名 [WEAK[(正確には、媒体型と引数名)]] に依存します。
+例えば、 [SAMP(MIME)[[[text/plain]]]] の [SAMP(MIME)[[[charset]]]]
+引数では区別しませんが、 [SAMP(MIME)[[[application/octet-stream]]]]
+の [SAMP(MIME)[[[name]]]] では区別します。
+
+MIME では、引数値は [CODE(ABNF)[[[value]]]] であり、
+[CODE(ABNF)[token]] または [CODE(ABNF)[[[quoted-string]]]]
+として定義されていますから、
+前者では引数名同様の文字種しか使えませんが、後者により
+[[RFC 822]] で使えるすべての 
+[ABBR[[[ASCII]]] [American Standard Code for Information Interchange]] 文字が使えます。
+それでも使える文字はわずかに限られますが、 [[RFC 2231]]
+の方法で事実上あらゆる文字の指定が可能です。
+
+HTTP でも [CODE(ABNF)[token]] と [CODE(ABNF)[quoted-string]]
+が使えますが、前述のように [CODE(ABNF)[token]] の定義は
+MIME と異なりますし、 [CODE(ABNF)[quoted-string]]
+の定義も異なります。 RFC 2231 
+の方法は使用できないと一般には考えられています。
+
+MIME・HTTP 以外の規格も [CODE(ABNF)[token]] と 
+[CODE(ABNF)[quoted-string]] が使えることが多いですが、
+詳細はばらばらです。
+
+[19] 引数は媒体型の定義と共に登録することになっています。
+そのためか、電子メイルや MIME 
+の多くの他の[Q[字句]]のような名前付けに関する規定がありません。
+[WEAK[([SAMP[x-]] で始まる引数名を[[私用]]してもよいという規定もありません。)]]
+
+*** 比較的共通なパラメーター
+
+[16] >>8 の通り、引数は媒体型各々固有のものであるのが原則ですが、
+必然的に、または間違いにより、
+媒体型にかかわらず比較的共通に使われている引数が何種類か存在します。
+
+,引数名	,説明	,備考
+,[CODE(MIME)[[[charset]]]]	,Charset
+,[CODE(MIME)[[[x-mac-creator]]]]	,作成プログラム識別子 ([[Macintosh]])
+,[CODE(MIME)[[[x-mac-type]]]]	,型 (Macintosh)
+,[CODE(MIME)[[[name]]]]	,[[ファイル名]]	,[CODE(MIME)[[[Content-Disposition]]]] の [CODE(MIME)[[[filename]]]] 引数を使用する'''べき'''
+,[CODE(MIME)[[[x-unix-mode]]]]	,[[アクセス権]] ([[Un|x]])
+
+[9] [CODE(MIME)[[[charset]]]] 引数は、 MIME
+本体規格でも特別に定義されている引数です。 MIME
+では [CODE(MIME)[[[text/[VAR[*]]]]]] で使うことを規定していますが、
+他の媒体型でも同じ、または似た意味でよく使われます。
+
+[18] [CODE(MIME)[[[name]]]] 引数は、古い MIME の規格で
+[CODE(MIME)[[[application/octet-stream]]]] 
+などごく一部の媒体型に定義されていましたが、
+任意の媒体型で[[ファイル名]]を指定するためのものとして間違って実装されました。
+現在の MIME には [CODE(MIME)[[[Content-Disposition]]:]]
+欄に [CODE(MIME)[[[filename]]]] 引数があり、最近のほとんどの
+[ABBR[[[UA]]] [利用者エージェント]]はそちらに移行しています。
+
+[10] [CODE(MIME)[[[x-unix-mode]]]] は [SAMP(MIME)[0777]]
+のように [[Un|x]] におけるファイルの [[permission]]
+を指定するようです。 [[AppleMail]] 
+などが使用していることがわかっています。
+
+[CODE(MIME)[[[x-mac-creator]]]] と [CODE(MIME)[[[x-mac-type]]]]
+は、 Macintosh の[[ファイル・システム]]の属性を記述するようです。
+[CODE(MIME)[[[application/applefile]>>1]]] をご覧下さい。
+
+これら3つの引数は、本来は [CODE(MIME)[[[Content-Disposition]]:]]
+欄に入れたほうが良い情報かもしれません。
+
+
+[33]
+[[HTTP]] でも [CODE(MIME)@en[[[name]]]] [[引数]]が指定されることがあります。
+
+;; どうやら、 [[Bugzilla]] が[[添付ファイル]]に [CODE(MIME)@en[[[name]]]]
+[[引数]]で[[ファイル名]]を指定しているようです。
+
+** 処理モデル
+
+*** 非妥当な値の解釈
+
+[858] [[HTTP]] [CODE(HTTP)@en[[[Content-Type:]]]] 欄の値が不適切な時の解釈は [[MIME Sniffing]]
+仕様書で規定されています。
+
+[REFS[
+- [861] [CITE[MIME Sniffing]] ([TIME[2011-11-27 08:05:14 +09:00]] 版) <http://mimesniff.spec.whatwg.org/#metadata>
+]REFS]
+
+- [859] 値を[[MIME型]]として解釈できないときは、 [CODE(HTTP)@en[[[Content-Type:]]]] が指定されなかった場合と同じように扱います。
+- [860] [CODE(HTTP)@en[[[Content-Type:]]]] 欄が複数ある時は、最後のものを使います。それが非妥当な値であれば、
+他に妥当な欄があったとしても、全体として非妥当とみなされます。
+
+*** [CODE(HTMLe)@en[meta]] 要素から符号化を取り出す算法
+
+[855] [[HTML]] では [DFN[[RUBYB[[CODE(HTMLe)@en[[[meta]]]] 要素から符号化を取り出す算法]@en[algorithm for extracting an encoding from a [CODE(HTMLe)@en[[[meta]]]] element]]]]が定義されており、
+[CODE(HTMLe)@en[[[meta]]]] [[要素]]の [CODE(HTMLa)@en[[[http-equiv]]]] [[属性]]が
+[CODE(HTTP)@en[[[Content-Type]]]] の時に[[文字符号化]] ([[charset]])
+の値を取り出す時に使われます。
+
+[REFS[
+- [856] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2012-02-22 20:11:59 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#algorithm-for-extracting-an-encoding-from-a-meta-element>
+]REFS]
+
+[857] 元々の [[HTTP]] の [CODE(HTTP)@en[[[Content-Type:]]]] 欄の構文と [[HTML]]
+の [CODE(HTMLe)@en[[[meta]]]] [[要素]]の構文には細かな違いがあり、この[[算法]]は [[HTML]]
+の構文に特化しています。
+
+** 実装
+
+[[#comment]]
+
+
+*** パラメーター不認識問題
+
+[1] 主に古い時代の [[HTTP]] [[UA]]
+において、パラメーターの存在を知らないためにうまく扱えないことがあります。
+
+単に無視するだけならまだ良いのですが、中にはパラメーターも含めて一つの[[媒体型]]とみなし、例えば
+[CODE[text/html;charset=iso-2022-jp]] という媒体型と認識し、保存しますか?
+と聞いてきたりします。
+
+[2] [[Mosaic]] variant にこういうのがいるみたいです。
+古い Mosaic は対応していなかったんでしょうか?
+同じ 1996年の Mosaic でも、 MosaicView ([[NEC]])
+はちゃんと扱えるのに Infomosaic ([[富士通]])
+は扱えなかったりします。
+
+[3] ちなみに、古い [[NN]] (2以前)
+は [[charsetパラメーター]]の扱いにまた別の問題があります。
+- [12] 古い [[UA]] には、 [SAMP[text/html;charset=iso-2022-jp]] ではなく [SAMP[text/html; charset=iso-2022-jp]] になっていないと認識しない困ったちゃんがいるらしいです。
+- [13] [[application/x-www-form-urlencoded]>>1] にも同様の問題が存在します。おそらく潜在的に少なからぬ数の [[UA]] (おそらく大多数は特定目的の tool か古代の [[WWW]] ブラウザ。) が、パラメータの存在により誤動作又は動作しなくなる虞があります。
+[[#comment]]
+
+
+** 歴史
+
+RFC 1049 の CT: は MIME の CT: とは互換性がありません。
+また、 1049 の型の全てに対応する Internet (MIME) 媒体型が
+定義されたわけでもありません。
+幾ら RFC 1049 が実際にはあまり使われなかったとはいえ、
+ひどい処遇です。
+
+son-of-RFC1036 は  RFC 1341 を参照していて、別途 CT: 領域を定義していません。
+usefor-article もそうです。
+
+HTTP の定義は RFC 2045 と同じ物ですが、 RFC 2231 の拡張に
+追随していません。 CGI の定義は HTTP と同じです。
+
+[[MIME//parameter値拡張]]
+RFC 2184, RFC 2231 により Content-Type: 領域の parameter の定義などが
+修訂されました。実際にはあまり実装されていません。
+
+[[#comment]]
+
+
+** 関連
+
+[25] [[XML]] で[[要素]]の[[内容]]として [[Base16]] または
+[[Base64]] で含められたものの[[媒体型]]を記述するための
+[CODE(XMLa)[[QN[xmlmime:[[contentType]]] [http://www.w3.org/2005/05/xmlmime]]]]
+[[属性]]があります。取り得る値は [[RFC 2045]] ([[MIME]])
+の [CODE(MIME)[[[Content-Type]]:]] 欄本体と同じです。
+(特に注記がないから [CODE(ABNF)[[[LFWS]]]] も認められるのか!?)
+
+[CITE[Describing Media Content of Binary Data in XML]] 
+<http://www.w3.org/TR/2005/NOTE-xml-media-types-20050504/#contentType>
+
+@@ [CODE(SGML)@en[%[[ContentType]];]]
+
+[[#comment]]
+
+
+** メモ
+
+- [1] [WEAK[2002-11-15 (金) 17:27]] ''[[名無しさん]]'': RFC 1049 は (MIME が出たかなり後まで) Internet Standard でしたが、いつのまにか histrical に降格していました。
+- [2] [[MIME]] では Content-Type: 欄の[[本体]]の値が[[媒体型]]です。
+- [3] >>2 より媒体型のことを Content-Type あるいは内容型と呼ぶことがあります。まあ間違いではありません。好んでそう呼ぶ人も中にはいます。
+- [17] [WEAK[2003-10-10 00:54:11 +00:00]] ''[[名無しさん]]'': <IW:Google:"Content-Type"> で41位、日本語2位。最近この WikiPage 読む人が多いのはそのせいか。
+
+[20]
+[CITE[Microsoft Windows XP Service Pack 2 での機能の変更点 : ブラウズのセキュリティ強化]]
+<http://www.microsoft.com/japan/technet/prodtechnol/winxppro/maintain/sp2brows.mspx>
+
+[ABBR[[[WinIE]]] [[[Internet Explorer]] ([[Windows]] 版)]] の型判別の仕様が変更されたそうです。相変わらず [CODE(HTTP)[Content-Type]]
+以外の情報を使うようですが、以前より幾分ましにはなっている模様。
+
+[26]
+[CITE[Re: Approved TAG finding: Authoritative Metadata from Ian Hickson on 2006-08-09 (www-tag@w3.org from August 2006)]] <http://lists.w3.org/Archives/Public/www-tag/2006Aug/0027>
+
+[29]
+[CITE[html5/cts/]] ([CODE[2007-09-22 11:17:46 +09:00]] 版) <http://dev.w3.org/cvsweb/html5/cts/>
+([[名無しさん]])
+
+[30]
+[CITE[プロフネット]] ([CODE[2007-11-18 14:32:36 +09:00]] 版) <http://prof.teacup.com/fprof/?p=fprof_guide>
+
+>
+[PRE(HTTP illegal example code)[
+Content-Type: text/html; charset=Shift_JIS lang=ja
+]PRE]
+
+([[名無しさん]])
+
+[32]
+[CITE[Bug 385166 &#8211; Gecko applies style sheets with Content-Type:"null" in standards mode]] ([CODE[2008-01-07 19:33:34 +09:00]] 版) <https://bugzilla.mozilla.org/show_bug.cgi?id=385166>
+([[名無しさん]])
+
+[[#comment]]
+
+@@ Content-Type sniffing についての章を書く
+
+[823] <http://www.leviathansecurity.com/pdf/Flirting%20with%20MIME%20Types.pdf>
+
+@@ Content-Encoding, Content-Transfer-Encoding
+との関連
+
+@@ 拡張子、 [[HFS]] type との関係
+
+* メタ変数 [CODE(CGI)@en[CONTENT_TYPE]] (CGI)
+
+[824] [[CGI]] の[[メタ変数]] [DFN[[CODE(CGI)@en[[[CONTENT_TYPE]]]]]] は、
+[RUBYB[[[メッセージ本体]]]@en[message-body]]の[[MIME型]]を表します [SRC[>>835]]。
+[[HTTP]] などの [CODE(HTTP)@en[[[Content-Type:]]]] [[欄]]に相当します。
+
+** 仕様書
+
+[REFS[
+- [853] [CITE@en[RFC 3875 - The Common Gateway Interface (CGI) Version 1.1]]
+-- [835] '''<http://tools.ietf.org/html/rfc3875#section-4.1.3>'''
+-- [852] <http://tools.ietf.org/html/rfc3875#section-8.2>
+]REFS]
+
+** 値
+
+*** 構文
+
+[832] [[メタ変数]] [CODE(CGI)@en[[[CONTENT_TYPE]]]] に値が設定される場合の構文は [[HTTP]]
+の [CODE(HTTP)@en[[[Content-Type:]]]] [[頭欄]]の構文と同じです。
+
+[FIG[
+[836] 
+[PRE(ABNF code)[
+      CONTENT_TYPE = "" | media-type
+      media-type   = type "/" subtype *( ";" parameter )
+      type         = token
+      subtype      = token
+      parameter    = attribute "=" value
+      attribute    = token
+      value        = token | quoted-string
+]PRE]
+[FIGCAPTION[
+[SRC[>>835]]
+]FIGCAPTION]
+]FIG]
+
+[837] [[RFC]] では構文は >>836 のように定義されています。これは [[RFC 2616]] の [[HTTP]]
+の定義と一致しているのですが、 [[HTTP]] の [[RFC]] とは違って [[LWS]] の挿入箇所は明記されてません。
+
+;; [838] 現実には挿入される可能性があるので、仕様書の誤りだと思います。
+
+[839] 値の意味は [[RFC 2616]] に依るとされています [SRC[>>835]]。
+
+*** 既定値
+
+[840] [CODE(CGI)@en[[[CONTENT_TYPE]]]] の[[既定値]]はありません。[[CGIスクリプト]]は値が設定されていない場合、
+その場合に限って[[MIME型]]を受信したデータから推測して[['''構いません''']]。それでも不明な場合にあっては
+[CODE(MIME)@en[[[application/octet-stream]]]] として扱っても構いませんし、[[誤り]]としても構いません。
+[SRC[>>835]]
+
+[841] 指定されている場合であっても、 [CODE(MIME)@en[[[charset]]]] [[引数]]については[[既定値]]が定義されています。
+
+*** 値の設定
+
+[842] [[鯖]]は、 [[HTTP]] [[要求]]に [CODE(HTTP)@en[[[Content-Type:]]]] [[欄]]が含まれている場合、
+それを設定しなければ[['''なりません''']]。
+[[クライアント]]が指定しなかった場合は[[鯖]]が推定しても[['''構いません''']]。
+そうでない場合は設定しないべきです。 [SRC[>>835]]
+
+** 処理モデル
+
+[851] [[スクリプト]]は [CODE(CGI)@en[[[CONTENT_TYPE]]]] が値を持たないときは [CODE(HTTP)[[[415]]]]
+[[応答]]により拒絶することができます。 [SRC[>>852]]
+
+** 歴史
+
+*** CGI/1.1 Internet Draft (03)
+
+**** 6.1.3. CONTENT_TYPE (CGI/1.1 draft 03)
+
+> If the request includes a message-body, CONTENT_TYPE is set to
+the Internet Media Type [9] of the attached entity if the type
+was provided via a "Content-type" field in the request header,
+or if the server can determine it in the absence of a supplied
+"Content-type" field. The syntax is the same as for the HTTP
+"Content-Type" header field.
+
+[[要求]]が [CODE(ABNF)@en[[[message-body]]]] を含んでいる場合、 
+[CODE(CGI)@en[[[CONTENT_TYPE]]]] は、
+[[要求頭部]]の [CODE(HTTP)@en[[[Content-Type]]]] 
+[[欄]]によって[[インターネット媒体型]]が指定されていればそれに設定されます。
+[CODE(HTTP)@en[[[Content-Type]]]] [[欄]]が明示されていない時で[[鯖]]が[[インターネット媒体型]]を決定できるときは、
+それに設定されます。[[構文]]は [[HTTP]] の [CODE(HTTP)@en[[[Content-Type]]]]
+[[頭欄]]のものと同じです。
+
+>
+[PRE(ABNF code)[
+    CONTENT_TYPE = "" | media-type
+    media-type   = type "/" subtype *( ";" parameter)
+    type         = token
+    subtype      = token
+    parameter    = attribute "=" value
+    attribute    = token
+    value        = token | quoted-string
+]PRE]
+
+> The type, subtype, and parameter attribute names are not
+case-sensitive. Parameter values MAY be case sensitive. Media
+types and their use in HTTP are described in section 3.7 of
+the HTTP/1.1 specification [8].
+
+[[型]]、[[部分型]]、[[引数属性名]]は[[大文字・小文字を区別しません]]。
+[[引数値]]は[[大文字・小文字を区別する]]'''かもしれません'''。
+[[HTTP]] における[[媒体型]]とその用法は [[HTTP/1.1]]
+仕様書の3.7節で説明されています。
+
+> Example:
+[PRE(example code)[
+application/x-www-form-urlencoded
+]PRE]
+
+> There is no default value for this variable. If and only if it
+is unset, then the script MAY attempt to determine the media
+type from the data received. If the type remains unknown, then
+the script MAY choose to either assume a content-type of
+application/octet-stream or reject the request with a 415
+("Unsupported Media Type") error. See section 7.2.1.3 for more
+information about returning error status values.
+
+この[[変数]]の[[既定値]]はありません。この値が設定されていなければ、
+また設定されていない場合に限り、[[スクリプト]]は受信データから
+[[媒体型]]を決定しようとしても'''[[構いません]]]'''。
+それでも[[型]]が未知である時は、[[スクリプト]]は[[内容型]]を 
+[CODE(MIME)@en[[[application/octet-stream]]]] と仮定するか、 
+[CODE(HTTP)[[[415]]]] (「未対応の媒体型」) 
+[[誤り]]によって[[要求]]を却下するのどちらかを選んで'''[[構いません]]'''。
+[[誤り]]状態値の返却についての詳細は7.2.1.3節をご覧ください。
+
+> Servers MUST provide this metavariable to scripts if a
+"Content-Type" field was present in the original request
+header. If the server receives a request with an attached
+entity but no "Content-Type" header field, it MAY attempt to
+determine the correct datatype, or it MAY omit this
+metavariable when communicating the request information to the
+script.
+
+[[鯖]]は、元々の[[要求頭部]]に [CODE(HTTP)@en[[[Content-Type]]]] [[頭欄]]が存在する場合、
+この[[メタ変数]]を提供し[['''なければなりません''']]。
+[[鯖]]は、[[添付実体]]があって [CODE(HTTP)@en[[[Content-Type]]]] [[頭欄]]がない[[要求]]を受信した場合、
+正しいデータ型を決定しようと試みて[['''構いません''']]し、
+[[スクリプト]]に[[要求]]情報を伝える際にこの[[メタ変数]]を省いても[['''構いません''']]。
+
+** 実装
+
+[825] [[CGIスクリプト]]は [CODE(CGI)@en[[[CONTENT_TYPE]]]] を [[HTTP]]
+仕様にのっとり正しく処理していないことがよくあります。具体的には、
+- [826] そもそも [CODE(CGI)@en[[[CONTENT_TYPE]]]] をチェックせずに常に 
+[CODE(MIME)@en[[[application/x-www-form-urlencoded]]]] [WEAK[(など特定の[[MIME型]])]]
+であると仮定する
+- [827] [[引数]]の存在を考慮せず、[[完全一致]]で特定の[[MIME型]]か検査する
+- [828] [[大文字・小文字を区別しない]]部分を考慮せず、[[小文字]]のみ受け付ける
+- [829] [[引数]]のまわりなど [CODE(ABNF)@en[[[LWS]]]] が認められている場所で、 [CODE(charname)@en[[[SP]]]]
+1個だけなど特定のパターンのみ受け付ける
+
+... というような実装があります。
+
+[830] [[Perl]] でよく使われる [[CGI.pm]] は[[MIME型]]が[[小文字]]で指定されていると仮定しています。
+
+[843] [CODE(MIME)@en[[[application/x-www-form-urlencoded]]; [[charset]]=[[utf-8]]]] のように[[引数]]が指定されていると正しく扱えない
+[[CGIスクリプト]]も昔はよくありましたが、最近は一部の[[Webブラウザー]]が[[引数]]をつけるようになったため、
+正しく扱えるものが多くなっています。
+
+** 関連
+
+[831] [[HTTP]] [[要求]]に含まれている[[頭欄]]は原則的に[[メタ変数]] [CODE(CGI)@en[[[HTTP_*]]]]
+として [[CGIスクリプト]]に渡されますが、 [CODE(HTTP)@en[[[Content-Type]]]] →
+[CODE(CGI)@en[[[CONTENT_TYPE]]]] は例外となっています。これは [CODE(CGI)@en[[[HTTP_*]]]] 
+が存在しなかった [[CGI/1.0]] 時代の仕様に由来します。
+
+** メモ
+
+[10] [[HTTP]] では [[Content-Type:欄]]の既定値は [CODE[text/plain; charset=iso-8859-1]] なんだが、 [[CGI]] ではこの既定値は採用しないってことか。
+
+* [CODE(HTTP)@en[Content-Type:]] 欄 (CGI)
+
+[844] [[CGI]] の [DFN[[CODE(HTTP)@en[[[Content-Type:]]]] [[欄]]]]は、[[応答本体]]の[[MIME型]]を表します。
+
+** 仕様書
+[REFS[
+- [845] [CITE@en[RFC 3875 - The Common Gateway Interface (CGI) Version 1.1]] ([TIME[2011-11-20 06:09:05 +09:00]] 版) <http://tools.ietf.org/html/rfc3875#section-6.3.1>
+]REFS]
+
+** 構文
+
+[846] この欄の構文は次のように定義されています [SRC[>>845]]。
+[PRE(ABNF code)[
+      Content-Type = "Content-Type:" media-type NL
+]PRE]
+
+[847] [CODE(ABNF)@en[[[media-type]]]] の前には[[空白]]を挿入できます。 [CODE(ABNF)@en[[[media-type]]]]
+は >>832 で定義されています。
+
+[848] [[CGI応答]]が[[応答本体]]を含む場合、 [CODE(HTTP)@en[[[Content-Type:]]]]
+欄は[['''必須''']]です。それが含まれていない場合、[[鯖]]は[[MIME型]]を勝手に推定する[['''べきではありません''']]。
+指定されている場合であっても、 [CODE(MIME)@en[[[charset]]]] [[引数]]を除き、
+変更せずに[[クライアント]]に送信する[['''べきです''']]。 [SRC[>>845]]
+
+;; [850] [CODE(MIME)@en[[[charset]]]] の項も参照。
+
+[849] [[局所リダイレクト応答]]では [CODE(HTTP)@en[[[Content-Type:]]]] 欄を指定できません。
+
+* メモ
+
+[833] [CITE@en[Working Group Decision on ISSUE-125 charset-vs-quotes]]
+( ([[Sam Ruby]] 著, [TIME[2011-03-16 00:13:22 +09:00]] 版))
+<http://lists.w3.org/Archives/Public/public-html/2011Mar/0304.html>
+
+[834] [CITE[Apache HTTP Server Project]]
+( ([TIME[2011-05-28 00:58:55 +09:00]] 版))
+<http://httpd.apache.org/docs/1.3/misc/known_client_problems.html#content-type-persistence>
+
+[854] [CITE@en-us[SOAP over Java Message Service 1.0]]
+( ([TIME[2012-02-15 02:00:44 +09:00]] 版))
+<http://www.w3.org/TR/2012/REC-soapjms-20120216/#contentType>
+
+[862] [CITE@en[RFC 4463 - A Media Resource Control Protocol (MRCP) Developed by Cisco, Nuance, and Speechworks]]
+( ([TIME[2011-12-04 10:31:11 +09:00]] 版))
+<http://tools.ietf.org/html/rfc4463#section-5.4.4>
+
+[863] [CITE@en[RFC 4975 - The Message Session Relay Protocol (MSRP)]]
+( ([TIME[2012-02-26 13:20:50 +09:00]] 版))
+<http://tools.ietf.org/html/rfc4975#page-37>
+
+[864] [CITE@en[RFC 6787 - Media Resource Control Protocol Version 2 (MRCPv2)]]
+( ([TIME[2012-11-13 15:18:40 +09:00]] 版))
+<http://tools.ietf.org/html/rfc6787#section-6.2.6>
+
+[865] [CITE@en[RFC 2660 - The Secure HyperText Transfer Protocol]]
+( ([TIME[2013-07-20 22:21:48 +09:00]] 版))
+<http://tools.ietf.org/html/rfc2660#section-2.4.2>

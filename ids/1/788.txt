@@ -1,0 +1,127 @@
+#?SuikaWiki/0.9
+
+[1] [DFN[HyTime [RUBYB[字句模型記法] [lexical model notation]]]]
+([DFN[HyLex]]) は、[[字句模型]]を記述するための方法の一種として
+[[ISO/IEC 10744]]:1997 で規定されている表記法です。
+
+仕様書: ISO/IEC 10744:1997
+- A.2.2 <http://www.y12.doe.gov/sgml/wg8/docs/n1920/html/clause-A.2.2.html>
+- A.2.3 <http://www.y12.doe.gov/sgml/wg8/docs/n1920/html/clause-A.2.3.html>
+
+[[#comment]]
+
+
+* 構文
+
+[2] HyLex の構文は、基本的には [[SGML]]
+の[[内容模型]]の構文と同じですが、幾つかの違いがあります。
+
+- [5] 下位模型群で [CODE(SGML)[GRPO]], [CODE(SGML)[GRPC]]
+の代わりに [CODE(SGML)[[[DSO]]]], [CODE(SGML)[[[DSC]]]]
+を使って、[DFN[[RUBYB[一致字句模型] [match token model]]]]を定義できます。
+-- 字句パターンの検索に使用する時には、
+一致字句模型を満足するデータの部分を[DFN[[RUBYB[一致字句] [match token]]]]と呼び、検索の結果として返します。
+-- 字句型の規定のために使用する時には、
+単に下位模型群としての意味だけを持ちます。
+
+- [CODE(ABNF)[[DFN[HyLex 模型]] := 模型群の内容]]
+- [CODE(ABNF)[[DFN[真の模型群]] := [CODE(SGML)[[[grpo]]]] 模型群の内容 [CODE(SGML)[[[grpc]]]]]]
+- [CODE(ABNF)[[DFN[一致字句模型群]] := [CODE(SGML)[[[dso]]]] 模型群の内容 [CODE(SGML)[[[dsc]]]]]]
+- [CODE(ABNF)[[DFN[模型群の内容]] := *[CODE(SGML)[[[ts]]]] 模型群の要素 *(*[CODE(SGML)[ts]] 接続子 模型群の要素) *[CODE(SGML)[ts]]]]
+- [CODE(ABNF)[[DFN[模型群の要素]] := 内容字句など [出現標識 / *([CODE(SGML)[[[rni]]]] ORDER 辞書式順序名 / [CODE(SGML)[rni]] CHECK 追加字句制約名)] / [CODE(SGML)[rni]] NOT 内容字句など]]
+- [CODE(ABNF)[[CODE[内容字句など]] := 内容字句 / 真の模型群 / 一致字句模型群]]
+- [CODE(ABNF)[[DFN[内容字句]] := [[表記]] / <以前に宣言された[[字句型名]]>]]
+- [CODE(ABNF)[[DFN[接続子]] := [CODE(SGML)[[[or]]]] / [CODE(SGML)[[[seq]]]]]]
+
+仕様書の文章をもとに ABNF にしてみました。
+(一部 [CODE(SGML)[ts]] が抜けています。)
+ISO 8879 に合わせて [CODE(SGML)[ts]] ですが、
+たぶん引数実体参照は使えないので、実際には [CODE(SGML)[[[s]]]]
+です。
+
+(生成規則くらい規格に書いておいてほしいなあ。)
+
+[4]
+
+:[CODE(SGML)[NOT]]:一致しないものと一致します。
+[WEAK[(正規表現の [CODE(regex)[^]] のようなものですが、文字ではなく文字列が対象です。)]]
+HyLex では一致個数を制限する方法はありません。
+使用例をみると零個以上無限大個と一致するみたいです。
+:[CODE(SGML)[ORDER]]:一致を試みる前に適用する[[辞書式順序]]を指定します。
+:[CODE(SGML)[CHECK]]:内容字句や模型群に一致したデータに適用する追加[[字句制約]]の名前を指定します。
+この追加字句制約を満足しなくても一致処理に影響はありません。
+(とはどういう意味? 単に誤りとして報告しないというだけか、あるいはそこまでの一致を取り消すこともないのか。)
+
+[6]
+陽には規定されていませんけど、やはり SGML 内容模型と同様に後戻りはなしでしょうか。
+
+[[#comment]]
+
+* 正規化字句模型
+
+[11] 字句型が本質的に[[空白]]で分離した字句の並びであるときには、「正規化」模型を使用できます。
+
+正規化模型はデータ属性 [CODE(SGMLa)[norm]] の値を
+[CODE(SGML)[norm]] とします (既定値)。
+非正規化模型は [CODE(SGML)[unorm]] とします。
+
+[12] 正規化模型は、次の手順で非正規化模型に変換できます。
+
+= 各[[表記]]内容字句の後に、修飾子
+[CODE(SGML)[#ORDER SGMLCASE]] を置く
+([CODE[SGMLCASE]] は [CODE[[[ISO 8879:1986//NOTATION LEXORD Namecase substitution//EN]]]])。
+= 各内容字句を一致字句模型とする。
+このとき、 [CODE(SGML)[#ORDER]] と [CODE(SGML)[#CHECK]]
+は一致字句模型群に入れるが、出現標識は除く。
+=- 例: [CODE(SGML)[(a, b #CHECK c, d*, (e, f+))]] →
+[CODE(SGML)[([a], [b #CHECK c], [d]*, ([e], [f]+))]]
+= 連続下位模型群の間に [CODE(SGML)[s+]] を挿入する。
+=- 例: [CODE(SGML)[( NMTOKEN+, ( '#ANY', NUMBER )* )]]
+→ [CODE(SGML)[( [NMTOKEN]+, [INS[s+,]] ( ['#ANY' #ORDER SGMLCASE], [INS[s+,]] [NUMBER] )* )]]
+= [CODE(SGML)[[[PLUS]]]] と [CODE(SGML)[[[REP]]]] のついた下位模型群を開く:
+=- [CODE(SGML)[[VAR[(m)]]+]] → [CODE(SGML)[( [VAR[(m)]], ( s+, [VAR[(m)]] )* )]]
+=- [CODE(SGML)[[VAR[(m)]]*]] → [CODE(SGML)[( [VAR[(m)]]?, ( s+, [VAR[(m)]] )* )]]
+=- 元の [VAR[(m)]] が一致字句模型群なら、対応する [VAR[(m)]]
+も一致字句模型群とする。
+= 最上位模型群が [CODE(SGML)[[[OR]]]] 群なら、
+その一つ上に連続群を置く。
+=- 例: [SAMP(SGML)[(a | b)]] → [SAMP(SGML)[( ([a] | [b]) )]]
+= 最上位模型群の最初と最後に [CODE(SGML)[s*]] を挿入する。
+=- 例: [SAMP(SGML)[(a | b)]] → [SAMP(SGML)[(s*, ([a] | [b]), s*)]]]]
+
+[12] [[ISO/IEC 10744]]:1997 の[[マーク宣言]]の注釈にある、
+[[属性]]や[[データ内容]]の[[字句型]]の定義
+([[表記法注釈]]) で、 [CODE[Lextype:]] の後に記述されているものは正規化模型
+([CODE(SGML)[[CODE(SGMLa)[norm]]=norm]]),
+[CODE[Ulextype:]] の後に記述されているものは非正規化模型
+([CODE(SGML)[[CODE(SGMLa)[norm]]=unorm]]) です。
+
+[[#comment]]
+
+* 公開識別子と属性
+
+[7] HyLex の[[公開識別子]]は
+[CODE[ISO/IEC 10744:1997//NOTATION HyTime lexical model notation (HyLex)//EN]]
+です。
+
+[8] 属性:
+,名前,値の型,既定値,説明
+,[CODE(SGMLa)[[[norm]]]],[CODE(SGML)[norm | unorm]],[CODE(SGML)[norm]],正規化
+,[CODE(SGML)[[[altreps]]]]
+,[CODE(SGML)[[[included]]]]
+,[CODE(SGML)[[[superdcn]]]]
+
+[9] 宣言例:
+[PRE(SGML)[
+<![[NOTATION]] HyLex
+  [[PUBLIC]] "ISO/IEC 10744:1997//NOTATION
+          HyTime lexical model notation (HyLex)//EN">
+<![[ATTLIST]] #NOTATION HyLex
+  norm (norm | unorm) norm
+  %ga.common.attrib;
+>
+]PRE]
+
+[10] HyLex は[[一般体系]]
+([CODE[ISO/IEC 10744:1997//DTD AFDR Meta-DTD General Architecture//EN]])
+で記法 [CODE[HyLex]] として宣言されています。

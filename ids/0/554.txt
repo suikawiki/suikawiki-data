@@ -1,0 +1,173 @@
+
+
+* 仕様書から
+
+
+** RFC 3229 (差分符号化) 10.4.1 226 IM Used
+
+> The server has fulfilled a GET request for the resource, and the
+response is a representation of the result of one or more instance-manipulations applied to the current instance.  The actual current
+instance might not be available except by combining this response
+with other previous or future responses, as appropriate for the
+specific instance-manipulation(s).  If so, the headers of the
+resulting instance are the result of combining the headers from the
+status-226 response and the other instances, following the rules in
+section 13.5.3 of the HTTP/1.1 specification [10].
+
+鯖は、[[要求]]に対する [CODE(HTTP)[[[GET]]]] 要求を満たし、
+[[応答]]は一つ以上の[[実現値操作]]を現在[[実現値]]に適用した結果の[[表現]]です。実際の現在実現値は、特定の実現値操作(群)によって、
+この応答と他の以前または将来に応答を結合することによってでないと入手可能でないかもしれません。
+そうである場合、 HTTP/1.1 仕様書の13.5.3 節の規則に従って状態 [CODE(HTTP)[226]] 応答と他の実現値からの頭群を結合した結果が結果の実現値の頭群です。
+
+> The request MUST have included an A-IM header field listing at least
+one instance-manipulation.  The response MUST include an Etag header
+field giving the entity tag of the current instance.
+
+要求は、最低一つの実現値操作を挙げた [CODE(HTTP)[[[A-IM]]]]
+頭欄を含んでいなければ'''なりません'''。
+応答は、現在実現値の[[実体札]]を与える [CODE(HTTP)[[[Etag]]]]
+頭欄を含んでいなければ'''なりません'''。
+
+> A response received with a status code of 226 MAY be stored by a
+cache and used in reply to a subsequent request, subject to the HTTP
+expiration mechanism and any Cache-Control headers, and to the
+requirements in section 10.6.
+
+状態符号 [CODE(HTTP)[226]] で受信した応答は、
+[[キャッシュ]]に蓄積して、後の要求に対する返答で用いて'''構いません'''。
+ただし、 HTTP [[満期]]機構および [CODE(HTTP)[[[Cache-Control]]]]
+
+頭群ならびに 10.6 節の要件の対象となります。
+
+> A response received with a status code of 226 MAY be used by a cache,
+in conjunction with a cache entry for the base instance, to create a
+cache entry for the current instance.
+
+状態符号 [CODE(HTTP)[226]] で受信した応答は
+キャッシュが[[基底実現値]]の[[キャッシュ項目]]と併せて現在実現値のキャッシュ項目を作成するために使って'''構いません'''。
+
+
+** RFC 3229 (差分符号化) 10.6 Caching rules for 226 responses
+
+> When a client or proxy receives a 226 (IM Used) response, it MAY use
+this response to create a cache entry in three ways:
+
+[[クライアント]]または[[串]]が [CODE(HTTP)[[[226]]]]
+([ABBR[IM]] 使用中) [[応答]]を受信した時は、
+この応答を三つの方法で[[キャッシュ項目]]を作成するために使用して'''構いません'''。
+
+>
+- 1. It MAY decode all of the instance-manipulations to recover the
+original instance, and store that instance in the cache.  In
+this case, the recovered instance is stored as a status-200
+response, and MUST be used in accordance with the normal HTTP
+caching rules.
+- 2. It MAY decode all of the instance-manipulations except for
+range selection(s), and store the result in the cache.  In this
+case, the result is stored as a status-206 response, and MUST
+be used in accordance with the normal HTTP caching rules for
+Partial Content.
+- 3. It MAY store the status-226 (IM Used) response as a cache entry.
+
+- もとの[[実現値]]を回復するためにすべての[[実現値操作]]を復号して、
+その実現値を[[キャッシュ]]に蓄積して'''構いません'''。
+この場合、回復した実現値は状態 [CODE(HTTP)[[[200]]]]
+応答として蓄積し、通常の HTTP キャッシュ付け規則に従って使用しなければ'''なりません'''。
+- 範囲選択(群)を除く実現値操作をすべて復号し、結果をキャッシュに蓄積して'''構いません'''。この場合、結果は状態 [CODE(HTTP)[[[206]]]]
+応答として蓄積し、部分内容についての通常の HTTP キャッシュ付け規則に従って使用しなければ'''なりません'''。
+- 状態 [CODE(HTTP)[226]] ([ABBR[IM]] 使用中)
+応答をキャッシュ項目として蓄積して'''構いません'''。
+
+> A status-226 cache entry MUST NOT be used in response to a subsequent
+request under any of these conditions (a cache that never stores
+status-226 responses may ignore these tests):
+
+状態 [CODE(HTTP)[226]] キャッシュ項目は次のどの条件の下でも以後の要求に対する応答として使用しては'''なりません'''
+(状態 [CODE(HTTP)[226]] 応答を蓄積しないキャッシュはこれらの試験を無視して構いません)。
+
+>
+- 1. If any of the instance-manipulation values from the IM header
+field in the cached response do not appear in the subsequent
+request's A-IM header field.  The comparison between the
+headers is done using an exact match on each instance-manipulation value including any associated imparams values
+see section 10.1).
+- 2. If the order of instance-manipulation values appearing in the
+cached IM header field differs from the order of that set of
+instance-manipulations in the A-IM header field of the
+subsequent request.
+- 3. If the cache implementation is not aware of, or is not at least
+conditionally compliant with, the specification of any of the
+instance-manipulation values in the cached IM header field.
+
+- キャッシュした応答の [CODE(HTTP)[[[IM]]]] 頭欄の実現値操作値のいずれもが後の要求の [CODE(HTTP)[[[A-IM]]]] 頭欄に出現しない場合。
+頭の比較は関連付けられた [CODE(ABNF)[imparams]] 値を含めた各実現値操作値の正確一致を使って行います。
+- キャッシュした [CODE(HTTP)[IM]] 頭欄の実現値操作値の順序が後の要求の
+[CODE(HTTP)[A-IM]] 頭欄中の実現値操作の集合の順序と異なる場合。
+- キャッシュ実装がキャッシュした [CODE(HTTP)[IM]]
+頭欄中の実現値操作値のいずれかの仕様も知らないか、または最低でも条件的に適合していない場合。
+
+> Note: This rule allows for extending the set of instance-manipulations without causing deployed cache implementations to
+commit errors.  The specification of new instance-manipulations
+may include additional caching rules to improve cache-hit rates
+in cognizant implementations.
+
+注意: この規則により、実現値操作の集合を拡張しても既存のキャッシュ実装が誤りを起こすことはありません。
+新しい実現値操作の仕様書は知っている実装のキャッシュ打率を向上する追加のキャッシュ付け規則を含むかもしれません。
+
+>
+- 4. If any of the instance-manipulation values in the cached IM
+header field is a delta-coding, and the cache entry includes a
+Delta-Base header field, and that Delta-Base entity tag is not
+one of the entity tags listed in an If-None-Match header field
+of the subsequent request.
+- 5. If any of the instance-manipulation values in the cached IM
+header field is a delta-coding, the cache entry does not
+include a Delta-Base header field, and the If-None-Match header
+field of the request that led to that cache entry does not
+match the If-None-Match header field of the subsequent request.
+
+- キャッシュしている [CODE(HTTP)[IM]] 頭欄の実現値操作値のいずれかが[[差分符号化]]であり、キャッシュ項目が [CODE(HTTP)[[[Delta-Base]]]]
+頭欄を含み、その [CODE(HTTP)[Delta-Base]] [[実体札]]が[[後続要求]]の
+[CODE(HTTP)[[[If-None-Match]]]] 頭欄に列せられた実体札のいずれでもない場合。
+- キャッシュしている [CODE(HTTP)[IM]] 頭欄の実現値操作値のいずれかが差分符号化であり、キャッシュ項目が [CODE(HTTP)[Delta-Base]]
+頭欄を含まず、そのキャッシュ項目に導いた要求の [CODE(HTTP)[If-None-Match]]
+頭欄が後続要求の [CODE(HTTP)[If-None-Match]] 頭欄に一致しない場合。
+
+> If the IM header field of the cached response includes the "range"
+instance-manipulation, then a status-226 cache entry MUST NOT be used
+in response to a subsequent request if the cached response is
+inconsistent with the Range header field value(s) in the request, as
+would be the case for a cached 206 (Partial Content) response.
+
+キャッシュしている応答の [CODE(HTTP)[IM]] 頭欄が
+[CODE(HTTP)[[[range]]]] 実現値操作を含む場合、
+キャッシュ応答が要求の [CODE(HTTP)[[[Range]]]] 頭欄値 (群)
+と不整合であるなら、キャッシュされた [CODE(HTTP)[[[206]]]] (部分内容)
+応答の場合と同様に、状態 [CODE(HTTP)[[[226]]]]
+キャッシュ項目を後続要求に対する応答に用いては'''なりません'''。
+
+> Note: we know of no existing, published formal specification for
+deciding if a cached status-206 response is consistent with a
+subsequent request.  We believe that either of these conditions is sufficient:
+
+注意: キャッシュされた状態 [CODE(HTTP)[206]] 応答が後続要求に整合しているかどうかを決定する出版済み公式仕様書の存在は知られていません。
+次の条件のいずれかが十分であると信じています。
+
+>
+- 1. The ranges specified in the headers of the request that led
+to the cached response are the same as specified in the
+headers of the subsequent request.
+- 2. The ranges specified in the cached response are the same as
+specified in the headers of the subsequent request.
+
+- キャッシュ応答を導いた要求の頭群に指定された範囲が後続要求の頭群に指定されたものと同じである。
+- キャッシュ応答に指定された範囲が後続要求の頭群に指定されたものと同じである。
+
+> Further analysis might be necessary.
+
+更なる調査が必要かもしれません。
+
+
+** RFC の部分の License
+
+[[RFCのライセンス]]

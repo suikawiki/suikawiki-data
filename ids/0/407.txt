@@ -1,0 +1,404 @@
+
+
+* RFC 2231 3.  Parameter Value Continuations
+
+[PRE[
+   Long MIME media type or disposition parameter values do not interact
+   well with header line wrapping conventions.  In particular, proper
+   header line wrapping depends on there being places where linear
+   whitespace (LWSP) is allowed, which may or may not be present in a
+   parameter value, and even if present may not be recognizable as such
+   since specific knowledge of parameter value syntax may not be
+   available to the agent doing the line wrapping. The result is that
+   long parameter values may end up getting truncated or otherwise
+   damaged by incorrect line wrapping implementations.
+]PRE]
+
+[PRE[
+   A mechanism is therefore needed to break up parameter values into
+   smaller units that are amenable to line wrapping. Any such mechanism
+   MUST be compatible with existing MIME processors. This means that
+]PRE]
+
+(1)   the mechanism MUST NOT change the syntax of MIME media
+type and disposition lines, and
+
+(1) 方法は MIME 媒体型及び意向行の構文を変えては''ならない''。
+
+(2)   the mechanism MUST NOT depend on parameter ordering
+since MIME states that parameters are not order
+sensitive.  Note that while MIME does prohibit
+modification of MIME headers during transport, it is
+still possible that parameters will be reordered when
+user agent level processing is done.
+
+(2) 方法は parameter 順に依存しては''ならない''。
+MIME はパラメーターの順は関係しないとしている。
+なお、 MIME は転送中の MIME 頭の編集は禁止しているので、
+利用者代理者段階の処理が行われた時にパラメーターの順序を
+変えることは可能ではある。
+
+[PRE[
+   The obvious solution, then, is to use multiple parameters to contain
+   a single parameter value and to use some kind of distinguished name
+   to indicate when this is being done.  And this obvious solution is
+   exactly what is specified here: The asterisk character ("*") followed
+   by a decimal count is employed to indicate that multiple parameters
+   are being used to encapsulate a single parameter value.  The count
+   starts at 0 and increments by 1 for each subsequent section of the
+   parameter value.  Decimal values are used and neither leading zeroes
+   nor gaps in the sequence are allowed.
+]PRE]
+
+The original parameter value is recovered by concatenating the
+various sections of the parameter, in order.  For example, the
+content-type field
+
+元のパラメーター値はパラメーターの各節を順につなぐことで復元されます。
+例えば次の content-type 領域
+
+[PRE[
+        Content-Type: message/external-body; access-type=URL;
+         URL*0="ftp://";
+         URL*1="cs.utk.edu/pub/moore/bulk-mailer/bulk-mailer.tar"
+]PRE]
+
+is semantically identical to
+
+は意味的には次のものと同じです。
+
+[PRE[
+        Content-Type: message/external-body; access-type=URL;
+          URL="ftp://cs.utk.edu/pub/moore/bulk-mailer/bulk-mailer.tar"
+]PRE]
+
+Note that quotes around parameter values are part of the value
+syntax; they are NOT part of the value itself.  Furthermore, it is
+explicitly permitted to have a mixture of quoted and unquoted
+continuation fields.
+
+なお、 parameter value の周りの引用符は value 構文の一部ではありません。
+これは value の一部では''ない''のです。なお、引用符で囲まれている継続領域
+と囲まれていない継続領域が混じっていることは明確に認められます。
+
+
+* RFC 2231 4.  Parameter Value Character Set and Language Information
+
+[PRE[
+   Some parameter values may need to be qualified with character set or
+   language information.  It is clear that a distinguished parameter
+   name is needed to identify when this information is present along
+   with a specific syntax for the information in the value itself.  In
+   addition, a lightweight encoding mechanism is needed to accommodate 8
+   bit information in parameter values.
+]PRE]
+
+[PRE[
+   Asterisks ("*") are reused to provide the indicator that language and
+   character set information is present and encoding is being used. A
+   single quote ("'") is used to delimit the character set and language
+   information at the beginning of the parameter value. Percent signs
+   ("%") are used as the encoding flag, which agrees with RFC 2047.
+]PRE]
+
+[PRE[
+   Specifically, an asterisk at the end of a parameter name acts as an
+   indicator that character set and language information may appear at
+   the beginning of the parameter value. A single quote is used to
+   separate the character set, language, and actual value information in
+   the parameter value string, and an percent sign is used to flag
+   octets encoded in hexadecimal.  For example:
+]PRE]
+
+[PRE[
+        Content-Type: application/x-stuff;
+         title*=us-ascii'en-us'This%20is%20%2A%2A%2Afun%2A%2A%2A
+]PRE]
+
+[PRE[
+   Note that it is perfectly permissible to leave either the character
+   set or language field blank.  Note also that the single quote
+   delimiters MUST be present even when one of the field values is
+   omitted.  This is done when either character set, language, or both
+   are not relevant to the parameter value at hand.  This MUST NOT be
+   done in order to indicate a default character set or language --
+   parameter field definitions MUST NOT assign a default character set
+   or language.
+]PRE]
+
+
+** 4.1.  Combining Character Set, Language, and Parameter Continuations
+
+
+** 4.1. 文字集合, 言語, パラメーター継続の組合せ
+
+Character set and language information may be combined with the
+parameter continuation mechanism. For example:
+
+文字集合及び言語情報はパラメーター継続機構と併用できます。例:
+
+[PRE[
+   Content-Type: application/x-stuff
+    title*0*=us-ascii'en'This%20is%20even%20more%20
+    title*1*=%2A%2A%2Afun%2A%2A%2A%20
+    title*2="isn't it!"
+]PRE]
+
+訳注: 各パラメータの後に「;」が必要ですが、この例では抜けています。
+RFC errata <http://www.rfc-editor.org/errata.html> 参照。
+
+Note that:
+
+註:
+
+(1)   Language and character set information only appear at
+the beginning of a given parameter value.
+
+(1) 言語及び文字集合情報はパラメーター値の始めにのみ出現できます。
+
+(2)   Continuations do not provide a facility for using more
+than one character set or language in the same
+parameter value.
+
+(2) 継続は同じパラメーター値で複数の文字集合や言語を使うのには
+使用できません。
+
+(3)   A value presented using multiple continuations may
+contain a mixture of encoded and unencoded segments.
+
+(3) 複数の継続を使って表現されている値は
+符号化されている部分と符号化されていない部分が混じっていても構いません。
+
+(4)   The first segment of a continuation MUST be encoded if
+language and character set information are given.
+
+(4) 言語及び文字集合情報がある場合、継続の最初の部分は
+符号化されて''いなければなりません''。
+
+(5)   If the first segment of a continued parameter value is
+encoded the language and character set field delimiters
+MUST be present even when the fields are left blank.
+
+(5) 継続パラメーター値の最初の部分が符号化されている場合、
+言語及び文字集合領域区切りは領域が空であっても''なければなりません''。
+
+
+* RFC 2231 6.  IMAP4 Handling of Parameter Values
+
+IMAP4 [RFC-2060] servers SHOULD decode parameter value continuations
+when generating the BODY and BODYSTRUCTURE fetch attributes.
+
+
+* RFC 2231 7.  Modifications to MIME ABNF
+
+The ABNF for MIME parameter values given in RFC 2045 is:
+
+RFC 2045 で MIME パラメーター値の ABNF は
+
+[PRE[
+   parameter := attribute "=" value
+]PRE]
+
+[PRE[
+   attribute := token
+                ; Matching of attributes
+                ; is ALWAYS case-insensitive.
+]PRE]
+
+This specification changes this ABNF to:
+
+でした。この仕様書はこの ABNF を次のように変更します。
+
+[PRE[
+   parameter := regular-parameter / extended-parameter
+]PRE]
+
+[PRE[
+   regular-parameter := regular-parameter-name "=" value
+]PRE]
+
+[PRE[
+   regular-parameter-name := attribute [section]
+]PRE]
+
+[PRE[
+   attribute := 1*attribute-char
+]PRE]
+
+[PRE[
+   attribute-char := <any (US-ASCII) CHAR except SPACE, CTLs,
+                     "*", "'", "%", or tspecials>
+]PRE]
+
+[PRE[
+   section := initial-section / other-sections
+]PRE]
+
+[PRE[
+   initial-section := "*0"
+]PRE]
+
+[PRE[
+   other-sections := "*" ("1" / "2" / "3" / "4" / "5" /
+                          "6" / "7" / "8" / "9") *DIGIT)
+]PRE]
+
+[PRE[
+   extended-parameter := (extended-initial-name "="
+                          extended-value) /
+                         (extended-other-names "="
+                          extended-other-values)
+]PRE]
+
+; 編註: extened-value は extended-initial-value の誤り?
+
+[PRE[
+   extended-initial-name := attribute [initial-section] "*"
+]PRE]
+
+[PRE[
+   extended-other-names := attribute other-sections "*"
+]PRE]
+
+[PRE[
+   extended-initial-value := [charset] "'" [language] "'"
+                             extended-other-values
+]PRE]
+
+[PRE[
+   extended-other-values := *(ext-octet / attribute-char)
+]PRE]
+
+[PRE[
+   ext-octet := "%" 2(DIGIT / "A" / "B" / "C" / "D" / "E" / "F")
+]PRE]
+
+[PRE[
+   charset := <registered character set name>
+]PRE]
+
+[PRE[
+   language := <registered language tag [RFC-1766]>
+]PRE]
+
+(以下略)
+
+
+* 他の仕様の BNF 抜粋
+
+
+** RFC 1766
+
+[PRE[
+    Language-Tag = Primary-tag *( "-" Subtag )
+    Primary-tag = 1*8ALPHA
+    Subtag = 1*8ALPHA
+]PRE]
+
+[PRE[
+   Whitespace is not allowed within the tag.
+]PRE]
+
+大文字・小文字を区別しません。
+
+
+** RFC 2978
+
+[PRE[
+     mime-charset = 1*mime-charset-chars
+     mime-charset-chars = ALPHA / DIGIT /
+                "!" / "#" / "$" / "%" / "&" /
+                "'" / "+" / "-" / "^" / "_" /
+                "`" / "{" / "}" / "~"
+     ALPHA        = "A".."Z"    ; Case insensitive ASCII Letter
+     DIGIT        = "0".."9"    ; Numeric digit
+]PRE]
+
+区切子「'」とか、問題ありまくりじゃなかろうか?
+(実際には、 [!#$%&'^`{}~] を使った charset 名は登録されていない。
+但し「$」については非標準名で使用例あり。)
+
+
+* 実装
+
+[1] あまり実装されていません。
+- [5] [[MIME]]-like な仕組みを採用している [[HTTP]] 及び派生プロトコルで [[RFC2231]] の方法が使えるのかは定かではありませんが、 RFC 2231 もそれより後に出た [[RFC2616]] ([[HTTP/1.1]]) も触れていないところをみると使わないのかもしれません。 [[HTTP]] では [[quoted-string]] の中に [[encoded-word]] が使えるとか、 [[RTSP]] や [[SIP]] では [[UTF-8]] が使えるとかもあるし。
+[[#comment]]
+
+
+** 非標準拡張・実装
+
+[3] parameter の value に認められない文字を含める時、
+(特に quoted-string 内に) encoded-word を使う実装があります。
+
+RFC 1867 は Content-Disposition の name パラメーター値
+についてこれを認めています。
+
+RFC 2017 <urn:ietf:rfc:2017> は長い URL について、
+RFC 2231 の方法を使わず、 URL 間に FWS を挟むことを認めています。
+(順序的にこっちが元祖だ:-) [[MHTML]] ([[RFC2110]]) の
+[[Content-Base:領域]], [[Content-Location:領域]]もこれに倣っています。
+
+[[Link:領域]]では、 「SGML 実体参照」というのが使えると
+[[HTML4]] は主張しています。
+- [4] [[RFC2388]] ([[multipart/form-data媒体型]]) は [[Content-Disposition:欄]]の [CODE(ABNF)[name]] パラメーターで [[encoded-word]] の使用を認めています。
+[[#comment]]
+
+
+** Mozilla の実装
+
+[2] Mozilla 1.2.1 では既定では >>3 の方法を使います。設定
+(まだ [[UI]] では実装されていないらしい。) により RFC 2231 の方法を使えますが、
+
+[PRE[
+ Content-Type: application/excel;
+  name*=ISO-8859-1'en-us, en, fr, ru, ja'membership.xls
+]PRE]
+
+のような値を生成してしまう問題があります。 ([[ietf-822]],
+<news://news.gmane.org/3DFA24AE.7060604@alex.blilly.com>)
+
+[6]
+[CITE[Mozilla Japan ナレッジベース - 受取人のメールクライアントによって、添付ファイル名が正しく表示されない場合がある]] 
+([[Thundirbird 1.5]])
+<http://www.mozilla-japan.org/kb/solution/3067>
+
+これに加えて値の方に生の [CODE(char)[/]]
+を含めてしまうとか [SRC@en[mew-dist 26833]]、
+分割した最後の引数の番号の後にまで [CODE(char)[*]]
+をつけてしまうとか [SRC@en[mew-dist 26847]]
+ずいぶんと杜撰な実装のようでございます。
+
+([[名無しさん]] [WEAK[2006-04-04 05:37:17 +00:00]])
+
+[7]
+>>2の問題はThunderbird 1.5で修正、>>6のうちKB3067の問題はThunderbird 1.5.0.2で修正されました。生の / を含めてしまう問題はThunderbird 1.5.0.5で修正される予定です。ご迷惑をおかけして申し訳ありません。
+番号の後に * を付けるのは不要(冗長)なだけで違反はしていません。また最後の引数の番号だから不要なのではなくて、([mew-dist 26847]の例では)ASCII文字しか含んでいないから不要なのです。
+([[名無しさん]] [WEAK[2006-06-13 07:17:00 +00:00]])
+
+[[#comment]]
+
+
+* SEE ALSO
+
+- <urn:ietf:rfc:2184>
+- <urn:ietf:rfc:2231>
+
+
+* RFC の部分の License
+
+See [[RFCのライセンス]]
+
+
+* メモ
+
+- [[RFC2231の実装は面倒]]
+
+[8]
+[CITE@en[Applicability of RFC 2231 Encoding to Hypertext Transfer Protocol (HTTP) Headers]] ([CODE[2008-10-10 20:52:00 +09:00]] 版) <http://greenbytes.de/tech/webdav/draft-reschke-rfc2231-in-http-latest.html>
+([[名無しさん]])
+
+[9]
+[CITE[Test Cases for HTTP Content-Disposition header and RFC 2231/2047 Encoding]] ([TIME[2008-09-21 02:53:50 +09:00]] 版) <http://greenbytes.de/tech/tc2231/>
+([[名無しさん]])
+

@@ -1,0 +1,175 @@
+* XML の定義済実体
+
+[1] [[XML]] ではよく使う[[名前文字参照]]のための[[一般実体]]が
+5つ[Q[定義済み]]とされています。
+
+:[CODE(XML)[[[amp]]]]:[CODE(charname)@en[[[AMPERSAND]]]] ([CODE(char)[&]])
+:[CODE(XML)[[[apos]]]]:[CODE(charname)@en[[[APOSTROPHE]]]] ([CODE(char)[']])
+:[CODE(XML)[[[gt]]]]:[CODE(charname)@en[[[GREATER-THAN SIGN]]]] ([CODE(char)[>]])
+:[CODE(XML)[[[lt]]]]:[CODE(charname)@en[[[LESS-THAN SIGN]]]] ([CODE(char)[<]])
+:[CODE(XML)[[[quot]]]]:[CODE(charname)@en[[[QUOTATION MARK]]]] ([CODE(char)["]])
+
+[5] これらの実体は、[[妥当]]な XML 文書であっても、
+[[DTD]] で[[宣言]]することなく参照できます。
+
+[PRE(XML example)[
+<?[CODE(XML)[xml]] [CODE(XMLa)[version]]="1.0"?>
+<![CODE(XML)[DOCTYPE]] [CODE(XMLe)[foo]] [<![CODE(XML)[ELEMENT]] [CODE(XMLe)[foo]] (#[CODE(XML)[PCDATA]])*>]>
+<[CODE(XMLe)[foo]]>&[CODE(XML)[amp]];</[CODE(XMLe)[foo]]>
+[CODE(comment)[<!-- この文書は整形式であり、かつ妥当です。 -->]]
+]PRE]
+
+[6] しかし、仕様書 [SRC[>>3]] 
+は[[相互運用性のため]]に明示的に宣言する'''べきである'''と述べています。
+
+[7] なお、これらの実体を DTD で宣言するに当たっては、
+他の[[置換文]]を持つようにしてはいけません。
+例えば、次の宣言は不正です。
+[PRE(XML illegal example)[
+<![CODE(XML)[ENTITY]] [CODE(XML)[lt]] "left">
+]PRE]
+
+- [3] ''Extensible Markup Language (XML) 1.0 : Predefined Entities'' <IW:XML1:"sec-predefined-ent">
+- [4] ''Extensible Markup Language (XML) 1.0 : Validity constraint: Entity Declared''
+<IW:XML1:"vc-entdeclared">
+
+[9] >>3 には、
+
+> If the entities lt or amp are declared, they must be declared as internal entities whose ''[INS[3]] replacement text'' is a ''[INS[1]] character reference'' to the respective character (less-than sign or ampersand) being ''[INS[2]] escaped''; the double escaping is required for these entities so that references to them produce a well-formed result. If the entities gt, apos, or quot are declared, they must be declared as internal entities whose ''[INS[3]] replacement text'' is the single character being ''[INS[2]] escaped'' (or a ''[INS[5]] character reference'' to that character; the double escaping here is unnecessary but harmless).
+
+とあります [WEAK[(強調引用者)]]。
+- 前者の群で、 [CODE[1]] の「それぞれの文字の''文字参照''」
+とは、 [CODE(XML)[&]] なら [CODE(XML)[&#x26;]] などです。
+- [CODE[2]] で、
+-- 「''escaped''」は、直前に定義で
+「実体と文字参照のどちらも、区切子を [DFN[escape する]]のに使うことが出来る」と書かれていますが、
+ここではその区切子自身の話ですから、数値文字参照のことでしょう。 [WEAK[そう考えないと、つじつまが合いません。]]
+-- 前者の群では、 [CODE[1]] の文字参照が escape されます。
+例えば、 [CODE(XML)[&]] なら [CODE(XML)[&#x26;#x26;]]
+になります。
+-- 後者の群では、その文字自身が escape されます。
+例えば、 [CODE(XML)["]] なら [CODE(XML)[&#x22;]] です。
+- [CODE[3]] で、
+-- 「置換文」とは、実体宣言の[[表記実体値]]の文字参照と引数実体参照を置換したものです。 <IW:XML1:"#dt-repltext">
+-- 逆に言えば、実体宣言の[[表記実体値]]にするには必要に応じて文字参照と引数実体参照に置換すればよいのです。
+--- 前者の群では、 [CODE(XML)[&]] の場合の置換文が 
+[CODE(XML)[&#x26;#x26;]] なのですから、
+[[表記実体値]]は [CODE(XML)[&#x26;#x26;#x26;]] です。
+--- 後者の群では、 [CODE(XML)["]] の場合の置換文が
+[CODE(XML)[&#x22;]] なのですから、
+[[表記実体値]]は [CODE(XML)[&#x26;#x22;]] です。
+- [CODE[5]] で、後者の群について、
+-- 「その文字の文字参照」でもよいとしています。
+ですから [CODE(XML)["]] の場合の [CODE(XML)[&#x22;]]
+になります。って、これは先程の場合と同じではないですか?
+- 結局、実体宣言の例は次のようになります。
+-- 前者の群: [SAMP(XML)[<!ENTITY amp "&#x26;#x26;#x26;">]]
+-- 後者の群: [SAMP(XML)[<!ENTITY quot "&#x26;#x22;">]]
+-- 後者はともかく、前者は激しく間違っていませんか?
+- 何が悪かったのかというと、 [CODE[3]] で間違って「置換文」
+と書いてしまったことと、 [CODE[5]] の部分が曖昧なことです。
+
+現時点で errata には何もかかれてません。
+
+[10] 正しいのかどうか良くわからない例
+[PRE(XML example code)[
+<!ENTITY gt ">">
+]PRE]
+
+([CODE(XML)@en[[[apos]]]], [CODE(XMLe)@en[[[quot]]]]でも同様)
+
+(>>9 のよくわからない規定を無視すれば)
+この定義でも問題なさそうですが、どうなのか。
+
+[14] 正しいのかどうか良くわからない例
+[PRE(XML example code)[
+<!ENTITY % gt "&#x3E;"><!-- ">" でも同じ -->
+<!ENTITY gt "%gt;">
+]PRE]
+
+([CODE(XML)@en[[[apos]]]], [CODE(XMLe)@en[[[quot]]]]でも同様)
+
+>>10 がよいならこれもよくないと困りますが、どうなのか。
+
+
+[[#comment]]
+
+
+** SGML との関係
+
+[2] [[SGML]] 的には、 [[Web SGML]] で新たに導入された、
+[[SGML宣言]]内で実体を宣言する機能を使っています。
+([[定義済みデータ文字実体]], Web SGML K.4.2)
+
+[8] Web SGML では、定義済みデータ文字実体は[[内部部分集合]]の前に宣言があったものとして扱います。
+ですから、 XML としての >>7 の制約は、 SGML
+的にはまったく無害となります [WEAK[(重複している実体宣言は無視されます)]]。
+
+[13] 5つの定義済み実体は、以前から [[HTML]]
+を含めて多くの [[SGML応用]]でよく使われてきたものが採用されています。
+
+[[#comment]]
+
+
+** HTML との関係
+
+[12] 5つの定義済み実体のうち、 [CODE(XML)[[[apos]]]]
+以外は以前から [[HTML]] でよく使用されていました。
+
+[CODE(XML)[[[apos]]]] は [[HTML 4]] までには含まれていませんでしたが、
+[[XML 1.0]] に取り込まれたことをうけて [[XHTML 1.0]]
+以降使えるようになっています。ただし [[XHTML 1.0]]
+の互換性指針は、旧来の [[HTML]] 
+[[利用者エージェント]]との互換性が必要であるなら [CODE(XML)[[[apos]]]]
+は使うべきではないと述べています。
+
+[[#comment]]
+
+
+** データ・モデルとの関係
+
+[16] '''XML情報集合との関係''':
+[[XML情報集合]]では、[[要素]]の[[内容]]の一部である[[定義済実体]]は通常の[[データ文字]]や[[文字参照]]と同様に[CODE(InfoItem)[[[文字情報項目]]]]として、
+[[属性値]]の一部である[[定義済実体]]は[CODE(InfoProp)[[[正規化値]]]]の一部として表されます。
+
+[15] '''DOMとの関係''':
+[[DOM]]の仕様書 (<IW:DOM1:"introduction.html#ID-E7C30824">,
+<IW:DOM2:"introduction.html#ID-E7C30824">,
+<IW:DOM3:"introduction.html#ID-E7C30824">) によれば、
+- [[DOM]][[中核]]モジュールには[[実体]]を表す[[界面]]がありません。
+- [[定義済実体]]は1つ[[文字]]として表します。
+
+ということになっています。[CODE(DOMi)@en[[[EntityReference]]]][[界面]]を有する[[DOM]]
+[[XML]]モジュールを使う場合にどうなるのかは定かではありません。
+
+仮に[[XML]]モジュールを使う場合であっても[[定義済実体]]は[[DOM]]では必ず[[文字]]として扱うとすると、
+[CODE(DOMm)@en[[[createEntityReference]]]]に[[引数]][CODE(XML)@en[[[lt]]]]
+(など) を与えた時にどうなるのかは、やはり定かではありません。
+
+[17]
+>>15 [[XML]] [[モジュール]]を使う場合でも、[[定義済実体]]への[[参照]]は[[展開]]されて[[DOM]][[木]]に現れません。
+
+;; 
+<IW:DOM1:"level-one-core.html#ID-11C98490">,
+<IW:DOM2:"Core/core.html#ID-11C98490">,
+<IW:DOM3:"Core/core.html#ID-11C98490">
+
+[11] '''XPath 1.0データ・モデル''':
+[[XPath 1.0]]や[[XSLT 1]]の[[データ・モデル]]では、
+[[定義済実体]]は通常の[[データ文字]]や[[文字参照]]同様に、
+[[テキスト節点]]の[[文字列値]]の一部、
+または[[属性節点]]の[[文字列値]]の一部となります。
+
+[[#comment]]
+
+
+** メモ
+
+[[#comment]]
+
+
+* メモ
+
+[18] [CITE@EN[XQuery 3.0: An XML Query Language]]
+( ([TIME[2014-04-08 08:26:21 +09:00]] 版))
+<http://www.w3.org/TR/xquery-30/#dt-predefined-entity-reference>

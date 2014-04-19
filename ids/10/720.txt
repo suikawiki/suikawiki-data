@@ -1,0 +1,73 @@
+
+Perl で RFC 822/2822 mail address(es) fields (From: とか
+To: とか。) を parse しようと思っても、(ありがちな処理ですから
+あってしかるべきですが) 適当な module がみつかりません。
+
+CPAN にあった幾つかの module を見たんですが、どれも、
+group
+[PRE[
+  
+  例: To: Administrators: webmaster@suika.fam.cx,
+                          postmaster <postmaster@suika.fam.cx>,
+                          "admin list" <admin@suika.fam.cx>;
+]PRE]
+
+に対応してません。「Administrators:」とか変なメイルアドレス
+があることになってしまいます。
+
+まあ group は最近はあまり使われないようなので、
+目をつぶるとして、それではこんなのが解釈できるのかというと、
+できません。
+
+[PRE[
+  例: "Suika \"TESTERS\" list" <testers@suika.fam.cx>
+]PRE]
+
+特殊な意味を持って使われる文字 (ここでは「"」) は
+「\」で quote されていますが、ここから名前を取り出す
+とき、返されるべき値は「Suika \"TESTERS\" list」
+ではなく「Suika "TESTERS" list」です。これが出来てません。
+
+Parse の逆の操作をさせても、
+
+[PRE[
+  名前: wakaba @ suika
+  アドレス: wakaba@suika.fam.cx
+  
+  結果: wakaba @ suika <wakaba@suika.fam.cx>
+  正解: "wakaba @ suika" <wakaba@suika.fam.cx>
+]PRE]
+
+なんてことになります。 (@ は特別な意味を持つので、
+"" で quote しないといけない。)
+
+まったく、手抜き実装には困ったもんです。
+(ほとんどラテンアルファベット52文字しか使わない
+方々にはこれで十分なんでしょうけどね。上の
+quote の例なんかは、仮名や漢字を扱う時に重大な意味を
+持ってきます。つまり、上にあげたような状態では
+使い物になりません。)
+
+てことで、やっぱり自分で書かないといけないんだろうか。
+なんだかなあ。(2002年3月12日)
+
+てことで書いたのが、 Message::Field::Addresses
+<http://suika.fam.cx/gate/cvs/perl/lib/Message/Field/Addresses.pm>
+
+[1]
+fV4lIt  <a href="http://ejucrywcofjq.com/">ejucrywcofjq</a>, [url=http://ahzddlsrwgiw.com/]ahzddlsrwgiw[/url], [link=http://tqxejlxzgxtp.com/]tqxejlxzgxtp[/link], http://qdoirjwoyjyw.com/
+([[yzmoerk]] [efjlql@kgxjal.com] [WEAK[2008-09-03 07:26:36 +00:00]])
+
+[2]
+fV4lIt  <a href="http://ejucrywcofjq.com/">ejucrywcofjq</a>, [url=http://ahzddlsrwgiw.com/]ahzddlsrwgiw[/url], [link=http://tqxejlxzgxtp.com/]tqxejlxzgxtp[/link], http://qdoirjwoyjyw.com/
+([[yzmoerk]] [efjlql@kgxjal.com] [WEAK[2008-09-03 07:26:40 +00:00]])
+
+[3]
+LM8BMP  <a href="http://jcgmwyzczaes.com/">jcgmwyzczaes</a>, [url=http://mrfnxgfjckqa.com/]mrfnxgfjckqa[/url], [link=http://lkxriyevzwuj.com/]lkxriyevzwuj[/link], http://irvqewlvcblc.com/
+([[ueutli]] [xtjitv@pdlsfj.com] [WEAK[2008-09-22 00:56:15 +00:00]])
+
+
+[4]
+LM8BMP  <a href="http://jcgmwyzczaes.com/">jcgmwyzczaes</a>, [url=http://mrfnxgfjckqa.com/]mrfnxgfjckqa[/url], [link=http://lkxriyevzwuj.com/]lkxriyevzwuj[/link], http://irvqewlvcblc.com/
+([[ueutli]] [xtjitv@pdlsfj.com] [WEAK[2008-09-22 00:56:21 +00:00]])
+

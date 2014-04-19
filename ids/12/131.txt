@@ -1,0 +1,88 @@
+#?SuikaWiki/0.9
+- Subject: WikiPlugin interface next generation
+- Priority: high
+- Status: closed
+- Category: WikiPlugin
+- Creation-Date: 2003-09-15T10:32:16+00:00
+
+[1] Wiki 全体の object 化にあたって今の
+Wiki plugin interface の維持には難があるし、既存のとりあえず界面を一掃する機会でもあるので、
+plugin system を再設計しようかと思ってます。
+
+そもそも今の設計は [[WikiForm]] しか想定してなかったんですし。
+
+[2]  ${Wiki::Implementatuion}->{plugin}  == ${Wiki::Plugin (plugin manager)}
+([[名無しさん]])
+
+[3]  ${Wiki::Plugin}->{ $type (form-input, interwiki,..) }->{ $name } = { description => $desc, process => sub { &something },... }
+([[名無しさん]] [WEAK[2003-09-15 10:55:00 +00:00]])
+
+[4]  懸案の lazy loading は将来の課題ってことで。
+
+とりあえず、 ${plugin}->use_feature ($type) ってのを用意しておいて。
+現状では >>3 なんで役にたたないけど、
+いずれ lazy になったら役に立つかも(たたないかも)。
+([[名無しさん]])
+
+[5]  >>3 の構造にすると、 Message::Util::Formatter
+に渡す時に都合が悪いけど。。。 Formatter に渡すデータのハッシュも、
+Message::Util::Error みたいに %( name => { key=>val,... } ) に変更しちゃおうか、このさい。
+([[名無しさん]] [WEAK[2003-09-15 11:19:01 +00:00]])
+
+[6]  >>5 非互換になると色々面倒だから、
+Formatter はそのままで fork して新しいモジュール作ったほうが楽かも。
+だけど名前は何がいいかなあ。。。
+
+([[名無しさん]])
+
+[7]  >>6 どうせ再実装するなら最初から木を扱えるようにしたいけど・・・こうやってると例の第2版の法則でいつまでたっても動くものが出来ないんだよなあ。
+([[名無しさん]])
+
+[8]  プラグインの主手続きの呼び出し
+
+&$procedure ($p, $o)
+$p : 局所的引数 (その規則手続きの引数)
+$o : 大域的引数 (その処理の引数)
+
+これは今のままでいいでしょう。
+だけど、 $o は SuikaWiki::Plugin
+に bless されてるだけで残りは闇の中になっちゃってたので、
+
+:$o->{plugin}  : plugin manager
+:$o->{wiki}    : wiki implementation
+:$o->{param}   : 処理 ($type) 依存の引数
+とします。引数の破壊は、これまでどおり、
+原則としては $p は局所なので OK,
+$o は駄目だけど、 $o->{wiki} や $o->{plugin} の正規の界面を通じた操作は OK,
+$o->{param} は $type によってその結果が保証されうるなら OK で。
+
+$o->{その他} は現状との互換のために当分不使用として、 $o の bless も当分は
+SuikaWiki::Plugin, これらは既存の plugin
+を全部再実装したら、将来のために予約で。
+
+
+([[名無しさん]])
+
+[9]  Formatter は、整形結果 $r を規則手続きに求めるけど、
+XML とか木を求める時は $r はつかわずに、
+$p->{-parent_node} みたいなのを提供した方が綺麗かも。その辺上手く再実装できたらいいなあ。
+([[名無しさん]])
+
+[10]  とりあえず部分的にだけ plugin source -> perl を実装した mkplugin2.pl を <IW:SuikaCVS:"suikawiki/script/bin/mkplugin2.pl"> に commit しました。
+([[わかば]])
+
+[11]  $o->{param} は $main::ARGV として SuikaWiki 2 で使用済みだったので、 SuikaWiki 3 での新用法は $o->{var} に変更します。
+([[名無しさん]] [WEAK[2003-10-18 01:43:15 +00:00]])
+
+[12]  >>8 bless SuikaWiki::Plugin は便利だから現状維持にしようかな。
+([[名無しさん]] [WEAK[2003-10-18 02:14:39 +00:00]])
+
+[13]
+- >>4 やっぱりやめました。無駄だし。
+- >>5-7 [[Message::Util::Formatter]] も全部書き換えました。
+- >>8-11 大体そんな感じになりました。
+- >>12 これはやめました。
+
+;; ちゃんと界面を文書化しないといけないなあ。
+
+[[#form:'%textarea(id=>msg,size=>20,lines=>3);%n;(%text(description=>"名前",id=>name,size=>6); [%text(description=>"メイル",id=>mail,size=>5);] %check(default,id=>record-date,label=>日時,description=>日時を記録するか否か);) %submit(label=>書込む);':'[%index;]  %text(source=>msg);%n;(%name;%text(source=>mail,prefix=>" [",suffix=>"]");%iif(source=>record-date,true=>" [WEAK[%date;]]");)%n;':'%require(msg);']]

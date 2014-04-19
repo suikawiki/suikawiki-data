@@ -1,0 +1,39 @@
+[1]
+DOMCore の実装をしていて気が付きましたが、
+[CODE@en[[VAR[Tree[SUB[1]]]] --[CODE[ownerDocument]]([CODE[irefnode[SUB[0]]]])--> [VAR[Tree[SUB[2]]]]]]
+な場合 ([CODE(DOMm)@en[[[createElementNS]]]] 直後とか)、
+[CODE@en[[VAR[Tree[SUB[2]]]] への参照が消えると
+[CODE@en[[VAR[Tree[SUB[1]]]] の [CODE(DOMa)@en[[[ownerDocument]]]]
+属性の参照先が解放されてしまいます。
+普通は本体の木 ([CODE@en[[VAR[Tree[SUB[2]]]])
+を先に消しちゃうことがないので今まで発覚しなかったというわけです。
+
+[CODE@en[[VAR[Tree[SUB[1]]]] --[CODE[ownerDocument]]([CODE[anydata[SUB[0]]]])--> [VAR(DOMi)[NodeRef[SUB[2]]]] --[CODE[nodeStem]]--> [VAR[Tree[SUB[2]]]]]]
+という形にすれば今までの参照の仕組みのままでよいのですが、
+生憎 [CODE(DOMa)@en[[[ownerDocument]]]] は
+[CODE@en[[VAR[Tree[SUB[2]]]] 内部の節点も持っている特性なので都合が悪い。
+
+そこで特性の種類として [DFN[[CODE@en[xrefnode[SUB[0]]]]]]
+を導入しました。 (いい名前が思い浮かばなかったので適当に。)
+この種類の特性の値は [CODE(DOMi)@en[NodeStem]]
+で、特性が付いてる節点と同じ木の節点でも違う木の節点でも構いません。
+違う木の節点である場合に限り、
+[CODE(DOMi)@en[NodeRef]] と同じように参照カウンタを増減します。
+[CODE(DOMi)@en[NodeRef]] とは異なり、
+[CODE(DOMm)@en[importTree]] や [CODE(DOMm)@en[changeTreeID]]
+で所属する木に変化が生じた時にも参照カウンタの値を修正する必要があります。
+
+これで、 [CODE@en[[VAR[Tree[SUB[1]]]]]] の節点が
+[CODE@en[[VAR[Tree[SUB[2]]]]]] の節点への数に入る参照を持つので
+[CODE@en[[VAR[Tree[SUB[1]]]]]] がある限り
+[CODE@en[[VAR[Tree[SUB[2]]]]]] は解放されず、
+逆に [CODE@en[[VAR[Tree[SUB[2]]]]]] はこれまで通り
+[CODE@en[[VAR[Tree[SUB[1]]]]]] への参照は持たないので
+[CODE@en[[VAR[Tree[SUB[1]]]]]] への他の参照がすべてなくなれば
+[CODE@en[[VAR[Tree[SUB[2]]]]]] が残っていても
+[CODE@en[[VAR[Tree[SUB[1]]]]]] が解放されます。
+
+
+
+([[名無しさん]] [WEAK[2005-10-09 15:23:29 +00:00]])
+

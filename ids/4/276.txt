@@ -1,0 +1,112 @@
+#?SuikaWiki/0.9 page-icon="HTTP"
+
+[[#comment]]
+
+
+* 仕様書から
+
+
+** RFC 2295 (HTTP 透過内容折衝) 8.4 Negotiate
+
+> The Negotiate request header can contain directives for any content
+negotiation process initiated by the request.
+
+>
+- Negotiate = "Negotiate" ":" 1#negotiate-directive
+- 
+[PRE[
+      negotiate-directive = "trans"
+                          | "vlist"
+                          | "guess-small"
+                          | rvsa-version
+                          | "*"
+                          | negotiate-extension
+]PRE]
+- negotiate-extension = token [ "=" token ]
+
+> Examples are
+- Negotiate: 1.0, 2.5
+- Negotiate: *
+
+> The negotiate directives have the following meaning
+>
+:"trans":
+The user agent supports transparent content negotiation for the current request.
+:"vlist":
+The user agent requests that any transparently negotiated
+response for the current request includes an Alternates
+header with the variant list bound to the negotiable resource. Implies "trans".
+:"guess-small":
+The user agent allows origin servers to run a custom algorithm
+which guesses the best variant for the request, and to return
+this variant in a choice response, if the resulting choice
+response is smaller than or not much larger than a list
+response.  The definition of `not much larger' is left to
+origin server heuristics.  Implies "vlist" and "trans".
+:rvsa-version:
+The user agent allows origin servers and proxies to run the
+remote variant selection algorithm with the indicated version
+number, or with the same major version number and a higher
+minor version number.  If the algorithm has sufficient
+information to choose a best, neighboring variant, the origin
+server or proxy MAY return a choice response with this variant.  Implies "trans".
+:"*":
+The user agent allows origin servers and proxies to run any
+remote variant selection algorithm.  The origin server may
+even run algorithms which have not been standardized.  If the
+algorithm has sufficient information to choose a best,
+neighboring variant, the origin server or proxy MAY return a
+choice response with this variant.  Implies "trans".
+
+:"trans":[[利用者エージェント]]は現在の[[要求]]で[[透過内容折衝]]に対応します。
+:"vlist":利用者エージェントは現在の要求への[[透過折衝済み応答]]に[[折衝可能資源]]に束縛された[[変種目録]]の入った
+[CODE(HTTP)[[[Alternates]]]] 頭を含むことを要求します。
+[CODE(HTTP)[trans]] を暗示します。
+:"guess-small":利用者エージェントは[[起源サーバー]]がその要求に対する最善の変種を推測する custom 算法を実行し、その変種を[[選択応答]]で返すとしたら[[目録応答]]より小さいか又はさして大きくならないのであれば、その変種の選択応答を認めます。
+「さして大きくない」の定義は起源サーバーの学習に任せます。
+[CODE(HTTP)[vlist]] と [CODE(HTTP)[trans]] を暗示します。
+:rvsa-version:利用者エージェントは起源サーバー及び[[串]]が示された版番号又は同じ大版番号で小版番号が示されているもの以上の版の[[遠隔変種選択算法]]を実行するのを認めます。
+算法が最善の[[隣接変種]]を選ぶのに十分な情報を持っていれば、
+サーバー又は串はこの変種を[[選択応答]]で返しても'''構いません'''。
+[CODE(HTTP)[trans]] を暗示します。
+:"*":利用者エージェントは期限サーバー及び串が任意の遠隔変種選択算法を実行することを認めます。起源サーバーは標準化されていない算法を実行しても一向に構いません。
+算法が最善の[[隣接変種]]を選ぶのに十分な情報を持っていれば、
+サーバー又は串はこの変種を選択応答で返しても'''構いません'''。
+[CODE(HTTP)[trans]] を暗示します。
+
+> Servers SHOULD ignore all negotiate-directives they do not
+understand.  If the Negotiate header allows a choice between multiple
+remote variant selection algorithms which are all supported by the
+server, the server SHOULD use some internal precedence heuristics to
+select the best algorithm.
+
+
+** RFC の部分の License
+
+[[RFCのライセンス]]
+
+
+* メモ
+
+[1]
+[[要求]]に対して[[鯖]]が[[内容折衝]]を行い、1つの[[表現]]を返す場合の[[応答]]中の
+[CODE(HTTP)@en[[[Vary]]]] 欄の例:
+[PRE(HTTP example code)[
+[[Vary]]: negotiate, [[Accept-Language]]
+]PRE]
+
+この例では[[要求]]の [CODE(HTTP)@en[Negotiate]] 欄と
+[CODE(HTTP)@en[[[Accept-Language]]]] 欄を使って[[表現]]を選択したことを表しています。
+なお、[[要求]]に実際には [CODE(HTTP)@en[[[Negotiate]]]]
+欄が含まれていなくても、[[透過内容折衝]]が行われたことを示すために
+[CODE(HTTP)@en[[[Vary]]]] 欄に [Q[[CODE(HTTP)@en[Negotiate]]]]
+という値を含めます。
+
+* [CODE(HTTP)@en[Negotiate]] auth-scheme
+
+[2] [CITE@en[HTTP/1.1 WWW-Authenticate header]] ([TIME[2009-07-19 11:05:40 +09:00]] 版) <http://www.http-stats.com/WWW-Authenticate>
+
+>
+[PRE(HTTP example code)[
+WWW-Authenticate: Negotiate
+]PRE]

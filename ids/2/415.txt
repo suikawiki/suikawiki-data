@@ -1,0 +1,323 @@
+SSI: Server Side Includes は、 [[HTTP]] サーバーが
+[[HTML]] 文書を顧客に送り出す際に、その内容を解析して
+適当にいじって吐き出す機能です。 NCSA httpd や [[Apache]]
+などで実装されています。
+
+[[RFC]] 化を目指して [[Internet-Draft]] が出ている
+[[CGI]] とは違って、 SSI の標準化の動きは無いみたいです。
+(標準化が必要なくらい実装差がないからかなぁ。あと、
+CGI ほど需要が大きくないし。)
+
+*基本構造
+
+=ssi-directive = "<!--#" element-name *(WSP attribute) [WSP] "-->"
+=attribute = attribute-name "=" attribute-value
+=attribute-value = bare-value / quoted-value
+=quoted-value = <"> bare-value <">
+=WSP = %x09 / %x0A / %x0D / %x20
+
+Apache mod_include の説明に拠ると、 "-->" の前の WSP は
+属性値と終端を区切るために should 入れるんだそうです。
+属性値は will often 二重引用符で囲まれます。
+しかしながら、これらは必ず (MUST) 入れる・囲むのが良いと思われます。
+多くの SSI な文書や解説文は WSP を入れて二重引用符も括っています。
+
+*要素
+
+Apache の説明によると SSI のこれ(どれ)は[[要素]] element
+と呼ぶようです。と思いきや、命令 command だったり directive
+だったりあんまり統一されてません。まあなんでもいいんでしょう。
+(NCSA HTTPd の説明は command と directive を使ってます。)
+
+**config 要素
+
+,errmsg   ,  ,text            ,エラー・メッセージ
+,sizefmt  ,  ,sizefmt-value   ,大きさの形式
+,timefmt  ,  ,strftime-format ,日付形式
+
+-sizefmt-value = 'bytes' / 'abbrev'
+-strftime-format = <[[strftime(3)]] date/time format string>
+
+errmsg 属性は、 SSI 処理が失敗した時に出力されるメッセージを
+指定します。
+
+sizefmt 属性は大きさの書式を指定します。値 bytes で[[バイト]]数
+(12,345 と読点が入れられる [NCSA]) を、
+値 abbrev でキロバイトやメガバイトに適当に短縮した値を返すようになります。
+
+timefmt 属性の値は日付を値に持つ変数や flastmod 要素の値に影響します。
+
+これらの属性は、どれか一つを必ず指定しなければなりません。
+複数指定している SSI な文書や説明は見たことがありません。
+ただし MUST NOT なのか SHOULD NOT なのかはわかりませんねぇ。
+
+**echo 要素
+
+,encoding,    ,"none" / "uri" / "entity" ,符号化
+,var   ,必須  ,variable-name     ,対象の変数名
+
+変数 var の値を出力します。値が空であれば (none)
+を返します。
+
+Apache 1.3.12 以降では encoding 属性が実装されています。
+既定値は "entity" です。 (他の実装では既定値 "none" に相当します。)
+
+Encoding "uri" は、安全でない文字を [[URI符号化]]します。
+Encoding "entity" は、安全でない文字を [[HTML]] 
+の[[実体参照]]形式にします。この時 [[ISO-8859-1]]
+が想定されますから、他の [[charset]] の値だと正しく処理されません。
+
+encoding 属性は対応する var 属性より前になければなりません。
+encoding 属性の値は同じ要素内で次の encoding 属性が
+指定されるまで有効です。
+
+**exec 要素
+
+,cgi   ,    ,relative-URI        ,実行する CGI script
+,cmd   ,    ,string              ,実行する命令
+
+cgi 属性と cmd 属性のどちらか一方を指定しなければなりません。
+
+Apache の実装では Options +IncludesNOEXEC になっていれば
+SSI は有効でも exec 要素は無効になります。
+
+例:
+-<!--#exec cmd="ls" -->
+-<!--#exec cmd="cmd" -->
+-<!--#exec cgi="/cgi-bin/example.cgi" -->
+
+***cgi 属性
+
+cgi 属性がある場合指定された CGI script を実行して、その結果を
+(の本文を) 出力します。指定したものが通常 CGI script として実行されないものであっても、
+その階層で CGI の使用が認められている限りは実行されます。
+
+実行される CGI script には、クライアントからの元の要求の PATH_INFO, 
+QUERY_STRING 両変数, [[CGI変数]], その他の include 変数が渡されます。
+
+CGI script から [[Location:領域]] ([[CGI]] 頭欄) が出力された場合で、
+本文が空であれば、 Location: の [[URI]] が
+[[HTML]] anchor ([[a要素]]) として出力されます。
+
+include 要素の virtual 属性を使うのが望ましいらしいです。
+そちらでは "/path/to/cgi/script?foo=bar" のように QUERY_STRING
+のついた URI を指定できますが、こちらでは出来ません。
+
+***cmd 属性
+
+cmd 属性がある場合指定した命令を実行して、その結果を出力します。
+使える命令やその書き方、出力の有無や内容は環境に依存します。
+
+通常の CGI 変数や include 変数が命令から参照可能です。
+
+Apache の実装では [[Un*x]] では /bin/sh に渡し、
+[[Win32]] では command.com や cmd.exe に渡すみたいです。
+(と書いてあります。ソースは追ってません。)
+[[suEXEC]] が有効であると実行前に厳しい確認が行われます。
+特に、引数を渡すことが出来なくなります。
+
+Apache 的には include virtual の使用をお勧めだそーで。
+
+**flastmod 要素
+
+,file   ,必須   ,file-path    ,対象ファイル名
+,virtual   ,  ,relative-URI   ,対象 URI
+
+ファイルの最終更新日時を取得します。 file 属性のとり得る値
+は環境により異なります。
+
+返す値の形式は config 要素の timefmt 属性によります。
+
+**fsize 要素
+
+,file   ,必須   ,file-path    ,対象ファイル名
+,virtual   ,  ,relative-URI   ,対象 URI
+
+ファイルの大きさを取得します。
+返す値の形式は config 要素の sizefmt 属性によります。
+
+**include 要素
+
+,file      ,  ,file-path     ,取り込みファイル名
+,virtual   ,  ,relative-URI  ,取り込み URI
+
+file 属性で指定したファイルまたは
+virtual 属性で指定した URI の資源を挿入します。
+file 属性と virtual 属性はどちらか一方が (でもって一方だけ)
+必ず指定されていなければなりません。
+
+Apache の実装では、 file 属性の値は「現在階層からの相対経路」
+("/" (根) で始まったり、 "../" (上の階層) を含んだりしない経路)
+でなければなりません。また、通常の接続制御の対象となります。
+(取り込み対象が deny from all みたいになってると、上手くいかない。)
+
+include 要素で挿入する資源でも SSI が有効である場合、
+それを処理してから挿入されます。その場合変数はもともとの(挿入元の)
+値が引き継がれるようです。
+
+Apache では file 属性より virtual 属性を推奨してます。
+
+**printenv 要素
+
+属性はありません。
+
+Apache 1.2 以降で実装されています。全ての変数と値の一覧を出力します。
+Apache 1.3.12 では適切に実体参照を使用します。 (See echo 要素)
+例:
+
+-<!--#printenv -->
+
+**set 要素
+
+,var  ,必須  ,variable-name        ,対象の変数名
+,value,必須  ,vtext               ,変数に設定する値
+
+echo 要素とは逆に、変数の値を設定します。
+value 属性の値には変数置換を使えます。
+
+Apache 1.2 以降で実装されています。
+
+例:
+
+-<!--#set var="modified" value="$LAST_MODIFIED" -->
+-<!--#set var="cost" value="\$100" -->
+-<!--#set var="date" value="${DATE_LOCAL}_${DATE_GMT}" -->
+
+**フロー制御 (if, elif, else, endif) 要素
+
+条件分岐します。各要素で囲まれた区間のうち、条件に合致する
+区間だけが出力されます。
+Apache 1.2 以降で実装されています。
+
+if, elif 要素の属性:
+,expr   ,必須,test-condition   ,条件
+
+-test-condition = string [*WSP operator *WSP string2] 
+/ "(" *WSP test-condition *WSP ")" / "!" *WSP test-condition 
+/ test-condition *WSP "&&" *WSP test-condition
+/ test-condition *WSP "||" *WSP test-condition
+-operator = "=" / "!=" / "<" / "<=" / ">" / ">="
+-string2 = string / regexp
+-regexp = <egrep(1) regexp>
+-string = token / squoted-string
+-squoted-string = "'" vtext "'"
+-token = vtext-w *(WSP vtext-w)
+-vtext-w = <vtext except WSP>
+
+演算子とかの優先順位は、 "=" = "!=" < "&&" = "||" < "!" です。
+
+例:
+
+        <!--#if expr="${Windows} && ${InternetExplorer}" -->
+        イかれた実装を揶揄する表現をここに
+        <!--#else -->
+        いけてる [[Strict]] な文書構造とスタイルをここに
+        <!--#endif -->
+
+*変数
+
+変数名, すなわち var の値
+variable-name は、 (実装を見ていないのでわかりませんが、おそらく) 
+取れる値は環境により異なります。普通は 1*(ALPHA / "_") を使うようです。
+
+変数は既定の状態では [[CGI]] script が利用出来る変数を
+全て含んでいます。また、次に挙げる include 変数が利用出来ます。
+[NCSA] [APACHE]
+
+多く(全て?)の実装では[[環境変数]]を使って実装されています。
+
+関連する要素に echo, set, config があります。
+
+-include 変数一覧 <http://httpd.apache.org/docs/mod/mod_include.html#includevars>
+
+**DATE_GMT
+
+現在時刻 ([[GMT]]) が値に入ります。値の形式は、 config 要素により
+設定可能です。 [NCSA] [APACHE]
+
+**DATE_LOCAL
+
+現在時刻 (地方時) が値に入ります。値の形式は、 config 要素により
+設定可能です。 [NCSA] [APACHE] 例:
+
+        <!--#config timefmt="%A %B %d, %Y" -->
+        Today is <!--#echo var="DATE_LOCAL" -->
+
+**DOCUMENT_NAME
+
+利用者が要求したファイル名(ディレクトリ名を除く) [NCSA] [APACHE]。
+
+**DOCUMENT_PATH_INFO
+
+渡す実装があるらしい。
+
+**DOCUMENT_URI
+
+利用者が要求した URI 経路(path) [NCSA] [APACHE]。
+
+include 要素で入り組んでいる場合、これは現在の文書の URI
+では''ありません''。
+
+**LAST_MODIFIED
+
+現在処理中の資源の最終更新日時が値に入ります。値の形式は
+config 要素の timefmt 属性の値に拠ります。 [NCSA] [APACHE]
+
+**QUERY_STRING_UNESCAPED
+
+変数 QUERY_STRING を URI unescape して shell escape したものです [NCSA]。
+NCSA HTTPd にはありますが、 Apache の文書にはありません。
+(少なくても昔の Apache には実装されていたようです。)
+
+**変数置換 variable substition
+
+config, exec, flastmod, fsize, include, set 各要素で使えるそうです。
+(どの属性でも使えるんだろうか? 謎)
+
+-vtext = *(vchar / variable-ref)
+-vchar = 1*( <OCTET except "$"> / quoted-pair )
+-quoted-pair = "\" OCTET
+-variable-ref = "$" variable-name / "${" variable-name "}"
+
+"$" から始まる文字列は変数名とみなされ、その変数の値に置き換えられます。
+"$" を表すには "\$" と [[quote]] します。
+
+quoted-pair の quote される文字に何が使えるのかは不明です。
+少なくても "$" は使えます。 "\" もおそらく使えるでしょう。
+<"> の例も出てきます。なんでもいいんかな?
+
+*媒体型
+
+[[媒体型]] text/x-server-parsed-html, text/x-server-parsed-html3
+が SSI な HTML であることを示すのに使われてきました。
+サーバーはこの型がついた文書は SSI を処理し、 text/html
+としてクライアントに送出します。
+
+Apache の実装ではこれは互換性のために対応していますが、
+AddHandler を使うのが望ましいです。例:
+
+ AddHandler server-parsed .shtml
+
+*Related URIs
+-NCSA HTTPd
+--[NCSA] <http://hoohoo.ncsa.uiuc.edu/docs/tutorials/includes.html>
+-Apache
+--Apache チュートリアル: SSI 入門 <http://httpd.apache.org/docs/howto/ssi.html>
+--[APACHE] mod_include <http://httpd.apache.org/docs/mod/mod_include.html>
+
+-Apache 1.2.*, 1.3.0 の SSI で [[ISO-2022-JP]] を使えるようにするパッチ <http://www.eal.or.jp/~nokubi/apache/>
+
+(この当時の) 次期版 Apache では [[I18N]] SSI が実装される予定
+だそうです。今の Apache にはもう入ってるんでしょうか?
+(ていうか Apache 1.3.0 ってもう大昔じゃん。)
+
+*comments
+- 2002-08-25 (Sun) 15:04:53 ''[[和]]'' : [[M$]] 社の [[IIS]] でも SSI が使えるらしいですよ。
+- 2002-08-25 (Sun) 15:05:09 ''[[わ]]'' : ほんとですか!? 信じられない
+- 2002-08-25 (Sun) 15:05:49 ''ワ'' : でも例の current directory 問題とかで厄介みたい。使ったこと無いんで知りませんが
+- 2002-08-25 (Sun) 15:06:13 ''WA'' : シ゛サクシ゛エンカコワルイ
+- [1] [[Apache]] での設定については ''.htaccessの偉い人 Part3'' <http://pc.2ch.net/test/read.cgi/php/1019888234/447> がｲｲ!!
+- [2] DOCUMENT_ROOT_PATH_INFO は Apache で今でも実装されています。
+- [3] >>2 s/ROOT_//
+- [4] [[IIS]] の SSI の実装はしょぼかったらしいです。昔は [CODE(SSI)[include]] しか使えなかったとか、 [[ASP]] じゃないと [CODE(SSI)[[[exec]]]] は使えないとか。 (いずれも未確認情報)
+[[#comment]]

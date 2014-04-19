@@ -1,0 +1,260 @@
+* 7.  Security Considerations
+>   A URI does not in itself pose a security threat.  However, as URIs
+are often used to provide a compact set of instructions for access to
+network resources, care must be taken to properly interpret the data
+within a URI, to prevent that data from causing unintended access,
+and to avoid including data that should not be revealed in plain text.
+
+URI はそれ自体では安全上の脅威とはなりません。しかし、 URI
+はよくネットワーク資源へのアクセスの指示の簡潔な集合を提供するために使われますから、
+URI 中のデータによって意図しないアクセスを引き起こすのを防ぐため、
+そして平分で曝すべきではないデータを含んでしまうのを防ぐため、
+URI 中のデータを適切に解釈するように注意しなければなりません。
+
+**7.1.  Reliability and Consistency
+>   There is no guarantee that once a URI has been used to retrieve
+information, the same information will be retrievable by that URI in
+the future.  Nor is there any guarantee that the information
+retrievable via that URI in the future will be observably similar to
+that retrieved in the past.  The URI syntax does not constrain how a
+given scheme or authority apportions its namespace or maintains it
+over time.  Such guarantees can only be obtained from the person(s)
+controlling that namespace and the resource in question.  A specific
+URI scheme may define additional semantics, such as name persistence,
+if those semantics are required of all naming authorities for that scheme.
+
+一度ある URI を情報を取出すのに使うことができたからといって、
+将来その URI から同じ情報を取出すことが可能であるとの保証はありません。
+その URI から将来に取出せる情報が以前取出したものとよく似ているとの保証もありません。
+URI の構文は [CODE(ABNF)[scheme]] や [CODE(ABNF)[authority]]
+が時々においてその名前空間をどう配分するか、管理するかを制約していません。
+先の保証はその名前空間と資源を統制している人(達)からのみ得ることができます。
+個々の URI scheme は名前の持続性などの意味的なことをその scheme
+のすべての命名権者が要求されるのであれば更に定義しているかもしれません。
+
+**7.2.  Malicious Construction
+>   It is sometimes possible to construct a URI so that an attempt to
+perform a seemingly harmless, idempotent operation, such as the
+retrieval of a representation, will in fact cause a possibly damaging
+remote operation.  The unsafe URI is typically constructed by
+specifying a port number other than that reserved for the network
+protocol in question.  The client unwittingly contacts a site running
+a different protocol service, and data within the URI contains
+instructions that, when interpreted according to this other protocol,
+cause an unexpected operation.  A frequent example of such abuse has
+been the use of a protocol-based scheme with a port component of
+"25", thereby fooling user agent software into sending an unintended
+or impersonating message via an SMTP server.
+
+時々、[[表現]]の[[取出し]]のような無害で[[冪等]]な[[操作]]を行うように見えながらも、
+実は有害かもしれない遠隔操作を行ってしまうような
+URI を構築することが可能です。よくある安全でない URI
+は当該ネットワーク・プロトコルに予約されている番号以外のポートを使って構築されています。
+クライアントは知らず知らずのうちに異なるプロトコル・サービスが動いているサイトに接触しますが、
+その URI 中のデータにはその別のプロトコルに従って解釈した場合に予期せぬ操作が行われるような指示が含まれています。
+こうした濫用例として、プロトコルを基にした scheme
+で [CODE(ABNF)[[[port]]]] 部品に [CODE(URI)[25]] を使い、
+利用者エージェント・ソフトウェアをだまして SMTP
+鯖を介して意図せぬメッセージやなりすましたメッセージを送信するというのがよくあります。
+
+>   Applications should prevent dereference of a URI that specifies a TCP
+port number within the "well-known port" range (0 - 1023) unless the
+protocol being used to dereference that URI is compatible with the
+protocol expected on that well-known port.  Although IANA maintains a
+registry of well-known ports, applications should make such
+restrictions user-configurable to avoid preventing the deployment of new services.
+
+応用は[Q[よく知られているポート]]の範囲内 ([CODE[0]]〜[CODE[1023]])
+の TCP ポート番号を指定している URI はその URI
+の参照を解くのによく知られているポートで期待されるプロトコルと互換性があるプロトコルを使う場合を除き、
+参照を解くのを避けるべきです。よく知られているポートの登録簿は IANA
+が管理していますが、応用は新しいサービスの使用の邪魔にならないようにこの制限は利用者が設定できるようにするべきです。
+
+>   When a URI contains percent-encoded octets that match the delimiters
+for a given resolution or dereference protocol (for example, CR and
+LF characters for the TELNET protocol), these percent-encodings must
+not be decoded before transmission across that protocol.  Transfer of
+the percent-encoding, which might violate the protocol, is less
+harmful than allowing decoded octets to be interpreted as additional
+operations or parameters, perhaps triggering an unexpected and
+possibly harmful remote operation.
+
+URI がある解決・参照を解くプロトコルの区切子と一致する百分率符号化オクテット
+(例えば TELNET プロトコルで [CODE(char)[CR]] と [CODE(char)[LF]]
+の文字) を含んでいる場合、その百分率符号化はプロトコルでの転送の前に復号してはなりません。
+百分率符号化の転送はそのプロトコルに反するかもしれませんが、
+復号したオクテットで予期していない有害かもしれない遠隔操作を引き起こしてしまうかもしれないような追加の操作や引数として解釈されてしまうよりは害が少ないはずです。
+
+[INS[
+訳注: 百分率記号 ([CODE(char)[%]]) 
+が意味を持つプロトコルでは百分率符号化を復号しないと却って危険なこともあり得ます。
+使用するプロトコルや文脈毎に適宜どう処理するかを判断するべきでしょう。
+]INS]
+
+**7.3.  Back-End Transcoding
+>   When a URI is dereferenced, the data within it is often parsed by
+both the user agent and one or more servers.  In HTTP, for example, a
+typical user agent will parse a URI into its five major components,
+access the authority's server, and send it the data within the
+authority, path, and query components.  A typical server will take
+that information, parse the path into segments and the query into
+key/value pairs, and then invoke implementation-specific handlers to
+respond to the request.  As a result, a common security concern for
+server implementations that handle a URI, either as a whole or split
+into separate components, is proper interpretation of the octet data
+represented by the characters and percent-encodings within that URI.
+
+URI の参照が解かれる時、その中のデータは利用者エージェントと鯖一つ以上の双方で構文解析されることがしばしばあります。
+例えば HTTP では、普通利用者エージェントが5つの大きな部品に分け、
+[CODE(ABNF)[authority]] の鯖にアクセスし、 [CODE(ABNF)[authority]],
+[CODE(ABNF)[path]], [CODE(ABNF)[query]] の各部品の中のデータを送ります。
+そして普通の鯖はその情報を受け取って構文解析して [CODE(ABNF)[path]]
+を [CODE(ABNF)[segment]] に分け、 [CODE(ABNF)[query]]
+を鍵と値の組幾つかに分け、その要求に応答する実装規定の取扱い器を呼び出します。
+ですから、 URI 全体あるいは分割した部品を扱う鯖の実装で安全性によく関係してくるのは、
+URI の中の文字や百分率符号化で表現されたオクテット・データの適切な解釈です。
+
+>   Percent-encoded octets must be decoded at some point during the
+dereference process.  Applications must split the URI into its
+components and subcomponents prior to decoding the octets, as
+otherwise the decoded octets might be mistaken for delimiters.
+Security checks of the data within a URI should be applied after
+decoding the octets.  Note, however, that the "%00" percent-encoding
+(NUL) may require special handling and should be rejected if the
+application is not expecting to receive raw data within a component.
+
+百分率符号化オクテットは参照を解く過程のいずれかの時点で復号しなければなりません。
+応用は 百分率符号化オクテットを復号する前に URI を部品や部分部品に分けなければなりません。
+さもなければ復号したオクテットを区切子と誤解してしまう虞があります。
+URI 中のデータの安全に関する検査は百分率符号化オクテットを復号した後に行うべきです。
+しかし、百分率符号化した [SAMP(URI)[%00]] ([CODE(char)[NUL]])
+は特別な扱いが必要になるかもしれません。
+部品中の生のデータを受け取ることを想定していない応用はこれを拒絶するべきです。
+
+>   Special care should be taken when the URI path interpretation process
+involves the use of a back-end file system or related system
+functions.  File systems typically assign an operational meaning to
+special characters, such as the "/", "\", ":", "[", and "]"
+characters, and to special device names like ".", "..", "...", "aux",
+"lpt", etc.  In some cases, merely testing for the existence of such
+a name will cause the operating system to pause or invoke unrelated
+system calls, leading to significant security concerns regarding
+denial of service and unintended data transfer.  It would be
+impossible for this specification to list all such significant
+characters and device names.  Implementers should research the
+reserved names and characters for the types of storage device that
+may be attached to their applications and restrict the use of data
+obtained from URI components accordingly.
+
+URI [CODE(ABNF)[path]] を解釈する過程で裏方のファイル・システムや関係するシステム関数を使用する場合には特別な注意が必要です。
+ファイル・システムはよく [SAMP(char)[/]], [SAMP(char)[\]],
+[SAMP(char)[:]], [SAMP(char)['''[''']], [SAMP(char)[''']''']]
+のような特別な文字や [SAMP[.]], [SAMP[..]],
+[SAMP[...]], [SAMP[aux]], [SAMP[lpt]] などの特別な装置名に操作的な意味を与えています。
+場合によってはただ単にこのような名前の存在を試験するだけでもオペレーティング・システムが止まったり無関係のシステム呼出しが行われたりして、サービス拒否や意図せぬデータの転送のような安全に関わる重大な問題を起こすことがあります。
+そのような文字や装置名をこの仕様書ですべて列挙するのは不可能です。
+実装者はその応用で関係し得る蓄積装置の種類の予約名や予約文字を調査し、
+それに基づいて URI 部品から得たデータの使用を制限するべきです。
+
+**7.4.  Rare IP Address Formats
+>   Although the URI syntax for IPv4address only allows the common
+dotted-decimal form of IPv4 address literal, many implementations
+that process URIs make use of platform-dependent system routines,
+such as gethostbyname() and inet_aton(), to translate the string
+literal to an actual IP address.  Unfortunately, such system routines
+often allow and process a much larger set of formats than those
+described in Section 3.2.2.
+
+URI の [CODE(ABNF)[IPv4address]] の構文は共通の点付き十進数形の
+IPv4 番地表記しか認めていませんが、 URI を処理する実装の多くは文字列表記から実際の
+IP 番地に翻訳するために [SAMP[gethostbyname()]] や
+[SAMP[inet_aton()]] のような環境依存のシステム・ルーチンを使っています。
+残念なことにこのようなシステム・ルーチンは3.2.2節で説明されている書式よりもずっといろいろな書式を認めて処理してしまうことがよくあります。
+
+>   For example, many implementations allow dotted forms of three
+numbers, wherein the last part is interpreted as a 16-bit quantity
+and placed in the right-most two bytes of the network address (e.g.,
+a Class B network).  Likewise, a dotted form of two numbers means
+that the last part is interpreted as a 24-bit quantity and placed in
+the right-most three bytes of the network address (Class A), and a
+single number (without dots) is interpreted as a 32-bit quantity and
+stored directly in the network address.  Adding further to the
+confusion, some implementations allow each dotted part to be
+interpreted as decimal, octal, or hexadecimal, as specified in the C
+language (i.e., a leading 0x or 0X implies hexadecimal; a leading 0
+implies octal; otherwise, the number is interpreted as decimal).
+
+例えば、多くの実装では数3つの点付き形で最後の部分を16ビットの値として解釈してネットワーク番地
+(例えば B 級網) の右側2バイトとします。同様に、数2つの点付き形は最後の部分を
+24ビットの値として解釈してネットワーク番地 (A 級)
+の右側3バイトとし、数1つ (点なし) は32ビットの値としてネットワーク番地に直接蓄積します。
+更に混乱することに、実装によっては点付き部分それぞれを C 言語のように十進、
+八進、十六進で解釈します (先頭に [SAMP[0x]] や [SAMP[0X]] があれば十六進数、
+[SAMP[0]] があれば八進数、それ以外なら十進数と解釈します)。
+
+>   These additional IP address formats are not allowed in the URI syntax
+due to differences between platform implementations.  However, they
+can become a security concern if an application attempts to filter
+access to resources based on the IP address in string literal format.
+If this filtering is performed, literals should be converted to
+numeric form and filtered based on the numeric value, and not on a
+prefix or suffix of the string form.
+
+このような追加の IP 番地の書式は環境によって実装に差異があるため
+URI 構文では認めていません。しかし、応用が文字列表記形の IP
+番地に基づいて資源へのアクセスを濾過しようとすると安全上問題となり兼ねません。
+濾過を行う際は表記を数値形に変換して数値に基づき濾過することとするべきであって、
+文字列形の最初や最後の一致によるべきではありません。
+
+**7.5.  Sensitive Information
+>   URI producers should not provide a URI that contains a username or
+password that is intended to be secret.  URIs are frequently
+displayed by browsers, stored in clear text bookmarks, and logged by
+user agent history and intermediary applications (proxies).  A
+password appearing within the userinfo component is deprecated and
+should be considered an error (or simply ignored) except in those
+rare cases where the 'password' parameter is intended to be public.
+
+URI 生成器は秘密であるべき利用者名や合言葉を含んだ URI
+を提供するべきではありません。 URI はブラウザに表示されたり平文で栞に蓄積されたり利用者エージェントの履歴や中間応用
+(串) で記録されたりすることがよくあります。 [CODE(ABNF)[userinfo]]
+部品に合言葉を入れるのは非推奨であり、[Q[合言葉]]引数を公開する意図がある稀な場合を除き、
+誤りとみなす (かただ単に無視する) べきです。
+
+**7.6.  Semantic Attacks
+>   Because the userinfo subcomponent is rarely used and appears before
+the host in the authority component, it can be used to construct a
+URI intended to mislead a human user by appearing to identify one
+(trusted) naming authority while actually identifying a different
+authority hidden behind the noise.  For example
+
+[CODE(ABNF)[userinfo]] 部分部品は稀にしか使われず、しかも
+[CODE(ABNF)[authority]] 部品の [CODE(ABNF)[host]] の前にありますから、
+人間利用者にはある (信頼できる) 命名権者であるかのように見せかけて実際には異なる
+[CODE(ABNF)[authority]] であるのを雑音で隠してしまうような URI
+を構築するために使うことができてしまいます。例えば、
+
+>      [SAMP(URI)[ftp://cnn.example.com&story=breaking_news@10.0.0.1/top_story.htm]]
+
+>   might lead a human user to assume that the host is 'cnn.example.com',
+whereas it is actually '10.0.0.1'.  Note that a misleading userinfo
+subcomponent could be much longer than the example above.
+
+は実際には [CODE(ABNF)[host]] は [SAMP(URI)[10.0.0.1]] であるにも関わらず人間利用者は
+[SAMP(URI)[cnn.exaple.com]] であると思ってしまいそうです。なお、
+誤解を招く [CODE(ABNF)[userinfo]] 部分部品は実際にはこの例よりもずっと長くできます。
+
+>   A misleading URI, such as that above, is an attack on the user's
+preconceived notions about the meaning of a URI rather than an attack
+on the software itself.  User agents may be able to reduce the impact
+of such attacks by distinguishing the various components of the URI
+when they are rendered, such as by using a different color or tone to
+render userinfo if any is present, though there is no panacea.  More
+information on URI-based semantic attacks can be found in [Siedzik].
+
+前例のような誤解を招く URI はソフトウェア自体への攻撃ではなく、
+利用者の予想するところの URI の意味への攻撃といえます。
+利用者エージェントはレンダリング時に色を変えたり調子を変えたりして URI
+の各部分を区別できるようにすることで万能ではないにしろ攻撃の影響を減らすことができるかもしれません。
+URI による意味的な攻撃について詳しくは [SRC[Siedzik]] をご覧下さい。
+*memo

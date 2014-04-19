@@ -1,0 +1,44 @@
+チェックリストみたいのがあれば便利なのになあ。
+
+*メッセージ構造
+
+-メッセージは頭・空行・本文(省略可)から構成される (822 3.1.  GENERAL DESCRIPTION)
+-頭領域は折畳める (822 3.1.1.  LONG HEADER FIELDS)
+--折畳みは、 linear-white-space の代わりに CRLF 1*LWSP-char を入れる *1
+--折畳みをのばすには、 CRLF ''1''LWSP-char を LWSP-char に替える
+-領域は領域名 ":" 領域本文(省略可) CRLF で構成される (822 3.1.2.  STRUCTURE OF HEADER FIELDS, 822 3.2.  HEADER FIELD DEFINITIONS) *4
+--領域名は ":" 以外の印字可能 ASCII 文字で構成される *2
+-字句間には linear-white-space を自由に挿入出来る (822 3.1.4.  STRUCTURED FIELD BODIES) *3
+--構造化領域では WSP+ は SP と同等 (822 3.4.2.  WHITE SPACE)
+-linear-white-space が入る場所には comment を挿入出来る (822 3.4.3.  COMMENTS)
+
+注: いまのところの既定値では、 linebreak_strict option
+は 0 であるから、 bare CR, bare LF, CRLF は同等と見なされる。
+1 に設定すれば厳密に改行は CRLF のみとなる。
+
+注1 Message::Header のいまの実装では、''代わりに''じゃなくて、
+''その前に'' CRLF SP を挿入するけど、実質的に同じことをしてる。
+(今の実装に深い意味は無い。)
+
+注2 field_name_validation option が 0 (既定値) の時、
+不当な文字を含んでいても気にせず出力する。
+
+注3 linear-white-space の自由な挿入は、各領域の定義に則り
+正しく解釈できるはず。出力は、 RFC 2822 に従い望ましい場所
+にのみ WSP を挿入する。
+
+注4 RFC 2822 は、一部の頭領域を除いて領域本文の省略を
+認めていない。 Message::Header の今の実装は、
+中身が空の領域を出力しない。 (この仕様は [[MIXER]] の実装などに
+問題があるので、修正する予定。)
+
+*字句とか
+
+-comment, quoted-string, domain-literal では、 "\" CHAR は quote とみなされる。 (意味的には "\" は無視される) (822 3.4.1.  QUOTING)
+--CR, "\" は常に quote しないといけない
+--comment では "(", ")", quoted-string では <">, domain-literal では "[", "]" は quote しないといけない
+-取り出して他のプロトコルに渡す時に、不要な linear-white-space は消す (822 3.4.2.  WHITE SPACE) 注1
+-TAB のメッセージ頭での使用は非推奨 (822 3.4.2.  WHITE SPACE) 注1
+
+注1 出力時に最低限しか SP は吐かないし、中身(メイル・アドレスとか)
+を取り出す method は不要なものをのぞいた状態でかえす。

@@ -1,0 +1,198 @@
+
+
+* cookie (HTTP)
+
+[5] [[RFC 2965]] によれば、
+[CODE(HTTP)[[[Cookie2]]]] 欄などで使われる
+[CODE(ABNF)[cookie]] の構文は
+
+>
+- [CODE(ABNF)[[DFN[cookie]]          =       NAME "=" VALUE *(";" set-cookie-av)]]
+- [CODE(ABNF)[[DFN[NAME]]            =       attr]]
+- [CODE(ABNF)[[DFN[VALUE]]           =       value]]
+
+です。 ([CODE(ABNF)[set-cookie-av]] は cookie 属性。)
+生成字句間には[[空白]]が入れられます。
+
+* [CODE(JS)@en[document.cookie]] 属性 (DOM HTML)
+
+@@ [18] 本章の記述は、2009年2月1日時点の [[WHATWG]] [[HTML5]] [[勧告案]] (r2733)
+に基づいています。
+
+[19] [DFN[[CODE(JS)@en[[[document]].[[cookie]]]] [[属性]]]]は、
+当該[[資源]]の[[クッキー]]を表します [SRC@en[[[HTML5]]]]。
+
+** 仕様書
+
+- [14] [[HTML5]]
+-- <http://www.whatwg.org/specs/web-apps/current-work/#dom-document-cookie>
+
+[15] 実装仕様書:
+- [MS]
+-- [7] <http://www.microsoft.com/japan/msdn/library/ja/jpisdk/dhtml/references/properties/cookie.asp?FRAME=true#cookie>
+-- [8] ''cookie Property (document) (Internet Explorer)'' <http://msdn.microsoft.com/workshop/author/dhtml/reference/properties/cookie.asp>
+
+[16] >>7 は大して参考になりません。 >>8 は比較的参考になります。
+
+** 取得
+
+[20] [[取得時]]には、 [CODE(JS)@en[[[document]].[[cookie]]]] [[属性]]は次のように動作しなければ[['''なりません''']]
+[SRC@en[[[HTML5]]]]。
+= [[文書]]が[[閲覧文脈]]に関連付けられていなければ、 [CODE(DOMc)@en[[[INVALID_STATE_ERR]]]]
+[[例外]]を投げます。
+= [[文書]]の[[閲覧文脈]]に[[砂箱化起源閲覧文脈旗]]が設定されていれば、
+[CODE(DOMc)@en[[[SECURITY_ERR]]]] を投げます。
+= [[文書の番地]]が[[鯖型命名局]]を使っていなければ、[[空文字列]]を返します。
+= 当該[[文書の番地]]によって示された[[資源]]を [[HTTP]] によって[[取る]]場合に
+[CODE(HTTP)@en[[[Cookie]]:]] [[HTTP]] [[頭欄]]の値として使う文字列と同じものを、
+[[RFC 2109]] 4.3.4節またはより新しい仕様書に基づき返します。ただし、
+[[HTTPのみのクッキー]]は除きます。
+
+** 設定
+
+[21] [[設定時]]には、 [CODE(JS)@en[[[document]].[[cookie]]]] [[属性]]は次のように動作しなければ[['''なりません''']]
+[SRC@en[[[HTML5]]]]。
+= [[文書]]が[[閲覧文脈]]に関連付けられていなければ、 [CODE(DOMc)@en[[[INVALID_STATE_ERR]]]]
+[[例外]]を投げます。
+= [[文書]]の[[閲覧文脈]]に[[砂箱化起源閲覧文脈旗]]が設定されていれば、
+[CODE(DOMc)@en[[[SECURITY_ERR]]]] を投げます。
+= [[文書の番地]]が[[鯖型命名局]]を使っていなければ、[[空文字列]]を返します。
+= 当該[[文書の番地]]を [[HTTP]] によって[[取る]]ことを丁度試みようとしたところ、
+[CODE(HTTP)@en[[[Set-Cookie]]:]] [[頭欄]]として指定された値が返されたとした場合と同じようにして、
+[[RFC 2109]] 4.3.1〜4.3.3節またはより新しい仕様書に基づき[[クッキー]]を処理します。ただし、
+[[HTTPのみのクッキー]]の値を上書きすることはありません。
+
+[22] [CITE[document.cookie の覚え書き - Ci.nsIZIGOROu - Mozilla 拡張機能勉強会]] ([TIME[2009-02-01 18:27:09 +09:00]] 版) <http://moz-addon.g.hatena.ne.jp/ZIGOROu/20081001/1222845305>
+
+>
+ところで、a=1, b=2 と言う二つを同時に設定する事は出来ません。
+[PRE(JS example code)[
+document.cookie="a=1;b=2";
+alert(document.cookie);
+]PRE]
+とやると a=1 しか設定出来てません。
+
+[23] 
+>A, B と言うタブを開いていて、共に test.example.com のページだとすると。
+>
+A の document.cookie を弄ると、A での変更は B でも読める権限ならば即座に反映されている。
+
+
+** 歴史
+
+[1] [[DOM]] 0+ の属性 [DFN[[CODE[[VAR(DOMi)[[[HTMLDocument]]]].[CODE(DOMa)[cookie]]]]]]
+は、当該[[文書]]・[[枠]]に関連付けられた持続状態情報
+([[Cookie]]) を扱うための属性です。
+属性値の型は [CODE(DOM)[[[DOMString]]]] です。
+
+DOM 1 FE ではこの属性は読取専用でした。
+
+DOM 1 は意味的な点には触れていません。
+DOM 2 は [[RFC 2965]] を参照しています。
+DOM 2 仕様書は UA のセッションについての正確な動作は規定しないと言っています。
+
+仕様書: 
+- [DOM 1 FE]
+<http://www.w3.org/TR/1998/REC-DOM-Level-1-19981001/level-one-html.html#attribute-cookie>
+- [DOM 1 SE]
+<http://www.w3.org/TR/2000/WD-DOM-Level-1-20000929/level-one-html.html#ID-8747038>
+- [DOM 2] <http://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-8747038>
+
+[2] この属性を読むと得られる値は、
+cookie の名前と値の組の群を [CODE[;]]
+で連結して一つの文字列にしたものです。
+Cookie が一つもないときには、空文字列となります。
+
+と DOM 1,2 仕様書に書いてあるのですが、
+こんな説明で本当にいいのでしょうか。
+これだけを読んで実装できる人なんているはずがない。
+
+一応、 DOM 1 には更に [SAMP[name=value;expires=date]]
+という例が載っています。
+
+[3] DOM 1 FE ではこの属性は読取専用ですが、
+DOM 0 と DOM 2+ では書込むこともできます。
+DOM 1 SE では読取専用ではなくなっていますが、
+説明は DOM 1 SE とほとんど同じで、書くときの構文の説明がありません。
+
+この属性に書くときの値は、
+RFC 2965 の [CODE(ABNF)[cookie]] (>>5) とするべき (should) です。
+
+Cookie 名が既に使用されていれば、
+新しい値と cookie 属性に置きかえられます。
+
+Cookie 属性の既定値:
+:[CODE(HTTP)[[[domain]]]]:現在の文書/枠の[[絶対URI]]
+の [CODE(ABNF)[[[host]]]]。
+:[CODE(HTTP)[[[path]]]]:現在の文書/枠の絶対 URI
+の絶対 [[path]] 部分。
+:[CODE(HTTP)[[[max-age]]]]:UA の既定値。
+
+[CODE(HTTP)[max-age]] が [CODE(HTTP)[0]] なら、
+当該名の cookie は削除します。
+
+[4] >>3 で構文が不適切だと、 [CODE(DOM)[[[DOMException]]]]
+[CODE(DOM)[[[SYNTAX_ERROR]]]] が発生します。
+
+** 保安性
+
+[13] [CITE[2004-04-27 - 「高木浩光@茨城県つくば市の日記」跡地]] ([TIME[2008-12-23 22:29:44 +09:00]] 版) <http://d.hatena.ne.jp/HiromitsuTakagi/20040427>
+
+>携帯電話のブラウザでは、どのみち完全なPC向けWebサイト対応は期待されていないのだから、この際思い切って、document.cookie機能を搭載しないでおいたらどうか。「セキュリティを重視して危ない機能は排除した」と主張すればよい。
+>
+一部の掲示板等でdocument.cookieが使われている(cookieで覚えさせたハンドルやメールアドレスを名前欄、E-mail欄に表示するため)が、JavaScriptを使わなくともCGI側で同じことを実現できるのだから、こんな機能はなくなってもかまわないはずだ。
+
+** 関連
+
+[6]
+[[MathML]] や [[SVG]] も [CODE(DOMi)[HTMLDocument]] に相当する [CODE(DOMi)[[[MathMLDocument]]]] や [CODE(DOMi)[[[SVGDocument]]]] を持っているのですが、そいつらは [CODE(DOMa)[cookie]] 属性は持っていないようです。
+
+** メモ
+
+[24] [CITE[setTimeout + document.cookie - Ci.nsIZIGOROu - Mozilla 拡張機能勉強会]] ([TIME[2009-02-01 18:37:36 +09:00]] 版) <http://moz-addon.g.hatena.ne.jp/ZIGOROu/20081009/1223567665>
+
+>
+,browser 	 ,c
+,IE7 	,15981
+,Fx3 	,20000
+,Opera 9.5 	,19995
+,Safari 4 	,20000
+,Chrome 0.2 	,16065
+>
+まぁこの結果見ると 20,000 と言う結果が出るブラウザの方がひょっとしたらたまたまで、他のブラウザの結果が普通かもしれない。まぁその是非は置いといて少なくとも言える事は、20,000にならないブラウザは、setTimeout() に指定した関数内の処理も非同期になっていて、実行順序が保障されてないと考えられる。
+
+* [CODE(HTMLe)@en[cookie]] 要素 (HTML)
+
+[17] 
+[[Emacs/W3]] は [[HTML]] の [DFN[[CODE(HTMLe)@en[cookie]] [[要素]]]]を実装している (いた?)
+ようです。
+
+[10]
+[CITE[Repository - markup - w3: w3/lisp/w3-parse.el]] ([CODE[2007-01-08 19:07:25 +09:00]] 版) <http://cvs.savannah.gnu.org/viewcvs/w3/lisp/w3-parse.el?rev=1.22&root=w3&view=auto>
+
+[11]
+[PRE(HTML example code)[
+    <p><cookie src="about:quotes"></p>
+]PRE]
+
+;; ([CODE[1997-03-02 12:44:03 +09:00]] 版) <http://iep.water.ca.gov/d/bin/sbin/site/etc/httpd/cgi-bin/dss/bin/sbin/site/lib/xemacs-19.15/lisp/w3/w3-about.el>
+
+[12]
+[CITE[Member w3/w3-draw.el of archive w3-2.2.26.tar.gz]] ([CODE[2007-01-08 20:04:19 +09:00]] 版) <http://fresh.t-systems-sfr.com/unix/src/www/w3-2.2.26.tar.gz:a/w3/w3-draw.el>
+
+
+[25] [CITE['''['''whatwg''']''' HTML Cookie API]]
+([TIME[2010-02-24 14:17:15 +09:00]] 版)
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2010-February/025300.html>
+
+[26] [CITE[クライアントサイドの巨大なクッキーとサーバーサイドのヘッダーサイズ制限の組み合わせによるDoSについて - デー]]
+( ([TIME[2012-04-18 07:22:38 +09:00]] 版))
+<http://d.hatena.ne.jp/ultraist/20120417/1334667427>
+
+[27] [CITE[JavaScriptでdocument.cookieへのアクセスを禁止する - 金利0無利息キャッシング – キャッシングできます - subtech]]
+( ([TIME[2012-07-09 08:30:42 +09:00]] 版))
+<http://subtech.g.hatena.ne.jp/mala/20120709/1341819651>
+
+[28] [CITE@en[''''''[''''''whatwg'''''']'''''' HTML Cookie API]]
+( ([[Ian Hickson]] 著, [TIME[2010-03-09 10:02:55 +09:00]] 版))
+<http://lists.w3.org/Archives/Public/public-whatwg-archive/2010Mar/0068.html>

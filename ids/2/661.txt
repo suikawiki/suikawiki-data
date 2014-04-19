@@ -1,0 +1,714 @@
+#?SuikaWiki/0.9 page-icon="メイル" import="メッセージ訳語集,その他の訳語集,RFC訳語集"
+
+'''Message Context for Internet Mail [INS[__&&Internet&&____&&mail&&__の__&&message&&__文脈]]'''
+- Network Working Group                                          
+- Request for Comments: 3458                            
+- Category: Standards Track 
+- E. Burger
+- SnowShore Networks              
+- E. Candell
+- Comverse
+- C. Eliot
+- Microsoft Corporation
+- G. Klyne
+- Nine by Nine
+- January 2003
+
+
+* Status of this Memo
+
+> This document specifies an Internet standards track protocol for the
+Internet community, and requests discussion and suggestions for
+improvements.  Please refer to the current edition of the "Internet
+Official Protocol Standards" (STD 1) for the standardization state
+and status of this protocol.  Distribution of this memo is unlimited.
+
+
+* Copyright Notice
+
+> Copyright (C) The Internet Society (2003).  All Rights Reserved.
+
+
+* Abstract
+
+[PRE[
+   This memo describes a new RFC 2822 message header, "Message-Context".
+   This header provides information about the context and presentation
+   characteristics of a message.
+]PRE]
+
+[PRE[
+   A receiving user agent (UA) may use this information as a hint to
+   optimally present the message.
+*Table of Contents
+]PRE]
+
+[PRE[
+   1. Introduction....................................................2
+   2. Conventions used in this document...............................3
+   3. Motivation......................................................3
+   4. Functional Requirements.........................................5
+   5. Determining the Message Context.................................6
+   6. Message-Context Reference Field.................................7
+     6.1. Message-Context Syntax......................................7
+     6.2. message-context-class Syntax................................7
+       6.2.1. voice-message...........................................8
+       6.2.2. fax-message.............................................8
+       6.2.3. pager-message...........................................8
+       6.2.4. multimedia-message......................................8
+       6.2.5. text-message............................................8
+       6.2.6. none....................................................8
+   7. Security Considerations.........................................9
+   8. IANA Considerations.............................................9
+     8.1. Message Content Type Registrations..........................9
+     8.2. Registration Template......................................10
+     8.3. Message-Context Registration...............................11
+   9. APPENDIX: Some messaging scenarios.............................12
+     9.1. Internet e-mail............................................12
+     9.2. Pager service..............................................12
+     9.3. Facsimile..................................................13
+     9.4. Voice mail.................................................14
+     9.5. Multimedia message.........................................14
+   10. References....................................................15
+     10.1 Normative References.......................................15
+     10.2 Informative References.....................................15
+   11. Acknowledgments...............................................15
+   12. Authors' Addresses............................................16
+   13. Full Copyright Statement......................................17
+*1. Introduction
+]PRE]
+
+[PRE[
+   This document describes a mechanism to allow senders of an Internet
+   mail message to convey the message's contextual information.  Taking
+   account of this information, the receiving user agent (UA) can make
+   decisions that improve message presentation for the user in the
+   context the sender and receiver expects.
+]PRE]
+
+[PRE[
+   In this document, the "message context" conveys information about the
+   way the user expects to interact with the message.  For example, a
+   message may be e-mail, voice mail, fax mail, etc.  A smart UA may
+   have specialized behavior based on the context of the message.
+]PRE]
+
+[PRE[
+   This document specifies a RFC 2822 header called "Message-Context".
+]PRE]
+
+[PRE[
+   The mechanism is in some ways similar to the use of the Content-
+   Disposition MIME entity described in [6].  Content-Disposition gives
+   clues to the receiving User Agent (UA) for how to display a given
+   body part.  Message-Context can give clues to the receiving UA for
+   the presentation of the message.  This allows the receiving UA to
+   present the message to the recipient, in a meaningful and helpful
+   way.
+]PRE]
+
+[PRE[
+   Typical uses for this mechanism include:
+]PRE]
+
+[PRE[
+   o  Selecting a special viewer for a given message.
+]PRE]
+
+[PRE[
+   o  Selecting an icon indicating the kind of message in a displayed
+      list of messages.
+]PRE]
+
+[PRE[
+   o  Arranging messages in an inbox display.
+]PRE]
+
+[PRE[
+   o  Filtering messages the UA presents when the user has limited
+      access.
+]PRE]
+
+
+* 2. Conventions used in this document [INS[この文書で使う記法]]
+
+> This document refers generically to the sender of a message in the
+masculine (he/him/his) and the recipient of the message in the
+feminine (she/her/hers).  This convention is purely for convenience
+and makes no assumption about the gender of a message sender or recipient.
+
+この文書では、__&&message&&__の送信者を男性 (彼)
+とし、__&&message&&__の受信者を女性 (彼女) として言及します。
+この記法は単に便宜上のものであって、__&&message&&__の送受信者の性別について何らの仮定をするものでもありません。
+
+> The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+"SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
+document are to be interpreted as described in BCP 14, RFC 2119 [2].
+__&&JA:RFCKeywordsAre...&&__> FORMATTING NOTE: Notes, such at this one, provide additional
+nonessential information that the reader may skip without missing
+anything essential.  The primary purpose of these non-essential notes
+is to convey information about the rationale of this document, or to
+place this document in the proper historical or evolutionary context.
+Readers whose sole purpose is to construct a conformant
+implementation may skip such information.  However, it may be of use
+to those who wish to understand why we made certain design choices.
+
+整形について: このような注記は、非本質的な追加情報を提供するもので、
+読者は本質的な事項を見落とすことなく読み飛ばすことが出来ます。
+この非本質的な注記の主たる目的はこの文書の論理的根拠を伝えることやこの文書を適当な歴史的・進化上の位置に置くことです。
+適合する実装を構築することだけが目的である読者はそのような情報を読み飛ばすことが出来ます。
+しかし、どうしてこのような設計が選ばれたのかを理解したいと思う読者には役に立つことでしょう。
+
+
+* 3. Motivation [INS[動機]]
+
+> Multimedia messaging systems receive messages that a UA may present
+in variety of ways.  For example, traditional e-mail uses simple text
+messages that the recipient displays and edits.  One UA may
+automatically print Fax images.  Another UA may play voice messages
+through a telephone handset.  Likewise, a receiving desktop computer
+may process or present documents transferred over e-mail using a
+local application.  Emerging and future developments may deliver
+other forms of information that have their own characteristics for
+user presentation, such as video messages and pager messages.
+__&&multimedia&&____&&message system&&__は UA が種々の方法で表現し得る__&&message&&__を受信します。
+例えば、伝統的な__&&email&&__は、受信者が表示・編集する単純な__&&text&&____&&message&&__を使います。
+ある UA は自動的に__&&fax&&__画像を印刷するかもしれません。
+他の UA は電話受話器を通じて__&&voice&&____&&message&&__を再生するかもしれません。
+同様に、受信した__&&desktop computer&&__は__&&email&&__で転送された文書を__&&local application&&__を使って処理又は表現するかもしれません。
+現在及び将来の開発者は__&&voice&&____&&message&&__や__&&pager&&____&&message&&__のように利用者への表現の性質を持った他の形式の情報を配送するかもしれません。
+
+> An often-requested characteristic for multimedia messaging systems is
+to collect received messages in a "universal inbox", and to offer
+them to the user as a combined list.
+__&&multimedia&&____&&message system&&__でよく要求される性質は、受信__&&message&&__を「__&&universal inbox&&__」に集めて、これを利用者に複合__&&list&&__として提供することです。
+
+> In the context of "unified messaging", different message contexts may
+have different implied semantics.  For example, some users may
+perceive voicemail to have an implicit assumption of urgency.  Thus
+they may wish to gather them together and process them before other
+messages.  This results in the end-user receiving agent needing to be
+able to identify voicemail and distinguish it from other messages.
+
+「__&&unified messaging&&__」の文脈では、異なる__&&message&&__文脈が異なる暗の意味を持ち得ます。
+例えば、ある利用者は__&&voice&&____&&mail&&__を暗に緊急性を持つものとして理解するかもしれません。
+従ってそうした利用者はそれを集めて他の__&&message&&__より先に処理することを望むでしょう。
+この結果__&&end user&&__の受信__&&agent&&__は__&&voice&&____&&mail&&__を識別して他の__&&message&&__から区別することが出来る必要があります。
+
+> The uses of this kind of presentation characteristic for each message
+are multi-fold:
+
+この種の各__&&message&&__の表現性質の利用は複数組まれています。
+
+[PRE[
+   o  Display an indication to the user (e.g., by a suitably evocative
+      icon along with other summary fields),
+]PRE]
+
+[PRE[
+   o  Auto-forward a given message type into another messaging
+      environment (e.g., a page to a mobile short message service),
+]PRE]
+
+[PRE[
+   o  Prioritize and group messages in an inbox display list,
+]PRE]
+
+[PRE[
+   o  Suggest appropriate default handling for presentation,
+]PRE]
+
+[PRE[
+   o  Suggest appropriate default handling for reply, forward, etc.
+]PRE]
+
+- 利用者への案内を表示 (例えば、他の要約欄に適当な呼起し__&&icon&&__で。)
+- ある__&&message&&__型を他の__&&message&&__環境に自動転送 
+(例えば、携帯の短めの__&&message service&&__を呼び出す。)
+- __&&inbox&&__表示__&&list&&__内での__&&message&&__の優先順序付けや分類
+- 適切な表現の既定の取扱いを提案
+- 返信, 転送等の既定の取扱いを提案
+
+> A problem faced by multimedia messaging systems is that it is not
+always easy to decide the context of a received message.  For
+example, consider the following scenarios.
+__&&multimedia&&____&&message system&&__が直面している問題は、受信__&&message&&__の文脈を決定するのが必ずしも容易ではないことです。
+例えば、次の場面を考えてください。
+
+[PRE[
+   o  A message that contains audio and image data:  Is this a fax
+      message that happens to have some voice commentary?  Is it a voice
+      message that is accompanied by some supplementary diagrams?  Is it
+      a fully multimedia message, in which all parts are expected to
+      carry equal significance?
+]PRE]
+__&&voice&&__と画像の__&&data&&__を含んだ__&&message&&__。
+これは__&&fax&&__&&message&&__に__&&voice&&__でメモが付いたものでしょうか。
+それとも__&&voice&&____&&message&&__に補足の図を付けたものでしょうか。
+あるいは完全に__&&multimedia&&__な__&&message&&__で、全ての部分を同様の重要度で伝えることを意図したものでしょうか。
+
+[PRE[
+   o  A message containing text and audio data:  Is this e-mail with an
+      MP3 music attachment?  Is it a voice message that happens to have
+      been generated with an initial text header for the benefit of
+      non-voice-enabled e-mail receivers?
+]PRE]
+__&&text&&__と__&&audio&&__の__&&data&&__を含んだ__&&message&&__。
+この__&&email&&__は MP3 音楽を添付したものでしょうか。
+それとも__&&voice&&____&&message&&__で__&&voice&&__が使えない__&&email&&__受信者向けの初期__&&text&&____&&header&&__つきで生成された__&&voice&&____&&message&&__でしょうか。
+
+> The message context does relate to the message media content.
+However, it is not the same thing.  As shown above, the media type
+used in a message is not sufficient to indicate the message context.
+One cannot determine a priori which media types to use in alternative
+(gateway) messages.  Also, what if the user cares about
+distinguishing traditional e-mail text from SMS messages?  They are
+both the same media type, text, but they have different user contexts.
+__&&message&&__文脈は__&&message&&____&&media&&__文脈とは関係はします。
+しかし、これらは同じことではありません。
+前に示したように、__&&messsage&&__で使われる__&&media type&&__は__&&message&&__文脈を示す上では重要ではありません。
+どの__&&media type&&__を代替 (__&&gateway&&__) __&&message&&__に使うのかの優先度は決定できません。
+また、利用者が伝統的な__&&email&&____&&text&&__と SMS __&&message&&__を区別した意図したらどうでしょう。
+両者は共に同じ__&&media type&&__の__&&text&&__ですが、異なる利用者文脈を持っています。
+
+
+* 4. Functional Requirements [INS[機能的要件]]
+
+> The goals stated above lead to the following functional requirements.
+
+以上で述べた目標から次の要件が導かれます。
+
+> For receivers:
+
+受信者について:
+
+[PRE[
+   o  Identify a message as belonging to a message class.
+]PRE]
+
+[PRE[
+   o  Incorrect or invalid message classification must not result in
+      failure to transfer or inability to present a message.
+]PRE]
+
+- __&&message&&__が__&&message class&&__に属するものとして識別する
+- 正しくない又は不正な__&&message&&__分類のために転送に失敗したり__&&message&&__の表現が出来なかったりしてはならない
+
+> For senders:
+
+送信者について:
+
+[PRE[
+   o  Specify message classes by the originating user's choice of
+      authoring tool or simple user interaction.
+]PRE]
+
+- 作成する利用者の__&&authoring tool&&__や単純な利用者の動作による選択で__&&message class&&__を指定
+
+> For both:
+
+両者について:
+
+[PRE[
+   o  Specify a well-defined set of message classes to make
+      interoperability between mail user agents (UAs) possible.
+]PRE]
+
+[PRE[
+   o  Message classification information has to be interpretable in
+      reasonable fashion by many different user agent systems.
+]PRE]
+
+[PRE[
+   o  The mechanism should be extensible to allow for the introduction
+      of new kinds of messages.
+]PRE]
+
+- __&&message class&&__のよく定義された集合を指定して__&&mail&&____&&user agent&&__
+(UA) 間の相互通信性を可能な限り確保する
+- __&&message&&__分類情報は多くの異なる__&&user agent&&____&&system&&__で道理的方法で解釈可能でなければならない
+- その仕組みは拡張可能で新しい種類の__&&message&&__を導入可能とする
+
+[PRE[
+   NOTE: We specifically do not specify user agent behavior when the
+   user agent forwards a message.  Clearly, the user agent, being
+   message-context-aware, should provide a meaningful message-context.
+   It is obvious what to do for the easy cases.  Messages that the user
+   simply forwards will most likely keep the context unchanged.
+   However, it is beyond the scope of this document to specify the user
+   agent behavior for any other scenario.
+]PRE]
+
+注意: 私達は、__&&user agent&&__が__&&message&&__を転送する時の__&&user agent&&__の動作を具体的には規定しません。
+明らかに、__&&user agent&&__で__&&message&&__文脈を知っているものは、意味のある__&&message&&__文脈を提供するべきです。
+簡単な場合には何をするのかは自明です。
+利用者が単に転送する__&&message&&__では文脈は変更しないでおくのが最も適当でしょう。
+しかし、他の場面での__&&user agent&&__の動作についてはこの文書の適用範囲外です。
+
+
+* 5. Determining the Message Context [INS[__&&message&&__文脈の決定]]
+
+> One method of indicating the interpretation context of a message is
+to examine the media types in the message.  However, this requires
+the UA to scan the entire message before it can make this
+determination.  This approach is particularly burdensome for the
+multi-media mail situation, as voice and especially video mail
+objects are quite large.
+
+解釈した__&&message&&__の文脈を示す一つの方法は、__&&message&&__中の__&&media type&&__を検査することです。
+しかし、このために UA は、この決定をする前に__&&message&&__全体を走査しなければなりません。
+この方法は特に__&&multimedia&&____&&mail&&__の場合には重荷となります。
+__&&voice&&__や特に__&&video&&__の__&&mail&&____&&object&&__は非常に大きくなりますから。
+
+> We considered indicating the message context by registering a
+multipart/* MIME subtype (Content-Type).  For example, the VPIM Work
+Group has registered multipart/voice-message to indicate that a
+message is primarily voice mail [7].  However, 
+multipart/voice-message is identical in syntax to multipart/mixed.  The only
+difference is that VPIM mail transfer agents and user agents
+recognize that they can perform special handling of the message based
+on it being a voice mail message.  Moreover, Content-Type refers to a
+given MIME body part, not to the message as a whole.
+
+[CODE[multipart/*]] MIME __&&subtype&&__ ([CODE[Content-Type]])
+を登録することで__&&message&&__文脈を示すことも考えました。例えば、
+VPIM __&&work group&&__はある__&&message&&__が主として__&&voice&&____&&mail&&__であることを示すために
+[CODE[multipart/voice-message]] を登録しました。
+しかし、 [CODE[multipart/voice-message]] は [CODE[multipart/mixed]]
+の構文と同一です。唯一の違いは、 VPIM __&&mail&&__転送__&&agent&&__及び__&&user agent&&__がその__&&message&&__を__&&voice&&____&&mail&&____&&message&&__であることに基づいた特別な__&&message&&__の取扱いを行うことが出来ると認識することです。
+更に、 [CODE[Content-Type]] は当該 MIME __&&body part&&__にのみ言及するのであって、__&&message&&__全体に言及するのではありません。
+
+[INS[
+
+訳注: 構文が同じというのは、そもそも [[RFC2046]] がそう規定している
+([[multipart/*]] 参照。) からであって当然のことです。 [INS[(スコア -1: 余計なもの)]]
+]INS]
+
+> We wish to avoid scanning the entire message.  In addition, we wish
+to avoid having to create multiple aliases for multipart/mixed every
+time someone identifies a new primary content type.  Multiple aliases
+for multipart/mixed are not desirable as they remove the possibility
+for specifying a message as multipart/alternate, multipart/parallel,
+or multipart/encrypted, for example.
+__&&message&&__の全体を走査することは避けたいと願っています。
+加えて、誰かが新しい主__&&content type&&__を識別する旅に複数の
+[CODE[multipart/mixed]] の別名を作成しなければならないのは避けたいと願っています。
+複数の [CODE[multipart/mixed]] の別名は、__&&message&&__を
+[CODE[multipart/alternate]], [CODE[multipart/parallel]],
+[CODE[multipart/encrypted]] などとして指定する時の可搬性を損ないますから望ましくありません。
+
+> Since the message context is an attribute of the entire message, it
+is logical to define a new top-level (RFC 2822 [3]) message
+attribute.  To this end, this document introduces the message
+attribute "Message-Context".
+__&&message context&&__は__&&message&&__全体の属性ですから、
+新しい__&&top-level&&__ (RFC 2822) __&&message&&__属性を定義するのは論理的です。
+この結論から、この文書は__&&message&&__属性 [CODE[Message-Context]]
+を導入します。
+
+> Message-Context only serves to identify the message context.  It does
+not provide any indication of content that the UA must be capable of
+delivering.  It does not imply any message disposition or delivery
+notification.  There is a related effort to define Critical Content
+of Internet Mail [8] that one might use to perform these tasks.
+__&&Message-Context&&__は、__&&message context&&__の識別のみのために供給されます。
+これは UA が配送の能力を持っていなければならない内容を指示するものではありません。
+これはいかなる__&&message disposition&&__や__&&delivery notification&&__を課すものでもありません。
+こうした作業を行うのに使えるものとしては、関連して__&&Internet Mail&&__の__&&Critical Content&&__を定義する仕事があります。
+
+> Message-Context is only an indicator.  We do not intend for it to
+convey information that is critical for presentation of the message.
+One can conceive of goofy situations, such as a message marked
+"voice-message" but without an audio body part.  In this case, the
+fact that the contents of a message don't match its context does not
+mean the receiving system should generate an error report or fail to
+deliver or process the message.
+__&&Message-Context&&__は単なる指示子です。
+これを__&&message&&__の表現に__&&ritical&&__であることの情報を運ぶのは意図していません。
+[CODE[voiced-message]] と__&&mark&&__されているのに__&&audio&&____&&body part&&__がないようなおかしな状況もあるかもしれません。
+この場合、__&&message&&__の内容がその__&&context&&__に一致しなかったという事実は、
+受信した__&&system&&__が__&&error report&&__を生成したり__&&message&&__を配送したり処理したりするのに失敗したりする__&&should&&__ということは意味しません。
+
+
+* 6. Message-Context Reference Field [INS[__&&Message-Context&&____&&reference&&____&&field&&__]]
+
+> The Message-Context reference field is a top-level header inserted by
+the sending UA to indicate the context of the message.
+
+[CODE[Message-Context]] __&&reference&&____&&field&&__は、
+送信 UA により__&&message&&__の__&&context&&__を示すために挿入される__&&top-level&&____&&header&&__です。
+
+> A receiving user agent MUST NOT depend on the indicated 
+message-context value in a way that prevents proper presentation of the
+message.  If the value is incorrect or does not match the message
+content, the receiving user agent MUST still be capable of displaying
+the message content at least as meaningfully as it would if no
+Message-Context value were present.
+
+受信__&&user agent&&__は、__&&message&&__の適当な__&&presentation&&__を妨げる形で示された__&&message-context&&__値に依存しては__&&MUST NOT&&__。
+値が間違っているか__&&message&&__内容と一致しない時でも、
+受信した__&&user agent&&__は依然__&&message&&__内容を、
+少なくても [CODE[Message-Context]] 値が指定されていなかった場合と同程度には有意に表示できる能力がなければ__&&MUST&&__。
+
+> One can envision situations where a well-formed message ends up not
+including a media type one would expect from the message-context.
+For example, consider a voice messaging system that records a voice
+message and also performs speech-to-text processing on the message.
+The message then passes through a content gateway, such as a
+firewall, that removes non-critical body parts over a certain length.
+The receiving user agent will receive a message in the voice-message
+context that has only a text part and no audio.  Even though the
+message does not have audio, it is still in the voice message context.
+
+[PRE[
+   Said differently, the receiving UA can use the message-context to
+   determine whether, when, and possibly where to display a message.
+   However, the message-context should not affect the actual rendering
+   or presentation.  For example, if the message is in the voice-message
+   context, then don't try to send it to a fax terminal.  Conversely,
+   consider the case of a message in the voice-message context that gets
+   delivered to a multimedia voice terminal with a printer.  However,
+   this message only has fax content.  In this situation, the "voice-
+   message" context should not stop the terminal from properly rendering
+   the message.
+]PRE]
+
+6.1. Message-Context Syntax
+
+[PRE[
+   The syntax of the Message-Context field, described using the ABNF [4]
+   is as follows.  Note that the Message-Context header field name and
+   message-context-class values are not case sensitive.
+]PRE]
+
+[PRE[
+      "Message-Context" ":" message-context-class CRLF
+]PRE]
+
+6.2. message-context-class Syntax
+
+[PRE[
+   The message-context-class indicates the context of the message.  This
+   is an IANA registered value.  Current values for message-context-
+   class are as follows.
+]PRE]
+
+Burger, et al.              Standards Track                     [Page 7]
+&#12;
+RFC 3458           Message Context for Internet Mail        January 2003
+
+[PRE[
+      message-context-class =  (   "voice-message"
+                                 / "fax-message"
+                                 / "pager-message"
+                                 / "multimedia-message"
+                                 / "text-message"
+                                 / "none"
+                                )
+]PRE]
+
+[PRE[
+   Note: The values for Message-Context MUST be IANA registered values
+   following the directions in the IANA Considerations section below.
+]PRE]
+
+6.2.1. voice-message
+
+[PRE[
+   The voice-message class states the message is a voice mail message.
+]PRE]
+
+6.2.2. fax-message
+
+[PRE[
+   The fax-message class states the message is a facsimile mail message.
+]PRE]
+
+6.2.3. pager-message
+
+[PRE[
+   The pager-message class states the message is a page, such as a text
+   or numeric pager message or a traditional short text message service
+   (SMS) message.
+]PRE]
+
+6.2.4. multimedia-message
+
+[PRE[
+   The multimedia-message class states the message is an aggregate
+   multimedia message, such as a message specified by [9].  This helps
+   identify a message in a multimedia context.  For example, a MIME
+   multipart/related [10] data part and resource part looks the same as
+   a multimedia MHTML multipart/related.  However, the semantics are
+   quite different.
+]PRE]
+
+6.2.5. text-message
+
+[PRE[
+   The text-message class states the message is a traditional internet
+   mail message.  Such a message consists of text, possibly richly
+   formatted, with or without attachments.
+]PRE]
+
+6.2.6. none
+
+[PRE[
+   The none class states there is no context information for this
+   message.
+]PRE]
+
+[PRE[
+   If a message has no Message-Context reference field, a receiving user
+   agent MUST treat it the same as it would if the message has a "none"
+   value.
+]PRE]
+
+Burger, et al.              Standards Track                     [Page 8]
+&#12;
+RFC 3458           Message Context for Internet Mail        January 2003
+
+7. Security Considerations
+
+[PRE[
+   The intention for this header is to be an indicator of message
+   context only.  One can imagine someone creating an "Application"
+   Message-Context.  A poorly designed user agent could blindly execute
+   a mailed program based on the Message-Context.  Don't do that!
+]PRE]
+
+[PRE[
+   One can envision a denial of service attack by bombing a receiver
+   with a message that has a Message-Context that doesn't fit the
+   profile of the actual body parts.  This is why the receiver considers
+   the Message-Context to be a hint only.
+]PRE]
+
+8. IANA Considerations
+
+[PRE[
+   Section 8.3 is a registration for a new top-level RFC 2822 [3]
+   message header, "Message-Context".
+]PRE]
+
+[PRE[
+   This document creates an extensible set of context types.  To promote
+   interoperability and coherent interpretations of different types, a
+   central repository has been established for well-known context types.
+]PRE]
+
+[PRE[
+   The IANA has created a repository for context types called "Internet
+   Message Context Types".  Following the policies outlined in [5], this
+   repository is "Specification Required" by RFC.  Section 8.1 describes
+   the initial values for this registry.
+]PRE]
+
+[PRE[
+   To create a new message context type, you MUST publish an RFC to
+   document the type.  In the RFC, include a copy of the registration
+   template found in Section 8.2 of this document.  Put the template in
+   your IANA Considerations section, filling-in the appropriate fields.
+   You MUST describe any interoperability and security issues in your
+   document.
+]PRE]
+
+8.1. Message Content Type Registrations
+
+[PRE[
+   Internet Message Content Types
+   ==============================
+]PRE]
+
+[PRE[
+   Value              Description                           Reference
+   -----              -----------                           ---------
+   voice-message      Indicates a message whose primary     This RFC
+                      content is a voice mail message.  The
+                      primary content is audio data.  The
+                      context is usually a message recorded
+                      from a voice telephone call.
+]PRE]
+
+Burger, et al.              Standards Track                     [Page 9]
+&#12;
+RFC 3458           Message Context for Internet Mail        January 2003
+
+[PRE[
+   fax-message        Indicates a message whose primary     This RFC
+                      content is a fax mail message.  The
+                      primary content is image data.  The
+                      context is usually a message recorded
+                      from a facsimile telephone call.
+]PRE]
+
+[PRE[
+   pager-message      Indicates a message whose primary     This RFC
+                      content is a page.  The primary
+                      content is text data.  The context is
+                      an urgent message usually of a
+                      limited length.
+]PRE]
+
+[PRE[
+   multimedia-message Indicates a message whose primary     This RFC
+                      content is a multimedia message.  The
+                      primary content is multimedia, most
+                      likely MHTML.  The context is often
+                      spam or newsletters.
+]PRE]
+
+[PRE[
+   text-message       Indicates a classic, text-based,      This RFC
+                      Internet message.
+]PRE]
+
+[PRE[
+   None               Indicates an unknown message context. This RFC
+]PRE]
+
+8.2. Registration Template
+
+[PRE[
+   In the following template, a pipe symbol, "|", precedes instructions
+   or other helpful material.  Be sure to replace "<classname>" with the
+   class name you are defining.
+]PRE]
+
+[PRE[
+   Message-Context class name:
+   <classname>
+]PRE]
+
+[PRE[
+   Summary of the message class:
+       | Include a short (no longer than 4 lines) description or summary
+       | Examples:
+       |   "Palmtop devices have a 320x160 pixel display, so we can..."
+       |   "Color fax is so different than black & white that..."
+   Person & email address to contact for further information:
+       | Name & e-mail
+]PRE]
+
+Burger, et al.              Standards Track                    [Page 10]
+&#12;
+RFC 3458           Message Context for Internet Mail        January 2003
+
+8.3. Message-Context Registration
+
+[PRE[
+   To: iana@iana.org
+   Subject: Registration of New RFC 2822 Header
+]PRE]
+
+[PRE[
+   RFC 2822 Header Name:
+   Message-Context
+]PRE]
+
+[PRE[
+   Allowable values for this parameter:
+   Please create a new registry for Primary Context Class
+   registrations.  See section 8.1 of this document for the initial
+   va
+]PRE]

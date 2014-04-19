@@ -1,0 +1,432 @@
+#?SuikaWiki/0.9
+[PRE[
+Internet 技術特別調査委員会 (IETF)                             Mark Welter
+INTERNET-DRAFT                                          Brian W. Spolarich
+draft-ietf-idn-utf6-00                                         WALID, Inc.
+2000年11月16日                                       2001年5月16日期限切れ
+]PRE]
+
+        UTF-6 - Yet Another ASCII-Compatible Encoding for IDN
+        UTF-6 - もうひとつの IDN 用 ASCII 互換符号化方法
+
+*このメモの位置付け
+
+この文書は Internet-Draft で RFC2026 の第10節の全ての要件を満たしています。
+
+Internet-Draft は Internet 技術特別調査委員会 (IETF) やその area,
+作業部会の作業文書です。その他の団体も作業文書を Internet-Draft として
+配布することが出来ます。
+
+Internet-Draft は最大で6ヶ月有効な原案文書で、随時他の文書により
+更新されたり置き換えられたり廃止されたりする可能性があります。Internet-
+Draft を「作業中」と断らずに他のものから参照したり引用したりするのは
+不適切です。
+
+     現在の Internet-Draft の一覧は
+     http://www.ietf.org/ietf/1id-abstracts.txt
+     で入手出来ます。
+
+     Internet-Draft Shadow Directory の表は
+     http://www.ietf.org/shadow.html
+     で入手出来ます。
+
+この文書の配布は制限しません。
+
+Copyright (c) The Internet Society (2000).  All Rights Reserved.
+
+*概要
+
+この文書は、現行のドメイン名機構と完全な互換性のある、ホスト名部分に
+使われる Unicode 文字符号位置を表現するための変形法を説明します。
+これは国際化されたドメイン名機構の展開を支える ASCII 互換符号化方法 (ACE)
+の候補として提案するものです。この変形法は Duerst により提案された
+UTF-5 符号化方法の拡張で、典型的な Unicode 列のより能率的な表現と
+簡素性や可読性の維持の両方を実現します。この変形法は現行 WALID
+多言語ドメイン名機構実装の一部として用いられています。もっともこの進捗は
+符号化方法候補としての長所の評価に勘案するべきものとは限りませんけど。
+
+*目次
+[PRE[
+1.        はじめに
+1.1         用語
+2.        ホスト名部分変形
+2.1         変換後の名前接頭辞
+2.2         ホスト名の準備
+2.3         定義
+2.4         UTF-6 符号化方法
+2.4.1         可変長16進符号化方法
+2.4.2         UTF-6 圧縮算法
+2.4.3         順方向変形算法
+2.5         UTF-6 復号
+2.5.1         可変長16進復号
+2.5.2         UTF-6 展開算法
+2.5.3         逆方向変形算法
+3.        例
+3.1         「www.walid.com」 (アラビア語で。)
+3.2         片仮名と平仮名の混合 (それぞれの場所) **
+3.3         現在認められていない ASCII 文字 ($OneBillionDollars!) **
+4.        安全性に関して
+5.        参考文献
+]PRE]
+[INS[
+訳注: (**) 原文目次にこれらの項目はないが、訳者が補った。
+]INS]
+
+*1.  はじめに
+
+UTF-6 は ISO/IEC 10646 [ISO10646] 文字集合 (文字符号割り当ては
+Unicode [UNICODE3] と同期しています。) の符号化方法とこの符号化方法を
+Unicode 文字列からなるホスト名部分を現行 DNS 規約 [STD13] と互換性の
+ある列に変形する手順を説明します。これは [IDNREQ] の定義する「charset」
+の定義を満たします。
+
+**1.1  用語
+
+この文書中のキーワード 「MUST」, 「SHALL」, 「REQUIRED」, 「SHOULD」,
+「RECOMMENDED」, 「MAY」は RFC 2119 [RFC2119] で説明されているとおりに
+解釈されます。
+
+16進値は「0x」ではじまります。例えば、「0xa1b5」は0xa1に0xb5が続く
+2つのオクテットを表します。2進値は「0b」ではじまります。例えば、9ビット
+の値は「0b101101111」のように表します。
+
+この文書中の例は Unicode 規格 [UNICODE3] の記法や ISO 10646 の文字名称
+を使用します。例えば、文字「a」は「U+0061」や「LATIN SMALL LETTER A」
+と表します。
+
+UTF-6 は国際化された文字の列を現行 DNS ホスト命名法でホスト名部分
+で認められている US-ASCII の文字列に変換します。前者を「変換前」,
+後者を「変換後」と呼びます。この仕様書は順方向・逆方向の変形算法を
+定義します。
+
+
+*2.  ホスト名部分変形
+
+[STD13] によると、ホスト名部分は大文字・小文字を区別せず、
+文字か数字で始まり, 終わり、文字・数字・ハイフン文字(「-」)のみ
+から成らなければなりません。これはもちろん、ASCII 文字レパートリの
+他の文字や非英語話者・文字を排除します。さらに、ドメイン名部分は
+62オクテット以下の長さである必要があります。
+
+**2.1  変換後の名前接頭辞
+
+この文書は文字列「wq--」を UTF-6 符号化列を識別する接頭辞として
+定義します。 IDN 作業部会の活動での比較のため、 UTF-6 列識別には
+接頭辞「wq--」のみ使われるべきです。しかし、この文書が原案段階である
+限り、接頭辞は他の IDN 作業部会の最終合意を得たものに変えられるかも
+しれません。
+
+なお、決められた識別子列を前置するのは国際ドメイン名を符号化した
+ASCII 文字を「普通」のドメイン名と区別する方法の一つでしかありません。
+一つには、[IDNRACE] で提案されていますが、どの領域(zone)ファイルの
+どの名前にも出現しない接頭辞か接尾辞の文字を含ませるという方法があり
+ます。また、国際化された名前を DNS 階層に於いて一段階以上深くする
+ドメイン部品を挿入するという方法もあります。最終的に選ばれる Unicode
+から ASCII への変形法とは独立した2つの方法の譲歩案があります。私達は
+国際化された名前と「普通」の名前の区別問題についてこの論文で扱いません。
+
+**2.2  ホスト名の準備
+
+ホスト名部分は [STD13] で認められていない文字を1文字以上含むもので、
+UTF-6 変換算法により変換する前に論理的に同じ文字の写像を処理し、
+(もしあれば) 認められていない文字を濾過し、互換合成・分解を行っている
+ものとします。
+
+ドメイン名内で妥当でないと思われる Unicode 文字に依存した変形方法を
+発明したり能率が改良された符号化方法への変形方法が今後利用可能に
+なったりするかもしれませんが、そのような提案は事態を非常に悪化させると
+考えています。私達はまた、名前解決と名前登録双方での Unicode の
+名前前処理は分離・独立した問題として考えるべきであると思っているので、
+別の文書で議論しようと考えています。
+
+**2.3  定義
+
+明快に:
+
+-「整数(integer)」は符号なし2進数
+-「バイト(byte)」は8ビット整数
+-「ニブル(nibble)」は4ビット整数
+
+**2.4  UTF-6 符号化方法
+
+この方式の裏にある考え方は、 [IDNDUERST] で説明された UTF-5 変形算法
+を単純な圧縮法が使えるように改良したものです。 UTF-6 は変換前文字列の
+同一の先導バイド/ニブル値を同じ物とみなし、この先導値の長さを変換前文字列に
+被せるが出来る仮面 (mask) の選択に使うことが出来ます。この結果の変換後の
+文字列は UTF-5 の簡素性と可読性を保持したまま、一つのホスト名部分により
+長い列を符号化することが出来ます。
+
+***2.4.1  可変長16進符号化方法
+
+可変長16進符号化算法は Duerst に [IDNDUERST] で紹介されました。
+これは整数値を、伝統的な16進値記法を少し修正した方法で符号化したもの
+です。最上位桁の数字は代替「数字」集合で表現します。 'g' から 'v' が
+0 から 15 を表します。この結果自由な長さの整数を能率的に表現出来る
+可変長符号化方法となります。
+
+可変長ニブル符号化整数 C は次のように定義します。
+
+=c の最初の意味のあるニブル, I を探すため、重要でない 0 のニブル
+を読み飛ばします。
+=集合 [ghijklmopqrstuv] の I 番目の文字を取り出します。
+=続く各ニブル J を、最上位から最下位の順に、集合 [0123456789abcdef]
+の J 番目の文字を取り出して符号化します。
+
+例:
+
+-0x1f4c    は「hf4c」と符号化します。
+-0x0624    は「m24」と符号化します。
+-0x0000    は「g」と符号化します。
+-'n'       単引用符で囲まれた単一文字は、その文字の Unicode 符号位置を表します。
+
+***2.4.2  UTF-6 圧縮算法
+
+UTF-6 は UTF-5 符号化方法を圧縮出来るように改良します。これにより
+より多くの文字が各ホスト名部分に使用出来るようになります。圧縮算法は
+次のように定義します。
+
+=0xFFFF の仮面をかぶり (set mask) ます。
+='-' 以外の文字が2つ未満なら、手順5に飛びます。
+=非 '-' 文字それぞれの最上位バイトが同じ値の場合:
+==3a.  HB にこの値を入れる。
+==3b.  'Y' を吐く。
+==3c.  HB を可変長16進符号化したものを吐く。
+==3d.  0x00FF の仮面を被る。
+==3e.  手順5へ進む。
+=非 '-' 文字それぞれの最上位ニブルが同じ値の場合:
+==4a.  HN にこの値を入れる。
+==4b.  'Z' を吐く。
+==4c.  HN を可変長16進符号化したものを吐く。
+==4d.  0x0FFF の仮面を被る。
+=各入力文字について:
+==5a.  HN に入力文字と仮面のビット演算 AND の結果を入れる。
+==5b.  HN を可変長ニブル符号化したものを吐く。
+
+***2.4.3  順方向変形算法
+
+UTF-6 変形算法は入力で UTF-16 [ISO10646] の文字列を受け付けます。
+符号化算法は次の通りです。
+
+=ホスト名文字列を点で区切られたホスト名部分に分解します。
+それぞれのホスト名部分について、次に示す手順2と3を行います。
+=前述の第2.4.2節で説明した方法で部品を圧縮し、第2.4.1節で説明した
+符号化方法を使って符号化します。
+=変換後の名前に接頭辞 'wq--' (前述の第2.1節を参照。) をつけて結果
+文字列とします。
+
+
+**2.5  UTF-6 復号
+
+***2.5.1  可変長16進復号
+
+  1.  N を最初の入力文字の小文字とします。
+
+      もし N が集合 [ghijklmnopqrstuv] に含まれなければ例外を返し、
+      そうでない場合は入力文字を処理します。
+
+  2.  R = N - 'g' とします。
+
+  3.  もし他の入力文字があれば、 N を次の入力文字の小文字にし、
+      なければ手順9へ飛びます。
+
+  4.  もし N が集合 [0123456789abcdef] に含まれなければ手順9へ飛びます。
+
+  5.  N を次の入力文字の小文字とし、入力文字を消費します。
+
+  6.  R = R * 16 とします。
+
+  7.  もし N が集合 [0123456789] に
+        含まれれば R = R + (N - '0') とし,
+        含まれなければ R = R + (N - 'a') + 10 とします。
+
+  8.  手順3に飛びます。
+
+  9.  復号結果 R を返します。
+
+***2.5.2  UTF-6 展開算法
+
+  1.  N を最初の入力文字の小文字とします。
+
+  2.  もし N が 'y' でなく、 N でもなければ 'z'、
+
+      2a.  CPART を 0 にします。
+      2b.  VMAX を 0xFFFF にします。
+
+      これは圧縮されていない場合です。
+
+  3.  もし N が 'y' なら、
+        
+      3a.  M を次の文字の可変長16進復号したものとします。
+      3b.  CPART を M × 0x0100 の結果とします。
+      3c.  VMAX を 0x00FF とします。
+      3d.  手順5へ飛びます。
+
+  4.  もし N が 'z' なら、
+
+      4a.  M を次の文字の可変長16進復号したものとします。
+      4b.  CPART を M × 0x1000 の結果とします。
+      4c.  VMAX と 0x0FFF とします。
+      4d.  手順5へ飛びます。
+
+  5.  他の入力文字がある間は、 N を次の入力文字の小文字として、
+      次の通り処理します。
+
+      5a.  もし N が 文字を消費する '-'
+             なら '-' を結果文字列に添え、
+             そうでなければ VPART を次の可変長16進復号値とします。
+      5b.  もし VPART > VMAX なら例外を返し、
+             そうでなければ CPART + VPART を結果文字列に付け足します。
+
+  6.  結果文字列を返します。
+      
+***2.5.3  逆方向変形算法
+
+  1.  文字列を点で区切られた部品に分解し、それぞれの部品について手順2〜4
+      を実行します。
+
+  2.  正当 (RFC1035 が許している文字) かどうかを確認し、もし不当なら
+      例外を返します。
+  
+  3.  変換後の名前の接頭辞 'wq--' (第2.1節参照) を削除します。
+
+  4.  上述の展開算法を使って部品を展開します。
+
+  5.  復号した部位を区切りの点でつなぎ、返します。
+
+
+*3.  例
+
+  次に示す例は符号化算法の例を示し、他の符号化方法と比較します。
+UTF-5 では ACE 接頭辞は定義されていませんが、 接頭辞 '----' を
+つけています。
+
+**3.1  「www.walid.com」 (アラビア語で。):
+
+  UTF-16:  U+0645 U+0648 U+0642 U+0639 . U+0648 U+0644 U+064A U+062F .
+           U+0634 U+0631 U+0643 U+0629
+
+  UTF-6:   wq--ymk5k8k2j9.wq--ymk8k4kaif.wq--ymj4j1k3i9
+
+  UTF-5:   ----m45m48m42m39.----m48m44m4am2f.----m34m31m43m29
+
+  RACE:    bq--azcuqqrz.bq--azeeisrp.bq--ay2dcqzj
+
+  LACE:    bq--aqdekscche.bq--aqdeqrckf5.bq--aqddimkdfe
+
+
+**3.2  片仮名と平仮名の混合 (それぞれの場所)
+
+[INS[
+訳注: 平仮名と漢字の混合に見えます。 UTF-[56] の例が欠落しているのは
+原文のままです。次項も同様。)
+]INS]
+
+  UTF-16:  U+305D U+308C U+305E U+308C U+306E U+5834 U+6240
+ 
+  UTF-6:   
+
+  UTF-5:   
+
+  RACE:    bq--4ayf3memgbpdbdbqnzmdiysa
+
+  LACE:    bq--auyf4dc7rrxacwbuafrea
+
+
+**3.3  現在認められていない ASCII 文字 ($OneBillionDollars!):
+
+  UTF-16:  U+0024 U+004F U+006E U+0065 U+0042 U+0069 U+006C U+006C 
+           U+0069 U+006F U+006E U+0044 U+006F U+006C U+006C U+0061 
+           U+0072 U+0073 U+0021 
+
+  UTF-6:
+
+  UTF-5:
+
+  RACE:   bq--aase74tfijuwy4djn6xei44mnrqxe5zb
+
+  LACE:   bq--cmacit4omvbgs4dmnfxw5rdpnrwgc5ttee
+
+*4.  安全性に関して
+
+Internet の安全性の多くは DNS にかかっていて、 DNS の仕様の
+変更は Internet の多くの安全性について変えかねません。そのため
+UTF-6 は DNS 自身には何ら変更を加えていません。
+
+UTF-6 is designed so that distinct Unicode sequences map to distinct
+domain name sequences (modulo the Unicode and DNS equivalence rules).
+そのため DNS での UTF-6 の使用は安全性に悪い影響は与えないでしょう。
+
+5.  参考文献
+
+[IDNCOMP] Paul Hoffman, “Comparison of Internationalized Domain Name 
+Proposals” (『国際化されたドメイン名提案の比較』), draft-ietf-idn-compare.
+
+[IDNREQ] James Seng, “Requirements of Internationalized Domain Names”
+(『国際化されたドメイン名の必要要件』) , draft-ietf-idn-requirement.
+
+[IDNNAMEPREP] Paul Hoffman and Marc Blanchet, “Preparation of 
+Internationalized Host Names” (『国際化されたドメイン名の準備』),
+draft-ietf-idn-nameprep
+
+[IDNDUERST] M. Duerst, “Internationalization of Domain Names”
+(『ドメイン名の国際化』) , draft-duerst-dns-i18n.
+
+[ISO10646] ISO/IEC 10646-1:1993. International Standard -- Information
+technology -- Universal Multiple-Octet Coded Character Set (UCS) --
+Part 1: Architecture and Basic Multilingual Plane (『国際標準——
+情報技術——多オクテットの国際符号化文字集合 (UCS)——第1部: 構造
+及び基本多言語面』).  5つの補遺と1つの技術訂正票が現在までに発行されて
+います。 UTF-16 は補遺1で出版された附属書Qで説明されています。
+他の17の補遺が現在標準化の各段階にあります。
+
+[RFC2119] Scott Bradner, “Key words for use in RFCs to Indicate
+Requirement Levels” (『RFC で使われる、要求水準を表すキーワード』),
+1997年3月, RFC 2119.
+
+[STD13] Paul Mockapetris, “Domain names - implementation and
+specification” (『ドメイン名—実装と仕様』), 1987年11月, STD 13 (RFC 1035).
+
+[UNICODE3] The Unicode Consortium, “The Unicode Standard -- Version
+3.0” (『Unicode 規格——第3.0版』), ISBN 0-201-61633-5. 
+<http://www.unicode.org/unicode/standard/versions/Unicode3.0.html>
+で説明されています。
+
+*A.  謝辞
+
+この文書の構造 (と構造文の幾らか) は Mark Davis と Paul Hoffman に
+よる LACE IDN 原案 (draft-ietf-idn-lace) からお借りしました。
+
+「それぞれの場所」の例は Adam Costello の draft-ietf-idn-brace 原案
+から取りました。
+
+*B.  IANA に関して
+
+この文書では IANA に関する話題は扱っていません。
+
+C.  著者の連絡先
+
+[PRE[
+Mark Welter
+Brian W. Spolarich
+WALID, Inc.
+State Technology Park
+2245 S. State St.
+Ann Arbor, MI  48104
++1-734-822-2020
+
+mwelter@walid.com
+briansp@walid.com
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.0.1 (GNU/Linux)
+Comment: For info see http://www.gnupg.org
+
+iD8DBQE6FaCt/DkPcNgtD/0RAtRmAJwISVeJGY6qmll71mL+Axc51o8iIwCgmNt/
+86RcQh1JQYWTux+8FS+XvMU=
+=bxiv
+-----END PGP SIGNATURE-----
+]PRE]
+[INS[
+訳注: この署名は原文(原著者)のものである。
+]INS]
+*License
+[[RFCのライセンス]]

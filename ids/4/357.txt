@@ -1,0 +1,131 @@
+#?SuikaWiki/0.9
+[12] [[GNUEmacs]] と [[XEmacs]] で内部コードがだいぶ異なります...
+
+*Mule2 / GNU Emacs の内部コード
+
+[16]
+,%x00-7F             ,Type 1-1 ,ASCII
+,%x80 ..             ,Type N   ,合成文字
+,%x80 ..             ,Emacs 21 ,eight-bit-graphic
+,%x81-8F C1          ,Type 1-2 ,1バイト集合
+,%x90-99 C21 C22     ,Type 2-3 ,2バイト集合
+,%x9A %xA0-DF C1     ,Type 1-3 ,1バイト集合 (1桁)
+,%x9B %xE0-EF C1     ,Type 1-3 ,1バイト集合 (2桁)
+,%x9C %xF0-F4 C21 C22,Type 2-4 ,2バイト集合 (1桁)
+,%x9D %xF5-FE C21 C22,Type 2-4 ,2バイト集合 (2桁)
+,%x9E %xFF? ?        ,Type 3-4 ,3バイト集合 (CNS 11643 = 未実装)
+,%x9E ..             ,Emacs 21 ,eight-bit-control
+,%x9F                ,         ,(lc-invalid)
+
+[13] GNU Emacs 22? からは UTF-8 base になるみたいです。
+([[マーくん]]が、まだ UTF-8 base になってないのは Emacs
+だけだよ, ママ〜ってうるさいよねぇ。)
+
+*XEmacs の内部コード
+
+[15] XEmacs 21 の src/mule-charset.h の注釈より。
+
+,%x00-7F             ,ASCII
+,%x80 ..             ,Composite
+,%x81-8D C1          ,Dimension-1 Official
+,%x8E C1             ,free (ASCII)
+,%x8F %xA0-BF        ,Control-1
+,%x90-99 C21 C22     ,Dimension-2 Official
+,%x9A-9D             ,free
+,%x9E %xA0-EF C1     ,Dimension-1 Private
+,%x9F %xF0-FF C21 C22,Dimension-2 Private
+
+-[2] C1 = C
+-[3] C21 = C
+-[4] C22 = C
+
+[14] XEmacs [[UTF-2000]] では内部コードが [[UTF-8]]
+的だったりします。
+
+[[#comment]]
+*合成文字
+
+**Mule 2 での合成文字
+-[6] Type-N = LCCMP 1*(LCN 1*C)
+-[8] LCCMP = %x80
+-[9] LCN = %xA1-BF ;; LC + 0x20
+-[7] C = %xA0-FF
+[[#comment]]
+*Leading byte
+
+[5] 最初のオクテット (または %x9A-9F の次のオクテット) は
+leading byte と呼びます。
+
+,LC   ,==,GNU Emacs 20/21         ,XEmacs 21
+,0x80,128,Composite               ,==
+,0x81,129,ISO/IEC 8859-1          ,==
+,0x82,130,ISO/IEC 8859-2          ,==
+,0x83,131,ISO/IEC 8859-3          ,==
+,0x84,132,ISO/IEC 8859-4          ,==
+,0x85,133,TIS 620-2533            ,==
+,0x86,134,ISO/IEC 8859-7          ,==
+,0x87,135,ISO/IEC 8859-6          ,==
+,0x88,136,ISO/IEC 8859-8          ,==
+,0x89,137,JIS X 0201-1976 Katakana,==
+,0x8A,138,JIS X 0201-1976 Roman   ,==
+,0x8B,139,                        ,ISO/IEC 8859-5
+,0x8C,140,ISO/IEC 8859-5          ,ISO/IEC 8859-9
+,0x8D,141,ISO/IEC 8859-9          ,unused
+,0x8E,142,                        ,(ASCII)
+,0x8F,143,                        ,Control-1
+,0x90,144,JIS X 0208-1978         ,==
+,0x91,145,GB 2312-80              ,==
+,0x92,146,JIS X 0208-1983         ,==
+,0x93,147,KS C 5601-1987          ,==
+,0x94,148,JIS X 0212-1990         ,==
+,0x95,149,CNS 11643 plane 1       ,==
+,0x96,150,CNS 11643 plane 2       ,==
+,0x97,151,CNS 11643 plane 14 (Mule2),
+,0x97,151,JIS X 0213 plane 1      ,Big5 Level 1
+,0x98,152,big5-1                  ,Big5 Level 2
+,0x99,153,big5-2                  ,unused
+,0x9A,154,1-byte private (1桁)    ,unused
+,0x9B,155,1-byte private (2桁)    ,unused
+,0x9C,156,2-byte private (1桁)    ,unused
+,0x9D,157,2-byte private (2桁)    ,unused
+,0x9E,158,(CNS 11643)             ,1byte private           
+,0x9F,159,                        ,2byte private           
+,0xA0,160,chinese-sisheng
+,0xA1,161,ipa
+,0xA2,162,viscii-lower
+,0xA3,163,viscii-upper
+,0xA4,164,arabic-digit
+,0xA5,165,arabic-1-column
+,0xA6,166,ascii-right-to-left
+,0xA7,167,lao
+,0xA8,168,
+,0xA9,169,
+,0xAA,170,
+,0xAB,171,
+,0xE0,224,arabic-2-column
+,0xE1,225,IS 13194
+,0xF0,240,indian-1-column
+,0xF1,241,tibetan-1-column
+,0xF2,242,mule-unicode-2500-33ff
+,0xF3,243,mule-unicode-e000-ffff
+,0xF4,244,mule-unicode-0100-24ff
+,0xF5,245,ethiopic
+,0xF6,246,CNS 11643 plane 3
+,0xF7,247,CNS 11643 plane 4
+,0xF8,248,CNS 11643 plane 5
+,0xF9,249,CNS 11643 plane 6
+,0xFA,250,CNS 11643 plane 7
+,0xFB,251,indian-2-column
+,0xFC,252,tibetan
+,0xFD,253,
+,0xFE,254,JIS X 0213 plane 2
+,0xFF,255,(CNS 11643 (Mule2))
+
+*文字表現
+
+[11] 内部表現にはまた別の19ビットのものを使います。
+[[#comment]]
+*メモ
+-[10] 詳しくは src/mule-charset.h に説明があります。
+- [1] 今から見ればちょっと設計の悪い符号ですね。設計後に何度か未使用の部分を修正しましたし。まあ仕方無いといえば仕方無い。
+- [17] 昔からたまに、[[メイル]]や[[ニュース]]でうっかり Mule 内部符号で送ってしまう人っているんですよねぇ。 (そんなので遅れるようになってる [[MUA]] もどうかと思うけど。)

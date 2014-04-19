@@ -1,0 +1,221 @@
+
+
+* 4. The Content-Location and Content-Base MIME Content Headers
+
+
+** 4.1 MIME content headers [INS[MIME 内容頭]]
+
+> In order to resolve URI references to other body parts, two MIME
+content headers are defined, Content-Location and Content-Base. Both
+these headers can occur in any message or content heading, and will
+then be valid within this heading and for its content.
+
+[1] 他の本体部分への URI 参照を解決するために、 [CODE[Content-Location]],
+[CODE[Content-Base]] の二つの MIME 内容頭を定義します。
+この両者はどんなメッセージ頭や内容頭にも出現することが出来、その頭及び内容に対して有効になります。
+
+> In practice, at present only those URIs which are URLs are used, but
+it is anticipated that other forms of URIs will in the future be used.
+
+実際には、現時点で URL が使われている URI だけを使いますが、他の形式の URI
+が将来使用されると予想されます。
+
+> The syntax for these headers is, using the syntax definition tools from [RFC822]:
+
+この頭の構文は、 [[RFC822]] の構文定義具を使って次のように表せます。
+
+- [3]       content-location ::= "Content-Location:" ( absoluteURI | relativeURI )
+- [4]       content-base ::= "Content-Base:" absoluteURI
+
+> where URI is at present (June 1996) restricted to the syntax for URLs
+as defined in RFC 1738 [URL].
+
+ここで、 URI は現在 (1996年6月) [[RFC1738]] で定義されている URL
+の構文に制限されます。
+
+> These two headers are valid only for exactly the content heading or
+message heading where they occurs and its text. They are thus not
+valid for the parts inside multipart headings, and are thus
+meaningless in multipart headings.
+
+[3] この二つの頭は、その実際に出現する内容頭又はメッセージ頭及びその文章に対してのみ有効です。
+従って複数部分頭の内側の部分には有効ではありませんから、よって複数部分頭では意味を持ちません。
+
+> These two headers may occur both inside and outside of a multipart/related part.
+
+この二つの頭は [CODE[multipart/related]] 部分の内側及び外側の両方で出現可能です。
+
+
+** 4.2 The Content-Base header
+
+> The Content-Base gives a base for relative URIs occurring in other
+heading fields and in HTML documents which do not have any BASE
+element in its HTML code. Its value MUST be an absolute URI.
+
+[2] [CODE[Content-Base]] は、その他の頭欄内及び [[base]] 要素を持たない [[HTML]]
+文書においてその HTML code 内に出現する相対 URI の基底となります。
+この値は絶対 URI でなければ'''なりません'''。
+
+> Example showing which Content-Base is valid where:
+
+[4] どの [CODE[Content-Base]] がどこで有効かの例を示します。
+
+[PRE[
+    Content-Type: Multipart/related; boundary="boundary-example-1";
+                  type=Text/HTML; start=foo2*foo3@bar2.net
+     ; A Content-Base header cannot be placed here, since this is a
+     ; multipart MIME object.
+     [INS[; Content-Base 頭はここには置けません。]]
+     [INS[; ここは複数部分 MIME 物体ですから。]]
+     [INS[;; 訳注: >>3 によれば、厳密に言えば、意味を持たないだけでここにも置けます。]]
+]PRE]
+
+[PRE[
+    --boundary-example-1
+]PRE]
+
+[PRE[
+    Part 1:
+    Content-Type: Text/HTML; charset=US-ASCII
+    Content-ID: <foo2*foo3@bar2.net>
+    Content-Location: http://www.ietf.cnir.reston.va.us/images/foo1.bar1
+    ;  This Content-Location must contain an absolute URI, since no base
+    ;  is valid here.
+    [INS[; この Content-Location は絶対 URI でなければなりません。]]
+    [INS[; ここには妥当な基底がありませんから。]]
+]PRE]
+
+[PRE[
+    --boundary-example-1
+]PRE]
+
+[PRE[
+    Part 2:
+    Content-Type: Text/HTML; charset=US-ASCII
+    Content-ID: <foo4*foo5@bar2.net>
+    Content-Location: foo1.bar1   ; The Content-Base below applies to
+                                  ; this relative URI
+                  [INS[;; 下の Content-Base がこの相対 URI に適用されます。]]
+    Content-Base: http://www.ietf.cnri.reston.va.us/images/
+]PRE]
+
+[PRE[
+    --boundary-example-1--
+]PRE]
+
+[INS[
+
+訳注: この例は例示のため [[MIME]] の複数部分メッセージとしてはそのままでは不正になっています。
+複数部分メッセージの構文については [[multipart/*媒体型]]を参照。
+]INS]
+
+
+** 4.3 The Content-Location Header
+
+> The Content-Location header specifies the URI that corresponds to the
+content of the body part in whose heading the header is placed. Its
+value CAN be an absolute or relative URI. Any URI or URL scheme may
+be used, but use of non-standardized URI or URL schemes might entail
+some risk that recipients cannot handle them correctly.
+
+[5] [CODE[Content-Location]] 頭は、その頭にこの頭が置かれている本体部分の内容に対応する
+URI を指定します。
+その値は絶対 URI にすることも相対 URI にすることも'''出来ます'''。
+どんな URI scheme も URL scheme も使用出来ますが、標準化されていない
+URI 又は URL の scheme を使うことは、受信者が正しくこれを取り扱えない危険性を必然的に伴うでしょう。
+
+> The Content-Location header can be used to indicate that the data
+sent under this heading is also retrievable, in identical format,
+through normal use of this URI. If used for this purpose, it must
+contain an absolute URI or be resolvable, through a Content-Base
+header, into an absolute URI. In this case, the information sent in
+the message can be seen as a cached version of the original data.
+
+[CODE[Content-Location]] 頭は、この頭の下に送られたデータが、同一の形式において、この
+URI の通常の使用により取り出すことが出来ることを示すのに使うことが出来ます。
+この目的で使う場合、絶対 URI 又は [CODE[Content-Base]] 頭を使って絶対 URI
+に解決可能な相対 URI を含めなければなりません。
+この場合、メッセージ中で贈られた情報は元のデータのキャッシュ版と見ることができます。
+
+> The header can also be used for data which is not available to some
+or all recipients of the message, for example if the header refers to
+an object which is only retrievable using this URI in a restricted
+domain, such as within a company-internal web space. The header can
+even contain a fictious URI and need in that case not be globally unique.
+
+この頭は、メッセージの受信者の一部又は全員に利用可能でないデータ,
+例えば, 会社内 Web 空間内のような制限された[RUBY[範囲] [ドメイン]]内でのみその
+URI を使って取り出すことが可能な物体を頭が参照している場合でも使用することが出来ます。
+
+[6]
+
+> Example:
+
+[PRE[
+   Content-Type: Multipart/related; boundary="boundary-example-1";
+                    type=Text/HTML
+]PRE]
+
+[PRE[
+      --boundary-example-1
+]PRE]
+
+[PRE[
+      Part 1:
+      Content-Type: Text/HTML; charset=US-ASCII
+]PRE]
+
+[PRE[
+      ... ... <IMG SRC="fiction1/fiction2"> ... ...
+]PRE]
+
+[PRE[
+      --boundary-example-1
+]PRE]
+
+[PRE[
+      Part 2:
+      Content-Type: Text/HTML; charset=US-ASCII
+      Content-Location: fiction1/fiction2
+]PRE]
+
+[PRE[
+      --boundary-example-1--
+]PRE]
+
+[INS[
+
+訳注: この例は例示のため [[MIME]] の複数部分メッセージとしてはそのままでは不正になっています。
+複数部分メッセージの構文については [[multipart/*媒体型]]を参照。
+]INS]
+
+
+** 4.4 Encoding of URIs in e-mail headers [INS[電子メイル頭内での URI の符号化]]
+
+> Since MIME header fields have a limited length and URIs can get quite
+long, these lines may have to be folded. If such folding is done, the
+algorithm defined in [URLBODY] section 3.1 should be employed.
+
+[7] MIME 頭欄は長さ制限があり、 URI 
+はかなり長くなり得ることから、これらの行は折り畳みしなければならないかもしれません。
+そのような折り畳みがなされる場合、 [[[URLBODY]]] 3.1節で定義された算法を使用するのが良いです。
+
+
+* RFC の License
+
+[[RFCのライセンス]]
+
+
+* メモ
+
+[8]
+[CITE@en[RFC 2110 MIME E-mail Encapsulation of Aggregate Documents, such as HTML (MHTML)]] ([CODE[2007-01-21 02:04:51 +09:00]] 版) <http://tools.ietf.org/html/rfc2110>
+([[名無しさん]])
+
+[9]
+[[RFC 2616]] には
+
+> Content-Base was deleted from the specification: it was not implemented widely, and there is no simple, safe way to introduce it without a robust extension mechanism. In addition, it is used in a similar, but not identical fashion in MHTML [45].
+
+と書いてあるのですが、 [[MHTML]] と同じでないというのは何のことですかね? 構文 ([[URLBODY]])?
+

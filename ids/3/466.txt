@@ -1,0 +1,193 @@
+
+* Via: 欄 (HTTP)
+
+- [4] ''Comments on AgentGripes'' <http://web.archive.org/web/20011019120517/http://www.dais.is.tohoku.ac.jp/logs/comment.html#via>
+
+[12]
+[SAMP(HTTP)[Via: 1.1 cachesv539 (NetCache NetApp/5.5R5D3)]]
+([[名無しさん]] [WEAK[2004-07-12 12:39:09 +00:00]])
+
+[[#comment]]
+
+
+** 仕様書から
+
+
+*** RFC 2068 (HTTP/1.1) 14.44; RFC 2616 (HTTP/1.1) 14.45  Via
+
+> The Via general-header field MUST be used by gateways and proxies to
+indicate the intermediate protocols and recipients between the user
+agent and the server on requests, and between the origin server and
+the client on responses. It is analogous to the "Received" field of
+RFC 822 [INS[ [9] ]] and is intended to be used for tracking message forwards,
+avoiding request loops, and identifying the protocol capabilities of
+all senders along the request/response chain.
+
+[1] [CODE(HTTP)[Via]] 一般頭欄は、関門や串が、
+[[利用者エージェント]]と要求先サーバー間の、
+および源サーバーと応答の顧客間の媒介プロトコル及び受信者を示すために、
+使用し'''なければなりません'''。
+これは RFC 822 の [CODE(822)[Received]] 欄に対応していて、
+メッセージの転送の追跡や要求の循環の回避, 
+要求・応答の鎖に居る全ての送信者のプロトコル能力の特定に使うことを目的としています。
+
+>
+- Via =  "Via" ":" 1#( received-protocol received-by [ comment ] )
+
+>
+- received-protocol = [ protocol-name "/" ] protocol-version
+- protocol-name     = token
+- protocol-version  = token
+- received-by       = ( host [ ":" port ] ) | pseudonym
+- pseudonym         = token
+
+> The received-protocol indicates the protocol version of the message
+received by the server or client along each segment of the
+request/response chain. The received-protocol version is appended to
+the Via field value when the message is forwarded so that information
+about the protocol capabilities of upstream applications remains
+visible to all recipients.
+
+[11] [CODE(HTTP)[[VAR(ABNF)[received-protocol]]]]
+は要求・応答の鎖の各部分のサーバー或いはクライアントが受信したメッセージのプロトコルの版を示します。
+[CODE(HTTP)[[VAR(ABNF)[received-protocol]]]]
+の版は、メッセージが転送された時に 
+[CODE(HTTP)[Via]] 欄の値に追加されるので、
+上流応用のプロトコル能力についての情報が全ての受信者に見えたままになります。
+
+> The protocol-name is optional if and only if it would be "HTTP". The
+received-by field is normally the host and optional port number of a
+recipient server or client that subsequently forwarded the message.
+However, if the real host is considered to be sensitive information,
+it MAY be replaced by a pseudonym. If the port is not given, it MAY
+be assumed to be the default port of the received-protocol.
+
+[CODE(HTTP)[[VAR(ABNF)[protocol-name]]]] は、
+[CODE(HTTP)[[CODE(ABNF)["HTTP"]]]]
+である場合に限って省略可能です。
+[CODE(HTTP)[[VAR(ABNF)[received-by]]]]
+欄は、通常、続けてメッセージを転送する、
+受信したサーバー或いは顧客のホストと省略可能で[RUBY[港] [ポート]]番号です。
+しかし、本当のホストが繊細な情報であると考えられる時は、 [CODE(HTTP)[[VAR(ABNF)[pseudonym]]]]
+(偽名)に置き換えても構いません。港が無い場合、 [CODE(HTTP)[[VAR(ABNF)[received-protocol]]]]
+の既定値と仮定しても'''構いません'''。
+
+> Multiple Via field values represent[INS[s]] each proxy or gateway that has
+forwarded the message. Each recipient MUST append its information
+such that the end result is ordered according to the sequence of
+forwarding applications.
+
+複数の [CODE(HTTP)[Via]] 欄値は、
+メッセージを転送した各串・関門を表します。
+各受信者はその情報を後置して、結果として転送した応用の順に並ぶように
+し'''なければなりません'''。
+
+> Comments MAY be used in the Via header field to identify the software
+of the recipient proxy or gateway, analogous to the User-Agent and
+Server header fields. However, all comments in the Via field are
+optional and MAY be removed by any recipient prior to forwarding the message.
+
+受信した[[串]]や[[関門]]のソフトウェアを識別するために、
+[CODE(HTTP)[[[User-Agent]]]] 頭欄や [CODE(HTTP)[[[Server]]]]
+頭欄と同様に、 [CODE(HTTP)[Via]] 頭欄で[[注釈]]を使って'''構いません'''。
+しかし、 [CODE(HTTP)[Via]] 欄内のすべての注釈は省略可能であり、
+どの受信者もメッセージの転送の前に削除して'''構いません'''。
+
+> For example, a request message could be sent from an HTTP/1.0 user
+agent to an internal proxy code-named "fred", which uses HTTP/1.1 to
+forward the request to a public proxy at nowhere.com, which completes
+the request by forwarding it to the origin server at www.ics.uci.edu.
+The request received by www.ics.uci.edu would then have the following
+Via header field:
+
+例えば、要求メッセージが [[HTTP/1.0]] 利用者エージェントから
+[SAMP[fred]] という符号名の内部串に送られて、こいつが HTTP/1.1
+を使ってその要求を [SAMP[nowhere.com]] の公開串に転送して、
+こいつはそれを [SAMP[www.ucs.uci.edu]] の[[起源鯖]]に転送することで要求を完了したとします。
+[SAMP[www.ucs.uci.edu]] がj苦心した要求はこの時次の [CODE(HTTP)[Via]]
+頭欄を持ちます:
+
+>
+- Via: 1.0 fred, 1.1 nowhere.com (Apache/1.1)
+
+> Proxies and gateways used as a portal through a network firewall
+SHOULD NOT, by default, forward the names and ports of hosts within
+the firewall region. This information SHOULD only be propagated if
+explicitly enabled. If not enabled, the received-by host of any host
+behind the firewall SHOULD be replaced by an appropriate pseudonym for that host.
+
+ネットワーク防火壁をくぐる玄関口として使われる串や関門は、
+既定では、防火壁領域内のホストの名前と[[ポート]]を転送する'''べきではありません'''。
+この情報は、陽に有効にしたときのみつける'''べきです'''。
+有効にしていなければ、防火壁内のすべての [CODE(ABNF)[received-by]] ホストは、
+そのホストの適切な [CODE(ABNF)[pseudonym]] で置換する'''べきです'''。
+
+> For organizations that have strong privacy requirements for hiding
+internal structures, a proxy MAY combine an ordered subsequence of
+Via header field entries with identical received-protocol values into
+a single such entry. For example,
+
+内部構造を隠す強い個人情報保護要件を持つ組織では、
+串は、同一の [CODE(ABNF)[received-protocol]] 値の
+[CODE(HTTP)[Via]] 頭欄項目の順序付き並びを一つの項目に結合して'''構いません'''。
+例えば、
+
+>
+- Via: 1.0 ricky, 1.1 ethel, 1.1 fred, 1.0 lucy
+
+> could be collapsed to
+
+は
+
+>
+- Via: 1.0 ricky, 1.1 mertz, 1.0 lucy
+
+とまとめることができます。
+
+> Applications SHOULD NOT combine multiple entries unless they are all
+under the same organizational control and the hosts have already been
+replaced by pseudonyms. Applications MUST NOT combine entries which
+have different received-protocol values.
+
+応用は、複数の項目がすべて同じ組織の統制の元にあり、
+ホストが既に [CODE(ABNF)[pseudonyms]] に置換されているのでない限り、
+複数の項目を結合する'''べきではありません'''。応用は、異なる
+[CODE(ABNF)[received-protocol]] 値の項目を結合しては'''なりません'''。
+
+
+*** RFC の部分の License
+
+[[RFCのライセンス]]
+
+** 統計
+
+[13] [CITE@en[HTTP/1.1 Via header]] ([TIME[2009-07-19 12:11:49 +09:00]] 版) <http://www.http-stats.com/Via>
+
+[14] >>13 ほとんどは protocol-name を省略していますが、
+>
+- Via: HTTP/1.1 10.86.124.17 (IBM-PROXY-WTE)
+- Via: HTTP/1.1 ootemachi2-ci2 (Traffic-Server/5.2.1a-fj [c s f ])
+
+のように省略していないものや
+
+>
+- Via: CN-5000, CN-5000
+
+のようにプロトコル名が完全に省略されているもの (仕様違反) もありますね。
+
+
+* Via: 欄 (電子メイル)
+
+[2] [[電子メイル]]でも大昔に使われていたらしい。
+
+例:
+- [3] [SAMP(822)[Via:  IBM-SJ; 25 Apr 83 19:09-PDT]]
+
+[[#comment]]
+
+
+* メモ
+
+[15] [CITE@en[Guidelines for Web Content Transformation Proxies 1.0]]
+( ([TIME[2010-10-22 17:20:31 +09:00]] 版))
+<http://www.w3.org/TR/2010/NOTE-ct-guidelines-20101026/#sec-via-headers>

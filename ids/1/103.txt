@@ -1,0 +1,157 @@
+
+
+* prefix 属性 (DOM Node 界面)
+
+[1] [[DOM2]] の属性
+[CODE[[VAR(DOMi)[[[Node]]]].[CODE(DOMa)[prefix]]]]
+は、その節の[[名前空間接頭辞]]です。
+
+[2] 値:
+,[CODE(DOM)[[[DOMString]]]]	,名前空間接頭辞	,下記以外の場合
+,[CODE(DOM)[null]]	,==	,接頭辞なしの場合
+,[CODE(DOM)[null]]	,==	,節の種類が要素又は属性のいずれでもない場合
+,[CODE(DOM)[null]]	,==	,節が DOM 1 method で作成された場合
+
+[3] 設定時の[[例外]]:
+,[CODE(DOM)[INVALID_CHARACTER_ERR]]	,接頭辞に不正な文字
+,[CODE(DOM)[NO_MODIFICATION_ALLOWED_ERR]]	,節は読取専用
+,[CODE(DOM)[NAMESPACE_ERR]]	,予約名の不正な使用
+
+[4] この属性の変更により、自動的に 
+[CODE(DOMa)[[[nodeName]]]]
+属性などの値も変更されます。
+(逆はありません。 [CODE(DOMa)[nodeName]] などは読取専用です。)
+
+この属性を変更しても、それに合わせて 
+[CODE(DOMa)[[[namespaceURI]]]] 属性などが変化することはありません。
+
+また、この属性を変更することによって、
+既定値を持つ属性が再生されることはありません。
+
+[5] >>4 の3つ目の話は、たとえばこんな例です。
+
+[PRE[
+DTD 断片:
+  <!ATTLIST foo
+    xmlns:prefix1 CDATA #FIXED 'http://uri.example/'
+    prefix1:attr1 CDATA 'default'
+  >
+文書実現値断片:
+  <foo prefix1:attr1="value"/>
+]PRE]
+
+ここで、 [SAMP(XML)[prefix1:attr1]] 属性の節の
+[CODE(DOMa)[prefix]] 属性の値を [SAMP(XML)[prefix2]]
+に変更したとします。
+
+これが接頭辞の変更ではなく、
+例えば属性節の削除であったなら、 [CODE(DOMa)[nodeName]]
+が [CODE(XML)[prefix1:attr1]] で [CODE(DOMa)[nodeValue]]
+が [SAMP(XML)[default]] である新たな属性節が「再生」
+してくるところです。しかし、単なる接頭辞の変更の場合は、
+この「再生」は起こりません。
+
+[6] >>5 もし [SAMP(XML)[prefix2:attr1]]
+が DTD の既定値で定義されていたらとか考えてみると嫌になりますね。
+
+[7] >>6 こんな処理とか。
+= [SAMP(XML)[prefix2:attr]] を [SAMP(XML)[prefix3:attr]] にする。
+= [SAMP(XML)[prefix1:attr]] を [SAMP(XML)[prefix2:attr]] にする。
+= [SAMP(XML)[prefix3:attr]] を削除する。
+= 元来の [SAMP(XML)[prefix2:attr]] が既定値で復活する。
+= この後、 [SAMP(XML)[prefix2:attr]] を呼んだ時に、どちらの節が選ばれるかは処理系定義。
+
+[8] >>5-7 [[DTD]] と XML 名前空間の相性の悪さに、
+DOM と XML 名前空間の相性の悪さ, DOM と DTD
+の相性の悪さが絡まってやな感じになっているというか。
+教訓: 
+- 名前空間接頭辞の編集なんてするな。
+- 名前空間[[宣言]]はできるだけ当たり障りのないように。
+- それ以前に名前空間を考えない文書・処理系は作るな。
+
+- [DOM2] ''Document Object Model Core'' <http://www.w3.org/TR/DOM-Level-2-Core/core.html#ID-NodeNSPrefix>
+- [9] >>7 補足。第5段階の時点で同じ[[展開名]]の節が2つあるから、名前を使って選択しようとするとどちらが返されるかは処理系定義。
+
+[10]
+[CITE[Test results for messing with Attr.prefix from Bjoern Hoehrmann on 2005-12-18 (www-archive@w3.org from December 2005)]] <http://lists.w3.org/Archives/Public/www-archive/2005Dec/0017.html>
+
+[[名前空間属性]]の [CODE(DOMa)@en[[[prefix]]]]
+を変更したらどうなるのか? の実装状況
+([[名無しさん]] [WEAK[2005-12-21 08:31:19 +00:00]])
+
+[11]
+[CITE[Re: DOM3 Core: changing .prefix of namespace declarations from Ray Whitmer on 2005-12-19 (www-dom@w3.org from October to December 2005)]]
+<http://www.w3.org/mid/3CB4022A-E422-4D42-88DE-D93781579B3D@personallegal.net>
+
+> I do not find the specification confusing.  I think expecting  
+checks to occur that are not specified is what you call confusing.   
+The spec seems fairly clear in most cases what checks occur and the  
+rest would not occur.
+
+[12]
+[CODE(DOMm)@en[[[createElementNS]]]] や
+[CODE(DOMm)@en[[[createAttributeNS]]]]
+で作成した [CODE(DOMi)@en[[[Node]]]] の
+[CODE(DOMa)@en[[[prefix]]]] に代入してみました。
+
+[[Firefox]] 1.5 では、どんな代入でも[[例外]]は発生せず、
+指定された値 (を [CODE(JS)@en[[[ToString]]]] したもの)
+が新しい [CODE(DOMa)@en[[[prefix]]]] となりました。
+[[XML名前空間]]的に適当な値かは一切チェックされないようです。
+ただし、[[空文字列]]を指定したときだけは
+[CODE(JS)@en[[[null]]]] になりました。
+
+[[Opera]] 9 では、どんな代入も[[例外]]は発生せず、
+[CODE(DOMa)@en[[[prefix]]]] は変化しませんでした。
+
+[[HTML]] でも [[XHTML]] でも同じ結果でした。
+
+;; 
+<http://suika.fam.cx/~wakaba/-temp/test/dom/node/prefix/>
+
+[13]
+Opera 8.5 と Opera 9 TP1 も [CODE(DOMa)@en[[[prefix]]]]
+に[[空文字列]]を指定しても何ら変化ありませんでした。
+([[名無しさん]])
+
+[14]
+[[DOM水準3]]で増えた記述:
+- [CODE(IDL)@en[[[null]]]] と定義されているなら、値を設定しようとしても効果なし (その[[節点]]が[[読取専用]]だろうと)。
+- [CODE(IDL)@en[[[null]]]] に設定すると[[名前空間接頭辞]]未指定となる。
+- [[空文字列]]を設定したら実装依存。
+
+([[名無しさん]])
+
+[15]
+[CODE(DOMc)@en[[[INVALID_CHARACTER_ERR]]]] についての言及は [[DOM水準2]]から。
+[[DOM水準2]]の[[正誤表]]には [[XML 1.0]] に従う、
+[[DOM水準3]]には [CODE(XMLa)@en[[[xmlVersion]]]]
+に従うとある。
+
+([[名無しさん]])
+
+
+[16]
+[CODE(DOMc)@en[[[NAMESPACE_ERR]]]] についての言及も
+[[DOM水準2]]から。指定された[[接頭辞]]が不正なら、
+という点について [[DOM水準3]]では [[XML名前空間]]仕様書によると追記あり。参照されているのは [[XML名前空間 1.0]]。
+
+([[名無しさん]])
+
+
+[[#comment]]
+
+
+* メモ
+
+[17] [CITE[IRC logs: freenode / #whatwg / 20110817]]
+( ([TIME[2011-08-28 08:21:00 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20110817>
+
+[18] [CITE@en[XHTML+RDFa 1.1 - Second Edition]]
+( ([TIME[2013-08-15 17:11:45 +09:00]] 版))
+<http://www.w3.org/TR/2013/REC-xhtml-rdfa-20130822/#A_prefix>
+
+[19] [CITE@en[HTML+RDFa 1.1]]
+( ([TIME[2013-08-20 15:49:04 +09:00]] 版))
+<http://www.w3.org/TR/2013/REC-html-rdfa-20130822/#extensions-to-the-html5-syntax>

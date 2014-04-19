@@ -1,0 +1,370 @@
+* access-type
+
+[1] [CODE(MIME)[access-type]] で使われる値は、
+次のものが確認されています。
+,afs	,AFS	,[MIME] (RFC 1341/1521)	[IANAREG] (RFC 1700)
+,anon-ftp	,匿名 FTP	,[MIME] [IANAREG]
+,content-id	,Content-ID	,RFC 1873
+,ftp	,FTP	,[MIME] [IANAREG]
+,local-file	,ファイル	,[MIME] [IANAREG]
+,mail-server	,メイルで取り寄せ	,[MIME] [IANAREG]
+,tftp	,TFTP	,[MIME] [IANAREG]
+,uri	,URI	,RFC 1867
+,url	,URL	,RFC 2017
+
+※ [IANAREG] <http://www.iana.org/assignments/access-types> 2002-06-25
+
+AFS は RFC 1341, 1521 では定義されていますが、 RFC 2046
+には載っていません。 RFC 1700 当時の IANA 登録簿にはありますが、
+現在の登録簿にも載っていません。
+
+RFC 1873 "Content-ID" 接続型, RFC 2017 は "URL" 接続型は
+IANA 登録簿には載っていません。
+
+RFC 1867 では、 UR''L'' を送るための "UR''I''" 接続型が説明されています。
+厳密な定義では無いように見えますけど。
+RFC 2017 の "URL" とは違った形式のようです。
+
+
+* パラメーター
+
+,名前	,型	,内容	,接続型	,定義
+,access-type	,token	,接続方法	,全て(必須)	,[MIME]
+,expiration	,1123.date-time	,期限切れ	,全て	,[MIME]
+,dir	,value	,(ディレクトリ名)	,?	,[MIME]
+,directory	,value	,ディレクトリ名	,anon-ftp;ftp; tftp	,[MIME]
+,mode	,token	,FTP mode	,anon-ftp; ftp; tftp	,[MIME]
+,name	,value	,ファイル名	,anon-ftp (必須); ftp (必須); local-file (必須); tftp (必須)	,[MIME]
+,permission	,token	,読書権限	,全て	,[MIME]
+,server	,addr-spec	,サーバー・アドレス	,mail-server (必須)	,[MIME]
+,site	,domain	,サーバー名	,afs; anon-ftp (必須); ftp (必須); local^file; tftp (必須)	,[MIME]
+,size	,1*DIGIT	,大きさ	,全て	,[MIME]
+,subject	,value	,主題	,mail-server	,[MIME]
+,url	,value	,URL	,url	,RFC 2017
+
+dir パラメーターは、 RFC 1521 の BNF にだけ定義されています。
+directory の誤植みたいですが、仕方無いので実装は
+これにも対応していた方が良いかもしれません。
+
+local-file, aftp では、 site パラメーターの値は
+domain / aste-domain
+
+[2] [[.//仕様書から]]
+
+
+* "Content-ID" 接続型
+
+RFC 1873 <urn:ietf:rfc:1873> 
+(訳 <http://suika.fam.cx/~wakaba/document/rfc-ja/rfc1873-ja>)
+で定義されています。
+
+''同じメッセージ中''の他の他部分実体を参照するのに使います。
+
+パラメーターは定義されていません。 RFC 1873 では必須のパラメーター
+無しとなっていますが、当然 access-type が必要です。
+
+参照先 CID は、 message/external-body の''外側の実体の頭''
+の [[Content-ID:領域]]に書くようです。 external-body 内部の
+頭ではありません。
+
+しかし、 MIME (RFC 1521, 2046) によれば、内部の頭での
+CID 領域が必須です。実装は外側に CID が無い場合に、
+内側に CID がないか確認して、あればそれを使うのが良さげです。
+
+逆に、送信側実装は、外側と同じ CID を内側にも入れると
+良いかもしれませんけど、よく分かりません。
+(外側 CID は本来的には、 message/external-body 実体の
+ID なんですよね? だからそこを参照先 CID に使うのが
+間違ってるような。)
+
+
+* "URL" 接続型
+
+RFC 2017 <urn:ietf:rfc:2017> で定義されてます。 BNF は次の通り。
+
+= URL-parameter := <"> URL-word *(*LWSP-char URL-word) <">
+= URL-word := token ; Must not exceed 40 characters in length
+
+RFC 2017 から抜粋。
+
+[PRE[
+    (1)   A check is made to make sure that all occurrences of
+          SPACE, CTLs, double quotes, backslashes, and 8-bit
+          characters in the URL string are already encoded using
+          the URL encoding scheme specified in RFC 1738. Any
+          unencoded occurrences of these characters must be
+          encoded.  Note that the result of this operation is
+          nothing more than a different representation of the
+          original URL.
+]PRE]
+
+URL 文字列中の SPACE, CTL, 二重引用符, 逆斜線, 8ビット文字
+が既に RFC 1738 で規定されている URL 符号化方式で符号化されているか
+確認する。符号化されていないこれらの文字があれば、符号化
+しなければなりません。この捜査の結果は元の URL の違った表現に
+過ぎないことに注意して下さい。
+
+[[訳注: SP / CTL / <"> / "\" / %x80-FF は、 URI/URL]]
+中では(URI 符号化しないと)使えません。けど、実際にはしばしば
+そういうのが使われてます。 ("URL" 接続型では使われてないとは
+思いますが・・・。) ですから、この確認はほとんどの場合で必須です。]]
+
+(2)   The resulting URL string is broken up into substrings
+of 40 characters or less.
+
+結果の URL 文字列を40文字以下の小文字列に分割する。
+
+[PRE[
+    (3)   Each substring is placed in a URL-parameter string as a
+          URL-word, separated by one or more spaces.  Note that
+          the enclosing quotes are always required since all URLs
+          contain one or more colons, and colons are tspecial
+          characters [RFC 1521].
+]PRE]
+
+各小文字列を URL-parameter 文字列中に、
+一つ以上の間隔で区切られた URL-word として入れる。
+URL は1つ以上のコロンを含み、コロンは tspecial 文字ですから、
+囲み引用符は常に必要であることに注意して下さい。
+
+Extraction of the URL string from the URL-parameter is even simpler:
+The enclosing quotes and any linear whitespace are removed and the
+remaining material is the URL string.
+
+URL 文字列を URL-parameter から取り出すのはより簡単です。
+囲んでいる引用符と行空白間隔を取り除けば、残ったものが
+URL 文字列です。
+
+(引用・翻訳ここまで)
+
+RFC 2017 は RFC 2231 の方法が規定される前ですから、こうした仕様に
+なってます。ですが、現在では普通に URL を(実際の)パラメーター値
+とする RFC 2231 方式の拡張パラメーターにするのが良いかもしれません。
+
+空白を入れつつも RFC 2231 方式で分割するのは、
+みっともないのであまり宜しくないと思います。けど、解釈する
+実装はそういうのにも対応するべきでしょう。
+
+特に HTTP なんかだと、 URL と実際のデータが一対一対応していないことが
+よくあります。 RFC 2017 によると、取り寄せたデータと
+external-body 本文に書いてある content-type が一致する場合のみ
+そのデータを使える (正しいと見なせる) としています。
+
+実装は、場合によっては CT だけでなくて Content-Language とかも
+同様の扱いにするのが良いと思われます。それから、取り寄せ時に HTTP
+なら [[Accept:領域]]や[[Accept-Language:領域]]を使うようにする
+のが良いと思います。
+
+
+* 例
+
+RFC 1486, 1528 に例が載ってます。 (別に external-body の例として
+載ってるわけではありませんけどねー)
+
+[PRE[
+      MIME-Version: 1.0
+      Content-Type: multipart/alternative;
+              boundary="----- =_aaaaaaaaaa0"
+      Content-Description:  pointers to ftp and e-mail access
+]PRE]
+
+[PRE[
+      ------- =_aaaaaaaaaa0
+      Content-Type: message/external-body;
+              access-type="mail-server";
+              server="archive-server@ftp.ics.uci.edu"
+]PRE]
+
+[PRE[
+      Content-Type: application/octet-stream; type="tar";
+              x-conversions="x-compress"
+      Content-ID: <4599.735726126.1@dbc.mtview.ca.us>
+]PRE]
+
+[PRE[
+      mimesend mrose/tpc/rp.tar.Z
+]PRE]
+
+[PRE[
+      ------- =_aaaaaaaaaa0
+      Content-Type: message/external-body;
+              access-type="anon-ftp"; name="rp.tar.Z";
+              directory="mrose/tpc"; site="ftp.ics.uci.edu"
+]PRE]
+
+[PRE[
+      Content-Type: application/octet-stream; type="tar";
+              x-conversions="x-compress"
+      Content-ID: <4599.735726126.2@dbc.mtview.ca.us>
+]PRE]
+
+[PRE[
+       ------- =_aaaaaaaaaa0--
+]PRE]
+
+CID の例
+
+[PRE[
+            MIME-Version: 1.0
+            Content-Type: Multipart/Mixed;
+               boundary=tiger-lily
+]PRE]
+
+[PRE[
+            --tiger-lily
+            Content-Type: image/jpeg
+            Content-ID: <950323.1552@XIson.com>
+]PRE]
+
+[PRE[
+            AAAcdb...
+            --tiger-lily
+            Content-type: Message/External-Body;
+               access-type=content-id
+            Content-ID: <950323.1552@XIson.com>
+            Content-Description:
+               This body part is duplicated by reference
+]PRE]
+
+[PRE[
+            --tiger-lily--
+]PRE]
+
+RFC 1521, 2046 では message/external-body の内側の頭で
+CID が必須です。ですから、最終部分は次のようにするのが
+正しいことになります。
+
+[PRE[
+            --tiger-lily
+            Content-type: Message/External-Body;
+               access-type=content-id
+            Content-ID: <950323.1552@XIson.com>
+            Content-Description:
+               This body part is duplicated by reference
+            
+            Content-ID: <some.content.id@external.body.example>
+            --tiger-lily--
+]PRE]
+
+上の "Content-ID" 接続型の説明も参照してください。
+
+URL の例
+
+[PRE[
+     Content-type: message/external-body; access-type=URL;
+                   URL="ftp://ftp.deepdirs.org/1/2/3/4/5/6/7/
+                        8/9/10/11/12/13/14/15/16/17/18/20/21/
+                        file.html"
+]PRE]
+
+[PRE[
+     Content-type: text/html
+     Content-Transfer-Encoding: binary
+]PRE]
+
+[PRE[
+     THIS IS NOT REALLY THE BODY!
+]PRE]
+
+なお、これは RFC 1521/2046 的には間違いです。 (上の例参照)
+
+RFC 2231 の方法を使うと、
+
+[PRE[
+        Content-Type: message/external-body; access-type=URL;
+          URL="ftp://cs.utk.edu/pub/moore/bulk-mailer/bulk-mailer.tar"
+]PRE]
+
+は次のようにも表せます。
+
+[PRE[
+        Content-Type: message/external-body; access-type=URL;
+         URL*0="ftp://";
+         URL*1="cs.utk.edu/pub/moore/bulk-mailer/bulk-mailer.tar"
+]PRE]
+
+
+* その他
+
+
+** RFC 1864 ([[Content-MD5:領域]])
+
+The Content-MD5 header may
+also be placed in the encapsulated headers of an object of type
+message/external-body, to be used to verify that the retreived and
+decoded data are the same data that were initially referenced.
+
+Content-MD5 頭は、 message/external-body 型の物体のカプセル化された頭
+にも置くことが出来ます。取り出して復号したデータが最初に参照していた
+データと同じ物であるかを確認するのに使います。
+
+
+** RFC 1867 (HTML の FORM) 5.7 Remote files with third-party transfer 第3者転送を使った遠隔ファイル
+
+[PRE[
+   In some scenarios, the user operating the client software might want
+   to specify a URL for remote data rather than a local file. In this
+   case, is there a way to allow the browser to send to the client a
+   pointer to the external data rather than the entire contents? This
+   capability could be implemented, for example, by having the client
+   send to the server data of type "message/external-body" with
+   "access-type" set to, say, "uri", and the URL of the remote data in
+   the body of the message.
+]PRE]
+
+幾つかの筋書きでは、クライアント・ソフトウェアを操作する利用者
+は遠隔データに local ファイルではなく遠隔データの URL
+を指定したいと思うかもしれません。この場合、閲覧者が
+クライアントに内容全体ではなく外部データ参照を送る方法はあるでしょうか。
+この機能は。例えばクライアントがサーバーにデータを型
+"message/external-body" で "access-type" を "uri" にして、
+メッセージの本文中に遠隔データの URL を入れることで実装出来ます。
+
+
+* 非互換性
+
+RFC 1341 と 1521/2046 では、内側の Content-ID についての規定が
+違います。 (1341 では必須でない。) "Content-ID" 接続型
+の節などを参照。
+
+実際の外部実体を統合する場合の手順が、 RFC 1341/1521/2046
+でそれぞれ微妙に違います。但し、 external-body
+ではあまり影響はないでしょう。 [[message/partial媒体型]]参照。
+
+
+* See also
+
+- [[媒体型]]
+-- [[message/*媒体型]]
+--- [[message/rfc822媒体型]]
+--- [[message/partial媒体型]]
+-- [[multipart/form-data媒体型]]
+- [[MIME]]
+-- [[Content-MD5:領域]]
+- [[RFC822]]
+- <http://www.iana.org/assignments/access-types>
+- [[FTP]]
+- [[URI]]
+-- [[URL]]
+
+
+* License
+
+See [[RFCのライセンス]]
+
+[3]
+にせ本体の頭として [SAMP(MIME)[X-Last-Modified: 19920514010000Z (1992 May 14 01:00:00 GMT)]] なんてのが入っているのを見つけました。
+([[名無しさん]])
+
+[4]
+[CITE[MIME の External-Body で本文と添付ファイルを分離保存]] 
+<http://sonic64.com/2005-08-29.html#2005-08-29-1>
+
+偽頭部に[[ファイル名]]を記述する方法が無いとして
+[CODE(MIME)@en[[[X-Original-File-Name]]]] 欄なるものを導入しているが、
+[CODE(MIME)@en[[[Content-[VAR[*]]]]]] 以外の名前の欄は無効
+[SRC[[[RFC 2046]]]] だから意味が無い。あと、
+[CODE(MIME)@en[[[Content-Disposition]]]] [CODE(MIME)@en[[[filename]]]]
+がちゃんとある。
+
+あと、ここに出ている例は [CODE(MIME)@en[[[Content-ID]]]] が不正。
