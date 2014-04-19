@@ -1,0 +1,394 @@
+head	1.6;
+access;
+symbols
+	suikawiki3-final:1.6;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.6
+date	2007.04.03.02.32.12;	author wakaba;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2003.12.08.02.03.39;	author wakaba;	state dead;
+branches;
+next	1.4;
+
+1.4
+date	2003.07.29.07.17.12;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2003.07.18.00.11.06;	author w;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2003.06.28.10.14.19;	author make;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.03.27.07.24.54;	author make;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.6
+log
+@auto-committed
+@
+text
+@
+[1]
+Not bad man! Look what i founf hier!!!!!
+ http://bed-bath-and-beyond-ivan.blogspot.com/  <a href= http://bed-bath-and-beyond-ivan.blogspot.com/ >bed bath and beyound</a>  [url= http://bed-bath-and-beyond-ivan.blogspot.com/ ]bed bath and beyound[/url] 
+http://bed-bath-and-beyond-ivan.blogspot.com/
+([[Prohor!]] [openbfor@@rtydg.com])
+
+@
+
+
+1.5
+log
+@auto-committed
+@
+text
+@d1 7
+a7 291
+#?SuikaWiki/0.9
+[1] [[HTTP]] などで使用される[[応答頭欄]]で、飛び先
+[[URI]] を指定します。
+細かい意味は仕様や[[応答符号]]により異なります。
+
+[2] HTTP では URI は[[絶対URI]] でなければなりません。 
+HTTP [[CGI]] では URI は
+「絶対[RUBY[経路] [パス]]の[[相対URI]]」 でも構いません。
+相対 URI の場合は HTTP Server
+がこれを解釈します。
+(従って HTTP [[UA]] には送られません。)
+
+「絶対[RUBY[経路] [パス]]の相対 URI」とは、
+[[scheme]] とサーバー指定の部分を絶対 URI
+から省いたもののことです。どんな相対 URI
+でもよいわけではありません。
+たとえば、 HTTP URI [SAMP[/foo/bar]]
+は適当ですが、 [SAMP[../foo/bar]] は不適当です。 
+(∵[SAMP[http://hoge.example/../foo/bar]] は不当。)
+
+[3] >>2 実際には相対 URI を正しく解釈''できない''
+[[HTTPd]] があります。
+また、 HTTP UA にも, 親切にも相対 URI 
+を解釈''する''ものが少なくないようです。
+
+[SAMP[../foo/bar]] のような相対 URI
+を指定した時の動作は、 CGI [[I-D]] では未定義です。
+素通しする HTTPd が多い(?)ようです。
+
+[4] CGI の話をする時に一番初めに参照するべきなのは CGI 
+の仕様書です。(NCSA の古典的:) 文書と期限切れの
+Internet Draft しかないのはちと痛いですが。)
+HTTP の仕様書は''その次''に参照するべきものなのです。
+CGI の話なのに HTTP の仕様書しかみない DQN
+がはまるのは、ほとんどこの [CODE[Location:]] 欄です。
+
+- [23] >>20 サーバー内 redirect を何度も繰り返し行うことも出来ます。 (HTTP Server は無限 loop にならないように対策する必要があるでしょう。)
+- [26] >>1,>>5 応答の種類 (応答符号) によっては、この欄が意味を持たず、指定できない (指定された場合の動作は未定義。何も起こらないこともある。) こともあります。例えば [[200]] (OK) 応答で [CODE[Location:]] 欄を返しても意味はありません。
+- [27] [CODE[Location:]] 欄はその意味を考えれば明白ですが、複数指定することはできません。
+- [28] サーバーによっては [[Cookie]] と相性が悪いようです。 (''CGIでクッキーセットした後にLocationで他のURLに飛ばしたいんですが・・・'' <http://tohoho.wakusei.ne.jp/lng/199908/99080130.htm>) (([CODE[200]] の [[HTML]] 文書以外では Cookie は使わない方が良いですね。色々の実装状況的に。))
+
+[29] CGI で [CODE[Location:]] を使う時は、
+[[Content-Type:]] 欄は不要なら出力しなくて構いません。
+例えば、
+
+ print <<EOH;
+ Location: http://foo.example/bar[INS[(改行)]]
+ [INS[(改行)]]
+ EOH
+
+というだけの出力の CGI script では
+[SAMP[Content-Type: text/html]]
+とか出力しなくてもいいです。 
+(というかむしろ書いたら、1文字もない「空」では
+HTML として成立しませんから不適当な指定となります。)
+
+[34] CGI 欄は[[折り畳み]]が認められていないことにも注意が必要です。つまり
+
+ Location:
+   http://foo.example/
+
+は HTTP では可能ですが、 CGI では不正です。
+(まあ URI が値のこの欄ではしないとは思いますけどね。)
+
+- [48] [[WinIE]] 2.0以降は相対 URI を解釈してくれますが、 1.0 はしてくれずにエラーになります。
+[[#comment]]
+*fragment
+
+[41] <http://foo.example/bar#fragment1> を取り寄せる時に、次のようになったとします。
+
+[PRE[
+C: GET /bar HTTP/1.1
+C: Host: foo.example
+C: 
+S: 302 Found HTTP/1.1
+S: Location: http://foo.example/hoge
+S: 
+]PRE]
+
+この時、 [[UA]] の望ましい動作は、 ([[WWWブラウザ]]であれば)
+<http://foo.example/hoge> を要求し、その #fragment1 を表示することです。
+
+[42] 同じ例で、次のような応答があったとしましょう。
+[PRE[
+S: 302 Found HTTP/1.1
+S: Location: http://foo.example/hoge#fragment2
+S: 
+]PRE]
+
+この時 WWW ブラウザは、 <http://foo.example/hoge#fragment2>
+を表示し、 #fragment1 のことは忘れます。
+
+[43] この #fragment の扱いについては仕様・実装がぐちゃぐちゃです。
+詳しくは >>24- で。
+**discussion
+- [24] >>20,>>5 [[RFC2396]] ([[URI]]) によると [CODE(ABNF)[absoluteURI]] は [CODE(ABNF)[fragment]] を含みません。従って [[HTTP/1.1]] と CGI で仕様が不整合な気がします。
+- [25] 実際のところ [CODE[fragment]] つき URI を送っても多くの URI は解釈する気がしますが、仕様的には無理ということでいいですか?
+
+[35] >>24-25 ''HTTP/1.1 Specification Errata'' 
+<http://world.std.com/~lawrence/http_errata.html#location-fragments>
+に載ってました。 (こんなの知らなかった。) >>6 
+の通り、 '''HTTP でも URI の後に #fragment をつけることが出来ます'''。
+
+[36] とはいえ、知らない実装者も居るだろうな。。。要注意ですね。
+
+[37] >>35 の文書から、該当部分の注記。
+>There are circumstances in which a fragment identifier in a Location URL would not be appropriate:
+-With a 201 Created response, because in this usage the Location header specifies the URL for the entire created resource.
+-With a 300 Multiple Choices, since the choice decision is intended to be made on resource characteristics and not fragment characteristics.
+-With 305 Use Proxy. 
+>At present, the behavior in the case where there was a fragment with the original URI, e.g.: http://host1.example.com/resource1#fragment1 where /resource1 redirects to http://host2.example.com/resource2#fragment2 is 'fragment1' discarded? Do you find fragment2 and then find fragment1 within it? We don't have fragment combination rules. 
+
+[CODE[Location]] URL 中での断片識別子が適切でない場面があります。
+-[[201]] Created (作成しますた) 応答。 [CODE[Location]]
+頭を使用して作成された資源全体を URL を指定するものだから。
+-[[300]] Multiple Choices (複数の選択肢)。選択決定は資源の性質についてなされるもので断片の性質についてではないから。
+-[[305]] Use Proxy (串使って)。
+
+現在、元の URI に断片がある場合、例えば 
+<http://host1.example.com/resource1#fragment1> で [SAMP[/resource1]]
+が <http://host2.example.com/resource2#fragment2>
+に redirect している時に「fragment1」は捨てられているのでしょうか?
+[SAMP[fragment2]] を探してそれから [SAMP[fragment2]] を探すのでしょうか?
+我々は断片組み合わせ規則は持っていません。
+
+[38] >>37 の後半の問題、実際のところどうなんだろう?
+どっちにしる!とも言いがたいよなあ。
+
+-[39] ''Common User Agent Problems: Handle the fragment identifier of a URI when the HTTP request is redirected.'' <http://www.w3.org/TR/cuap#cp-fragment>
+
+[40] >>39 の [[W3C]] [[NOTE]] は、 #fragment に対応していない UA
+があるけどちゃんとしる! と言うと共に、 >>37-38 問題について、 #fragment2 
+にしる! と言っています (小文字 must)。
+
+[44] >>42 で、「アドレス・バー」のような [[UI]] 部分をどうするかという問題がありますね。
+[[301]] なら新しい (#fragment2 の) URI にしてしまえばいいですが、 [[307]]
+の時はどうなんでしょう。元の #fragment1 にしておくのと、 #fragment*
+は削ってしまうのと2種類考えられますが。
+
+- [47] >>35 場所が変わっていました: ''HTTP/1.1 Specification Errata'' <http://purl.org/NET/http-errata>
+[[#comment]]
+*飛び先で文字化け問題
+
+[30] 古い [[NC]]4 などで、
+
+ Content-Type: text/html; charset=iso-8859-1
+ Location: http://foo.example/bar/
+
+と言われて、 [SAMP[http://foo.example/bar/]] を取り寄せると
+
+ Content-Type: text/html
+
+であって中身が日本語の漢字かな混じり文とかの時に、[[文字コード]]自動判別が行われずにそのまま
+[[ISO-8859-1]] と認識され、[[文字化け]]するという問題が起きました。
+
+[31] この問題で一番悪いのは、 [[ISO-8859-1]] 以外の文書に
+[[charsetパラメーター]]を付けずに送り出す相手サーバーです。
+
+[[Apache]] 1.3.12 で >>30 の上の例のように、エラー・メッセージで必ず
+[CODE[charset]] パラメーターをつけるように修正された
+(安全性の問題への対処のため。) ことで、正しい [CODE[charset]]
+パラメーターを HTML 
+文書につけて送らない日本語文書が主のサーバーで広範囲で問題が起こりました。
+問題の直接的な原因となった 1.3.12 の修正を元に戻すことで対策を行ったところやそれを薦める人もいましたが、それは'''間違っています'''。
+[[#comment]]
+*HTTP/1.1 (RFC 2616) 14.30 Location
+>The Location response-header field is used to redirect the recipient
+to a location other than the Request-URI for completion of the
+request or identification of a new resource. For 201 (Created)
+responses, the Location is that of the new resource which was created
+by the request. For 3xx responses, the location SHOULD indicate the
+server's preferred URI for automatic redirection to the resource. The
+field value consists of a single absolute URI.
+
+[5] [CODE[Location]] 応答頭欄は、要求の完了又は新しい資源の特定のために
+[[Request-URI]] 以外の場所に受信者を[RUBY[誘導] [リダイレクト]]するのに使います。
+[[201]] (Created: 作成。) 応答では、 [CODE[Location]]
+は要求により作られた新しい資源の場所です。
+3[VAR[x]][VAR[x]] 要求では、この場所は、資源への自動誘導のための、サーバー側的により好ましい
+URI を示します。
+欄の値は単一の絶対 URI で構成します。
+-[6]       Location       = "Location" ":" absoluteURI [INS[[ "#" fragment ]]]
+
+[INS[
+訳注: Errata の件について >>35 を参照。
+]INS]
+
+>An example is:
+
+-[7]       Location: http://www.w3.org/pub/WWW/People.html
+
+>Note: The Content-Location header field (section 14.14) differs
+from Location in that the Content-Location identifies the original
+location of the entity enclosed in the request. It is therefore
+possible for a response to contain header fields for both Location
+and Content-Location. Also see section 13.10 for cache
+requirements of some methods.
+
+[8] '''注意''': [CODE[Content-Location]]
+頭欄 ([[Content-Location:]] 参照。)
+は [CODE[Location]] とは異なり、要求に同封された実体の場所を識別します。
+従って、応答に [CODE[Location]] と 
+[CODE[Content-Location]] の双方を含めることも可能です。
+幾つかの方式のキャッシュ要求について、 13.10
+節も参照。
+
+[INS[
+-[9] 訳注: 「要求に同封された」とは「応答に同封された」でないと話が合わなくないですか?
+[[#comment]]
+]INS]
+*HTTP CGI/1.1 (draft 03)
+**7.2 (抜粋)
+>At least one CGI-Field
+MUST be supplied, but no CGI field name may be used more than
+once in a response. If a body is supplied, then a
+"Content-type" header field MUST be supplied by the script,
+otherwise the script MUST send a "Location" or "Status" header
+field. If a Location CGI-Field is returned, then the script
+MUST NOT supply any HTTP-Fields.
+
+[33] 最低1つの CGI 欄を供給しなければ'''なりません'''。
+但し同じ CGI 欄名を1つの応答中に複数使ってはいけません。
+[[本体]]を供給する場合、 script は「Content-type」
+頭欄を供給しなければ'''なりません'''。
+そうでない場合 [INS[(本体を供給しない場合)]] script は
+は「Location」頭欄か「Status」頭欄を送らなければ'''なりません'''。
+[CODE[Location]] CGI 欄を返す場合、 script はどの HTTP
+欄も供給しては'''いけません'''。
+**7.2.1.2. Location
+>This is used to specify to the server that the script is
+returning a reference to a document rather than an actual
+document.
+
+[10] これは、サーバーに対してスクリプトが実際の文書ではなく文書への参照を返すことを指定するのに使います。   
+-[11] Location         = "Location" ":" ( fragment-URI | rel-URL-abs-path ) NL
+-[12] fragment-URI     = URI [ # fragmentid ]
+-[13] URI              = scheme ":" *qchar
+-[14] fragmentid       = *qchar
+-[15] rel-URL-abs-path = "/" [ hpath ] [ "?" query-string ]
+-[16] hpath            = fpsegment *( "/" psegment )
+-[17] fpsegment        = 1*hchar
+-[18] psegment         = *hchar
+-[19] hchar            = alpha | digit | safe | extra | ":" | "@@" | "& | "="
+
+>The Location value is either an absolute URI with optional
+fragment, as defined in RFC 1630 [1], or an absolute path
+within the server's URI space (i.e., omitting the scheme and
+network-related fields) and optional query-string. If an
+absolute URI is returned by the script, then the server MUST
+generate a '302 redirect' HTTP response message unless the
+script has supplied an explicit Status response header field.
+Scripts returning an absolute URI MAY choose to provide a
+message-body. Servers MUST make any appropriate modifications
+to the script's output to ensure the response to the
+user-agent complies with the response protocol version. If the
+Location value is a path, then the server MUST generate the
+response that it would have produced in response to a request
+containing the URL
+   
+-[21] scheme "://" SERVER_NAME ":" SERVER_PORT rel-URL-abs-path
+
+[20] [CODE[Location]] 値は、 [[RFC1630]] で定義されている絶対
+URI 及び省略可能な[[断片]]か、又はサーバーの URI
+空間内の絶対経路 (すなわち、[[scheme]] とネットワーク関連欄を省略したもの。)
+及び省略可能な [[query-string]] のいずれかです。
+絶対 URI が script により返された場合、サーバーは、
+[CODE[Status]] 応答頭欄が明示的に指定されていない限り、
+「[[302]] redirect」 HTTP 応答メッセージを生成しなければ'''なりません'''。
+絶対 URI を返す script は [[message-body]]
+を提供することを選んでも'''構いません'''。
+サーバーは、[[利用者エージェント]]への応答が応答のプロトコルの版に合致することを確実にするため、
+script の出力を適当に修正しなければ'''なりません'''。
+[VAR[Location]] 値が経路である場合、サーバーは >>21 の [[URL]]
+を含む要求への応答であるとして応答を生成しなければ'''なりません'''。
+
+>Note: If the request was accompanied by a message-body (such
+as for a POST request), and the script redirects the request
+with a Location field, the message-body may not be available
+to the resource that is the target of the redirect.
+   
+[22] '''注意''': 要求が [CODE(ABNF)[message-body]]
+を伴っていて ([[POST]] 要求の場合など)、
+script が要求を [CODE[Location]] 欄で redirect
+した場合、 redirect の対象の資源には [CODE(ABNF)[message-body]]
+は利用可能でないかもしれません。
+*RFC/I-D の部分の License
+[[RFCのライセンス]]
+*メモ
+- [32] [[w3m]] の local cgi 機能で似たようなものとして [[w3m-control:]] 欄 + [CODE[GOTO]] があります。 [SAMP[w3m-control: GOTO file:///cgi-bin/foo.cgi]] のように使います。
+- [45] 噂によると [[tok2]] では広告の関係で CGI header [CODE(CGI)[Location:]] が使えないらしいです。
+- [46] >>45 トクトクは CGI 使えますと宣伝していましたよね。本当だとしたら虚偽広告ということになります。やめていただきたいね。
+@
+
+
+1.4
+log
+@auto-commited
+@
+text
+@@
+
+
+1.3
+log
+@auto-commited
+@
+text
+@d65 1
+@
+
+
+1.2
+log
+@auto-commited
+@
+text
+@d139 1
+@
+
+
+1.1
+log
+@pre-namespace
+@
+text
+@d288 2
+@
+

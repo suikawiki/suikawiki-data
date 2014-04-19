@@ -1,0 +1,1042 @@
+head	1.6;
+access;
+symbols
+	suikawiki3-final:1.6
+	before-db-leaffile:1.5
+	after-upgrade-to-suikawiki-3:1.5
+	before-fork-suikawiki3:1.5
+	after-restore-20040122:1.5;
+locks; strict;
+comment	@# @;
+
+
+1.6
+date	2008.09.13.02.54.42;	author wakaba;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2002.12.26.06.37.41;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2002.12.26.01.25.46;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2002.12.25.13.28.35;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2002.11.15.13.25.20;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2002.07.29.12.01.58;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.6
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9 default-name="不正なFrom:欄です"
+
+
+* quoted-string の仕様
+
+
+** RFC 724 (電子メイル)
+
+[26] [CODE[quoted-string]] を規定した最初のメイル規格です。
+基本的には現在の電子メイル仕様と同じなのですが、
+[CODE[quoted-pair]] が無い代わりに [CODE(ABNF)[<"">]] で 
+[CODE(ABNF)[<">]] を表現しました。
+
+この規格は廃止されて既に随分経っていて、この形式のメッセージはみたことがありません。
+(但し RFC 724 の [CODE[quoted-string]] の形式と
+[[Micro$oft]] の [[VisualBasic]] の[[文字列型]]の表記法は同じです。
+おそらく偶然だとは思いますが。)
+
+[16] 
+[PRE[
+ <quoted-string>   ::=   <double quote mark ("), decimal 34>
+                         <a sequence of one or more TELNET
+                          ASCII characters, where two
+                          adjacent quotes are treated as a
+                          single quote and part of the
+                          string> <">
+]PRE]
+
+>>16 を [[ABNF]] で書き直すと、こうです。
+- [19] quoted-string = <"> qcontent <">
+- [20] qcontent = qtext / quotes
+- [21] qtext = 1*(%x00-09 / %x0B-0C / %x0E-21 / %x23-7F)
+- [22] quotes = <"">
+
+[23] >>16 では <"> の出現が禁じられていませんが、常識的に考えてそんなもんは出てきてはいかんでしょう。 (>>21)
+
+[25] >>16 では ASCII なんでもありのように読めるけど、 >>24
+を読むと [CODE[CRLF]] が認められていないことがわかる。 (>>21)
+(単独の [CODE[LF]] は認められているんだろうか?)
+
+[24] '''[INS[II.B.1.C.]]3) Quoted strings'''
+
+> Where  permitted  (i.e.,  in  structured  fields)   quoted
+strings  are  treated as a single symbol (i.e.  equivalent
+to an <atom> syntactically).  However, if  quoted  strings
+are  to  be  "folded" onto multiple lines, then the syntax
+for folding must be  adhered  to  (See  items  II.B.1.a.1,
+above,  and  II.B.1.c.6,  below.)  Note  that the official
+semantics do not  encounter  <crlf>s  in  quoted  strings,
+although  particular  parsing  programs  may  wish to note
+their presence.
+> [INS[認められているところ (つまり構造化欄の中) では引用符で囲まれた文字列を単一の記号 (つまり構文的に <atom> と等しいもの) として取り扱います。しかし、引用符で囲まれた文字列が複数行に「折畳まれ」ている時は、折畳みの構文に従わなければいけません。なお、公式な意味では引用符で囲まれた文字列中に <crlf> は現れません。解析プログラムでこの出現に注意したいと思うのがあるかもしれませんが。]]
+
+- [18] BS が最初に来てはいけません。 (>>12 と同じ)
+[[#comment]]
+
+
+** RFC 733 (電子メイル)
+
+[13] RFC 733 の規定はほぼそのまま RFC 822
+に受け継がれました。詳しくは RFC 822 の節 (>>14) と RFC 733
+<urn:ietf:rfc:733> をご覧下さい。
+
+[PRE[
+ quoted-string = <"> *(qtext/quoted-pair) <">; Any number of qtext
+                                             ;   chars or any
+                                             ;   quoted char.
+ qtext       =  <any CHAR excepting <">      ; => may be folded
+                 and CR, and including
+                 linear-white-space>
+ quoted-pair =  "\" CHAR
+]PRE]
+
+[15] [CODE(ABNF)[qtext]] で [CODE(ABNF)["\"]]
+が除外されていないので、これでは [CODE(ABNF)[quoted-pair]]
+の構文解析が出来なくなってしまいますが、 RFC 822
+で修正されています (>>14) し、単なる不具合と考えて良いでしょう。
+
+[17] RFC 724 の方法 (>>16) とは互換性がありません。
+
+[[#comment]]
+
+
+** RFC 822 (電子メイル)
+
+[14]
+[PRE[
+ quoted-string = <"> *(qtext/quoted-pair) <">; Regular qtext or
+                                             ;   quoted chars.
+                 [INS[; 普通の qtext か引用符で囲んだ文字]]
+ qtext       =  <any CHAR excepting <">,     ; => may be folded
+                 "\" & CR, and including
+                 linear-white-space>
+                 [INS[<任意の CHAR。但し <">, "\", CR を除き、]]
+                  [INS[linear-white-space を含む>]]
+                 [INS[; ⇒折畳んでも良い。]]
+ CHAR        =  <any ASCII character>        ; (  0-177,  0.-127.)
+ quoted-pair =  "\" CHAR                     ; may quote any char
+                 [INS[; 任意の文字を quote 可能]]
+]PRE]
+
+- [1] [CODE(ABNF)[quoted-string]] 中に [[comment]] はつかえません。 (3.4.3)
+- [2] 両側の <"> と [CODE(ABNF)[quoted-char]] の "\" は [CODE(ABNF)[quoted-string]] のデータの一部ではありません。 (3.4.4)
+- [12] [[制御文字]] [[BS]] が [CODE(ABNF)[quoted-string]] の初めに来てはいけません。
+
+[3] [CODE(ABNF)[phrase]] 中では、前後に隣接する [CODE(ABNF)[word]]
+との間に [CODE(ABNF)[SPACE]] が1つあると仮定します。
+(実際の [CODE(ABNF)[LWSP-char]] の数によらず [CODE(ABNF)[1SPACE]]
+とします。)
+
+複数の [CODE(ABNF)[LWSP-char]] を入れたいときは <">
+の内側に入れます。 (3.4.4)
+
+例えば、 [SAMP[atom1 (SP) "quoted-string" (SP) (TAB) atom2]]
+は ''atom1 (SP) quoted-string (SP) atom2'' と解釈され、
+[SAMP[atom1 (SP) " (TAB) quoted-string" (TAB) (TAB) atom2]]
+は ''atom1 (SP) (TAB) quoted-string (SP) atom2'' と解釈されます。
+
+[4]
+
+> '''3.4.5.  QUOTED-STRINGS [INS[引用符で囲まれた文字列]]'''
+> Where permitted (i.e., in words in structured fields)  
+quoted-strings  are  treated  as a single symbol.  That is, a 
+quoted-string is equivalent to an atom, syntactically.  If a  
+quoted-string  is to be "folded" onto multiple lines, then the syntax
+for folding must be adhered to.  (See the "Lexical Analysis of
+Messages"  section  on "Folding Long Header Fields" above, and
+the section on "Case  Independence"  below.)   Therefore,  the
+official  semantics  do  not  "see" any bare CRLFs that are in
+quoted-strings; however particular parsing programs  may  wish
+to  note  their presence.  For such programs, it would be 
+reasonable to interpret a "CRLF LWSP-char" as being a CRLF  which
+is  part  of the quoted-string; i.e., the CRLF is kept and the
+LWSP-char is discarded.  Quoted CRLFs (i.e., a backslash  
+followed  by  a CR followed by a LF) are also subject to rules of
+folding, but the presence of the quoting character (backslash)
+explicitly  indicates  that  the  CRLF  is  data to the quoted
+string.  Stripping off the first following LWSP-char  is  also
+appropriate when parsing quoted CRLFs.
+
+認められているところ (例えば構造化欄の [CODE(ABNF)[word]] 中)
+では [CODE(ABNF)[quoted-string]] は単一の記号として扱われます。
+つまり、構文的には 1つの [CODE(ABNF)[quoted-string]] は
+1つの [CODE(ABNF)[atom]] に相当します。 [CODE(ABNF)[quoted-string]]
+が複数行に「折畳まれ」る場合、折畳みの構文を守らないといけません。
+(上の「メッセージの字句解析」節の「[[長い頭欄の折畳み]]」と下の
+「大文字・小文字不区別性」を参照。) 従って、公式な意味では生の
+[CODE(ABNF)[CRLF]] を [CODE(ABNF)[quoted-string]] 
+中で見ることはありません。
+しかし解析プログラムにはこの出現に注意したいと願うのもあるかもしれません。
+そうしたプログラムでは、「[CODE(ABNF)[CRLF]] [CODE(ABNF)[LWSP-char]]」
+を [CODE(ABNF)[quoted-string]] の一部である [CODE(ABNF)[CRLF]]
+と解釈するのが良いでしょう。従って [CODE(ABNF)[CRLF]]
+は残して [CODE(ABNF)[LWSP-char]] は捨てます。 Quote
+された [CODE(ABNF)[CRLF]] (つまり逆斜線に CR と LF
+が続くもの。) も折畳みの規則の対象ですが、 quote 文字
+(逆斜線) の存在が [CODE(ABNF)[CRLF]] が [CODE(ABNF)[quoted-string]]
+のデータの一部であることを明示しています。 Quote
+された [CODE(ABNF)[CRLF]] を解析する時には最初に続く
+[CODE(ABNF)[LWSP-char]] を読み飛ばすのも適切でしょう。
+
+- [5] >>4 の後半部分の解釈:
+- [6] (a) 「qtext CRLF LWSP-char qtext」は「qtext LWSP-char qtext」と解釈する。
+- [7] (b) 「qtext CRLF LWSP-char qtext」は「qtext CRLF qtext」と解釈しても良い。
+- [8] (A) 「qtext "\" CRLF LWSP-char qtext」は「qtext CRLF LWSP-char qtext」と解釈する。
+- [9] (B) 「qtext "\" CRLF LWSP-char qtext」は「qtext CRLF qtext」と解釈しても良い。
+- [10] >>6-9 であってますかね? しかしこうだとすると、(欄の定義を見ずに) CRLF LWSP-char ⇒ LWSP-char という風に unfolding を実装することが出来なくなってしまいます...
+
+[[#comment]]
+
+
+** HTTP メッセージ
+
+RFC 1945 [[HTTP/1.0]] によると、
+
+= quoted-string  = ( <"> *(qdtext) <"> )
+= qdtext         = <any CHAR except <"> and CTLs, but including LWS>
+
+[55] RFC 2068 (HTTP/1.1) によると:
+- [56]           quoted-string  = ( <"> *(qdtext) <"> )
+- [57]          qdtext         = <any TEXT except <">>
+- [58]          quoted-pair    = "\" CHAR
+
+[59] RFC 2616 [[HTTP/1.1]] によると、
+
+= quoted-string  = ( <"> *(qdtext | quoted-pair ) <"> )
+= qdtext         = <any TEXT except <">>
+= quoted-pair    = "\" CHAR
+
+[60] HTTP/1.0 では quoted-pair が使えなかったと。それで HTTP/1.1
+でも使えるけど使えないみたいな玉虫色。 See [[メッセージ頭のcomment]] の HTTP
+のとこ。
+(さすがに RFC 733 の bug (>>15) を引きずってるのでは''ない''でしょう。)
+
+= http1.0.quoted-string = <"> http1.0.qcontent <">
+= http1.0.qcontent = *http1.0.qtext
+= http1.0.qtext = %x20-21 / %x23-%x7E / FWS
+
+= http1.1.quoted-string = <"> http1.1.qcontent <">
+= http1.1.qcontent = *( http1.1.qtext / http.quoted-pair )
+= http1.1.qtext = %x00-21 / %x23-5B / %x5D-FF
+= http.quoted-string = "\" %x00-7F
+
+[46] たぶん HTTP/1.1 でも qdtext に LWS が使えると解釈したほーがいいんだろうけど、
+HTTP だと単独の CR が使えるから BNF がちょいとばかり複雑になるなあ。
+
+[54] HTTP でも [CODE(ABNF)[CHAR = %x00-7F]] ですから、 [CODE(ABNF)[quoted-pair]]
+で8ビットの値を使用することは出来ません。
+- [81] なお、8ビットの値は、 [[HTTP/1.0]] (RFC 1945) では「[[ISO-8859-1]] と解釈しても良」く、 HTTP/1.1 (RFC 2068/2616) では [CODE(CHARSET)[ISO-8859-1]] です。
+- [82] [[RFC2831]] ([[SASL]]) にも [CODE(ABNF)[quoted-string]] の定義がありますが、 RFC 2616 からの引用で同じものです。
+[[#comment]]
+
+
+** RTSP メッセージ
+
+[48] [[HTTP/1.1]] ([[RFC2068]]) 派生プロトコルの1つ、 [[RTSP/1.0]] ([[RFC2326]])
+は次のように定義しています。
+- [49]  quoted-string      =      ( <"> *(qdtext) <"> )
+- [50]  qdtext             =      <any TEXT except <">> [INS[;; %x20-21 / %x23-7E / %x80-FF]]
+- [51]  quoted-pair        =      "\" CHAR [INS[;; "\" %x00-7F]]
+
+[52] RTSP において8ビットの値は [[UTF-8]] と解釈されます。
+>>51 にあるように8ビットの時は [CODE(ABNF)[quoted-pair]]
+が使えません。単に HTTP からのコピペで済ませたから使えないままなのか、 UTF-8
+の2オクテット目以降を quote するのかの問題が生じるのが嫌だから敢えて使えないままにしたのかはわかりません。
+
+[53] >>49-50 [CODE(ABNF)[quoted-pair]] をどこに使うのかわからないのは HTTP
+譲りでしょうか(藁)。
+[[#comment]]
+
+
+** SIP メッセージ
+
+[27] HTTP を元にしてる SIP だけど、びみょーに違う。いやらしーのは
+HTTP/1.1 と同じ。(たぶん何も考えずに写したんだ。)
+
+= quoted-string  =  ( <"> *(qdtext | quoted-pair ) <"> )
+= qdtext         =  <any TEXT-UTF8 except <">>
+= quoted-pair  =  " \ " CHAR
+
+[47] [CODE(ABNF)[" \ "]] はたぶん [CODE(ABNF)["\"]] の間違いだ。そー信じたい。
+
+= sip.quoted-string = <"> sip.quoted-string <">
+= sip.qcontent = *( sip.qtext / http.quoted-pair )
+= sip.qtext = %x20-21 / %x23-5B / %x5D-7E / utf8-xtra-char / FWS
+[[#comment]]
+
+
+** RFC 2822 (電子メイル)
+
+
+*** 3.2.2. Quoted characters
+
+> Some characters are reserved for special interpretation, such as
+delimiting lexical tokens.  To permit use of these characters as
+uninterpreted data, a quoting mechanism is provided.
+
+[35] 幾つかの文字は単語字句を区切るためなどの特別な解釈に予約されています。
+こうした文字を解釈しないデータとして使うことを可能にするため、
+quote 機構を提供します。
+
+- [36]   quoted-pair     =       ("\" text) / obs-qp
+
+> Where any quoted-pair appears, it is to be interpreted as the text
+character alone.  That is to say, the "\" character that appears as
+part of a quoted-pair is semantically "invisible".
+
+[37] [CODE(ABNF)[quoted-pair]] が出現したら、これは [CODE(ABNF)[text]]
+文字だけであると解釈されます。言い換えれば、 [CODE(ABNF)[quoted-pair]]
+の一部として出現する [CODE(ABNF)["\"]] 文字は意味的には「不可視」です。
+
+> Note: The "\" character may appear in a message where it is not part
+of a quoted-pair.  A "\" character that does not appear in a
+quoted-pair is not semantically invisible.  The only places in this
+standard where quoted-pair currently appears are ccontent, qcontent,
+dcontent, no-fold-quote, and no-fold-literal.
+
+[38] 注意: [CODE(ABNF)["\"]] 文字はメッセージ中で [CODE(ABNF)[quoted-pair]]
+の一部でない場所で出現するかもしれません。 [CODE(ABNF)[quoted-pair]]
+中でない [CODE(ABNF)["\"]] は意味的に不可視ではありません。
+この規格中で現在 [CODE(ABNF)[quoted-pair]] が出現するのは
+[CODE(ABNF)[ccontent]], [CODE(ABNF)[qcontent]], [CODE(ABNF)[dcontent]],
+[CODE(ABNF)[no-fold-quote]], [CODE(ABNF)[no-fold-literal]] だけです。
+
+
+*** 3.2.5. Quoted strings
+
+> Strings of characters that include characters other than those
+allowed in atoms may be represented in a quoted string format, where
+the characters are surrounded by quote (DQUOTE, ASCII value 34) characters.
+
+[28] [[atom]] 中で認められている以外の文字を含む文字列は引用符で囲まれた文字列形式,
+すなわち引用符 ([CODE(ABNF)[DQUOTE]], [[ASCII]] 値 [CODE[34]])
+文字で囲まれた文字を使って表現しても構いません。
+
+[29]
+[PRE[
+ qtext          =       NO-WS-CTL /     ; Non white space controls
+                                        [INS[; 非空白間隔制御文字]]
+                        %d33 /          ; The rest of the US-ASCII
+                        %d35-91 /       ;  characters not including "\"
+                        %d93-126        ;  or the quote character
+                                        [INS[; "\" や引用符文字を除いた US-ASCII 文字]]
+]PRE]
+
+- [30] qcontent        =       qtext / quoted-pair
+- [31] quoted-string   =       [CFWS] DQUOTE *([FWS] qcontent) [FWS] DQUOTE [CFWS]
+
+> A quoted-string is treated as a unit.  That is, quoted-string is
+identical to atom, semantically.  Since a quoted-string is allowed to
+contain FWS, folding is permitted.  Also note that since quoted-pair
+is allowed in a quoted-string, the quote and backslash characters may
+appear in a quoted-string so long as they appear as a quoted-pair.
+
+[32] [CODE(ABNF)[quoted-string]] は1単位として扱います。
+つまり、 [CODE(ABNF)[quoted-string]] は意味的には [CODE(ABNF)[atom]]
+と同一です。 [CODE(ABNF)[quoted-string]] は [CODE(ABNF)[FWS]]
+を含むことを認めていますから、[[折り畳み]]が認められます。
+[CODE(ABNF)[quoted-string]] 中で [CODE(ABNF)[quoted-pair]]
+が認められているので、引用符文字及び逆斜線文字は
+[CODE(ABNF)[quoted-pair]] としてなら [CODE(ABNF)[quoted-string]]
+中に出現しても構わないことにも注意して下さい。
+
+> Semantically, neither the optional CFWS outside of the quote
+characters nor the quote characters themselves are part of the
+quoted-string; the quoted-string is what is contained between the two
+quote characters.  As stated earlier, the "\" in any quoted-pair and
+the CRLF in any FWS/CFWS that appears within the quoted-string are
+semantically "invisible" and therefore not part of the quoted-string either.
+
+[33] 意味的には、引用符文字の外側の省略可能な [CODE(ABNF)[CFWS]]
+も引用符文字自体も [CODE(ABNF)[quoted-string]] の一部ではありません。
+[CODE(ABNF)[quoted-string]] は2つの引用符文字の間に含まれるものです。
+上述の通り、 [CODE(ABNF)[quoted-string]] 中に出現する
+[CODE(ABNF)[quoted-pair]] 中の [CODE(ABNF)["\"]] 及び
+[CODE(ABNF)[FWS]]/[CODE(ABNF)[CFWS]] 中の [CODE(ABNF)[CRLF]]
+は意味的には「不可視」であって従ってこれもまた [CODE(ABNF)[quoted-string]]
+の一部ではありません。 
+
+
+*** メモ
+
+[42]
+[PRE[
+ text           =       %d1-9 /         ; Characters excluding CR and LF
+                        %d11 /          [INS[; CR, LF を除く文字]]
+                        %d12 /          [INS[;; RFC 2822 3.2.1]]
+                        %d14-127 /
+                        obs-text
+[45]
+ obs-char       =       %d0-9 / %d11 /          ; %d0-127 except CR and
+                        %d12 / %d14-127         ;  LF
+-[43] obs-text        =       *LF *CR *(obs-char *LF *CR) ;; RFC 2822 4.1
+-[44] obs-qp          =       "\" (%d0-127) ;; RFC 2822 4.1
+-[40] no-fold-quote   =       DQUOTE *(qtext / quoted-pair) DQUOTE ;; RFC 2822 3.6.4 (Message-ID)
+]PRE]
+
+- [39] >>38 にあるように、 [CODE(ABNF)[quoted-pair]]
+が使える場所は [CODE(ABNF)[quoted-string]], [[comment]], [[domain-literal]] です。
+- [41] >>40 は新構文の [[Message-ID]] で使います。 Message-ID
+中での折り畳みは非推奨ということで、その他は [CODE(ABNF)[quoted-string]]
+と同じです。
+[[#comment]]
+
+
+** USEFOR (電子ニュース)
+
+[61] [[usefor-article]] (08) は次のような構文を定義しています。
+- [64]      quoted-string = [CFWS] DQUOTE *( [FWS] qcontent ) [FWS] DQUOTE [CFWS]
+- [62]      quoted-pair   = "\" text
+- [63]      qcontent      = qtext / quoted-pair
+[65]
+[PRE[
+      text            = %d1-9 /            ; all UTF-8 characters except
+                        %d11-12 /          ; US-ASCII NUL, CR and LF
+                        %d14-127 /
+                        UTF8-xtra-char
+]PRE]
+
+- [67] strict-quoted-string = [CFWS] DQUOTE *( [FWS] strict-qcontent ) [FWS] DQUOTE [CFWS]
+- [68] strict-quoted-pair = "\" strict-text
+- [69] strict-qcontent = strict-qtext / strict-quoted-pair
+
+[66]
+[PRE[
+      strict-qtext    = NO-WS-CTL /        ; qtext restricted to
+                        %d33 /             ; US-ASCII
+                        %d35-91 /
+                        %d93-126
+[71]
+      no-fold-quote      = DQUOTE
+                              *( strict-qtext / "\\" / "\" DQUOTE )
+                              qspecial
+                              *( strict-qtext / "\\" / "\" DQUOTE )
+                              DQUOTE
+[72]
+      qspecial           = "(" / ")" /        ; same as specials except
+                           "<" / ">" /        ; "\" and DQUOTE quoted
+                           "[" / "]" /
+                           ":" / ";" /
+                           "@@" / "\\" /
+                           "," / "." /
+                           "\" DQUOTE
+]PRE]
+
+[70] RFC 2822 の定義 (>>31) から非推奨構文を除き [[UTF-8]] の文字を加えたものが 
+[CODE(ABNF)[quoted-string]] (>>64) 及び [CODE(ABNF)[quoted-pair]] (>>62)
+です。また、電子メイル・アドレスの [[local-part]] などで使われる
+[CODE(ABNF)[strict-quoted-string]] (>>67) は、 RFC 2822 の [CODE(ABNF)[quoted-string]]
+(>>31) から非推奨構文を除いたものです。
+
+[73] [[Message-ID]] で使う RFC 2822 の [CODE(ABNF)[no-fold-quote]] (>>40)
+も更に厳格化されています。これはニュースに於いてメイル以上に重要な意味を持つ
+Message-ID の比較などを簡単に行えるようにするためです。
+Usefor の [CODE(ABNF)[no-fold-quote]] は、 RFC 2822 同様に UTF-8
+の文字が使えない上に、 [CODE(ABNF)[quoted-pair]] が使えるのは
+[CODE(ABNF)["\\"]] 及び [CODE(ABNF)[<\">]] の2種類のみです。
+又、 [CODE(ABNF)[specials]] に該当する文字が含まれていない場合は使うことが出来ません。
+[74] (これでもまだ [CODE(ABNF)[dot-atom-text]] が quote あり/なし2種類で表せるなあ。)
+[[#comment]]
+
+
+* encoded-word と quoted-string
+
+[75] [[MIME]] の [[encoded-word]] は、 [[RFC2047]] (やその以前の RFC)
+によれば [CODE(ABNF)[quoted-string]] の内側 ([CODE(ABNF)[qcontent]])
+で使うことは出来ません。ですから、 [SAMP["=?us-ascii?q?foo?="]]
+は [CODE(ABNF)[encoded-word]] を含む [CODE(ABNF)[quoted-string]]
+のように見えますが、単なる [SAMP[=?us-ascii?q?foo?=]]
+という文字列であって、 [SAMP[foo]] の [CODE(ABNF)[encoded-word]]
+では'''ありません'''。
+
+[76] >>75 なのですが、 [[M$OE]] 
+のようなふざけた[[利用者エージェント]]が長く間違った利用を続けていたこともあって、[[バグ互換性]]のためにこの方法を使う
+[[UA]] は多いです。
+- [80] [[HTTP]] では [CODE(ABNF)[quoted-string]] 中で [CODE(ABNF)[encoded-word]] が使えます。 [[encoded-word]>>13] を参照。
+[[#comment]]
+
+
+* パラメーター値である quoted-string
+
+[77] [[MIME]] が [[Content-Type:欄]]などで導入した [[prameter]]
+では、値の部分 ([[ABNF]] でいう [[value]])
+を [[token]] 又は [CODE(ABNF)[quoted-string]] としています。
+つまり、特殊文字が値に使われる場合には [CODE(ABNF)[quoted-string]]
+が使われ (るか、後に導入された [[RFC2231]] の [[MIMEのparameter値拡張]]が使われ) ます。
+この方法は [[HTTP]] の一部の欄や [[usefor-article]]
+などの MIME に倣った幾つかの仕様でも採用されています。
+
+[78] RFC 2231 による拡張の導入は MIME 本体より遅れ、未だにその存在を知らない人もいるくらいで、
+>>75 のような [CODE(ABNF)[encoded-word]] を使った例や、 [[シフトJIS]]
+などを (規格に反して) 直書きする実装が多く存在しています。
+特に [[Content-Disposition:欄]]の [CODE[filename]] パラメーターで問題となっています。
+
+[79] >>78 また、 RFC 2231 の方法の標準化以前に制定された規格ではこの方法を規定してしまったものもあります。
+([[MIMEのparameter値拡張]>>3])
+
+
+* RFC の部分の License
+
+- [11] [[RFCのライセンス]]
+
+
+* メモ
+
+[83]
+[[RFC 5335]] により、 [CODE(MIME)@@en[[[message/global]]]]
+においては [CODE(ABNF)@@en[[[quoted-string]]]] 中で
+[[UTF-8]] の使用が認められるようになりました ([[RFC 5335]] 4.3)。
+
+([[名無しさん]])
+
+[84]
+(正確には [CODE(ABNF)@@en[[[utf8-quoted-string]]]])
+([[名無しさん]])
+
+@
+
+
+1.5
+log
+@*** empty log message ***
+@
+text
+@d1 208
+a208 189
+#?SuikaWiki/0.9 default-name="不正なFrom:欄です"
+*quoted-string の仕様
+**RFC 724 (電子メイル)
+
+[26] [CODE[quoted-string]] を規定した最初のメイル規格です。
+基本的には現在の電子メイル仕様と同じなのですが、
+[CODE[quoted-pair]] が無い代わりに [CODE(ABNF)[<"">]] で 
+[CODE(ABNF)[<">]] を表現しました。
+
+この規格は廃止されて既に随分経っていて、この形式のメッセージはみたことがありません。
+(但し RFC 724 の [CODE[quoted-string]] の形式と
+[[Micro$oft]] の [[VisualBasic]] の[[文字列型]]の表記法は同じです。
+おそらく偶然だとは思いますが。)
+
+[16] 
+ <quoted-string>   ::=   <double quote mark ("), decimal 34>
+                         <a sequence of one or more TELNET
+                          ASCII characters, where two
+                          adjacent quotes are treated as a
+                          single quote and part of the
+                          string> <">
+
+>>16 を [[ABNF]] で書き直すと、こうです。
+-[19] quoted-string = <"> qcontent <">
+-[20] qcontent = qtext / quotes
+-[21] qtext = 1*(%x00-09 / %x0B-0C / %x0E-21 / %x23-7F)
+-[22] quotes = <"">
+
+[23] >>16 では <"> の出現が禁じられていませんが、常識的に考えてそんなもんは出てきてはいかんでしょう。 (>>21)
+
+[25] >>16 では ASCII なんでもありのように読めるけど、 >>24
+を読むと [CODE[CRLF]] が認められていないことがわかる。 (>>21)
+(単独の [CODE[LF]] は認められているんだろうか?)
+
+[24] '''[INS[II.B.1.C.]]3) Quoted strings'''
+>Where  permitted  (i.e.,  in  structured  fields)   quoted
+strings  are  treated as a single symbol (i.e.  equivalent
+to an <atom> syntactically).  However, if  quoted  strings
+are  to  be  "folded" onto multiple lines, then the syntax
+for folding must be  adhered  to  (See  items  II.B.1.a.1,
+above,  and  II.B.1.c.6,  below.)  Note  that the official
+semantics do not  encounter  <crlf>s  in  quoted  strings,
+although  particular  parsing  programs  may  wish to note
+their presence.
+>[INS[認められているところ (つまり構造化欄の中) では引用符で囲まれた文字列を単一の記号 (つまり構文的に <atom> と等しいもの) として取り扱います。しかし、引用符で囲まれた文字列が複数行に「折畳まれ」ている時は、折畳みの構文に従わなければいけません。なお、公式な意味では引用符で囲まれた文字列中に <crlf> は現れません。解析プログラムでこの出現に注意したいと思うのがあるかもしれませんが。]]
+
+-[18] BS が最初に来てはいけません。 (>>12 と同じ)
+[[#comment]]
+**RFC 733 (電子メイル)
+
+[13] RFC 733 の規定はほぼそのまま RFC 822
+に受け継がれました。詳しくは RFC 822 の節 (>>14) と RFC 733
+<urn:ietf:rfc:733> をご覧下さい。
+
+ quoted-string = <"> *(qtext/quoted-pair) <">; Any number of qtext
+                                             ;   chars or any
+                                             ;   quoted char.
+ qtext       =  <any CHAR excepting <">      ; => may be folded
+                 and CR, and including
+                 linear-white-space>
+ quoted-pair =  "\" CHAR
+
+[15] [CODE(ABNF)[qtext]] で [CODE(ABNF)["\"]]
+が除外されていないので、これでは [CODE(ABNF)[quoted-pair]]
+の構文解析が出来なくなってしまいますが、 RFC 822
+で修正されています (>>14) し、単なる不具合と考えて良いでしょう。
+
+[17] RFC 724 の方法 (>>16) とは互換性がありません。
+
+[[#comment]]
+**RFC 822 (電子メイル)
+[14]
+ quoted-string = <"> *(qtext/quoted-pair) <">; Regular qtext or
+                                             ;   quoted chars.
+                 [INS[; 普通の qtext か引用符で囲んだ文字]]
+ qtext       =  <any CHAR excepting <">,     ; => may be folded
+                 "\" & CR, and including
+                 linear-white-space>
+                 [INS[<任意の CHAR。但し <">, "\", CR を除き、]]
+                  [INS[linear-white-space を含む>]]
+                 [INS[; ⇒折畳んでも良い。]]
+ CHAR        =  <any ASCII character>        ; (  0-177,  0.-127.)
+ quoted-pair =  "\" CHAR                     ; may quote any char
+                 [INS[; 任意の文字を quote 可能]]
+
+-[1] [CODE(ABNF)[quoted-string]] 中に [[comment]] はつかえません。 (3.4.3)
+-[2] 両側の <"> と [CODE(ABNF)[quoted-char]] の "\" は [CODE(ABNF)[quoted-string]] のデータの一部ではありません。 (3.4.4)
+- [12] [[制御文字]] [[BS]] が [CODE(ABNF)[quoted-string]] の初めに来てはいけません。
+
+[3] [CODE(ABNF)[phrase]] 中では、前後に隣接する [CODE(ABNF)[word]]
+との間に [CODE(ABNF)[SPACE]] が1つあると仮定します。
+(実際の [CODE(ABNF)[LWSP-char]] の数によらず [CODE(ABNF)[1SPACE]]
+とします。)
+
+複数の [CODE(ABNF)[LWSP-char]] を入れたいときは <">
+の内側に入れます。 (3.4.4)
+
+例えば、 [SAMP[atom1 (SP) "quoted-string" (SP) (TAB) atom2]]
+は ''atom1 (SP) quoted-string (SP) atom2'' と解釈され、
+[SAMP[atom1 (SP) " (TAB) quoted-string" (TAB) (TAB) atom2]]
+は ''atom1 (SP) (TAB) quoted-string (SP) atom2'' と解釈されます。
+
+[4]
+>'''3.4.5.  QUOTED-STRINGS [INS[引用符で囲まれた文字列]]'''
+>Where permitted (i.e., in words in structured fields)  
+quoted-strings  are  treated  as a single symbol.  That is, a 
+quoted-string is equivalent to an atom, syntactically.  If a  
+quoted-string  is to be "folded" onto multiple lines, then the syntax
+for folding must be adhered to.  (See the "Lexical Analysis of
+Messages"  section  on "Folding Long Header Fields" above, and
+the section on "Case  Independence"  below.)   Therefore,  the
+official  semantics  do  not  "see" any bare CRLFs that are in
+quoted-strings; however particular parsing programs  may  wish
+to  note  their presence.  For such programs, it would be 
+reasonable to interpret a "CRLF LWSP-char" as being a CRLF  which
+is  part  of the quoted-string; i.e., the CRLF is kept and the
+LWSP-char is discarded.  Quoted CRLFs (i.e., a backslash  
+followed  by  a CR followed by a LF) are also subject to rules of
+folding, but the presence of the quoting character (backslash)
+explicitly  indicates  that  the  CRLF  is  data to the quoted
+string.  Stripping off the first following LWSP-char  is  also
+appropriate when parsing quoted CRLFs.
+
+認められているところ (例えば構造化欄の [CODE(ABNF)[word]] 中)
+では [CODE(ABNF)[quoted-string]] は単一の記号として扱われます。
+つまり、構文的には 1つの [CODE(ABNF)[quoted-string]] は
+1つの [CODE(ABNF)[atom]] に相当します。 [CODE(ABNF)[quoted-string]]
+が複数行に「折畳まれ」る場合、折畳みの構文を守らないといけません。
+(上の「メッセージの字句解析」節の「[[長い頭欄の折畳み]]」と下の
+「大文字・小文字不区別性」を参照。) 従って、公式な意味では生の
+[CODE(ABNF)[CRLF]] を [CODE(ABNF)[quoted-string]] 
+中で見ることはありません。
+しかし解析プログラムにはこの出現に注意したいと願うのもあるかもしれません。
+そうしたプログラムでは、「[CODE(ABNF)[CRLF]] [CODE(ABNF)[LWSP-char]]」
+を [CODE(ABNF)[quoted-string]] の一部である [CODE(ABNF)[CRLF]]
+と解釈するのが良いでしょう。従って [CODE(ABNF)[CRLF]]
+は残して [CODE(ABNF)[LWSP-char]] は捨てます。 Quote
+された [CODE(ABNF)[CRLF]] (つまり逆斜線に CR と LF
+が続くもの。) も折畳みの規則の対象ですが、 quote 文字
+(逆斜線) の存在が [CODE(ABNF)[CRLF]] が [CODE(ABNF)[quoted-string]]
+のデータの一部であることを明示しています。 Quote
+された [CODE(ABNF)[CRLF]] を解析する時には最初に続く
+[CODE(ABNF)[LWSP-char]] を読み飛ばすのも適切でしょう。
+
+- [5] >>4 の後半部分の解釈:
+- [6] (a) 「qtext CRLF LWSP-char qtext」は「qtext LWSP-char qtext」と解釈する。
+- [7] (b) 「qtext CRLF LWSP-char qtext」は「qtext CRLF qtext」と解釈しても良い。
+- [8] (A) 「qtext "\" CRLF LWSP-char qtext」は「qtext CRLF LWSP-char qtext」と解釈する。
+- [9] (B) 「qtext "\" CRLF LWSP-char qtext」は「qtext CRLF qtext」と解釈しても良い。
+- [10] >>6-9 であってますかね? しかしこうだとすると、(欄の定義を見ずに) CRLF LWSP-char ⇒ LWSP-char という風に unfolding を実装することが出来なくなってしまいます...
+
+[[#comment]]
+**HTTP メッセージ
+
+RFC 1945 [[HTTP/1.0]] によると、
+
+=quoted-string  = ( <"> *(qdtext) <"> )
+=qdtext         = <any CHAR except <"> and CTLs, but including LWS>
+
+[55] RFC 2068 (HTTP/1.1) によると:
+-[56]           quoted-string  = ( <"> *(qdtext) <"> )
+-[57]          qdtext         = <any TEXT except <">>
+-[58]          quoted-pair    = "\" CHAR
+
+[59] RFC 2616 [[HTTP/1.1]] によると、
+
+=quoted-string  = ( <"> *(qdtext | quoted-pair ) <"> )
+=qdtext         = <any TEXT except <">>
+=quoted-pair    = "\" CHAR
+
+[60] HTTP/1.0 では quoted-pair が使えなかったと。それで HTTP/1.1
+でも使えるけど使えないみたいな玉虫色。 See [[メッセージ頭のcomment]] の HTTP
+のとこ。
+(さすがに RFC 733 の bug (>>15) を引きずってるのでは''ない''でしょう。)
+
+=http1.0.quoted-string = <"> http1.0.qcontent <">
+=http1.0.qcontent = *http1.0.qtext
+=http1.0.qtext = %x20-21 / %x23-%x7E / FWS
+
+=http1.1.quoted-string = <"> http1.1.qcontent <">
+=http1.1.qcontent = *( http1.1.qtext / http.quoted-pair )
+=http1.1.qtext = %x00-21 / %x23-5B / %x5D-FF
+=http.quoted-string = "\" %x00-7F
+
+[46] たぶん HTTP/1.1 でも qdtext に LWS が使えると解釈したほーがいいんだろうけど、
+HTTP だと単独の CR が使えるから BNF がちょいとばかり複雑になるなあ。
+
+[54] HTTP でも [CODE(ABNF)[CHAR = %x00-7F]] ですから、 [CODE(ABNF)[quoted-pair]]
+で8ビットの値を使用することは出来ません。
+d211 225
+a435 198
+[[#comment]]
+**RTSP メッセージ
+
+[48] [[HTTP/1.1]] ([[RFC2068]]) 派生プロトコルの1つ、 [[RTSP/1.0]] ([[RFC2326]])
+は次のように定義しています。
+- [49]  quoted-string      =      ( <"> *(qdtext) <"> )
+- [50]  qdtext             =      <any TEXT except <">> [INS[;; %x20-21 / %x23-7E / %x80-FF]]
+- [51]  quoted-pair        =      "\" CHAR [INS[;; "\" %x00-7F]]
+
+[52] RTSP において8ビットの値は [[UTF-8]] と解釈されます。
+>>51 にあるように8ビットの時は [CODE(ABNF)[quoted-pair]]
+が使えません。単に HTTP からのコピペで済ませたから使えないままなのか、 UTF-8
+の2オクテット目以降を quote するのかの問題が生じるのが嫌だから敢えて使えないままにしたのかはわかりません。
+
+[53] >>49-50 [CODE(ABNF)[quoted-pair]] をどこに使うのかわからないのは HTTP
+譲りでしょうか(藁)。
+[[#comment]]
+**SIP メッセージ
+
+[27] HTTP を元にしてる SIP だけど、びみょーに違う。いやらしーのは
+HTTP/1.1 と同じ。(たぶん何も考えずに写したんだ。)
+
+=quoted-string  =  ( <"> *(qdtext | quoted-pair ) <"> )
+=qdtext         =  <any TEXT-UTF8 except <">>
+=quoted-pair  =  " \ " CHAR
+
+[47] [CODE(ABNF)[" \ "]] はたぶん [CODE(ABNF)["\"]] の間違いだ。そー信じたい。
+
+=sip.quoted-string = <"> sip.quoted-string <">
+=sip.qcontent = *( sip.qtext / http.quoted-pair )
+=sip.qtext = %x20-21 / %x23-5B / %x5D-7E / utf8-xtra-char / FWS
+[[#comment]]
+**RFC 2822 (電子メイル)
+***3.2.2. Quoted characters
+>Some characters are reserved for special interpretation, such as
+delimiting lexical tokens.  To permit use of these characters as
+uninterpreted data, a quoting mechanism is provided.
+
+[35] 幾つかの文字は単語字句を区切るためなどの特別な解釈に予約されています。
+こうした文字を解釈しないデータとして使うことを可能にするため、
+quote 機構を提供します。
+
+-[36]   quoted-pair     =       ("\" text) / obs-qp
+
+>Where any quoted-pair appears, it is to be interpreted as the text
+character alone.  That is to say, the "\" character that appears as
+part of a quoted-pair is semantically "invisible".
+
+[37] [CODE(ABNF)[quoted-pair]] が出現したら、これは [CODE(ABNF)[text]]
+文字だけであると解釈されます。言い換えれば、 [CODE(ABNF)[quoted-pair]]
+の一部として出現する [CODE(ABNF)["\"]] 文字は意味的には「不可視」です。
+
+>Note: The "\" character may appear in a message where it is not part
+of a quoted-pair.  A "\" character that does not appear in a
+quoted-pair is not semantically invisible.  The only places in this
+standard where quoted-pair currently appears are ccontent, qcontent,
+dcontent, no-fold-quote, and no-fold-literal.
+
+[38] 注意: [CODE(ABNF)["\"]] 文字はメッセージ中で [CODE(ABNF)[quoted-pair]]
+の一部でない場所で出現するかもしれません。 [CODE(ABNF)[quoted-pair]]
+中でない [CODE(ABNF)["\"]] は意味的に不可視ではありません。
+この規格中で現在 [CODE(ABNF)[quoted-pair]] が出現するのは
+[CODE(ABNF)[ccontent]], [CODE(ABNF)[qcontent]], [CODE(ABNF)[dcontent]],
+[CODE(ABNF)[no-fold-quote]], [CODE(ABNF)[no-fold-literal]] だけです。
+***3.2.5. Quoted strings
+>Strings of characters that include characters other than those
+allowed in atoms may be represented in a quoted string format, where
+the characters are surrounded by quote (DQUOTE, ASCII value 34) characters.
+
+[28] [[atom]] 中で認められている以外の文字を含む文字列は引用符で囲まれた文字列形式,
+すなわち引用符 ([CODE(ABNF)[DQUOTE]], [[ASCII]] 値 [CODE[34]])
+文字で囲まれた文字を使って表現しても構いません。
+
+[29]
+ qtext          =       NO-WS-CTL /     ; Non white space controls
+                                        [INS[; 非空白間隔制御文字]]
+                        %d33 /          ; The rest of the US-ASCII
+                        %d35-91 /       ;  characters not including "\"
+                        %d93-126        ;  or the quote character
+                                        [INS[; "\" や引用符文字を除いた US-ASCII 文字]]
+
+-[30] qcontent        =       qtext / quoted-pair
+-[31] quoted-string   =       [CFWS] DQUOTE *([FWS] qcontent) [FWS] DQUOTE [CFWS]
+
+>A quoted-string is treated as a unit.  That is, quoted-string is
+identical to atom, semantically.  Since a quoted-string is allowed to
+contain FWS, folding is permitted.  Also note that since quoted-pair
+is allowed in a quoted-string, the quote and backslash characters may
+appear in a quoted-string so long as they appear as a quoted-pair.
+
+[32] [CODE(ABNF)[quoted-string]] は1単位として扱います。
+つまり、 [CODE(ABNF)[quoted-string]] は意味的には [CODE(ABNF)[atom]]
+と同一です。 [CODE(ABNF)[quoted-string]] は [CODE(ABNF)[FWS]]
+を含むことを認めていますから、[[折り畳み]]が認められます。
+[CODE(ABNF)[quoted-string]] 中で [CODE(ABNF)[quoted-pair]]
+が認められているので、引用符文字及び逆斜線文字は
+[CODE(ABNF)[quoted-pair]] としてなら [CODE(ABNF)[quoted-string]]
+中に出現しても構わないことにも注意して下さい。
+
+>Semantically, neither the optional CFWS outside of the quote
+characters nor the quote characters themselves are part of the
+quoted-string; the quoted-string is what is contained between the two
+quote characters.  As stated earlier, the "\" in any quoted-pair and
+the CRLF in any FWS/CFWS that appears within the quoted-string are
+semantically "invisible" and therefore not part of the quoted-string either.
+
+[33] 意味的には、引用符文字の外側の省略可能な [CODE(ABNF)[CFWS]]
+も引用符文字自体も [CODE(ABNF)[quoted-string]] の一部ではありません。
+[CODE(ABNF)[quoted-string]] は2つの引用符文字の間に含まれるものです。
+上述の通り、 [CODE(ABNF)[quoted-string]] 中に出現する
+[CODE(ABNF)[quoted-pair]] 中の [CODE(ABNF)["\"]] 及び
+[CODE(ABNF)[FWS]]/[CODE(ABNF)[CFWS]] 中の [CODE(ABNF)[CRLF]]
+は意味的には「不可視」であって従ってこれもまた [CODE(ABNF)[quoted-string]]
+の一部ではありません。 
+***メモ
+[42]
+ text           =       %d1-9 /         ; Characters excluding CR and LF
+                        %d11 /          [INS[; CR, LF を除く文字]]
+                        %d12 /          [INS[;; RFC 2822 3.2.1]]
+                        %d14-127 /
+                        obs-text
+[45]
+ obs-char       =       %d0-9 / %d11 /          ; %d0-127 except CR and
+                        %d12 / %d14-127         ;  LF
+-[43] obs-text        =       *LF *CR *(obs-char *LF *CR) ;; RFC 2822 4.1
+-[44] obs-qp          =       "\" (%d0-127) ;; RFC 2822 4.1
+-[40] no-fold-quote   =       DQUOTE *(qtext / quoted-pair) DQUOTE ;; RFC 2822 3.6.4 (Message-ID)
+
+-[39] >>38 にあるように、 [CODE(ABNF)[quoted-pair]]
+が使える場所は [CODE(ABNF)[quoted-string]], [[comment]], [[domain-literal]] です。
+-[41] >>40 は新構文の [[Message-ID]] で使います。 Message-ID
+中での折り畳みは非推奨ということで、その他は [CODE(ABNF)[quoted-string]]
+と同じです。
+[[#comment]]
+**USEFOR (電子ニュース)
+
+[61] [[usefor-article]] (08) は次のような構文を定義しています。
+-[64]      quoted-string = [CFWS] DQUOTE *( [FWS] qcontent ) [FWS] DQUOTE [CFWS]
+-[62]      quoted-pair   = "\" text
+-[63]      qcontent      = qtext / quoted-pair
+[65]
+      text            = %d1-9 /            ; all UTF-8 characters except
+                        %d11-12 /          ; US-ASCII NUL, CR and LF
+                        %d14-127 /
+                        UTF8-xtra-char
+
+-[67] strict-quoted-string = [CFWS] DQUOTE *( [FWS] strict-qcontent ) [FWS] DQUOTE [CFWS]
+-[68] strict-quoted-pair = "\" strict-text
+-[69] strict-qcontent = strict-qtext / strict-quoted-pair
+
+[66]
+      strict-qtext    = NO-WS-CTL /        ; qtext restricted to
+                        %d33 /             ; US-ASCII
+                        %d35-91 /
+                        %d93-126
+[71]
+      no-fold-quote      = DQUOTE
+                              *( strict-qtext / "\\" / "\" DQUOTE )
+                              qspecial
+                              *( strict-qtext / "\\" / "\" DQUOTE )
+                              DQUOTE
+[72]
+      qspecial           = "(" / ")" /        ; same as specials except
+                           "<" / ">" /        ; "\" and DQUOTE quoted
+                           "[" / "]" /
+                           ":" / ";" /
+                           "@@" / "\\" /
+                           "," / "." /
+                           "\" DQUOTE
+
+[70] RFC 2822 の定義 (>>31) から非推奨構文を除き [[UTF-8]] の文字を加えたものが 
+[CODE(ABNF)[quoted-string]] (>>64) 及び [CODE(ABNF)[quoted-pair]] (>>62)
+です。また、電子メイル・アドレスの [[local-part]] などで使われる
+[CODE(ABNF)[strict-quoted-string]] (>>67) は、 RFC 2822 の [CODE(ABNF)[quoted-string]]
+(>>31) から非推奨構文を除いたものです。
+
+[73] [[Message-ID]] で使う RFC 2822 の [CODE(ABNF)[no-fold-quote]] (>>40)
+も更に厳格化されています。これはニュースに於いてメイル以上に重要な意味を持つ
+Message-ID の比較などを簡単に行えるようにするためです。
+Usefor の [CODE(ABNF)[no-fold-quote]] は、 RFC 2822 同様に UTF-8
+の文字が使えない上に、 [CODE(ABNF)[quoted-pair]] が使えるのは
+[CODE(ABNF)["\\"]] 及び [CODE(ABNF)[<\">]] の2種類のみです。
+又、 [CODE(ABNF)[specials]] に該当する文字が含まれていない場合は使うことが出来ません。
+[74] (これでもまだ [CODE(ABNF)[dot-atom-text]] が quote あり/なし2種類で表せるなあ。)
+[[#comment]]
+*encoded-word と quoted-string
+
+[75] [[MIME]] の [[encoded-word]] は、 [[RFC2047]] (やその以前の RFC)
+によれば [CODE(ABNF)[quoted-string]] の内側 ([CODE(ABNF)[qcontent]])
+で使うことは出来ません。ですから、 [SAMP["=?us-ascii?q?foo?="]]
+は [CODE(ABNF)[encoded-word]] を含む [CODE(ABNF)[quoted-string]]
+のように見えますが、単なる [SAMP[=?us-ascii?q?foo?=]]
+という文字列であって、 [SAMP[foo]] の [CODE(ABNF)[encoded-word]]
+では'''ありません'''。
+
+[76] >>75 なのですが、 [[M$OE]] 
+のようなふざけた[[利用者エージェント]]が長く間違った利用を続けていたこともあって、[[バグ互換性]]のためにこの方法を使う
+[[UA]] は多いです。
+d437 40
+a476 21
+[[#comment]]
+*パラメーター値である quoted-string
+
+[77] [[MIME]] が [[Content-Type:欄]]などで導入した [[prameter]]
+では、値の部分 ([[ABNF]] でいう [[value]])
+を [[token]] 又は [CODE(ABNF)[quoted-string]] としています。
+つまり、特殊文字が値に使われる場合には [CODE(ABNF)[quoted-string]]
+が使われ (るか、後に導入された [[RFC2231]] の [[MIMEのparameter値拡張]]が使われ) ます。
+この方法は [[HTTP]] の一部の欄や [[usefor-article]]
+などの MIME に倣った幾つかの仕様でも採用されています。
+
+[78] RFC 2231 による拡張の導入は MIME 本体より遅れ、未だにその存在を知らない人もいるくらいで、
+>>75 のような [CODE(ABNF)[encoded-word]] を使った例や、 [[シフトJIS]]
+などを (規格に反して) 直書きする実装が多く存在しています。
+特に [[Content-Disposition:欄]]の [CODE[filename]] パラメーターで問題となっています。
+
+[79] >>78 また、 RFC 2231 の方法の標準化以前に制定された規格ではこの方法を規定してしまったものもあります。
+([[MIMEのparameter値拡張]>>3])
+*RFC の部分の License
+- [11] [[RFCのライセンス]]
+*メモ
+@
+
+
+1.4
+log
+@*** empty log message ***
+@
+text
+@d191 1
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@d26 1
+a26 1
+-[21] qtext = 1*(%x00-09 / %x11-12 / %x14-21 / %x23-7F)
+d160 6
+a165 1
+RFC 2616 [[HTTP/1.1]] によると、
+d171 1
+a171 1
+HTTP/1.0 では quoted-pair が使えなかったと。それで HTTP/1.1
+d174 1
+a174 1
+(さすがに RFC 733 の bug (>>15) を引きずってるのではないでしょう。)
+d185 1
+a185 1
+たぶん HTTP/1.1 でも qdtext に LWS が使えると解釈したほーがいいんだろうけど、
+d188 20
+d217 1
+a217 1
+" \ " はたぶん "\" の間違いだ。そー信じたい。
+d221 2
+a222 1
+=sip.qtext = %x20-21 / %x23-5B / %x5D-7F / utf8-xtra-char / FWS
+d270 1
+a270 1
+                   [INS[; "\" や引用符文字を除いた US-ASCII 文字]]
+d325 83
+@
+
+
+1.2
+log
+@Updated.
+@
+text
+@d2 2
+a3 1
+*RFC 724
+d49 1
+a49 1
+*RFC 733
+d71 1
+a71 1
+*RFC 822
+d153 1
+a153 1
+*HTTP
+d183 1
+a183 1
+*SIP
+d185 1
+a185 1
+HTTP を元にしてる SIP だけど、びみょーに違う。いやらしーのは
+d197 102
+@
+
+
+1.1
+log
+@Updated.
+@
+text
+@d1 151
+d168 1
+d196 3
+a198 8
+
+*See also
+-[[MIME]]
+-[[HTTP]]
+-[[RFC822と仲間達の頭領域名]]
+-[[メッセージの頭]]
+--[[メッセージ頭のcomment]]
+
+@
+

@@ -1,0 +1,136 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.1
+date	2005.05.03.02.06.26;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@
+
+
+* Roles use case
+
+[2]
+- クラス DOMMetaImpl:ManakaiDOMMinimumImplementation は
+-- 実現値 [VAR[I]] を DOMCore:ManakaiDOMImplementationSource 
+から得られる (ように実装されている)
+-- 実現値 [VAR[J]] を、クラス DOMMetaImpl:ManakaiDOMMinimumImplementation
+と[Q[互換]]な別のクラス [VAR[C]] の実現値 [VAR[J[SUB[[VAR[C]]]]]] と 
+[CODE(DOMm)[[[getFeature]]]] によって得られ得る
+- クラス swcfg21:ManakaiSWCFGImplementation は
+-- クラス DOMMetaImpl:ManakaiDOMMinimumImplementation を継承している
+--- 実現値 [VAR[I']] を〜という性質も継承している
+--- 実現値 [VAR[J']] を〜という性質も継承している
+- クラス DOMCore:ManakaiDOMImplementation は
+-- クラス DOMMetaImpl:ManakaiDOMMinimumImplementation を継承している
+--- 〜という性質も継承している
+- クラス [VAR[AnotherDOMImplementation]] は
+-- 実現値 [VAR[I[SUB[[VAR[ADOMI]]]]]] を DOMCore:DOMImplementationSource
+から得られる (ように実装されている)
+-- 実現値 [VAR[J[SUB[[VAR[ADOMI]]]]]] を [VAR[AnotherDOMImplSource]]
+から得られる (ように実装されている)
+-- DOMMetaImpl:ManakaiDOMMinimumImplementation とは[Q[非互換]]で、
+実現値を [CODE(DOMm)[[[getFeature]]]] を介して得ることはできない
+
+[3]
+- クラス DOMCore:ManakaiDOMImplementationSource は
+-- ManakaiDOMImplementationRegistry の情報源となる
+- クラス [VAR[D]] は
+-- ManakaiDOMImplementationRegistry の情報源となる
+- クラス [VAR[E]] は
+-- [VAR[AnotherDOMImplementationRegistry]] の情報源となる 
+
+[4]
+- クラス DOMCore:ManakaiDOMNode は
+-- 実現値 [VAR[K]] を DOM Node を返すメソッドの返り値とし得る
+-- 実現値 [VAR[L]] を DOMCore:ManakaiDOMNode と[Q[互換]]なクラス
+[VAR[F]] の実現値 [VAR[L[SUB[[VAR[F]]]]]] とメソッド
+[CODE(DOMm)[[[getFeature]]]] から得られ得る
+- クラス DOMEvents:ManakaiDOMEventTargetNode は
+-- クラス DOMCore:ManakaiDOMNode を継承する
+--- 実現値 [VAR[K]] を DOM Node を返すメソッドの返り値とし得る
+--- 実現値 [VAR[L]] を DOMCore:ManakaiDOMNode と[Q[互換]]なクラス
+[VAR[F]] の実現値 [VAR[L[SUB[[VAR[F]]]]]] とメソッド
+[CODE(DOMm)[[[getFeature]]]] から得られ得る
+
+@@@@ nodeType 依存、名前依存、。。。
+
+[5]
+@@@@ Events
+
+
+* Roles 実装
+
+[6] >>1 より
+- DOMCore:ManakaiDOMImplementationSource の候補リストに
+DOMMetaImpl:ManakaiDOMMinimumImplementation を追加
+- DOMMetaImpl:ManakaiDOMMinimumImplementation の
+getFeature 互換クラスリストに
+DOMMetaImpl:ManakaiDOMMinimumImplementation を追加
+- DOMCore:ManakaiDOMImplementationSource の候補リストに
+swcfg21:ManakaiSWCFGImplementation を追加
+- DOMMetaImpl:ManakaiDOMMinimumImplementation の
+getFeature 互換クラスリストに
+swcfg21:ManakaiSWCFGImplementation を追加
+- DOMCore:ManakaiDOMImplementationSource の候補リストに
+[VAR[AnotherDOMImplementation]] を追加
+- [VAR[AnotherDOMImplSource]] の候補リストに
+[VAR[AnotherDOMImplementation]] を追加
+
+
+* 物体の (動的) 相関図
+
+[7]
+[PRE(aafig)[
+                     PerlCodeImpl ―{node}→ ManakaiNodeObject
+                                                   ↑
+                                                 {node}
+                                                   |
+                                           DISImpl : SWCFGImpl
+                                                   ↑
+  DISDatabase                             {DOMCore:ownerDocument}
+      |                                             |
+   {resDef}                               ManakaiNodeObject (root)
+     ↓                                             ↑↓
+  DISResource  ―{src}→ DISElement ―{node}→ ManakaiNodeObject
+      | |                                                 ↑↓
+      | +―{(propResNodeList)}→ DISElement ―{node}→ ManakaiNodeObject
+      |                                                     |
+ {DIS:plCodeFragment}                             {DIS:plCodeFragment}
+     ↓                                                     ↓
+ PerlCodeFragment ―{node}→ ManakaiNodeObject      PerlCodeFragment
+                                   ↑↓
+                             ManakaiNodeObject
+]PRE]
+
+[8]
+これに [CITE[messaging/manakai/lib/Message/Util/DIS.dis - diff - 1.25]] <http://suika.fam.cx/gate/cvs/messaging/manakai/lib/Message/Util/DIS.dis.diff?r1=1.24&r2=1.25>
+の getPropertyResourceNodeList
+導入に関わる変更を加えたところで何も問題はおきないような気がするのですが、
+実際には何か問題があったようで、
+global destruction でエラーが出ました。
+
+結局 >>6 の Roles の新モデルの実装により
+getPropertyResourceNodeList
+は要らなくなったので 1.26 では元に戻しましたが・・・。
+
+([[名無しさん]] [WEAK[2005-04-30 11:22:46 +00:00]])
+
+@

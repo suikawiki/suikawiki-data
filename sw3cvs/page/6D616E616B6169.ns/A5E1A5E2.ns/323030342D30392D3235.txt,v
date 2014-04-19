@@ -1,0 +1,84 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.1
+date	2004.09.27.02.10.47;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@
+
+[1]
+[CODE(DOMa)[[[baseURI]]]] 
+属性の仕様は曖昧で困る。 XML の場合、
+基底 URI は[CODE(Infop)[基底 URI]] 特性から採らず、 [[XML基底]]仕様に従って計算するとなっている。
+
+ところが、 XML 基底は文書実体・外部解析対象実体・要素の他は、
+どこにある URI をどうやって解決するか規定していない。
+(例えば属性値の URI を解決する方法は書いてあるが、属性の基底 URI は定義されていない。)
+だから DOM 仕様書には問題がある。
+
+参考までに XML Infoset を見てみると、 
+XML 基底で定義された基底 URI に対応する[CODE(Infop)[基底 URI]]
+特性と、 DTD 宣言の[CODE(Infop)[宣言基底URI]] が定義されている。
+属性情報項目などには特性そのものが存在しない。
+
+さて、幸いにも DOM 3 には Appendix C Infoset Mapping という、 Informative とかかれていないから Normative なのであろう附属書がついている。
+これから [CODE(DOMa)[baseURI]] の値を推定できる。
+
+それによると、属性節などでは [CODE(DOMa)[baseURI]] は [CODE(DOM)[[[null]]]] らしい。
+なんだ、そんなんでいいのか。
+
+幾つか問題。
+[CODE(DOMi)[[[DocumentFragment]]]] では?
+情報集合に対応するものがないから附属書に載ってない。
+まあ計算しようがないのだから、
+[CODE(DOM)[null]] でよかろう。
+
+[CODE(DOMi)[[[Document]]]] の場合、
+DOM → 情報集合では [CODE(DOMa)[[[documentURI]]]] → [CODE(Infop)[基底 URI]],
+逆では [CODE(Infop)[基底 URI]] → [CODE(DOMa)[documentURI]], [CODE(DOMa)[baseURI]] は [CODE(DOMa)[documentURI]] に同じとなっている。
+
+XML 情報集合は文書実体の (基底 URI ではない) URI についての情報を持たないから、
+これでいい。しかし、もっと情報が提供されている場合 (普通はそうだろう) はどうするのか。
+DOM から情報集合に変換するときは、
+必ずしも [CODE(DOMa)[documentURI]] 
+ではなく、他に基底 URI 情報があればそれを使わないといけないはずだ。
+それとも、 DOM 的には[Q[他の基底 URI 情報]]を保持できないとか言うのか?
+(それって困るじゃん。)
+([[名無しさん]] [WEAK[2004-09-25 09:22:16 +00:00]])
+
+
+[2]
+[CODE(DOMi)[Entity]] や [CODE(DOMi)[EntityReference]] では[CODE(Infosetp)[宣言基底 URI]]
+が [CODE(DOMa)[baseURI]] に対応する。
+でもそれでいいのか? [CODE(Infosetp)[宣言基底 URI]]
+は[[システム宣言]]を解決するのに適当な基底 URI であって、外部解析対象実体の基底 URI ではない。
+(外部)実体節の子孫の URI を解決する時に
+[CODE(DOMa)[baseURI]] を使ったら違った答えになってしまう。
+
+[CODE(DOMi)[[[ProcessingInstruction]]]] の [CODE(DOMa)[baseURI]] は親要素(あれば)の
+[CODE(DOMa)[baseURI]] らしい。
+情報集合から DOM に変換したら[CODE(Infosetp)[基底 URI]]
+は捨てられるとちゃんと書いてあって、
+それはそれで結構だけど、
+XML Infoset の情報くらいはちゃんと完全に扱えるようであって欲しいものじゃない?
+([[名無しさん]] [WEAK[2004-09-25 09:29:15 +00:00]])
+
+@

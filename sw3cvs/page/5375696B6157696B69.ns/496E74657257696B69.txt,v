@@ -1,0 +1,292 @@
+head	1.3;
+access;
+symbols
+	suikawiki3-final:1.3
+	before-db-leaffile:1.2
+	after-upgrade-to-suikawiki-3:1.2
+	before-fork-suikawiki3:1.2
+	after-restore-20040122:1.2;
+locks; strict;
+comment	@# @;
+
+
+1.3
+date	2004.06.08.02.10.06;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2003.07.31.08.29.23;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.07.18.00.11.33;	author w;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9
+
+[1] [DFN[InterWiki]] は、 ([[URI]] よりも人間に優しい)
+別の ([[wiki]] の外の) 文書群にリンクするための仕組みです。
+
+[[SuikaWiki]] は、他の多くの wiki システムよりも柔軟に
+InterWiki を扱うことができます。
+
+
+* InterWiki を使ったリンクの作成
+
+[2]
+[[SuikaWiki/0.9]] 形式の文書では、次のように InterWiki
+リンクを書くことができます。
+
+[PRE[
+'''<'''IW:[VAR["文書群名"]]:[VAR["文書名"]]'''>'''
+]PRE]
+
+例えば、[SAMP[どこかのwiki]] に属する [SAMP[InterWikiのテスト]]という文書にリンクしたい時には、
+[PRE[
+'''<'''IW:"どこかのwiki":"InterWikiのテスト"'''>'''
+]PRE]
+
+と書きます。
+(引用符はなくても安全な時は省略できます。
+安全でない時には警告が出ます。)
+
+[[#comment]]
+
+
+* InterWiki 文書群の定義
+
+[3] >>2 で説明した[VAR[文書群名]]には、
+[CODE(WikiPage)[[[Wiki//InterWikiName]]]]
+という特別な頁で定義した文書群の名前を指定します。
+
+たとえば、
+[PRE[
+Site:
+  @@Name: RFC
+  @@URIReference:
+    http://www.ietf.org/rfc/rfc%parameter;.txt
+]PRE]
+
+のような定義を [CODE(WikiPage)[Wiki//InterWikiName]]
+に追加すると、
+[PRE[
+'''<'''IW:RFC:2822'''>'''
+]PRE]
+
+と書いて <http://www.ietf.org/rfc/rfc2822.txt> にリンクできます。
+
+[4] [CODE[URIReference]] の欄は、
+[CODE(perl)[[[Message::Util::Formatter]]]] 形式で解釈されます。
+>>3 の例の [SAMP[%parameter;]] の部分のことを
+[CODE(perl)[Message::Util::Formatter]] 
+では[Q[整形規則]]と呼んでいます。
+
+整形規則は SuikaWiki の [[WikiPlugin]] を使って定義されています。
+従って、 wiki の管理者は (多少の知識は必要ですが)
+自由に整形規則を定義して、 InterWiki のリンク先 URI
+を自在に生成することができます。
+
+[5] SuikaWiki に標準で付属している整形規則を使って、
+[[Google]] にリンクするための InterWiki の定義を行ってみましょう。
+
+[PRE[
+Site:
+  @@Name: Google
+  @@URIReference:
+    %uri-with-query (
+      base => {http://www.google.com/search},
+      query => {%query-parameter (
+        name => q,
+        value => {%parameter;}p,
+        charset => {iso-2022-jp},
+      );}p,
+      query => {ie=iso-2022-jp},
+    );
+]PRE]
+
+この定義を使うと、
+[PRE[
+'''<'''IW:Google:SuikaWiki'''>'''
+]PRE]
+
+は <http://www.google.com/search?q=SuikaWiki&ie=iso-2022-jp>
+になります。
+
+>>3 の例のように [SAMP[http://www.google.com/search?q=%parameter;]]
+と定義しても良いように思えるかもしれません。
+しかし、それでは、 
+[PRE[
+'''<'''IW:Google:"すいかゐき"'''>'''
+]PRE]
+
+のように仮名や漢字を含んでいる場合や、 [SAMP[&]]
+という記号を含んでいる場合には正しい URI が生成できません。
+
+整形規則 [SAMP[uri-with-query]] や [SAMP[query-parameter]]
+は、そのような問題を解決してくれます。
+
+[6] このほかにも、 [SAMP[yukiwiki]] のように特定の相手先の URI
+の生成を楽にするための整形規則も用意しています。
+[[Wiki//InterWikiName]] には多くの例がありますから、
+参考にしてください。
+
+利用できる整形規則の一覧は、 [[Wiki//Plugin//Info]] にあります。
+(InterWiki の定義以外の目的に使う整形規則も含まれます。)
+整形規則が内部でどのような動作をしているのかは、
+<IW:SuikaCVS:"suikawiki/script/lib/SuikaWiki/Plugin/">
+や <IW:SuikaCVS:"suikawiki/script/misc/plugins/">
+にある WikiPlugin のソースを見てもらえばわかります。
+
+[[#comment]]
+
+
+* まだ実装していない機能
+
+[7] HTML 出力モードでは InterWiki のリンクは
+[SAMP['''<'''Google:SuikaWiki'''>''']]
+のようになりますが、より柔軟に、
+[SAMP[Google 検索: 「SuikaWiki」]]
+などとしたり、
+[SAMP[''HTML 4 仕様書'' ''4.1 節'' (''和訳'')]]
+のような感じで1つの InterWiki リンク指定から複数のリンク先を出力できるようにする予定です。
+
+また、 InterWiki の方法を応用して、 wiki 内のリンクの方法をより柔軟にできないか模索中です。
+
+
+[8]
+Wiki//InterWikiName の編集を HTML form を使って簡単にできるようにすることも考えています。
+([[名無しさん]] [WEAK[2004-06-03 07:23:33 +00:00]])
+
+
+[[#comment]]
+
+
+* メモ@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@d1 140
+a140 95
+#?SuikaWiki/0.9 
+[3] [[SuikaWiki]] は [[YukiWiki]] を base
+にしていますが、 YukiWiki の実装
+(See <IW:YukiWiki:InterWikiテクニカル>) とは異なります。
+
+[4] '''歴史についてのメモ''': SuikaWiki の最初の実装は YukiWiki 1
+でしたが、これは InterWiki を実装していませんでした。
+その時に (YukiWiki2 で) InterWiki 
+のために使われる構文を別の意味で使ってしまっていたので、
+YukiWiki2 base に移行するときに InterWiki
+を無効としていました。
+
+**InterWiki でリンクをはる
+
+[6] InterWiki を使った参照は、 '<IW:' [VAR[site-name]] ':'
+[VAR[WikiName]] '>'
+と書きます。例えば '<IW:' 'YukiWiki:InterWiki' '>'
+を書くと、 <IW:YukiWiki:InterWiki> のように「YukiWiki」内の
+Wiki 名が「InterWiki」のところへの[[ハイパーリンク]]となります。
+
+[7] なお、 [VAR[WikiName]] に[[ラテン文字]], [[数字]],
+[[仮名]], [[漢字]]など以外の[[文字]] ([[記号]]など)
+が入る場合は、 <"> ([[二重引用符]]) で括って、
+'<IW:' 'SuikaSearch:"愛 勇気"' '>' のようにします。
+
+**InterWiki の site の定義
+
+[8] [VAR[site-name]] は [DEL[[[InterWikiName]]]] [INS[[[Wiki//InterWikiName]]]]
+で定義します。 InterWikiName は、先頭行が
+'#?SuikaWikiConfig/1.0' で、二行目以降が
+( [VAR[site-name]] 1*WSP [VAR[site-uri-template]] )
+になります。
+
+[VAR[site-name]] にはラテン文字, 数字, 仮名, 漢字などが使えます。
+(記号類をどうするかは未定です。使わないで下さい。)
+
+[VAR[site-uri-template]] には [VAR[site-name]] に相当する [[URI]]
+(の雛形) を書きます。これは [[Message::Util::Formatter]]
+を使って展開されます。
+
+M::U::F の詳しい展開規則はここでは述べませんが、
+''%[VAR[hogehoge]]([VAR[parameters]);'' が (規則 
+''[VAR[hogehoge]]'' が定義されているなら) 適切なものに置換されます。
+
+''%'' 自体は ''%percent;'' と書きますが、曖昧でない場合はそのまま
+''%'' と書いて構いません。
+
+有効な展開規則の例は次の通りです。
+
+,%encoded(charset=>iso-2022-jp);,[[ISO-2022-JP]] + [[URI]] encode
+,%encoded(charset=>euc-jp);     ,[[EUC-JP]] + URI encode
+,%encoded(charset=>shift_jis);  ,[[Shift_JIS]] + URI encode
+,%ykwk;   ,YukiWiki1 形式 ('[[' を名前に含める)
+,%percent;,''%''
+
+[14] 展開規則は plugin で定義されています。 M::U::F で組込み定義されている
+[CODE[%percent]] 以外は plugin 「InterWikiCore」で実装しています。
+追加の plugin による展開規則については [[WikiPluginInfo]]
+をご覧下さい。
+
+[15] 実際には多分ありえない、使用例。
+(強調した部分が展開されます。)
+
+ WikiSite  http://foo.example/bar%5B%20''%percent;''5D;mode=edit/wiki/''%encoded(charset=>iso-2022-jp);''/''%ykwk;''
+
+この例で、 '<IW' ':' 'WikiSite:Inter-Wiki' '>'
+を書いたとすると、次のような URI に展開されます。
+
+ http://foo.example/bar%5B%20''%''5D;mode=edit/wiki/''Inter-Wiki''/''%5B%5BInter-Wiki%5D%5D''
+
+[[#comment]]
+
+**Q&A
+***こんな展開規則無いですか?
+
+[16] '''質問''': 他の WikiClone によくある [CODE[asis]] のようなものはないのですか?
+
+[17] ありません。 [[URI]] として不適当な文字を含んでしまう可能性があって危険だからです。
+その代わり、 [CODE[%encoded]] に [CODE[except]] option を指定することで、特定の文字を
+escape しないことが出来ます。 (この場合でも、 URI に含むことが出来ない文字は必ず
+escape します。) 例えば、 [SAMP[%encoded(charset=>iso-2022-jp,except=>"/")]]
+とすると、斜線を [CODE[%2F]] と変換しなくなります。
+
+[[#form:'%radio(id=>type,label=>回答,value=>false,default); or %radio(id=>type,label=>追加質問,value=>true);: %text(label=>"名前 : ",id=>name,size=>"9.5"); %text(label=>"メイル: ",id=>mail,size=>9.5);%n;%textarea(id=>a,size=>20);':'[%index;] %iif(source=>type,true=>"\'\'\'質問\'\'\' ",false=>"");\'\'%name;\'\'%text(source=>mail,prefix=>" [",suffix=>"]"); [WEAK[%date;]]: %text(source=>a);%n;':'%require(a);']]
+[[#form(newq):'':'**%text(source=>qsum);%n;%n;[%index;] \'\'\'質問\'\'\' (\'\'%name;\'\'%text(source=>mail,prefix=>" [",suffix=>"]"); [WEAK[%date;]]): %text(source=>q);%n;%n;[[#form:\'%percent;radio(id=>type,label=>回答,value=>false,default); or %percent;radio(id=>type,label=>追加質問,value=>true);: %percent;text(label=>"名前 : ",id=>name,size=>"9.5"); %percent;text(label=>"メイル: ",id=>mail,size=>9.5);%percent;n;%percent;textarea(id=>a,size=>20);\':\'[%percent;index;] %percent;iif(source=>type,true=>"\\\'\\\'\\\'質問\\\'\\\'\\\' ",false=>"");\\\'\\\'%percent;name;\\\'\\\'%percent;text(source=>mail,prefix=>" [",suffix=>"]"); [WEAK[%percent;date;]]: %percent;text(source=>a);%percent;n;\':\'%percent;require(a);\']]']]
+***新しい質問の追加
+[[#form:'%text(id=>qsum,label=>質問要約,size=>10); %text(label=>"名前 : ",id=>name,size=>"9.5"); %text(label=>"メイル: ",id=>mail,size=>9.5);%n;%textarea(id=>q,label=>質問,size=>20);':'':'%output(id=>newq);']]
+**メモ
+- [9] [WEAK[2002-11-13 (水) 21:04]] ''[[わかば]]'': '<' ... '>' を使う方が、 '[' '[' ... ']' ']' を使うより (SuikaWiki 的には) 整合性があるでしょ? '[' '[' ... ']' ']' は SW 内部, '<' ... '>' は SW 外部へのリンクってことで。
+- [10] [WEAK[2002-11-13 (水) 21:06]] ''[[わかば]]'': 稀に必要になりそうな encode の入れ子とかは考え中。 (でもほんとに稀だと思う。) それから、複雑なの (変数を2つ以上持つものとか。) を実装したら面白く使えそうだけど、これも考え中。
+-- [11] 一応は今の実装でほとんど足りると思います。
+-- [12] あ, [[UTF-8]] 対応も要りますね, ほんとは。これも待ってちょ。
+- [18] [WEAK[2003-07-07 12:45:44 +00:00]] ''[[わかば]]'': 名前定義 WikiPage は、 [CODE(wiki)[InterWikiName]] から [CODE(wiki)[[[Wiki//InterWikiName]]]] に変更しました。
+- [19] もっとも、 >>18 は''この SuikaWiki'' での話であって ''SuikaWiki 実装''での話ではなく、 SuikaWiki 実装一般では以前も以後も [CODE(wiki)[suikawiki-config.ph]] で自由に設定できます。
+- [20] SuikaWiki における InterWiki の概念と実装の改良の話題は [[..//Linking]] で。
+@
+
+
+1.1
+log
+@auto-commited
+@
+text
+@d95 1
+@
+

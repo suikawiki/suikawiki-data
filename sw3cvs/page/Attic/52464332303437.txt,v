@@ -1,0 +1,1159 @@
+head	1.5;
+access;
+symbols
+	before-db-leaffile:1.4
+	after-upgrade-to-suikawiki-3:1.4
+	before-fork-suikawiki3:1.4
+	after-restore-20040122:1.4;
+locks; strict;
+comment	@# @;
+
+
+1.5
+date	2004.05.23.02.03.00;	author wakaba;	state dead;
+branches;
+next	1.4;
+
+1.4
+date	2002.12.26.06.37.41;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2002.10.28.13.24.58;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2002.09.28.13.24.22;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2002.07.29.12.01.58;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.5
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9
+-Network Working Group                                           
+-Request for Comments: 2047                       
+-Obsoletes: 1521, 1522, 1590                                
+-Category: Standards Track
+-K. Moore
+-University of Tennessee
+-November 1996
+
+*MIME (Multipurpose Internet Mail Extensions) Part Three: Message Header Extensions for Non-ASCII Text [INS[MIME (多目的 Internet メイル拡張) 第3部: 非 ASCII 文用メッセージ頭拡張]]
+
+**Status of this Memo [INS[このメモの位置付け]]
+
+>This document specifies an Internet standards track protocol for the
+Internet community, and requests discussion and suggestions for
+improvements.  Please refer to the current edition of the "Internet
+Official Protocol Standards" (STD 1) for the standardization state
+and status of this protocol.  Distribution of this memo is unlimited.
+
+**Abstract [INS[概要]]
+
+>STD 11, RFC 822, defines a message representation protocol specifying
+considerable detail about US-ASCII message headers, and leaves the
+message content, or message body, as flat US-ASCII text.  This set of
+documents, collectively called the Multipurpose Internet Mail
+Extensions, or MIME, redefines the format of messages to allow for
+
+=(1) textual message bodies in character sets other than US-ASCII,
+=(2) an extensible set of different formats for non-textual message
+bodies,
+=(3) multi-part message bodies, and
+=(4) textual header information in character sets other than US-ASCII.
+
+>These documents are based on earlier work documented in RFC 934, STD
+11, and RFC 1049, but extends and revises them.  Because RFC 822 said
+so little about message bodies, these documents are largely
+orthogonal to (rather than a revision of) RFC 822.
+
+>This particular document is the third document in the series.  It
+describes extensions to RFC 822 to allow non-US-ASCII text data in
+Internet mail header fields.
+
+
+
+>Other documents in this series include:
+
+   + RFC 2045, which specifies the various headers used to describe
+     the structure of MIME messages.
+
+   + RFC 2046, which defines the general structure of the MIME media
+     typing system and defines an initial set of media types,
+
+   + RFC 2048, which specifies various IANA registration procedures
+     for MIME-related facilities, and
+
+   + RFC 2049, which describes MIME conformance criteria and
+     provides some illustrative examples of MIME message formats,
+     acknowledgements, and the bibliography.
+
+>These documents are revisions of RFCs 1521, 1522, and 1590, which
+themselves were revisions of RFCs 1341 and 1342.  An appendix in RFC
+2049 describes differences and changes from previous versions.
+
+**1. Introduction [INS[はじめに]]
+
+   RFC 2045 describes a mechanism for denoting textual body parts which
+   are coded in various character sets, as well as methods for encoding
+   such body parts as sequences of printable US-ASCII characters.  This
+   memo describes similar techniques to allow the encoding of non-ASCII
+   text in various portions of a RFC 822 [2] message header, in a manner
+   which is unlikely to confuse existing message handling software.
+
+   Like the encoding techniques described in RFC 2045, the techniques
+   outlined here were designed to allow the use of non-ASCII characters
+   in message headers in a way which is unlikely to be disturbed by the
+   quirks of existing Internet mail handling programs.  In particular,
+   some mail relaying programs are known to (a) delete some message
+   header fields while retaining others, (b) rearrange the order of
+   addresses in To or Cc fields, (c) rearrange the (vertical) order of
+   header fields, and/or (d) "wrap" message headers at different places
+   than those in the original message.  In addition, some mail reading
+   programs are known to have difficulty correctly parsing message
+   headers which, while legal according to RFC 822, make use of
+   backslash-quoting to "hide" special characters such as "<", ",", or
+   ":", or which exploit other infrequently-used features of that
+   specification.
+
+   While it is unfortunate that these programs do not correctly
+   interpret RFC 822 headers, to "break" these programs would cause
+   severe operational problems for the Internet mail system.  The
+   extensions described in this memo therefore do not rely on little-
+   used features of RFC 822.
+
+   Instead, certain sequences of "ordinary" printable ASCII characters
+   (known as "encoded-words") are reserved for use as encoded data.  The
+   syntax of encoded-words is such that they are unlikely to
+   "accidentally" appear as normal text in message headers.
+   Furthermore, the characters used in encoded-words are restricted to
+   those which do not have special meanings in the context in which the
+   encoded-word appears.
+
+   Generally, an "encoded-word" is a sequence of printable ASCII
+   characters that begins with "=?", ends with "?=", and has two "?"s in
+   between.  It specifies a character set and an encoding method, and
+   also includes the original text encoded as graphic ASCII characters,
+   according to the rules for that encoding method.
+
+   A mail composer that implements this specification will provide a
+   means of inputting non-ASCII text in header fields, but will
+   translate these fields (or appropriate portions of these fields) into
+   encoded-words before inserting them into the message header.
+
+   A mail reader that implements this specification will recognize
+   encoded-words when they appear in certain portions of the message
+   header.  Instead of displaying the encoded-word "as is", it will
+   reverse the encoding and display the original text in the designated
+   character set.
+
+***NOTES [INS[注意]]
+
+   This memo relies heavily on notation and terms defined RFC 822 and
+   RFC 2045.  In particular, the syntax for the ABNF used in this memo
+   is defined in RFC 822, as well as many of the terminal or nonterminal
+   symbols from RFC 822 are used in the grammar for the header
+   extensions defined here.  Among the symbols defined in RFC 822 and
+   referenced in this memo are: 'addr-spec', 'atom', 'CHAR', 'comment',
+   'CTLs', 'ctext', 'linear-white-space', 'phrase', 'quoted-pair'.
+   'quoted-string', 'SPACE', and 'word'.  Successful implementation of
+   this protocol extension requires careful attention to the RFC 822
+   definitions of these terms.
+
+   When the term "ASCII" appears in this memo, it refers to the "7-Bit
+   American Standard Code for Information Interchange", ANSI X3.4-1986.
+   The MIME charset name for this character set is "US-ASCII".  When not
+   specifically referring to the MIME charset name, this document uses
+   the term "ASCII", both for brevity and for consistency with RFC 822.
+   However, implementors are warned that the character set name must be
+   spelled "US-ASCII" in MIME message and body part headers.
+
+   This memo specifies a protocol for the representation of non-ASCII
+   text in message headers.  It specifically DOES NOT define any
+   translation between "8-bit headers" and pure ASCII headers, nor is
+   any such translation assumed to be possible.
+
+**2. Syntax of encoded-words [INS[encoded-word (符号化語) の構文]]
+
+>An 'encoded-word' is defined by the following ABNF grammar.  The
+notation of RFC 822 is used, with the exception that white space
+characters MUST NOT appear between components of an 'encoded-word'.
+
+「encoded-word」は次の [[ABNF]] 文法で定義します。
+RFC 822 の記法を使いますが、[[空白間隔]]文字が「encoded-word」
+の部品間に現れては'''いけません'''。
+
+   encoded-word = "=?" charset "?" encoding "?" encoded-text "?="
+
+   charset = token    ; see section 3
+
+   encoding = token   ; see section 4
+
+   token = 1*<Any CHAR except SPACE, CTLs, and especials>
+
+   especials = "(" / ")" / "<" / ">" / "@@" / "," / ";" / ":" / "
+               <"> / "/" / "[" / "]" / "?" / "." / "="
+
+   encoded-text = 1*<Any printable ASCII character other than "?"
+                     or SPACE>
+                  ; (but see "Use of encoded-words in message
+                  ; headers", section 5)
+
+>Both 'encoding' and 'charset' names are case-independent.  Thus the
+charset name "ISO-8859-1" is equivalent to "iso-8859-1", and the
+encoding named "Q" may be spelled either "Q" or "q".
+
+「encoding」と「charset」の名前はどちらも大文字・小文字を
+区別しません。ですから charset 名「ISO-8859-1」は
+「iso-8859-1」と同じで、符号化方式名「Q」は「Q」とも「q」とも
+綴ることが出来ます。
+
+>An 'encoded-word' may not be more than 75 characters long, including
+'charset', 'encoding', 'encoded-text', and delimiters.  If it is
+desirable to encode more text than will fit in an 'encoded-word' of
+75 characters, multiple 'encoded-word's (separated by CRLF SPACE) may
+be used.
+
+「encoded-word」は「charset」, 「encoding」, 「encoded-text」
+と区切りを含めて75文字長より長くなってはなりません。
+「encoded-word」で75文字を超える文字を符号化したい時は、
+複数の「encoded-word」(CRLF SPACE で区切る) を使うことが出来ます。
+
+>While there is no limit to the length of a multiple-line header
+field, each line of a header field that contains one or more
+'encoded-word's is limited to 76 characters.
+
+複数行頭領域の長さの制限はないので、頭領域の各行は1つ以上の「encoded-word」
+を含む頭領域の各行は76文字に制限します。
+
+>The length restrictions are included both to ease interoperability
+through internetwork mail gateways, and to impose a limit on the
+amount of lookahead a header parser must employ (while looking for a
+final ?= delimiter) before it can decide whether a token is an
+"encoded-word" or something else.
+
+長さの制限をするはネットワーク間メイル関門での相互通信を容易にし、
+頭解析器の (最後の ?= 区切りを探して) token が 「encoded-word」
+か他の何かか決める前の先読みの量を制限するためです。
+
+>IMPORTANT: 'encoded-word's are designed to be recognized as 'atom's
+by an RFC 822 parser.  As a consequence, unencoded white space
+characters (such as SPACE and HTAB) are FORBIDDEN within an
+'encoded-word'.  For example, the character sequence
+
+重要: 「encoded-word」は RFC 822 解析器には「atom」と
+みなされるように設計されています。ですから、符号化されていない
+空白間隔文字 (SPACE や HTAB) は「encoded-word」では''禁止''します。
+例えば、文字列
+
+      =?iso-8859-1?q?this is some text?=
+
+>would be parsed as four 'atom's, rather than as a single 'atom' (by
+an RFC 822 parser) or 'encoded-word' (by a parser which understands
+'encoded-words').  The correct way to encode the string "this is some
+text" is to encode the SPACE characters as well, e.g.
+
+は (RFC 822 解析器には) 1つの「atom」や (「encoded-word」を理解する解析器には) 
+「encoded-word」ではなく、4つの「atom」と解析されます。
+文字列「This is some text」を符号化する正しい方法は、
+SPACE 文字を同様に符号化して次のようにするものです。
+
+      =?iso-8859-1?q?this=20is=20some=20text?=
+
+>The characters which may appear in 'encoded-text' are further
+restricted by the rules in section 5.
+
+「encoded-text」に現れる文字は第5章の規則で更に制限します。
+
+**3. Character sets [INS[文字集合]]
+
+>The 'charset' portion of an 'encoded-word' specifies the character
+set associated with the unencoded text.  A 'charset' can be any of
+the character set names allowed in an MIME "charset" parameter of a
+"text/plain" body part, or any character set name registered with
+IANA for use with the MIME text/plain content-type.
+
+>Some character sets use code-switching techniques to switch between
+"ASCII mode" and other modes.  If unencoded text in an 'encoded-word'
+contains a sequence which causes the charset interpreter to switch
+out of ASCII mode, it MUST contain additional control codes such that
+ASCII mode is again selected at the end of the 'encoded-word'.  (This
+rule applies separately to each 'encoded-word', including adjacent
+'encoded-word's within a single header field.)
+
+幾つかの文字集合は「ASCII 状態」と他の状態を切り替えるのに
+符号切り替え技術を使います。「encoded-word」中の符号化されていない文が、
+charset 解釈者に ASCII 状態の他に切り替えさせる列である場合、
+「encoded-word」の終わりで再び ASCII 状態に切り替える制御符号
+を加えて入れなければ''なりません''。 (この規則は各「encoded-word」
+にそれぞれ適用されます。単一頭領域内の隣接した「encoded-word」も含みます。)
+
+>When there is a possibility of using more than one character set to
+represent the text in an 'encoded-word', and in the absence of
+private agreements between sender and recipients of a message, it is
+recommended that members of the ISO-8859-* series be used in
+preference to other character sets.
+
+「encoded-word」中の文を表現する文字集合を複数使用できるときは、
+メッセージの送信者と受信者の間の私的な合意が無い限り、
+ISO-8859-* 系列のどれかを他の文字集合に優先して使用することを推奨します。
+
+**4. Encodings [INS[符号化]]
+
+   Initially, the legal values for "encoding" are "Q" and "B".  These
+   encodings are described below.  The "Q" encoding is recommended for
+   use when most of the characters to be encoded are in the ASCII
+   character set; otherwise, the "B" encoding should be used.
+   Nevertheless, a mail reader which claims to recognize 'encoded-word's
+   MUST be able to accept either encoding for any character set which it
+   supports.
+
+   Only a subset of the printable ASCII characters may be used in
+   'encoded-text'.  Space and tab characters are not allowed, so that
+   the beginning and end of an 'encoded-word' are obvious.  The "?"
+   character is used within an 'encoded-word' to separate the various
+   portions of the 'encoded-word' from one another, and thus cannot
+   appear in the 'encoded-text' portion.  Other characters are also
+   illegal in certain contexts.  For example, an 'encoded-word' in a
+   'phrase' preceding an address in a From header field may not contain
+   any of the "specials" defined in RFC 822.  Finally, certain other
+   characters are disallowed in some contexts, to ensure reliability for
+   messages that pass through internetwork mail gateways.
+
+   The "B" encoding automatically meets these requirements.  The "Q"
+   encoding allows a wide range of printable characters to be used in
+   non-critical locations in the message header (e.g., Subject), with
+   fewer characters available for use in other locations.
+
+***4.1. The "B" encoding [INS["B" 符号化方式]]
+
+>The "B" encoding is identical to the "BASE64" encoding defined by RFC 2045.
+
+「B」符号化方式は RFC 2045 で定義された "BASE64"
+符号化方式と同じです。
+
+***4.2. The "Q" encoding [INS["Q" 符号化方式]]
+
+>The "Q" encoding is similar to the "Quoted-Printable" content-
+transfer-encoding defined in RFC 2045.  It is designed to allow text
+containing mostly ASCII characters to be decipherable on an ASCII
+terminal without decoding.
+
+   (1) Any 8-bit value may be represented by a "=" followed by two
+       hexadecimal digits.  For example, if the character set in use
+       were ISO-8859-1, the "=" character would thus be encoded as
+       "=3D", and a SPACE by "=20".  (Upper case should be used for
+       hexadecimal digits "A" through "F".)
+
+(2) The 8-bit hexadecimal value 20 (e.g., ISO-8859-1 SPACE) may be
+represented as "_" (underscore, ASCII 95.).  (This character may
+not pass through some internetwork mail gateways, but its use
+will greatly enhance readability of "Q" encoded data with mail
+readers that do not support this encoding.)  Note that the "_"
+always represents hexadecimal 20, even if the SPACE character
+occupies a different code position in the character set in use.
+
+(2) 8ビットの16進値で 20 (ISO-8859-1 では SPACE (間隔)) は
+「_」 (下線, ASCII 95) えで表現できます。 (この文字は
+幾つかのネットワーク間メイル関門を通過できないかもしれませんが、 
+この符号化法に対応していないメイル読者の「Q」符号化データ可読性を
+非常に高めることになります。) なお、「_」は SPACE 文字が使われる
+文字集合において他の符号位置にある場合であっても常に16進20を表現します。
+
+(3) 8-bit values which correspond to printable ASCII characters other
+than "=", "?", and "_" (underscore), MAY be represented as those
+characters.  (But see section 5 for restrictions.)  In
+particular, SPACE and TAB MUST NOT be represented as themselves
+within encoded words.
+
+(3) 「=」, 「?」, 「_」(下線) を除く印字可能な ASCII 文字に対応する
+8ビット値はその文字で表現しても''構いません''。 (但し第5章の
+制限も参照して下さい。) 特に、 SPACE と TAB は符号化語内で
+自身を表現しては''なりません''。
+
+**5. Use of encoded-words in message headers [INS[encoded-word のメッセージ頭内での使用]]
+
+>An 'encoded-word' may appear in a message header or body part header
+according to the following rules:
+
+>(1) An 'encoded-word' may replace a 'text' token (as defined by RFC 822)
+in any Subject or Comments header field, any extension message
+header field, or any MIME body part field for which the field body
+is defined as '*text'.  An 'encoded-word' may also appear in any
+user-defined ("X-") message or body part header field.
+
+(1) 「encoded-word」は Subject (主題), Comments (注釈) 
+頭欄や欄本体が「*text」と定義された拡張メッセージ頭欄, MIME
+本体部分欄の「text」 token (RFC 822 で定義) を置き換えることが出来ます。
+「encoded-word」は利用者定義 (「X-」) メッセージ/本体部分頭領域
+に出現することも出来ます。
+
+[INS[
+訳注: 「拡張メッセージ頭欄, ''欄本体が『*text』と定義された'' MIME
+本体部分欄」ではありません。 [[ietf-822]] の
+<mid:200210141709.g9EH9c015818@@astro.cs.utk.edu> を参照。
+]INS]
+
+>Ordinary ASCII text and 'encoded-word's may appear together in the
+same header field.  However, an 'encoded-word' that appears in a
+header field defined as '*text' MUST be separated from any adjacent
+'encoded-word' or 'text' by 'linear-white-space'.
+
+普通の ASCII 文と「encoded-word」は同じ頭欄に同時に出現出来ます。
+しかし、「*text」と定義された頭欄内に出現する「encoded-word」
+は他のどの隣接する「encoded-word」または「text」とも
+「linear-white-space」で区切らなければ''なりません''。
+
+>(2) An 'encoded-word' may appear within a 'comment' delimited by "(" and
+")", i.e., wherever a 'ctext' is allowed.  More precisely, the RFC
+822 ABNF definition for 'comment' is amended as follows:
+
+(2) 「encoded-word」は「(」と「)」で区切られた「comment」(注釈)内、
+つまり「ctext」が認められる場所で出現出来ます。より正確に言うと、
+「comment」の RFC 822 ABNF 定義は次のように改訂されます。
+
+    comment = "(" *(ctext / quoted-pair / comment / encoded-word) ")"
+
+A "Q"-encoded 'encoded-word' which appears in a 'comment' MUST NOT
+contain the characters "(", ")" or "
+'encoded-word' that appears in a 'comment' MUST be separated from
+any adjacent 'encoded-word' or 'ctext' by 'linear-white-space'.
+
+「comment」中の「Q」符号化された「encoded-word」では
+文字「(」, 「)」, 「\」は使っては''いけません''。
+「comment」中に現れる「encoded-word」は他のどの「encoded-word」
+や「ctext」とも「linear-white-space」で区切らなければ''なりません''。
+
+;; 訳注: 原文「\」欠落
+
+It is important to note that 'comment's are only recognized inside
+"structured" field bodies.  In fields whose bodies are defined as
+'*text', "(" and ")" are treated as ordinary characters rather than
+comment delimiters, and rule (1) of this section applies.  (See RFC
+822, sections 3.1.2 and 3.1.3)
+
+「comment」は「構造化」領域本体でのみ認識されることに
+注意するのが重要です。本体が「*text」と定義された領域では
+「(」や「)」は注釈区切りではなく普通の文字として扱われるので、
+この節の規則(1)が適用されます。  (RFC 822 第3.1.2節, 第3.1.3節参照)
+
+(3) As a replacement for a 'word' entity within a 'phrase', for example,
+one that precedes an address in a From, To, or Cc header.  The ABNF
+definition for 'phrase' from RFC 822 thus becomes:
+
+(3) 「phrase」中の「word」実体を置き換えます。例えば
+From (送信元), To (送信先), Cc (同報) 頭中のアドレスの前に
+来るものです。 RFC 822 の「phrase」の ABNF 定義はですから次のようになります。
+
+    phrase = 1*( encoded-word / word )
+
+In this case the set of characters that may be used in a "Q"-encoded
+'encoded-word' is restricted to: <upper and lower case ASCII
+letters, decimal digits, "!", "*", "+", "-", "/", "=", and "_"
+(underscore, ASCII 95.)>.  An 'encoded-word' that appears within a
+'phrase' MUST be separated from any adjacent 'word', 'text' or
+'special' by 'linear-white-space'.
+
+この場合に「Q」符号化された「encoded-word」で使用可能な文字の集合は
+<ASCII の大文字・小文字, 10進数字, 「!」, 「*」, 「+」, 「+」, 「-」, 
+「/」, 「=」, 「_」(下線, ASCII 95)> に制限されます。
+「phrase」中に現れる「encoded-word」は他のどの隣接する「word」,
+「text」, 「special」とも「linear-white-space」で区切らなければ
+''なりません''。
+
+These are the ONLY locations where an 'encoded-word' may appear.  In particular:
+これ''だけ''が「encoded-word」が出現できる場所です。
+特に、
+
+-An 'encoded-word' MUST NOT appear in any portion of an 'addr-spec'.
+-An 'encoded-word' MUST NOT appear within a 'quoted-string'.
+-An 'encoded-word' MUST NOT be used in a Received header field.
+-An 'encoded-word' MUST NOT be used in parameter of a MIME Content-Type or Content-Disposition field, or in any structured field body except within a 'comment' or 'phrase'.
+
+-「encoded-word」は「addr-spec」のどこにも出現しては''いけません''。
+-「encoded-word」は「quoted-string」中に出現しては''いけません''。
+-「encoded-word」は Received (受信) 頭領域中で使用しては''いけません''。
+-「encoded-word」は MIME Content-Type (内容型), Content-Disposition 領域の parameter 中や「comment」や「phrase」内を除くどの構造化領域本体でも使用しては''いけません''。
+
+   The 'encoded-text' in an 'encoded-word' must be self-contained;
+   'encoded-text' MUST NOT be continued from one 'encoded-word' to
+   another.  This implies that the 'encoded-text' portion of a "B"
+   'encoded-word' will be a multiple of 4 characters long; for a "Q"
+   'encoded-word', any "=" character that appears in the 'encoded-text'
+   portion will be followed by two hexadecimal characters.
+
+   Each 'encoded-word' MUST encode an integral number of octets.  The
+   'encoded-text' in each 'encoded-word' must be well-formed according
+   to the encoding specified; the 'encoded-text' may not be continued in
+   the next 'encoded-word'.  (For example, "=?charset?Q?=?=
+   =?charset?Q?AB?=" would be illegal, because the two hex digits "AB"
+   must follow the "=" in the same 'encoded-word'.)
+
+   Each 'encoded-word' MUST represent an integral number of characters.
+   A multi-octet character may not be split across adjacent 'encoded-
+   word's.
+
+   Only printable and white space character data should be encoded using
+   this scheme.  However, since these encoding schemes allow the
+   encoding of arbitrary octet values, mail readers that implement this
+   decoding should also ensure that display of the decoded data on the
+   recipient's terminal will not cause unwanted side-effects.
+
+   Use of these methods to encode non-textual data (e.g., pictures or
+   sounds) is not defined by this memo.  Use of 'encoded-word's to
+   represent strings of purely ASCII characters is allowed, but
+   discouraged.  In rare cases it may be necessary to encode ordinary
+   text that looks like an 'encoded-word'.
+
+**6. Support of 'encoded-word's by mail readers
+**6. 「encoded-word」のメイル読者による対応
+
+***6.1. Recognition of 'encoded-word's in message headers
+***6.1. メッセージ頭中の「encoded-word」の認識
+
+   A mail reader must parse the message and body part headers according
+   to the rules in RFC 822 to correctly recognize 'encoded-word's.
+
+   'encoded-word's are to be recognized as follows:
+
+   (1) Any message or body part header field defined as '*text', or any
+       user-defined header field, should be parsed as follows: Beginning
+       at the start of the field-body and immediately following each
+       occurrence of 'linear-white-space', each sequence of up to 75
+       printable characters (not containing any 'linear-white-space')
+       should be examined to see if it is an 'encoded-word' according to
+       the syntax rules in section 2.  Any other sequence of printable
+       characters should be treated as ordinary ASCII text.
+
+(1) 「*text」と定義されたメッセージ/本体部分頭領域, または利用者定義の頭領域
+では次のように解析します: 領域本体の最初から初めて、
+すぐに「linear-white-space」が各々続き、75字までの印字可能文字
+(「linear-white-space」を含まない) の各列を第2章の構文規則に従った
+「encoded-wprd」か調べます。他の印字可能な文字の列は普通の
+ASCII 文として扱います。
+
+   (2) Any header field not defined as '*text' should be parsed
+       according to the syntax rules for that header field.  However,
+       any 'word' that appears within a 'phrase' should be treated as an
+       'encoded-word' if it meets the syntax rules in section 2.
+       Otherwise it should be treated as an ordinary 'word'.
+
+(2) 「*text」と定義されていない頭領域はその頭領域の構文規則に
+従って解析します。しかし、「phrase」中に現れる「word」
+は第2章の構文規則に合致すれば「encoded-word」として扱います。
+そうでなければ普通の「word」として扱います。
+
+   (3) Within a 'comment', any sequence of up to 75 printable characters
+       (not containing 'linear-white-space'), that meets the syntax
+       rules in section 2, should be treated as an 'encoded-word'.
+       Otherwise it should be treated as normal comment text.
+
+(3) 「COMMENT」中では、75字までの印字可能な文字 (「linear-white-space」
+を含まない) で第2章の構文規則に合致するものを
+「encoded-word」として扱います。そうでなければ普通の comment 文として
+扱います。
+
+   (4) A MIME-Version header field is NOT required to be present for
+       'encoded-word's to be interpreted according to this
+       specification.  One reason for this is that the mail reader is
+       not expected to parse the entire message header before displaying
+       lines that may contain 'encoded-word's.
+
+(4) MIME-Version 頭領域は「encoded-word」をこの仕様書に従って
+解釈するのにある必要は''ありません''。この理由の一つは
+メイル読者がメッセージ頭全体を「encoded-word」を含む行を表示する前に
+解析するとか限らないからです。
+
+***6.2. Display of 'encoded-word's
+***6.2. 「encoded-word」の表示
+
+Any 'encoded-word's so recognized are decoded, and if possible, the
+resulting unencoded text is displayed in the original character set.
+
+認識された「encoded-word」は復号し、可能ならその結果の
+符号化されていない文を元の文字集合で表示します。
+
+NOTE: Decoding and display of encoded-words occurs *after* a
+structured field body is parsed into tokens.  It is therefore
+possible to hide 'special' characters in encoded-words which, when
+displayed, will be indistinguishable from 'special' characters in the
+surrounding text.  For this and other reasons, it is NOT generally
+possible to translate a message header containing 'encoded-word's to
+an unencoded form which can be parsed by an RFC 822 mail reader.
+
+参考: encoded-word の復号と表示は構造化領域本体が token に
+解析された'後'にします。そうしなければ、 encoded-word 中に
+周りの文中の「special」文字と区別がつかなくなる「special」文字が隠れて
+いるかもしれないのです。この理由や他の理由により、
+「encoded-word」を含むメッセージ頭を RFC 822 メイル読者が
+解析できる符号化されていないものに変換することは
+通常出来''ない''のです。
+
+   When displaying a particular header field that contains multiple
+   'encoded-word's, any 'linear-white-space' that separates a pair of
+   adjacent 'encoded-word's is ignored.  (This is to allow the use of
+   multiple 'encoded-word's to represent long strings of unencoded text,
+   without having to separate 'encoded-word's where spaces occur in the
+   unencoded text.)
+
+複数の「encoded-word」を含む頭領域を表示する場合、
+隣接する「encoded-word」を区切る「linear-white-space」は無視します。
+(これは長い文字列の符号化されていない文を、
+符号化されていない文中で空白間隔で区切った「encoded-word」を使わずに
+表現するのに「encoded-word」を利用できるようにするためです。)
+
+In the event other encodings are defined in the future, and the mail
+reader does not support the encoding used, it may either (a) display
+the 'encoded-word' as ordinary text, or (b) substitute an appropriate
+message indicating that the text could not be decoded.
+
+将来定義される他の符号化方式であった時、メイル読者が対応していない
+符号化法式が使われていたときは、 (a) 「encoded-word」を普通の文で
+表示または (b) 復号できなかった文を示す適切なメッセージを
+代わりに使うかのどちらかを採っても構いません。
+
+If the mail reader does not support the character set used, it may
+(a) display the 'encoded-word' as ordinary text (i.e., as it appears
+in the header), (b) make a "best effort" to display using such
+characters as are available, or (c) substitute an appropriate message
+indicating that the decoded text could not be displayed.
+
+メイル読者が対応していない文字集合が使われていた場合、
+(a) 「encoded-word」を普通の文として表示 (頭中に出てくるままに),
+(b) 使われている文字が表示出来るように「最大の努力」を払う,
+(c) 復号できなかった文を示す適切なメッセージを
+代わりに使うのいずれかを採っても構いません。
+
+If the character set being used employs code-switching techniques,
+display of the encoded text implicitly begins in "ASCII mode".  In
+addition, the mail reader must ensure that the output device is once
+again in "ASCII mode" after the 'encoded-word' is displayed.
+
+符号切り替え技術を用いる文字集合が使われている場合、
+符号化文は暗黙の内に「ASCII 状態」から始まります。
+加えて、メイル読者は「encoded-word」が表示された後再び
+「ASCII 状態」出力機器を念のため戻さなければなりません。
+
+***6.3. Mail reader handling of incorrectly formed 'encoded-word's
+***6.3. 不正形式の「encoded-word」のメイル読者の取り扱い
+
+It is possible that an 'encoded-word' that is legal according to the
+syntax defined in section 2, is incorrectly formed according to the
+rules for the encoding being used.   For example:
+
+   (1) An 'encoded-word' which contains characters which are not legal
+       for a particular encoding (for example, a "-" in the "B"
+       encoding, or a SPACE or HTAB in either the "B" or "Q" encoding),
+       is incorrectly formed.
+
+(1) その符号化方式で妥当でない文字 
+(例えば、「B」符号化方式の「-」
+や「B」・「Q」いずれの符号化方式においても SPACE (間隔) や HTAB (水平タブ))
+を含む「encoded-word」は不正確に形成されています。
+
+   (2) Any 'encoded-word' which encodes a non-integral number of
+       characters or octets is incorrectly formed.
+
+(2) 非整数個の文字やオクテットを符号化した「encoded-word」は不正確に
+形成されています。
+
+   A mail reader need not attempt to display the text associated with an
+   'encoded-word' that is incorrectly formed.  However, a mail reader
+   MUST NOT prevent the display or handling of a message because an
+   'encoded-word' is incorrectly formed.
+
+メイル読者は不正確に形成された「encoded-word」に関連付けられた文を表示
+しようとする必要はありません。しかし、メイル読者は「encoded-word」が
+不正確に形成されているからといってメッセージの表示や取り扱いを
+やめては''いけません''。
+
+**7. Conformance
+**7. 適合性
+
+   A mail composing program claiming compliance with this specification
+   MUST ensure that any string of non-white-space printable ASCII
+   characters within a '*text' or '*ctext' that begins with "=?" and
+   ends with "?=" be a valid 'encoded-word'.  ("begins" means: at the
+   start of the field-body, immediately following 'linear-white-space',
+   or immediately following a "(" for an 'encoded-word' within '*ctext';
+   "ends" means: at the end of the field-body, immediately preceding
+   'linear-white-space', or immediately preceding a ")" for an
+   'encoded-word' within '*ctext'.)  In addition, any 'word' within a
+   'phrase' that begins with "=?" and ends with "?=" must be a valid
+   'encoded-word'.
+
+この使用に適合すると主張するメイル作成プログラムは
+「*text」や「*ctext」中の「=?」で始まり「?=」で終わる
+非空白間隔印字可能 ASCII 文字から成る文字列を妥当な「encoded-word」
+としなければ''なりません''。 (「始まる」の意味: 領域本体の開始時に、
+直ぐに「linear-white-space」が来るか
+「*ctext」中の「encoded-word」の場合直ぐに「(」が来る。
+「終わる」の意味: 領域本体の終わりで、すぐに「linear-white-space」
+が続くか「*ctext」中の「encoded-word」の場合直ぐに「)」が来る。)
+加えて、「phrase」中の「word」で「=?」で始まり「?=」で終わるものを全て
+妥当な「encoded-word」としなければなりません。
+
+   A mail reading program claiming compliance with this specification
+   must be able to distinguish 'encoded-word's from 'text', 'ctext', or
+   'word's, according to the rules in section 6, anytime they appear in
+   appropriate places in message headers.  It must support both the "B"
+   and "Q" encodings for any character set which it supports.  The
+   program must be able to display the unencoded text if the character
+   set is "US-ASCII".  For the ISO-8859-* character sets, the mail
+   reading program must at least be able to display the characters which
+   are also in the ASCII set.
+
+この仕様書に適合すると主張するメイルを読むプログラムは
+「encoded-word」を第6章の規則に従い「text」, 「ctext」, 「word」から
+区別できなければなりません。また、「B」符号化方式と
+「Q」符号化方式の両方を対応しているどの文字集合に就いても
+対応しなければなりません。プログラムは、文字集合が「US-ASCII」なら
+符号化されていない文を表示できなければなりません。ISO-8859-*
+文字集合については、メイルを読むプログラムは少なくても
+ASCII 集合と同じ部分は表示できなければなりません。
+
+**8. Examples
+
+The following are examples of message headers containing 'encoded-word's:
+
+次に挙げるのは「encoded-word」を含むメッセージ頭の例です。
+
+   From: =?US-ASCII?Q?Keith_Moore?= <moore@@cs.utk.edu>
+   To: =?ISO-8859-1?Q?Keld_J=F8rn_Simonsen?= <keld@@dkuug.dk>
+   CC: =?ISO-8859-1?Q?Andr=E9?= Pirard <PIRARD@@vm1.ulg.ac.be>
+   Subject: =?ISO-8859-1?B?SWYgeW91IGNhbiByZWFkIHRoaXMgeW8=?=
+    =?ISO-8859-2?B?dSB1bmRlcnN0YW5kIHRoZSBleGFtcGxlLg==?=
+
+      Note: In the first 'encoded-word' of the Subject field above, the
+      last "=" at the end of the 'encoded-text' is necessary because each
+      'encoded-word' must be self-contained (the "=" character completes a
+      group of 4 base64 characters representing 2 octets).  An additional
+      octet could have been encoded in the first 'encoded-word' (so that
+      the encoded-word would contain an exact multiple of 3 encoded
+      octets), except that the second 'encoded-word' uses a different
+      'charset' than the first one.
+
+参考: 上の Subject (主題) 領域の最初の「encoded-word」で、
+「encoded-text」の最後の「=」は、各「encoded-word」が
+自己完結していなければならない (「=」文字は2オクテットを表現する
+4つの base64 文字の集団を完成させる) ので必要です。...
+
+   From: =?ISO-8859-1?Q?Olle_J=E4rnefors?= <ojarnef@@admin.kth.se>
+   To: ietf-822@@dimacs.rutgers.edu, ojarnef@@admin.kth.se
+   Subject: Time for ISO 10646?
+
+   To: Dave Crocker <dcrocker@@mordor.stanford.edu>
+   Cc: ietf-822@@dimacs.rutgers.edu, paf@@comsol.se
+   From: =?ISO-8859-1?Q?Patrik_F=E4ltstr=F6m?= <paf@@nada.kth.se>
+   Subject: Re: RFC-HDR care and feeding
+
+   From: Nathaniel Borenstein <nsb@@thumper.bellcore.com>
+         (=?iso-8859-8?b?7eXs+SDv4SDp7Oj08A==?=)
+   To: Greg Vaudreuil <gvaudre@@NRI.Reston.VA.US>, Ned Freed
+      <ned@@innosoft.com>, Keith Moore <moore@@cs.utk.edu>
+   Subject: Test of new header generator
+   MIME-Version: 1.0
+   Content-type: text/plain; charset=ISO-8859-1
+
+   The following examples illustrate how text containing 'encoded-word's
+   which appear in a structured field body.  The rules are slightly
+   different for fields defined as '*text' because "(" and ")" are not
+   recognized as 'comment' delimiters.  [Section 5, paragraph (1)].
+
+   In each of the following examples, if the same sequence were to occur
+   in a '*text' field, the "displayed as" form would NOT be treated as
+   encoded words, but be identical to the "encoded form".  This is
+   because each of the encoded-words in the following examples is
+   adjacent to a "(" or ")" character.
+
+   encoded form                                displayed as
+   ---------------------------------------------------------------------
+   (=?ISO-8859-1?Q?a?=)                        (a)
+
+   (=?ISO-8859-1?Q?a?= b)                      (a b)
+
+           Within a 'comment', white space MUST appear between an
+           'encoded-word' and surrounding text.  [Section 5,
+           paragraph (2)].  However, white space is not needed between
+           the initial "(" that begins the 'comment', and the
+           'encoded-word'.
+
+
+   (=?ISO-8859-1?Q?a?= =?ISO-8859-1?Q?b?=)     (ab)
+
+           White space between adjacent 'encoded-word's is not
+           displayed.
+
+   (=?ISO-8859-1?Q?a?=  =?ISO-8859-1?Q?b?=)    (ab)
+
+        Even multiple SPACEs between 'encoded-word's are ignored
+        for the purpose of display.
+
+   (=?ISO-8859-1?Q?a?=                         (ab)
+       =?ISO-8859-1?Q?b?=)
+
+           Any amount of linear-space-white between 'encoded-word's,
+           even if it includes a CRLF followed by one or more SPACEs,
+           is ignored for the purposes of display.
+
+   (=?ISO-8859-1?Q?a_b?=)                      (a b)
+
+           In order to cause a SPACE to be displayed within a portion
+           of encoded text, the SPACE MUST be encoded as part of the
+           'encoded-word'.
+
+   (=?ISO-8859-1?Q?a?= =?ISO-8859-2?Q?_b?=)    (a b)
+
+           In order to cause a SPACE to be displayed between two strings
+           of encoded text, the SPACE MAY be encoded as part of one of
+           the 'encoded-word's.
+
+**9. References
+**9. 参考文献
+
+   [RFC 822] Crocker, D., "Standard for the Format of ARPA Internet Text
+       Messages", STD 11, RFC 822, UDEL, August 1982.
+
+   [RFC 2049] Borenstein, N., and N. Freed, "Multipurpose Internet Mail
+       Extensions (MIME) Part Five: Conformance Criteria and Examples",
+       RFC 2049, November 1996.
+
+   [RFC 2045] Borenstein, N., and N. Freed, "Multipurpose Internet Mail
+       Extensions (MIME) Part One: Format of Internet Message Bodies",
+       RFC 2045, November 1996.
+
+   [RFC 2046] Borenstein N., and N. Freed, "Multipurpose Internet Mail
+       Extensions (MIME) Part Two: Media Types", RFC 2046,
+       November 1996.
+
+   [RFC 2048] Freed, N., Klensin, J., and J. Postel, "Multipurpose
+       Internet Mail Extensions (MIME) Part Four: Registration
+       Procedures", RFC 2048, November 1996.
+
+**10. Security Considerations
+**10. 保安に関して
+
+   Security issues are not discussed in this memo.
+
+**11. Acknowledgements
+**11. 謝辞
+
+   The author wishes to thank Nathaniel Borenstein, Issac Chan, Lutz
+   Donnerhacke, Paul Eggert, Ned Freed, Andreas M. Kirchwitz, Olle
+   Jarnefors, Mike Rosin, Yutaka Sato, Bart Schaefer, and Kazuhiko
+   Yamamoto, for their helpful advice, insightful comments, and
+   illuminating questions in response to earlier versions of this
+   specification.
+
+**12. Author's Address
+**12. 著者の連絡先
+
+   Keith Moore
+   University of Tennessee
+   107 Ayres Hall
+   Knoxville TN 37996-1301
+
+   EMail: moore@@cs.utk.edu
+
+**Appendix - changes since RFC 1522 (in no particular order)
+**附属書 ― RFC 1522 からの変更点 (順不同)
+
+   + explicitly state that the MIME-Version is not requried to use
+     'encoded-word's.
+
+   + add explicit note that SPACEs and TABs are not allowed within
+     'encoded-word's, explaining that an 'encoded-word' must look like an
+     'atom' to an RFC822 parser.values, to be precise).
+
+   + add examples from Olle Jarnefors (thanks!) which illustrate how
+     encoded-words with adjacent linear-white-space are displayed.
+
+   + explicitly list terms defined in RFC822 and referenced in this memo
+
+   + fix transcription typos that caused one or two lines and a couple of
+     characters to disappear in the resulting text, due to nroff quirks.
+
+   + clarify that encoded-words are allowed in '*text' fields in both
+     RFC822 headers and MIME body part headers, but NOT as parameter
+     values.
+
+   + clarify the requirement to switch back to ASCII within the encoded
+     portion of an 'encoded-word', for any charset that uses code switching
+     sequences.
+
+   + add a note about 'encoded-word's being delimited by "(" and ")"
+     within a comment, but not in a *text (how bizarre!).
+
+   + fix the Andre Pirard example to get rid of the trailing "_" after
+     the =E9.  (no longer needed post-1342).
+
+   + clarification: an 'encoded-word' may appear immediately following
+     the initial "(" or immediately before the final ")" that delimits a
+     comment, not just adjacent to "(" and ")" *within* *ctext.
+
+   + add a note to explain that a "B" 'encoded-word' will always have a
+     multiple of 4 characters in the 'encoded-text' portion.
+
+   + add note about the "=" in the examples
+
+   + note that processing of 'encoded-word's occurs *after* parsing, and
+     some of the implications thereof.
+
+   + explicitly state that you can't expect to translate between
+     1522 and either vanilla 822 or so-called "8-bit headers".
+
+   + explicitly state that 'encoded-word's are not valid within a
+     'quoted-string'.
+
+*[[RFC2231]] による修訂
+
+**5.  Language specification in Encoded Words
+
+   RFC 2047 provides support for non-US-ASCII character sets in RFC 822
+   message header comments, phrases, and any unstructured text field.
+   This is done by defining an encoded word construct which can appear
+   in any of these places.  Given that these are fields intended for
+   display, it is sometimes necessary to associate language information
+   with encoded words as well as just the character set.  This
+   specification extends the definition of an encoded word to allow the
+   inclusion of such information.  This is simply done by suffixing the
+   character set specification with an asterisk followed by the language
+   tag.  For example:
+
+          From: =?US-ASCII*EN?Q?Keith_Moore?= <moore@@cs.utk.edu>
+
+**7.  Modifications to MIME ABNF (抜粋)
+
+   The ABNF given in RFC 2047 for encoded-words is:
+
+   encoded-word := "=?" charset "?" encoding "?" encoded-text "?="
+
+   This specification changes this ABNF to:
+
+   encoded-word := "=?" charset ["*" language] "?" encoded-text "?="
+
+*SEE ALSO
+-[[MIME]]
+--[[encoded-word]]
+--[[RFC2183]]
+--[[RFC2231]]
+-[[draft-usefor-article]]
+-[[RFC822と仲間達の頭領域]]
+--[[X-Moe:領域と仲間達]]
+
+- 2002-09-28 (Sat) 19:53:19 ''[[名無しさん]]'' : [[RFC2231]] の改訂版 [[encoded-word]] [[ABNF]] には間違いがあって、 [[RFC-ERRATA]] に載ってます。
+- [1] RFC 2047 で例として挙げられているものやこの他の例も含めて、 [[encoded-word]] の WikiPage で取り扱っています。そちらもご覧下さい。
+@
+
+
+1.4
+log
+@*** empty log message ***
+@
+text
+@@
+
+
+1.3
+log
+@Updated.
+@
+text
+@d914 1
+@
+
+
+1.2
+log
+@Updated.
+@
+text
+@d1 41
+a41 4
+  Network Working Group                                           K. Moore
+  Request for Comments: 2047                       University of Tennessee
+  Obsoletes: 1521, 1522, 1590                                November 1996
+  Category: Standards Track
+a42 3
+*MIME (Multipurpose Internet Mail Extensions) Part Three:
+*Message Header Extensions for Non-ASCII Text
+*MIME (多目的 Internet メイル拡張) 第3部: 非 ASCII 文用メッセージ頭拡張
+a43 1
+**Status of this Memo
+d45 1
+a45 35
+   This document specifies an Internet standards track protocol for the
+   Internet community, and requests discussion and suggestions for
+   improvements.  Please refer to the current edition of the "Internet
+   Official Protocol Standards" (STD 1) for the standardization state
+   and status of this protocol.  Distribution of this memo is unlimited.
+
+**Abstract
+
+   STD 11, RFC 822, defines a message representation protocol specifying
+   considerable detail about US-ASCII message headers, and leaves the
+   message content, or message body, as flat US-ASCII text.  This set of
+   documents, collectively called the Multipurpose Internet Mail
+   Extensions, or MIME, redefines the format of messages to allow for
+
+   (1) textual message bodies in character sets other than US-ASCII,
+
+   (2) an extensible set of different formats for non-textual message
+       bodies,
+
+   (3) multi-part message bodies, and
+
+   (4) textual header information in character sets other than US-ASCII.
+
+   These documents are based on earlier work documented in RFC 934, STD
+   11, and RFC 1049, but extends and revises them.  Because RFC 822 said
+   so little about message bodies, these documents are largely
+   orthogonal to (rather than a revision of) RFC 822.
+
+   This particular document is the third document in the series.  It
+   describes extensions to RFC 822 to allow non-US-ASCII text data in
+   Internet mail header fields.
+
+
+
+   Other documents in this series include:
+d60 3
+a62 3
+   These documents are revisions of RFCs 1521, 1522, and 1590, which
+   themselves were revisions of RFCs 1341 and 1342.  An appendix in RFC
+   2049 describes differences and changes from previous versions.
+d64 1
+a64 1
+**1. Introduction
+d119 1
+a119 2
+**NOTES
+**注意
+d145 1
+a145 2
+**2. Syntax of encoded-words
+**2. encoded-word (符号化語) の構文
+d147 1
+a147 1
+An 'encoded-word' is defined by the following ABNF grammar.  The
+d151 3
+a153 3
+「encoded-word」は次の ABNF 文法で定義します。
+RFC 822 の記法を使いますが、空白間隔文字が「encoded-word」の
+部品間に現れては''いけません''。
+d171 1
+a171 1
+Both 'encoding' and 'charset' names are case-independent.  Thus the
+d180 1
+a180 1
+An 'encoded-word' may not be more than 75 characters long, including
+d191 1
+a191 1
+While there is no limit to the length of a multiple-line header
+d198 1
+a198 1
+The length restrictions are included both to ease interoperability
+d208 1
+a208 1
+IMPORTANT: 'encoded-word's are designed to be recognized as 'atom's
+d220 1
+a220 1
+would be parsed as four 'atom's, rather than as a single 'atom' (by
+d232 1
+a232 1
+The characters which may appear in 'encoded-text' are further
+d237 1
+a237 2
+**3. Character sets
+**3. 文字集合
+d239 5
+a243 5
+   The 'charset' portion of an 'encoded-word' specifies the character
+   set associated with the unencoded text.  A 'charset' can be any of
+   the character set names allowed in an MIME "charset" parameter of a
+   "text/plain" body part, or any character set name registered with
+   IANA for use with the MIME text/plain content-type.
+d245 1
+a245 1
+Some character sets use code-switching techniques to switch between
+d260 1
+a260 1
+When there is a possibility of using more than one character set to
+d270 1
+a270 1
+**4. Encodings
+d297 1
+a297 2
+***4.1. The "B" encoding
+***4.1. 「B」符号化方式
+d299 1
+a299 1
+The "B" encoding is identical to the "BASE64" encoding defined by RFC 2045.
+d301 2
+a302 1
+「B」符号化方式は RFC 2045 で定義された「BASE64」符号化方式と同じです。
+d304 1
+a304 2
+***4.2. The "Q" encoding
+***4.2. 「Q」符号化方式
+d306 4
+a309 4
+   The "Q" encoding is similar to the "Quoted-Printable" content-
+   transfer-encoding defined in RFC 2045.  It is designed to allow text
+   containing mostly ASCII characters to be decipherable on an ASCII
+   terminal without decoding.
+d343 1
+a343 2
+**5. Use of encoded-words in message headers
+**5. encoded-word のメッセージ頭内での使用
+d345 2
+a346 2
+   An 'encoded-word' may appear in a message header or body part header
+   according to the following rules:
+d348 1
+a348 1
+(1) An 'encoded-word' may replace a 'text' token (as defined by RFC 822)
+d354 3
+a356 3
+(1) 「encoded-word」は Subject (主題), Comments (注釈) 頭領域や
+拡張メッセージ頭領域, 領域本体が「*text」と定義された MIME 本体部分領域
+の「text」 token (RFC 822 で定義) を置き換えることが出来ます。
+d360 7
+a366 1
+Ordinary ASCII text and 'encoded-word's may appear together in the
+d371 2
+a372 2
+普通の ASCII 文と「encoded-word」は同じ頭領域に同時に出現出来ます。
+しかし、「*text」と定義された頭領域内に出現する「encoded-word」
+d376 1
+a376 1
+(2) An 'encoded-word' may appear within a 'comment' delimited by "(" and
+d913 1
+a913 1
+- 2002-09-28 (Sat) 19:53:19 ''[[名無しさん]]'' : [[RFC2231]] の改訂版 [[encoded-word]] [[ABNF]] には間違いがあって、 [[RFC-ERRATA]] に載ってます。
+@
+
+
+1.1
+log
+@Updated.
+@
+text
+@d913 1
+@
+

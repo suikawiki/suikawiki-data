@@ -1,0 +1,95 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1
+	before-db-leaffile:1.1;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.1
+date	2004.03.18.02.07.17;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9
+
+[1]
+RequestLog plugin module
+(旧 RequestLog + UserAgent)
+を作りました。
+
+これを使うと一々 lock する必要があるので遅くなる懸念があったのですが、然程でもないようです。誤差の範囲内。ただし実戦投入したときの負荷でも誤差で要られるかはよくわかりません。
+
+この RequestLog と今途中まで書いた Referer,
+[CODE[database_loaded]] & [CODE[input_close]]
+event に引っ掛ける必要があるので、今のところ、 plugin だけじゃなくて driver ([CODE(file)[suikawiki-config.ph]]) をいじらないといけません (WikiPlugin source format で書けないから)。
+どうするのがいいんだろうか。
+(どっちみちデータベースのファイル名設定で driver config file はいじらないといけないんだよなあ。)
+([[名無しさん]] [WEAK[2004-02-15 12:22:37 +00:00]])
+
+[2]
+Referer plugin も基本的には RequestLog と似たようなものなので、大枠はもうできちゃったわけですが、こっちは URI 参照による filtering とか、人間向けの label への置換えとかがあるのでもうちょっと作業が必要。
+([[名無しさん]] [WEAK[2004-02-15 12:23:45 +00:00]])
+
+[3]
+WikiDB の lock について。
+- Lock の解除し忘れがあるのが本当に WikiEngine debug 時の不正終了の場合だけなのかちゃんと検証する必要がある。
+- [CODE(HTTP)[[[423]] Locked]] で報告できるように。
+
+とか書いてるそばから locked error が意味もなく出るくらいだから、 lock module または WikiEngine のどっかが bug ってることは間違いない。
+([[名無しさん]] [WEAK[2004-02-15 12:29:12 +00:00]])
+
+[4]
+WikiDB の lock について。
+- Lock の解除し忘れがあるのが本当に WikiEngine debug 時の不正終了の場合だけなのかちゃんと検証する必要がある。
+- [CODE(HTTP)[[[423]] Locked]] で報告できるように。
+
+とか書いてるそばから locked error が意味もなく出るくらいだから、 lock module または WikiEngine のどっかが bug ってることは間違いない。
+([[名無しさん]] [WEAK[2004-02-15 12:30:58 +00:00]])
+
+[5]
+
+- WikiFormat の trace error を debug mode 以外で出さないように。
+([[名無しさん]] [WEAK[2004-02-15 12:32:16 +00:00]])
+
+[6]
+
+- WikiFormat の trace error を debug mode 以外で出さないように。
+- WikiResource/temp_accept_language で既に {input} が閉じられていることがある (誤り報告時)。
+([[AnonymousCoward]] [WEAK[2004-02-15 12:33:57 +00:00]])
+
+[7]
+>>3-4 やっと時間が取れたので調べてみました。やっぱり Lock module に虫がいましたので駆除しました。
+
+WikiDB debug mode ([CODE(perl)[$wiki->{config}->{debug}->{db} == 1]])
+だと激烈に遅くなります。 [CODE(perl)[[[caller]]]] 追跡表を吐くのが激烈に遅い (のが一杯ある) のと、
+その報告の際に資源を取得するために一度閉じた WikiDB をもう一度開き直すとか厄介なことをしているのが原因です。 (ほかにもあるかもしれませんが、ちゃんと調べていません。)
+前者はどうしようもない。後者はうまいチェックの方法が思い付きません。どっちも虫捕り時以外はたいした問題にならないでしょう。
+([[名無しさん]] [WEAK[2004-02-18 02:41:17 +00:00]])
+
+[8]
+>>4 423 Locked は以前に実装済みでした。最近ボケが(以下略)。
+
+それはともかく、
+一頁内に [CODE(HTMLe)[[[title]]]] 要素が複数ある時、 [[NN4]] は最初の物を、 [[w3m]] は最後の物を採用するみたいです。
+(NN 1 か 2 の animated title の不具合は有名。) まあどちらが正しいというわけでもありませんけどね。 (間違っているのは HTML 文書。)
+([[名無しさん]] [WEAK[2004-02-18 04:08:08 +00:00]])
+
+
+[9]
+>>5 WikiFormat module の error 通知の trace は "general" debug mode に依存していました。(まだ寝ぼけてたみたいです。)
+より柔軟に制御できるように "format" debug mode で switch するようにしておきました。
+([[名無しさん]] [WEAK[2004-02-18 07:42:43 +00:00]])
+@

@@ -1,0 +1,119 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1
+	before-db-leaffile:1.1
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2003.09.24.07.19.40;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@semi-auto committed
+@
+text
+@#?SuikaWiki/0.9
+[1] 【[[XPath]]】 [[文脈節]]からの相対的な位置を表す[[位置経路]]のことを、[WEAK[そのままですが]]相対位置経路
+(relative location path) といいます。
+
+相対位置経路は、1つ以上の[[位置段階]]が区切子
+[CODE(XPath)[[[/]]]] で区切られた形になってます。
+
+まず最初の位置段階をその文脈で評価し、
+その結果を新しい文脈として更に次の位置段階で評価します。
+これを最後の位置段階まで繰り返して、
+残った節の集合が与えられた相対位置経路の評価結果になります。
+
+[2] たとえば、次の XML 文書断片を考えます。
+[PRE[
+<context>
+  <p id="p1">
+    <q id="q1">
+      <r id="r1"></r>
+      <r id="r2"></r>
+      <q id="q2">
+        <r id="r3"></r>
+      </q>
+    </q>
+    <p id="p2">
+      <q id="q3">
+        <r id="r4"/>
+      </q>
+    </p>
+    <q id="q4">
+    </q>
+    <q id="q5">
+      <r id="r5"/>
+    </q>
+  </p>
+</context>
+]PRE]
+
+[SAMP(XML)[context]] 要素を文脈節として、
+[SAMP(XPath)[child:p/child:q/child:r]]
+を評価することを考えます。
+
+まず、最初の位置段階である [SAMP(XPath)[child:p]]
+を評価します。ここで、[[軸]] [CODE(XPath)[[[child]]]]
+は[[子要素]]を選択することを意味します。
+そこで [SAMP(XML)[context]] 要素の子要素で型名が
+[SAMP(XML)[p]] であるものを探します。
+すると要素 [SAMP(XML)[p1]] が見つかります。
+- [SAMP(XPath)[child:p]] の結果
+-- [SAMP(XML)[p1]]
+
+次に、得られた結果である要素 [SAMP(XML)[p1]]
+を文脈節として、二番目の位置段階である
+[SAMP(XPath)[child:q]] を評価します。
+同様に子要素を眺めると、該当する節は3つ見つかります。
+- [SAMP(XPath)[child:p/child:q]] の結果
+-- [SAMP(XML)[p1]] → [SAMP(XML)[q1]]
+-- [SAMP(XML)[p1]] → [SAMP(XML)[q4]]
+-- [SAMP(XML)[p1]] → [SAMP(XML)[q5]]
+
+そして、三番目の位置段階 [SAMP(XPath)[child:r]]
+を評価します。まず、 [SAMP(XML)[q1]]
+を文脈節にしてみると、2つの節が見つかります。
+- [SAMP(XPath)[child:p/child:q/child:r]] の結果
+-- [SAMP(XML)[p1]] → [SAMP(XML)[q1]] → [SAMP(XML)[r1]]
+-- [SAMP(XML)[p1]] → [SAMP(XML)[q1]] → [SAMP(XML)[r2]]
+
+次に、 [SAMP(XML)[q4]] を文脈節にしてみます。
+ところが、 [SAMP(XPath)[child:r]]
+に合致する節は見つかりません。
+- [SAMP(XPath)[child:p/child:q/child:r]] の結果
+-- [SAMP(XML)[p1]] → [SAMP(XML)[q4]] → (該当無し)
+
+最後になりますが、 [SAMP(XML)[q5]] を文脈節にします。
+該当する節は1つあります。
+- [SAMP(XPath)[child:p/child:q/child:r]] の結果
+-- [SAMP(XML)[p1]] → [SAMP(XML)[q5]] → [SAMP(XML)[r5]]
+
+ということで、以上の結果を総合すると、
+- [SAMP(XPath)[child:p/child:q/child:r]] の結果
+-- [SAMP(XML)[p1]] → [SAMP(XML)[q1]] → [SAMP(XML)[r1]]
+-- [SAMP(XML)[p1]] → [SAMP(XML)[q1]] → [SAMP(XML)[r2]]
+-- [SAMP(XML)[p1]] → [SAMP(XML)[q5]] → [SAMP(XML)[r5]]
+
+従って、 [SAMP(XPath)[child:p/child:q/child:r]]
+を評価すると、節集合 
+[CODE(Math)[{[SAMP(XML)[r1]], [SAMP(XML)[r2]], [SAMP(XML)[r5]]}]]
+が得られます。
+
+- [3] [DFN[相対位置経路]] := [ [[WSP]] ] ([[段階]] | [[省略相対位置経路]]) *("/" (段階 / 省略相対位置経路)) [WSP] ;; <http://www.w3.org/TR/xpath#NT-RelativeLocationPath>
+- [4] >>3 の式は省略形が入ってくるので若干ややこしく見えますが [WEAK[(そして仕様書の元の形は再帰があるのでもっと微妙にややこしく見えますが)]]、実際には [CODE(ABNF)[ [WSP] 段階 *(("/" / "//") 段階) [WSP] ]] というだけのことです。更に[[絶対位置経路]]も含めれば、 [CODE(ABNF)[[DFN[位置経路]] := 1*(段階区切子 段階) / "/" / 段階; [DFN[段階区切子]] := "/" / "//"]] ともっと単純にかけます。
+@

@@ -1,0 +1,646 @@
+head	1.3;
+access;
+symbols
+	before-db-leaffile:1.2
+	after-upgrade-to-suikawiki-3:1.2
+	before-fork-suikawiki3:1.2
+	after-restore-20040122:1.2;
+locks; strict;
+comment	@# @;
+
+
+1.3
+date	2004.06.18.02.05.26;	author wakaba;	state dead;
+branches;
+next	1.2;
+
+1.2
+date	2003.03.27.07.24.56;	author make;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.01.03.03.19.13;	author w;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9 import="RFC訳語集,メッセージ訳語集" page-icon="HTTP"
+[1] '''HTTP MIME Type Handler Detection [INS[HTTP MIME 型取扱器判別]]'''
+-Network Working Group                                         
+-Request for Comments: 2936                                       
+-Category: Informational                                          
+-D. Eastlake
+-Motorola
+-C. Smith
+-                                                     Royal Bank of Canada
+-                                                                D. Soroka
+-                                                                      IBM
+-                                                           September 2000
+__&&InfoStatus&&__
+*Copyright Notice
+>Copyright (C) The Internet Society (2000).  All Rights Reserved.
+*Abstract [INS[概要]]
+>Entities composing web pages to provide services over the Hypertext
+Transfer Protocol (HTTP) frequently have the problem of not knowing
+what Multipurpose Internet Mail Extensions (MIME) types have handlers
+installed at a user's browser.  For example, whether an Internet Open
+Trading Protocol (IOTP) or VRML or SET or some streaming media
+handler is available.  In some cases they would want to display
+different web pages or content depending on a MIME handler's
+availability.  This document summarizes reasonable techniques to
+solve this problem for most of the browsers actually deployed on the
+Internet as of early 2000.  It is intended to be of practical use to
+implementors during the period before the wide deployment of superior
+standards based techniques which may be developed.
+
+*Acknowledegements [INS[謝辞]]
+>Helpful comments by Tony Lewis of Visa have been incorporated.
+
+Visa の Tony Lewis の有用な意見を取り入れました。
+*Table of Contents
+   1. Introduction.................................................  2
+   2. The HTTP 'Accept' Header.....................................  2
+   3. JavaScript...................................................  3
+   4. ActiveX and the Windows Registry.............................  4
+   5. ECML, The Electronic Commerce Modeling Language..............  4
+   6. Putting It All Together......................................  5
+   7. Future Development...........................................  5
+   8. Security Considerations......................................  5
+   9. IANA Considerations..........................................  6
+   References......................................................  6
+   Appendix A: Browser Version Sniffer Code........................  8
+   Authors' Addresses.............................................. 12
+   Full Copyright Statement........................................ 13
+*1. Introduction [INS[はじめに]]
+>Entities composing web pages to provide services over [HTTP]
+frequently have the problem of not knowing what [MIME] types have
+handlers installed at a user's browser.  For example, whether an
+[IOTP] or VRML or [SET] or some streaming media handler is available.
+In many cases they would want to display different web pages or
+content depending on a MIME handler's availability.  Sending a
+response with a MIME type that is not supported frequently results in
+interrupting the flow of the user experience, browser queries as to
+what to do with the data being provided, and, of course, failure to
+provide the behavior that would have occurred had the correct MIME
+type handler been installed.
+
+[[HTTP]] 上でサービスを提供するために Web 頁を構成する実体は、どの MIME
+型が利用者の__&&browser&&__で取扱器が導入されているかを知ることが出来ないという問題を持っています。
+例えば、 [[IOTP]] や [[VRML]] や [[SET]] や__&&streaming&&__媒体取扱器が利用可能かどうかです。
+多くの場合、 MIME 取扱器が利用可能かどうかにより異なる Web
+頁や内容を表示することを望んでいます。よく対応されていない MIME
+型で応答を送信すると利用者の経験の流れを邪魔し、提供されたデータをどうするかを__&&browser&&__が問い合わせ、そしてもちろん、正しい
+MIME 型取扱器が導入されていたら起こったであろう動作を提供することに失敗することとなります。
+
+>This document describes reasonable techniques to solve this problem
+for most of the browsers actually deployed on the Internet as of
+early 2000.  It is intended to be of practical use to implementors
+during the period before the wide deployment of superior standards
+based techniques which may be developed.  It is written in terms of
+determining whether a handler for application/iotp or 
+application/x-iotp exists but is equally applicable to other MIME types.
+
+この文書は 2000年初頭の時点で Internet 
+に実際に展開しているほとんどの__&&browser&&__でこの問題を解決する分別ある手法を説明します。
+これは優れた規格を基にした手法が開発され広く採用されるまでの期間に実装者が現実的に使用することを意図したものです。
+[CODE[application/iotp]] 又は [CODE[application/x-iotp]]
+の取扱器が存在するかどうかの決定について書いていますが、他の MIME
+型についても同様に応用可能です。
+
+*2. The HTTP 'Accept' Header [INS[HTTP の「Accept」__&&header&&__]]
+>The problem should be solved by the Hyper Text Transport Protocol
+[HTTP] request "Accept" header which lists accepted [MIME] types.
+This header is present in both Version 1.0 and 1.1 of HTTP and its
+content is supposed to be a list of MIME types and subtypes that are
+accepted.  The only problem is that many browsers just send "*/*" or the like.
+
+MIME 型を列挙する__&&Hypertext Transfer Protocol&&__要求の
+「Accept」__&&header&&__により問題は解決されるはずです。
+この__&&header&&__は HTTP の第1.0版と第1.1版の両者に存在し、その内容は受け入れる
+MIME 型及び亜型の一覧とされています。
+唯一問題なのは、多くの__&&browser&&__が [CODE["*/*"]]
+のようなものを送るだけであることです。
+
+>If the particular MIME type you are looking for is specifically
+present in the Accept header, it is generally safe to assume that a
+handler for it is actually installed or part of the browser.
+
+探している特定の MIME 型が [CODE(HTTP)[Accept]] __&&header&&__に具体的に存在すれば、通常この取扱者が導入されているか__&&browser&&__の一部であると考えても安全です。
+
+>NOTE: Although not part of the main topic of this document, if you
+are designing MIME type handler software and have access to a browser
+interface that allows you to request the insertion of the MIME type
+or types your software handles into the Accept header, you generally
+should do so.  It will make it easier for servers sensitive to that
+MIME type to respond correctly.
+
+注意: この文書の主題ではありませんが、 MIME 型取扱器ソフトウェアを設計していて、
+[CODE(HTTP)[Accept]] __&&header&&__にそのソフトウェアが取り扱う MIME
+型を挿入することを要求することが出来る__&&browser&&__の界面に接触可能であれば、通常そうするのが良いです。
+これによってサーバーがその MIME 型で正しく応答するのが簡単になります。
+
+*3. JavaScript
+>Most recent browsers support one or more scripting languages of which
+the most widely deployed is "JavaScript".  These scripting languages
+appear in web pages and permit the interpretive execution of
+programming language constructs that can probe the browser
+environment, conditionally cause different page contents to be
+displayed, etc.  For example, Appendix A shows JavaScript available
+from the Netscape web site for determining what operating system,
+browser, and version on which a web page is appearing.
+
+殆どの最近の__&&browser&&__は幾つかのスクリプト言語に対応していて、中でも
+[[JavaScript]] が最も広く採用されています。
+こうしたスクリプト言語は Web 
+頁中で使って__&&browser&&__環境の調査をして条件によって異なる頁の内容を表示するなどのことが出来るプログラム言語構造を対話的に実行することが可能です。
+例として附属書 A に、 Web 
+頁を表示する__&&operating system&&__, __&&browser&&__及び版を決定する,
+[[Netscape]] の Web サイトから利用可能な JavaScript を示します。
+
+>NOTE: JavaScript is a trademark of SUN Microsystems, Inc.  It was
+originally called LiveScript.  It has nothing to do with the Java language.
+
+注意: JavaScript は SUN Microsystems, Inc. の登録商標です。
+これは元々 [[LiveScript]] と呼ばれていました。 [[Java]]
+言語とは関係ありません。
+
+>The syntax for script use appears to be a Hyper Text Markup Language
+(HTML) comment so that browsers that do not support scripting will
+ignore such items.  That is, script use is preceded by "<!--" and
+terminated by "-->".  The following is a simple example of
+conditional execution of parts of a web page based on JavaScript MIME
+type handler detection.
+
+スクリプトの構文には__&&Hypertext Markup Language&&__ (HTML)
+注釈を使いますから、スクリプトに対応していない__&&browser&&__はこの項目を無視します。
+すなわち、スクリプトは [CODE(HTML)["<!--"]] を前に置き, [CODE(HTML)[”−−>”]]
+で終端します。次に示すのは JavaScript の MIME 型取扱器判別に基づき
+Web 頁の一部を条件的で実行する簡単な例です。
+
+   <SCRIPT LANGUAGE=JAVASCRIPT>
+   <!-- hide it
+   if (navigator.mimeTypes && navigator.mimeTypes.length > 0) {
+     if ( navigator.mimeTypes["application/iotp"] ||
+          navigator.mimeTypes["application/x-iotp"]) {
+       // here if IOTP handler exists [INS[IOTP 取扱器存在の時ここ]]
+       }
+     else {
+       // here if IOTP handler does not exist [INS[IOTP 取扱器不存在の時ここ]]
+       }
+     }
+   // end and hide -->
+   </SCRIPT>
+
+*4. ActiveX and the Windows Registry [INS[ActiveX 及び Windows Registry]]
+>If running on Microsoft Windows Internet Explorer version 3 or 4, it
+is necessary to query the Windows Registry to determine local MIME
+type support.  Although these broswers support JavaScript, in v3 the
+mimeTypes array is not present and in v4 the mimeTypes array is
+present but always empty.  For example, executing the following code
+will test for support of the IOTP types:
+
+Microsoft Windows Internet Explorer 第3版又は第4版が動いていれば、__&&local&&__の
+MIME 型対応の決定に Windows Registry に問い合わせる必要があります。
+この__&&browser&&__ は JavaScript に対応していますが、第3版では
+[CODE(JS)[mimeTypes]] 配列は存在せず、第4版では [CODE(JS)[mimeTypes]]
+配列は常に空です。例えば、次の code を実行すると IOTP
+型の対応を試験できます。
+
+   CString iotpString, xiotpString;
+   char* Key, Keyx;
+
+      int rc, rcx;
+      iotpString =
+   "SOFTWARE\Classes\MIME\Database\Content Type\application/iotp";
+      xiotpString =
+   "SOFTWARE\Classes\MIME\Database\Content Type\application/x-iotp";
+      Key = iotpString.GetBuffer(1);
+      Keyx = xiotpString.GetBuffer(1);
+      rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE, Key, 0, KEY_READ, hDefKey);
+      rcx = RegOpenKeyEx(HKEY_LOCAL_MACHINE, Keyx, 0, KEY_READ, hDefKey);
+   if ( ( rc  == ERROR_SUCCESS ) || ( rcx == ERROR_SUCCESS ) )
+    {
+    // IOTP Handler exists
+    }
+   else
+    {
+    // No IOTP Handler
+    }
+
+>NOTE: ActiveX is a trademark of Microsoft and was originally called Sweeper.
+
+注意: [[ActiveX]] は [[Microsoft]] の登録商標で元は掃除機と呼ばれていました。
+
+*5. ECML, The Electronic Commerce Modeling Language [INS[ECML, 電子商取引モデル化言語]]
+>A industry group has recently proposed a standard for fields used in
+electronic commerce.  This fields allow "wallet" software acting for
+the consumer to convey standardized information to a merchant,
+including information as to what payment related protocols are
+supported at the customer site.  See [ECML].
+
+産業団体が最近電子商取引で使われる欄の規格を提案しています。
+この欄によって、「財布」ソフトウェアを使って消費者が、どの支払い関連__&&protocol&&__を顧客側で対応しているのかの情報を含めた標準化された情報を商店に伝達することが可能になります。
+[[ECML]] をご覧下さい。
+
+*6. Putting It All Together [INS[相関図]]
+>The following diagram indicates how these techniques can be put together.
+
+次の図は各技術がどう関係するかを示すものです。
+
+   [INS[開始]]
+   start>-----+
+              |
+      +------------------+    [INS[いいえ]]
+      | Was desired type |     NO      +-------------------------+
+      |found in Accept?  |------------>| Is JavaScript available |
+      |[INS[Accept に]]         |             |[INS[JavaScript が利用可能で]]  |
+      |[INS[望む型はあるか?]]   |             |[INS[これは型を提示するか?]]   |
+      +------------------+             |and does it show type?   |
+            |                          +-------------------------+
+       YES  |                            |         |           |
+      [INS[はい]]  |<---------------------------+         |        NO | [INS[いいえ]]
+            |        YES                           |           |
+            |       [INS[はい]]           +---<explorer<--+           |
+            |                      |                           |
+            |          +----------------------+                |
+            |          | Is ActiveX available |                |
+            |          |and does it show type?|                |
+            |          |[INS[ActiveX が利用可能で]]  |                |
+            |          |[INS[これは型を提示するか?]] |                |
+            |  [INS[はい]]    +----------------------+         [INS[いいえ]] |
+            |  YES       |        |         |             NO   |
+            |<-----------+        |         +----------------->|
+            |                     V                            |
+   remember |               Indeterminate.            remember |
+     that   |.              Take default  [INS[不明。]]     that type |
+   type IS  |               action. [INS[既定の動作。]]        is NOT |
+   supported|                                        supported |
+   [INS[型は対応して'''いた''']]                      [INS[型は対応して'''いなかった''']]
+            X done [INS[完了]]                                        X
+
+*7. Future Development [INS[将来の開発]]
+>Active work is proceeding in the IETF, World Wide Web Consortium
+[W3C], and other standards and industry groups concerning content and
+capabilities negotiation.  This work is likely to lead to superior
+methods to implement the functionality described herein.  However,
+near universal deployment of such new standards/features will take
+some time.  Thus you should expect the methods given herein to be
+obsoleted, but perhaps not for some time.
+
+[[IETF]], World Wide Web Consortium ([[W3C]]), 
+その他の内容及び能力折衝に関する標準化・業界団体で活発な作業が進められています。
+この作業はここで説明したような機能を実装するより優れた方法を率いるものとなるでしょう。
+しかし、そうした新しい規格・機能がほとんど普遍的に採用されるまでには時間がかかります。
+ですから、ここで示した方法が時代遅れのものとなることを期待しているかもしれませんが、おそらくしばらくはそうならないでしょう。
+
+*8. Security Considerations [INS[安全性に関して]]
+>It should be noted that the variety of ActiveX control suggested
+above is reading the user's registry, that is, examining their
+computer and reporting back some information it has discovered.  This
+may be a concern among some users.
+
+上記で提案した ActiveX control の変化は利用者の registry
+を読むもので、すなわち利用者の計算機を検査して判明した情報を報告するものであることに注意して下さい。
+このことを心配する利用者がいるかもしれません。
+
+>In general, the use of JavaScript and, even more so, ActiveX is
+dangerous because they are so powerful.  JavaScript or ActiveX from a
+web page could be invisibly damaging to the client.
+
+通常、 JavaScript や, それ以上に ActiveX の使用は、これが強力であるが故に危険です。
+Web 頁からの JavaScript や ActiveX は__&client&&__に目に見えない損害を与えるかもしれません。
+
+>Security of web interactions is normally provided by adopting channel
+encryption on the browser to server connections, such as [TLS].  In
+the absence of some such additional security outside of HTTP,
+requests and/or responses may be forged or tampered with.
+
+Web 通信の安全性は通常、 [[TLS]] 
+のような__&&browser&&__からサーバーへの接続の通信路暗号化を採用することで提供します。
+こうした HTTP の外側の追加の安全性が無い場合、要求[[及び/又は]]応答は偽造されたり改竄されたりするかもしれません。
+
+*9. IANA Considerations [INS[IANA に関して]]
+>None specific to the techniques described herein.  For MIME types and
+type registration procedures, see [MIME: RFCs 2046, 2048].
+
+ここに説明した手法に特有のものはありません。
+MIME 型及び型登録手続きについては、 [[MIME]] の [[RFC2046]], [[RFC2048]]
+をご覧下さい。
+*References [INS[参考文献]]
+
+   [ECML] Eastlake, D. and T. Goldstein, "ECML v1: Field Names for
+          E-Commerce", [[RFC2706]], October 1999.
+
+   [HTTP] Berners-Lee, T., Fielding, R. and H. Frystyk, "Hypertext
+          Transfer Protocol -- [[HTTP/1.0]]", [[RFC1945]], May 1996.
+
+   [HTTP] Fielding, R., Gettys, J., Mogul, J., Frystyk, H., Masinter,
+          L., Leach, P. and T. Berners-Lee, "Hypertext Transfer Protocol
+          -- [[HTTP/1.1]]", [[RFC2616]], June 1999.
+
+   [IOTP] Burdett, D., "Internet Open Trading Protocol - IOTP Version
+          1.0", [[RFC2801]], April 2000.
+
+   [MIME] Freed, N. and N. Borenstein, "Multipurpose Internet Mail
+          Extensions (MIME) Part One: Format of Internet Message
+          Bodies", [[RFC2045]], November 1996.
+
+   [MIME] Freed, N. and N. Borenstein, "Multipurpose Internet Mail
+          Extensions (MIME) Part Two: Media Types", [[RFC2046]], November
+          1996.
+
+   [MIME] Moore, K., "MIME (Multipurpose Internet Mail Extensions) Part
+          Three: Message Header Extensions for Non-ASCII Text", 
+          [[RFC2047]], November 1996.
+
+   [MIME] Freed, N., Klensin, J. and J. Postel, "Multipurpose Internet
+          Mail Extensions (MIME) Part Four: Registration Procedures",
+          [[RFC2048]], November 1996.
+
+   [SET]  "Secure Electronic Transaction (SET) Specification, Version
+          1.0", May 31, 1997, available from <http://www.setco.org>.
+             Book 1: Business Description
+             Book 2: Programmer's Guide
+             Book 3: Formal Protocol Definition
+
+   [TLS]  Dierks, T. and C. Allen, "The TLS Protocol Version 1.0", 
+          [[RFC2246]], January 1999.
+
+   [W3C] World Wide Web Consortium, <www.w3.org> [INS[<http://www.w3.org/>]]
+
+*Appendix A: Browser Version Sniffer Code [INS[附属書A: __&&browser&&__版判定 code]]
+
+  <SCRIPT LANGUAGE="JavaScript">
+  <!-- hide JavaScript from non-JavaScript browsers
+  // Ultimate client-side JavaScript client sniff.
+  [INS[// クライアント側 JavaScript クライアント判定]]
+  // (C) Netscape Communications 1999.
+  //     Permission granted to reuse and distribute.
+  [INS[// 再利用及び配布の許可を与える。]]
+  // Revised 17 May 99 to add is_nav5up and is_ie5up (see below).
+  [INS[// 改訂 1999-05-12 is_nav5up 及び is_ie5up を追加 (下記参照)。]]
+
+  // Everything you always wanted to know about your JavaScript client
+  // but were afraid to ask. Creates "is_" variables indicating:
+  // (1) browser vendor:
+  //     is_nav, is_ie, is_opera
+  // (2) browser version number:
+  //     is_major (integer indicating major version number: 2, 3, 4 ...)
+  //     is_minor (float   indicating full  version number:
+  //                                               2.02, 3.01, 4.04 ...)
+  // (3) browser vendor AND major version number
+  //     is_nav2, is_nav3, is_nav4, is_nav4up, is_nav5, is_nav5up,
+  //     is_ie3, is_ie4, is_ie4up
+  // (4) JavaScript version number:
+  //     is_js (float indicating full JavaScript version number:
+  //                                                    1, 1.1, 1.2 ...)
+  // (5) OS platform and version:
+  //     is_win, is_win16, is_win32, is_win31,
+  //     is_win95, is_winnt, is_win98
+  //     is_os2
+  //     is_mac, is_mac68k, is_macppc
+  //     is_unix
+  //        is_sun, is_sun4, is_sun5, is_suni86
+  //        is_irix, is_irix5, is_irix6
+  //        is_hpux, is_hpux9, is_hpux10
+  //        is_aix, is_aix1, is_aix2, is_aix3, is_aix4
+  //        is_linux, is_sco, is_unixware, is_mpras, is_reliant
+  //        is_dec, is_sinix, is_freebsd, is_bsd
+  //     is_vms
+  //
+  // See http://www.it97.de/JavaScript/JS_tutorial/bstat/navobj.html and
+  // http://www.it97.de/JavaScript/JS_tutorial/bstat/Browseraol.html
+  // for detailed lists of userAgent strings.
+  //
+  // Note: you don't want your Nav4 or IE4 code to "turn off" or
+  // stop working when Nav5 and IE5 (or later) are released, so
+  // in conditional code forks, use is_nav4up ("Nav4 or greater")
+  // and is_ie4up ("IE4 or greater") instead of is_nav4 or is_ie4
+  // to check version in code which you want to work on future
+  // versions.
+
+// Nav5 及び IE5 (以降) が発表された時に Nav4 又は IE5 の code
+を「消す」又は機能するのを止めるのを望まないなら、条件分岐中で
+is_nav4up (「Nav4 以降」) 及び is_ie4up (「IE4 以降」)
+を is_nav4 及び is_ie4 の代わりに版を検査するのに使って下さい。
+
+  // convert all characters to lowercase to simplify testing
+  var agt=navigator.userAgent.toLowerCase();
+
+  // *** BROWSER VERSION ***
+  // Note: On IE5, these return 4, so use is_ie5up to detect IE5.
+  var is_major = parseInt(navigator.appVersion);
+  var is_minor = parseFloat(navigator.appVersion);
+
+  // Note: Opera and WebTV spoof Navigator.  We do strict client
+  //  detection.  If you want to allow spoofing, take out the tests
+  //  for opera and webtv.
+  [INS[// 注意: Opera 及び WebTV は偽証します。厳密に判定します。]]
+  [INS[// 偽証を許すなら opera 及び webtv の試験を取り除いて下さい。]]
+  var is_nav  = ((agt.indexOf('mozilla')!=-1)
+              && (agt.indexOf('spoofer')==-1)
+              && (agt.indexOf('compatible') == -1)
+              && (agt.indexOf('opera')==-1)
+              && (agt.indexOf('webtv')==-1));
+  var is_nav2 = (is_nav && (is_major == 2));
+  var is_nav3 = (is_nav && (is_major == 3));
+  var is_nav4 = (is_nav && (is_major == 4));
+  var is_nav4up = (is_nav && (is_major >= 4));
+  var is_navonly      = (is_nav && ((agt.indexOf(";nav") != -1) ||
+                        (agt.indexOf("; nav") != -1)) );
+  var is_nav5 = (is_nav && (is_major == 5));
+  var is_nav5up = (is_nav && (is_major >= 5));
+
+  var is_ie   = (agt.indexOf("msie") != -1);
+  var is_ie3  = (is_ie && (is_major < 4));
+  var is_ie4  = (is_ie && (is_major == 4)
+                       && (agt.indexOf("msie 5.0")==-1) );
+  var is_ie4up  = (is_ie  && (is_major >= 4));
+  var is_ie5  = (is_ie && (is_major == 4)
+                       && (agt.indexOf("msie 5.0")!=-1) );
+  var is_ie5up  = (is_ie  && !is_ie3 && !is_ie4);
+
+  // KNOWN BUG: On AOL4, returns false if IE3 is embedded browser
+  // or if this is the first browser window opened.  Thus the
+  // variables is_aol, is_aol3, and is_aol4 aren't 100% reliable.
+  var is_aol   = (agt.indexOf("aol") != -1);
+  var is_aol3  = (is_aol && is_ie3);
+  var is_aol4  = (is_aol && is_ie4);
+
+  var is_opera = (agt.indexOf("opera") != -1);
+  var is_webtv = (agt.indexOf("webtv") != -1);
+
+  // *** JAVASCRIPT VERSION CHECK ***
+  var is_js;
+  if (is_nav2 || is_ie3) is_js = 1.0
+  else if (is_nav3 || is_opera) is_js = 1.1
+  else if ((is_nav4 && (is_minor <= 4.05)) || is_ie4) is_js = 1.2
+  else if ((is_nav4 && (is_minor > 4.05)) || is_ie5) is_js = 1.3
+  else if (is_nav5) is_js = 1.4
+  // NOTE: In the future, update this code when newer versions of JS
+  // are released. For now, we try to provide some upward compatibility
+  // so that future versions of Nav and IE will show they are at
+  // *least* JS 1.x capable. Always check for JS version compatibility
+  // with > or >=.
+  else if (is_nav && (is_major > 5)) is_js = 1.4
+  else if (is_ie && (is_major > 5)) is_js = 1.3
+  // HACK: no idea for other browsers;
+  //       always check for JS version with > or >=
+  else is_js = 0.0;
+
+  // *** PLATFORM ***
+  var is_win   = ( (agt.indexOf("win")!=-1) ||
+                   (agt.indexOf("16bit")!=-1) );
+  // NOTE: On Opera 3.0, the userAgent string includes "Windows 95/NT4"
+  // on all Win32, so you can't distinguish between Win95 and WinNT.
+  var is_win95 = ((agt.indexOf("win95")!=-1) ||
+                  (agt.indexOf("windows 95")!=-1));
+
+  // is this a 16 bit compiled version?
+  var is_win16 = ((agt.indexOf("win16")!=-1) ||
+             (agt.indexOf("16bit")!=-1) ||
+             (agt.indexOf("windows 3.1")!=-1) ||
+             (agt.indexOf("windows 16-bit")!=-1) );
+
+  var is_win31 = ((agt.indexOf("windows 3.1")!=-1) ||
+                  (agt.indexOf("win16")!=-1) ||
+                  (agt.indexOf("windows 16-bit")!=-1));
+
+  // NOTE: Reliable detection of Win98 may not be possible.
+  // It appears that:
+  //  - On Nav 4.x and before you'll get plain "Windows" in userAgent.
+  //  - On Mercury client, the 32-bit version will return "Win98", but
+  //    the 16-bit version running on Win98 will still return "Win95".
+  var is_win98 = ((agt.indexOf("win98")!=-1) ||
+                  (agt.indexOf("windows 98")!=-1));
+  var is_winnt = ((agt.indexOf("winnt")!=-1) ||
+                  (agt.indexOf("windows nt")!=-1));
+  var is_win32 = (is_win95 || is_winnt || is_win98 ||
+                  ((is_major >= 4) &&
+                   (navigator.platform == "Win32")) ||
+                  (agt.indexOf("win32")!=-1) ||
+                  (agt.indexOf("32bit")!=-1));
+
+  var is_os2   = ((agt.indexOf("os/2")!=-1) ||
+                  (navigator.appVersion.indexOf("OS/2")!=-1) ||
+                  (agt.indexOf("ibm-webexplorer")!=-1));
+
+  var is_mac    = (agt.indexOf("mac")!=-1);
+  var is_mac68k = (is_mac && ((agt.indexOf("68k")!=-1) ||
+                             (agt.indexOf("68000")!=-1)));
+  var is_macppc = (is_mac && ((agt.indexOf("ppc")!=-1) ||
+                              (agt.indexOf("powerpc")!=-1)));
+
+  var is_sun   = (agt.indexOf("sunos")!=-1);
+  var is_sun4  = (agt.indexOf("sunos 4")!=-1);
+  var is_sun5  = (agt.indexOf("sunos 5")!=-1);
+  var is_suni86= (is_sun && (agt.indexOf("i86")!=-1));
+  var is_irix  = (agt.indexOf("irix") !=-1);    // SGI
+  var is_irix5 = (agt.indexOf("irix 5") !=-1);
+  var is_irix6 = ((agt.indexOf("irix 6") !=-1) ||
+                  (agt.indexOf("irix6") !=-1));
+  var is_hpux  = (agt.indexOf("hp-ux")!=-1);
+  var is_hpux9 = (is_hpux && (agt.indexOf("09.")!=-1));
+  var is_hpux10= (is_hpux && (agt.indexOf("10.")!=-1));
+  var is_aix   = (agt.indexOf("aix") !=-1);      // IBM
+  var is_aix1  = (agt.indexOf("aix 1") !=-1);
+  var is_aix2  = (agt.indexOf("aix 2") !=-1);
+  var is_aix3  = (agt.indexOf("aix 3") !=-1);
+  var is_aix4  = (agt.indexOf("aix 4") !=-1);
+  var is_linux = (agt.indexOf("inux")!=-1);
+  var is_sco   = (agt.indexOf("sco")!=-1) ||
+                 (agt.indexOf("unix_sv")!=-1);
+  var is_unixware = (agt.indexOf("unix_system_v")!=-1);
+  var is_mpras    = (agt.indexOf("ncr")!=-1);
+  var is_reliant  = (agt.indexOf("reliantunix")!=-1);
+  var is_dec   = ((agt.indexOf("dec")!=-1) ||
+         (agt.indexOf("osf1")!=-1) ||
+         (agt.indexOf("dec_alpha")!=-1) ||
+         (agt.indexOf("alphaserver")!=-1) ||
+         (agt.indexOf("ultrix")!=-1) ||
+         (agt.indexOf("alphastation")!=-1));
+  var is_sinix = (agt.indexOf("sinix")!=-1);
+  var is_freebsd = (agt.indexOf("freebsd")!=-1);
+  var is_bsd = (agt.indexOf("bsd")!=-1);
+  var is_unix  = ((agt.indexOf("x11")!=-1) || is_sun ||
+               is_irix || is_hpux ||
+               is_sco ||is_unixware || is_mpras || is_reliant ||
+               is_dec || is_sinix || is_aix || is_linux ||
+               is_bsd || is_freebsd);
+
+  var is_vms   = ((agt.indexOf("vax")!=-1) ||
+                  (agt.indexOf("openvms")!=-1));
+  </SCRIPT>
+
+*Authors' Addresses [INS[著者の連絡先]]
+
+   Donald E. Eastlake 3rd
+   Motorola
+   140 Forest Avenue
+   Hudson, MA 01749 USA
+
+   Phone: +1 978-562-2827(h)
+          +1 508-261-5434(w)
+   Fax:   +1 508-261-4447(w)
+   EMail: Donald.Eastlake@@motorola.com
+
+
+   Chris J. Smith
+   Royal Bank of Canada
+   277 Front Street West
+   Toronto, Ontario M5V 3A4 CANADA
+
+   Phone: +1 416-348-6090
+   Fax:   +1 416-348-2210
+   EMail: chris.smith@@royalbank.com
+
+
+   David M. Soroka
+   IBM
+   Raleigh, NC
+
+   Phone: +1 919-486-2684
+   Fax:   +1 919-543-4653
+   EMail: dsoroka@@us.ibm.com
+
+*Full Copyright Statement
+>Copyright (C) The Internet Society (2000).  All Rights Reserved.
+__&&RFCFullCopyright&&__
+__&&RFCAcknowledgement&&__
+*メモ
+-[2] [[RFC]] にするほどの内容でもなかったきがするな。
+- [3] >>2 本当に RFC にする必要があったのか問詰めたいな。お前ら単に RFC(ry
+- [4] 附属書Aの判別コードの最新版は ''JavaScriptによるブラウザの種類とバージョン判断'' <http://www.mozilla.org/docs/web-developer/sniffer/browser_type.html>, <http://jt.mozilla.gr.jp/docs/web-developer/sniffer/browser_type.html> (和訳) 参照。
+@
+
+
+1.2
+log
+@pre-namespace
+@
+text
+@@
+
+
+1.1
+log
+@update to latest version
+@
+text
+@d1 1
+a1 1
+#?SuikaWiki/0.9 import="RFC訳語集,メッセージ訳語集"
+d585 3
+a587 1
+-[2] [[RFC]] にするほどの内容でもなかったきがするな。@
+

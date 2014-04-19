@@ -1,0 +1,290 @@
+head	1.6;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.6
+date	2003.09.13.02.01.46;	author wakaba;	state dead;
+branches;
+next	1.5;
+
+1.5
+date	2003.03.27.07.24.51;	author make;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2002.12.17.13.25.57;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2002.11.29.09.26.03;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2002.11.15.09.25.43;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2002.07.31.14.26.20;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.6
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9
+*RFC 2616 14.13 Content-Length
+
+The Content-Length entity-header field indicates the size of the
+entity-body, in decimal number of OCTETs, sent to the recipient or,
+in the case of the HEAD method, the size of the entity-body that
+would have been sent had the request been a GET.
+
+Content-Length 実体頭欄は、受信者に送られる entity-body の大きさ、
+または HEAD 形式の場合は GET で要求されていたら送られる entity-body の大きさを 
+OCTET の10進数で示します。
+
+       Content-Length    = "Content-Length" ":" 1*DIGIT
+
+An example is
+
+       Content-Length: 3495
+
+Applications SHOULD use this field to indicate the transfer-length of
+the message-body, unless this is prohibited by the rules in section 4.4.
+
+応用はこの欄を message-body の transfer-length を示すのに
+使う'''べきです'''。但し4.4節の規則で禁じられている場合を除きます。
+
+Any Content-Length greater than or equal to zero is a valid value.
+Section 4.4 describes how to determine the length of a message-body
+if a Content-Length is not given.
+
+零以上のどんな Content-Length も妥当な値です。4.4節は Content-Length
+がない時に message-body の長さがどう決定されるかを説明しています。
+
+   Note that the meaning of this field is significantly different from
+   the corresponding definition in MIME, where it is an optional field
+   used within the "message/external-body" content-type. In HTTP, it
+   SHOULD be sent whenever the message's length can be determined prior
+   to being transferred, unless this is prohibited by the rules in
+   section 4.4.
+
+(要約: [[MIME]] の似たのとは違うのねん。)
+
+*RFC 2616 
+4.4 Message Length
+
+   The transfer-length of a message is the length of the message-body as
+   it appears in the message; that is, after any transfer-codings have
+   been applied. When a message-body is included with a message, the
+   transfer-length of that body is determined by one of the following
+   (in order of precedence):
+
+メッセージの transfer-length は message 中にある message-body の長さです。
+これは、 transfer-codings が適用された後のものです。 message-body
+がメッセージに含まれている場合、その本文の transfer-length
+は次のもののいずれか一つ (優先順) で決定されます。
+
+   1.Any response message which "MUST NOT" include a message-body (such
+     as the 1xx, 204, and 304 responses and any response to a HEAD
+     request) is always terminated by the first empty line after the
+     header fields, regardless of the entity-header fields present in
+     the message.
+
+message-body を含んでは「'''いけない'''」応答メッセージ
+(1xx, 204, 304 各応答と HEAD 要求の全ての応答) は常に頭欄の後の最初の
+空行で終わります。メッセージに entity-header 欄があってもです。
+
+   2.If a Transfer-Encoding header field (section 14.41) is present and
+     has any value other than "identity", then the transfer-length is
+     defined by use of the "chunked" transfer-coding (section 3.6),
+     unless the message is terminated by closing the connection.
+
+Transfer-Encoding 頭欄 ([[Transfer-Encoding:領域]]) があって
+"identity" 以外の値をとる場合、 transfer-length は "chunked"
+transfer-coding ([[chunked転送符号化]]) の使用により定義されます。
+但しメッセージが接続を閉じることにより終わる場合を除きます。
+
+   3.If a Content-Length header field (section 14.13) is present, its
+     decimal value in OCTETs represents both the entity-length and the
+     transfer-length. The Content-Length header field MUST NOT be sent
+     if these two lengths are different (i.e., if a Transfer-Encoding
+     header field is present). If a message is received with both a
+     Transfer-Encoding header field and a Content-Length header field,
+     the latter MUST be ignored.
+
+Content-Length 頭欄 ([[Content-Length:欄]]) がある場合、
+OCTET での10進値が entity-length と transfer-length の両方を示します。
+Content-Length 頭欄はこの2つの値が異なる (つまり Transfer-Encoding
+頭欄がある) 時には送っては'''なりません'''。
+Transfer-Encoding 頭欄と Content-Length 欄の両方を含むメッセージを
+受け取った場合は、後者は無視しないと'''いけません'''。
+
+>4.If the message uses the media type "multipart/byteranges", and 
+the [INS[t]]ransfer-length is not otherwise specified, then this 
+self-[INS[d]]elimiting media type defines the transfer-length. 
+This media type [INS[M]]UST NOT be used unless the sender knows that 
+the recipient can [INS[p]]arse
+it; the presence in a request of a Range header 
+with  [INS[m]]ultiple byte-range specifiers from a 1.1 client implies that 
+the [INS[c]]lient can parse multipart/byteranges responses.
+
+メッセージが媒体型 "multipart/byteranges" を使用している場合、
+かつ [INS[t]]ransfer-length が他で指定されていない時、この自己[INS[区]]切媒体型が
+[CODE[transfer-length]] を定義します。
+この媒体型は、受信者がこれを[INS[解]]析できると送信者が知っていない限り使っては'''[INS[い]]けません'''。
+HTTP/1.1 クライアントからの[INS[複]]数の byte-range 指定がある Range 
+頭がある要求は、[INS[ク]]ライアントが multipart/byteranges 
+応答を解析できることを暗示しています。
+
+[INS[
+[7] 訳注: 原文欠落箇所は ''HTTP/1.1 Specification Errata'' 
+<http://world.std.com/~lawrence/http_errata.html#msg-len-chars>
+から補った。
+]INS]
+       A range header might be forwarded by a 1.0 proxy that does not
+       understand multipart/byteranges; in this case the server MUST
+       delimit the message using methods defined in items 1,3 or 5 of
+       this section.
+
+範囲頭は multipart/byteranges を理解しない HTTP/1.0 串が中継する
+かもしれません。この場合、サーバーはメッセージをこの節の
+1,3,5 項のいずれかで定義された方法を使って区切ら'''なければなりません'''。
+
+   5.By the server closing the connection. (Closing the connection
+     cannot be used to indicate the end of a request body, since that
+     would leave no possibility for the server to send back a response.)
+
+   For compatibility with HTTP/1.0 applications, HTTP/1.1 requests
+   containing a message-body MUST include a valid Content-Length header
+   field unless the server is known to be HTTP/1.1 compliant. If a
+   request contains a message-body and a Content-Length is not given,
+   the server SHOULD respond with 400 (bad request) if it cannot
+   determine the length of the message, or with 411 (length required) if
+   it wishes to insist on receiving a valid Content-Length.
+
+   All HTTP/1.1 applications that receive entities MUST accept the
+   "chunked" transfer-coding (section 3.6), thus allowing this mechanism
+   to be used for messages when the message length cannot be determined
+   in advance.
+
+   Messages MUST NOT include both a Content-Length header field and a
+   non-identity transfer-coding. If the message does include a non-
+   identity transfer-coding, the Content-Length MUST be ignored.
+
+   When a Content-Length is given in a message where a message-body is
+   allowed, its field value MUST exactly match the number of OCTETs in
+   the message-body. HTTP/1.1 user agents MUST notify the user when an
+   invalid length is received and detected.
+
+
+*RTSP (RFC 2326) 12.14 Content-Length
+>This field contains the length of the content of the method (i.e.
+after the double CRLF following the last header). Unlike HTTP, it
+MUST be included in all messages that carry content beyond the header
+portion of the message. If it is missing, a default value of zero is
+assumed. It is interpreted according to [H14.14].
+
+[5] この欄は、[RUBY[方式] [method]] の内容
+(つまり、最後の頭の後の 2つの CRLF の後) の長さから成ります。
+HTTP とは違って、メッセージの頭部分を超えた内容を伝える全てのメッセージはこれを含め'''なければなりません'''。
+これが欠けていた場合は既定値の零とみなします。
+これは [H14.14] により解釈します。
+
+*RFC の部分の License
+[[RFCのライセンス]]
+*メモ
+- [1] [WEAK[2002-11-15 (金) 18:10]] ''[[名無しさん]]'': [[HTTP]] ではなく[[電子メイル]]や[[電子ニュース]]でも使われるのがたまに見られます。古い [[MIME]] の draft に書いてあったのではないかと思いますが、確認していません。
+- [2] [WEAK[2002-11-15 (金) 18:11]] ''[[名無しさん]]'': MIME 的には [[Content-Disposition:欄]]の "size" パラメーターが後に用意されました。
+- [3] [WEAK[2002-11-15 (金) 18:11]] ''2'': また電子ニュースでは伝統的に [[Lines:欄]]という似たものがあります。
+- [4] [WEAK[2002-11-15 (金) 18:13]] ''2'': [[CGI]] では[[メタ変数]] [[CONTENT_LENGTH]] が規定されていて、こちらは必須です。
+- [6] [WEAK[2002-12-17 (火) 20:49]] ''[[名無しさん]]'': [[iモード]]に対して送るときは Content-Length: 欄は必須となります。 <http://www.nttdocomo.co.jp/mc-user/i/tag/s3.html>
+@
+
+
+1.5
+log
+@pre-namespace
+@
+text
+@@
+
+
+1.4
+log
+@Updated.
+@
+text
+@d90 8
+a97 7
+   4.If the message uses the media type "multipart/byteranges", and the
+     ransfer-length is not otherwise specified, then this self-
+     elimiting media type defines the transfer-length. This media type
+     UST NOT be used unless the sender knows that the recipient can arse
+     it; the presence in a request of a Range header with ultiple byte-
+     range specifiers from a 1.1 client implies that the lient can parse
+     multipart/byteranges responses. (欠落箇所原文ママ)
+d100 12
+a111 6
+でもって transfer-length が他で指定されていない時、この自己区切媒体型が
+transfer-length を定義します。この媒体型は、受信者がこれを処理できると
+送信者が知っていない限り使っては'''いけません'''。 HTTP/1.1
+顧客からの複数の byte-range 指定がある Range 頭がある要求は、
+顧客が multipart/byteranges 応答を解析できることを暗示しています。
+
+d168 1
+a168 1
+- [6] [WEAK[2002-12-17 (火) 20:49]] ''[[名無しさん]]'': [[iモード]]に対して送るときは Content-Length: 欄は必須となります。 <http://www.nttdocomo.co.jp/mc-user/i/tag/s3.html>
+@
+
+
+1.3
+log
+@Updated.
+@
+text
+@d161 1
+@
+
+
+1.2
+log
+@Updated.
+@
+text
+@d1 1
+d141 20
+a160 7
+*License
+
+[[RFCのライセンス]]
+- [1] [WEAK[2002-11-15 (金) 18:10]] ''[[名無しさん]]'': [[HTTP]] ではなく[[電子メイル]]や[[電子ニュース]]でも使われるのがたまに見られます。古い [[MIME]] の draft に書いてあったのではないかと思いますが、確認していません。
+- [2] [WEAK[2002-11-15 (金) 18:11]] ''[[名無しさん]]'': MIME 的には [[Content-Disposition:欄]]の "size" パラメーターが後に用意されました。
+- [3] [WEAK[2002-11-15 (金) 18:11]] ''2'': また電子ニュースでは伝統的に [[Lines:欄]]という似たものがあります。
+- [4] [WEAK[2002-11-15 (金) 18:13]] ''2'': [[CGI]] では[[メタ変数]] [[CONTENT_LENGTH]] が規定されていて、こちらは必須です。
+@
+
+
+1.1
+log
+@Updated.
+@
+text
+@d142 5
+a146 1
+[[RFCのライセンス]]@
+

@@ -1,0 +1,232 @@
+head	1.4;
+access;
+symbols
+	after-upgrade-to-suikawiki-3:1.3
+	before-fork-suikawiki3:1.3
+	after-restore-20040122:1.3;
+locks; strict;
+comment	@# @;
+
+
+1.4
+date	2004.04.13.02.01.03;	author wakaba;	state dead;
+branches;
+next	1.3;
+
+1.3
+date	2003.07.18.00.11.07;	author w;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2003.06.06.12.26.24;	author make;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.03.27.07.24.56;	author make;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.4
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9 page-icon="メイル"
+[2] [CODE[Received:]] 欄は、普通[[電子メイル]]で使って、配送の記録が行われる欄です。
+他に、電子ニュースでもかつてはつかわれていました。
+
+[[#comment]]
+*電子メイルにおける Received: 欄
+
+[3] 配送の各段階の数だけどんどん追加されていきます。
+メイルがどのような経路で配送されたのかやどのサーバーが不調なのかなどの追跡に使用出来ます。
+(現在では途中経路を数 hop も経ないで直接サイトからサイトに配送されるのが普通ですし、途中の経過サイトの不調のための遅延もかなり稀ですが、昔はよくあることでした。)
+
+-[[.//RFC822]] (822 旧仕様)
+-[[.//RFC2822]] (822)
+-[[.//RFC821]] (SMTP 旧仕様)
+-[[.//RFC2821]] (SMTP)
+
+[5] [[RFC2822]] は一般的な [CODE[Received:]] 欄の構文を規定しています。
+[[RFC2821]] ([[SMTP]]) は、 SMTP サーバーが [CODE[Received:]]
+欄に記録すること及びその書式を規定しています。 RFC 2821 の構文は
+RFC 2822 のものより具体的・厳格になっています。
+
+RFC 2822, RFC 2821 の旧版である [[RFC822]], [[RFC821]]
+についても同じような関係がありますが、 2822/2821 程はっきり分化してはいません。
+
+[[#comment]]
+**値
+
+-by = domain
+-for = addr-spec / "<" [route] addr-spec ">"
+-from = domain
+-id = word / msg-id
+-via = "TCP" (2821) / "UUCP" (2821) / iana-atom 
+/ "smtptcp" / "TELNET" (821) / "DDN" / "ARPANET/MILNET" / "EUnet"
+-with = "ESMTP" (2821) / "SMTP" (2821) / iana-atom 
+/ "X25" (821) / "TCP/SMTP" / "Mailnet" / "BSMTP"
+
+昔は結構すきなよーな値を入れてたらしい。
+
+"BSMTP" [[BITNET]] 版 [[SMTP]]?
+
+- [11] [[RFC1428]] は値 [CODE[convert]] を規定しています。 "rfc822-to-8bit", "rfc822-to-base-64" or "rfc822-to-quoted-printable"
+[[#comment]]
+**注釈 comment について
+
+RFC 2821 は慣習的に行われてきた、 comment 内に実ドメイン名・ IP address を
+記録する方法を標準化しました。これに限らず Received: 領域の
+注釈には有意義な情報が入れられていますから、注釈を取り除いて
+解釈するのはよくないかもしれません。
+
+しかし注釈は (RFC 2821/2822 で入る場所が限定されたとはいえ) RFC 822 以来
+各要素間どこにでも入れられるので、構文解析 parse が面倒になります。
+また、 RFC 2821 で標準化された注釈とそうでない注釈を
+一目で見分ける方法はありません。
+
+ですから、 Received: を解釈する実装としては、次のようなものが考えられます。
+
+-非構造化 unstructured 領域と同等に見て、構文解析しない
+-注釈内の情報を残すのは諦め、取り除いて解析する
+-RFC 2821/2822 的に妥当 (で旧構文 obsolete syntax でない) 注釈はなんとか解析する
+-注釈は解析しないが、参考情報として残す
+
+3番目の方法は旧構文の注釈 (例えば date-time 内の注釈) は取り除く必要が
+あるので、なんだか面倒そうです。それから4番目の方法は
+そこまでするならあと1歩で中身も解析出来る気が。
+
+わけのわからんことぐたぐた述べてないで実装してみた方が
+早いという説もありますが:-)
+
+[6] [[MIME]] は [CODE[encoded-word]] を規定していますが、これを [CODE[Received:]]
+欄の注釈内で使用してもいいのかは不明です。 (See [[encoded-word]>>12])
+
+[7] [CODE[Received:]] 欄の日付の部分の後 (つまり一番最後)
+には、その欄を加えたサーバーの現地の[[時間帯を表す文字列]]を注釈として入れておくと追跡の時に役に立つかもしれないのでイイとされています。
+
+[[#comment]]
+**env-from
+
+-Received = rfc2822.Received FWS "env-from" FWS "(" host ")" [CFWS]
+
+こんなのをつけてくる [[MTA]] がいるみたい。
+例:
+
+ Received: from localhost (daemon@@localhost)
+	by smtp.foo.example (8.9.3/8.9.3) with SMTP id KAA25477;
+	Fri, 23 Feb 2001 10:42:36 +0900 (JST)
+	env-from (from@@bar.example)
+
+[[#comment]]
+**参考
+
+Received: 領域の数が多いと配送拒否されることがあるので、
+mail-list などで Received: を X-Received: に置き換えることがある。
+(あるいはそこでばっさり消されることもある。)
+
+[9] [CODE[Received:]] 欄は長くなりがちなので、たいてい折畳まれています。
+この時、2行目以降の行頭は [CODE(CHARNAME)[TAB]] になっているのが普通です。
+また、名前‐値組の間や日付の途中で折畳むことはありません。
+
+しかし、これはそうなっていることが多いだけで、 RFC 2822 や RFC 2821
+を読んでもこれが強制されてはいないことが分かります。
+
+[[#comment]]
+**関連する IANA 登録簿
+-Mail parameters <http://www.iana.org/assignments/mail-parameters>
+[[#comment]]
+**例
+-[10] 以下の例は規格への適合性により分類していますが、この判断にはちょっと疑問もあります。
+構文や本文規定を参考に振り分けなおす必要があるかもしれません。
+[[#comment]]
+***RFC 2821 的に適当なもの
+
+-Received: from foo3.example (foo4.example [127.0.0.1]) by foo2.example (Postfix) with ESMTP id E7F0824030; Sat, 16 Mar 2002 21:40:39 +0900 (JST)
+-Received: (qmail 16842 invoked from network); 16 Mar 2002 21:41:54 +0900
+-Received: (qmail 12928 invoked by uid 38); 16 Mar 2002 13:01:43 -0000
+-Received: from foo8.example (mail@@192.168.0.11) by foo9.example with SMTP; 16 Mar 2002 13:01:40 -0000
+-Received: (from uucp@@localhost) by foo9.example (8.9.1a/3.7W-u48) id OAA09787; Tue, 12 Mar 2002 14:12:37 +0900 (JST)
+-Received: by foo10.example (8.9.1a/3.7W-hack) id OAA03107 for hoge-outgoing; Tue, 12 Mar 2002 14:08:04 +0900 (JST)
+-Received: from foo.bar2.example ([61.198.253.195]) by foo.bar3.example (8.9.3 (PHNE_24848+JAGad82359)/8.8.6) with ESMTP id JAA17845; Sat, 9 Mar 2002 09:30:50 +0900 (JST)
+
+[[#comment]]
+***RFC 2821 的に不適当だが RFC 2822 的に適当なもの
+
+-Received: from unknown (HELO foo1.example) (192.168.0.1) by foo2.example with SMTP; 16 Mar 2002 21:41:54 +0900
+-Received: from foo4.example (unknown [192.168.0.8]) by foo5.example (Postfix) with ESMTP id 48DB815007 for <bar@@foo5.example>; Sat, 16 Mar 2002 21:04:21 +0800 (CST)
+-Received: from bar by foo8.example with local (Exim 3.12 1 (Debian)) id 16mDoa-0004ep-00; Sat, 16 Mar 2002 07:01:40 -0600
+-Received: from localhost ([127.0.0.1] helo=foo.bar1.example) by bar.bar1.example with esmtp (Exim 3.31-VA-mm2 #1 (Debian)) id 16jUlY-0006UE-00; Fri, 08 Mar 2002 16:31:16 -0800
+
+***その他
+
+-Received: from foo6.example [192.168.0.10] by foo7.example with smtp (Exim 3.12 1 (Debian)) id 16mDoZ-0004ec-00; Sat, 16 Mar 2002 07:01:39 -0600
+-Received: from mailhost(192.9.200.18) by hogehoge via smap/slg/sizecheck/clearerr (V1.3) with ESMTP id fmala9603; Tue Mar 12 14:11:44 2002
+
+[[#comment]]
+**参考文献
+-[1] ''Fight spam on the Net!'' <http://ssss.jp/~trombik/email/index.html>
+[CODE[Received:]] 欄の読み方を学習するのにいいでしょう。
+[[#comment]]
+**メモ
+- [12] たまに、特に [[ML]] なんかで、おせっかいにも送信者にお宅の時計ずれてませんか? とか忠告する人いますね。 [CODE(822)[[[Date:]]]] 欄の日付が受信時刻からあまりに離れているからとか、 ML の他のメイルと番号と日付の関係が合わなかったりするのを根拠にそう言うんでしょうが。実際よく見てみると送信者の方の時計はおそらくあっていて、転送路の問題で遅れただけであることも実はよくあったりします。[WEAK[ML server が遅延の原因だったりすることもあったりします。]] わざわわざわざ忠告してみて知識をひけらかす暇があったら、 [CODE(822)[Received:]] 欄の読み方くらい勉強した方がいいですね(w
+- [13] ほんとに、メイルが届くのに時間がかかって、しかも届くかどうか分からなかった時代は遠くに行ってしまったんですねぇ。それでも未だに遅延があるからには [CODE(822)[Received:]] 欄の存在意義も減らないとは思うんですけど、メイル配送路障害のことなんて考えもしない人が増えてるんだろうなあ。
+[[#comment]]
+*電子ニュースにおける Received: 欄
+
+[3] かつて Received: は記事を受け取った時間を表す領域として
+USENET で使われていた。領域本体の値は USENET 形式の日付。
+(See [[日付形式]]) RFC 850 ではすでに旧式とされ [[Date-Received:領域]] を使う
+ことになっているが、 RFC 850 および RFC 1036 の例に挙がっている。
+
+[4] 今ではもう使用されることはないでしょう。ただ、 [[INN]]
+は現在の版でも [CODE[Received:]] 欄を持つメッセージの投稿は拒否します。
+([CODE[Received:]] 欄のあるメッセージを中継する時は中継元で落としてから中継先に送っていた。)
+
+[[#comment]]
+*メモ@
+
+
+1.3
+log
+@auto-commited
+@
+text
+@@
+
+
+1.2
+log
+@auto-commited
+@
+text
+@d139 2
+@
+
+
+1.1
+log
+@pre-namespace
+@
+text
+@d1 1
+a1 1
+#?SuikaWiki/0.9
+d12 4
+a15 4
+-[[RFC821のReceived:]]
+-[[RFC822のReceived:]]
+-[[RFC2821のReceived:]]
+-[[RFC2822のReceived:]]
+d41 1
+a41 1
+- [11] [[RFC1428]] は値 [CODE[convert]] を規定しています。 "rfc822-to-8bit", "rfc822-to-base-64" or "rfc822-to-quoted-printable"
+@
+

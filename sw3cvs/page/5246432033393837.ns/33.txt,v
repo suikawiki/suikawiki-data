@@ -1,0 +1,576 @@
+head	1.2;
+access;
+symbols
+	suikawiki3-final:1.2;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.2
+date	2005.11.23.02.24.19;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2005.02.18.02.08.13;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@* 3.  Relationship between IRIs and URIs
+>   IRIs are meant to replace URIs in identifying resources for
+protocols, formats, and software components that use a UCS-based
+character repertoire.  These protocols and components may never need
+to use URIs directly, especially when the resource identifier is used
+simply for identification purposes.  However, when the resource
+identifier is used for resource retrieval, it is in many cases
+necessary to determine the associated URI, because currently most
+retrieval mechanisms are only defined for URIs.  In this case, IRIs
+can serve as presentation elements for URI protocol elements.  An
+example would be an address bar in a Web user agent.  (Additional
+rationale is given in section 3.1.)
+
+IRI は UCS を基にした文字レパートリを使うプロトコル、書式、
+ソフトウェア部品で資源の識別を行っている URI
+を置き換えることを考えています。そのようなプロトコルや部品では、
+特に資源識別子が単なる識別目的で塚wれている場合には、
+URI を直接扱う必要はないかもしれません。しかし、
+資源識別子を資源の取出しに使う場合は、現在ほとんどの取出し方法は
+URI についてしか定義されていないので、対応する URI
+を決定する必要がある場合が多々あります。その場合、 IRI
+は URI プロトコル要素に対する表現要素として働くことができます。
+Web 利用者エージェントの番地棒がその例です。
+
+**3.1.  Mapping of IRIs to URIs
+>   This section defines how to map an IRI to a URI.  Everything in this
+section also applies to IRI references and URI references, as well as
+to components thereof (for example, fragment identifiers).
+
+この節では IRI を URI に写像する方法を定義します。
+この節のすべては IRI 参照と URI 参照やその部品 (例えば素片識別子)
+にも適用できます。
+
+>   This mapping has two purposes:
+
+この写像には二つの目的があります。
+
+>   Syntaxical. Many URI schemes and components define additional
+syntactical restrictions not captured in section 2.2.
+Scheme-specific restrictions are applied to IRIs by converting
+IRIs to URIs and checking the URIs against the scheme-specific
+restrictions.
+
+構文的。多くの URI scheme と部品は2.2節が捕らえている以上の追加の構文的規則を定義しています。
+Scheme 規定の制限は IRI を URI に変換して、その URI
+に対して scheme 規定の制限を検査することによって IRI に適用されます。
+
+>   Interpretational. URIs identify resources in various ways.  IRIs also
+identify resources.  When the IRI is used solely for
+identification purposes, it is not necessary to map the IRI to a
+URI (see section 5).  However, when an IRI is used for resource
+retrieval, the resource that the IRI locates is the same as the
+one located by the URI obtained after converting the IRI according
+to the procedure defined here.  This means that there is no need
+to define resolution separately on the IRI level.
+
+解釈的。 URI は色々な方法で資源を識別します。 IRI も資源を識別します。
+IRI が単に識別目的で使われる時には、 IRI を URI
+に写像する必要はありません。しかし、 IRI が資源の取出しに使われる時には、
+IRI が位置付ける資源は IRI をここで定義する手続きに従って URI
+に変換した後得られる URI で位置付けられるものと同じです。
+これは解決を IRI で別途定義する必要がないことを意味しています。
+
+>   Applications MUST map IRIs to URIs by using the following two steps.
+
+応用は次の2段階を踏んで IRI を URI に変換しなければ'''なりません'''。
+
+>   Step 1.  Generate a UCS character sequence from the original IRI
+format.  This step has the following three variants,
+depending on the form of the input:
+
+手順1. UCS 文字列を元の IRI 書式から生成します。
+この手順は入力の形式により次の3種類があります。
+
+>            a. If the IRI is written on paper, read aloud, or otherwise
+represented as a sequence of characters independent of
+any character encoding, represent the IRI as a sequence
+of characters from the UCS normalized according to
+Normalization Form C (NFC, [UTR15]).
+
+IRI が紙に書かれていたり読み上げられていたり、
+その他文字符号化とは関係のない文字列として表現されていた場合には、
+IRI を正規化形 C ([[NFC]]) により正規化された UCS の文字列として表現します。
+
+>            b. If the IRI is in some digital representation (e.g., an
+octet stream) in some known non-Unicode character
+encoding, convert the IRI to a sequence of characters
+from the UCS normalized according to NFC.
+
+IRI が何らかの既知の非 Unicode 文字符号化による何らかのデジタル表現 
+(例えばオクテット列) で表現されていた場合には、
+IRI を NFC により正規化された文字列に変換します。
+
+>            c. If the IRI is in a Unicode-based character encoding (for
+example, UTF-8 or UTF-16), do not normalize (see section
+5.3.2.2 for details).  Apply step 2 directly to the
+encoded Unicode character sequence.
+
+IRI が Unicode を基にした文字符号化 (例えば UTF-8 や UTF-16)
+で表現されていた場合には、正規化しません。符号化された Unicode
+文字列に直接手順2を適用します。
+
+>   Step 2.  For each character in 'ucschar' or 'iprivate', apply steps
+2.1 through 2.3 below.
+
+手順2. [CODE(ABNF)[ucschar]] や [CODE(ABNF)[iprivate]]
+の文字それぞれについて次の手順 2.1〜2.3 を適用します。
+
+>
+=       2.1.  Convert the character to a sequence of one or more octets
+using UTF-8 [RFC3629].
+=       2.2.  Convert each octet to %HH, where HH is the hexadecimal
+notation of the octet value.  Note that this is identical
+to the percent-encoding mechanism in section 2.1 of
+[RFC3986].  To reduce variability, the hexadecimal notation
+SHOULD use uppercase letters.
+=       2.3.  Replace the original character with the resulting character
+sequence (i.e., a sequence of %HH triplets).
+
+= 文字を UTF-8 による一つ以上のオクテットに変換します。
+= 各オクテットを [SAMP(URI)[%[VAR[HH]]]] に変換します。
+ここで、 [VAR[HH]] はオクテット値の十六進表記です。
+なお、これは RFC 3986 の2.1節の百分率符号化法と同じです。
+変化に富むのを避けるために十六進表記は大文字を使う'''べきです'''。
+= 元の文字を得られた文字列 (すなわち [SAMP(URI)[%[VAR[HH]]]] の3文字の組の列)
+で置き換えます。
+
+>   The above mapping from IRIs to URIs produces URIs fully conforming to
+[RFC3986].  The mapping is also an identity transformation for URIs
+and is idempotent;  applying the mapping a second time will not
+change anything.  Every URI is by definition an IRI.
+
+この IRI から URI への写像により RFC 3986 に完全に適合する URI
+が生成されます。この写像は URI に対する[[単位変形]]であり、[[冪等]]です。
+この写像を二度適用しても何も変わりません。すべての URI
+は、定義上 IRI でもあります。
+
+>   Systems accepting IRIs MAY convert the ireg-name component of an IRI
+as follows (before step 2 above) for schemes known to use domain
+names in ireg-name, if the scheme definition does not allow
+percent-encoding for ireg-name:
+
+IRI を受け付けるシステムは、 [CODE(ABNF)[ireg-name]]
+でドメイン名を使うと分かっている scheme で、
+scheme 定義が [CODE(ABNF)[ireg-name]] に百分率符号化を認めていなければ、
+(先の手順2の前に) IRI の [CODE(ABNF)[ireg-name]] 
+部品を次のように変換しても'''構いません'''。
+
+>   Replace the ireg-name part of the IRI by the part converted using the
+ToASCII operation specified in section 4.1 of [RFC3490] on each
+dot-separated label, and by using U+002E (FULL STOP) as a label
+separator, with the flag UseSTD3ASCIIRules set to TRUE, and with the
+flag AllowUnassigned set to FALSE for creating IRIs and set to TRUE otherwise.
+
+IRI の [CODE(ABNF)[ireg-name]] 部を、点分離の各札について [[RFC 3490]]
+の4.1節で規定された [CODE[[[ToASCII]]]] 操作を使って変換した部分を、
+旗 [CODE[[[UseSTD3ASCIIRules]]]] を [CODE[[[TRUE]]]] に設定して、
+旗 [CODE[[[AllowUnassigned]]]] を IRI 作成では [CODE[[[FALSE]]]]、
+それ以外では [CODE[[[TRUE]]]] に設定して [CODE(char)[[[U+002E]]]]
+([CODE(char)[[[FULL STOP]]]]) を札分離子として使って置き換えます。
+
+>   The ToASCII operation may fail, but this would mean that the IRI
+cannot be resolved.  This conversion SHOULD be used when the goal is
+to maximize interoperability with legacy URI resolvers.  For example, the IRI
+
+[CODE[[[ToASCII]]]] 操作は失敗するかもしれませんが、
+それは IRI が解決できないという意味ではありません。
+この変換は目標が遺物的 URI 解決器との相互運用性を最大化することである時に使う'''べきです'''。
+例えば、 IRI
+
+>   "http://r&#xE9;sum&#xE9;.example.org"
+
+>   may be converted to
+
+は
+
+>   "http://xn--rsum-bpad.example.org"
+
+>   instead of
+
+に変換することができます (通常は
+
+>   "http://r%C3%A9sum%C3%A9.example.org".
+
+です)。
+
+>   An IRI with a scheme that is known to use domain names in ireg-name,
+but where the scheme definition does not allow percent-encoding for
+ireg-name, meets scheme-specific restrictions if either the
+straightforward conversion or the conversion using the ToASCII
+operation on ireg-name result in an URI that meets the scheme-specific restrictions.
+
+ドメイン名を [CODE(ABNF)[ireg-name]] に使うと分かっている scheme
+でその scheme 定義が [CODE(ABNF)[ireg-name]] で百分率符号化を認めていないという
+IRI は、 [CODE(ABNF)[ireg-name]] に対する率直な変換または
+[CODE[ToASCII]] 操作を使った変換のいずれかの結果の URI
+が scheme 規定の制限に合致すれば、 scheme 規定の制限に合致していることになります。
+
+>   Such an IRI resolves to the URI obtained after converting the IRI and
+uses the ToASCII operation on ireg-name.  Implementations do not have
+to do this conversion as long as they produce the same result.
+
+そのような IRI はその IRI を変換した後得られる URI に解決し、
+[CODE(ABNF)[ireg-name]] に [CODE[ToASCII]] 操作を使います。
+実装は同じ結果を生成する限りにおいてこの変換通りでなくても構いません。
+
+>   Note: The difference between variants b and c in step 1 (using
+normalization with NFC, versus not using any normalization)
+accounts for the fact that in many non-Unicode character
+encodings, some text cannot be represented directly. For example,
+the word "Vietnam" is natively written "Vi&#x1EC7;t Nam"
+(containing a LATIN SMALL LETTER E WITH CIRCUMFLEX AND DOT BELOW)
+in NFC, but a direct transcoding from the windows-1258 character
+encoding leads to "Vi&#xEA;&#x323;t Nam" (containing a LATIN SMALL
+LETTER E WITH CIRCUMFLEX followed by a COMBINING DOT BELOW).
+Direct transcoding of other 8-bit encodings of Vietnamese may lead
+to other representations.
+
+注意: 手順1 の方法 b と c の違い (NFC を使って正規化するものと正規化しないものと)
+は多くの非 Unicode 文字符号化で直接表現できない文章があるという事実を考慮しています。
+例えば、[Q[越南]]という語は原語では NFC で [SAMP[Vi[VAR[&#x1EC7;]]t Nam]]
+([CODE(char)[[[LATIN SMALL LETTER E WITH CIRCUMFLEX AND DOT BELOW]]]]
+を含みます。) と書きますが、 windows-1258 文字符号化から直接転符号化すると
+[SAMP[Vi&#xEA;&#x323;t Nam]] ([CODE(char)[[[LATIN SMALL LETTER E WITH CIRCUMFLEX]]]]
+の後に [CODE(char)[[[COMBINING DOT BELOW]]]] が含まれます。)
+になってしまいます。越南語の他の
+8ビット符号化の直接転符号化は他の表現となってしまいます。
+
+>   Note: The uniform treatment of the whole IRI in step 2 is important
+to make processing independent of URI scheme.  See [Gettys] for an
+in-depth discussion.
+
+注意: 手順2での IRI 全体の統一的な扱いは処理を URI scheme
+と独立にするために重要です。詳しくは [SRC[Gettys]] をご覧下さい。
+
+>   Note: In practice, whether the general mapping (steps 1 and 2) or the
+ToASCII operation of [RFC3490] is used for ireg-name will not be
+noticed if mapping from IRI to URI and resolution is tightly
+integrated (e.g., carried out in the same user agent).  But
+conversion using [RFC3490] may be able to better deal with
+backwards compatibility issues in case mapping and resolution are
+separated, as in the case of using an HTTP proxy.
+
+注意: 実際には一般的写像 (手順1と手順2) か [CODE(ABNF)[ireg-name]]
+の [CODE[ToASCII]] 操作かは IRI から URI への写像と解決が密に統合されていれば
+(例えば同じ利用者エージェントで実行されれば) 気づきません。
+しかし RFC 3490 を使った変換は HTTP 串を使う場合のように写像と解決が分離されている場合に後方互換性の問題に対処するためにはよいかもしれません。
+
+>   Note: Internationalized Domain Names may be contained in parts of an
+IRI other than the ireg-name part.  It is the responsibility of
+scheme-specific implementations (if the Internationalized Domain
+Name is part of the scheme syntax) or of server-side
+implementations (if the Internationalized Domain Name is part of
+'iquery') to apply the necessary conversions at the appropriate
+point.  Example: Trying to validate the Web page at
+http://r&#xE9;sum&#xE9;.example.org would lead to an IRI of
+http://validator.w3.org/check?uri=http%3A%2F%2Fr&#xE9;sum&#xE9;.
+example.org, which would convert to a URI of
+http://validator.w3.org/check?uri=http%3A%2F%2Fr%C3%A9sum%C3%A9.
+example.org.  The server side implementation would be responsible
+for making the necessary conversions to be able to retrieve the Web page.
+
+注意: 国際化ドメイン名は IRI の [CODE(ABNF)[ireg-name]] 部以外の部分に含まれるかもしれません。
+適切な時点で必要な変換を行うのは scheme 規定の実装
+(国際化ドメイン名が scheme 構文の一部の場合) や鯖側実装
+(国際化ドメイン名が [CODE(ABNF)[iquery]] の一部の場合) の責任です。
+例: [SAMP(URI)[http://r&#xE9;sum&#xE9;.example.org]] の Web
+頁を検証しようとすると IRI は
+[SAMP(URI)[http://validator.w3.org/check?uri=http%3A%2F%2Fr&#xE9;sum&#xE9;.example.org]]
+になります。 Web 頁を取出すために必要な変換を行う責任は鯖側実装にあります。
+
+>   Systems accepting IRIs MAY also deal with the printable characters in
+US-ASCII that are not allowed in URIs, namely "<", ">", '"', space,
+"{", "}", "|", "\", "^", and "`", in step 2 above.  If these
+characters are found but are not converted, then the conversion
+SHOULD fail.  Please note that the number sign ("#"), the percent
+sign ("%"), and the square bracket characters ("[", "]") are not part
+of the above list and MUST NOT be converted.  Protocols and formats
+that have used earlier definitions of IRIs including these characters
+MAY require percent-encoding of these characters as a preprocessing
+step to extract the actual IRI from a given field.  This
+preprocessing MAY also be used by applications allowing the user to enter an IRI.
+
+IRI を受付ける IRI は URI で認められない US-ASCII の印字可能文字、すなわち
+[CODE(char)[<]], [CODE(char)[>]], [CODE(char)["]], 間隔,
+[CODE(char)[{]], [CODE(char)[}]], [CODE(char)[|]],
+[CODE(char)[\]], [CODE(char)[^]], [CODE(char)[`]] も先の手順2
+で処理して'''構いません'''。これらの文字が見つかり、
+変換されなければ、変換は失敗とする'''べきです'''。
+注意していただきたいのは、数字符 ([SAMP(URI)[#]]),
+百分率記号 ([SAMP(URI)[%]]), 四角括弧 ([SAMP(URI)['''[''']],
+[SAMP(URI)[''']''']]) はこの一覧に含まれず、変換しては'''なりません'''。
+これらの文字を含んでいた以前の IRI の定義を使っているプロトコルや書式は、
+ある欄から実際の IRI を取り出す前処理手順としてこれらの文字の百分率符号化を要求しても'''構いません'''。
+この前処理は利用者が IRI を入力できる応用でも使って'''構いません'''。
+
+>   Note: In this process (in step 2.3), characters allowed in URI
+references and existing percent-encoded sequences are not encoded
+further.  (This mapping is similar to, but different from, the
+encoding applied when arbitrary content is included in some part
+of a URI.)  For example, an IRI of
+"http://www.example.org/red%09ros&#xE9;#red" (in XML notation) is
+converted to
+"http://www.example.org/red%09ros%C3%A9#red", not to something
+like
+"http%3A%2F%2Fwww.example.org%2Fred%2509ros%C3%A9%23red".
+
+注意: この処理 (手順 2.3) で、 URI 参照で認められた文字や百分率符号化列はそれ以上符号化されません。
+(この写像は URI のどこかの部分に勝手な内容を含めるときんひ適用される符号化と似ていますが、異なります。)
+例えば、 IRI [SAMP(URI)[http://www.example.org/red%09ros[VAR[&#xE9;]]#red]]
+は [SAMP(URI)[http://www.example.org/red%09ros%C3%A9#red]] に変換され、
+[SAMP(URI)[http%3A%2F%2Fwww.example.org%2Fred%2509ros%C3%A9%23red]]
+などとはなりません。
+
+>   Note: Some older software transcoding to UTF-8 may produce illegal
+output for some input, in particular for characters outside the
+BMP (Basic Multilingual Plane).  As an example, for the IRI with
+non-BMP characters (in XML Notation):
+"http://example.com/&#x10300;&#x10301;&#x10302";
+which contains the first three letters of the Old Italic alphabet,
+the correct conversion to a URI is
+"http://example.com/%F0%90%8C%80%F0%90%8C%81%F0%90%8C%82"
+
+注意: 古い UTF-8 への転符号化ソフトウェアは入力により、
+特に BMP (基本多言語面) の外の文字で違法な出力を生成することがあります。
+例えば、非 BMP 文字を含む IRI
+[SAMP(URI)[http://example.com/[VAR[&#x10300;]][VAR[&#x10301;]][VAR[&#x10302]]]]
+(古伊太利亜字母の最初の3文字を含みます。) の正しい URI
+は [SAMP(URI)[http://example.com/%F0%90%8C%80%F0%90%8C%81%F0%90%8C%82]] です。
+
+**3.2.  Converting URIs to IRIs
+>   In some situations, converting a URI into an equivalent IRI may be
+desirable.  This section gives a procedure for this conversion.  The
+conversion described in this section will always result in an IRI
+that maps back to the URI used as an input for the conversion (except
+for potential case differences in percent-encoding and for potential
+percent-encoded unreserved characters).  However, the IRI resulting
+from this conversion may not be exactly the same as the original IRI
+(if there ever was one).
+
+状況によっては URI を同値な IRI に変換したいことがあります。
+この節はこの変換の手続きを与えます。
+この節で説明する変換は (百分率符号化内での違いや非予約文字の百分率符号化の違いの可能性はありますが)
+入力された URI に再度写像しなおすことができる IRI を常に出力します。
+しかし、この変換の結果得られる IRI は必ずしも元の IRI と
+(そういうものがあったとしても) 同じになるとは限りません。
+
+>   URI-to-IRI conversion removes percent-encodings, but not all
+percent-encodings can be eliminated.  There are several reasons for this:
+
+URI から IRI への変換は百分率符号化を削除しますが、
+すべての百分率符号化が除去されるわけではありません。
+これにはいくつかの理由があります。
+
+>
+-   1.  Some percent-encodings are necessary to distinguish 
+percent-encoded and unencoded uses of reserved characters.
+
+百分率符号化と符号化していない予約文字の用法の区別のために必要な百分率符号化もあります。
+
+>
+-   2.  Some percent-encodings cannot be interpreted as sequences of
+UTF-8 octets.
+
+百分率符号化は UTF-8 のオクテット列として解釈できないものもあります。
+
+>       (Note: The octet patterns of UTF-8 are highly regular.
+Therefore, there is a very high probability, but no guarantee,
+that percent-encodings that can be interpreted as sequences of
+UTF-8 octets actually originated from UTF-8.  For a detailed
+discussion, see [Duerst97].)
+
+注意: UTF-8 のオクテット・パターンは非常に規則的です。従って、
+UTF-8 のオクテット列として解釈できる百分率符号化は、
+保証はありませんが非常に高い確率で実際に元々 UTF-8 です。
+
+>
+-   3.  The conversion may result in a character that is not appropriate
+in an IRI.  See sections 2.2, 4.1, and 6.1 for further details.
+
+変換の結果は IRI で適切でない文字かもしれません。
+
+>   Conversion from a URI to an IRI is done by using the following steps
+(or any other algorithm that produces the same result):
+
+URI から IRI への変換は次の手順 (やそれと同じ結果を生成する他の方法)
+を使って行います。
+
+>
+=   1.  Represent the URI as a sequence of octets in US-ASCII.
+=   2.  Convert all percent-encodings ("%" followed by two hexadecimal
+digits) to the corresponding octets, except those corresponding
+to "%", characters in "reserved", and characters in US-ASCII not
+allowed in URIs.
+=   3.  Re-percent-encode any octet produced in step 2 that is not part
+of a strictly legal UTF-8 octet sequence.
+= 4. Re-percent-encode all octets produced in step 3 that in UTF-8
+represent characters that are not appropriate according to
+sections 2.2, 4.1, and 6.1.
+=   5. Interpret the resulting octet sequence as a sequence of characters
+encoded in UTF-8.
+
+= URI を US-ASCII のオクテット列として表現します。
+= すべての百分率符号化 ([CODE(URI)[%]] の後に十六進数字二桁)
+を対応するオクテットに変換します。ただし、 [CODE(URI)[%]] や
+[CODE(ABNF)[reserved]] の文字や URI で認められていない US-ASCII
+の文字は除きます。
+= 手順2で生成された厳密に合法な UTF-8 
+オクテット列ではないオクテットは再び百分率符号化します。
+= 手順3で生成されたオクテットで UTF-8 において
+2.2 節, 4.1 節, 6.1節に照らして適切でないものはすべて再び百分率符号化します。
+= 残ったオクテット列を UTF-8 で符号化された列として解釈します。
+
+>   This procedure will convert as many percent-encoded characters as
+possible to characters in an IRI.  Because there are some choices
+when step 4 is applied (see section 6.1), results may vary.
+
+この手続きはできるだけ多くの百分率符号化文字を IRI
+の文字に変換します。手順4の適用時に幾つかの選択肢がありますから、
+結果は変化します。
+
+>   Conversions from URIs to IRIs MUST NOT use any character encoding
+other than UTF-8 in steps 3 and 4, even if it might be possible to
+guess from the context that another character encoding than UTF-8 was
+used in the URI.  For example, the URI
+"http://www.example.org/r%E9sum%E9.html" might with some guessing be
+interpreted to contain two e-acute characters encoded as iso-8859-1.
+It must not be converted to an IRI containing these e-acute
+characters.  Otherwise, in the future the IRI will be mapped to
+"http://www.example.org/r%C3%A9sum%C3%A9.html", which is a different
+URI from "http://www.example.org/r%E9sum%E9.html".
+
+URI から IRI への変換は、たとえ文脈によって UTF-8 以外の文字符号化が URI
+で使われていると推定できたとしても、手順3と手順4で UTF-8
+以外の文字符号化を使っては'''なりません'''。例えば、 URI
+[SAMP(URI)[http://www.example.org/r%E9sum%E9.html]] は
+[CODE(charset)[iso-8859-1]] で符号化されたアキュート・アクセント付き e
+を2つ含んでいると解釈できるかもしれません。しかし、
+アキュート・アクセント付き e を含む IRI に変換してはなりません。
+さもなければ、後で IRI が
+[SAMP(URI)[http://www.example.org/r%C3%A9sum%C3%A9.html]] に写像されてしまいますが、
+これは [SAMP(URI)[http://www.example.org/r%E9sum%E9.html]] とは異なる URI です。
+
+***3.2.1.  Examples
+>   This section shows various examples of converting URIs to IRIs.  Each
+example shows the result after each of the steps 1 through 5 is
+applied.  XML Notation is used for the final result.  Octets are
+denoted by "<" followed by two hexadecimal digits followed by ">".
+
+この節では URI から IRI に変換する色々な例を示します。
+各例について手順1〜5のそれぞれを適用した結果を示します。
+最終結果には XML 記法を使います。オクテットは
+2桁の十六進数字を [CODE[<]] と [CODE[>]] で挟んで示します。
+
+>   The following example contains the sequence "%C3%BC", which is a
+strictly legal UTF-8 sequence, and which is converted into the actual
+character U+00FC, LATIN SMALL LETTER U WITH DIAERESIS (also known as
+u-umlaut).
+
+次の例は [SAMP(URI)[%C3%BC]] という列を含んでいます。
+これは厳密に合法な UTF-8 列であり、実際の文字 [SAMP(char)[[[U+00FC]]]]
+[CODE(char)[[[LATIN SMALL LETTER U WITH DIAERESIS]]]]
+(ウムラウト付き u) に変換されます。
+
+>
+=   1.  http://www.example.org/D%C3%BCrst
+=   2.  http://www.example.org/D[VAR[<c3>]][VAR[<bc>]]rst
+=   3.  http://www.example.org/D[VAR[<c3>]][VAR[<bc>]]rst
+=   4.  http://www.example.org/D[VAR[<c3>]][VAR[<bc>]]rst
+=   5.  http://www.example.org/D[VAR[&#xFC;]]rst
+
+>   The following example contains the sequence "%FC", which might
+represent U+00FC, LATIN SMALL LETTER U WITH DIAERESIS, in the
+iso-8859-1 character encoding.  (It might represent other characters
+in other character encodings.  For example, the octet <fc> in
+iso-8859-5 represents U+045C, CYRILLIC SMALL LETTER KJE.)  Because
+<fc> is not part of a strictly legal UTF-8 sequence, it is
+re-percent-encoded in step 3.
+
+次の例は [SAMP(URI)[%FC]] という列を含んでいます。これは
+[CODE(charset)[iso-8859-1]] 文字符号化では [SAMP(char)[[[U+00FC]]]]
+[CODE(char)[[[LATIN SMALL LETTER U WITH DIAERESIS]]]] を表現します。
+(他の文字符号化では他の文字を表現するかもしれません。例えば、
+オクテット [VAR[<fc>]] は [CODE(charset)[iso-8859-5]]
+では [CODE(char)[[[U+045C]]]] [CODE(char)[[[CYRILLIC SMALL LETTER KJE]]]]
+を表します。) [VAR[<fc>]] は厳密に合法な UTF-8 列の一部ではありませんから、
+手順3で再百分率符号化します。
+
+>
+=   1.  http://www.example.org/D%FCrst
+=   2.  http://www.example.org/D[VAR[<fc>]]rst
+=   3.  http://www.example.org/D%FCrst
+=   4.  http://www.example.org/D%FCrst
+=   5.  http://www.example.org/D%FCrst
+
+>   The following example contains "%e2%80%ae", which is the 
+percent-encoded UTF-8 character encoding of U+202E, RIGHT-TO-LEFT OVERRIDE.
+Section 4.1 forbids the direct use of this character in an IRI.
+Therefore, the corresponding octets are re-percent-encoded in step 4.
+This example shows that the case (upper- or lowercase) of letters
+used in percent-encodings may not be preserved.  The example also
+contains a punycode-encoded domain name label (xn--99zt52a), which is
+not converted.
+
+次の例は [SAMP(URI)[%e2%80%ae]] を含んでいます。これは [SAMP(char)[[[U+202E]]]]
+[CODE(char)[[[RIGHT-TO-LEFT OVERRIDE]]]] の UTF-8 文字符号化で百分率符号化したものです。
+4.1節はこの文字を IRI で直接使用することを禁じています。
+従って、対応するオクテットは手順4で再百分率符号化します。
+この例は百分率符号化の中の文字の大文字・小文字が必ずしも保存されないことを示しています。
+また、 Punycode 符号化ドメイン名札 ([SAMP[xn--99zt52a]])
+も含まれていますが、変換されません。
+
+>
+=   1.  http://xn--99zt52a.example.org/%e2%80%ae
+=   2.  http://xn--99zt52a.example.org/[VAR[<e2>]][VAR[<80>]][VAR[<ae>]]
+=   3.  http://xn--99zt52a.example.org/[VAR[<e2>]][VAR[<80>]][VAR[<ae>]]
+=   4.  http://xn--99zt52a.example.org/%E2%80%AE
+=   5.  http://xn--99zt52a.example.org/%E2%80%AE
+
+>   Implementations with scheme-specific knowledge MAY convert
+punycode-encoded domain name labels to the corresponding characters
+by using the ToUnicode procedure.  Thus, for the example above, the
+label "xn--99zt52a" may be converted to U+7D0D U+8C46 (Japanese
+Natto), leading to the overall IRI of
+"http://&#x7D0D;&#x8C46;.example.org/%E2%80%AE".
+
+Scheme 規定の知識がある実装は Punycode で符号化されたドメイン名札を
+[CODE[[[ToUnicode]]]] 手続きを使って対応する文字に変換しても'''構いません'''。
+従って、先の例のドメイン名札 [SAMP[xn--99zt52a]] は
+[CODE(char)[[[U+7D0D]]]] [CODE(char)[[[U+8C46]]]]
+(日本語で納豆) に変換しても構いません。 IRI 全体は
+[SAMP(URI)[http://[VAR[&#x7D0D;]][VAR[&#x8C46;]].example.org/%E2%80%AE]] となります。
+*メモ@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@a0 1
+
+d134 1
+a134 1
+が生成されます。この写像は URI に対する単位変形であり、同効です。
+@
+

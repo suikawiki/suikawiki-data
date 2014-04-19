@@ -1,0 +1,150 @@
+head	1.2;
+access;
+symbols
+	suikawiki3-final:1.2
+	before-db-leaffile:1.2;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.2
+date	2004.03.31.02.01.01;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2004.03.23.02.01.36;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9
+* SuikaWiki 3 WikiDatabase Locking
+
+[1] [DFN[SuikaWiki 3 WikiDatabase Locking]]
+は、 SuikaWiki 3 において、 lock (排他制御)
+を行うための共通の界面です。
+
+** WikiDB Locking module
+
+[2] WikiDB Locking を実装する module は、
+次の method を実装しなければ'''なりません'''。
+
+: new : 新しい実現値の生成
+: lock : 固定
+: unlock : 固定の解除
+: readable : 読取りの可否
+: writable : 書込みの可否
+: appendable : 追記の可否
+: locked : 固定状態の取得
+
+;; 冗長なのですが気にしてはいけません。
+
+*** $lock = MODULE->new (%option)
+[3]
+WikiDB Locking module の新しい実現値を生成します。
+
+引数には option (連想配列) を与えます。 
+Option の種類や必須性は個々の
+module に委ねますが、 [CODE[-]] で始まる option 
+名はここで規定する意味を持つこととします。
+(これらの option の実装を強制するものではありませんし、
+詳細な意味は module に依存します。)
+
+: -directory : Lock file を作成する directory
+: -error_handler : 誤り・警告を報告する code reference
+(第1引数が module の実現値、第2引数以降は連想配列で、
+[CODE[-]] から始まる名前は予約 (それ以外は module 依存)。
+返値は未定義。)
+: -limit : 最大同時 lock 数。正の整数か [CODE[-1]] (無限)
+: -name : Lock の名前
+: -share : [CODE[0]] なら排他 lock, [CODE[1]] なら共通 lock
+: -retry : 再試行回数。正の整数か零か [CODE[-1]] (無限)
+: -timeout : Lock の有効期限 (単位は秒)
+
+*** success = $lock->lock
+
+[4] Lock を行います。 Lock を行った場合には
+[CODE[1]], lock を行っていないが lock されたとみなしてよい場合
+(既に lock されている場合など) は [CODE(perl)["0 but true"]],
+それ以外の場合には [CODE[0]] を返します。
+
+*** success = $lock->unlock
+
+[5] Lock を解除します。Lock を解除した場合には
+[CODE[1]], lock を解除していないが lock 
+解除されたとみなしてよい場合
+(既に lock 解除されている場合など) は 
+[CODE(perl)["0 but true"]],
+それ以外の場合には [CODE[0]] を返します。
+
+*** status = $lock->readable
+
+[6] Lock 対象を読んでもいいかを返します。
+
+通常は lock されているなら [CODE[1]],
+されていないなら [CODE[0]] とします。
+
+*** status = $lock->writable
+
+[7] Lock 対象に書込んでいいかを返します。
+
+通常は排他 lock されているなら [CODE[1]],
+されていないなら [CODE[0]] とします。
+
+*** status = $lock->appendable
+
+[10] Lock 対象に追記していいかを返します。
+
+「追記」とは、通常は [CODE[>>]] による書込み
+(またはそれにほぼ相当するもの) を指します。
+
+通常は排他 lock されているなら [CODE[1]] です。 
+排他 lock されていないときは lock module
+の方針によります。
+
+*** status = $lock->locked
+
+[8] Lock されているかどうかを返します。
+Lock されているときには [CODE[1]],
+lock されていないがされているとみなしていいときには
+[CODE(perl)["0 but true"]], lock されていないときには
+[CODE[0]] を返します。
+
+** WikiDB Locking module
+
+[9] 現在 SuikaWiki 3 には2種類の WikiDB Locking
+module があります。
+- [CODE(perl)[SuikaWiki::DB::Util::Lock]]:
+[CODE(perl)[[[Yuki::YukiWikiDB2]]]] の lock
+算法を使用した (rename による) lock です。
+<IW:SuikaCVS:"suikawiki/script/lib/SuikaWiki/DB/Util/Lock.pm">
+- [CODE(perl)[SuikaWiki::DB::Lock::NoLock]]:
+実際には lock しませんが、 lock しているように振舞います。
+Lock の不要な場面での処理と必要な場面の処理を共通化するために用意しています。
+<IW:SuikaCVS:"suikawiki/script/lib/SuikaWiki/DB/Lock/NoLock.pm">
+
+[CODE[[[flock]]]] を使うための module も用意する予定です。
+
+* メモ@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@d18 1
+d74 11
+@
+

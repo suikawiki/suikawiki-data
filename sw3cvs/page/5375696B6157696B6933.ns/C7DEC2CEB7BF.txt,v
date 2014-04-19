@@ -1,0 +1,230 @@
+head	1.2;
+access;
+symbols
+	suikawiki3-final:1.2
+	before-db-leaffile:1.1;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.2
+date	2004.04.27.02.09.56;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2004.03.18.02.07.17;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9
+[1] SuikaWiki で[DFN[[RUBYB[媒体型] [media type]]]]とは、
+[[MIME]] でと同じ意味で、大雑把に言えばデータ形式のことです。
+
+中身とラベルの区別が往々にして曖昧になるという世間一般の慣習に従って(謎)、
+SuikaWiki でも媒体型の識別子を指して単に「媒体型」ということがままあります。
+
+* 媒体型識別子
+
+[2] SuikaWiki では、歴史的に二種類の媒体型識別子があります。
+両者は適当に使い分けられています。
+- 魔法識別子
+- インターネット媒体型識別子
+- URI 参照識別子
+
+お勧め度的には URI 参照 > インターネット媒体型 > 魔法識別子です。
+ただし、 URI 参照はインターネット媒体型で一般に使われているものがないときに使います。
+
+また、媒体の完全度を表す旗があります。
+更に、内部的にはこれらの識別情報を統一的に扱うための直列化書式を用いています。
+
+* 魔法識別子
+
+[3] SuikaWiki 2 では、 WikiPage
+の内容の先頭の行 ([DFN[魔法行]])
+でその本体の形式を区別していました。
+この魔法行の最初の部分が[DFN[魔法識別子]]です。
+
+- [CODE(ABNF)[[DFN[魔法識別子]] := Name ["/" Version] ]]
+- [CODE(ABNF)[[DFN[Name]] := 字句]]
+- [CODE(ABNF)[[DFN[Version]] := 字句]]
+- [CODE(ABNF)[[DFN[字句]] := 1*([[ALPHA]] / [[DIGIT]] / "-" / "_" / "." / "+")]]
+-- 大文字・小文字は区別''する''。
+-- 英数字以外の記号は版によって揺れてますが、 SuikaWiki 3 はこの4文字を認めています。
+
+[CODE(ABNF)[魔法識別子]]は、
+[[HTTP]] の [CODE(ABNF)[[[product]]]] の部分集合になっています。
+
+[4] 魔法行は、次のように定義されます。
+- [CODE(ABNF)[[DFN[魔法行]] := ("#?" / "/*" *WSP) 魔法識別子]]
+
+魔法''行''とか言いながら、
+現在の定義では行末まで含んでいません。
+残りの部分の書式は[CODE(ABNF)[魔法識別子]]で識別される書式に依存します。
+[WEAK[(SuikWiki 2 では[CODE(ABNF)[魔法行]]は内容とは別に扱っていましたが、 SuikaWiki 3 では内容の一部です。従って、たとえば [[XML]] [[文書実体]]では[CODE(ABNF)[魔法行]]は使えません。)]]
+
+[10] SuikaWiki の実装の中では、しばしば、名前付き引数 
+[CODE[Magic]] に指定します。斜線の前後で分けて、
+名前付き引数 [CODE[Name]], [CODE[Version]] 
+に指定することもできます。
+
+WikiPlugin source では、 [CODE[Name]] 特性と
+[CODE[Version]] 特性に分けて記述します。
+
+* インターネット媒体型
+
+[4] SuikaWiki 3 では、 [[MIME]]
+が規定するインターネット媒体型に基づく識別子も使うことができます。
+ただし、 [[RFC 822]] に依存した MIME
+の定義ではなく、ほぼ部分集合の独自の定義を使いますので、
+厳密には別のものです。
+
+- [CODE(ABNF)[[DFN[媒体型]] := 無引数媒体型 [";" 引数並び] ]]
+- [CODE(ABNF)[[DFN[無引数媒体型]] := 型 "/" 亜型]]
+- [CODE(ABNF)[[DFN[型]] := 字句]]
+- [CODE(ABNF)[[DFN[亜型]] := 字句]]
+- [CODE(ABNF)[[DFN[引数並び]] := 引数 *(";" 引数)]]
+-- [CODE(ABNF)[引数]]は[CODE(ABNF)[字句]]の [[ASCII]] 符号昇順に並べなければならない。
+-- [CODE(ABNF)[引数]]の[CODE(ABNF)[字句]]が同じものがあってはならない。
+- [CODE(ABNF)[[DFN[引数]] := 字句 "=" 引用文字列]]
+- [CODE(ABNF)[[DFN[字句]] := <[[RFC 2616]] [CODE(ABNF)[[[token]]]] (小文字)>]]
+-- 大文字を使ってはならない。
+- [CODE(ABNF)[[DFN[引用文字列]] := <"> *(引用文字 / 引用組) <">]]
+- [CODE(ABNF)[[DFN[引用文字]] := <任意の文字> - <"> - "\"]]
+-- [[制御文字]]透過は保証しない。
+-- 外部プロトコル用に使うときに非 (ASCII 図形文字)が正しく伝わることは、一般には保証されない。
+- [CODE(ABNF)[[DFN[引用組]] := "\" (<"> / "\")]]
+
+生成規則間に空白を挿入することはできません。
+
+この構文だと、引数の値が一意に定まるのなら、常に媒体型の識別子が一意に定まります。
+
+引数は、書式の決定に必須なもののみを使用します。
+既定値のときは適宜省略します。
+
+たとえば、
+[CODE(MIME)[[[text/plain]]; [[format]]=[[fixed]]]]
+は [CODE[text/plain]] とし、
+[CODE(MIME)[text/plain; format=[[flowed]]]] は
+[CODE[text/plain;format="flowed"]] とします。
+[CODE(MIME)[[[text/x-suikawiki]]; version=0.9]]
+は [CODE[text/x-suikawiki;version="0.9"]] です。
+[CODE(MIME)[text/html]] は [CODE[text/html]] です。
+
+[11] SuikaWiki の実装の中では、しばしば、
+名前付き引数 [CODE[Type]] に[CODE(ABNF)[無引数媒体型]]を指定できます。
+同時に、名前付き引数 [CODE[Type_param]] に引数の名前・値の組のハッシュへの参照を与えることもできます。
+
+WikiPlugin source では、 [CODE[Type]] 特性に[CODE(ABNF)[無引数媒体型]]を記述し、
+その子供として局所名が引数名、値が引数値の要素を記述できます。
+
+例:
+[PRE[
+Type:
+  @@@@: text/plain
+  @@type: flowed
+]PRE]
+
+* URI 参照識別子
+
+[9] [[URI参照]]を媒体型の識別子に使うことができます。
+
+- [CODE(ABNF)[[DFN[URI 参照識別子]] := [[絶対URI参照]]]]
+
+[12] SuikaWiki の実装の中では、しばしば、
+名前付き引数 URIReference に指定できます。
+
+WikiPlugin の中では、 TypeURIReference 特性に記述できます。
+
+* 媒体の完全度を表す旗 
+
+[14]
+: [CODE[f]] ([CODE[IsFragment]]) : 
+素片である。すなわち、単体で使えるものではなく、
+他のものに埋込まれるなどして完全形にしてから使われることを想定している。
+: [CODE[p]] ([CODE[IsPlaceholder]]):
+場所取りである。たとえば [CODE(HTMLe)[[[img]]]] 要素のように、
+参照だけで実物ではない。
+([CODE[f]] と併用されるのが普通。)
+
+* 直列化書式 
+
+[13]
+これまでに説明した識別子は内部的に統一して扱われます。
+
+- [CODE(ABNF)[[DFN[直列化識別子]] := 'IMT:' インターネット媒体型識別子 旗 / 'MAGIC:' 魔法識別子 旗 / URI 参照識別子 旗 / 内部処理用識別子]]
+- [CODE(ABNF)[[DFN[旗]] := '##' *旗]]
+- [CODE(ABNF)[[DFN[内部処理用識別子]] := '#' 0*[[OCTET]]]]
+
+[CODE(ABNF)[内部処理用識別子]]は、
+必要に応じて内部での処理に使用します。
+
+例:
+- [SAMP[IMT:text/plain##]]
+- [SAMP[http://example.org/wiki-format/##]]
+- [SAMP[MAGIC:SuikaWiki/0.9##]]
+- [SAMP[IMT:text/html##fp]]
+
+* 書式の識別
+
+[5] SuikaWiki 3 では、
+内容がどんな書式で書かれているかを、
+= [[WikiDB]] のインターネット媒体型識別子特性
+(content_prop の media-type:media-type 属性) を検査
+= それで決められなければ、 WikiDB の内容 ([CODE[content]]) 特性の[CODE(ABNF)[魔法行]]を検査
+
+で決定します。
+二つ目の方法は SuikaWiki 2 との互換のためであって、
+新たなデータを保管するときに一つ目の方法で書式を記録しておくことが望ましいです。
+
+* 関係モジュール
+-[6] WikiFormat plugin <IW:SuikaCVS:"suikawiki/script/lib/SuikaWiki/Plugin/WikiFormat.wp2">
+-[7] [CODE(perl)[SuikaWiki::Format::Definition]] <IW:SuikaCVS:"suikawiki/script/lib/SuikaWiki/Format/Definition.pm">
+- [8] [CODE(file)[[[mkplugin2.pl]]]] <IW:SuikaCVS:"suikawiki/script/bin/mkplugin2.pl">
+[[#comment]]
+
+* メモ@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@d3 1
+a3 1
+[[MIME]] と同じ意味で、大雑把に言えばデータ形式のことです。
+d14 7
+d31 1
+a31 1
+- [CODE(ABNF)[[DFN[Version]]]] := 字句]]
+d47 8
+d59 3
+a61 2
+ただし、 [[RFC822]] に依存した MIME
+の定義ではなく、ほぼ部分集合の独自の定義を使います。
+d71 1
+a71 1
+- [CODE(ABNF)[[DFN[字句]] := <[[RFC2616]] [CODE(ABNF)[[[token]]]] (小文字)>]]
+d83 66
+d153 2
+a154 1
+= [[WikiDB]] のインターネット媒体型識別子特性を検査
+d157 2
+a158 3
+で決定します。 (ただし、まだ一つ目は実装されていません。)
+二つ目の方法は SuikaWiki 2
+との互換のためであって、
+@
+

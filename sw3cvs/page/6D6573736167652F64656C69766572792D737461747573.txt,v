@@ -1,0 +1,854 @@
+head	1.3;
+access;
+symbols
+	suikawiki3-final:1.3
+	before-db-leaffile:1.1
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.3
+date	2006.07.03.02.12.47;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2005.05.03.02.05.31;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2004.01.31.02.03.44;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@
+[1] メッセージの配送状況 (エラーとか。) を返す時に使う
+[[媒体型]]で、 RFC 1894 <urn:ietf:rfc:1894> が定義しています。
+[[multipart/report]]媒体型で使います。 [[DSN]] と略します。
+
+[2] message/delivery-status 媒体型のデータは、
+必ず 7bit になるので、それ以外の値をこれを含む実体の
+[[Content-Transfer-Encoding:欄]]に指定することは
+出来ません。
+
+
+* 引数
+
+[17]
+,引数名	,引数値	,既定値	,説明	,状態	,出典
+,[CODE(MIME)[[[name]]]]	,	,	,[[ファイル名]]	,非標準 →[CODE(MIME)[[[Content-Disposition]]]] [CODE(MIME)[[[filename]]]]	,
+
+
+[21]
+to you
+([[aaa]] [ieka] [WEAK[2006-06-29 09:00:31 +00:00]])
+
+
+[[#comment]]
+
+
+* メッセージ構造
+
+= delivery-status-content = per-message-fields 1*( CRLF per-recipient-fields )
+
+各 fields は、 RFC 822 の fields と同じ構文と定義されています。
+折畳みできますし、注釈を挿入できます。注釈の中には [[MIME]]
+[[encoded-word]] がかけます。領域名は大文字・小文字を区別しません。
+
+
+** xtext
+
+= xtext = *( xchar / hexchar / linear-white-space / comment )
+= xchar = any ASCII CHAR between "!" (33) and "~" (126) inclusive, except for "+", "\" and "(".
+= hexchar = ASCII "+" immediately followed by two upper case hexadecimal digits
+
+xtext では SP / TAB は無視されます。 (comment も無視されます。)
+
+xtext では encoded-word は使えません。
+
+xtext は、 DSN 領域の幾つかの領域本文で使うことになってますが、
+どの領域でも''使えません''。 (どの領域の定義にも無い。)
+
+
+** *-type 
+
+,address-type	,atom	,メイル箱アドレス形式
+,diagnostic-type	,atom	,状態符号 status code 形式
+,MTA-name-type	,atom	,MTA 名形式
+
+この3つの *-type の値は、大文字・小文字を区別しません。
+使える値は IANA 登録簿にあるものか、 "X-" で始まる実験用の
+値です。
+
+Internet メイルでは、 RFC 1891 で定義された次の値を使います。
+(ちなみに、現時点でこの他の値は IANA 登録簿にありません。)
+
+- address-type: RFC822
+- diagnostic-type: SMTP
+- mta-name-type: DNS
+
+address-type には "unknown" という値も使えるようです。
+(Original-Recipient: 領域)
+
+- IANA 登録簿 <http://www.iana.org/assignments/mail-parameters>
+- RFC 1891 <urn:ietf:rfc:1891>
+
+
+*** address-type "rfc822"
+
+RFC 1891 で定義されています。値は RFC 822 の <[route] addr-epec>
+になります。
+
+RFC 1891 は、この値は US-ASCII の図形文字以外は使わないと
+しています。しかしこれは間違いです。[[quoted-string]]
+や [[domain-literal]] で、非 US-ASCII 図形文字を使うことが
+出来ます。
+
+実装は、必要な場合は値を xtext で符号化するのが良いかもしれません。
+ただ、 RFC 822 メイル・アドレスでは "+" は(頻繁ではないとはいえ)
+よく使われる文字ではあります・・・。
+
+
+*** diagnostic-type "smtp"
+
+RFC 1891 によると、このとき値は
+[PRE[
+ <*( 3*DIGIT "-" *text ) 3*DIGIT SPACE *text>
+と定義されます。例:
+]PRE]
+
+= Diagnostic-Code: smtp ; 550-mailbox unavailable 550 user has moved with no forwarding address
+
+見てわかるとおり、受信側が元の SMTP 応答に復元するのは
+不可能です。
+
+
+*** diagnostic-type "X-Unix"
+
+値は数値。 [[UUCP]] 転送かなんかだろーか?
+
+
+*** MTA-name-type "dns"
+
+値は Internet ドメイン名です。このとき、値は DNS
+に登録されていて、メイル・アドレス
+[PRE[
+ <postmaster@@{値}> が有効でないといけないそうです。
+]PRE]
+
+値は sub-domain *("." sub-domain) または "[" IPv4-address "]"
+です。現代的には、 RFC 2821 を参考に IPv6-address
+を使ってもいいかもしれません。
+
+
+** date-time
+
+[3] [[MIMEの日付形式]]です。
+- [4] [SAMP(DSN)[Diagnostic-Code: X-Unix; 73]] UUCP ではなくて、プログラムの返り値かなんかじゃないですか?
+[[#comment]]
+
+
+** その他
+
+= generic-address = *text
+= mta-name = *text
+
+こういう定義になっているのは、アドレスの書式がメイル系統により
+異なるからですが、それならどーして xtext にしなかったんでしょ。
+
+
+** メッセージ毎領域群
+
+= per-message-fields =          [ original-envelope-id-field CRLF ]          reporting-mta-field CRLF          [ dsn-gateway-field CRLF ]          [ received-from-mta-field CRLF ]          [ arrival-date-field CRLF ]          *( extension-field CRLF )
+
+
+** 受信者毎領域群
+
+[PRE[
+     per-recipient-fields =
+          [ original-recipient-field CRLF ]
+          final-recipient-field CRLF
+          action-field CRLF
+          status-field CRLF
+          [ remote-mta-field CRLF ]
+          [ diagnostic-code-field CRLF ]
+          [ last-attempt-date-field CRLF ]
+          [ will-retry-until-field CRLF ]
+          *( extension-field CRLF )
+]PRE]
+
+
+* 領域
+
+
+** Action: 領域 (受信者毎; 必須)
+
+= action-field = "Action" ":" action-value
+= action-value = "failed" / "delayed" / "delivered" / "relayed" / "expanded"
+
+報告 MTA がとった行動を書き入れます。値の大文字・小文字は
+区別しません。
+
+,failed	,配送失敗で、これ以上の報告は期待しても無駄です。
+,delayed	,配送または中継不能ですが、後でやり直します。更なる遅延・配送成功・配送失敗の連絡が後から来るかもしれません。
+,delivered	,配送は成功しました。
+,relayed	,報告 MTA が責任を持てない領域へ中継または関門通過しました。この通知は送信者が当該受信者について希望しない限り送る'''べきではありません'''。
+,expanded	,送信者が指定した受取先まで到着し、そこから複数の配送先へ飛ばされました。
+
+"expanded" は "delivered" とは、 "expanded" は終着点にまで
+達していないという点で異なります。
+
+「alias」の場合は "expanded" を、[[メイル・リスト]]の場合は
+"delivered" を使います。
+
+
+** Arrival-Date: 領域 (メッセージ毎, 受信者毎; 省略可)
+
+= arrival-date-field = "Arrival-Date" ":" date-time
+
+メッセージ毎に使う時は、メッセージが報告 MTA に届いた時間
+を書き入れます。
+
+受信者毎に使う時は、報告 MTA が DSN を書いた時間を書き入れます。
+
+
+** Diagnostic-Code: 領域 (受信者毎; 省略可)
+
+= diagnostic-code-field = "Diagnostic-Code" ":" diagnostic-type ";" *text
+
+失敗 "failed" または遅延 "delayed" の時に、その詳しい状況を書きます。
+
+Remote-MTA: 領域がある場合は相手 MTA が言ってきた理由が、
+そうでない時は報告 MTA の主張する理由が書かれているとみなします。
+
+Diagnostic-Code 以外に文字の説明があるときは、 comment
+にして書き入れても'''良い'''そうです。 (どこに? って気もするが。
+[PRE[
+ *text だと comment はかけないでしょ。 diagnostic-type の部分に
+書くのかな?)
+]PRE]
+
+例:
+
+= Diagnostic-Code: smtp; 426 connection timed out
+= Diagnostic-Code: smtp;(CRLF)    550 'arathib@@vnet.IBM.COM.EXAMPLE' is not a registered gateway user
+
+- [5] [SAMP(DSN)[[[Diagnostic-Code]]: X-Postfix; delivery via mail.example.net[192.168.1.4]: 250 Ok]]
+- [9]
+[PRE(DSN example code)[
+Diagnostic-Code: X-Postfix; host mail.example.com[192.168.0.2] said:
+    554 delivery error: dd Sorry, your message to name@@example.net cannot
+    be delivered.  This account is over quota. - mail.example.net
+]PRE]
+- [10]
+[SAMP(DSN)[Diagnostic-Code: X-Notes; User 576e88b578e8.12d7 (576e88b578e8.foo@@example.com) not listed in public Name & Address Book]]
+- [11] [SAMP(DSN)[Diagnostic-Code: X-Unix; 65]]
+- [12] [SAMP(DSN)[Diagnostic-Code: X-Unix; 550 <foo@@example.com> not found]]
+- [13] 
+[PRE(DSN example code)[
+Diagnostic-Code: X-PostfixPost; maildir delivery failed: error writing message:
+    Disc quota exceeded
+]PRE]
+- [14]
+[PRE(DSN example code)[
+Diagnostic-Code: X-Bezeq-International-SMTP-out-Mail-Server; Name service error
+    for name=example.net type=A: Host not found
+]PRE]
+- [15] [SAMP(DSN)[Diagnostic-Code: x-local; 550 (User does not exist)]]
+- [16] [SAMP(DSN)[Diagnostic-Code: X-XWall; 5.9.1 Virus infection]]
+- [18]
+[PRE(DSN example code)[
+Diagnostic-Code: X--Email-service-for-IOL-isp--apoioaocliente-iol-pt--; host
+    mx.iol.pt[172.16.4.224] said: 550 5.1.1 unknown or illegal alias:
+    6c0a576ba9ea.6ba9ea6c0a57@@iol.pt (in reply to RCPT TO command)
+]PRE]
+
+
+** DSN-Gateway: 領域 (メッセージ毎)
+
+非 Internet メイルの連絡形式から DSN に変換した時に、
+その変換者の名前を書きます。
+
+変換した時には必ずかか'''なければなりません'''。
+それ以外の場合には使っては'''いけません'''。
+
+= dsn-gateway-field = "DSN-Gateway" ":" mta-name-type ";" mta-name
+
+
+** Final-Log-ID: 領域 (受信者毎; 省略可)
+
+= final-log-id-field = "Final-Log-ID" ":" *text
+
+最終 MTA の記録 ID です。これは最終 MTA の記録と照合する時
+に便利です。
+
+RFC 1894 ではこの部分の小題が乱丁になってます。
+
+
+** Final-Recipient: 領域 (受信者毎; 必須)
+
+= final-recipient-field = "Final-Recipient" ":" address-type ";" generic-address
+
+報告 MTA が送ろうとしていた宛先を書き入れます。
+
+報告 MTA は、その address-type 的に正しい構文の generic-address
+を書き入れることは期待されていません。配送系が受け取った
+そのままの宛先を書き入れます。但し、 CR や LF のような
+DSN の構造上問題があるものはそのままにしておく必要はありません。
+(というか放っておいたらいけません。 (xtext で定義しておけば
+良かったのにねえ。))
+
+例:
+
+= Final-Recipient: rfc822;louisl@@larry.slip.umd.edu.example
+= Final-Recipient: unknown; nair_s
+
+
+** Last-Attempt-Date: 領域 (受信者毎; 省略可)
+
+= last-attempt-date-field = "Last-Attempt-Date" ":" date-time
+
+最後に配送試行された時刻 (失敗・成功に関わらず。) です。
+DSN のメッセージの [[Date:領域]]の時刻とは必ずしも一致しません。
+
+特に、関門で DSN に変換する際には、 DSN の Date: 領域は
+変換時刻が、 LAD: 領域には(関門の向こうの方で)最後に
+試行された時刻が入ります。
+
+時刻不明の際は書いては'''いけません'''。
+
+
+** Original-Envelope-Id: 領域 (メッセージ毎; 省略可)
+
+値は封筒の唯一識別子で、送信者または送信 MTA がつけたものです。
+送信者が返却された報告を見て、どのメッセージに対するものか特定する
+のに使います。
+
+= original-envelope-id-field = "Original-Envelope-Id" ":" envelope-id
+= envelope-id = *text
+
+なお、これは [[Message-ID]] ではありません。
+
+
+** Original-Recipient: 領域 (受信者毎; 省略可)
+
+See [[Original-Recipient:]]
+
+
+** Received-From-MTA: 領域 (メッセージ毎; 省略可)
+
+メッセージ受信元の MTA の名前を書きます。 Internet メイルで
+[[SMTP]] の場合は、名前は HELO か EHLO で名乗られたもの
+にする'''べき'''で、ネットワーク・アドレスを comment
+で併記する'''べき'''です。 (併記形式は RFC 2821 の
+[[Received:領域]]の定義に倣うのがいいと思われます。)
+
+= received-from-mta-field = "Received-From-MTA" ":" mta-name-type ";" mta-name
+
+
+** Remote-MTA: 領域 (受信者毎; 省略可)
+
+= remote-mta-field = "Remote-MTA" ":" mta-name-type ";" mta-name
+
+通信中に失敗するなどした相手先の MTA の名前です。
+
+
+** Reporting-MTA: 領域 (メッセージ毎; 必須)
+
+= reporting-mta-field = "Reporting-MTA" ":" mta-name-type ";" mta-name
+
+DSN に書かれた処理 (配送・中継など) をしようとした MTA。
+
+[[SMTP]] クライアントがサーバーに、 RCPT TO: ほげほげ、
+と送ろうとして失敗した場合、クライアントは DSN を書くんだけど、
+このクライアントのドメイン名がこの Reporting-MTA: 領域に
+書かれる。サーバーのドメイン名は、 Remote-MTA: 領域に。
+
+関門の向こうでエラーになって、戻って来た関門が DSN 形式
+にエラー報告を変換するよーな時に、 Reporting-MTA: 領域
+には元の(関門の向こうの)エラー報告 MTA を書く。
+(で、この場合 関門 MTA = DSN を書く MTA ≒ Reporting-MTA: = 
+関門の向こうのエラー報告 MTA)
+
+報告 MTA が複数の名前を持つ場合、メッセージ送信元側での
+名前にする'''べき'''。 (Internet メイルからほんじゃらメイル(謎)
+への関門で、 Internet から送られてきたメイルがエラーで
+Internet にエラー報告を送り返す時に、ほんじゃら世界の名前
+(ほんじゃら☆MTA☆例) じゃなくて Internet の名前
+(foo.mta.example) を書く、ってことだろう。)
+
+例:
+
+= Reporting-MTA: dns; cs.utk.edu.example
+
+
+** Status: 欄 (受信者毎; 必須)
+
+⇒[[Status:欄]>>9]
+
+
+** Will-Retry-Until: 領域 (受信者毎; 省略可)
+
+= will-retry-until-field = "Will-Retry-Until" ":" date-time
+
+遅延 "delayed" の時に、配送を中止する予定時刻を書き入れます。
+
+遅延の時は省略可能、それ以外のときは使っては'''いけません'''。
+
+
+** X-*: 領域
+
+例によって、実験目的に利用出来ます。
+
+
+*** X-Actual-Recipient: 領域 (受信者毎)
+
+Final-Recipient: 領域のメイル・アドレスが他の
+アドレスの別名であるときに使われるみたいです。
+中身は他の *-Recipient: 領域と同じ。
+
+
+** 拡張領域
+
+その他の領域は、 IANA で登録しないと'''いけません'''。 (登録簿は
+どれですか?)
+
+拡張領域の目的は、
+
+(a) 外部配送系の配送情報の情報から変換時の損失を失くすため。
+このとき、 X400-Physical-Forwarding-Address みたいに
+配送系の名前から始まるとよさげ。
+
+(b) 特定転送系の診断情報を書くため。このとき、
+SMTP-Remote-Recipient-Address みたいに転送系の名前から
+始まるとよさげ。
+
+(c) 特定 MTA の診断情報を書くため。このとき、
+Foomail-Queue-ID みたいに MTA 実装名から始めるとよさげ。
+MTA 開発者が一々 IANA に登録なんてめんどーだ、
+と思いなさるなら、 X-Foomail-Log-ID みたいにすべし、と。
+
+(Final-Log-ID: 領域って、ほんとは削除されるんだったんじゃないかなー?)
+
+[6] 例:
+- [7] [CODE(DSN)[X-Postfix-Queue-ID: 84863BC0E5]]
+- [8] [CODE(DSN)[X-Postfix-Sender: rfc822; foo@@example.com]]
+- [19] [SAMP(DSN)[X--Email-service-for-IOL-isp--apoioaocliente-iol-pt---Queue-ID: C650E77BC2]]
+- [20] [SAMP(DSN)[X--Email-service-for-IOL-isp--apoioaocliente-iol-pt---Sender: rfc822; foo@@example.com]]
+
+[Q[-Email-service-for-IOL-isp--apoioaocliente-iol-pt--]]
+([Q[(Email service for IOL isp (apoioaocliente@@iol.pt))]])
+って [Q[Postfix]] のソース・コードを単純に置換したんじゃないか?
+
+[[#comment]]
+
+
+* メモ@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@d1 423
+a423 368
+[1] メッセージの配送状況 (エラーとか。) を返す時に使う
+[[媒体型]]で、 RFC 1894 <urn:ietf:rfc:1894> が定義しています。
+[[multipart/report]]媒体型で使います。 [[DSN]] と略します。
+
+[2] message/delivery-status 媒体型のデータは、
+必ず 7bit になるので、それ以外の値をこれを含む実体の
+[[Content-Transfer-Encoding:欄]]に指定することは
+出来ません。
+
+* 引数
+
+[17]
+,引数名,引数値,既定値,説明,状態,出典
+,[CODE(MIME)[[[name]]]],,,[[ファイル名]],非標準 →[CODE(MIME)[[[Content-Disposition]]]] [CODE(MIME)[[[filename]]]],
+
+[[#comment]]
+
+*メッセージ構造
+
+=delivery-status-content = per-message-fields 1*( CRLF per-recipient-fields )
+
+各 fields は、 RFC 822 の fields と同じ構文と定義されています。
+折畳みできますし、注釈を挿入できます。注釈の中には [[MIME]]
+[[encoded-word]] がかけます。領域名は大文字・小文字を区別しません。
+
+**xtext
+
+=xtext = *( xchar / hexchar / linear-white-space / comment )
+=xchar = any ASCII CHAR between "!" (33) and "~" (126) inclusive, except for "+", "\" and "(".
+=hexchar = ASCII "+" immediately followed by two upper case hexadecimal digits
+
+xtext では SP / TAB は無視されます。 (comment も無視されます。)
+
+xtext では encoded-word は使えません。
+
+xtext は、 DSN 領域の幾つかの領域本文で使うことになってますが、
+どの領域でも''使えません''。 (どの領域の定義にも無い。)
+
+** *-type 
+
+,address-type      ,atom,メイル箱アドレス形式
+,diagnostic-type   ,atom,状態符号 status code 形式
+,MTA-name-type     ,atom,MTA 名形式
+
+この3つの *-type の値は、大文字・小文字を区別しません。
+使える値は IANA 登録簿にあるものか、 "X-" で始まる実験用の
+値です。
+
+Internet メイルでは、 RFC 1891 で定義された次の値を使います。
+(ちなみに、現時点でこの他の値は IANA 登録簿にありません。)
+
+-address-type: RFC822
+-diagnostic-type: SMTP
+-mta-name-type: DNS
+
+address-type には "unknown" という値も使えるようです。
+(Original-Recipient: 領域)
+
+-IANA 登録簿 <http://www.iana.org/assignments/mail-parameters>
+-RFC 1891 <urn:ietf:rfc:1891>
+
+***address-type "rfc822"
+
+RFC 1891 で定義されています。値は RFC 822 の <[route] addr-epec>
+になります。
+
+RFC 1891 は、この値は US-ASCII の図形文字以外は使わないと
+しています。しかしこれは間違いです。[[quoted-string]]
+や [[domain-literal]] で、非 US-ASCII 図形文字を使うことが
+出来ます。
+
+実装は、必要な場合は値を xtext で符号化するのが良いかもしれません。
+ただ、 RFC 822 メイル・アドレスでは "+" は(頻繁ではないとはいえ)
+よく使われる文字ではあります・・・。
+
+***diagnostic-type "smtp"
+
+RFC 1891 によると、このとき値は
+ <*( 3*DIGIT "-" *text ) 3*DIGIT SPACE *text>
+と定義されます。例:
+
+=Diagnostic-Code: smtp ; 550-mailbox unavailable 550 user has moved with no forwarding address
+
+見てわかるとおり、受信側が元の SMTP 応答に復元するのは
+不可能です。
+***diagnostic-type "X-Unix"
+
+値は数値。 [[UUCP]] 転送かなんかだろーか?
+
+***MTA-name-type "dns"
+
+値は Internet ドメイン名です。このとき、値は DNS
+に登録されていて、メイル・アドレス
+ <postmaster@@{値}> が有効でないといけないそうです。
+
+値は sub-domain *("." sub-domain) または "[" IPv4-address "]"
+です。現代的には、 RFC 2821 を参考に IPv6-address
+を使ってもいいかもしれません。
+
+**date-time
+
+[3] [[MIMEの日付形式]]です。
+- [4] [SAMP(DSN)[Diagnostic-Code: X-Unix; 73]] UUCP ではなくて、プログラムの返り値かなんかじゃないですか?
+[[#comment]]
+**その他
+
+=generic-address = *text
+=mta-name = *text
+
+こういう定義になっているのは、アドレスの書式がメイル系統により
+異なるからですが、それならどーして xtext にしなかったんでしょ。
+
+**メッセージ毎領域群
+
+=per-message-fields =          [ original-envelope-id-field CRLF ]          reporting-mta-field CRLF          [ dsn-gateway-field CRLF ]          [ received-from-mta-field CRLF ]          [ arrival-date-field CRLF ]          *( extension-field CRLF )
+
+**受信者毎領域群
+
+     per-recipient-fields =
+          [ original-recipient-field CRLF ]
+          final-recipient-field CRLF
+          action-field CRLF
+          status-field CRLF
+          [ remote-mta-field CRLF ]
+          [ diagnostic-code-field CRLF ]
+          [ last-attempt-date-field CRLF ]
+          [ will-retry-until-field CRLF ]
+          *( extension-field CRLF )
+
+*領域
+
+**Action: 領域 (受信者毎; 必須)
+
+=action-field = "Action" ":" action-value
+=action-value = "failed" / "delayed" / "delivered" / "relayed" / "expanded"
+
+報告 MTA がとった行動を書き入れます。値の大文字・小文字は
+区別しません。
+
+,"failed" ,配送失敗で、これ以上の報告は期待しても無駄です。
+,"delayed" ,配送または中継不能ですが、後でやり直します。更なる遅延・配送成功・配送失敗の連絡が後から来るかもしれません。
+,"delivered" ,配送は成功しました。
+,"relayed" ,報告 MTA が責任を持てない領域へ中継または関門通過しました。この通知は送信者が当該受信者について希望しない限り送る'''べきではありません'''。
+,"expanded" ,送信者が指定した受取先まで到着し、そこから複数の配送先へ飛ばされました。
+
+"expanded" は "delivered" とは、 "expanded" は終着点にまで
+達していないという点で異なります。
+
+「alias」の場合は "expanded" を、[[メイル・リスト]]の場合は
+"delivered" を使います。
+
+**Arrival-Date: 領域 (メッセージ毎, 受信者毎; 省略可)
+=arrival-date-field = "Arrival-Date" ":" date-time
+
+メッセージ毎に使う時は、メッセージが報告 MTA に届いた時間
+を書き入れます。
+
+受信者毎に使う時は、報告 MTA が DSN を書いた時間を書き入れます。
+
+**Diagnostic-Code: 領域 (受信者毎; 省略可)
+
+=diagnostic-code-field = "Diagnostic-Code" ":" diagnostic-type ";" *text
+
+失敗 "failed" または遅延 "delayed" の時に、その詳しい状況を書きます。
+
+Remote-MTA: 領域がある場合は相手 MTA が言ってきた理由が、
+そうでない時は報告 MTA の主張する理由が書かれているとみなします。
+
+Diagnostic-Code 以外に文字の説明があるときは、 comment
+にして書き入れても'''良い'''そうです。 (どこに? って気もするが。
+ *text だと comment はかけないでしょ。 diagnostic-type の部分に
+書くのかな?)
+
+例:
+
+=Diagnostic-Code: smtp; 426 connection timed out
+=Diagnostic-Code: smtp;(CRLF)    550 'arathib@@vnet.IBM.COM.EXAMPLE' is not a registered gateway user
+-[5] [SAMP(DSN)[[[Diagnostic-Code]]: X-Postfix; delivery via mail.example.net[192.168.1.4]: 250 Ok]]
+-[9]
+[PRE(DSN example code)[
+Diagnostic-Code: X-Postfix; host mail.example.com[192.168.0.2] said:
+    554 delivery error: dd Sorry, your message to name@@example.net cannot
+    be delivered.  This account is over quota. - mail.example.net
+]PRE]
+-[10]
+[SAMP(DSN)[Diagnostic-Code: X-Notes; User 576e88b578e8.12d7 (576e88b578e8.foo@@example.com) not listed in public Name & Address Book]]
+-[11] [SAMP(DSN)[Diagnostic-Code: X-Unix; 65]]
+-[12] [SAMP(DSN)[Diagnostic-Code: X-Unix; 550 <foo@@example.com> not found]]
+-[13] 
+[PRE(DSN example code)[
+Diagnostic-Code: X-PostfixPost; maildir delivery failed: error writing message:
+    Disc quota exceeded
+]PRE]
+-[14]
+[PRE(DSN example code)[
+Diagnostic-Code: X-Bezeq-International-SMTP-out-Mail-Server; Name service error
+    for name=example.net type=A: Host not found
+]PRE]
+-[15] [SAMP(DSN)[Diagnostic-Code: x-local; 550 (User does not exist)]]
+-[16] [SAMP(DSN)[Diagnostic-Code: X-XWall; 5.9.1 Virus infection]]
+-[18]
+[PRE(DSN example code)[
+Diagnostic-Code: X--Email-service-for-IOL-isp--apoioaocliente-iol-pt--; host
+    mx.iol.pt[172.16.4.224] said: 550 5.1.1 unknown or illegal alias:
+    6c0a576ba9ea.6ba9ea6c0a57@@iol.pt (in reply to RCPT TO command)
+]PRE]
+
+**DSN-Gateway: 領域 (メッセージ毎)
+
+非 Internet メイルの連絡形式から DSN に変換した時に、
+その変換者の名前を書きます。
+
+変換した時には必ずかか'''なければなりません'''。
+それ以外の場合には使っては'''いけません'''。
+
+=dsn-gateway-field = "DSN-Gateway" ":" mta-name-type ";" mta-name
+
+**Final-Log-ID: 領域 (受信者毎; 省略可)
+
+=final-log-id-field = "Final-Log-ID" ":" *text
+
+最終 MTA の記録 ID です。これは最終 MTA の記録と照合する時
+に便利です。
+
+RFC 1894 ではこの部分の小題が乱丁になってます。
+
+**Final-Recipient: 領域 (受信者毎; 必須)
+
+=final-recipient-field = "Final-Recipient" ":" address-type ";" generic-address
+
+報告 MTA が送ろうとしていた宛先を書き入れます。
+
+報告 MTA は、その address-type 的に正しい構文の generic-address
+を書き入れることは期待されていません。配送系が受け取った
+そのままの宛先を書き入れます。但し、 CR や LF のような
+DSN の構造上問題があるものはそのままにしておく必要はありません。
+(というか放っておいたらいけません。 (xtext で定義しておけば
+良かったのにねえ。))
+
+例:
+
+=Final-Recipient: rfc822;louisl@@larry.slip.umd.edu.example
+=Final-Recipient: unknown; nair_s
+
+**Last-Attempt-Date: 領域 (受信者毎; 省略可)
+
+=last-attempt-date-field = "Last-Attempt-Date" ":" date-time
+
+最後に配送試行された時刻 (失敗・成功に関わらず。) です。
+DSN のメッセージの [[Date:領域]]の時刻とは必ずしも一致しません。
+
+特に、関門で DSN に変換する際には、 DSN の Date: 領域は
+変換時刻が、 LAD: 領域には(関門の向こうの方で)最後に
+試行された時刻が入ります。
+
+時刻不明の際は書いては'''いけません'''。
+
+**Original-Envelope-Id: 領域 (メッセージ毎; 省略可)
+
+値は封筒の唯一識別子で、送信者または送信 MTA がつけたものです。
+送信者が返却された報告を見て、どのメッセージに対するものか特定する
+のに使います。
+
+=original-envelope-id-field = "Original-Envelope-Id" ":" envelope-id
+=envelope-id = *text
+
+なお、これは [[Message-ID]] ではありません。
+
+**Original-Recipient: 領域 (受信者毎; 省略可)
+See [[Original-Recipient:]]
+**Received-From-MTA: 領域 (メッセージ毎; 省略可)
+
+メッセージ受信元の MTA の名前を書きます。 Internet メイルで
+[[SMTP]] の場合は、名前は HELO か EHLO で名乗られたもの
+にする'''べき'''で、ネットワーク・アドレスを comment
+で併記する'''べき'''です。 (併記形式は RFC 2821 の
+[[Received:領域]]の定義に倣うのがいいと思われます。)
+
+=received-from-mta-field = "Received-From-MTA" ":" mta-name-type ";" mta-name
+
+**Remote-MTA: 領域 (受信者毎; 省略可)
+
+=remote-mta-field = "Remote-MTA" ":" mta-name-type ";" mta-name
+
+通信中に失敗するなどした相手先の MTA の名前です。
+
+**Reporting-MTA: 領域 (メッセージ毎; 必須)
+
+=reporting-mta-field = "Reporting-MTA" ":" mta-name-type ";" mta-name
+
+DSN に書かれた処理 (配送・中継など) をしようとした MTA。
+
+[[SMTP]] クライアントがサーバーに、 RCPT TO: ほげほげ、
+と送ろうとして失敗した場合、クライアントは DSN を書くんだけど、
+このクライアントのドメイン名がこの Reporting-MTA: 領域に
+書かれる。サーバーのドメイン名は、 Remote-MTA: 領域に。
+
+関門の向こうでエラーになって、戻って来た関門が DSN 形式
+にエラー報告を変換するよーな時に、 Reporting-MTA: 領域
+には元の(関門の向こうの)エラー報告 MTA を書く。
+(で、この場合 関門 MTA = DSN を書く MTA ≒ Reporting-MTA: = 
+関門の向こうのエラー報告 MTA)
+
+報告 MTA が複数の名前を持つ場合、メッセージ送信元側での
+名前にする'''べき'''。 (Internet メイルからほんじゃらメイル(謎)
+への関門で、 Internet から送られてきたメイルがエラーで
+Internet にエラー報告を送り返す時に、ほんじゃら世界の名前
+(ほんじゃら☆MTA☆例) じゃなくて Internet の名前
+(foo.mta.example) を書く、ってことだろう。)
+
+例:
+
+=Reporting-MTA: dns; cs.utk.edu.example
+
+**Status: 欄 (受信者毎; 必須)
+⇒[[Status:欄]>>9]
+**Will-Retry-Until: 領域 (受信者毎; 省略可)
+
+=will-retry-until-field = "Will-Retry-Until" ":" date-time
+
+遅延 "delayed" の時に、配送を中止する予定時刻を書き入れます。
+
+遅延の時は省略可能、それ以外のときは使っては'''いけません'''。
+
+**X-*: 領域
+
+例によって、実験目的に利用出来ます。
+
+***X-Actual-Recipient: 領域 (受信者毎)
+
+Final-Recipient: 領域のメイル・アドレスが他の
+アドレスの別名であるときに使われるみたいです。
+中身は他の *-Recipient: 領域と同じ。
+
+**拡張領域
+
+その他の領域は、 IANA で登録しないと'''いけません'''。 (登録簿は
+どれですか?)
+
+拡張領域の目的は、
+
+(a) 外部配送系の配送情報の情報から変換時の損失を失くすため。
+このとき、 X400-Physical-Forwarding-Address みたいに
+配送系の名前から始まるとよさげ。
+
+(b) 特定転送系の診断情報を書くため。このとき、
+SMTP-Remote-Recipient-Address みたいに転送系の名前から
+始まるとよさげ。
+
+(c) 特定 MTA の診断情報を書くため。このとき、
+Foomail-Queue-ID みたいに MTA 実装名から始めるとよさげ。
+MTA 開発者が一々 IANA に登録なんてめんどーだ、
+と思いなさるなら、 X-Foomail-Log-ID みたいにすべし、と。
+
+(Final-Log-ID: 領域って、ほんとは削除されるんだったんじゃないかなー?)
+
+[6] 例:
+-[7] [CODE(DSN)[X-Postfix-Queue-ID: 84863BC0E5]]
+-[8] [CODE(DSN)[X-Postfix-Sender: rfc822; foo@@example.com]]
+-[19] [SAMP(DSN)[X--Email-service-for-IOL-isp--apoioaocliente-iol-pt---Queue-ID: C650E77BC2]]
+-[20] [SAMP(DSN)[X--Email-service-for-IOL-isp--apoioaocliente-iol-pt---Sender: rfc822; foo@@example.com]]
+
+[Q[-Email-service-for-IOL-isp--apoioaocliente-iol-pt--]]
+([Q[(Email service for IOL isp (apoioaocliente@@iol.pt))]])
+って [Q[Postfix]] のソース・コードを単純に置換したんじゃないか?
+
+[[#comment]]
+*メモ@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@a0 1
+#?SuikaWiki/0.9
+d3 1
+a3 1
+[[multipart/report媒体型]]で使います。 [[DSN]] と略します。
+d10 8
+d178 29
+d356 11
+@
+

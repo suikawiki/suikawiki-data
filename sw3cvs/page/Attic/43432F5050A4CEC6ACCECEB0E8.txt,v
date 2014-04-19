@@ -1,0 +1,187 @@
+head	1.2;
+access;
+symbols
+	before-db-leaffile:1.1
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+
+
+1.2
+date	2004.06.13.02.05.18;	author wakaba;	state dead;
+branches;
+next	1.1;
+
+1.1
+date	2002.07.29.12.01.57;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@* *-Profile: 領域 ([[HTTP要求]])
+
+;; <http://www.w3.org/1999/06/NOTE-CCPPexchange-19990624> をもとにした。
+
+ Profile             = namespace "-Profile:" reference
+                       *([SP] "," [SP] reference)
+
+;; SP を入れていいのか不明瞭だけど、入っている例があるので良いことに。
+FWS が入るかは例が無いので不明。 (でも入らないとすると実装は面倒だと思われ。)
+
+ reference           = <"> ( absoluteURI / profile-diff-name ) <">
+ profile-diff-name   = profile-diff-number "-" profile-diff-digest
+ profile-diff-number = NON-ZERO-DIGIT *DIGIT
+
+;; 「0」が認められるのか不明。「#DIGIT」になってたけど「*」の間違いだと思われ。
+
+ profile-diff-digest = DIGIT / ALPHA / "+" / "/"
+                     ;; MD5 message digest encoded by base64
+
+;; absoluteURI は CC/PP description のある URI
+
+> An absoluteURI can unambiguously be distinguished 
+> from a profile-diff-name by the presence of a colon(":") 
+> in the Profile header field-value.
+
+;; profile-diff-name は同じ要求中の対応する Profile-Diff-* 頭領域
+の名前
+
+**例
+
+-Profile: "http://www.aaa.example/hw","http://www.bbb.example/sw"
+-Profile: "http://www.aaa.example/hw","1-uKhJE/AEeeMzFSejsYshHg==","http://www.bbb.example/sw"
+
+* *-Profile-DIff-*: 領域 ([[HTTP要求]])
+
+;; <http://www.w3.org/1999/06/NOTE-CCPPexchange-19990624> をもとにした。
+
+;; 常に *-Profile: 領域と併用する。
+
+ Profile-Diff = namespace "-Profile-Diff-" profile-diff-number ":" profile-desc
+ profile-desc = *(%x21-7E / %x80-FF / FWS)
+              ;; the CC/PP description based on XML/RDF text format
+
+**例
+
+ Profile: "1-P1GRkSjKK50aTWXXndFcSQ=="
+ Profile-Diff-1: <?xml version="1.0"?>
+     <RDF xmlns="http://www.w3.org/TR/1999/PR-rdf-syntax-19990105#"
+          xmlns:PRF="http://www.w3.org/TR/WD-profile-vocabulary#">
+     .....
+     </RDF>
+
+;; こんなもん頭に詰め込んで迷惑だと思うぞ:-) メイルやニュースじゃない
+からいいけど。
+
+* *-Profile-Warning: 領域
+
+ Profile-warning = namespace "-Profile-Warning:" warning-value
+                 *([FWS] "," [FWS] warning-value)
+ warning-value   = warn-code 1*SP warn-target 1*SP warn-text [1*SP warn-date]
+ warn-code       = 3DIGIT
+ warn-target     = (absoluteURI / host [ ":" port ])
+ warn-text       = quoted-string
+ warn-date       = <"> HTTP-date <">
+
+;; 「#」(RFC 822: 読点区切りの「*」) で読点の前後に FWS が入るか不明瞭
+ですが、入っている例があるので入れられることにしときました。
+
+;; warning-value の区切りは SP とされてましたが、複数 SP が
+入っている例が挙がっているので 1*SP に変えました。
+(例示が適合するかくらい確認しとくれ:-<)
+
+-100 OK 
+-101 Used stale profile 
+-102 Not used profile 
+-200 Not applied 
+-201 Content selection applied 
+-202 Content generation applied 
+-203 Transformation applied 
+
+**例
+
+ Profile-Warning: 102 http://www.aaa.example/hw "Not used profile",
+                  202 www.example.org "Content generation applied"
+ Profile-Warning: 101 http://www.aaa.example/hw "Used stale profile",
+                  102 http://www.bbb.example/sw "Not used profile",
+                  200 192.168.0.23:80 "Not applied"  "Wed, 31 Mar 1999 08:49:37 GMT"
+
+*例
+
+ M-GET /a-resource HTTP/1.1
+ Host: www.example.org
+ Man: "http://www.w3.org/1999/06/24-CCPPexchange" ; ns=99
+ 99-Profile: "http://www.aaa.example/hw","http://www.bbb.example/sw","1-uKhJE/AEeeMzFSejsYshHg=="
+ 99-Profile-Diff-1: <?xml version="1.0"?>
+         <RDF xmlns="http://www.w3.org/TR/1999/PR-rdf-syntax-19990105#"
+              xmlns:PRF="http://www.w3.org/TR/WD-profile-vocabulary#">
+         <Description ID="SoftwarePlatform" PRF:Sound="On" />
+         </RDF>
+
+ M-POST /a-resource HTTP/1.1
+ Man: "http://www.w3.org/1999/06/24-CCPPexchange" ; ns=99
+ 99-Profile: "http://www.aaa.example/hw","http://www.bbb.example/sw","uKhJE/AEeeMzFSejsYshHg=="
+ Host: www.org.example
+
+;; profile-diff-number が無いから BNF に合致しないんですけど...
+
+ GET /a-resource HTTP/1.1
+ Host: www.example.org
+ Opt: "http://www.w3.org/1999/06/24-CCPPexchange" ; ns=19
+ 19-Profile: "http://www.aaa.example/hw","http://www.bbb.example/sw","1-uKhJE/AEeeMzFSejsYshHg=="
+ 19-Profile-Diff-1: <?xml version="1.0"?>
+          <RDF xmlns="http://www.w3.org/TR/1999/PR-rdf-syntax-19990105#"
+               xmlns:PRF="http://www.w3.org/TR/WD-profile-vocabulary#">
+          <Description ID="SoftwarePlatform" PRF:Sound="On" />
+          </RDF>
+
+ M-GET /a-resource HTTP/1.1
+ Host: www.example.org
+ C-Man: "http://www.w3.org/1999/06/24-CCPPexchange" ; ns=64
+ 64-Profile: "http://www.aaa.example/hw", "http://www.bbb.example/sw", "1-uKhJE/AEeeMzFSejsYshHg=="
+ 64-Profile-Diff-1: <?xml version="1.0"?>
+                <RDF xmlns="http://www.w3.org/TR/1999/PR-rdf-syntax-19990105#"
+                xmlns:PRF="http://www.w3.org/TR/WD-profile-vocabulary#">
+                <Description ID="SoftwarePlatform" PRF:Sound="On" />
+                </RDF>
+ Connection: C-Man, 64-Profile, 64-Profile-Diff-1
+
+ HTTP/1.1 200 OK
+ Ext: 
+ 25-Profile-warning: 102 http://www.bbb.example/sw "Not used profile",
+                     202 www.example.org "Content generation applied"
+ Cache-control: no-cache
+ Content-Type: text/html
+ Content-Length: 1200
+ ....
+
+*SEE ALSO
+-CC/PP exchange protocol based on HTTP Extension Framework <http://www.w3.org/TR/NOTE-CCPPexchange>
+--<http://www.w3.org/1999/06/NOTE-CCPPexchange-19990624>
+-[[HTTP]]
+--[[HTTP/1.1]]
+--[[RFC2274]] <urn:ietf:rfc:2274> 
+-[[RFC822と仲間達の頭領域名]]
+--[[P3P:領域]]
+--[[*-*:頭領域]]
+@
+
+
+1.1
+log
+@Updated.
+@
+text
+@@
+

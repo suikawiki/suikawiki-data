@@ -1,0 +1,444 @@
+head	1.2;
+access;
+symbols
+	suikawiki3-final:1.2
+	before-db-leaffile:1.2
+	after-upgrade-to-suikawiki-3:1.2
+	before-fork-suikawiki3:1.2
+	after-restore-20040122:1.2;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.2
+date	2003.11.08.02.01.57;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.11.03.02.02.41;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9
+[[#comment]]
+* 仕様書から
+** 定義
+[1] 
+> [INS[[[RFC2295]] 2.2 抜粋]]
+:choice response:
+A choice response returns a representation of the best variant for
+the request, and may also return the variant list of the negotiable
+resource.  It can be generated when the server has sufficient
+information to be able to choose the best variant on behalf the
+user agent, but may only be generated if this best variant is a
+neighboring variant.  Choice responses are defined in section 10.2.
+
+[DFN[選択応答]]は、[[要求]]に対する最善の[[変種]]の[[表現]]を返しまして、
+その[[折衝可能資源]]の[[変種目録]]をも返しても構いません。
+一般に[[サーバー]]が[[利用者エージェント]]の代わりに最善の変種を選ぶことができる十分な情報を持っているときには選択応答を返すことができますが、
+この最善の変種が[[隣接変種]]であるときには選択応答を生成することだけが許されます。
+選択応答は10.2節で定義します。
+**RFC 2295 (HTTP 透過内容折衝) 10.2 Choice response
+[2]
+> A choice response returns a representation of the best variant for
+the request, and may also return the variant list of the negotiable
+resource.  It can be generated when the server has sufficient
+information to be able to choose the best variant on behalf the user
+agent, but may only be generated if this best variant is a
+neighboring variant.  For request from user agents which do not
+support transparent content negotiation, a server may always generate
+a choice response, provided that the variant returned is a
+neighboring variant.  The variant returned in a choice response need
+not necessarily be listed in the variant list bound to the negotiable resource.
+
+   A choice response merges a normal HTTP response from the chosen
+   variant, a TCN header which specifies the "choice" response-type, and
+   a Content-Location header giving the location of the variant.
+   Depending on the status code, a choice response is cacheable unless
+   indicated otherwise.
+
+   Origin servers and proxy caches MUST construct choice responses with
+   the following algorithm (or any other algorithm which gives equal end
+   results for the client).
+
+   In this algorithm, `the current Alternates header' refers to the
+   Alternates header containing the variant list which was used to
+   choose the best variant, and `the current variant list validator'
+   refers to the validator of this list.  Section 10.4 specifies how
+   these two items can be obtained by a proxy cache.
+
+   The algorithm consists of four steps.
+
+> 1. Construct a HTTP request message on the best variant resource
+by rewriting the request-URI and Host header (if appropriate) of
+the received request message on the negotiable resource.
+
+折衝可能資源について受取った要求メッセージの [CODE(ABNF)[[[Request-URI]]]]
+と (適当であれば) [CODE(HTTP)[[[Host]]]] 頭を書き換えて最善の変種資源についての
+HTTP 要求メッセージを構築します。
+
+> 2. Generate a valid HTTP response message, but not one with the
+304 (Not Modified) code, for the request message constructed in step 1.
+
+手順1で構築した要求メッセージに対する、 [CODE(HTTP)[[[304]]]]
+(未修正) 符号ではない妥当な HTTP メッセージを生成します。
+
+> In a proxy cache, the response can be obtained from cache
+memory, or by passing the constructed HTTP request towards the
+origin server.  If the request is passed on, the proxy MAY add,
+modify, or delete If-None-Match and If-Range headers to optimize
+the transaction with the upstream server.
+
+串キャッシュでは、応答はキャッシュ記憶から得たものであっても、
+構築した HTTP 要求を起源サーバーに渡して得たものであっても構いません。
+要求が渡される時には、串は[[上流]]サーバーとの転送の最適化のために
+[CODE(HTTP)[[[If-None-Match]]]] 頭と [CODE(HTTP)[[[If-Range]]]]
+頭を追加したり修正したり削除したりしても'''構いません'''。
+
+> Note: the proxy should be careful not to add entity tags of
+non-neighboring variants to If-* (conditional) headers of the
+request, as there are no global uniqueness requirements for these tags.
+
+注意 : 串は、要求の [CODE(HTTP)[If-[VAR[*]]]] (条件)
+頭に非隣接変種の[[実体札]]を加えてしまわないように注意するべきです。
+そのような実体札には大域固有性の要件はないからです。
+
+> 3. Only in origin servers: check for an origin server
+configuration error. If the HTTP response message generated in
+step 2 contains a TCN header, then the best variant resource is
+not a proper end point in the transparent negotiation process,
+and a 506 (Variant Also Negotiates) error response message
+SHOULD be generated instead of going to step 4.
+
+起源サーバーのみ : 起源サーバー設定誤りを検査します。手順2で生成された HTTP
+応答メッセージが [CODE(HTTP)[[[TCN]]]] 頭を含んでいる場合、
+最善の変種資源は透過折衝過程の適当な終点ではありませんので、
+手順4へ進む代わりに [CODE(HTTP)[[[506]]]] (変種もまた折衝)
+誤り応答メッセージを生成する'''べきです'''。
+
+> 4. Add a number of headers to the HTTP response message generated in step 2.
+
+> a. Add a TCN header which specifies the "choice" response-type.
+
+[CODE(HTTP)[[[choice]]]] [CODE(ABNF)[response-type]]
+を指定した [CODE(HTTP)[[[TCN]]]] 頭を加えます。
+
+> b. Add a Content-Location header giving the location of the
+chosen variant.  Delete any Content-Location header which was already present.
+
+選択された変種の位置を与える [CODE(HTTP)[[[Content-Location]]]]
+頭を加えます。既存のすべての [CODE(HTTP)[Content-Location]]
+頭は削除します。
+
+> Note: According to the HTTP/1.1 specification [1], if the
+Content-Location header contains a relative URI, this URI
+is relative to the URI in the Content-Base header, if
+present, and relative to the request-URI if no Content-Base header is present.
+
+注意 : HTTP/1.1 仕様書によれば、 [CODE(HTTP)[Content-Location]]
+頭が[[相対URI]] を含んでいる時は、この URI
+は [CODE(HTTP)[[[Content-Base]]]] 頭があればその URI
+に、 [CODE(HTTP)[Content-Base]] 頭がなければ [CODE(ABNF)[[[Request-URI]]]]
+に相対とします。
+
+> c. If any Vary headers are present in the response message
+from step 2, add, for every Vary header, a Variant-Vary
+header with a copy of the contents of this Vary header.
+
+手順2の応答メッセージに [CODE(HTTP)[[[Vary]]]] 頭があれば、
+各 [CODE(HTTP)[Vary]] 頭について、この [CODE(HTTP)[Vary]]
+頭の内容の複製を持った [CODE(HTTP)[[[Variant-Vary]]]]
+頭を加えます。
+
+> d. Delete any Alternates headers which are present in in the
+response.  Now, the current Alternates header MUST be added
+if this is required by the Negotiate request header, or if
+the server returns "re-choose" in the TCN response header.
+Otherwise, the current Alternates header MAY be added.
+
+応答に [CODE(HTTP)[[[Alternates]]]] 頭があればすべて削除します。
+そして、 [CODE(HTTP)[[[Negotiate]]]] 要求頭が要求しているか、
+サーバーが [CODE(HTTP)[[[TCN]]]] 応答頭で [CODE(HTTP)[[[re-choose]]]]
+を返すのであれば、現在 [CODE(HTTP)[Alternates]] 頭を加えなければ'''なりません'''。
+それ以外では、現在 [CODE(HTTP)[Alternates]] 頭を加えても'''構いません'''。
+
+> Note: It is usually a good strategy to always add the
+current Alternates header, unless it is very large
+compared to the rest of the response.
+
+注意 : 現在 [CODE(HTTP)[Alternates]] 頭が応答の残りに比べて非常に大きいのでない限り、
+これを常に加えるのは通常よい戦略です。
+
+> e. Add a Vary header to ensure correct handling by plain
+HTTP/1.1 caching proxies.  This header can either be
+-              Vary: *
+> or a more elaborate header, see section 10.6.
+
+> f. To ensure compatibility with HTTP/1.0 caching proxies which
+do not recognize the Vary header, an Expires header with a
+date in the past MAY be added. See section 10.7 for more information.
+
+> g. If an ETag header is present in the response message from
+step 2, then extend the entity tag in that header with the
+current variant list validator, as specified in section 9.2.
+
+> Note: Step g. is required even if the variant list itself is not added in step d.
+
+> h. Only in proxy caches: set the Age header of the response to
+-
+              max( variant_age , alternates_age )
+
+> where variant_age is the age of the variant response obtained
+in step 2, calculated according to the rules in the HTTP/1.1
+specification [1], and alternates_age is the age of the
+Alternates header added in step d, calculated according to
+the rules in section 10.4.
+
+> Note that a server can shorten the response produced by the above
+algorithm to a 304 (Not Modified) response if an If-None-Match header
+in the original request allows it.  If this is the case, an
+implementation of the above algorithm can avoid the unnecessary
+internal construction of full response message in step 2, it need
+only construct the parts which end up in the final 304 response.  A
+proxy cache which implements this optimization can sometimes generate
+a legal 304 response even if it has not cached the variant data itself.
+
+> An example of a choice response is:
+[PRE[
+     HTTP/1.1 200 OK
+     Date: Tue, 11 Jun 1996 20:05:31 GMT
+     TCN: choice
+     Content-Type: text/html
+     Last-Modified: Mon, 10 Jun 1996 10:01:14 GMT
+     Content-Length: 5327
+     Cache-control: max-age=604800
+     Content-Location: paper.1
+     Alternates: {"paper.1" 0.9 {type text/html} {language en}},
+                 {"paper.2" 0.7 {type text/html} {language fr}},
+                 {"paper.3" 1.0 {type application/postscript}
+                     {language en}}
+     Etag: "gonkyyyy;1234"
+     Vary: negotiate, accept, accept-language
+     Expires: Thu, 01 Jan 1980 00:00:00 GMT
+
+     <title>A paper about ....
+]PRE]
+**RFC 2295 (HTTP 透過内容折衝) 10.5 Extracting a normal response from a choice response
+> If a proxy receives a choice response, it MAY extract and cache the
+normal HTTP response contained therein.  The normal response can be
+extracted by taking a copy of the choice response and then deleting
+any Content-Location, Alternates, and Vary headers, renaming any
+Variant-Vary headers to Vary headers, and shortening the structured
+entity tag in any ETag header to a normal entity tag.
+
+串が[[選択応答]]を受取った時に、その中の通常の HTTP 応答を取り出してキャッシュしても'''構いません'''。
+通常の応答は、選択応答の複製を作って [CODE(HTTP)[[[Content-Location]]]]
+頭、 [CODE(HTTP)[[[Alternates]]]] 頭、 [CODE(HTTP)[[[Vary]]]]
+頭をすべて削除し、すべての [CODE(HTTP)[[[Variant-Vary]]]]
+頭を [CODE(HTTP)[Vary]] 頭に名前変更し、すべての [CODE(HTTP)[[[ETag]]]]
+頭中の[[構造化実体札]]を通常の[[実体札]]に短しめることで取り出せます。
+
+> This normal response MAY be cached (as a HTTP response to the variant
+request as constructed in step 1. of section 10.2) and reused to
+answer future direct requests on the variant resource, according to
+the rules in the HTTP/1.1 specification [1].
+
+通常の応答は (10.2節の手順1で構築した[[変種要求]]に対する応答として)
+キャッシュして、 HTTP/1.1 仕様書の規則に従って将来の変種資源への直接要求に回答するのに再利用しても'''構いません'''。
+
+> Note: The caching of extracted responses can decrease the upstream
+bandwidth usage with up to a factor 2, because two independent
+HTTP/1.1 cache entries, one associated with the negotiable
+resource URI and one with the variant URI, are created in the same
+transaction.  Without this optimization, both HTTP/1.1 cache
+entries can only be created by transmitting the variant data twice.
+
+> For security reasons (see section 14.2), an extracted normal response
+MUST NEVER be cached if belongs to a non-neighboring variant
+resource.  If the choice response claims to contain data for a non-neighboring variant resource, the proxy SHOULD reject the choice
+response as a probable spoofing attempt.
+
+*RFC 2295 (HTTP 透過内容折衝) 22 Appendix: Example of choice response construction
+[3]
+> The following is an example of the construction of a choice response
+by a proxy cache which supports HTTP/1.1 and transparent content
+negotiation.  The use of the HTTP/1.1 conditional request mechanisms is also shown.
+
+次に挙げるのは、 HTTP/1.1 と透過内容折衝に対応した[[串キャッシュ]]が[[選択応答]]を構築する例です。
+HTTP/1.1 条件付要求機構の使用も示します。
+
+> Assume that a user agent has cached a variant list with the validator
+"1234" for the negotiable resource http://x.org/paper.  Also assume
+that it has cached responses from two neighboring variants, with the
+entity tags "gonkyyyy" and W/"a;b".  Assume that all three user agent
+cache entries are stale: they would need to be revalidated before the
+user agent can use them.  If http://x.org/paper accessed in this
+situation, the user agent could send the following request to its proxy cache:
+
+利用者エージェントは折衝可能資源 [SAMP(URI)[http://x.org/paper]]
+の[[検証子]] [SAMP(HTTP)["1234"]] の[[変種目録]]をキャッシュしているとします。
+また、[[実体札]]が [SAMP(HTTP)["gonkyyyy"]] と [SAMP(HTTP)[W/"a;b"]]
+の2つの[[隣接変種]]もキャッシュしているとします。
+3つのすべての利用者エージェントキャッシュ項目は[[腐っている]]とします。
+よって、利用者エージェントはこれらを使う前に[[再検証]]する必要があります。
+この状況で [SAMP(URI)[http://x.org/paper]] に接続するとすれば、
+利用者エージェントは串キャッシュに次の要求を送ることが出来ます。
+
+>
+[PRE[
+     GET /paper HTTP/1.1
+     Host: x.org
+     User-Agent: WuxtaWeb/2.4
+     Negotiate: 1.0
+     Accept: text/html, application/postscript;q=0.4, */*
+     Accept-Language: en
+     If-None-Match: "gonkyyyy;1234", W/"a;b;1234"
+
+]PRE]
+
+> Assume that the proxy cache has cached the same three items as the
+user agent, but that it has revalidated the variant list 8000 seconds
+ago, so that the list is still fresh for the proxy.  This means that
+the proxy can run a remote variant selection algorithm on the list
+and the incoming request.
+
+串キャッシュが同じ3つの項目をキャッシュしていて、
+8000秒前に変種目録を再検証していて、串にとっては目録はまだ[[新鮮]]であるとします。
+このことは、串が目録とやってくる要求で[[遠隔変種選択算法]]を動かせることを意味します。
+
+> Assume that the remote algorithm is able to choose paper.html.en as
+the best variant.  The proxy can now construct a choice response,
+using the algorithm in section 10.2.  In steps 1 and 2 of the
+algorithm, the proxy can construct the following conditional request
+on the best variant, and send it to the origin server:
+
+遠隔算法が [SAMP(URI)[paper.html.en]] を最善の変種として選ぶことが出来たとします。
+串は10.2節の算法を使って選択応答を構築することが出来ます。
+その算法の手順1と手順2で、串は最善の変種についての次の条件付要求を構築し、
+起源サーバーに送ることが出来ます。
+
+>
+[PRE[
+     GET /paper.html.en HTTP/1.1
+     Host: x.org
+     User-Agent: WuxtaWeb/2.4
+     Negotiate: 1.0
+     Accept: text/html, application/postscript;q=0.4, */*
+     Accept-Language: en
+     If-None-Match: "gonkyyyy", W/"a;b"
+     Via: 1.1 fred
+
+]PRE]
+
+> On receipt of the response
+[PRE[
+     HTTP/1.1 304 Not Modified
+     Date: Tue, 11 Jun 1996 20:05:31 GMT
+     Etag: "gonkyyyy"
+
+]PRE]
+from the origin server, the proxy can use its freshly revalidated
+paper.html.en cache entry to expand the response to a non-304
+response:
+
+という応答を起源サーバーから受信し、串はこの応答を新鮮なものとして再検証された 
+[CODE(URI)[paper.html.en]] キャッシュ項目を使って非 [CODE(HTTP)[[[304]]]]
+応答に展開できます。
+
+>
+[PRE[
+     HTTP/1.1 200 OK
+     Date: Tue, 11 Jun 1996 20:05:31 GMT
+     Content-Type: text/html
+     Last-Modified: Mon, 10 Jun 1996 10:01:14 GMT
+     Content-Length: 5327
+     Cache-control: max-age=604800
+     Etag: "gonkyyyy"
+     Via: 1.1 fred
+     Age: 0
+
+     <title>A paper about ....
+]PRE]
+
+> Using this 200 response, the proxy can construct a choice response
+in step 4 of the algorithm:
+
+この [CODE(HTTP)[[[200]]]] 応答を使って、串は算法の手順4の選択応答を構築できます。
+
+>
+[PRE[
+     HTTP/1.1 200 OK
+     Date: Tue, 11 Jun 1996 20:05:31 GMT
+     TCN: choice
+     Content-Type: text/html
+     Last-Modified: Mon, 10 Jun 1996 10:01:14 GMT
+     Content-Length: 5327
+     Cache-control: max-age=604800
+     Content-Location: paper.html.en
+     Alternates: {"paper.html.en" 0.9 {type text/html} {language en}},
+                 {"paper.html.fr" 0.7 {type text/html} {language fr}},
+                 {"paper.ps.en"   1.0 {type application/postscript}
+                     {language en}}
+[INS[(篇注 : 空行ママ。たぶん誤り)]]
+     Etag: "gonkyyyy;1234"
+     Vary: negotiate, accept, accept-language
+     Expires: Thu, 01 Jan 1980 00:00:00 GMT
+     Via: 1.1 fred
+     Age: 8000
+
+     <title>A paper about ....
+]PRE]
+
+> The choice response can subsequently be shortened to a 304 response,
+because of the If-None-Match header in the original request from the
+user agent.  Thus, the proxy can finally return
+
+利用者エージェントからの元の要求に [CODE(HTTP)[[[If-None-Match]]]]
+頭があるので、この選択応答は続いて [CODE(HTTP)[304]]
+応答に短しめることができます。よって、串は最終的に
+
+>
+[PRE[
+     HTTP/1.1 304 Not Modified
+     Date: Tue, 11 Jun 1996 20:05:31 GMT
+     Etag: "gonkyyyy;1234"
+     Content-Location: paper.html.en
+     Vary: negotiate, accept, accept-language
+     Expires: Thu, 01 Jan 1980 00:00:00 GMT
+     Via: 1.1 fred
+     Age: 8000
+
+]PRE]
+to the user agent.
+
+を利用者エージェントに返すことが出来ます。
+
+
+** RFC の部分の License
+[[RFCのライセンス]]
+* メモ
+@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@d2 3
+d20 375
+d396 3
+@
+

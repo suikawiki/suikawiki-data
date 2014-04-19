@@ -1,0 +1,119 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.1
+date	2005.09.23.02.12.43;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@[1]
+[CODE(file)@@en[dac.pl]] が富豪的杉で遅杉る上に作られる [CODE(file)@@en[.dac]]
+ファイルが大きすぎて読み書きもままならないということで、
+さすがにもうやばいと思い、この1週間くらいその辺を書き換えてました。
+
+- 古い [CODE(file)@@en[disc.pl]] で最低限のモジュールを作って、
+それを使って本物を作る手はずになっていたのを、
+古い [CODE(file)@@en[disc.pl]] に合わせてレベルを落とすのが面倒 &
+[CODE(file)@@en[disc.pl]] も[AA(hw)[テラオソス]]ということで切り捨て。
+自分を作るために必要な最低限のモジュールも (アレだけど) CVS repository
+に入れておくことにしました。
+- [CODE(file)@@en[lib/Message/Util/DIS.dis]] から [[Perl]] 
+モジュール生成関係のメソッドを [CODE(file)@@en[lib/Message/Util/DIS/Perl.dis]]
+(新) に切り離し。
+- 各特性は従来のように [CODE(file)@@en[dac2pm.pl]] などで必要になったら読むのではなく、
+[CODE(file)@@en[dac.pl]] の時点で既に全部読むように 
+([CODE(file)@@en[lib/Message/Util/DIS/Value.dis]])。
+これやったら [CODE(file)@@en[dac2pm.pl]] の処理が[AA(hw)[テラハヤス]]。
+後でこれ ([CODE(DOMi)@@en[DVValue]]) って [CODE(DOMi)@@en[SWCFGNode]]
+の yet another 再実装だよねと気付いた[AA[orz]]
+- [CODE@@en[ManakaiDISElement]] (extends [CODE@@en[SWCFGElement]])
+のうちの最低限の機能だけの [CODE(DOMi)@@em[DNLElement]]
+を新設 ([CODE(file)@@en[lib/Message/Util/DIS/DNLite.dis]])。
+[CODE(DOMa)[parentNode]] など使ってない機能を省き、
+そのために内部構造も簡略化 (親節点への参照が不要になるので循環参照問題が解決できて、
+[CODE(file)@@en[lib/Message/Util/ManakaiNode.dis]] を継承しなくなるのでかなり嬉しい)。
+- しかし [CODE(DOMi)@@en[DISDocument]] から [CODE(DOMi)@@en[DISDatabase]]
+への参照を [CODE(DOMi)@@en[DNLElement]] 
+からは参照できなくなってしまったのが[AA(hw)[イタス]]。
+おかげであちこちに [CODE(DOMp)@@en[databaseArg]] なる引数を付け足す羽目になり、
+既存のとの混合で architecture 的にかなりやばくなってしまった。
+- [CODE@@en[for]] 違いの資源で [CODE@@en[dis:Description]]
+などの値をできるだけ共有するようにしてみた。それなりの成果は得られたものの、
+期待したほどではなかった。
+
+[2]
+できた [CODE(file)@@en[dac]] ファイルのサイズ (単位はオクテット)。
+
+,"SWCFG","DVVal","Shared NS","DVNSVal","\\ Val","DNLite","File"
+,"8,196,137","6,003,516*","3,489,344*","1,412,037*","1,555,388","1,565,008","m/all"
+,"11,497,423","10,656,604*","6,002,002*","2,565,365*","2,700,602","2,729,860","MU/core"
+,"76,177,942","141,839,671*","102,951,442*","52,409,318*","51,240,257","49,875,374","MD/core"
+,"85,952,130","162,464,060*","114,256,587*","58,291,703*","57,053,740","55,490,151","MM/all"
+,"129,658,592*","237,207,062*","161,864,565*","82,091,762*","80,498,854","75,311,906*","MU/discore[SUP[−]]"
+,"135,157,207*","","","","","82,846,631","MU/discore"
+,"131,247,860*","","","","","90,915,095","MU/disdoc"
+,"146,938,118*","","","","","","MD/html"
+
+米印は、ソースの変更が多くて厳密には比較できないことを意味します。
+[CODE(file)@@en[MU/discore]] は [CODE(file)@@en[lib/Message/Util/DIS/DNLite.dis]]
+の有無で2種類あります。
+
+[Q@@en[SWCFG]] は元の実装。 [Q@@en[DVVal]] は特性を読込むようにした場合。
+特性を読む分処理時間は結構増えました。 (その分 [CODE(file)@@en[dac2pm.pl]]
+[SPAN(hw)[テラハヤス]]。) サイズが途中で逆転してるのはなんででしょ?
+同じのを [CODE@@en[for]] で何度も読むせいでしょうかね?
+
+その [Q@@en[DVVal]] では [CODE(DOMi)@@en[DVValue]] 
+物体がそれぞれ名前空間束縛の複製を持っていたので、
+出自が同じ (同じ [CODE(file)@@en[dis]] ファイル起源) なら共有するようにしたのが
+[Q@@en[Shared NS]] です。かなり喰ってたみたいですね。。。
+
+[CODE@@en[lang:Perl]] や [CODE@@en[lang:disdoc]] のように名前空間束縛を使う値があるところでは
+[CODE(DOMi)@@en[DVValue]] の値として [CODE(DOMi)@@en[SWCFGElement]]
+を持たせていたので、それを [CODE@@en[lang:dis]]
+以外ではやめて、新しい [CODE(DOMi)@@en[DVNSValue]]
+という名前空間束縛付きの値のための物体を使うようにしたのが [Q@@en[DVNSVal]]
+です。なんと半分に。やっぱり [CODE(DOMi)@@en[SWCFGNode]]
+は大き杉ますねぇ。
+
+名前空間共有で小さくなったのに味を占めて、
+[CODE@@en[lang:Perl]] や [CODE@@en[lang:disdoc]] を scalar reference
+にすることで同じ [CODE@@en[for]] なら共有するようにしたのが
+[Q@@en[\ Val]]。増えているようにみえるのは元の [CODE(file)@@en[dis]]
+ファイルに大きな修正があったためです。それでも [CODE@@en[for]]
+による重複がある [CODE(file)@@en[MD/core]] 以下ではほどほどの成果が出ています。
+もうちょっと減ってくれると思ったけど、
+よくみてみるとソース・ファイルの大きさとかを反映しているみたいです。。。
+
+そして最後の [Q@@en[DNLite]] があたらしい [CODE(DOMi)@@en[DNLNode]]
+を使った実装で、データベースの大きさとして反映されるのは
+[CODE@@en[lang:dis]] の分だけなのでそれほどでもありませんが
+(それでも [Q@@en[\ Val]] の分と同じくらいの改善にはなってるな。。。)、
+[CODE(file)@@en[dac.pl]] の処理速度がとてつもなく向上。
+[Q@@en[SWCFG]] で全部作るのに1時間以上は余裕で掛かっていた
+(他のプログラムが動くと更に掛かっていた) のが、
+[Q@@en[DNLite]] では全部で10分程度に。
+データベースの読み書きが一番時間が掛かっているような。。。
+
+[3]
+これ以上の改善は、もちろんしたいですけど、
+変更の面倒臭さとかプログラムの楽さとかと得られそうな成果を考えるとそろそろ限界かなあと思っています。
+URI を識別子に使うのをやめればサイズ的にはかなりよくなりそうですけど。。。
+(実際匿名資源に与えた適当な自動生成の URI が馬鹿にならないんですよ。。。)
+@

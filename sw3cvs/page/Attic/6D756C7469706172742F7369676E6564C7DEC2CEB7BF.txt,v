@@ -1,0 +1,154 @@
+head	1.2;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.2
+date	2003.06.06.12.26.32;	author make;	state dead;
+branches;
+next	1.1;
+
+1.1
+date	2002.07.29.12.01.58;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@auto-commited
+@
+text
+@[[MIME]] を使って署名つきメッセージを送るための[[媒体型]]です。
+
+RFC 1847 <urn:ietf:rfc:1847> が定義しています。
+ちなみに RFC 1847 は [[multipart/encrypted媒体型]]も定義してます。
+
+*応用
+-[[MOSS]] (RFC 1848)
+-[[PGP/MIME]]
+-[[S/MIME]]
+
+*媒体型パラメーター
+
+,boundary,mime.boundary,必須,多部分境界 [MIME] (See [[multipart/*媒体型]])
+,micalg,mime.type "/" mime.subtype,必須,署名の媒体型 [RFC 1847]
+,protocol,mime.value,必須,Message Integrity Check (MIC) [RFC 1847]
+
+protocol パラメーターの値には、署名の媒体型を書きます。
+
+**micalg パラメーター
+
+micalg パラメーターは、メッセージ完全性検査 
+Message Integrity Check (MIC) の名前を書き入れます。
+
+RFC 1847 曰く:
+
+>   The Message Integrity Check (MIC) is the name given to the quantity
+>   computed over the body part with a message digest or hash function,
+>   in support of the digital signature service.  Valid value tokens are
+>   defined by the specification for the value of the protocol parameter.
+>   The value may be a comma (",") separated list of tokens, indicating
+>   the use of multiple MIC algorithms.  As a result, the comma (",")
+>   character is explicitly excluded from the list of characters that may
+>   be included in a token used as a value of the micalg parameter.  If
+>   multiple MIC algorithms are specified, the purpose and use of the
+>   multiple algorithms is defined by the protocol.  If the MIC algorithm
+>   is also specified in the control information and the value there does
+>   not agree with the value in this parameter, it must be treated as an
+>   error.
+
+メッセージ完全性検査は、本文部分を要約・ハッシュ関数で
+計算した量の名前で、デジタル署名サービスが対応するものです。
+妥当な値字句は、 protocol パラメーターで指定した仕様が
+定義します。値には読点 (",") を使っても構いません。
+この場合、複数の MIC 算法が使われていることを示します。
+よって、読点文字は明白に、 micalg パラメーターの値に
+使う字句に含めることが出来る文字の表から除かれます。
+複数の MIC 算法を指定する場合、複数の算法の目的と使用法は
+プロトコルが定義します。 MIC 算法も制御情報を持っていて、
+その値とこのパラメーターの値が一致しない場合、
+誤り error として扱わなければなりません。
+
+>    NOTE: The presence of the micalg parameter on the
+>    multipart/signed content type header is explicitly intended to
+>    support one-pass processing.  MIME implementations may locate
+>    the second body part by inputting the first body part and
+>    computing the specified MIC values until the boundary
+>    identifying the second body part is found.
+
+参考: micalg パラメーターの multipart/signed 内容型頭
+への掲示は、明白に1過程処理に対応することを意図しています。
+MIME 実装は2つめの本文部分を、最初の本文部分を入力して、
+2つめの本文部分が来ることを識別する区切りまでの指定された MIC 
+値を計算することで配置しても構いません。
+
+*多部分本文
+
+最初の部分は署名される部分です。署名部分には MIME 頭も含まれます。
+MIME として妥当ならどんなものでも構いません。
+(てことは、 [[multipart/*媒体型]]でもいいんだ。)
+
+と思いきや、
+
+>   The signature in a multipart/signed only applies to the material that
+>   is actually within the multipart/signed object.  In particular, it
+>   does not apply to any enclosing message material, nor does it apply
+>   to entities that are referenced (e.g. via a MIME 
+> message/external-body) by rather than included in the signed content.
+
+multipart/signed 中の署名は、実際に multipart/signed 物体の
+中にあるものにのみ適用されます。特に、囲んでいるメッセージ物体
+や (例えば、 MIME message/external-body で) 参照されている実体 
+には適応されません。
+
+って書いてあるや。 multipart はどーなんだろう。
+
+2つ目の部分は署名で、 protocol パラメーターの値と同じ
+媒体型になります。
+
+*作成
+
+1. MIME 正規形で(ほんとの)本文部分を用意する。
+適切な MIME 頭も。
+
+1.5. 7bit 表現にする。転送系が 8bit や binary
+であっても、関門で 7bit 世界に突入することを考慮して、
+予め [[quoted-printable]] か [[Base64]] を使っておく
+必要がある。
+
+3. (ほんとの)本文 (と MIME 頭) を署名処理に通す。
+で、署名の検証に要るデータをもらう。
+
+3.5. 以上で用意したデータから、 multipart/signed 本文を組み立てる。
+
+*検証
+
+1. 最初の部分(ほんとの本文) と2つ目の部分 (検証用データ)
+を取り出す。2つ目の部分の[[媒体型]]は protocol パラメーター
+と一致するはず。しなければ誤り。
+
+2. 検証プログラムに両部分を渡す。検証プログラムは検証し、
+妥当か不当かを返す。
+
+3. 検証結果を利用者に示す。必要なら次の処理へ進む。
+
+*License
+
+See [[RFCのライセンス]]
+@
+
+
+1.1
+log
+@Updated.
+@
+text
+@@
+

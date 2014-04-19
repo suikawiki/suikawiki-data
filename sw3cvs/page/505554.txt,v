@@ -1,0 +1,236 @@
+head	1.2;
+access;
+symbols
+	suikawiki3-final:1.2
+	before-db-leaffile:1.1
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.2
+date	2005.02.03.02.06.17;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.12.03.02.03.40;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@
+
+[[#comment]]
+
+
+* 仕様書から
+
+
+** RFC 1945 (HTTP/1.0) D.1.1; RFC 2068・2616 (HTTP/1.1) 9.6 PUT
+
+> The PUT method requests that the enclosed entity be stored under the
+supplied Request-URI. If the Request-URI refers to an already
+existing resource, the enclosed entity [DEL[should]] [INS[SHOULD]] be considered as a
+modified version of the one residing on the origin server. If the
+Request-URI does not point to an existing resource, and that URI is
+capable of being defined as a new resource by the requesting user
+agent, the origin server can create the resource with that URI. [INS[If a new resource is created, the origin server MUST inform the user agent via the 201 (Created) response.  If an existing resource is modified, either the 200 (OK) or 204 (No Content) response codes SHOULD be sent to indicate successful completion of the request. If the resource could not be created or modified with the Request-URI, an appropriate error response SHOULD be given that reflects the nature of the problem. The recipient of the entity MUST NOT ignore any Content-* (e.g. Content-Range) headers that it does not understand or implement and MUST return a 501 (Not Implemented) response in such cases.]]
+
+[CODE(HTTP)[PUT]] 方式は、囲まれた[[実体]]を供給した
+[CODE(HTTP)[[[Request-URI]]]] の元で蓄積することを要求します。
+[CODE(HTTP)[Request-URI]]]] が既に存在する[[資源]]を指している時は、
+囲まれた実体は[[起源サーバー]]にあるものの修正版と考えられる'''べきです'''。
+[CODE(ABNF)[Request-URI]] が既存の資源を指しておらず、
+その URI に要求している利用者エージェントによって新しい資源を定義する能力があるなら、
+起源サーバーはその URI に資源を作ることが出来ます。 [INS[新しい資源が作られたら、起源サーバーは [CODE(HTTP)[[[301]]]] (作成せし) 応答で利用者エージェントに知らせなければ'''なりません'''。既存の資源が修正されたなら、 [CODE(HTTP)[[[200]]]] (了解) または [CODE(HTTP)[[[204]]]] (無内容) の応答符号を送って要求の成功裏完了を示す'''べきです'''。その [CODE(ABNF)[Request-URI]] で資源を作るか修正するかできなかったときは、問題の性質を反映して適切な誤り応答を与える'''べきです'''。実体の受信者は、その理解・実装しない [CODE(HTTP)[Content-[VAR[*]]]] 頭 (例えば [CODE(HTTP)[[[Content-Range]]]]) を無視しては'''なりません'''で、そのような場合には [CODE(HTTP)[[[501]]]] (未実装) 応答を返さなければ'''なりません'''。]]
+
+[INS[
+
+> If the request passes through a cache and the Request-URI identifies
+one or more currently cached entities, those entries [DEL[should]] [INS[SHOULD]] be
+treated as stale. Responses to this method are not cach[INS[e]]able.
+
+要求が[[キャッシュ]]を通して渡され、 [CODE(ABNF)[Request-URI]]
+が一つか複数個の現在キャッシュされている実体を識別する時は、
+それらの項目は[[腐敗]]しているものとして扱う'''べきです'''。
+この方式への応答は[[キャッシュ可能]]ではありません。
+]INS]
+
+> The fundamental difference between the POST and PUT requests is
+reflected in the different meaning of the Request-URI. The URI in a
+POST request identifies the resource that will handle the enclosed
+entity [DEL[[INS[{1945}]] as data to be processed]].
+That resource [DEL[[INS[{1945,2068}]] may]] [INS[[INS[{2616}]] might]] be a data-accepting process, a gateway to
+some other protocol, or a separate entity that accepts annotations.
+In contrast, the URI in a PUT request identifies the entity enclosed
+with the request -- the user agent knows what URI is intended and the
+server [DEL[[INS[{1945}]] should not]] [INS[MUST NOT attempt to]]
+apply the request to some other resource. [INS[If the server desires that the request be applied to a different URI, it MUST send a 301 (Moved Permanently) response; the user agent MAY then make its own decision regarding whether or not to redirect the request.]]
+
+[CODE(HTTP)[[[POST]]]] 要求と [CODE(HTTP)[PUT]] 要求の本質的な違いは、
+[CODE(ABNF)[Request-URI]] の違った意味を反映しています。
+[CODE(HTTP)[POST]] 要求の URI は囲まれた実体を[DEL[処理されるデータとして]]取扱う[[資源]]を識別します。
+その資源はデータ受入れ過程かもしれませんし、他のプロトコルとの[[関門]]かもしれませんし、
+[[注釈]]を受け入れる別の実体かもしれません。
+かわって、 [CODE(HTTP)[PUT]] 要求の URI は要求に囲まれた実体のを識別します。
+利用者エージェントはどの URI が意図されているかを知っており、
+サーバーはその要求を他の資源に適用しようと試みては'''なりません'''。[INS[サーバーが要求を異なる URI に適用することを望む時は、 [CODE(HTTP)[[[301]]]] (永続的移動) 応答を送らなければ'''なりません'''。利用者エージェントは要求を[[再指向]]するかどうかについて自身の決定を下して'''構いません'''。]]
+
+[INS[
+
+> A single resource MAY be identified by many different URIs. For
+example, an article [DEL[may]] [INS[might]] have a URI for identifying "the current
+version" which is separate from the URI identifying each particular
+version. In this case, a PUT request on a general URI [DEL[may]] [INS[might]] result in
+several other URIs being defined by the origin server.
+
+一つの資源は多くの違った URI で識別して'''構いません'''。
+例えば、ある記事は特定の版を識別する URI とは別に「現行版」
+を識別する URI を持つかもしれません。
+この場合、一般 URI への [CODE(HTTP)[PUT]] 要求は、結果その起源サーバーが定義する幾つかの他の URI
+となるかもしれません。
+
+> HTTP/1.1 does not define how a PUT method affects the state of an origin server.
+
+HTTP/1.1 は起源サーバーの状態に [CODE(HTTP)[PUT]] 方式がどう影響するかを定義しません。
+
+> PUT requests [DEL[must]] [INS[MUST]] obey the message transmission requirements set out in section 8.2.
+
+[CODE(HTTP)[PUT]] 要求は8.2節のメッセージ転送要件に従わなければ'''なりません'''。
+
+[INS[
+
+> Unless otherwise specified for a particular entity-header, the
+entity-headers in the PUT request SHOULD be applied to the resource
+created or modified by the PUT.
+
+特定の実体頭で特に指定されていない限り、
+[CODE(HTTP)[PUT]] 要求の実体頭は [CODE(HTTP)[PUT]]
+で作成または修正された資源に適用する'''べきです'''。
+]INS]
+]INS]
+
+
+** RFC の部分の License
+
+[[RFCのライセンス]]
+
+
+* メモ
+
+[1]
+Editing the Web - Detecting the Lost Update Problem Using Unreserved Checkout <http://www.w3.org/1999/04/Editing/>
+([[名無しさん]])
+
+@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@d1 104
+a104 87
+#?SuikaWiki/0.9
+[[#comment]]
+* 仕様書から
+**RFC 1945 (HTTP/1.0) D.1.1; RFC 2068・2616 (HTTP/1.1) 9.6 PUT
+> The PUT method requests that the enclosed entity be stored under the
+supplied Request-URI. If the Request-URI refers to an already
+existing resource, the enclosed entity [DEL[should]] [INS[SHOULD]] be considered as a
+modified version of the one residing on the origin server. If the
+Request-URI does not point to an existing resource, and that URI is
+capable of being defined as a new resource by the requesting user
+agent, the origin server can create the resource with that URI. [INS[If a new resource is created, the origin server MUST inform the user agent via the 201 (Created) response.  If an existing resource is modified, either the 200 (OK) or 204 (No Content) response codes SHOULD be sent to indicate successful completion of the request. If the resource could not be created or modified with the Request-URI, an appropriate error response SHOULD be given that reflects the nature of the problem. The recipient of the entity MUST NOT ignore any Content-* (e.g. Content-Range) headers that it does not understand or implement and MUST return a 501 (Not Implemented) response in such cases.]]
+
+[CODE(HTTP)[PUT]] 方式は、囲まれた[[実体]]を供給した
+[CODE(HTTP)[[[Request-URI]]]] の元で蓄積することを要求します。
+[CODE(HTTP)[Request-URI]]]] が既に存在する[[資源]]を指している時は、
+囲まれた実体は[[起源サーバー]]にあるものの修正版と考えられる'''べきです'''。
+[CODE(ABNF)[Request-URI]] が既存の資源を指しておらず、
+その URI に要求している利用者エージェントによって新しい資源を定義する能力があるなら、
+起源サーバーはその URI に資源を作ることが出来ます。 [INS[新しい資源が作られたら、起源サーバーは [CODE(HTTP)[[[301]]]] (作成せし) 応答で利用者エージェントに知らせなければ'''なりません'''。既存の資源が修正されたなら、 [CODE(HTTP)[[[200]]]] (了解) または [CODE(HTTP)[[[204]]]] (無内容) の応答符号を送って要求の成功裏完了を示す'''べきです'''。その [CODE(ABNF)[Request-URI]] で資源を作るか修正するかできなかったときは、問題の性質を反映して適切な誤り応答を与える'''べきです'''。実体の受信者は、その理解・実装しない [CODE(HTTP)[Content-[VAR[*]]]] 頭 (例えば [CODE(HTTP)[[[Content-Range]]]]) を無視しては'''なりません'''で、そのような場合には [CODE(HTTP)[[[501]]]] (未実装) 応答を返さなければ'''なりません'''。]]
+
+[INS[
+> If the request passes through a cache and the Request-URI identifies
+one or more currently cached entities, those entries [DEL[should]] [INS[SHOULD]] be
+treated as stale. Responses to this method are not cach[INS[e]]able.
+
+要求が[[キャッシュ]]を通して渡され、 [CODE(ABNF)[Request-URI]]
+が一つか複数個の現在キャッシュされている実体を識別する時は、
+それらの項目は[[腐敗]]しているものとして扱う'''べきです'''。
+この方式への応答は[[キャッシュ可能]]ではありません。
+]INS]
+
+> The fundamental difference between the POST and PUT requests is
+reflected in the different meaning of the Request-URI. The URI in a
+POST request identifies the resource that will handle the enclosed
+entity [DEL[[INS[{1945}]] as data to be processed]].
+That resource [DEL[[INS[{1945,2068}]] may]] [INS[[INS[{2616}]] might]] be a data-accepting process, a gateway to
+some other protocol, or a separate entity that accepts annotations.
+In contrast, the URI in a PUT request identifies the entity enclosed
+with the request -- the user agent knows what URI is intended and the
+server [DEL[[INS[{1945}]] should not]] [INS[MUST NOT attempt to]]
+apply the request to some other resource. [INS[If the server desires that the request be applied to a different URI, it MUST send a 301 (Moved Permanently) response; the user agent MAY then make its own decision regarding whether or not to redirect the request.]]
+
+[CODE(HTTP)[[[POST]]]] 要求と [CODE(HTTP)[PUT]] 要求の本質的な違いは、
+[CODE(ABNF)[Request-URI]] の違った意味を反映しています。
+[CODE(HTTP)[POST]] 要求の URI は囲まれた実体を[DEL[処理されるデータとして]]取扱う[[資源]]を識別します。
+その資源はデータ受入れ過程かもしれませんし、他のプロトコルとの[[関門]]かもしれませんし、
+[[注釈]]を受け入れる別の実体かもしれません。
+かわって、 [CODE(HTTP)[PUT]] 要求の URI は要求に囲まれた実体のを識別します。
+利用者エージェントはどの URI が意図されているかを知っており、
+サーバーはその要求を他の資源に適用しようと試みては'''なりません'''。[INS[サーバーが要求を異なる URI に適用することを望む時は、 [CODE(HTTP)[[[301]]]] (永続的移動) 応答を送らなければ'''なりません'''。利用者エージェントは要求を[[再指向]]するかどうかについて自身の決定を下して'''構いません'''。]]
+
+[INS[
+> A single resource MAY be identified by many different URIs. For
+example, an article [DEL[may]] [INS[might]] have a URI for identifying "the current
+version" which is separate from the URI identifying each particular
+version. In this case, a PUT request on a general URI [DEL[may]] [INS[might]] result in
+several other URIs being defined by the origin server.
+
+一つの資源は多くの違った URI で識別して'''構いません'''。
+例えば、ある記事は特定の版を識別する URI とは別に「現行版」
+を識別する URI を持つかもしれません。
+この場合、一般 URI への [CODE(HTTP)[PUT]] 要求は、結果その起源サーバーが定義する幾つかの他の URI
+となるかもしれません。
+
+> HTTP/1.1 does not define how a PUT method affects the state of an origin server.
+
+HTTP/1.1 は起源サーバーの状態に [CODE(HTTP)[PUT]] 方式がどう影響するかを定義しません。
+
+> PUT requests [DEL[must]] [INS[MUST]] obey the message transmission requirements set out in section 8.2.
+
+[CODE(HTTP)[PUT]] 要求は8.2節のメッセージ転送要件に従わなければ'''なりません'''。
+
+[INS[
+>Unless otherwise specified for a particular entity-header, the
+entity-headers in the PUT request SHOULD be applied to the resource
+created or modified by the PUT.
+
+特定の実体頭で特に指定されていない限り、
+[CODE(HTTP)[PUT]] 要求の実体頭は [CODE(HTTP)[PUT]]
+で作成または修正された資源に適用する'''べきです'''。
+]INS]
+]INS]
+
+
+** RFC の部分の License
+[[RFCのライセンス]]
+* メモ
+@
+

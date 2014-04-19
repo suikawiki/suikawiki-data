@@ -1,0 +1,82 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1
+	before-db-leaffile:1.1;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.1
+date	2004.04.03.02.00.23;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9
+
+[1]
+suikawiki.pl で WikiName ($wiki->{var}->{page}) が必ず非空になるようにしています。この制限を取ってみたら無限循環?に陥りました。
+
+根名前空間に使いたかったのですけど、どこに問題があるのかよく分からないし、当分諦めるか。 (探すの面倒だし。)
+([[名無しさん]] [WEAK[2004-04-01 02:22:05 +00:00]])
+
+[2]
+>>1 はなんのことはない、根名前空間の子頁一覧を出そうとして、全 WikiPage の一覧を一生懸命書いてただけでした。 (これ、すごく時間がかかるったらありゃしない。)
+
+page-list も30個ごとにぶった切ることにしました。 (そうすると頁一覧がすごいことに(w。) 
+
+こうすると今度は根が [[YukiWikiDBNS]] では対応ファイルが [CODE(file)[.txt]] になってしまいまして、 SuikaWiki 2 のときにこれは望ましくないと決めたのですが、 [CODE(perl)[SuikaWiki::DB::FileSystem::YukiWikiDBNS]] ではそのチェックが抜けていたので追加しました。
+しかし根ではやっぱりこれまでどおり HomePage が出てきてほしいので、 [CODE(perl)[SuikaWiki::DB::FileSystem::YukiWikiDBNS->new]] に新しい option, [CODE[root_page]] をつくって、根を読もうとしたら代わりに読みにいくべきファイルの鍵を指定できるようにしました。
+
+ところで、根の [CODE(HTMLe)[h1]] とか [CODE(HTMLe)[title]] が空文字列になってしまうのは、いったいどうしたらいいのでしょう。根のためだけに条件分岐するのは面倒くさいなあ。放置してもいい?
+([[名無しさん]] [WEAK[2004-04-01 03:27:44 +00:00]])
+
+[3]
+根の rel=up も根になってるけど面倒なので放置。
+([[名無しさん]] [WEAK[2004-04-01 03:29:54 +00:00]])
+
+[4]
+しかし根直下の WikiPage の rel=up が無しになるのは Windoze 95 の[[マイ コンヒ゜ュータ]]で「上へ」ボタンを押したら上へいけませんと出るみたいでみっともないから修正。
+([[名無しさん]] [WEAK[2004-04-01 03:32:45 +00:00]])
+
+[5]
+根を表す文字列形式の WikiName が空文字列だと (規定値決定とかで) 困ることがあるので、根を表す文字列記号を使えるように [CODE(perl)[SuikaWiki::Name]] を修正しました。 (こうしないと >>4 がちゃんと機能しない。)
+([[名無しさん]] [WEAK[2004-04-01 03:49:53 +00:00]])
+
+[6]
+>>5 で >>2 の空文字列問題も解決。
+([[名無しさん]] [WEAK[2004-04-01 04:00:09 +00:00]])
+
+[7]
+>>2 の DB の修正は content だけで lastmodified には適用されないので、日付が齟齬。厄介な問題だ。面倒なので黙殺。
+([[名無しさん]] [WEAK[2004-04-01 04:01:18 +00:00]])
+
+[8]
+recent-change-list の作成を content の keys ではなく lastmodified のkeys にしてみたら分かったのだけど、 lastmodified がついていない (つまり lastmodified 導入以前から修正されていない) WikiPage が全体の 1/4, 150 個くらいあるらしい。たぶん 2001年とか2002年の記事だと思うから、すごい生存力だ。
+([[名無しさん]] [WEAK[2004-04-01 04:03:50 +00:00]])
+
+[9]
+Map WikiPlugin module で m--change mode を定義しました。これは RecentChanges WikiPage の機能を提供します。大昔の YukiWiki 由来の code にもそんなようなのがありましたから、それの復活と言えば復活ですが、実装としてはまるっきり違います。
+
+m--change mode では現在 WikiPage 以下の WikiPage の修正日時だけを扱います。
+従来の RecentChanges と同じ内容を得たい時は根 WikiPage の m--change を見ればいいだけです。 (>>1-7 はこのためだったのだ。)
+懸案がやっと一つ解決ですね。
+([[名無しさん]] [WEAK[2004-04-01 04:33:52 +00:00]])
+
+
+[10]
+<IW:SuikaCVS:"suikawiki/wikidata/"> の [CODE(file)[suikawiki-config.ph]] と [CODE(file)[ChangeLog]] が、本来 SuikaWiki 3 版 (現行版) が幹に、 SuikaWiki 2 版が [CODE[branch-suikawiki-1]] 枝にないといけないのに、うっかり [CODE[branch-suikawiki-1]] 枝のまま SuikaWiki 3 に来てしまっていることがわかったので、正しく、 SuikaWiki 3 版の最新を幹の先端に、 SuikaWiki 2 版の最終を枝の先端に commit しました。まったく間抜けなミスをやらかしたもんです。
+([[名無しさん]] [WEAK[2004-04-01 05:04:00 +00:00]])
+
+@

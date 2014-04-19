@@ -1,0 +1,256 @@
+head	1.5;
+access;
+symbols
+	suikawiki3-final:1.5
+	before-db-leaffile:1.4
+	after-upgrade-to-suikawiki-3:1.4
+	before-fork-suikawiki3:1.4
+	after-restore-20040122:1.4;
+locks; strict;
+comment	@# @;
+
+
+1.5
+date	2004.04.27.02.09.56;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2003.08.16.09.19.01;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2003.07.31.08.29.23;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2003.07.29.07.17.14;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.06.28.10.15.06;	author make;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.5
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9
+- Subject: 物理層 module 総合スレ
+- Priority: high
+- Status: closed
+- Category: WikiDatabase
+- Creation-Date: 2003-06-05T08:11:45+00:00
+
+[20] また、 WikiPage database も ([[YukiWiki]] でもやや実現されていますが)
+固定とせず (hard-coding せず) に外部に完全に追い出して、従来の
+plain-text database on file-system や外部 database
+以外に、 [[CVS]] database や [[HTTP]] などからの入(出)力も実装出来れば良いでしょう。
+
+[23] >>20 これって今話題の [[WikiFarm]] の小さい版みたいなものかなあ?
+
+[24] >>23 そうともいえるし違うともいえる。
+
+[1] [[WikiDatabase]] 物理層の実装の問題について。
+
+[PRE[
+WikiDatabase のモデル
+
+   (WikiDatabase への access)
+    ↓↑                 ↓↑
++------------+           ↓↑
+| 形式差吸収 |           ↓↑
+| モジュール |           ↓↑
++------------+           ↓↑
+    ↓↑WikiDatabase 界面↓↑
++--------+------------------------+
+| 抽象層 | WikiPage, WikiNamespace|
++--(仮称)+------------------------+
+           ↓↑ 物理層界面
++--------+------------------------+
+| 物理層 | 実際のデータ           |
+|        | (ディスク上のファイル, |
+|        |  遠隔データ, etc.)     |
++--------+------------------------+
+]PRE]
+
+形式差吸収モジュールについては [[..//6]] 参照。
+
+[2] 物理層実装についての課題:
+- 抽象層 (仮称) との分離
+-- 現状では抽象層 (仮称) と物理層の区別がない。
+--- 柔軟な物理データ源の選択のために一々全体のモジュールを書かないといけない (コピペや継承も可能ではあるが)。
+---- 例えば名前空間階層の一部を他のディスクやインターネットの任意の資源にするとか。
+--- WikiDatabase を扱う Wiki のあらゆる部分で、使用している 
+Database の性質を知らないといけない。
+---- 例えばメタ情報用補助データベースの有無
+---- [CODE(perl)[[[exist]]]] の使用の可否
+--- Wiki level でのアクセス権管理の実装が困難
+---- すべての WikiDatabase 実装を書き直して実装するか、
+すべての WikiDatabase への access 側を書き直さないといけない。
+---- Wiki level での管理は諦めて database 側に完全にゆだねる手もあるが・・・。それにしてもそのための界面が結局必要。
+- メタ情報用補助データベースの実装法
+-- メタ情報: 更新日時, 凍結状態, [[Referer]] 記録など
+-- [[YukiWiki]] 式実装 (SuikaWiki では既に破棄
+--- メタ情報用の別の database を用意
+--- 情報内容の非対等性 (メタ情報は本情報より少量とか) を無視
+--- 一つの情報についての database としての統一性に欠く [WEAK[(だって実際複数の database。)]]
+-- 現 SuikaWiki 標準実装 ([CODE(perl)[Yuki::YukiWikiDBMeta]])
+--- メタ情報データベースは本データベースの附属機能
+--- メタ情報データベースは本データベースに対して簡易的構造
+--- 異なるデータベースを無理矢理結合した形で気持ちが悪い
+---- より柔軟なデータの扱いのために、メタ情報データベースをもっと別の形式にする、のようなことが不可能 (書き直す必要)
+-- 新しい実装案
+--- 基本に立ち返り、一モジュール、一データベース (形式・データ源)。
+--- メタ情報のための複数データベース利用は抽象層で処理
+---- 抽象層から見るとき、メタ情報・本情報の区別はなくし、それぞれデータベースの項目 (属性) となる。
+----(例) 記録1
+----- entity : *本文* : file:///wiki/database/entity/記録1
+----- last-modified : 2003-04-05 : mtime (file:///wiki/database/entity/記録1)
+----- frozen : false : (file:///wiki/database/frozen#記録1)
+---- この例では、項目 [CODE[entity]] はファイル・システムのファイルに記録が写像される database,
+[CODE[last-modified]] は [CODE[entity]] の記録ファイルのファイル・システム上の日付情報の database,
+[CODE[frozen]] は記録がファイルの一部に記述される database
+を使い、抽象層が1つの database の記録であるように見せている。
+---- 例えば $abs_db->get_data ('記録1', 'last-modified')
+で [CODE[last-modified]] のデータを取得できる。
+- [3] >>2 でなんかもっともらしい理由 (にしようと画策したらしきもの) を述べてますが、現実的に何が問題なのかというと、 WikiPlugin 云々からデータにアクセスする界面が整備されていない ($main::database で無理矢理参照している) のと、メタ情報と称してでっかなデータが収められつつあるが、このままではファイルがいつかパンクするだろうこと。
+- [4] でっかなメタ情報ってのは、具体的には [[Referer]]。今は URI だけ保存して、既に一部 WikiPage では数キロオクテットになってるのに、今後 [[TrackBack]] 的逆リンクが増えると。。。
+- [5] それと、 WikiName と結合された外部データ源の利用は plugin でそれぞれ実装するより共通界面が使えたほうがいい。例えば、 ML archive + Wiki という応用を考えると、1つの WikiPage で従来の Wiki database と ML archive を同時に扱う必要が出てくる。
+
+[6] 物理層の部分のモデル:
+[PRE[
+物理 DB(群) 論理 DB
++------+   +-------+
+| DB 1 |<==>項目 1 |
++------+   | - - - |
++------+  =>項目 2 |
+| DB 2 |<= | - - - |
++------+  =>項目 3 |
+   :       : - - - :
+]PRE]
+こんな感じでいくのはどうでしょう?
+
+論理 DB を実現する module
+を [CODE(wiki)[SuikaWiki::DB]]
+とすると、その実現値を生成する時に物理
+DB 群との関係を設定します。
+([CODE(wiki)[suikawiki-config.ph]]
+で、こんな感じで書く:
+[PRE[
+$db = new SuikaWiki::DB;
+$db->regist_prop (page => $page_db);
+$db->regist_prop (last_modified => $meta_db);
+$db->regist_prop (frozen => $meta_db);
+]PRE]
+ここで、 [CODE(perl)[$page_db]]
+と [CODE(perl)[$meta_db]]
+は物理 DB の実現値。)
+
+データを取り出すのには、
+[CODE(perl)[$db->get ($record_name => 'page')]]。
+これで [SAMP[page]] DB から record
+[SAMP[$record_name]] が返る。
+- [7] 物理 DB の追加は plugin で簡単に出来るように。
+
+[8] SuikaWiki::DB の界面(案):
+:new :新しい実現値の生成
+:set_prop ($propname, $db):新しい特性 (物理 DB) の追加
+:exist_prop ($propname):ある特性を持っているか?
+:delete_prop ($propname):特性の論理 DB からの削除
+:get ($propname, $recordname):値の取得
+:set ($propname, $recordname, $value): 値の設定
+:exist ($propname, $recordname):値が存在するか?
+:delete ($propname, $recordname):値の削除
+:keys ($propname):値一覧の取得
+
+物理 DB の界面:
+:new (%option):実現値の生成
+:get ($propname, $recordname):値の取得
+:set ($propname, $recordname, $value): 値の設定
+:exist ($propname, $recordname):値が存在するか?
+:delete ($propname, $recordname):値の削除
+:keys ($propname):値一覧の取得
+
+
+界面がほぼ共通だから、
+論理 DB を物理 DB として扱うこともできるわけだ。
+(あんまり意味はないけど。)
+
+- [9] 名前空間のことを忘れてました。実装によっては、例えば下位 directory を必要になるまで読まないとかすると少しは速くなるかもしれません。
+- [10] keys の引数は ($propname, %option) で、 %option の共通 option に -type = key / ns / both, -recursive = 1/0
+- [11] >>10 -ns => $ns という現在の [[Yuki::YukiWikiDBNS]] の実装を基本的には踏襲でいいかな?
+- [12] どの record 名も、単なる文字列じゃなくて array reference にします。名前空間対応のためです。 たとえば get ('key', [qw/path to wikipage/]) のように。抽象データベース界面の level では名前空間の区切子から独立とします。
+- [13] データベースによっては使えない名前とかがあるわけです。他にもエラー処理は統一されていた方がいいから、 SuikaWiki::Markup::XML::Error みたいなかんじで SuikaWiki::DB::Util::Error に集中的 error manager を用意しましょう。
+- [14] >>13 エラーの種類を標準化しておけば、名前が使えないとかロック中とかの共通のエラーには外部 (Wiki 側) で利用者に対するメッセージを用意しておくことが出来ますし。 DB 固有のエラーは「その他のエラー」として報告すれば良いし。現状では適当に die してるだけだから CGI::Carp が拾う画面が出るわけですが、そのへんを整備できるわけです。やったね。
+- [15] close() も要る。いまの SuikaWiki では最初から最後まで開きっぱなしだけど、いろんな応用のためには明示的 close が必須。
+
+[25] 結局どう実装したかというと: [[SuikaWiki3//WikiDB]]
+@
+
+
+1.4
+log
+@auto-committed
+@
+text
+@d4 1
+a4 1
+- Status: open
+d151 1
+a151 1
+[[#form:'%submit(label=>書き込む); %text(label=>"名前 : ",id=>name,size=>"9.5"); %text(label=>"メイル: ",id=>mail,size=>9.5);%n;%textarea(id=>msg,size=>35,lines=>5);':'[%index;] : %name;%text(source=>mail,prefix=>" [",suffix=>"]"); : %date;%n;%n;%text(source=>msg);%n;':'%require(msg);']]@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@d3 1
+a3 1
+- Priority: low
+d8 9
+d143 9
+a151 7
+- [9] 名前空間のことを忘れてました。実装によっては、例えば下位 directory を必要になるまで読まないとかすると少しは速くなるかもしれません。
+- [10] keys の引数は ($propname, %option) で、 %option の共通 option に -type = key / ns / both, -recursive = 1/0
+- [11] >>10 -ns => $ns という現在の [[Yuki::YukiWikiDBNS]] の実装を基本的には踏襲でいいかな?
+- [12] どの record 名も、単なる文字列じゃなくて array reference にします。名前空間対応のためです。 たとえば get ('key', [qw/path to wikipage/]) のように。抽象データベース界面の level では名前空間の区切子から独立とします。
+- [13] データベースによっては使えない名前とかがあるわけです。他にもエラー処理は統一されていた方がいいから、 SuikaWiki::Markup::XML::Error みたいなかんじで SuikaWiki::DB::Util::Error に集中的 error manager を用意しましょう。
+- [14] >>13 エラーの種類を標準化しておけば、名前が使えないとかロック中とかの共通のエラーには外部 (Wiki 側) で利用者に対するメッセージを用意しておくことが出来ますし。 DB 固有のエラーは「その他のエラー」として報告すれば良いし。現状では適当に die してるだけだから CGI::Carp が拾う画面が出るわけですが、そのへんを整備できるわけです。やったね。
+- [15] close() も要る。いまの SuikaWiki では最初から最後まで開きっぱなしだけど、いろんな応用のためには明示的 close が必須。
+@
+
+
+1.2
+log
+@auto-commited
+@
+text
+@d137 4
+@
+
+
+1.1
+log
+@auto-commited
+@
+text
+@d71 66
+a136 3
+- [3] >>2 でなんかもっともらしい理由 (にしようと画策したらしきもの) を述べてますが、現実的に何が問題なのかというと、 WikiPlugin 云々からデータにアクセスする界面が整備されていない ($main::database で無理矢理参照している) のと、メタ情報と称してでっかなデータが収められつつあるが、このままではファイルがいつかパンクするだろうこと。
+- [4] でっかなメタ情報ってのは、具体的には [[Referer]]。今は URI だけ保存して、既に一部 WikiPage では数キロオクテットになってるのに、今後 [[TrackBack]] 的逆リンクが増えると。。。
+- [5] それと、 WikiName と結合された外部データ源の利用は plugin でそれぞれ実装するより共通界面が使えたほうがいい。例えば、 ML archive + Wiki という応用を考えると、1つの WikiPage で従来の Wiki database と ML archive を同時に扱う必要が出てくる。
+@
+

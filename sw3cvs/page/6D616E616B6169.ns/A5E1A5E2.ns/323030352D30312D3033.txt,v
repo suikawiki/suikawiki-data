@@ -1,0 +1,60 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.1
+date	2005.01.08.02.06.25;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@
+
+[1]
+Perl で弱い参照を作るための方法の1つに [CODE(perl)[Scalar::Util::weaken]]
+(標準モジュールの関数) がある。だけど、参照を弱めるのは双方向参照の問題の解決にはならない。
+
+例えば、
+[PRE[
+use strict;
+use Scalar::Util qw/weaken/;
+
+my $a = {a => 1};
+
+{
+  my $b = {parent => $a, a => 2};
+  $a->{child} = $b;
+  #weaken $a->{child};
+  warn $a->{child}->{a};
+}
+warn $a->{child}->{a};
+]PRE]
+を実行すると [SAMP[2]] が2回警告される。最後から4行目の注釈部を有効にすると、
+最初の [SAMP(perl)[warn]] は [SAMP[2]] だが、後の方は [SAMP(perl)[undef]] 
+になってしまう (つまり [VAR(perl)[$b]] は破棄されている)。
+
+[SAMP[child]] ではなく [SAMP[parent]] の参照を弱めれば元の通り
+2回とも [SAMP[2]] に戻るが、 [VAR(perl)[$a]] と [VAR(perl)[$b]]
+が逆だった時、つまり子供は外部から参照されているが親はそうではない時には親が消滅してしまう。
+[SAMP[child]] も [SAMP[parent]] も両方弱い参照にするのでは、
+当然何の解決にもならない。ということで、やはり [SAMP[child]]
+と [SAMP[parent]] の両方を強い参照のままにしておかざるを得ない。
+
+
+([[名無しさん]] [WEAK[2005-01-03 12:35:21 +00:00]])
+
+@

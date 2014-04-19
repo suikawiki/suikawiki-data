@@ -1,0 +1,434 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.1
+date	2005.03.08.02.07.26;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@*4.  Bidirectional IRIs for Right-to-Left Languages
+>   Some UCS characters, such as those used in the Arabic and Hebrew
+scripts, have an inherent right-to-left (rtl) writing direction.
+IRIs containing these characters (called bidirectional IRIs or Bidi
+IRIs) require additional attention because of the non-trivial
+relation between logical representation (used for digital
+representation and for reading/spelling) and visual representation
+(used for display/printing).
+
+アラビア用字系やヘブライ用字系で使われる文字など、 UCS
+の文字には書字方向が右から左 ([ABBR[rtl]]) という性質を持ったものがあります。
+このような文字を含む IRI (双方向的 IRI や [ABBR[Bidi]] IRI などと呼びます。)
+は (デジタル表現や読み書きに使う) 論理表現と
+(表示や印刷に使う) 視覚表現の間の関係が自明でないため、
+特に注意する必要があります。
+
+>   Because of the complex interaction between the logical
+representation, the visual representation, and the syntax of a Bidi
+IRI, a balance is needed between various requirements.  The main
+requirements are
+
+論理表現と視覚表現と Bidi IRI の構文の相互の関係は複雑なので、
+色々な要件の間での調整が必要です。主要な要件は
+
+>
+-   1.  user-predictable conversion between visual and logical
+representation;
+-   2.  the ability to include a wide range of characters in various
+parts of the IRI; and
+-   3.  minor or no changes or restrictions for implementations.
+
+- 利用者が視覚表現と論理表現の変換を予想できること
+- 色々な種類の文字を IRI の色々な部分に使えること
+- 実装の変更や制限が少ないか、わずかであること
+
+です。
+
+**4.1.  Logical Storage and Visual Presentation
+>When stored or transmitted in digital representation, bidirectional
+IRIs MUST be in full logical order and MUST conform to the IRI syntax
+rules (which includes the rules relevant to their scheme). This
+ensures that bidirectional IRIs can be processed in the same way as other IRIs.
+
+双方向的 IRI はデジタル表現で蓄積したり転送したりする時には完全に論理順でなければ'''なりません'''し、
+IRI 構文規則に (scheme に関する規則も含めて) 適合しなければ'''なりません'''。
+そうすれば双方向的 IRI を他の IRI と同じ方法で処理できます。
+
+>   Bidirectional IRIs MUST be rendered by using the Unicode
+Bidirectional Algorithm [UNIV4], [UNI9].  Bidirectional IRIs MUST be
+rendered in the same way as they would be if they were in a
+left-to-right embedding; i.e., as if they were preceded by U+202A,
+LEFT-TO-RIGHT EMBEDDING (LRE), and followed by U+202C, POP
+DIRECTIONAL FORMATTING (PDF).  Setting the embedding direction can
+also be done in a higher-level protocol (e.g., the dir='ltr'
+attribute in HTML).
+
+双方向的 IRI は Unicode 双方向的算法を使ってレンダリングしなければ'''なりません'''。
+双方向的 IRI は左から右への埋込みであるのと同じように、
+すなわち直前に [CODE(char)[[[U+202A]]]]
+[CODE(char)[[[LEFT-TO-RIGHT EMBEDDING]]]] ([CODE(char)[[[LRE]]]]) 
+があり、直後に [CODE(char)[[[U+202C]]]] 
+[CODE(char)[[[POP DIRECTIONAL FORMATTING]]]] ([CODE(char)[[[PDF]]]])
+があるのと同じようにレンダリングしなければ'''なりません'''。
+埋込み方向設定は高水準プロトコルによっても行うことができます
+(例えば HTML では [CODE(HTML)[[CODE(HTMLa)[[[dir]]]]='[[ltr]]']]
+属性で行えます)。
+
+>   There is no requirement to use the above embedding if the display is
+still the same without the embedding.  For example, a bidirectional
+IRI in a text with left-to-right base directionality (such as used
+for English or Cyrillic) that is preceded and followed by whitespace
+and  strong left-to-right characters does not need an embedding.
+Also, a bidirectional relative IRI reference that only contains
+strong right-to-left characters and weak characters and that starts
+and ends with a strong right-to-left character and appears in a text
+with right-to-left base directionality (such as used for Arabic or
+Hebrew) and is preceded and followed by whitespace and strong
+characters does not need an embedding.
+
+埋め込みにしなくても表示が変わらない場合にはこの埋め込みを使わなくても構いません。
+例えば、[[基底方向性]]が左から右の文章 (例えば英語やキリル文字の文章)
+で双方向的 IRI の前後に[[空白]]と強い左から右への文字があれば、
+埋め込みは必要ありません。また、強い右から左の文字と弱い文字だけを含み、
+最初と最後が強い右から左の文字である相対 IRI 参照が右から左の基底方向性の文章
+(例えばアラビア文字やヘブライも字の文章) に含まれていて前後が空白と強い文字であれば、
+埋め込みは必要ありません。
+
+>   In some other cases, using U+200E, LEFT-TO-RIGHT MARK (LRM), may be
+sufficient to force the correct display behavior.  However, the
+details of the Unicode Bidirectional algorithm are not always easy to
+understand.  Implementers are strongly advised to err on the side of
+caution and to use embedding in all cases where they are not
+completely sure that the display behavior is unaffected without the embedding.
+
+場合によっては [CODE(char)[[[U+202E]]]]
+[CODE(char)[[[LEFT-TO-RIGHT MARK]]]] ([CODE(char)[[[LRM]]]])
+を使えば十分正しい表示動作を強制できます。しかし、
+Unicode 双方向算法の詳細を理解するのはいつも簡単ではありません。
+実装者は十分よく注意すると共に、
+埋込みしなくても表示動作が変わってしまわないかはっきり分からないときにはいつも埋込みを使うようにすることを強くお勧めします。
+
+>   The Unicode Bidirectional Algorithm ([UNI9], section 4.3) permits
+higher-level protocols to influence bidirectional rendering.  Such
+changes by higher-level protocols MUST NOT be used if they change the
+rendering of IRIs.
+
+Unicode 双方向的算法は高水準プロトコルが双方向のレンダリングに影響することを認めています。
+IRI のレンダリングを変更するような変更を高水準プロトコルで行っては'''なりません'''。
+
+>   The bidirectional formatting characters that may be used before or
+after the IRI to ensure correct display are not themselves part of
+the IRI.  IRIs MUST NOT contain bidirectional formatting characters
+(LRM, RLM, LRE, RLE, LRO, RLO, and PDF).  They affect the visual
+rendering of the IRI but do not appear themselves.  It would
+therefore not be possible to input an IRI with such characters correctly.
+
+IRI が正しく表示されるように IRI の前後に双方向的書式付け文字を使うとしても、
+それ自体は IRI の一部ではありません。 IRI は双方向的書式付け文字
+([CODE(char)[[[LRM]]]], [CODE(char)[[[RLM]]]],
+[CODE(char)[[[LRE]]]], [CODE(char)[[[RLE]]]],
+CODE(char)[[[LRO]]]], [CODE(char)[[[RLO]]]],
+[CODE(char)[[[PDF]]]]) を含んでいては'''なりません'''。
+双方向的書式付け文字は IRI の視覚レンダリングに影響はしますが、
+それ自体が現れてはなりません。従って、双方向的書式付け文字を含む IRI
+を正しく入力することは不可能です。
+
+** 4.2.  Bidi IRI Structure
+>   The Unicode Bidirectional Algorithm is designed mainly for running
+text.  To make sure that it does not affect the rendering of
+bidirectional IRIs too much, some restrictions on bidirectional IRIs
+are necessary.  These restrictions are given in terms of delimiters
+(structural characters, mostly punctuation such as "@@", ".", ":", and
+"/") and components (usually consisting mostly of letters and digits).
+
+Unicode 双方向的算法は主に文章が続いたものに対して設計されえちます。
+双方向的算法が双方向的 IRI のレンダリングに影響を与えすぎないように、
+双方向的 IRI には幾分の制限が必要です。制限は区切子
+(構造的文字、ほとんどは [CODE(char)[@@]], [CODE(char)[.]],
+[CODE(char)[:]], [CODE(char)[/]] のような句読点) と部品
+(通常はほとんど文字と数字で構成されます。) について与えます。
+
+>   The following syntax rules from section 2.2 correspond to components
+for the purpose of Bidi behavior: iuserinfo, ireg-name, isegment,
+isegment-nz, isegment-nz-nc, ireg-name, iquery, and ifragment.
+
+2.2節の構文規則のうち、 [CODE(ABNF)[[[userinfo]]]],
+[CODE(ABNF)[[[ireg-name]]]], [CODE(ABNF)[[[isegment]]]],
+[CODE(ABNF)[[[isegment-nz]]]], [CODE(ABNF)[[[isegment-nz-nc]]]],
+[CODE(ABNF)[[[ireg-name]]]] [INS[(訳注: ママ)]], [CODE(ABNF)[[[iquery]]]],
+[CODE(ABNF)[[[ifragment]]]] は Bidi 動作に関係があります。
+
+>   Specifications that define the syntax of any of the above components
+MAY divide them further and define smaller parts to be components
+according to this document.  As an example, the restrictions of [RFC3490] 
+on bidirectional domain names correspond to treating each
+label of a domain name as a component for schemes with ireg-name as a
+domain name.  Even where the components are not defined formally, it
+may be helpful to think about some syntax in terms of components and
+to apply the relevant restrictions.  For example, for the usual
+name/value syntax in query parts, it is convenient to treat each name
+and each value as a component.  As another example, the extensions in
+a resource name can be treated as separate components.
+
+これらの部品のいずれかの構文を定義する仕様は、
+この文書に従って各部品を更に分割し、小さな部品を定義して'''構いません'''。
+例えば、 [CODE(ABNF)[ireg-name]] として[[ドメイン名]]を使う scheme
+ではドメイン名札それぞれを部品として扱い、 [[RFC 3490]]
+の双方向的ドメイン名に関する制限を適用させることができます。
+部品がたとえ正式に定義されていない場合でも、
+部品の構文を考え、関係する制限を適用することは役に立ちます。
+例えば、 [CODE(ABNF)[[[query]]]] 部分でよくある名前と値の構文では、
+名前と値のそれぞれを一つの部品と考えるのが便利です。別の例では、
+資源名の拡張子は別の部品として扱うことができます。
+
+>   For each component, the following restrictions apply:
+-   1.  A component SHOULD NOT use both right-to-left and left-to-right characters.
+-   2.  A component using right-to-left characters SHOULD start and end
+with right-to-left characters.
+
+各部品について次の制限を適用します。
+- 1つの部品は右から左の文字と右から左の文字の両方を使う'''べきではありません'''。
+- 右から左の文字を使う部品は右から左の文字で始まり、
+右から左の文字で終わるべきです。
+
+>   The above restrictions are given as shoulds, rather than as musts.
+For IRIs that are never presented visually, they are not relevant.
+However, for IRIs in general, they are very important to ensure
+consistent conversion between visual presentation and logical
+representation, in both directions.
+
+この制限はしなければならないではなくするべきであるです。
+視覚的に表現されることがない IRI ではこれらは関係しません。
+しかし、 IRI は通常視覚表現と論理表現の両方向の変換について一貫させることが非常に重要です。
+
+>   Note: In some components, the above restrictions may actually be
+strictly enforced.  For example, [RFC3490] requires that these
+restrictions apply to the labels of a host name for those schemes
+where ireg-name is a host name.  In some other components (for
+example, path components) following these restrictions may not be
+too difficult.  For other components, such as parts of the query
+part, it may be very difficult to enforce the restrictions because
+the values of query parameters may be arbitrary character sequences.
+
+注意: 部品によってはこれらの制限が実際に厳密に課されています。
+例えば、 [[RFC 3490]] は [CODE(ABNF)[[[ireg-name]]]]
+がホスト名である scheme でホスト名札にこれらの制限を課すことを認めています。
+他の部品 (例えば [CODE(ABNF)[[[path]]]] 部品) でもこれらの制限に従うことは難しくありません。
+その他の部品、例えば [CODE(ABNF)[[[query]]]] 部の一部では照会引数の値が任意の文字列になり得るので、
+制限を課すことは非常に難しいかもしれません。
+
+>   If the above restrictions cannot be satisfied otherwise, the affected
+component can always be mapped to URI notation as described in
+section 3.1.  Please note that the whole component has to be mapped
+(see also Example 9 below).
+
+先の制限を別途満たすことができなければ、影響のある部品は常に
+3.1節で説明した方法で URI 記法に写像できます。
+部品全体を写像しなければならないことに注意してください。
+
+**4.3.  Input of Bidi IRIs
+>   Bidi input methods MUST generate Bidi IRIs in logical order while
+rendering them according to section 4.1.  During input, rendering
+SHOULD be updated after every new character is input to avoid end-user confusion.
+
+Bidi 入力法は4.1節に従ってレンダリングしつつも論理順で Bidi IRI 
+を生成しなければ'''なりません'''。
+入力中は末端利用者の混乱を防ぐため新しい文字が入力されるたびにレンダリングを更新する'''べきです'''。
+
+**4.4.  Examples
+>   This section gives examples of bidirectional IRIs, in Bidi Notation.
+It shows legal IRIs with the relationship between logical and visual
+representation and explains how certain phenomena in this
+relationship may look strange to somebody not familiar with
+bidirectional behavior, but familiar to users of Arabic and Hebrew.
+It also shows what happens if the restrictions given in section 4.2
+are not followed.  The examples below can be seen at [BidiEx], in
+Arabic, Hebrew, and Bidi Notation variants.
+
+この節では双方向的 IRI の例を Bidi 記法で示します。
+その例によって合法な IRI と論理表現および視覚表現の関係やこの関係がアラビア文字やヘブライ文字の用法に詳しくても双方向的動作に詳しくない人になんとも奇妙に見えることを説明します。
+また、4.2節の制限に従わなかった場合に何が起こるかも示します。
+次の各例は [SRC[BidiEx]] においてアラビア文字、ヘブライ文字、
+Bidi 記法それぞれで見ることができます。
+
+>   To read the bidi text in the examples, read the visual representation
+from left to right until you encounter a block of rtl text.  Read the
+rtl block (including slashes and other special characters) from right
+to left, then continue at the next unread ltr character.
+
+例の中の bidi 文は、 rtl 文の塊が出てくるまで視覚表現を左から右に読んで下さい。
+Rtl の塊は (斜線その他の特殊文字も含めて) 右から左に読み、
+それから次の未読の ltr 文字を続けて下さい。
+
+>   Example 1: A single component with rtl characters is inverted:
+Logical representation: "http://ab.CDEFGH.ij/kl/mn/op.html"
+Visual representation: "http://ab.HGFEDC.ij/kl/mn/op.html"
+Components can be read one by one, and each component can be read in
+its natural direction.
+
+例1: ある rtl 文字の部品が逆に:
+- 論理表現 [SAMP(URI)[http://ab.''CDEFGH''.ij/kl/mn/op.html]]
+- 視覚表現 [SAMP(URI)[http://ab.''HGFEDC''.ij/kl/mn/op.html]]
+
+部品は1つずつ読むことができ、各部品は自然な方向で読むことができます。
+
+>   Example 2: More than one consecutive component with rtl characters is
+inverted as a whole:
+Logical representation: "http://ab.CDE.FGH/ij/kl/mn/op.html"
+Visual representation: "http://ab.HGF.EDC/ij/kl/mn/op.html"
+A sequence of rtl components is read rtl, in the same way as a
+sequence of rtl words is read rtl in a bidi text.
+
+例2: 1つ以上の連続した rtl 文字の部品が全体として逆に:
+-論理表現 [SAMP(URI)[http://ab.''CDE''.''FGH''/ij/kl/mn/op.html]]
+-視覚表現 [SAMP(URI)[http://ab.''HGF''.''EDC''/ij/kl/mn/op.html]]
+
+rtl 部品の列は bidi 文で rtl の語の列を rtl
+で読むのと同じように rtl で読みます。
+
+>   Example 3: All components of an IRI (except for the scheme) are rtl.
+All rtl components are inverted overall:
+Logical representation: "http://AB.CD.EF/GH/IJ/KL?MN=OP;QR=ST#UV"
+Visual representation: "http://VU#TS=RQ;PO=NM?LK/JI/HG/FE.DC.BA"
+The whole IRI (except the scheme) is read rtl.  Delimiters between
+rtl components stay between the respective components; delimiters
+between ltr and rtl components don't move.
+
+例3: IRI の ([CODE(ABNF)[[[scheme]]]] 以外の) すべての部品が rtl。
+すべての rtl 部品は全体として逆に:
+-論理表現: [SAMP(URI)[http://''AB''.''CD''.''EF''/''GH''/''IJ''/''KL''?''MN''=''OP'';''QR''=''ST''#''UV'']]
+-視覚表現: [SAMP(URI)[http://''VU''#''TS''=''RQ'';''PO''=''NM''?''LK''/''JI''/''HG''/''FE''.''DC''.''BA'']]
+
+IRI 全体を ([CODE(ABNF)[scheme]] を除き) rtl で読みます。
+Rtl 部品の間の区切子は同じ部品の間に位置します。
+ltr 部品と rtl 部品の間の区切子は移動しません。
+
+>   Example 4: Each of several sequences of rtl components is inverted on
+its own:
+Logical representation: "http://AB.CD.ef/gh/IJ/KL.html"
+Visual representation: "http://DC.BA.ef/gh/LK/JI.html"
+Each sequence of rtl components is read rtl, in the same way as each
+sequence of rtl words in an ltr text is read rtl.
+
+例4: いくつかの rtl 部品の列がそれぞれ逆に:
+-論理表現: [SAMP(URI)[http://''AB''.''CD''.ef/gh/''IJ''/''KL''.html]]
+-視覚表現: [SAMP(URI)[http://''DC''.''BA''.ef/gh/''LK''/''JI''.html]]
+
+Rtl 部品の列は ltr 文中の rtl 語をそれぞれ rtl
+で読むのと同じようにそれぞれ rtl に読みます。
+
+>   Example 5: Example 2, applied to components of different kinds:
+Logical representation: "http://ab.cd.EF/GH/ij/kl.html"
+Visual representation: "http://ab.cd.HG/FE/ij/kl.html"
+The inversion of the domain name label and the path component may be
+unexpected, but it is consistent with other bidi behavior.  For
+reassurance that the domain component really is "ab.cd.EF", it may be
+helpful to read aloud the visual representation following the bidi
+algorithm.  After "http://ab.cd." one reads the RTL block
+"E-F-slash-G-H", which corresponds to the logical representation.
+
+例5: 例2 を異なる種類の部品に適用:
+-論理表現: [SAMP(URI)[http://ab.cd.''EF''/''GH''/ij/kl.html]]
+-視覚表現: [SAMP(URI)[http://ab.cd.''HG''/''FE''/ij/kl.html]]
+
+ドメイン名札と [CODE(ABNF)[[[path]]]] 部品の逆転は予期していないことですが、
+他の bidi 動作と一貫しています。ドメイン部品が実際は
+[SAMP[ab.cd.''EF'']] であることを明確にするために bidi
+算法に従って視覚表現を大声で読むのが役に立つかもしれません。
+[SAMP(URI)[http://ab.cd.]] の後 RTL の塊
+[Q[E、F、斜線、G、H]] と論理表現に対応して読み上げます。
+
+>   Example 6: Same as Example 5, with more rtl components:
+Logical representation: "http://ab.CD.EF/GH/IJ/kl.html"
+Visual representation: "http://ab.JI/HG/FE.DC/kl.html"
+The inversion of the domain name labels and the path components may
+be easier to identify because the delimiters also move.
+
+例6: 例5と同じで更に多くの rtl 部品:
+-論理表現: [SAMP(URI)[http://ab.''CD''.''EF''/''GH''/''IJ''/kl.html]]
+-視覚表現: [SAMP(URI)[http://ab.''JI''/''HG''/''FE''.''DC''/kl.html]]
+
+ドメイン名札と [CODE(ABNF)[[[path]]]] 部品の逆転は区切子も動くのでより簡単にわかります。
+
+>   Example 7: A single rtl component includes digits:
+Logical representation: "http://ab.CDE123FGH.ij/kl/mn/op.html"
+Visual representation: "http://ab.HGF123EDC.ij/kl/mn/op.html"
+Numbers are written ltr in all cases but are treated as an additional
+embedding inside a run of rtl characters.  This is completely
+consistent with usual bidirectional text.
+
+例7: 数字を含む rtl 部品が1つ:
+-論理表現: [SAMP(URI)[http://ab.''CDE''123''FGH''.ij/kl/mn/op.html]]
+-視覚表現: [SAMP(URI)[http://ab.''HGF''123''EDC''.ij/kl/mn/op.html]]
+
+数字はどちらの場合も ltr で書きますが、 rtl
+文字の連なりの中に更に埋め込まれているものと扱います。
+これは完全に普通の双方向的文と一貫しています。
+
+>   Example 8 (not allowed): Numbers are at the start or end of an rtl
+component:
+Logical representation: "http://ab.cd.ef/GH1/2IJ/KL.html"
+Visual representation: "http://ab.cd.ef/LK/JI1/2HG.html"
+The sequence "1/2" is interpreted by the bidi algorithm as a
+fraction, fragmenting the components and leading to confusion.  There
+are other characters that are interpreted in a special way close to
+numbers; in particular, "+", "-", "#", "$", "%", ",", ".", and ":".
+
+例8 (不認可): 数が rtl 部品のはじめや終わりに:
+-論理表現: [CODE(URI)[http://ab.cd.ef/''GH''1/2''IJ''/''KL''.html]]
+-視覚表現: [CODE(URI)[http://ab.cd.ef/''LK''/''JI''1/2''HG''.html]]
+
+[SAMP[1/2]] という列を bidi 算法は分数と解釈してしまい、
+部品が分断されて混乱を招きます。他にも [SAMP(char)[+]],
+[SAMP(char)[-]], [SAMP(char)[#]], [SAMP(char)[$]], [SAMP(char)[%]],
+[SAMP(char)[,]], [SAMP(char)[.]], [SAMP(char)[:]] のように数の近くで特別に解釈される文字があります。
+
+>   Example 9 (not allowed): The numbers in the previous example are
+percent-encoded:
+Logical representation: "http://ab.cd.ef/GH%31/%32IJ/KL.html",
+Visual representation (Hebrew): "http://ab.cd.ef/%31HG/LK/JI%32.html"
+Visual representation (Arabic): "http://ab.cd.ef/31%HG/%LK/JI32.html"
+Depending on whether the uppercase letters represent Arabic or
+Hebrew, the visual representation is different.
+
+例9 (不認可): 先の例の数が[[百分率符号化]]済み:
+-論理表現: [SAMP(URI)[http://ab.cd.ef/''GH''%31/%32''IJ''/''KL''.html]]
+-視覚表現 (ヘブライ文字): [SAMP(URI)[http://ab.cd.ef/%31''HG''/''LK''/''JI''%32.html]]
+-視覚表現 (アラビア文字): [SAMP(URI)[http://ab.cd.ef/31%''HG''/%''LK''/''JI''32.html]]
+
+大文字がアラビア文字を表すかヘブライ文字を表すかにより、
+視覚表現が異なってきます。
+
+>   Example 10 (allowed but not recommended):
+Logical representation: "http://ab.CDEFGH.123/kl/mn/op.html"
+Visual representation: "http://ab.123.HGFEDC/kl/mn/op.html"
+Components consisting of only numbers are allowed (it would be rather
+difficult to prohibit them), but these may interact with adjacent RTL
+components in ways that are not easy to predict.
+
+例10: (認められるが非推奨):
+-論理表現: [SAMP(URI)[http://ab.''CDEFGH''.123/kl/mn/op.html]]
+-視覚表現: [SAMP(URI)[http://ab.123.''HGFEDC''/kl/mn/op.html]]
+
+数だけで構成される部品は認められます
+(禁止するのは難しいです) が、隣接する rtl
+と予想しがたい影響があるかもしれません。
+
+* メモ
+
+@

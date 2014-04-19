@@ -1,0 +1,140 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1
+	before-db-leaffile:1.1
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+
+
+1.1
+date	2003.06.06.12.26.23;	author make;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-commited
+@
+text
+@*BNF
+
+;; <http://www.w3.org/TR/2002/PR-P3P-20020128/> を元にした。
+
+-p3p-header = "P3P:" SP p3p-header-field *("," p3p-header-field)
+-p3p-header-field = policy-ref-field / compact-policy-field / extension-field
+-policy-ref-field = "policyref=" <"> URI-reference <">
+-extension-field = token ["=" (http-token | quoted-string) ]
+
+;; policy-ref-field は、 P3P 方針ファイルの URI で、相対 URI
+の場合は当該頭領域のある資源の URI からの参照。
+
+-compact-policy-field = "CP=" <"> compact-policy <">
+-compact-policy = compact-token *(SP compact-token)
+
+ compact-token = compact-access / compact-disputes / compact-remedies
+               / compact-non-identifiable / compact-purpose
+               / compact-recipient / compact-retention / compact-categories
+               / compact-test
+
+ ;; draft-w3c-p3p-header-00 のより厳密な定義
+ compact-policy        =  compact-access
+                         [SP compact-disputes]
+                         [*(SP compact-remedies)]
+                         [SP compact-non-identifiable]
+                         [1*(SP compact-purpose)]
+                         [1*(SP compact-recipient)]
+                         1*(SP compact-retention)
+                         [*(SP compact-category)]
+                         [compact-test]
+
+ 
+;; 一つ以上の compact-policy があれば、最初の以外は無視
+し'''なければならない'''。
+
+;; 値は大文字・小文字を区別する。
+
+ compact-access = 'NOI' ; for <nonident/>
+                / 'ALL' ; for <all/>
+                / 'CAO' ; for <contact-and-other/>
+                / 'IDC' ; for <ident-contact/>
+                / 'OTI' ; for <other-ident/>
+                / 'NON' ; for <none/>
+ compact-disputes = 'DSP' ; there are some DISPUTES
+ compact-remedies = 'COR' ; for <correct/>
+                  / 'MON' ; for <money/>
+                  / 'LAW' ; for <law/>
+ compact-non-identifiable = "NID" ; for <NON-IDENTIFIABLE/>
+ compact-purpose = 'CUR' / 'ADM' [creq] / "DEV" [creq] / "TAI" [creq]
+                 / "PSA" [creq] / "PSD" [creq] / "IVA" [creq]
+                 / "IVD" [creq] / "CON" [creq] / "HIS" [creq]
+                 / "TEL" [creq] / "OTP" [creq]
+ creq = "a" ;"always"
+      / "i" ;"opt-in"
+      / "o" ;"opt-out"
+ compact-recipient = "OUR" / "DEL" [creq] / "SAM" [creq] / "UNR" [creq]
+                   / "PUB" [creq] / "OTR" [creq]
+ compact-retention = "NOR" / "STP" / "LEG" / "BUS" / "IND"
+ compact-categories = "PHY" / "ONL" / "UNI" / "PUR" / "FIN" / "COM"
+                    / "NAV" / "INT" / "DEM" / "CNT" / "STA" / "POL"
+                    / "HEA" / "PRE" / "LOC" / "GOV" / "OTC"
+ compact-test = "TST" ; for <TEST/>
+
+*例
+
+-P3P: policyref="http://catalog.example.com/P3P/PolicyReferences.xml"
+ 
+*感想など
+
+なんで読点区切りなんだよ... 普通セミコロンでしょ?
+
+
+それから、 extension-field の定義が token てことは、
+今後の拡張はパラメーター型じゃないってこと? と思ったら、
+I-D の方はパラメーター型を認めている。
+
+それから、この領域に限らず言えることだけど、 SP とか FWS が隙間に
+入るのか入らないのか不明。この領域だと特に、 SP を入れる場所が
+指定されているから、「,」の前後には入れてはいけないのか??
+
+<http://www.w3.org/2000/draft-w3c-p3p-header> は draft 01
+だけど August 2, 2000 で、  draft 00
+<http://www.w3.org/2001/08/draft-w3c-p3p-header-00> August 14, 2001
+の方がなぜか新しい。
+
+01案での定義は 「P3P: "PolicyRef:" URI [; <extensions>]」
+で、 <extensions> は未定義。 URI は RFC 2396 で定義されているけど、
+2396 BNF に URI というのは無い。 URI には「;」も入り得るけど、
+どう見分けるつもりだったんだか。
+
+この名残か、 00案に
+「P3P: PolicyRef: http://catalog.example.com/P3P/PolicyReferences.xml」
+という例が載っている。00案や PR-P3P 的には不適合。
+
+RFC 2274 (HTTP 頭領域の名前に名前空間を導入する奴。)
+の応用らしい <http://www.w3.org/Protocols/Activity> けど、そんなの嘘だ。
+
+*See also
+-<http://www.w3.org/TR/P3P/>
+-<http://www.w3.org/2000/draft-w3c-p3p-header> (2000年8月2日)
+-<http://www.w3.org/2001/08/draft-w3c-p3p-header-00> (2001年8月14日)
+-<http://www.w3.org/TR/2002/PR-P3P-20020128/> (2002年1月28日)
+-[[RFC2274]] <urn:ietf:rfc:2274>
+--[[*-*:頭領域]]
+-[[RFC822と仲間達の頭領域名]]
+-[[HTTP]]
+--[[HTTP/1.1]]
+-[[HTML]]
+-[[P3P]]
+
+- 2002-10-14 (Mon) 07:41:39 ''[[名無しさん]]'' : RFC 2274 の応用というのはたぶん、[[名前空間]]の方ではなくて、 Opt: 欄とか C-Man: 欄とかを使う、ってことじゃないでしょうか。
+- [1] 読点区切りってことは複数置けるんだろうか?
+@

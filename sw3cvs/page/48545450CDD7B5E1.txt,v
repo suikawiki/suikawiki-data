@@ -1,0 +1,338 @@
+head	1.3;
+access;
+symbols
+	suikawiki3-final:1.3
+	before-db-leaffile:1.3
+	after-upgrade-to-suikawiki-3:1.3
+	before-fork-suikawiki3:1.3
+	after-restore-20040122:1.3;
+locks; strict;
+comment	@# @;
+
+
+1.3
+date	2003.01.26.04.49.33;	author w;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2002.12.23.01.25.37;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2002.07.30.14.24.18;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.3
+log
+@auto-commited
+@
+text
+@#?SuikaWiki/0.9
+*RFC 2616 5 Request
+
+A request message from a client to a server includes, within the
+first line of that message, the method to be applied to the resource,
+the identifier of the resource, and the protocol version in use.
+
+顧客からサーバーへの要求メッセージはそのメッセージの最初の行に
+資源に対して適用される方式と資源の識別子, 使われるプロトコルの版を
+含みます。
+
+        Request       = Request-Line              ; Section 5.1
+                        *(( general-header        ; Section 4.5
+                         | request-header         ; Section 5.3
+                         | entity-header ) CRLF)  ; Section 7.1
+                        CRLF
+                        [ message-body ]          ; Section 4.3
+
+**5.1 Request-Line
+
+The Request-Line begins with a method token, followed by the
+Request-URI and the protocol version, and ending with CRLF. The
+elements are separated by SP characters. No CR or LF is allowed
+except in the final CRLF sequence.
+
+Request-Line は方式字句で始まり、 Request-URI とプロトコルの版が
+続き、 CRLF で終わります。各要素は SP 文字で区切ります。
+最後の CRLF 列以外で CR や LF は認められません。
+
+        Request-Line   = Method SP Request-URI SP HTTP-Version CRLF
+
+***5.1.1 Method
+
+The Method  token indicates the method to be performed on the
+resource identified by the Request-URI. The method is case-sensitive.
+
+Method 字句は Request-URI で識別される資源に行われる方式を示します。
+方式は大文字・小文字を区別しません。
+
+;; 方式 = method。直訳。改訳きぼんぬ。
+
+       Method         = "OPTIONS"                ; Section 9.2
+                      | "GET"                    ; Section 9.3
+                      | "HEAD"                   ; Section 9.4
+                      | "POST"                   ; Section 9.5
+                      | "PUT"                    ; Section 9.6
+                      | "DELETE"                 ; Section 9.7
+                      | "TRACE"                  ; Section 9.8
+                      | "CONNECT"                ; Section 9.9
+                      | extension-method
+       extension-method = token
+
+   The list of methods allowed by a resource can be specified in an
+   Allow header field (section 14.7). The return code of the response
+   always notifies the client whether a method is currently allowed on a
+   resource, since the set of allowed methods can change dynamically. An
+   origin server SHOULD return the status code 405 (Method Not Allowed)
+   if the method is known by the origin server but not allowed for the
+   requested resource, and 501 (Not Implemented) if the method is
+   unrecognized or not implemented by the origin server. The methods GET
+   and HEAD MUST be supported by all general-purpose servers. All other
+   methods are OPTIONAL; however, if the above methods are implemented,
+   they MUST be implemented with the same semantics as those specified
+   in section 9.
+
+ある資源に対して認められる方式の表は Allow 頭欄で指定出来ます。
+応答の復帰符号は常に顧客に方式が現在資源に認められているかを知らせます。
+というのは認められる方式の集合は動的に変化するのです。
+また元のサーバーは、状態符号 405 (方式は認められていません)
+を方式は知っているが要求された資源に認めていない場合に、
+501 (未実装) を方式が認識できないか実装されていない場合に返す
+'''べきです'''。方式 GET および HEAD は全ての常用サーバーが
+対応し'''なければなりません'''。他の全ての方式は'''任意です'''。
+しかし、上記の方式が実装されている場合、第9章で規定するのと
+同じ意味で実装し'''なければなりません'''。
+***5.1.2 Request-URI
+
+The Request-URI is a Uniform Resource Identifier (section 3.2) and
+identifies the resource upon which to apply the request.
+
+Request-URI は統一資源識別子であり、要求が適用される資源を識別します。
+
+       Request-URI    = "*" | absoluteURI | abs_path | authority
+
+The four options for Request-URI are dependent on the nature of the
+request. The asterisk "*" means that the request does not apply to a
+particular resource, but to the server itself, and is only allowed
+when the method used does not necessarily apply to a resource. One
+example would be
+
+要求の性質により4つの選択肢が Request-URI にはあります。星印 "*"
+は要求が特定の資源に対するものではなく、サーバー自身に対するものである
+ことを示し、使われる方式が資源に適用される必要がない時にだけ
+認められます。1つの例はこれです。
+
+       OPTIONS * HTTP/1.1
+
+The absoluteURI form is REQUIRED when the request is being made to a
+proxy. The proxy is requested to forward the request or service it
+from a valid cache, and return the response. Note that the proxy MAY
+forward the request on to another proxy or directly to the server
+specified by the absoluteURI. In order to avoid request loops, a
+proxy MUST be able to recognize all of its server names, including
+any aliases, local variations, and the numeric IP address. An example
+Request-Line would be:
+
+absoluteURI 形式は要求が串に対して行われる場合に'''必須'''です。
+串は要求を転送するか妥当な控えから供給するかし、応答を返すように
+要求されます。なお、串は要求を他の串に転送しても absoluteURI
+で指定されたサーバーに直接転送しても'''構いません'''。
+要求 loop <!-- やくごきぼんぬ --> を避けるため、串はそのサーバー名の
+全て (別名, 地方変名, 数値 IP アドレスを含む。) 
+を認識でき'''なければなりません'''。 Request-Line
+の例を示します。
+
+       GET http://www.w3.org/pub/WWW/TheProject.html HTTP/1.1
+
+To allow for transition to absoluteURIs in all requests in future
+versions of HTTP, all HTTP/1.1 servers MUST accept the absoluteURI
+form in requests, even though HTTP/1.1 clients will only generate
+them in requests to proxies.
+
+将来の版の HTTP で全ての要求を absoluteURI に移行するのを可能にするため、
+全ての HTTP/1.1 サーバーは要求で absoluteURI 形式を受け入れ
+'''なければなりません'''。 HTTP/1.1 顧客は串への要求でのみ
+これを生成するにも関わらずです。
+
+The authority form is only used by the CONNECT method (section 9.9).
+
+authority 形式は CONNECT 方式でのみ使われます。
+
+   The most common form of Request-URI is that used to identify a
+   resource on an origin server or gateway. In this case the absolute
+   path of the URI MUST be transmitted (see section 3.2.1, abs_path) as
+   the Request-URI, and the network location of the URI (authority) MUST
+   be transmitted in a Host header field. For example, a client wishing
+   to retrieve the resource above directly from the origin server would
+   create a TCP connection to port 80 of the host "www.w3.org" and send
+   the lines:
+
+最も良くある形式の Request-URI は源サーバーまたは関門の資源を
+識別するのに使います。この場合 URI の絶対経路を Request-URI
+とっしてわたさ'''なければなりません''' (3.2.1節, abs_path)。
+また URI のネットワーク位置 (authority) は Host 頭欄で渡さ
+'''なければなりません'''。例えば、顧客が原サーバーから直接
+上の資源を取り出したい時にはホスト「www.w3.org」の80番に
+TCP 接続を張って次の行を送ります。
+
+       GET /pub/WWW/TheProject.html HTTP/1.1
+       Host: www.w3.org
+
+followed by the remainder of the Request. Note that the absolute path
+cannot be empty; if none is present in the original URI, it MUST be
+given as "/" (the server root).
+
+続けて Request の残りを送ります。なお、絶対経路は空であってはなりません。
+源 URI に無い場合は、 "/" (サーバーの根) を与え'''なければなりません'''。
+
+   The Request-URI is transmitted in the format specified in section
+   3.2.1. If the Request-URI is encoded using the "% HEX HEX" encoding
+   [42], the origin server MUST decode the Request-URI in order to
+   properly interpret the request. Servers SHOULD respond to invalid
+   Request-URIs with an appropriate status code.
+
+Request-URI は3.2.1節で規定した方式で渡します。 Request-URI
+が「% HEX HEX」符号化を使って符号化されている場合、源サーバーは
+要求を適切に解釈するために Request-URI を復号し'''なければなりません'''。
+サーバーは不正な Request-URI に適切な状態符号で反応する'''べきです'''。
+
+   A transparent proxy MUST NOT rewrite the "abs_path" part of the
+   received Request-URI when forwarding it to the next inbound server,
+   except as noted above to replace a null abs_path with "/".
+
+透過串は受け取った Request-URI を次の上りサーバーに転送する時に、
+上に記したとおり abs_path を "/" に書き換えるのを除いては、
+"abs_path" 部分を書き換えては'''なりません'''。
+
+      Note: The "no rewrite" rule prevents the proxy from changing the
+      meaning of the request when the origin server is improperly using
+      a non-reserved URI character for a reserved purpose.  Implementors
+      should be aware that some pre-HTTP/1.1 proxies have been known to
+      rewrite the Request-URI.
+
+参考: 「書き換えない」規則は源サーバーが予約していない
+URI 文字をよさ腐れている目的に不適切に使っている時に、
+串が要求の意味を替えてしまうことを防ぎます。
+実装者は HTTP/1.1 以前の串が Request-URI を書き換えてしまうと
+知られていることに注意するべきです。
+
+**5.2 The Resource Identified by a Request [INS[要求により識別される資源]]
+>The exact resource identified by an Internet request is determined by
+examining both the Request-URI and the Host header field.
+
+Internet 要求により識別される実際の資源は [CODE(ABNF)[Request-URI]]
+及び [CODE(HTTO)[Host]] 頭欄の両者の検査により決定します。
+
+>An origin server that does not allow resources to differ by the
+requested host MAY ignore the Host header field value when
+determining the resource identified by an HTTP/1.1 request. (But see
+section 19.6.1.1 for other requirements on Host support in HTTP/1.1.)
+
+資源が要求されたホストと異なっていることを認めない元サーバーは、
+HTTP/1.1 要求で識別される資源を決定する時に [CODE(HTTP)[Host]]
+頭欄の値を無視しても'''構いません'''。
+(HTTP/1.1 における [CODE(HTTP)[HTTP]] への対応の他の要件については
+19.6.1.1 を参照。)
+
+>An origin server that does differentiate resources based on the host
+requested (sometimes referred to as virtual hosts or vanity host
+names) MUST use the following rules for determining the requested
+resource on an HTTP/1.1 request:
+
+ホストの要求に基づく資源が異なっている元サーバー
+(時たま仮想ホストとか可変ホスト名とか言われます。) は、 HTTP/1.1
+要求で要求される資源の決定に次の規則を用いなければ'''なりません'''。
+
+   1. If Request-URI is an absoluteURI, the host is part of the
+     Request-URI. Any Host header field value in the request MUST be
+     ignored.
+
+Request-URI が [[absoluteURI]] であれば、ホストは Request-URI
+の一部です。要求中の Host 頭欄の値は無視しなければ'''なりません'''。
+
+   2. If the Request-URI is not an absoluteURI, and the request includes
+     a Host header field, the host is determined by the Host header
+     field value.
+
+Request-URI が [CODE(ABNF)[absoluiteURI]] ではなく、要求が Host
+頭欄が Host 頭欄を含んでいれば、ホストは Host 頭欄の値で決定します。
+
+   3. If the host as determined by rule 1 or 2 is not a valid host on
+     the server, the response MUST be a 400 (Bad Request) error message.
+
+規則1又は2により決定されたホストがそのサーバーにおいて妥当なホストでなければ、応答は
+[[400]] (悪い要求) エラー・メッセージでなければ'''なりません'''。
+
+>Recipients of an HTTP/1.0 request that lacks a Host header field MAY
+attempt to use heuristics (e.g., examination of the URI path for
+something unique to a particular host) in order to determine what
+exact resource is being requested.
+
+Host 頭欄の欠けた HTTP/1.1 要求の受信者は試行錯誤
+(例えば特定ホストに固有の URI 経路を検査) して要求されている実際の資源を決定しても'''構いません'''。
+
+*RFC の部分のLicense
+
+See [[RFCのライセンス]]
+*メモ
+- [1] 古い HTTP/1.0 Server
+- [2] は [CODE(ABNF)[absoluteURI]] での要求に [CODE[404]] を返すことがあります。
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d248 3
+a250 1
+*メモ@
+
+
+1.1
+log
+@Updated.
+@
+text
+@d1 1
+d190 26
+a215 14
+**5.2 The Resource Identified by a Request
+
+   The exact resource identified by an Internet request is determined by
+   examining both the Request-URI and the Host header field.
+
+   An origin server that does not allow resources to differ by the
+   requested host MAY ignore the Host header field value when
+   determining the resource identified by an HTTP/1.1 request. (But see
+   section 19.6.1.1 for other requirements on Host support in HTTP/1.1.)
+
+   An origin server that does differentiate resources based on the host
+   requested (sometimes referred to as virtual hosts or vanity host
+   names) MUST use the following rules for determining the requested
+   resource on an HTTP/1.1 request:
+d221 3
+d228 3
+d234 7
+a240 4
+   Recipients of an HTTP/1.0 request that lacks a Host header field MAY
+   attempt to use heuristics (e.g., examination of the URI path for
+   something unique to a particular host) in order to determine what
+   exact resource is being requested.
+d242 2
+d245 1
+a245 1
+*License
+d247 2
+a248 1
+See [[RFCのライセンス]]@
+

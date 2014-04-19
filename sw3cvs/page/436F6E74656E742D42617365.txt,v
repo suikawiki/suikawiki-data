@@ -1,0 +1,487 @@
+head	1.5;
+access;
+symbols
+	suikawiki3-final:1.5
+	before-db-leaffile:1.2
+	after-upgrade-to-suikawiki-3:1.2
+	before-fork-suikawiki3:1.2
+	after-restore-20040122:1.2;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.5
+date	2006.03.13.02.09.04;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2005.06.13.02.19.36;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2004.08.08.02.05.17;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2003.10.27.02.03.11;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.10.03.02.02.08;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.5
+log
+@auto-committed
+@
+text
+@
+
+* [CODE(MIME)[Content-Base:]] 頭欄 (MIME, HTTP)
+
+[13] [[HTTP]] および [[MIME]] の [DFN[[CODE(MIME)[Content-Base:]] 頭欄]]は、
+その[[実体]] (の[[頭欄]]や[[実体本体]]) における[[相対URI]]
+の解釈のために使う[[基底URI]] を[[欄本体]]として記述するものです。
+
+[1] 似たものとして [CODE(MIME)[[[Content-Location]]:]]
+欄があります。どちらもあまり有効に使われていないのが実情で、
+意味的に多少違いがあるのですが、新しい規格では
+[CODE(MIME)[Content-Location]] だけ残して
+[CODE(MIME)[Content-Base]] は削除されています。
+
+[14] 仕様書:
+- [[MHTML]] ([[MIME]])
+-- [DEL[[[RFC 2110]]]] ([[IETF]] [[提案標準]]; [[廃止]])
+<urn:ietf:rfc:2110>
+--- [CSECTION[4.2 The Content-Base header]]
+-- [[RFC 2557]] ([[IETF]] [[提案標準]]) <urn:ietf:rfc:2557>
+--- [CSECTION[12.  Differences as compared to the previous version of this proposed standard in RFC 2110]]
+
+
+** 構文
+
+[15] [[RFC 2110]] では [[RFC 822]] の [[ABNF]]
+を使って
+
+>
+[PRE(ABNF code)[
+content-base ::= "Content-Base:" absoluteURI
+]PRE]
+
+と構文が定義されていました。ここで、 [CODE(ABNF)[[[absoluteURI]]]]
+の定義については明確な説明がありませんが、
+[Q[URI は [[RFC 1738]] の定義に制限される]]と書いてあるので、
+[[RFC 1738]] で規定されている[[絶対URL]]
+を表すのでしょう。
+[WEAK[([CODE(ABNF)[[[absoluteURL]]]] でなくて [CODE(ABNF)[[[absoluteURI]]]] なのは既に [[RFC 2396]] の策定作業中であったからでしょう。)]]
+
+[16] >>15 は [[RFC 822]] の [[ABNF]] で記述されていますが、
+[[RFC 822]] 的には[[欄本体]]の前後には [CODE(ABNF)[[[LWS]]]]
+が挿入できると考える方が適当です。実際 [[RFC 2110]]
+の改訂版の [[RFC 2557]] には ([CODE(MIME)[Content-Base]]
+の定義はありませんが、一緒に定義されていた [CODE(MIME)[Content-Location]]
+は) [[ABNF]] で [CODE(ABNF)[[[CFWS]]]] 
+[WEAK[([CODE(ABNF)[[[LWS]]]] の [[RFC 2822]] 版)]]
+を使うように修正されています。
+
+それを考慮して定義を書き直すと、
+[PRE(ABNF code)[
+[DFN[content-base]] := "Content-Base:" '''['''[[CFWS]]''']''' [[absolute-URI]] '''['''[[CFWS]]''']'''
+]PRE]
+
+となります。まあ書き直すというほどの違いではありませんが。
+[[RFC 1738]] の [[URL]] というのはいくらなんでも古過ぎるので、
+勝手に [[RFC 3986]] の [CODE(ABNF)[[[absolute-URI]]]]
+に変えさせて頂きました。
+
+;; 実は欄本体の末尾に [CODE(ABNF)[[[CFWS]]]] が書けるというのには問題があります。
+[CODE(char)[(]] が [[URI]] なのか [CODE(ABNF)[[[comment]]]]
+なのか判断できないことがあります。詳しくは
+[CODE(MIME)[[[Content-Location]]:]] 欄の解説をご覧下さい。
+
+[6] '''URLBODY''':
+さて、話は >>15-16 で終わりではありません。
+[[RFC 2110]] 4.4 によれば、 [[URI]] は [[MIME]] の頭欄の行長制限
+[WEAK[(そんなのあったか?)]] を超え得るので、
+[[URLBODY]] 3.1 節の方法を採用するとしています。
+簡単に言えば、[[引用符]]で括れば[[空白]]を [[URI]] 
+の途中に勝手に挿入してもよいということです。
+
+これを考慮すると:
+[PRE(ABNF code)[
+[DFN[content-base]] := "Content-Base:" '''['''[[CFWS]]''']''' (absolute-URI / quoted-absolute-URI) '''['''[[CFWS]]''']'''
+[DFN[quoted-absolute-URI]] := <"> URI-word *([[FWS]] URI-word) <">
+    [CODE(comment)[;; [[FWS]] を除去すると、 [[absolute-URI]] になること]]
+[DFN[URI-word]] := 1*40(%x21 / %x23-5B / %x5D-7E)
+    [CODE(comment)[;; [[CTL]], [[SP]], <">, "\", 8ビットを除くもの]]
+]PRE]
+
+([[URLBODY]] の仕様上の問題を補正済み。詳しくは [[URLBODY]]
+の解説を参照。)
+
+[17] '''[CODE(MIME)[Content-Location:]] 新規格との整合性''':
+[[RFC 2110]] では [CODE(MIME)[Content-Base]] と
+[CODE(MIME)[Content-Location]] が共に規定されていましたが、
+新しい [[RFC 2557]] は [CODE(MIME)[Content-Location]]
+だけを規定しています。どちらの欄も元々ほとんど構文等は同じでしたが、
+[[RFC 2557]] では [CODE(ABNF)[[[encoded-word]]]]
+に関する規定が加わっています。
+
+両欄の整合性を考えるなら、 [CODE(MIME)[Content-Base]]
+も [CODE(MIME)[Content-Location]] とほぼ同じように処理するべきです。
+
+[CODE(MIME)[[[Content-Location]]:]] 
+欄の解説に新しい構文についての考察があります。
+
+[21]
+>>6 実装は [[URLBODY]] の方法を使うというのを引用符で囲むのも含めてと解釈していますけど
+(>>12)、それは本当に
+[[RFC 2110]] の意図なのでしょうか? [[URLBODY]] は 
+[CODE(MIME)[[[message/external-body]]]] の[[媒体型引数]]だから引用符も含めて定義しているだけで、
+[[欄本体]]で使うなら引用符をわざわざ含める必然性はないのですから。
+
+でも [[RFC 2110]] を厳密に読んだら確かに引用符が必要と解釈するのが自然な気もする。仕様書が曖昧なのが一番問題だな。
+([[名無しさん]] [sage])
+
+[[#comment]]
+
+
+** 意味
+
+[18] '''適用範囲''':
+[[RFC 2110]] には、[CODE(MIME)[Content-Base]]
+と [CODE(MIME)[Content-Location]] が適用されるのはその[[実体]]そのものだけであり、
+[CODE(MIME)[[[multipart/[VAR[*]]]]]] 
+の[[実体]]に指定しても内側の[[実体本体]]には適用されないと規定されています
+[SRC[[[RFC 2110]] 4.1]]。
+
+が、それに反する例もあります [SRC[[[RFC 2110]] 9.3]]。
+[CODE(MIME)[Content-Location]] の改訂版の [[RFC 2557]]
+には相当する規定が無いので、撤回されたものと思われます。
+
+[[#comment]]
+
+
+** 仕様書から
+
+
+*** RFC 2068 (HTTP/1.1) 14.11 Content-Base
+
+[19]
+
+> The Content-Base entity-header field may be used to specify the base
+URI for resolving relative URLs within the entity. This header field
+is described as Base in RFC 1808, which is expected to be revised.
+
+[CODE(HTTP)[Content-Base]] [[実体頭欄]]は、[[実体]]中の[[相対URL]]
+を[[解決]]するための[[基底URI]] を指定するために使うことができます。
+この[[頭欄]]は、改訂が期待される [[RFC 1808]]
+で [CODE(MIME)[[[Base]]]] 欄として説明されているものです。
+
+[20]
+
+>
+- [CODE(ABNF)[[DFN[Content-Base]]      = "Content-Base" ":" absoluteURI]]
+
+[4]
+
+> If no Content-Base field is present, the base URI of an entity is
+defined either by its Content-Location (if that Content-Location URI
+is an absolute URI) or the URI used to initiate the request, in that
+order of precedence. Note, however, that the base URI of the contents
+within the entity-body may be redefined within that entity-body.
+
+[CODE(HTTP)[Content-Base]] 欄が無ければ、[[実体]]の[[基底URI]] は[[実体]]の
+[CODE(HTTP)[[[Content-Location]]]] ([CODE(MIME)[[[Content-Location]]]] 
+が[[絶対URI]] の場合。)
+又は[[要求]]を[[初期化]]するのに使った [[URI]] のいずれかにより、
+この優先順で定義されます。
+ただし、[[実体本体]]中の内容の[[基底URI]] 
+は[[実体本体]]中で再定義されるかもしれないことに注意して下さい。
+
+
+*** RFC 2110 (MHTML)
+
+[CODE(WikiPage)[[[RFC 2110]>>2]]]] をご覧下さい。
+
+
+** 実装
+
+[12]
+>>8-11 [[Mozilla]] (Not [[Classic Mozilla]]) 系 [[MUA]] ([[Mozilla Suite]] の MUA とか、 [[Thunderbird]] とか)
+で非 local の文書を添付して送ると [CODE(MIME)[Content-Base]] と
+[CODE(MIME)[[[Content-Location]]]] ''両方''が >>8 のように [URLBODY]
+を使ったものになるようです。
+([[名無しさん]] [WEAK[2004-08-05 11:25:36 +00:00]])
+
+
+[22]
+[[Thundirbird]] 1.5 は[[RSS]]を[[電子メイル]]のような [[822]] + [[MIME]]らしき形式に変換して処理しているようですが、
+その中で元の[[基底URI]]を保存するための[CODE(MIME)@@en[[[Content-Base]]:]]
+欄が使われています。
+
+([[名無しさん]] [sage])
+
+
+[[#comment]]
+
+
+** 例
+
+[8] [[URLBODY]] の方法で分割された例
+[PRE(MIME example code)[
+Content-Base: "http://foo.example/
+   path/to/base/URI
+   /%28very%20very%20long%2E%29?foo=bar;bar=foo"
+]PRE]
+
+[9] >>8 というかそもそも [CODE(MIME)[Content-Base:]] 
+欄が使われているの自体はじめてみました。
+ちなみに [CODE(MIME)[Content-Location:]] 欄と併用されては''いません''でした。
+
+[[#comment]]
+
+
+** 関連
+
+[10] 本来はその名の通り [ABBR@@en[CL] [Content-Location]] は位置、
+[ABBR@@en[CB] [Content-Base]] は基底だったんですけどねぇ。 
+[ABBR@@en[CL] [Content-Location]] 指定すれば敢えて 
+[ABBR@@en[CB] [Content-Base]] 指定する必要はないし。 
+[WEAK[(意味的には確かに異なるけど、実際必要な場面ってねぇ。)]]
+
+[7] [[相対URI]] でも良い [CODE(MIME)[[[Content-Location]]:]] 欄に対して、 
+[CODE(MIME)[[[Content-Base]]:]] 欄は[[絶対URI]] しか使えません。
+
+[[#comment]]
+
+
+** メモ
+
+[[#comment]]
+
+
+* メモ@
+
+
+1.4
+log
+@auto-committed
+@
+text
+@d99 6
+a105 7
+[21]
+>>6 実装は [[URLBODY]] の方法を使うというのを引用符で囲むのも含めてと解釈していますけど
+(>>12)、それは本当に
+[[RFC 2110]] の意図なのでしょうか? [[URLBODY]] は 
+[CODE(MIME)[[[message/external-body]]]] の[[媒体型引数]]だから引用符も含めて定義しているだけで、
+[[欄本体]]で使うなら引用符をわざわざ含める必然性はないのですから。
+
+a108 1
+
+d179 9
+@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@a0 1
+#?SuikaWiki/0.9
+a1 4
+[1] [CODE(HTTP)[Content-Base:]] 欄は、[[実体]]の[[基底URI]]
+を指定するための頭欄で、 [[HTTP]] や [[MIME]] で使われることを想定していました。
+しかし実際には殆ど使われず、しかも [CODE(HTTP)[[[Content-Location]]:]]
+欄との使い分けが不明瞭であったことから、実質的に廃止されています。
+d3 20
+a22 2
+- [10] 本来はその名のとおり CL は位置、 CB は基底だったんですけどねぇ。 CL 指定すれば敢えて CB 指定する必要はないし。 (意味的には確かに異なるけど、実際必要な場面ってねぇ。)
+[[#comment]]
+d24 1
+d26 2
+a27 1
+* 長い URI
+d29 4
+a32 4
+[6] [[MIME]] メッセージに行長制限があるのに対し、 [[URI]]
+の長さには制限がありません。そこで、 RFC 2110 は 「[[URLBODY]]
+の方法」を採用しています。つまり、 URI 中に自由に [[FWS]]
+を挿入することが出来、解釈する時には取り除かなければならない、ということです。
+d34 20
+a53 3
+[8] [[ML]] の [[HTML]]ed archive で発見したので作成した [[MUA]]
+とかはわからないんですが、こんな [CODE(MIME)[Content-Base:]]
+欄を出力する MUA がいるようです。
+d55 25
+a79 4
+[PRE[
+ Content-Base: "http://foo.example/
+   path/to/base/URI
+   /%28very%20very%20long%2E%29?foo=bar;bar=foo"
+d82 30
+a111 2
+すなわち、 [URLBODY] の方法で URI 中に FWS を挿入し、かつ [CODE(ABNF)[<">]]
+で括っています。
+a112 2
+[9] >>8 というかそもそも [CODE(MIME)[Content-Base:]] 欄が使われているの自体はじめてみました。
+ちなみに [CODE(MIME)[Content-Location:]] 欄と併用されては''いません''でした。
+d114 1
+a114 1
+- [11] 先頭に [CODE(char)["]] が来る URI はありえませんし、そもそも URI に [CODE(char)["]] は使えませんから、quoted と標準の書式は安全に区別できますので、実装は両形式に対応しておいて損はないでしょう。
+d116 10
+a125 5
+[12]
+>>8-11 [[Mozilla]] (Not [[Classic Mozilla]]) 系 [[MUA]] ([[Mozilla Suite]] の MUA とか、 [[Thunderbird]] とか)
+で非 local の文書を添付して送ると [CODE(MIME)[Content-Base]] と
+[CODE(MIME)[[[Content-Location]]]] ''両方''が >>8 のように [URLBODY] in [CODE(ABNF)[quoted-string]] になるようです。
+([[名無しさん]] [WEAK[2004-08-05 11:25:36 +00:00]])
+d130 1
+a130 1
+* 仕様書から
+d133 3
+a135 1
+** RFC 2068 (HTTP/1.1) 14.11 Content-Base
+d141 6
+a146 4
+[CODE(HTTP)[Content-Base]] 実体頭欄は、実体中の相対 URL
+を解決するための基底 URI を指定するのに使うことができます。
+この頭欄は、改訂が期待される [[RFC1808]]
+では [CODE[Base]] として説明されているものです。
+d149 3
+a151 1
+- Content-Base      = "Content-Base" ":" absoluteURI
+d159 10
+a168 5
+[4] [CODE[Content-Base]] 欄が無い場合、実体の基底 URI は、実体の
+[CODE[Content-Location]] ([CODE[Content-Location]] が絶対 URI の場合。)
+又は要求を始めるのに使った URI のいずれかにより、この優先順で定義されます。
+ただ、実体本体中の内容の基底 URI 
+は実体本体中で再定義されるかもしれないことに注意して下さい。
+d170 1
+a171 1
+** MHTML (RFC 2110)
+d173 1
+a173 1
+- [5] content-base ::= "Content-Base:" absoluteURI
+d175 18
+a192 1
+(詳しくは [CODE(WikiPage)[[[RFC2110]>>2]]]] をご覧下さい。)
+d194 8
+d203 5
+a207 1
+** RFC の部分の License
+d209 2
+a210 1
+[[RFCのライセンス]]
+d212 6
+a218 1
+* メモ
+d220 1
+a220 1
+- [7] [[相対URI]] でも良い [[Content-Location:]] 欄に対して、 [CODE[Content-Base:]] 欄は[[絶対URI]] しか使えません。@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@d1 7
+a7 6
+#?SuikaWiki/0.9
+[1] [CODE(HTTP)[Content-Base:]] 欄は、[[実体]]の[[基底URI]]
+を指定するための頭欄で、 [[HTTP]] や [[MIME]] で使われることを想定していました。
+しかし実際には殆ど使われず、しかも [CODE(HTTP)[[[Content-Location]]:]]
+欄との使い分けが不明瞭であったことから、実質的に廃止されています。
+
+d9 26
+a34 23
+[[#comment]]
+
+*長い URI
+
+[6] [[MIME]] メッセージに行長制限があるのに対し、 [[URI]]
+の長さには制限がありません。そこで、 RFC 2110 は 「[[URLBODY]]
+の方法」を採用しています。つまり、 URI 中に自由に [[FWS]]
+を挿入することが出来、解釈する時には取り除かなければならない、ということです。
+
+[8] [[ML]] の [[HTML]]ed archive で発見したので作成した [[MUA]]
+とかはわからないんですが、こんな [CODE(MIME)[Content-Base:]]
+欄を出力する MUA がいるようです。
+
+ Content-Base: "http://foo.example/
+   path/to/base/URI
+   /%28very%20very%20long%2E%29?foo=bar;bar=foo"
+
+すなわち、 [URLBODY] の方法で URI 中に FWS を挿入し、かつ [CODE(ABNF)[<">]]
+で括っています。
+
+[9] >>8 というかそもそも [CODE(MIME)[Content-Base:]] 欄が使われているの自体はじめてみました。
+ちなみに [CODE(MIME)[Content-Location:]] 欄と併用されては''いません''でした。
+
+d36 55
+a90 38
+[[#comment]]
+
+* 仕様書から
+** RFC 2068 (HTTP/1.1) 14.11 Content-Base
+>The Content-Base entity-header field may be used to specify the base
+URI for resolving relative URLs within the entity. This header field
+is described as Base in RFC 1808, which is expected to be revised.
+
+[CODE(HTTP)[Content-Base]] 実体頭欄は、実体中の相対 URL
+を解決するための基底 URI を指定するのに使うことができます。
+この頭欄は、改訂が期待される [[RFC1808]]
+では [CODE[Base]] として説明されているものです。
+
+>
+-          Content-Base      = "Content-Base" ":" absoluteURI
+
+> If no Content-Base field is present, the base URI of an entity is
+defined either by its Content-Location (if that Content-Location URI
+is an absolute URI) or the URI used to initiate the request, in that
+order of precedence. Note, however, that the base URI of the contents
+within the entity-body may be redefined within that entity-body.
+
+[4] [CODE[Content-Base]] 欄が無い場合、実体の基底 URI は、実体の
+[CODE[Content-Location]] ([CODE[Content-Location]] が絶対 URI の場合。)
+又は要求を始めるのに使った URI のいずれかにより、この優先順で定義されます。
+ただ、実体本体中の内容の基底 URI 
+は実体本体中で再定義されるかもしれないことに注意して下さい。
+
+**MHTML (RFC 2110)
+-[5] content-base ::= "Content-Base:" absoluteURI
+
+(詳しくは [CODE(WikiPage)[[[RFC2110]>>2]]]] をご覧下さい。)
+
+**RFC の部分の License
+[[RFCのライセンス]]
+
+*メモ
+- [7] [[相対URI]] でも良い [[Content-Location:]] 欄に対して、 [CODE[Content-Base:]] 欄は[[絶対URI]] しか使えません。
+@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@d7 1
+d31 1
+@
+

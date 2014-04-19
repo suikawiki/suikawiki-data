@@ -1,0 +1,221 @@
+head	1.3;
+access;
+symbols
+	before-db-leaffile:1.2
+	after-upgrade-to-suikawiki-3:1.2
+	before-fork-suikawiki3:1.2
+	after-restore-20040122:1.2;
+locks; strict;
+comment	@# @;
+
+
+1.3
+date	2004.05.23.02.03.05;	author wakaba;	state dead;
+branches;
+next	1.2;
+
+1.2
+date	2003.01.26.04.49.34;	author w;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2002.07.29.12.01.58;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9 obsoleted="yes"
+→[[mailto:]]@
+
+
+1.2
+log
+@auto-commited
+@
+text
+@@
+
+
+1.1
+log
+@Updated.
+@
+text
+@d1 2
+a2 164
+*定義
+
+mailto: URI の最新の定義は RFC 2368 です。 BNF では次の様に説明されています。
+
+=mailtoURL  =  "mailto:" [ to ] [ headers ]
+=to         =  #mailbox
+=headers    =  "?" header *( "&" header )
+=header     =  hname "=" hvalue
+=hname      =  *urlc
+=hvalue     =  *urlc
+
+[[Another HTML―Lint]] の覚書 <http://openlab.ring.gr.jp/k16/htmllint/notice.html#rfc2368>
+に幾つか突っ込みがあります。
+
+-この構文はRFC1738から引用したように書かれていますが、RFC1738には urlc という構文要素は出てきません。RFC822にも出てきません(当然)。RFC2396の uric のことでしょうか。そもそもRFC1738にこのような構文は書かれていません。話の流れから言うと、uric から ? = & を取り除いたもののようです。 
+-構文では hname と hvalue が共に空になり得るので、= だけのheader部が許されることになりますが、本当にそれでいいのでしょうか。 
+
+他にも、次のような問題点が思い浮かびます。
+
+="mailto:" という URI が認められてしまいますが、良いのでしょうか。
+=RFC 1123 で mailbox の定義が改訂されているのですが、そっちの定義を使った方が良いのではないでしょうか。
+=そもそも RFC 822 自体改訂されて RFC 2822 になっています。 (もっとも時期が全然違うのでこれは RFC 2368 の問題ではありません。)
+
+RFC 2368 の第2章には
+
+> Note that all URL reserved characters in "to" must be encoded: 
+> in particular,parentheses, commas, and the percent sign ("%"), 
+> which commonly occur in the "mailbox" syntax. 
+
+と書いてあります。では URL reserved characters とは何でしょうか。
+URI / URL の BNF にある「reserved」だとしたら、 "@@" とかも使ってはいけなく
+なりますが、例をみればそうでないことが分かります。
+とりあえず、 "(" / ")" / "," は「to」の文字から除外する必要があることだけは
+確かです。また、次の段落には
+「As with "to", all URL reserved characters must be encoded. 」
+とあるので、 hname や hvalue からも除外されることが分かります。
+
+> Within mailto URLs, the characters "?", "=", "&" are reserved. 
+
+と、少し後の段落に書いてあります。 reserved と言ってももちろん使用禁止ではなく、
+特殊記号として解釈されるということです。
+
+しかし、 "?" はともかく、 "=" や "&" は to でも使えないということでしょうか。
+
+ということで ABNF を書き直してみます。
+
+=mailtoURL = mailto-absoluteURI
+=mailto-absoluteURI = mailto-scheme ":" mailto-opaque_part
+=mailto-scheme = "mailto"
+=mailto-opaque_part = to [ headers ] / headers
+=;; opaque_part   = uric_no_slash *uric
+=to = <mailto-uric_no_slash *mailto-uric で、内容は mailbox-list>
+=headers = header *("&" header)
+=header = hname "=" hbody / mailto-body
+=hname = <1*mailto-uric で、内容は field-name。但し "body" を除く>
+=hbody = <*mailto-uric で、内容は field-body>
+=mailto-body = "body=" mailto-body-content
+=mailto-body-content = <*mailto-uric で、内容は message-body>
+=mailto-uric_no_slash = mailto-reserved / mailto-unreserved / escaped
+=mailto-uric = mailto-uric_no_slash / "/"
+=mailto-reserved = ";" / ":" / "@@" / "+" / "$" ;; rfc2396.reserved - ("/" / "?" / "&" / "=" / ",")
+=mailto-unreserved = ALPHA / DIGIT / mailto-mark
+=mailto-mark = "-" / "_" / "." / "!" / "~" / "*" / "'" ;; rfc2396.mark - ("(" / ")")
+=escaped = rfc2396.escaped ;; "%" 2HEXDIGIT
+=mailbox-list = rfc2822.mailbox-list
+=field-name = rfc2822.field-name
+=field-body = rfc2822.unstructured  ;; 厳密な内容は field-name により決まる
+=message-body = rfc2822.body
+
+ところで、 to の定義は #mailbox (RFC 2822 では mailbox-list)
+ですから、 group は使うことが出来ません。 group を使う時は
+headers の中で "to=foo:abc@@bar.example;"とするのでしょう。
+
+address-list (address = mailbox / group) にすると parse がやや面倒に
+なることはあるのですが、どのみち headers の中で使えてしまうのですから、
+あまり意味がありません。そもそも、 RFC 822/2822 MUA は group
+を扱えなければなりません。 (URI parser は単に分解して % 復号したものを
+そのまま MUA に渡せばいいだけです。 RFC 822/2822 的な parse
+はする必要が無いはずです。)
+
+> 8-bit characters in mailto URLs are forbidden. 
+
+と2章の終わりに書いてあります。そのまま解釈すると URI ではそもそも
+8ビット文字は使えません。きっと、 % 符号化で符号化されたオクテット
+が8ビットのでは駄目、って言いたかったのでしょう。
+
+hvalue の中身には encoded-word も使えると書いてあります。
+まとめると、 hvalue の中身は RFC 822 で定義されたそのものでないと
+いけないということです。たまに、シフト JIS とか日本語 EUC
+で「mailto:hoge@@foo.example?subject=うんにゃらかんにゃら」
+と書いてあるのを見かけますが、 (これは URI としてそもそも
+間違ってますが、そのまま URI 符号化したところで
+%83%なんちゃら・・・というのになりますから) 不正であるということです。
+
+古い定義に遡ってみますと、 RFC 1738 には次の様に書かれています。
+
+>        mailto:<rfc822-addr-spec>
+
+>   where <rfc822-addr-spec> is (the encoding of an) addr-spec, as
+>   specified in RFC 822 [6]. Within mailto URLs, there are no reserved
+>   characters.
+
+BNF を抜粋すると次の通り。
+
+=; MAILTO (see also RFC822)
+=mailtourl      = "mailto:" encoded822addr
+=encoded822addr = 1*xchar               ; further defined in RFC822
+=xchar          = unreserved | reserved | escape
+=reserved       = ";" | "/" | "?" | ":" | "@@" | "&" | "="
+=escape         = "%" hex hex
+=safe           = "$" | "-" | "_" | "." | "+"
+=extra          = "!" | "*" | "'" | "(" | ")" | ","
+
+非互換なのは明らかです。
+
+ところで、これなら "mailto:" を取り去って % を復号すれば
+そのままメイル・アドレスになりそうな気がします。そのまま
+RFC 822 メッセージに突っ込んで使えるという意味ではその通りですが、
+一般的な意味では間違いです。
+
+RFC 822 addr-spec では構成要素間に注釈が挿入出来ますから、
+「mailto:foo(comment)@@bar.example」というのもありですが、
+(comment) はメイル・アドレスの一部ではありません。
+(なお、このアドレスは RFC 2368 的には不正のようです。括弧は
+%28 %29 にしないといけません。 (注釈の挿入自体は、 2368
+でも認められています。というか本文に明記されています。))
+
+*例
+
+=mailto:addr1%2C%20addr2
+=mailto:?to=addr1%2C%20addr2
+=mailto:addr1?to=addr2
+
+上記は全て等価。
+
+=mailto:chris@@example.com
+=mailto:infobot@@example.com?subject=current-issue
+=mailto:infobot@@example.com?body=send%20current-issue
+=mailto:infobot@@example.com?body=send%20current-issue%0D%0Asend%20index
+=mailto:foobar@@example.com?In-Reply-To=%3c3469A91.D10AF4C@@example.com%3e
+=mailto:majordomo@@example.com?body=subscribe%20bamboo-l
+=mailto:joe@@example.com?cc=bob@@example.com&body=hello
+=mailto:?to=joe@@example.com&cc=bob@@example.com&body=hello
+=mailto:gorby%25kremvax@@example.com
+=mailto:unlikely%3Faddress@@example.com?blat=foop
+
+不正な例
+
+=mailto:joe@@example.com?cc=bob@@example.com?body=hello
+
+*See also
+-RFC 1738 <urn:ietf:rfc:1738>
+-RFC 2368 <urn:ietf:rfc:2368>
+--RFC 2368 和訳 (mirror) <http://suika.fam.cx/~wakaba/-temp/rfc-ja/rfc2368-ja>
+-[[電子メイル]]
+--RFC 822 <urn:ietf:rfc:822>
+--RFC 1123 <urn:ietf:rfc:1123>
+--RFC 2822 <urn:ietf:rfc:2822>
+--[[RFC822と仲間達の頭領域]]
+---[[Subject:領域]]
+---[[To:領域]]
+-[[URI]]
+--RFC 2396 (URI 定義) <urn:ietf:rfc:2396>
+--[[URL]]
+@
+

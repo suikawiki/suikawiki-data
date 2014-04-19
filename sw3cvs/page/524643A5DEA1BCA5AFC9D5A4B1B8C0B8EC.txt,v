@@ -1,0 +1,323 @@
+head	1.4;
+access;
+symbols
+	suikawiki3-final:1.4
+	before-db-leaffile:1.3
+	after-upgrade-to-suikawiki-3:1.3
+	before-fork-suikawiki3:1.3
+	after-restore-20040122:1.3;
+locks; strict;
+comment	@# @;
+
+
+1.4
+date	2006.06.08.02.11.13;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2003.10.31.02.03.35;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2003.01.26.04.49.33;	author w;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2002.07.29.12.01.58;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.4
+log
+@auto-committed
+@
+text
+@*RFC 2629 “Writing I-Ds and RFCs using XML”
+
+XML を使って RFC を書く言語を定義しているのが RFC 2629
+<urn:ietf:rfc:2629> 
+和訳 <http://suika.fam.cx/~wakaba/documents/rfc-ja/rfc2629-ja>。
+
+:文書型宣言:<!DOCTYPE rfc SYSTEM "rfc2629.dtd">
+
+*xml2rfc 実装
+
+RFC 2629 の著者の実装。処理命令を使って、 RFC 2629
+に書いていない機能を入れてます。 <http://xml.resource.org/> 参照。
+
+*拡張可能な RFC の翻訳マーク付け言語
+
+RFC 2629 を拡張して、 RFC の和訳をマーク付けしよーというものです。
+仕様はまだ確定してません。
+
+:名前空間 URI:<http://suika.fam.cx/~wakaba/lang/rfc/translation/>
+
+以下の説明では、名前空間接頭辞 "ja" をこの名前空間 URI
+と関連付けてあるものとします。
+
+**データ型
+
+:<!ENTITY % NUMBER     "CDATA">:1*DIGIT
+:<!ENTITY % NUMBERS    "CDATA">:1#( NUMBER )
+:<!ENTITY % DAY        "CDATA">:1*2DIGIT
+:<!ENTITY % MONTH      "CDATA">:"January" / "February" / ... / "December"
+:<!ENTITY % YEAR       "CDATA">:4DIGIT
+:<!ENTITY % URI        "CDATA">:absoluteURI
+:<!ENTITY % ATEXT      "CDATA">:<printable ASCII text (no line-terminators)>
+:<!ENTITY % CTEXT      "#PCDATA">:<printable ASCII text (no line-terminators)>
+:<!ENTITY % TEXT       "#PCDATA">:<character data>
+
+*実体参照
+
+:amp:& [XML]
+:lt:< [XML]
+:gt:> [XML]
+:quot:" [XML]
+:apos:' [XML]
+:<!ENTITY   rfc.number "XXXX">:RFC 番号 [RFC2629]
+
+*根
+
+:内容:(XML,DOCTYPE,PI?,rfc)
+
+*rfc 要素
+
+:内容:(front,middle,back?)
+:内容:(front,ja:front?,middle,back?) [JA]
+
+:number:%NUMBER; #IMPLIED
+:obsoletes:%NUMBERS;          ""
+:updates:%NUMBERS;          ""
+:category:(std|bcp|info|exp|historic)       "info"
+:seriesNo:%NUMBER;           #IMPLIED
+:ipr:(full2026|noDerivativeWorks2026|none)   #IMPLIED
+:docName:%ATEXT;            #IMPLIED
+:ja:workgroup:%TEXT; "Network Working Group" -- 作業部会名 --
+
+*front 要素
+
+   <!ELEMENT front       (title,author+,date,area*,workgroup*,keyword*,
+                          abstract?,note*)>
+   <!ELEMENT title       (%CTEXT;)>
+   <!ATTLIST title
+             abbrev      %ATEXT;            #IMPLIED>
+
+   <!ELEMENT author      (organization,address?)>
+   <!ATTLIST author
+
+             initials    %ATEXT;            #IMPLIED
+             surname     %ATEXT;            #IMPLIED
+             fullname    %ATEXT;            #IMPLIED>
+
+   <!ELEMENT organization
+                         (%CTEXT;)>
+   <!ATTLIST organization
+             abbrev      %ATEXT;            #IMPLIED>
+
+   <!ELEMENT address     (postal?,phone?,facsimile?,email?,uri?)>
+
+   <!-- at most one of each the city, region, code, and country
+        elements may be present -->
+   <!ELEMENT postal      (street+,(city|region|code|country)*)>
+   <!ELEMENT street      (%CTEXT;)>
+   <!ELEMENT city        (%CTEXT;)>
+   <!ELEMENT region      (%CTEXT;)>
+   <!ELEMENT code        (%CTEXT;)>
+   <!ELEMENT country     (%CTEXT;)>
+   <!ELEMENT phone       (%CTEXT;)>
+   <!ELEMENT facsimile   (%CTEXT;)>
+   <!ELEMENT email       (%CTEXT;)>
+   <!ELEMENT uri         (%CTEXT;)>
+
+   <!ELEMENT date        EMPTY>
+   <!ATTLIST date
+             day         %DAY;              #IMPLIED
+             month       %MONTH;            #REQUIRED
+             year        %YEAR;             #REQUIRED>
+
+   <!-- meta-data... -->
+   <!ELEMENT area        (%CTEXT;)>
+   <!ELEMENT workgroup   (%CTEXT;)>
+   <!ELEMENT keyword     (%CTEXT;)>
+
+   <!ELEMENT abstract    (t)+>
+   <!ELEMENT note        (t)+>
+   <!ATTLIST note
+             title       %ATEXT;            #REQUIRED>
+
+
+   <!--
+     The body
+     -->
+
+
+   <!ELEMENT middle      (section)+>
+
+
+
+
+Rose                         Informational                     [Page 26]
+
+RFC 2629            Writing I-Ds and RFCs using XML            June 1999
+
+
+   <!ELEMENT section     (t|figure|section)*>
+   <!ATTLIST section
+             anchor      ID                 #IMPLIED
+             title       %ATEXT;            #REQUIRED>
+
+   <!ELEMENT t           (%TEXT;|list|figure|xref|eref|iref|vspace)*>
+   <!ATTLIST t
+             hangText    %ATEXT;            #IMPLIED>
+
+   <!-- the value of the style attribute is inherited from the closest
+        parent -->
+   <!ELEMENT list        (t+)>
+   <!ATTLIST list
+             style       (numbers|symbols|hanging|empty)
+                                            "empty">
+
+   <!ELEMENT xref        (%CTEXT;)>
+   <!ATTLIST xref
+             target      IDREF              #REQUIRED
+             pageno      (true|false)       "false">
+
+   <!ELEMENT eref        (%CTEXT;)>
+   <!ATTLIST eref
+             target      %URI;              #REQUIRED>
+
+   <!ELEMENT iref        EMPTY>
+   <!ATTLIST iref
+             item        %ATEXT;            #REQUIRED
+             subitem     %ATEXT;            "">
+
+   <!ELEMENT vspace      EMPTY>
+   <!ATTLIST vspace
+             blankLines  %NUMBER;           "0">
+
+   <!ELEMENT figure      (preamble?,artwork,postamble?)>
+   <!ATTLIST figure
+             anchor      ID                 #IMPLIED
+             title       %ATEXT;            "">
+
+   <!ELEMENT preamble    (%TEXT;|xref|eref|iref)*>
+   <!ELEMENT artwork     (%TEXT;)*>
+   <!ATTLIST artwork
+             xml:space   (default|preserve) "preserve">
+   <!ELEMENT postamble   (%TEXT;|xref|eref|iref)*>
+
+
+   <!--
+     Back matter
+
+
+
+Rose                         Informational                     [Page 27]
+
+RFC 2629            Writing I-Ds and RFCs using XML            June 1999
+
+
+     -->
+
+   <!-- sections, if present, are appendices -->
+   <!ELEMENT back        (references?,section*)>
+
+   <!ELEMENT references  (reference+)>
+   <!ELEMENT reference   (front,seriesInfo*)>
+   <!ATTLIST reference
+             anchor      ID                 #IMPLIED
+             target      %URI;              #IMPLIED>
+   <!ELEMENT seriesInfo  EMPTY>
+   <!ATTLIST seriesInfo
+             name        %ATEXT;            #REQUIRED
+             value       %ATEXT;            #REQUIRED>
+
+*処理命令 PI
+
+<?rfc symrefs="yes"?> みたいにします。擬似属性は、
+一つの擬似タグごとに一つしか使えません。 (実装はそう想定してます。)
+
+擬似要素名 rfc は xml2rfc が使っているもので、
+rfc-translation は [JA] が定義したものです。
+
+,擬似要素名,擬似属性名,内容,既定値,説明
+,rfc       ,symref    ,yn  ,'no'  ,参考文献参照で名前 [JA] を使う。偽なら番号 [1]
+,rfc       ,toc       ,yn  ,'no'  ,目次を出力するか
+,rfc       ,private   ,TEXT,''    ,RFC でない場合に series 名
+,rfc-translation,show-header-category,yn,'yes',頭に「分類」を出力するか
+,rfc-translation,show-rfc-copyright,yn,,RFC 著作権を出力するか
+,rfc-translation,show-rfc-acknowledgement-editor,yn,,RFC 書記謝辞を出力するか
+,rfc-translation,output-http-equiv,yn,'no',[[Content-Style-Type:領域]]を (X)HTML の meta 要素で出力するか
+
+
+=yn = 'yes' / 'no'
+
+既定値欄空欄は、状況によって変化することを示す。
+
+*See also
+-[[RFC]]
+--[[RFCEditor]]
+--[[RFC2026]] <urn:ietf:rfc:2026>
+--RFC 2629 <urn:ietf:rfc:2629>
+--[[RFCマーク付け言語]]
+--[[RFCのライセンス]]
+-[[IETF]]
+-[[ISOC]]
+-<http://xml.resource.org/>
+- [1] ''Index of /authoring/bibxml'' <http://xml.resource.org/authoring/bibxml/>
+- [2] ''Index of /public/rfc/xml'' <http://xml.resource.org/public/rfc/xml/> [[RFC2629]] 方式で書かれた RFCs
+- [3] ''xml2rfc'' <http://xml.resource.org/>
+- [4] [CODE(XML)[rfc]] 処理指令の擬似属性一覧 : ''The README file: xml2rfc v1.21'' <http://xml.resource.org/authoring/README.html#rfc.section.4.1.1>
+- [5] 2629bis : ''Writing I-Ds and RFCs using XML (revised)'' <http://xml.resource.org/authoring/draft-mrose-writing-rfcs.html>
+- [6] >>2 妥当どころか[[整形式]]でさえないのが幾つかあるよん。せめてチェックくらいせんかい。。。
+- [7] RFC 2629 Markup language in modularized DTD : <IW:SuikaCVS:"markup/rfc/dtd/">
+@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@d12 1
+a12 1
+に書いていない機能を入れてます。 <http://xml.resouce.org/> 参照。
+d232 8
+a239 8
+-<http://xml.resource.org/>
+- [1] ''Index of /authoring/bibxml'' <http://xml.resource.org/authoring/bibxml/>
+- [2] ''Index of /public/rfc/xml'' <http://xml.resource.org/public/rfc/xml/> [[RFC2629]] 方式で書かれた RFCs
+- [3] ''xml2rfc'' <http://xml.resource.org/>
+- [4] [CODE(XML)[rfc]] 処理指令の擬似属性一覧 : ''The README file: xml2rfc v1.21'' <http://xml.resource.org/authoring/README.html#rfc.section.4.1.1>
+- [5] 2629bis : ''Writing I-Ds and RFCs using XML (revised)'' <http://xml.resource.org/authoring/draft-mrose-writing-rfcs.html>
+- [6] >>2 妥当どころか[[整形式]]でさえないのが幾つかあるよん。せめてチェックくらいせんかい。。。
+- [7] RFC 2629 Markup language in modularized DTD : <IW:SuikaCVS:"markup/rfc/dtd/">
+@
+
+
+1.2
+log
+@auto-commited
+@
+text
+@d235 5
+@
+
+
+1.1
+log
+@Updated.
+@
+text
+@d232 3
+a234 1
+-<http://xml.resource.org/>@
+

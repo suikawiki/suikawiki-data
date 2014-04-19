@@ -1,0 +1,123 @@
+head	1.2;
+access;
+symbols
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+
+
+1.2
+date	2004.04.13.02.01.23;	author wakaba;	state dead;
+branches;
+next	1.1;
+
+1.1
+date	2003.06.28.10.14.53;	author make;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9
+[1] 【[[XML]]】 XML では、
+よく使う[[名前文字参照]]のための[[一般実体]]が
+5つ「定義済み」とされています。
+
+:[CODE(XML)[amp]]:[CODE(char)[AMPASAND]] ([CODE(char)[&]])
+:[CODE(XML)[apos]]:[CODE(char)[APOSTOROPHE]] ([CODE(char)[']])
+:[CODE(XML)[gt]] :[CODE(char)[GREATER-THAN SIGN]] ([CODE(char)[>]])
+:[CODE(XML)[lt]] :[CODE(char)[LESS-THAN SIGN]] ([CODE(char)[<]])
+:[CODE(XML)[quot]]:[CODE(CHAR)[DOUBLE QUOTATION MARK]] ([CODE(char)["]])
+
+[5] これらの実体は、[[妥当]]な XML 文書であっても、
+[[DTD]] で[[宣言]]することなく参照できます。
+例:
+[PRE[
+<?xml version="1.0"?>
+<!DOCTYPE foo [<!ELEMENT foo #PCDATA>]>
+<foo>&amp;</foo>
+<!-- この文書は整形式であり、かつ妥当です。 -->
+]PRE]
+
+[6] しかし、仕様書 (>>3) は[[相互運用性のため]]に
+陽に宣言することを推奨 (should) しています。
+
+[7] なお、これらの実体を DTD で宣言するに当たっては、
+他の[[置換文]]を持つようにしてはいけません。
+例えば、次の宣言は不正です。
+[PRE[
+<!ENTITY lt "left">
+]PRE]
+
+- [3] ''Extensible Markup Language (XML) 1.0 : Predefined Entities'' <http://www.w3.org/TR/REC-xml#sec-predefined-ent>
+- [4] ''Extensible Markup Language (XML) 1.0 : Validity constraint: Entity Declared'' <http://www.w3.org/TR/REC-xml#vc-entdeclared>
+
+[9] >>3 には、
+> If the entities lt or amp are declared, they must be declared as internal entities whose ''[INS[3]] replacement text'' is a ''[INS[1]] character reference'' to the respective character (less-than sign or ampersand) being ''[INS[2]] escaped''; the double escaping is required for these entities so that references to them produce a well-formed result. If the entities gt, apos, or quot are declared, they must be declared as internal entities whose ''[INS[3]] replacement text'' is the single character being ''[INS[2]] escaped'' (or a ''[INS[5]] character reference'' to that character; the double escaping here is unnecessary but harmless).
+
+とあります [WEAK[(強調引用者)]]。
+- 前者の群で、 [CODE[1]] の「それぞれの文字の''文字参照''」
+とは、 [CODE(XML)[&]] なら [CODE(XML)[&#x26;]] などです。
+- [CODE[2]] で、
+--「''escaped''」は、直前に定義で
+「実体と文字参照のどちらも、区切子を [DFN[escape する]]のに使うことが出来る」と書かれていますが、
+ここではその区切子自身の話ですから、数値文字参照のことでしょう。 [WEAK[そう考えないと、つじつまが合いません。]]
+-- 前者の群では、 [CODE[1]] の文字参照が escape されます。
+例えば、 [CODE(XML)[&]] なら [CODE(XML)[&#x26;#x26;]]
+になります。
+-- 後者の群では、その文字自身が escape されます。
+例えば、 [CODE(XML)["]] なら [CODE(XML)[&#x22;]] です。
+- [CODE[3]] で、
+--「置換文」とは、実体宣言の[[指定実体値]]の文字参照と引数実体参照を置換したものです。 <http://www.w3.org/TR/REC-xml#dt-repltext>
+-- 逆に言えば、実体宣言の指定実体値にするには必要に応じて文字参照と引数実体参照に置換すればよいのです。
+--- 前者の群では、 [CODE(XML)[&]] の場合の置換文が 
+[CODE(XML)[&#x26;#x26;]] なのですから、
+指定実体値は [CODE(XML)[&#x26;#x26;#x26;]] です。
+--- 後者の群では、 [CODE(XML)["]] の場合の置換文が
+[CODE(XML)[&#x22;]] なのですから、
+指定実体値は [CODE(XML)[&#x26;#x22;]] です。
+- [CODE[5]] で、後者の群について、
+-- 「その文字の文字参照」でもよいとしています。
+ですから [CODE(XML)["]] の場合の [CODE(XML)[&#x22;]]
+になります。って、これは先程の場合と同じではないですか?
+- 結局、実体宣言の例は次のようになります。
+-- 前者の群: [SAMP(XML)[<!ENTITY amp "&#x26;#x26;#x26;">]]
+-- 後者の群: [SAMP(XML)[<!ENTITY quot "&#x26;#x22;">]]
+-- 後者はともかく、前者は激しく間違っていませんか?
+- 何が悪かったのかというと、 [CODE[3]] で間違って「置換文」
+と書いてしまったことと、 [CODE[5]] の部分が曖昧なことです。
+
+現時点で errata には何もかかれてません。
+
+[10] >>3 を素直に読むと [SAMP(XML)[<!ENTITY gt ">">]]
+は駄目なような気がしますが、この節を無視して考えると正当に思えます。
+>>9 のついでの間違いですか?
+
+[2] [[SGML]] 的には、 [[WebSGML]] で新たに導入された、
+[[SGML宣言]]内で実体を宣言する機能を使っています。
+([[定義済みデータ文字実体]], Web SGML K.4.2)
+
+[8] Web SGML では、定義済みデータ文字実体は[[内部部分集合]]の前に宣言があったものとして扱います。
+ですから、 XML としての >>7 の制約は、 SGML
+的にはまったく無害 (重複している実体宣言は無視される。)
+となります。
+@
+
+
+1.1
+log
+@auto-commited
+@
+text
+@@
+

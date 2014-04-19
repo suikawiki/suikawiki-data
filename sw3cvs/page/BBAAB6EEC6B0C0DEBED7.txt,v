@@ -1,0 +1,140 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1
+	before-db-leaffile:1.1;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.1
+date	2004.04.13.02.01.20;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@[[#comment]]
+* 仕様書から
+** RFC 2068・2616 (HTTP/1.1) 12.1 Server-driven Negotiation
+> If the selection of the best representation for a response is made by
+an algorithm located at the server, it is called server-driven
+negotiation.  Selection is based on the available representations of
+the response (the dimensions over which it can vary; e.g. language,
+content-coding, etc.) and the contents of particular header fields in
+the request message or on other information pertaining to the request
+(such as the network address of the client).
+
+[[応答]]の最善の[[表現]]の選択が[[サーバー]]に位置付けられた算法によって行われる時、
+これを[DFN[サーバー駆動折衝]]と呼びます。選択は、
+利用可能な応答の表現 (その変化し得る次元、例えば言語、 [CODE(ABNF)[[[content-coding]]]] など)
+[[要求]]メッセージ中の特定の頭欄の内容や要求に関係するその他の情報
+([[クライアント]]のネットワーク番地など) に基づきます。
+
+> Server-driven negotiation is advantageous when the algorithm for
+selecting from among the available representations is difficult to
+describe to the user agent, or when the server desires to send its
+"best guess" to the client along with the first response (hoping to
+avoid the round-trip delay of a subsequent request if the "best
+guess" is good enough for the user). In order to improve the server's
+guess, the user agent MAY include request header fields (Accept,
+Accept-Language, Accept-Encoding, etc.) which describe its
+preferences for such a response.
+
+サーバー駆動折衝は、利用可能な表現から選択する算法を[[利用者エージェント]]に説明するのが難しい時や、
+(「最善の推測」が利用者にとって十分であるときの後続の要求の往復の[RUBY[間] [ま]を避けることを願って)
+最初の応答で「最善の推測」によるものをクライアントに送ることをサーバーが望む時に有利です。
+サーバーの推測を向上させるために、利用者エージェントは応答の選り好みを記述した[[要求頭欄]]
+([CODE(HTTP)[[[Accept]]]], [CODE(HTTP)[[[Accept-Language]]]], 
+[CODE(HTTP)[[[Accept-Encoding]]]] など) を含めて'''構いません'''。
+
+> Server-driven negotiation has disadvantages:
+
+サーバー駆動折衝には不利な点もあります。
+
+>
+-1. It is impossible for the server to accurately determine what might be
+"best" for any given user, since that would require complete
+knowledge of both the capabilities of the user agent and the intended
+use for the response (e.g., does the user want to view it on screen
+or print it on paper?).
+-2. Having the user agent describe its capabilities in every request can
+be both very inefficient (given that only a small percentage of
+responses have multiple representations) and a potential violation of
+the user's privacy.
+-3. It complicates the implementation of an origin server and the
+algorithms for generating responses to a request.
+-4. It may limit a public cache's ability to use the same response
+for multiple user's requests.
+
+- サーバーがその利用者にとって何が「最善」なのかを正確に決定するのは不可能です。
+正確に決定するためには利用者エージェントの能力と応答をどう使うつもりか
+(例えば利用者が画面で見ることを望んでいるのか、紙に印刷することを望んでいるのか)
+の両方についての完全な知識が必要になってしまいます。
+- 利用者エージェントが毎度の要求でその能力を記述するのは 
+(複数の表現を持つ応答がほんのわずかの割合だとしたら) とても非効率ですし、
+利用者の個人情報を漏らしてしまう虞もあります。
+- 起源サーバーの実装と要求に対する応答を生成する算法を複雑化させてしまいます。
+- [[公開キャッシュ]]が同じ応答を複数の利用者の要求に使える場面を限定してしまうかもしれません。
+
+> HTTP/1.1 includes the following request-header fields for enabling
+server-driven negotiation through description of user agent
+capabilities and user preferences: Accept (section 14.1), Accept-Charset (section 14.2), Accept-Encoding (section 14.3), Accept-Language (section 14.4), and User-Agent (section [DEL[14.42]] [INS[14.43]]). However, an
+origin server is not limited to these dimensions and MAY vary the
+response based on any aspect of the request, including information
+outside the request-header fields or within extension header fields
+not defined by this specification.
+
+HTTP/1.1 は、利用者エージェント能力及び利用者の好みの記述によってサーバー駆動折衝を可能とするための[[要求頭欄]]として
+[CODE(HTTP)[[[Accept]]]], [CODE(HTTP)[[[Accept-Charset]]]],
+[CODE(HTTP)[[[Accept-Encoding]]]], [CODE(HTTP)[[[Accept-Language]]]],
+[CODE(HTTP)[[[User-Agent]]]] を含んでいます。
+しかし、[[起源サーバー]]はこれらの次元に限定されず、
+要求頭欄外の情報やこの仕様書で定義していない拡張頭欄中の情報も含めて、
+要求の任意の側面に基づいて応答を変化させて'''構いません'''。
+
+[DEL[
+> HTTP/1.1 origin servers MUST include an appropriate Vary header field
+(section 14.43) in any cachable response based on server-driven
+negotiation. The Vary header field describes the dimensions over
+which the response might vary (i.e. the dimensions over which the
+origin server picks its "best guess" response from multiple representations).
+
+HTTP/1.1 起源サーバーは、サーバー駆動折衝に基づく[[キャッシュ可能]]な応答に適切な
+[CODE(HTTP)[[[Vary]]]] 頭欄を含めなければ'''なりません'''。
+[CODE(HTTP)[Vary]] 頭欄は、その応答が変化し得る次元
+(すなわち、起源サーバーが複数の表現から「最善の推測」応答を選んだ次元)
+を記述します。
+
+> HTTP/1.1 public caches MUST recognize the Vary header field when it
+is included in a response and obey the requirements described in
+section 13.6 that describes the interactions between caching and
+content negotiation.
+
+HTTP/1.1 公開キャッシュは、 [CODE(HTTP)[Vary]] 頭欄が応答中に含まれているときは、
+これを認識し、キャッシュと内容折衝の相互作用について説明した13.6節に記述されている要件に従わなければ'''なりません'''。
+]DEL]
+
+[INS[
+> The Vary  header field can be used to express the parameters the
+server uses to select a representation that is subject to server-driven negotiation. See section 13.6 for use of the Vary header field
+by caches and section 14.44 for use of the Vary header field by servers.
+
+サーバーが内容折衝の対象である表現を選択するのに使った引数を表現するのに
+[CODE(HTTP)[Vary]] 頭欄を使うことができます。
+キャッシュの [CODE(HTTP)[Vary]] 頭欄の利用については13.6節を、
+サーバーの [CODE(HTTP)[Vary]] 頭欄の使用については 14.44 節をご覧下さい。
+]INS]
+** RFC の部分の License
+[[RFCのライセンス]]
+* メモ
+@

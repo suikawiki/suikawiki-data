@@ -1,0 +1,631 @@
+head	1.2;
+access;
+symbols
+	suikawiki3-final:1.2;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.2
+date	2005.03.13.02.05.55;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2004.05.18.02.05.07;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@
+'''Instance Digests in HTTP [INS[HTTP における実現値要約]]'''
+-Network Working Group                                          
+-Request for Comments: 3230                                   
+-Category: Standards Track                                   
+- J. Mogul
+- Compaq WRL
+- A. Van Hoff
+-                                                                 Marimba
+-                                                            January 2002
+
+* Status of this Memo
+
+   This document specifies an Internet standards track protocol for the
+   Internet community, and requests discussion and suggestions for
+   improvements.  Please refer to the current edition of the "Internet
+   Official Protocol Standards" (STD 1) for the standardization state
+   and status of this protocol.  Distribution of this memo is unlimited.
+
+* Copyright Notice
+
+   Copyright (C) The Internet Society (2002).  All Rights Reserved.
+
+* Abstract
+> HTTP/1.1 defines a Content-MD5 header that allows a server to include
+a digest of the response body.  However, this is specifically defined
+to cover the body of the actual message, not the contents of the full
+file (which might be quite different, if the response is a Content-Range, or uses a delta encoding).  Also, the Content-MD5 is limited
+to one specific digest algorithm; other algorithms, such as SHA-1
+(Secure Hash Standard), may be more appropriate in some
+circumstances.  Finally, HTTP/1.1 provides no explicit mechanism by
+which a client may request a digest.  This document proposes HTTP
+extensions that solve these problems.
+
+HTTP/1.1 は鯖が応答本体の要約を含めることができる [CODE(HTTP)[Content-MD5]]
+頭を定義しています。しかし、これは完全なファイルの内容ではなく実際のメッセージの本体を覆う物として仕様上定義されています
+(応答が [CODE(HTTP)[Content-Range]] だったり、差分符号化を使っていると両者は甚だ異なるかもしれません)。
+また、 [CODE(HTTP)[Content-MD5]] は一つの特定の要約算法に限定されています。
+他の算法、例えば SHA-1 (安全ハッシュ規格) がより適切な場面もあります。
+最後に、 HTTP/1.1 はクライアントが陽に要約を要求することのできる仕組みを提供していません。
+この文書はこれらの問題を解決する HTTP 拡張を提案します。
+
+* Table of Contents
+
+   1 Introduction....................................................  2
+        1.1 Other limitations of HTTP/1.1............................  3
+   2 Goals...........................................................  4
+   3 Terminology.....................................................  5
+   4 Specification...................................................  6
+        4.1 Protocol parameter specifications........................  6
+             4.1.1 Digest algorithms.................................  6
+        4.2 Instance digests.........................................  7
+        4.3 Header specifications....................................  8
+             4.3.1 Want-Digest.......................................  8
+             4.3.2 Digest............................................  9
+   5 Negotiation of Content-MD5......................................  9
+   6 IANA Considerations............................................. 10
+   7 Security Considerations......................................... 10
+   8 Acknowledgements................................................ 10
+   9 References...................................................... 10
+   10 Authors' Addresses............................................. 12
+   11 Full Copyright Statement....................................... 13
+
+* 1 Introduction
+> Although HTTP is typically layered over a reliable transport
+protocol, such as TCP, this does not guarantee reliable transport of
+information from sender to receiver.  Various problems, including
+undetected transmission errors, programming errors, corruption of
+stored data, and malicious intervention can cause errors in the
+transmitted information.
+
+[[HTTP]] は典型的に信頼できる輸送プロトコル、たとえば [[TCP]]
+の上の層に位置しますが、[[送信者]]から[[受信者]]へ信頼できる情報の輸送を保証してはいません。
+種々の問題、たとえば検出されない転送誤り、プログラム誤り、
+蓄積データの腐敗、それに悪意の介入が転送情報に誤りを起こすことがあります。
+
+> A common approach to the problem of data integrity in a network
+protocol or distributed system, such as HTTP, is the use of digests,
+checksums, or hash values.  The sender computes a digest and sends it
+with the data; the recipient computes a digest of the received data,
+and then verifies the integrity of this data by comparing the digests.
+
+HTTP のようなネットワーク・プロトコルや分散システムでのデータ整合性の問題への広く行われている方法は、[[要約]]、[[検査和]]、あるいは[[ハッシュ値]]の使用です。[[送信者]]は要約を計算し、データと共に送ります。
+[[受信者]]は受信したデータの要約を計算してから、要約を比較することによってこのデータの整合性を検証します。
+
+> Checksums are used at virtually all layers of the IP stack.  However,
+different digest algorithms might be used at each layer, for reasons
+of computational cost, because the size and nature of the data being
+protected varies, and because the possible threats to data integrity
+vary.  For example, Ethernet uses a Cyclic Redundancy Check (CRC).
+The IPv4 protocol uses a ones-complement checksum over the IP header
+(but not the rest of the packet).  TCP uses a ones-complement
+checksum over the TCP header and data, and includes a "pseudo-header"
+to detect certain kinds of programming errors.
+
+検査和は IP スタックの全層で仮想的に使用されます。しかし、
+保護されるデータの寸法と性質が変化することと、
+データ整合性が変化する危険性により、計算経費の理由から、
+各層で異なる要約算法が使われることがあります。たとえば、 [[Ethernet]]
+は循環冗長検査 ([[CRC]]) を使います。 [[IPv4]] は IP 頭部上で[[一補数検査和]]を使います (が小包の残りでは使いません)。
+TCP は TCP 頭部とデータにおいて一補数検査和を使い、
+ある種のプログラム誤りを検出する「疑似頭部」を含んでいます。
+
+> HTTP/1.1 [4] includes a mechanism for ensuring message integrity, the
+Content-MD5 header.  This header is actually defined for MIME-conformant messages in a standalone specification [10].  According to
+the HTTP/1.1 specification,
+
+[[HTTP/1.1]] はメッセージ整合性を確保するための仕組み、
+[CODE(HTTP)[[[Content-MD5]]]] [[頭]]を含んでいます。
+この頭は実際は [[MIME]] 適合[[メッセージ]]向けに単独の仕様書で定義されています。
+HTTP/1.1 仕様書によれば、
+
+>> The Content-MD5 entity-header field [...]  is an MD5 digest of the
+entity-body for the purpose of providing an end-to-end message
+integrity check (MIC) of the entity-body.
+
+[CODE(HTTP)[Content-MD5]] [[実体頭欄]]は[[実体本体]]のメッセージ整合性検査
+([[MIC]]) を提供する目的の実体本体の [[MD5]] 要約です。
+
+> HTTP/1.1 borrowed Content-MD5 from the MIME world based on an analogy
+between MIME messages (e.g., electronic mail messages) and HTTP
+messages (requests to or responses from an HTTP server).
+
+HTTP/1.1 は MIME メッセージ (例えば[[電子メイル]]メッセージ) と HTTP
+メッセージ (HTTP [[鯖]]から、または HTTP 鯖への[[要求]]や[[応答]])
+との類似性に基づき、 MIME の世界から [CODE(HTTP)[Content-MD5]]
+を借りました。
+
+> As discussed in more detail in section 3, this analogy between MIME
+messages and HTTP messages has resulted in some confusion.  In
+particular, while a MIME message is self-contained, an HTTP message
+might not contain the entire representation of the current state of a
+resource.  (More precisely, an HTTP response might not contain an
+entire "instance"; see section 3 for a definition of this term.)
+
+第3章でより詳しく議論しているように、この MIME メッセージと
+HTTP メッセージの類似性はいくつかの混乱を招いています。
+特に、 MIME メッセージは自己包含的ですが、 HTTP メッセージは[[資源]]の現在の状態の完全な[[表現]]を含んでいないかもしれません。
+(より正確には、 HTTP 応答は「[[実現値]]」の全体を含んでいないかもしれません。
+この用語の定義は3章を見て下さい。)
+
+> There are at least two situations where this distinction is an issue:
+
+この違いが問題となる場面は少なくても二つあります。
+
+>
+-1. When an HTTP server sends a 206 (Partial Content) response, as
+defined in HTTP/1.1.  The client may form its view of an
+instance (e.g., an HTML document) by combining a cache entry
+with the partial content in the message.
+-2. When an HTTP server uses a "delta encoding", as proposed in a
+separate document [9].  A delta encoding represents the changes
+between the current instance of a resource and a previous
+instance, and is an efficient way of reducing the bandwidth
+required for cache updates.  The client forms its view of an
+instance by applying the delta in the message to one of its
+cache entries.
+
+- HTTP 鯖が HTTP/1.1 で定義されている通り [CODE(HTTP)[[[206]]]] (部分内容) 
+応答を送信する時。[[クライアント]]はその実現値 (例えば [[HTML文書]])
+をメッセージ中の部分内容と[[キャッシュ項目]]を結合することにより表示を形成するかもしれません。
+- HTTP 鯖が別の文書で提案されている「差分符号化」を使う時。
+差分符号化は資源の現在の実現値と以前の実現値の間の変更を表現します。
+これはキャッシュの更新に必要な帯域を効率よく削減する方法です。
+クライアントはメッセージ中の差分をキャッシュ項目の実現値に適用することでその表示を形成します。
+
+>We include these two kinds of transformations in a potentially
+broader category we call "instance manipulations."
+
+この二種類の変形を、一つの潜在的により広い分類、
+私たちの呼ぶところの「[[実現値操作]]」に含めます。
+
+>   In each of these cases, the server might use a Content-MD5 header to
+protect the integrity of the response message.  However, because the
+MIC in a Content-MD5 header field applies only to the entity in that
+message, and not to the entire instance being reassembled, it cannot
+protect against errors due to data corruption (e.g., of cache
+entries), programming errors (e.g., improper application of a partial
+content or delta), certain malicious attacks [9], or corruption of
+certain HTTP headers in transit.
+
+このどちらの場合でも、鯖は応答メッセージの整合性を保護するために
+[CODE(HTTP)[Content-MD5]] 頭を使うかもしれません。しかし、
+[CODE(HTTP)[Content-MD5]] 頭欄中の MIC はそのメッセージ中の実体にのみ適用され、
+組み立てられる実現値全体に適用されるのではないので、
+(例えばキャッシュ項目の) データ腐敗やプログラム誤り
+(例えば部分内容や差分の不適切な応用) やある種の悪意ある攻撃、
+あるいはある HTTP 頭が転送で腐敗から保護することはできません。
+
+>   Thus, the Content-MD5 header, while useful and sufficient in many
+cases, is not sufficient for verifying instance integrity in all uses of HTTP.
+
+従って、 [CODE(HTTP)[Content-MD5]] 頭は、有用でありほとんどの場合に十分ではありますが、 HTTP
+のすべての使用で実現値の整合性を検証するためには十分ではありません。
+
+>   The Digest Authentication mechanism [5] provides (in addition to its
+other goals) a message-digest function similar to Content-MD5, except
+that it includes certain header fields.  Like Content-MD5, it covers
+a specific message, not an entire instance.
+
+要約認証機構は、頭欄を含んでいることを除いて [CODE(HTTP)[Content-MD5]]
+と同様な [CODE[message-digest]] 関数を
+(他の目標に加えて) 提供しています。 [CODE(HTTP)[Content-MD5]]
+と同様に、こちらも特定のメッセージを覆いますが、実現値全体は覆いません。
+
+** 1.1 Other limitations of HTTP/1.1
+>   Checksums are not free.  Computing a digest takes CPU resources, and
+might add latency to the generation of a message.  (Some of these
+costs can be avoided by careful caching at the sender's end, but in
+many cases such a cache would not have a useful hit ratio.)
+Transmitting a digest consumes HTTP header space (and therefore
+increases latency and network bandwidth requirements.)  If the
+message recipient does not intend to use the digest, why should the
+message sender waste resources computing and sending it?
+
+検査和は無料ではありません。要約の計算は CPU 資源を取り、
+メッセージの生成が遅くなるかもしれません。
+(こうした経費の幾つかは送信者側で注意深くキャッシュすることで避けることができますが、多くの場合そのようなキャッシュは有意ヒット率を持たないでしょう。)
+要約の転送は HTTP 頭領域を消費します (し、従って遅くなりますし、必要なネットワーク帯域も多くなります)。
+メッセージ受信者が要約を使用することを意図しないなら、
+どうしてメッセージ送信者が要約を計算して送信するために資源を捨てる必要がありましょう。
+
+>   The Content-MD5 header, of course, implies the use of the MD5
+algorithm [15].  Other algorithms, however, might be more appropriate
+for some purposes.  These include the SHA-1 algorithm [12] and
+various "fingerprinting" algorithms [7].  HTTP currently provides no
+standardized support for the use of these algorithms.
+
+[CODE(HTTP)[Content-MD5]] 頭は、もちろん案に MD5 算法の使用を求めています。
+しかし、目的によっては他の算法がより適切かもしれません。
+それには [[SHA-1]] 算法や種々の「指紋」算法を含みます。
+HTTP は現在それらの算法を使用する標準化されたほうほうを提供していません。
+
+>   HTTP/1.1 apparently assumes that the choice to generate a digest is
+up to the sender, and provides no mechanism for the recipient to
+indicate whether a checksum would be useful, or what checksum
+algorithms it would understand.
+
+HTTP/1.1 は明らかに要約を生成することを選択するのを送信者の責任としていまして、
+受信者が検査和が有用かどうか、どの検査和算法を理解できるかを示す仕組みを提供していません。
+
+* 2 Goals
+>   The goals of this proposal are:
+-1. Digest coverage for entire instances communicated via HTTP.
+-2. Support for multiple digest algorithms.
+-3. Negotiation of the use of digests.
+
+この提案の目標は
+- [[HTTP]] を介して通信される[[実現値]]全体を覆う[[要約]]
+- 複数の要約算法を対応
+- 要約の使用の折衝
+
+です。
+目標は、次の事を含みません。
+
+>   The goals do not include:
+:-  header integrity:
+The digest mechanisms described here cover only the bodies of
+instances, and do not protect the integrity of associated
+"entity headers" or other message headers.
+:-  authentication:
+The digest mechanisms described here are not meant to support
+authentication of the source of a digest or of a message or
+instance.  These mechanisms, therefore, are not sufficient
+defense against many kinds of malicious attacks.
+:-  privacy:
+Digest mechanisms do not provide message privacy.
+:-  authorization:
+The digest mechanisms described here are not meant to support
+authorization or other kinds of access controls.
+
+: 頭整合性 : ここで説明する要約機構は[[実現値]]の[[本体]]のみを覆い、「実体頭」や他のメッセージ頭に関する整合性は保護しません。
+: 認証 : ここで説明する要約機構は要約の、もしくは[[メッセージ]]または実現値の起源の認証を支援することは意味しません。
+この機構は、従って、多くの種類の悪意のある攻撃から防衛するためには十分ではありません。
+: 個人情報保護 : 要約機構はメッセージの個人情報を保護しません。
+: 認可 : ここで説明する要約機構は認可やその他の種類の接続制御を支援することを意味しません。
+
+>   The Digest Access Authentication mechanism [5] can provide some
+integrity for certain HTTP headers, and does provide authentication.
+
+要約接続認証機構はある HTTP 頭の整合性を提供することが可能であり、
+認証を提供します。
+
+* 3 Terminology
+>   HTTP/1.1 [4] defines the following terms:
+
+HTTP/1.1 は次の用語を定義しています。
+
+>
+:   resource          :
+A network data object or service that can be
+identified by a URI, as defined in section 3.2.
+Resources may be available in multiple
+representations (e.g. multiple languages, data
+formats, size, resolutions) or vary in other ways.
+
+[[資源]]
+
+>
+:   entity            :
+The information transferred as the payload of a
+request or response.  An entity consists of
+metainformation in the form of entity-header fields
+and content in the form of an entity-body, as
+described in section 7.
+
+[[実体]]
+
+>
+:   variant           :
+A resource may have one, or more than one,
+representation(s) associated with it at any given
+instant.  Each of these representations is termed a
+`variant.' Use of the term `variant' does not
+necessarily imply that the resource is subject to
+content negotiation.
+
+[[変体]]
+
+>   The dictionary definition for "entity" is "something that has
+separate and distinct existence and objective or conceptual reality" [8].  Unfortunately, the definition for "entity" in HTTP/1.1 is
+similar to that used in MIME [6], based on an entirely false analogy
+between MIME and HTTP.
+
+「[[実体]]」の辞書的定義は「分離された異なる存在ならびに物体的または概念的現実性を有するもの」です。
+不幸にも、 HTTP/1.1 の「実体」の定義は [[MIME]] で使われているものと同様で、
+完全に間違った MIME と HTTP との類似性に基づいています。
+
+>   In MIME, electronic mail messages do have distinct and separate
+existences. MIME defines "entity" as something that "refers
+specifically to the MIME-defined header fields and contents of either
+a message or one of the parts in the body of a multipart entity."
+
+MIME では、電子メイル・メッセージは異なる分離された存在を有していました。
+MIME は「実体」を「メッセージまたは[[多部分実体]]の本体中の[[部分]]の一つのいずれかの MIME 定義[[頭欄]]および[[内容]]を特に指す」ものとして定義しています。
+
+>   In HTTP, however, a response message to a GET does not have a
+distinct and separate existence.  Rather, it is describing the
+current state of a resource (or a variant, subject to a set of
+constraints).  The HTTP/1.1 specification provides no term to
+describe "the value that would be returned in response to a GET
+request at the current time for the selected variant of the specified
+resource."  This leads to awkward wordings in the HTTP/1.1
+specification in places where this concept is necessary.
+
+しかし、 HTTP では、 [CODE(HTTP)[[[GET]]]] に対する[[応答メッセージ]]は異なる分離された存在を有していません。
+むしろ、応答メッセージは資源の現在の状態 (制約の集合の対象となる、[[変体]])
+を記述しています。 HTTP/1.1 仕様書は「指定された資源の選択された変体についての現時点で
+[CODE(HTTP)[GET]] 要求に対する応答で返されることになる値」
+を記述する用語を提供していません。このために、 HTTP/1.1
+仕様書でこの概念が必要なところでぐちゃぐちゃした言い方をしています。
+
+>   It is too late to fix the terminological failure in the HTTP/1.1
+specification, so we instead define a new term, for use in this document:
+
+HTTP/1.1 仕様書での用語遣いの失敗を修正するのにはもう遅すぎますので、
+代わりにこの文書で使用するために新しい用語を定義します。
+
+>
+:   instance          :
+The entity that would be returned in a status-200
+response to a GET request, at the current time, for
+the selected variant of the specified resource,
+with the application of zero or more content-codings, but without the application of any
+instance manipulations or transfer-codings.
+
+:実現値:
+特定の[[資源]]の選択された[[変体]]について、
+[CODE(HTTP)[[[GET]]]] [[要求]]に対する[[状態]]
+[CODE(HTTP)[[[200]]]] の[[応答]]で、現時点において返されるであろう、
+零個以上の[[内容符号化]]を適用した、
+[[実現値操作]]や[[転送符号化]]は適用していない[[実体]]。
+
+>   It is convenient to think of an entity tag, in HTTP/1.1, as being
+associated with an instance, rather than an entity.  That is, for a
+given resource, two different response messages might include the
+same entity tag, but two different instances of the resource should
+never be associated with the same (strong) entity tag.
+
+HTTP/1.1 の[[実体札]]は、実体と関連付けられていると考えるよりは、
+実現値と関連付けられていると考えた方が便利です。
+すなわち、ある資源について、二つの異なる[[応答メッセージ]]は同じ実体札を返すかもしれませんが、
+その資源の二つの異なる実現値は決して同じ (強い) 実体札に関連付けられるべきではありません。
+
+>   We also define this term:
+
+また、この用語も定義します。
+
+>
+:   instance manipulation:
+An operation on one or more instances which may
+result in an instance being conveyed from server to
+client in parts, or in more than one response
+message.  For example, a range selection or a delta
+encoding.  Instance manipulations are end-to-end,
+and often involve the use of a cache at the client.
+
+:実現値操作:
+一つ以上の[[実現値]]についての演算であり、
+結果として一つの実現値が[[鯖]]から[[クライアント]]に部分的に、または複数の[[要求メッセージ]]によって運ばれてくることになるかもしれない。
+例えば、範囲選択や[[差分符号化]]である。
+実現値操作は[[末端対末端]]であり、しばしばクライアントでの[[キャッシュ]]の使用を伴う。
+
+* 4 Specification
+>   In this specification, the key words "MUST", "MUST NOT", "SHOULD",
+"SHOULD NOT", and "MAY" are to be interpreted as described in RFC 2119 [2].
+
+この仕様書では、見出し語「'''しなければならない'''」,
+「'''してはならない'''」,「'''するべきである'''」,
+「'''するべきではない'''」, 「'''して構わない'''」
+は [[RFC 2119]] で記述されているように解釈します。
+
+** 4.1 Protocol parameter specifications
+*** 4.1.1 Digest algorithms
+→ [[digest-algorithm]]
+** 4.2 Instance digests
+→ [[instance-digest]]
+** 4.3 Header specifications
+>   The following headers are defined.
+
+次の頭を定義します。
+
+* 4.3.1 Want-Digest
+→ [[Want-Digest]]
+*** 4.3.2 Digest
+→ [[Digest]]
+* 5 Negotiation of Content-MD5
+→ [[Content-MD5]]
+* 6 IANA Considerations
+→ [[digest-algorithm]]
+
+* 7 Security Considerations
+> This document specifies a data integrity mechanism that protects HTTP
+instance data, but not HTTP entity headers, from certain kinds of
+accidental corruption.  It is also useful in detecting at least one
+spoofing attack [9].  However, it is not intended as general
+protection against malicious tampering with HTTP messages.
+
+この文書は、ある種の事故的破壊から、 HTTP [[実現値]]データを護る、
+ただし HTTP 実体頭は護らないデータ整合性機構を規定しています。
+この機構は最低一つの偽装攻撃を検出するためにも有用です。
+しかし、 HTTP [[メッセージ]] の悪意による改変から一般的に保護することを意図してはいません。
+
+> The HTTP Digest Access Authentication mechanism [5] provides some
+protection against malicious tampering.
+
+HTTP 要約接続認証機構は悪意による改変からの保護を提供しています。
+
+* 8 Acknowledgements
+> It is not clear who first realized that the Content-MD5 header field
+is not sufficient to provide data integrity when ranges or deltas are used.
+
+誰が最初に [CODE(HTTP)[[[Content-MD5]]]] 頭欄が範囲や差分を使用する時にデータ整合性を提供するために十分ではないと気づいたのかははっきりしません。
+
+> Laurent Demailly may have been the first to suggest an algorithm-independent checksum header for HTTP [3].  Dave Raggett suggested the
+use of the term "digest" instead of "checksum" [14].
+
+Laurent Demailly は最初に HTTP で算法独立検査和頭を提案したのかもしれません。
+Dave Raggett は用語「[[検査和]]」の代わりに「[[要約]]」
+を使うことを提案しました。
+
+* 9 References
+
+   [1]  Freed, N. and N. Borenstein, N., "MIME (Multipurpose Internet
+        Mail Extensions) Part One:  Mechanisms for Specifying and
+        Describing the Format of Internet Message Bodies", RFC 2049,
+        November 1996.
+
+   [2]  Bradner, S., "Key words for use in RFCs to Indicate Requirement
+        Levels", BCP 14, RFC 2119, March 1997.
+
+   [3]  Laurent Demailly.  Re: Revised Charter.
+        http://www.ics.uci.edu/pub/ietf/http/hypermail/1995q4/0165.html.
+
+   [4]  Fielding, R., Gettys, J., Mogul, J., Frystyk, H., Masinter, L.,
+        Leach, P. and T. Berners-Lee, "Hypertext Transfer Protocol --
+        HTTP/1.1.", RFC 2616, June 1999.
+
+   [5]  Franks, J., Hallam-Baker, P., Hostetler, J., Lawrence, S.,
+        Leach, P., Luotonen, A. and L. Stewart, "HTTP Authentication:
+        Basic and Digest Access Authentication", RFC 2617, June 1999.
+
+   [6]  Freed, N. and N. Borenstein, "Multipurpose Internet Mail
+        Extensions (MIME) Part One: Format of Internet Message Bodies",
+        RFC 2045, November 1996.
+
+   [7]  Nevin Heintze.  Scalable Document Fingerprinting.  Proc. Second
+        USENIX Workshop on Electronic Commerce, USENIX, Oakland, CA,
+        November, 1996, pp. 191-200.
+        http://www.cs.cmu.edu/afs/cs/user/nch/www/koala/main.html.
+
+   [8]  Merriam-Webster.  Webster's Seventh New Collegiate Dictionary.
+        G. & C. Merriam Co., Springfield, MA, 1963.
+
+   [9]  Mogul, J., Krishnamurthy, B., Douglis, F., Feldmann, A., Goland,
+        Y. and A. van Hoff, "Delta encoding in HTTP", RFC 3229, December
+        2001.
+
+   [10] Myers, J. and M. Rose, "The Content-MD5 Header Field", RFC 1864,
+        October 1995.
+
+   [11] Narten, T. and H. Alvestrand, "Guidelines for Writing an IANA
+        Considerations Section in RFCs", BCP 26, RFC 2434, October 1998.
+
+   [12] National Institute of Standards and Technology.  Secure Hash
+        Standard.  FEDERAL INFORMATION PROCESSING STANDARDS PUBLICATION
+        180-1, U.S. Department of Commerce, April, 1995.
+        http://csrc.nist.gov/fips/fip180-1.txt.
+
+   [13] The Open Group.  The Single UNIX Specification, Version 2 - 6
+        Vol Set for UNIX 98.  Document number T912, The Open Group,
+        February, 1997.
+
+   [14] Dave Raggett.  Re: Revised Charter.
+        http://www.ics.uci.edu/pub/ietf/http/hypermail/1995q4/0182.html.
+
+   [15] Rivest, R., "The MD5 Message-Digest Algorithm", RFC 1321, April
+        1992.
+
+* 10 Authors' Addresses
+
+   Jeffrey C. Mogul
+   Western Research Laboratory
+   Compaq Computer Corporation
+   250 University Avenue
+   Palo Alto, California, 94305, U.S.A.
+
+   EMail: JeffMogul@@acm.org
+   Phone: 1 650 617 3304 (email preferred)
+
+   Arthur van Hoff
+   Marimba, Inc.
+   440 Clyde Avenue
+   Mountain View, CA 94043
+
+   EMail: avh@@marimba.com
+   Phone: 1 (650) 930 5283
+
+* 11 Full Copyright Statement
+
+   Copyright (C) The Internet Society (2002).  All Rights Reserved.
+
+   This document and translations of it may be copied and furnished to
+   others, and derivative works that comment on or otherwise explain it
+   or assist in its implementation may be prepared, copied, published
+   and distributed, in whole or in part, without restriction of any
+   kind, provided that the above copyright notice and this paragraph are
+   included on all such copies and derivative works.  However, this
+   document itself may not be modified in any way, such as by removing
+   the copyright notice or references to the Internet Society or other
+   Internet organizations, except as needed for the purpose of
+   developing Internet standards in which case the procedures for
+   copyrights defined in the Internet Standards process must be
+   followed, or as required to translate it into languages other than
+   English.
+
+   The limited permissions granted above are perpetual and will not be
+   revoked by the Internet Society or its successors or assigns.
+
+   This document and the information contained herein is provided on an
+   "AS IS" basis and THE INTERNET SOCIETY AND THE INTERNET ENGINEERING
+   TASK FORCE DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING
+   BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE INFORMATION
+   HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED WARRANTIES OF
+   MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+
+[[RFCのライセンス]]参照。
+
+* Acknowledgement
+
+   Funding for the RFC Editor function is currently provided by the
+   Internet Society.
+
+* メモ
+@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@d1 1
+a1 1
+#?SuikaWiki/0.9 page-icon="HTTP"
+d430 1
+a430 13
+> The Internet Assigned Numbers Authority (IANA) administers the name
+space for digest-algorithm values.  Values and their meaning must be
+documented in an RFC or other peer-reviewed, permanent, and readily
+available reference, in sufficient detail so that interoperability
+between independent implementations is possible.  Subject to these
+constraints, name assignments are First Come, First Served (see RFC 2434 [11]).
+
+インターネット割り当て番号事務局 ([[IANA]])
+は [CODE(ABNF)[[[digest-algorithm]]]] 値の名前空間を管理します。
+値とその意味は、 [[RFC]] または他のよく評価された、持続的で、
+既に入手可能な参照物で、独立な実装が相互運用可能である程度十分詳細に文書化されていなければなりません。
+この制約の元、名前割り当ては[[先来先給]]とします
+([[RFC 2434]] を参照)。
+@
+

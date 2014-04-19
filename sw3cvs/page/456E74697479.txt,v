@@ -1,0 +1,265 @@
+head	1.4;
+access;
+symbols
+	suikawiki3-final:1.4
+	before-db-leaffile:1.1
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+
+
+1.4
+date	2008.03.31.02.57.42;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2006.01.03.02.07.53;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2005.12.31.02.08.46;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.06.06.12.26.19;	author make;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.4
+log
+@auto-committed
+@
+text
+@
+
+* Entity 節・Entity 界面 (DOM)
+
+[2] DOM 1 によれば、 [CODE(DOM)[Entity]] は[[実体]]をモデル化したものであり、 [CODE(XML)[[[ENTITY]]]] 宣言をモデル化したものではありません。
+将来の水準の DOM で実体宣言をモデル化したものを規定するかもしれないとしています。
+
+実体は[[解析実体]]でも[[非解析実体]]でもあり得ます。
+
+[3] 置換値 ([[実体参照]]の[[置換文]]に当たるもの。)
+がある場合は、実体節の子節としてそれを得ることが出来ます。
+[WEAK[(外部非解析実体の場合や、外部解析実体を読んでいない場合などには置換値が存在しないかもしれません。)]]
+
+置換値の設定 (実体の評価) は、文書木が作られるときではなく、
+実際に必要になった (実体節の置換値が参照された)
+ときに行われるかもしれません ([[怠惰]]評価)。
+
+[4] DOM 1 では、実体節は常に読取専用で、編集できません。
+
+[5] [CODE(DOM)[[[Node]]]] 界面を継承して:
+,読取専用属性	,[[notationName]]	,記法名	,[DOM1]
+,読取専用属性	,[[publicId]]	,公開識別子	,[DOM1]
+,読取専用属性	,[[systemId]]	,システム識別子	,[DOM1]
+
+[1] [[DOM1]] では、[RUBYB[実体節] [[CODE(DOM)[Entity]] node]]は次の種類の子[[節]]を持つことが出来ます。
+- [[Element]]
+- [[ProcessingInstruction]]
+- [[Comment]]
+- [[Text]]
+- [[CDATASection]]
+- [[EntityReference]]
+
+[7] この界面は拡張界面です。
+DOM 1 HTML では、この界面は実装しなくて構いません。
+
+- [DOM1] ''Document Object Model (Core) Level 1'' <http://www.w3.org/TR/REC-DOM-Level-1/level-one-core.html#ID-527DCFF2>
+- [6] >>4 全ての子孫節が読取専用になります。
+- [8] [DOM2] ''Document Object Model Core'' <http://www.w3.org/TR/DOM-Level-2-Core/core.html#ID-527DCFF2>
+
+[9]
+[CODE(DOMi)@@en[[[Entity]]]]は[Q{既知の[[実体]]を表す]<IW:DOM3:"Core/core.html#ID-527DCFF2">]という。また、[[実体]]は読んで[[処理]]されるとは限らないので、[[置換文]]が入手できない場合があり、その場合[CODE(DOMi)@@en[[[Entity]]]]の[[子供]]は[[空]]だという。
+
+;; <IW:DOM3:"Core/core.html#ID-527DCFF2">
+
+これは、[[未展開実体参照]]に対応する[[実体]]の[[節点]]を
+(その[[宣言]]を読んでいなくても) 作ることを想定しているのか??
+
+([[名無しさん]])
+
+[10]
+>>9
+[Q[[[非検証処理器]]は[[外部実体]]への[[参照]]を認識しても読んで処理する必要はない]]についていっているのかも。
+
+;; <IW:XML1:"#include-if-valid">
+
+([[名無しさん]])
+
+[11]
+[[Opera]] 9 は [[XML]] [[文書]]の [[DTD]] に含まれる (有効な) [[実体宣言]]から
+[CODE(DOMi)@@en[[[Entity]]]] [[節点]]を作り、 [CODE(DOMi)@@en[[[DocumentType]]]]
+[[節点]]の [CODE(DOMa)@@en[[[entities]]]] に含めます。
+
+([[名無しさん]])
+
+[12]
+>>11
+最初の5つは、必ず [CODE(XML)@@en[[[amp]]]]、
+[CODE(XML)@@en[[[lt]]]]、
+[CODE(XML)@@en[[[gt]]]]、
+[CODE(XML)@@en[[[apos]]]]、
+[CODE(XML)@@en[[[quot]]]]
+(この順) の [CODE(DOMi)@@en[[[Entity]]]]
+になります。
+
+([[名無しさん]])
+
+[13]
+>>12 その後、[[DTD]] で明示的に[[宣言]]されている[[実体]]が続きます。
+[[宣言]]された順序で並びます。
+重複している[[実体宣言]]や[[処理]]されなかった[[実体宣言]]に相当する
+[CODE(DOMi)@@en[[[Entity]]]] [[節点]]は作られ''ません''。
+([[名無しさん]])
+
+[14]
+>>11 [[実体値]]は [CODE(DOMi)@@en[[[Entity]]]] の[[子孫]]となるのですが、
+[CODE(DOMi)@@en[[[Entity]]]] の[[子供]]となるべき[[節点]]は、
+なぜか [CODE(DOMi)@@en[[[Entity]]]] の [CODE(DOMa)@@en[[[childNodes]]]] に含まれません。
+また、[[子供]]となるべき[[節点]]の [CODE(DOMa)@@en[[[parentNode]]]]
+はなぜか [CODE(DOMi)@@en[[[Document]]]] [[節点]]になっています。
+
+一方で、 [CODE(DOMa)@@en[[[firstChild]]]] や [CODE(DOMa)@@en[[[lastChild]]]] や
+[CODE(DOMa)@@en[[[textContent]]]] や [CODE(DOMa)@@en[[[text]]]]
+的には正しく[[子供]]であるかのように見えています。
+([[名無しさん]])
+
+[15]
+[[実体値]]が ([[XML]] としては正しくても) [[構文解析]]に失敗するような値の時には、
+[[子供]]は作られないようです。 [CODE(XML)@@en[[[amp]]]] や [CODE(XML)@@en[[[lt]]]]
+もこのケースに該当するようで、[[子供]]なしになります。
+([[名無しさん]])
+
+[16]
+[CODE(DOMi)@@en[[[XMLSerializer]]]] を使って [CODE(DOMi)@@en[[[Entity]]]] [[節点]]を[[直列化]]しようとすると、[[子孫]]を順に[[直列化]]したものが返されるようです。
+
+;; [CODE(DOMi)@@en[[[DocumentType]]]] を[[直列化]]しようとしても[[空文字列]]が返されるようです。
+
+;; [CODE(DOMi)@@en[[[Document]]]] を[[直列化]]すると[[内部部分集合]]には
+[CODE(DOMa)@@en[[[internalSubset]]]] の値が使われるようで、
+[CODE(DOMi)@@en[[[Entity]]]] の[[木構造]]は反映されません。
+
+([[名無しさん]])
+
+[17]
+ちなみに、 [[Opera]] 9 の [[HTML]] [[文書]]の [CODE(DOMa)@@en[[[entities]]]] も
+[CODE(DOMi)@@en[[[NamedNodeMap]]]] が入ってはいますが、常に空のようです。
+([[名無しさん]])
+
+[18]
+>>15 いや、 [CODE(XML)@@en[[[amp]]]] と [CODE(XML)@@en[[[lt]]]] がそうなのはおかしいですね。
+二重に [[escape]] されているはずですから。
+([[名無しさん]])
+
+[19]
+>>15 いや、 [CODE(XML)@@en[[[amp]]]] と [CODE(XML)@@en[[[lt]]]] がそうなのはおかしいですね。
+二重に [[escape]] されているはずですから。
+([[名無しさん]])
+
+
+[20]
+>>15 いや、 [CODE(XML)@@en[[[amp]]]] と [CODE(XML)@@en[[[lt]]]] がそうなのはおかしいですね。
+二重に [[escape]] されているはずですから。
+([[名無しさん]])
+
+
+[[#comment]]
+
+
+* メモ@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@d50 77
+a127 5
+[10]
+>>9
+[Q[[[非検証処理器]]は[[外部実体]]への[[参照]]を認識しても読んで処理する必要はない]]についていっているのかも。
+
+;; <IW:XML1:"#include-if-valid">
+d129 3
+@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@d41 13
+a53 6
+[CODE(DOMi)@@en[[[Entity]]]]は[Q{既知の[[実体]]を表す]<IW:DOM3:"Core/core.html#ID-527DCFF2">]という。また、[[実体]]は読んで[[処理]]されるとは限らないので、[[置換文]]が入手できない場合があり、その場合[CODE(DOMi)@@en[[[Entity]]]]の[[子供]]は[[空]]だという。
+
+;; <IW:DOM3:"Core/core.html#ID-527DCFF2">
+
+これは、[[未展開実体参照]]に対応する[[実体]]の[[節点]]を
+(その[[宣言]]を読んでいなくても) 作ることを想定しているのか??
+d55 1
+d58 1
+@
+
+
+1.1
+log
+@auto-commited
+@
+text
+@d1 37
+a37 36
+#?SuikaWiki/0.9
+*Entity 節・Entity 界面 (DOM)
+
+[2] DOM 1 によれば、 [CODE(DOM)[Entity]] は[[実体]]をモデル化したものであり、 [CODE(XML)[[[ENTITY]]]] 宣言をモデル化したものではありません。
+将来の水準の DOM で実体宣言をモデル化したものを規定するかもしれないとしています。
+
+実体は[[解析実体]]でも[[非解析実体]]でもあり得ます。
+
+[3] 置換値 ([[実体参照]]の[[置換文]]に当たるもの。)
+がある場合は、実体節の子節としてそれを得ることが出来ます。
+[WEAK[(外部非解析実体の場合や、外部解析実体を読んでいない場合などには置換値が存在しないかもしれません。)]]
+
+置換値の設定 (実体の評価) は、文書木が作られるときではなく、
+実際に必要になった (実体節の置換値が参照された)
+ときに行われるかもしれません ([[怠惰]]評価)。
+
+[4] DOM 1 では、実体節は常に読取専用で、編集できません。
+
+[5] [CODE(DOM)[[[Node]]]] 界面を継承して:
+,読取専用属性,[[notationName]],記法名       ,[DOM1]
+,読取専用属性,[[publicId]]   ,公開識別子    ,[DOM1]
+,読取専用属性,[[systemId]]   ,システム識別子,[DOM1]
+
+[1] [[DOM1]] では、[RUBYB[実体節] [[CODE(DOM)[Entity]] node]]は次の種類の子[[節]]を持つことが出来ます。
+-[[Element]]
+-[[ProcessingInstruction]]
+-[[Comment]]
+-[[Text]]
+-[[CDATASection]]
+-[[EntityReference]]
+
+[7] この界面は拡張界面です。
+DOM 1 HTML では、この界面は実装しなくて構いません。
+
+-[DOM1] ''Document Object Model (Core) Level 1'' <http://www.w3.org/TR/REC-DOM-Level-1/level-one-core.html#ID-527DCFF2>
+- [6] >>4 全ての子孫節が読取専用になります。
+d39 15
+a53 2
+[[#comment]]
+
+@
+

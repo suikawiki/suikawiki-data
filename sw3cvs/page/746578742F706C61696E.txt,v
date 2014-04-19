@@ -1,0 +1,984 @@
+head	1.10;
+access;
+symbols
+	suikawiki3-final:1.10
+	before-db-leaffile:1.3
+	after-upgrade-to-suikawiki-3:1.3
+	before-fork-suikawiki3:1.3
+	after-restore-20040122:1.3;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.10
+date	2008.09.13.02.55.28;	author wakaba;	state Exp;
+branches;
+next	1.9;
+
+1.9
+date	2005.11.13.02.10.55;	author wakaba;	state Exp;
+branches;
+next	1.8;
+
+1.8
+date	2005.02.23.02.10.04;	author wakaba;	state Exp;
+branches;
+next	1.7;
+
+1.7
+date	2004.10.08.02.05.42;	author wakaba;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2004.08.13.02.06.08;	author wakaba;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2004.07.18.02.03.12;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2004.05.23.02.03.08;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2003.11.23.02.02.32;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2003.11.08.02.01.56;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.10.13.02.02.15;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.10
+log
+@auto-committed
+@
+text
+@
+[1] [DFN[[CODE(MIME)[text/plain]]]] はいわゆる plain text の
+[[媒体型]]で、もっとも基本的な形式として
+[[MIME]] で定義されています。
+
+[9] [[MIME]] は[[媒体型]]が指定されていない時の既定値にこの 
+[CODE(MIME)[text/plain]] を採用しています。
+
+[2] また、 [CODE(MIME)[[[text/[VAR[*]]]]]] の媒体型で [[UA]] 
+が対応していないものは [CODE(MIME)[text/plain]]
+であるとして扱うことになっています。
+
+[[#comment]]
+
+
+* パラメーター
+
+,名前	,構文	,既定値	,説明	,状態	,出典
+,[CODE(MIME)[[[charset]]]]	,[CODE(ABNF)[[[charset]]]]	,(プロトコル依存)	,Charset	,	,[MIME]
+,[CODE(MIME)[[[charset-edition]]]]	,[CODE(ABNF)[4[[DIGIT]]]]	,(なし)	,Charset 制定年	,	,[[RFC 1922]]
+,[CODE(MIME)[[[charset-extension]]]]	,[CODE(ABNF)[[[token]]]]	,(なし)	,Charset 拡張	,	,[[RFC 1922]]
+,[CODE(MIME)[[[delsp]]]]	,	,[[間隔]]削除	,	,[RFC]
+,[CODE(MIME)[[[format]]]]	,"[CODE(ABNF)[\"flowed\" / \"fixed\"]]"	,[CODE(MIME)[fixed]]	,書式	,	,"[[RFC 2646]], [RFC]"
+,[CODE(MIME)[[[type]]]]	,[CODE(ABNF)[[[token]]]]	,書式	,(なし)	,非標準
+,[CODE(MIME)@@en[[[reply-type]]]]	,[CODE(MIME example)@@en[[[original]]]]	,	,	,非標準
+,[CODE(MIME)[[[x-rot]]]]	,[CODE(ABNF)[[[token]]]]	,(なし)	,簡易暗号化	,非標準
+,[CODE(MIME)[[[x-type]]]]	,[CODE(ABNF)[[[token]]]]	,(なし)	,書式	,非標準	,[[Namazu]]
+
+[[#comment]]
+
+
+** "charset" parameter
+
+[3] [CODE[charset]] パラメーター本体は MIME により、それを補助する
+[CODE[charset-edition]] パラメーターと [CODE[charset-extension]]
+パラメーターが [[RFC 1922]] により定義されています。
+詳しくは [[charsetパラメーター]]を参照。
+[[#comment]]
+
+
+** "format" パラメーター
+
+[4] [[RFC 2646]] <urn:ietf:rfc:2646> で定義されています。
+
+値は大文字・小文字を区別しません。 "fixed" が既定値で、
+MIME の "text/plain", すなわち RFC 822 の本文の形式と同じ意味です。
+
+"flowed" の場合は、 RFC 2646 で定義されているように解釈します。
+
+[7] 実際のところ flowed 形式は (見た目こそ同様ではありますが意味的には)
+fixed の text/plain 形式と随分と差があります。
+標準化に際して別の媒体型にするかパラメーターにするかの激しい議論があったようですが、結局こうなりました。
+- [8] [[Message-pm]] では fixed と flowed を別モジュールに分けて実装しています。
+(というかそうしないととっても複雑になりそうだった。)
+- [19] [CODE(MIME)[delsp=yes]] ってのをつけてるのがいます。 [CODE(822)[[[X-Mailer]]: Apple Mail (2.552)]] なのが。
+- [20] [WEAK[2003-11-21 08:04:53 +00:00]] ''[[US-ASCII]]'': [[Hotmail]] なんかも format=flowed を送ってきます。
+- [21] Flowed って text/plain にかなり重大な意味的修正を加えてますよね。それを text/なんたらじゃなくて text/plain にしないといけなかったというのが、なんとも MIME の失敗を物語っているようで。 [WEAK[だって、 MIME がちゃんと実装されていれば、 text/なんたらは未対応でもちゃんと text/plain に fallback されるはずで、何も問題ないんだから。]]
+[[#comment]]
+
+
+** "type" パラメーター, "x-type" パラメーター
+
+[5] 小分類を示します。このパラメーターはどの [[RFC]] 
+でも定義されていませんが、用例が観測されています。
+
+[6] 値 "patch" は、内容がパッチであることを示します。
+パッチに使われる媒体型には、他に [[text/x-patch媒体型]]がありますが、
+"type" parameter も text/x-patch も、使用するべきではありません。
+[[text/*媒体型]]では改行の正規化などの制限があるからです。
+(See [[text/*媒体型の正規化]]) パッチには 
+[[application/octet-stream媒体型]]を使うべきです。
+(と、どこかの [[ML]] で[[守岡さん]]が書いてた。)
+
+[7] [[namazu]] は内部処理に "x-type" パラメーターを使っています。
+現在使われている値は "rfc" で、 [[RFC]] 形式であることをあらわします。
+
+[[#comment]]
+
+
+* WWW での使用
+
+[[#comment]]
+
+
+** フォーム提出形式として
+
+- [10] [[form]] 要素の [[enctype]] 属性に指定された時に、対応する [[UA]] は [[application/form-urlencoded]] と同じようにフォーム項目の値を用意し、 [[URI符号化]]は'''行わず'''、 "&" の代わりに改行を使います。
+- [11] >>10 但しこの動作はどの RFC や W3C の仕様書にも書かれていません。 de facto なものです。
+- [12] >>10-11 [[charset]] をちゃんと処理してるのかとか、もともとの改行はどうなるのかとか謎ですし
+
+[25] [CODE(HTMLa)[[[action]]]] が [CODE(URI)[[[mailto]]:]] URI
+の時によく使われます。
+
+[22] [[Web Forms 2.0]] では [CODE(HTMLa)[[[enctype]]]]
+が [CODE(MIME)[[[text/plain]]]] の時の UA の挙動も規定しています。
+
+[26]
+[CITE[フォームでメールを送信するには]] <http://tohoho.wakusei.ne.jp/lng/199812/98120210.htm>
+([[名無しさん]] [sage])
+
+[[#comment]]
+
+
+** 鯖の誤設定と逝かれたブラウザ
+
+- [13] 一部の [[WWWブラウザ]]は、内容に [[HTML]] の[[タグ]]らしきものがあると、媒体型が [CODE[text/plain]] であっても勝手に HTML とみなしてみたり、画像のヘッダらしきものがあると画像とみなしてみたりします。
+- [14] このような''誤動作''するのは、 WinIE/MacIE, Opera (こちらは設定で変更可。既定値 off にしとけよな。。。)です。
+
+[15] [[HTTP]] サーバーの設定不良が原因で、媒体型が無意味に 
+[CODE(MIME)[text/plain]] になっている資源は沢山あります。
+
+- [17] [[Mozilla]] は、標準モード以外では媒体型が [[text/css]] 以外である [[CSS]] の[[スタイル・シート]] (らしきもの) を「正しく」読み込んでしまいますし、画像などで媒体型を無視する挙動も見せます。 Mozilla はまだまともな方で、 IE などは媒体型よりも[[拡張子]]や内容を重視しているように思えます。
+- [18] このような挙動は、時に安全上の重大な問題をも引き起こします。 <IW:Tiki:"Tiki/クロスサイトスクリプティング"> では、 [[Tiki]] の [CODE[text/plain]] 出力の内容に HTML とも解釈し得るものが含まれていて、かつ危険な code も含まれている場合に問題 ([[クロスサイトスクリプティング脆弱性]]) が発生することについての議論です。 (どうして異常な [[UA]] の尻拭いをする必要があるのか, するとしたらどういう方法があるのか, 云々)
+
+[[#comment]]
+
+
+** 素片識別子
+
+[16] [CODE(MIME)[text/plain]] な資源の[[素片識別子]]の解釈についての公式な規定は現時点では存在しません。
+
+[[XPointer]] 風な書式を提案した [[I-D]] がありましたが、
+結局 [[RFC]] にはなりませんでした。
+
+[[w3m]] は素片識別子を行数 (最初が [CODE(URI)[1]] 行目) とみなすようです。
+
+
+[27]
+[CODE(MIME)@@en[[[text/plain]]]] の[[素片識別子]]を定義する
+[[I-D]] は紆余曲折を経て [[RFC 5147]] になりました。
+([[名無しさん]])
+
+
+[[#comment]]
+
+
+** メモ
+
+[[#comment]]
+
+
+* メモ
+
+[23] よく [CODE(MIME)[[[plain/text]]]] と間違えられます。
+言葉としてそちらの方が自然ですから、仕方がありません。
+
+(MIME で逆になったのは、元々 [[RFC 1049]] 式の
+[CODE(822)[[[text]]]] という型を細分化して [CODE(MIME)[plain]]
+という亜型名を付け足したからです。)
+
+しかし、ただ間違えただけならまだしも、
+そのまま実装しちゃう人もいるみたいですから呆れます。
+
+[24] [CODE(MIME)[text/plain]] として札付けされていても、
+実際には何らかの書式付けがなされていることはかなりあります。
+
+極端な話、 [[XML Schema]] の[[単純型]]で表されるものはすべて
+[CODE(MIME)[text/plain]] で札付けしろと言っている仕様もあったりします。
+「整数」とか「日付」のようなデータにまで媒体型名を割り振るのは阿呆らしいですし、
+人間が読んでも予備知識無しに分かりますから
+(しかしその整数が何を意味しているのかはやっぱり分からないかも)、
+[CODE(MIME)[text/plain]] を流用するのはまま妥当なことでしょう。
+(Plain text なのに [CODE(MIME)[[[application/octet-stream]]]]
+というのも嫌な感じです。)
+
+そのような細かなデータの札付けは元々媒体型の対象外でしょうから別としても
+(しかし[[フォーム]]の提出などで頻繁に用いられているのは事実)、
+プログラムのソース・コードや定型の文書など、
+書式のある文書が [CODE(MIME)[[[text/plain]]]] でよく札付けされています。
+
+[Q[Plain text]] の意味が非常に広くとられる傾向にあるというのもそうですが、
+よく考えてみれば、狭義の [Q[plain text]] 
+にしても改行や段落や引用やちょっとした見出しのように書式を持っています。
+結局は程度の問題ということになるでしょう。@
+
+
+1.9
+log
+@auto-committed
+@
+text
+@d1 173
+a173 166
+[1] [DFN[[CODE(MIME)[text/plain]]]] はいわゆる plain text の
+[[媒体型]]で、もっとも基本的な形式として
+[[MIME]] で定義されています。
+
+[9] [[MIME]] は[[媒体型]]が指定されていない時の既定値にこの 
+[CODE(MIME)[text/plain]] を採用しています。
+
+[2] また、 [CODE(MIME)[[[text/[VAR[*]]]]]] の媒体型で [[UA]] 
+が対応していないものは [CODE(MIME)[text/plain]]
+であるとして扱うことになっています。
+
+
+[[#comment]]
+
+
+* パラメーター
+
+,名前	,構文	,既定値	,説明	,状態	,出典
+,[CODE(MIME)[[[charset]]]]	,[CODE(ABNF)[[[charset]]]]	,(プロトコル依存)	,Charset	,	,[MIME]
+,[CODE(MIME)[[[charset-edition]]]]	,[CODE(ABNF)[4[[DIGIT]]]]	,(なし)	,Charset 制定年	,	,[[RFC 1922]]
+,[CODE(MIME)[[[charset-extension]]]]	,[CODE(ABNF)[[[token]]]]	,(なし)	,Charset 拡張	,	,[[RFC 1922]]
+,[CODE(MIME)[[[delsp]]]]	,	,[[間隔]]削除	,	,[RFC]
+,[CODE(MIME)[[[format]]]]	,"[CODE(ABNF)[\"flowed\" / \"fixed\"]]"	,[CODE(MIME)[fixed]]	,書式	,	,"[[RFC 2646]], [RFC]"
+,[CODE(MIME)[[[type]]]]	,[CODE(ABNF)[[[token]]]]	,書式	,(なし)	,非標準
+,[CODE(MIME)@@en[[[reply-type]]]],[CODE(MIME example)@@en[[[original]]]],,,非標準
+,[CODE(MIME)[[[x-rot]]]]	,[CODE(ABNF)[[[token]]]]	,(なし)	,簡易暗号化	,非標準
+,[CODE(MIME)[[[x-type]]]]	,[CODE(ABNF)[[[token]]]]	,(なし)	,書式	,非標準	,[[Namazu]]
+
+[[#comment]]
+
+
+** "charset" parameter
+
+[3] [CODE[charset]] パラメーター本体は MIME により、それを補助する
+[CODE[charset-edition]] パラメーターと [CODE[charset-extension]]
+パラメーターが [[RFC 1922]] により定義されています。
+詳しくは [[charsetパラメーター]]を参照。
+[[#comment]]
+
+
+** "format" パラメーター
+
+[4] [[RFC 2646]] <urn:ietf:rfc:2646> で定義されています。
+
+値は大文字・小文字を区別しません。 "fixed" が既定値で、
+MIME の "text/plain", すなわち RFC 822 の本文の形式と同じ意味です。
+
+"flowed" の場合は、 RFC 2646 で定義されているように解釈します。
+
+[7] 実際のところ flowed 形式は (見た目こそ同様ではありますが意味的には)
+fixed の text/plain 形式と随分と差があります。
+標準化に際して別の媒体型にするかパラメーターにするかの激しい議論があったようですが、結局こうなりました。
+- [8] [[Message-pm]] では fixed と flowed を別モジュールに分けて実装しています。
+(というかそうしないととっても複雑になりそうだった。)
+- [19] [CODE(MIME)[delsp=yes]] ってのをつけてるのがいます。 [CODE(822)[[[X-Mailer]]: Apple Mail (2.552)]] なのが。
+- [20] [WEAK[2003-11-21 08:04:53 +00:00]] ''[[US-ASCII]]'': [[Hotmail]] なんかも format=flowed を送ってきます。
+- [21] Flowed って text/plain にかなり重大な意味的修正を加えてますよね。それを text/なんたらじゃなくて text/plain にしないといけなかったというのが、なんとも MIME の失敗を物語っているようで。 [WEAK[だって、 MIME がちゃんと実装されていれば、 text/なんたらは未対応でもちゃんと text/plain に fallback されるはずで、何も問題ないんだから。]]
+[[#comment]]
+
+
+** "type" パラメーター, "x-type" パラメーター
+
+[5] 小分類を示します。このパラメーターはどの [[RFC]] 
+でも定義されていませんが、用例が観測されています。
+
+[6] 値 "patch" は、内容がパッチであることを示します。
+パッチに使われる媒体型には、他に [[text/x-patch媒体型]]がありますが、
+"type" parameter も text/x-patch も、使用するべきではありません。
+[[text/*媒体型]]では改行の正規化などの制限があるからです。
+(See [[text/*媒体型の正規化]]) パッチには 
+[[application/octet-stream媒体型]]を使うべきです。
+(と、どこかの [[ML]] で[[守岡さん]]が書いてた。)
+
+[7] [[namazu]] は内部処理に "x-type" パラメーターを使っています。
+現在使われている値は "rfc" で、 [[RFC]] 形式であることをあらわします。
+
+[[#comment]]
+
+
+* WWW での使用
+
+[[#comment]]
+
+
+** フォーム提出形式として
+
+- [10] [[form]] 要素の [[enctype]] 属性に指定された時に、対応する [[UA]] は [[application/form-urlencoded]] と同じようにフォーム項目の値を用意し、 [[URI符号化]]は'''行わず'''、 "&" の代わりに改行を使います。
+- [11] >>10 但しこの動作はどの RFC や W3C の仕様書にも書かれていません。 de facto なものです。
+- [12] >>10-11 [[charset]] をちゃんと処理してるのかとか、もともとの改行はどうなるのかとか謎ですし
+
+[25] [CODE(HTMLa)[[[action]]]] が [CODE(URI)[[[mailto]]:]] URI
+の時によく使われます。
+
+[22] [[Web Forms 2.0]] では [CODE(HTMLa)[[[enctype]]]]
+が [CODE(MIME)[[[text/plain]]]] の時の UA の挙動も規定しています。
+
+[26]
+[CITE[フォームでメールを送信するには]] <http://tohoho.wakusei.ne.jp/lng/199812/98120210.htm>
+([[名無しさん]] [sage])
+
+[[#comment]]
+
+
+** 鯖の誤設定と逝かれたブラウザ
+
+- [13] 一部の [[WWWブラウザ]]は、内容に [[HTML]] の[[タグ]]らしきものがあると、媒体型が [CODE[text/plain]] であっても勝手に HTML とみなしてみたり、画像のヘッダらしきものがあると画像とみなしてみたりします。
+- [14] このような''誤動作''するのは、 WinIE/MacIE, Opera (こちらは設定で変更可。既定値 off にしとけよな。。。)です。
+
+[15] [[HTTP]] サーバーの設定不良が原因で、媒体型が無意味に 
+[CODE(MIME)[text/plain]] になっている資源は沢山あります。
+
+- [17] [[Mozilla]] は、標準モード以外では媒体型が [[text/css]] 以外である [[CSS]] の[[スタイル・シート]] (らしきもの) を「正しく」読み込んでしまいますし、画像などで媒体型を無視する挙動も見せます。 Mozilla はまだまともな方で、 IE などは媒体型よりも[[拡張子]]や内容を重視しているように思えます。
+- [18] このような挙動は、時に安全上の重大な問題をも引き起こします。 <IW:Tiki:"Tiki/クロスサイトスクリプティング"> では、 [[Tiki]] の [CODE[text/plain]] 出力の内容に HTML とも解釈し得るものが含まれていて、かつ危険な code も含まれている場合に問題 ([[クロスサイトスクリプティング脆弱性]]) が発生することについての議論です。 (どうして異常な [[UA]] の尻拭いをする必要があるのか, するとしたらどういう方法があるのか, 云々)
+
+[[#comment]]
+
+
+** 素片識別子
+
+[16] [CODE(MIME)[text/plain]] な資源の[[素片識別子]]の解釈についての公式な規定は現時点では存在しません。
+
+[[XPointer]] 風な書式を提案した [[I-D]] がありましたが、
+結局 [[RFC]] にはなりませんでした。
+
+[[w3m]] は素片識別子を行数 (最初が [CODE(URI)[1]] 行目) とみなすようです。
+
+[[#comment]]
+
+
+** メモ
+
+[[#comment]]
+
+
+* メモ
+
+[23] よく [CODE(MIME)[[[plain/text]]]] と間違えられます。
+言葉としてそちらの方が自然ですから、仕方がありません。
+
+(MIME で逆になったのは、元々 [[RFC 1049]] 式の
+[CODE(822)[[[text]]]] という型を細分化して [CODE(MIME)[plain]]
+という亜型名を付け足したからです。)
+
+しかし、ただ間違えただけならまだしも、
+そのまま実装しちゃう人もいるみたいですから呆れます。
+
+[24] [CODE(MIME)[text/plain]] として札付けされていても、
+実際には何らかの書式付けがなされていることはかなりあります。
+
+極端な話、 [[XML Schema]] の[[単純型]]で表されるものはすべて
+[CODE(MIME)[text/plain]] で札付けしろと言っている仕様もあったりします。
+「整数」とか「日付」のようなデータにまで媒体型名を割り振るのは阿呆らしいですし、
+人間が読んでも予備知識無しに分かりますから
+(しかしその整数が何を意味しているのかはやっぱり分からないかも)、
+[CODE(MIME)[text/plain]] を流用するのはまま妥当なことでしょう。
+(Plain text なのに [CODE(MIME)[[[application/octet-stream]]]]
+というのも嫌な感じです。)
+
+そのような細かなデータの札付けは元々媒体型の対象外でしょうから別としても
+(しかし[[フォーム]]の提出などで頻繁に用いられているのは事実)、
+プログラムのソース・コードや定型の文書など、
+書式のある文書が [CODE(MIME)[[[text/plain]]]] でよく札付けされています。
+
+[Q[Plain text]] の意味が非常に広くとられる傾向にあるというのもそうですが、
+よく考えてみれば、狭義の [Q[plain text]] 
+にしても改行や段落や引用やちょっとした見出しのように書式を持っています。
+@
+
+
+1.8
+log
+@auto-committed
+@
+text
+@a0 1
+
+d25 1
+@
+
+
+1.7
+log
+@auto-committed
+@
+text
+@d1 166
+a166 168
+
+
+[1] [DFN[[CODE(MIME)[text/plain]]]] はいわゆる plain text の
+[[媒体型]]で、もっとも基本的な形式として
+[[MIME]] で定義されています。
+
+[9] [[MIME]] は[[媒体型]]が指定されていない時の既定値にこの 
+[CODE(MIME)[text/plain]] を採用しています。
+
+[2] また、 [CODE(MIME)[[[text/[VAR[*]]]]]] の媒体型で [[UA]] 
+が対応していないものは [CODE(MIME)[text/plain]]
+であるとして扱うことになっています。
+
+[[#comment]]
+
+
+* パラメーター
+
+,名前	,構文	,既定値	,説明	,状態	,出典
+,[CODE(MIME)[[[charset]]]]	,[CODE(ABNF)[[[charset]]]]	,(プロトコル依存)	,Charset	,	,[MIME]
+,[CODE(MIME)[[[charset-edition]]]]	,[CODE(ABNF)[4[[DIGIT]]]]	,(なし)	,Charset 制定年	,	,[[RFC 1922]]
+,[CODE(MIME)[[[charset-extension]]]]	,[CODE(ABNF)[[[token]]]]	,(なし)	,Charset 拡張	,	,[[RFC 1922]]
+,[CODE(MIME)[[[delsp]]]]	,	,[[間隔]]削除	,	,[RFC]
+,[CODE(MIME)[[[format]]]]	,"[CODE(ABNF)[\"flowed\" / \"fixed\"]]"	,[CODE(MIME)[fixed]]	,書式	,	,"[[RFC 2646]], [RFC]"
+,[CODE(MIME)[[[type]]]]	,[CODE(ABNF)[[[token]]]]	,書式	,(なし)	,非標準
+,[CODE(MIME)[[[x-rot]]]]	,[CODE(ABNF)[[[token]]]]	,(なし)	,簡易暗号化	,非標準
+,[CODE(MIME)[[[x-type]]]]	,[CODE(ABNF)[[[token]]]]	,(なし)	,書式	,非標準	,[[Namazu]]
+
+[[#comment]]
+
+
+** "charset" parameter
+
+[3] [CODE[charset]] パラメーター本体は MIME により、それを補助する
+[CODE[charset-edition]] パラメーターと [CODE[charset-extension]]
+パラメーターが [[RFC 1922]] により定義されています。
+詳しくは [[charsetパラメーター]]を参照。
+[[#comment]]
+
+
+** "format" パラメーター
+
+[4] [[RFC 2646]] <urn:ietf:rfc:2646> で定義されています。
+
+値は大文字・小文字を区別しません。 "fixed" が既定値で、
+MIME の "text/plain", すなわち RFC 822 の本文の形式と同じ意味です。
+
+"flowed" の場合は、 RFC 2646 で定義されているように解釈します。
+
+[7] 実際のところ flowed 形式は (見た目こそ同様ではありますが意味的には)
+fixed の text/plain 形式と随分と差があります。
+標準化に際して別の媒体型にするかパラメーターにするかの激しい議論があったようですが、結局こうなりました。
+- [8] [[Message-pm]] では fixed と flowed を別モジュールに分けて実装しています。
+(というかそうしないととっても複雑になりそうだった。)
+- [19] [CODE(MIME)[delsp=yes]] ってのをつけてるのがいます。 [CODE(822)[[[X-Mailer]]: Apple Mail (2.552)]] なのが。
+- [20] [WEAK[2003-11-21 08:04:53 +00:00]] ''[[US-ASCII]]'': [[Hotmail]] なんかも format=flowed を送ってきます。
+- [21] Flowed って text/plain にかなり重大な意味的修正を加えてますよね。それを text/なんたらじゃなくて text/plain にしないといけなかったというのが、なんとも MIME の失敗を物語っているようで。 [WEAK[だって、 MIME がちゃんと実装されていれば、 text/なんたらは未対応でもちゃんと text/plain に fallback されるはずで、何も問題ないんだから。]]
+[[#comment]]
+
+
+** "type" パラメーター, "x-type" パラメーター
+
+[5] 小分類を示します。このパラメーターはどの [[RFC]] 
+でも定義されていませんが、用例が観測されています。
+
+[6] 値 "patch" は、内容がパッチであることを示します。
+パッチに使われる媒体型には、他に [[text/x-patch媒体型]]がありますが、
+"type" parameter も text/x-patch も、使用するべきではありません。
+[[text/*媒体型]]では改行の正規化などの制限があるからです。
+(See [[text/*媒体型の正規化]]) パッチには 
+[[application/octet-stream媒体型]]を使うべきです。
+(と、どこかの [[ML]] で[[守岡さん]]が書いてた。)
+
+[7] [[namazu]] は内部処理に "x-type" パラメーターを使っています。
+現在使われている値は "rfc" で、 [[RFC]] 形式であることをあらわします。
+
+[[#comment]]
+
+
+* WWW での使用
+
+[[#comment]]
+
+
+** フォーム提出形式として
+
+- [10] [[form]] 要素の [[enctype]] 属性に指定された時に、対応する [[UA]] は [[application/form-urlencoded]] と同じようにフォーム項目の値を用意し、 [[URI符号化]]は'''行わず'''、 "&" の代わりに改行を使います。
+- [11] >>10 但しこの動作はどの RFC や W3C の仕様書にも書かれていません。 de facto なものです。
+- [12] >>10-11 [[charset]] をちゃんと処理してるのかとか、もともとの改行はどうなるのかとか謎ですし
+
+[25] [CODE(HTMLa)[[[action]]]] が [CODE(URI)[[[mailto]]:]] URI
+の時によく使われます。
+
+[22] [[Web Forms 2.0]] では [CODE(HTMLa)[[[enctype]]]]
+が [CODE(MIME)[[[text/plain]]]] の時の UA の挙動も規定しています。
+
+
+[26]
+[CITE[フォームでメールを送信するには]] <http://tohoho.wakusei.ne.jp/lng/199812/98120210.htm>
+([[名無しさん]] [sage])
+
+
+[[#comment]]
+
+
+** 鯖の誤設定と逝かれたブラウザ
+
+- [13] 一部の [[WWWブラウザ]]は、内容に [[HTML]] の[[タグ]]らしきものがあると、媒体型が [CODE[text/plain]] であっても勝手に HTML とみなしてみたり、画像のヘッダらしきものがあると画像とみなしてみたりします。
+- [14] このような''誤動作''するのは、 WinIE/MacIE, Opera (こちらは設定で変更可。既定値 off にしとけよな。。。)です。
+
+[15] [[HTTP]] サーバーの設定不良が原因で、媒体型が無意味に 
+[CODE(MIME)[text/plain]] になっている資源は沢山あります。
+
+- [17] [[Mozilla]] は、標準モード以外では媒体型が [[text/css]] 以外である [[CSS]] の[[スタイル・シート]] (らしきもの) を「正しく」読み込んでしまいますし、画像などで媒体型を無視する挙動も見せます。 Mozilla はまだまともな方で、 IE などは媒体型よりも[[拡張子]]や内容を重視しているように思えます。
+- [18] このような挙動は、時に安全上の重大な問題をも引き起こします。 <IW:Tiki:"Tiki/クロスサイトスクリプティング"> では、 [[Tiki]] の [CODE[text/plain]] 出力の内容に HTML とも解釈し得るものが含まれていて、かつ危険な code も含まれている場合に問題 ([[クロスサイトスクリプティング脆弱性]]) が発生することについての議論です。 (どうして異常な [[UA]] の尻拭いをする必要があるのか, するとしたらどういう方法があるのか, 云々)
+
+[[#comment]]
+
+
+** 素片識別子
+
+[16] [CODE(MIME)[text/plain]] な資源の[[素片識別子]]の解釈についての公式な規定は現時点では存在しません。
+
+[[XPointer]] 風な書式を提案した [[I-D]] がありましたが、
+結局 [[RFC]] にはなりませんでした。
+
+[[w3m]] は素片識別子を行数 (最初が [CODE(URI)[1]] 行目) とみなすようです。
+
+[[#comment]]
+
+
+** メモ
+
+[[#comment]]
+
+
+* メモ
+
+[23] よく [CODE(MIME)[[[plain/text]]]] と間違えられます。
+言葉としてそちらの方が自然ですから、仕方がありません。
+
+(MIME で逆になったのは、元々 [[RFC 1049]] 式の
+[CODE(822)[[[text]]]] という型を細分化して [CODE(MIME)[plain]]
+という亜型名を付け足したからです。)
+
+しかし、ただ間違えただけならまだしも、
+そのまま実装しちゃう人もいるみたいですから呆れます。
+
+[24] [CODE(MIME)[text/plain]] として札付けされていても、
+実際には何らかの書式付けがなされていることはかなりあります。
+
+極端な話、 [[XML Schema]] の[[単純型]]で表されるものはすべて
+[CODE(MIME)[text/plain]] で札付けしろと言っている仕様もあったりします。
+「整数」とか「日付」のようなデータにまで媒体型名を割り振るのは阿呆らしいですし、
+人間が読んでも予備知識無しに分かりますから
+(しかしその整数が何を意味しているのかはやっぱり分からないかも)、
+[CODE(MIME)[text/plain]] を流用するのはまま妥当なことでしょう。
+(Plain text なのに [CODE(MIME)[[[application/octet-stream]]]]
+というのも嫌な感じです。)
+
+そのような細かなデータの札付けは元々媒体型の対象外でしょうから別としても
+(しかし[[フォーム]]の提出などで頻繁に用いられているのは事実)、
+プログラムのソース・コードや定型の文書など、
+書式のある文書が [CODE(MIME)[[[text/plain]]]] でよく札付けされています。
+
+[Q[Plain text]] の意味が非常に広くとられる傾向にあるというのもそうですが、
+よく考えてみれば、狭義の [Q[plain text]] 
+にしても改行や段落や引用やちょっとした見出しのように書式を持っています。
+@
+
+
+1.6
+log
+@auto-committed
+@
+text
+@d1 169
+a169 150
+[1] [DFN[[CODE(MIME)[text/plain]]]] はいわゆる plain text の
+[[媒体型]]で、もっとも基本的な形式として
+[[MIME]] で定義されています。
+
+[9] [[MIME]] は[[媒体型]]が指定されていない時の既定値にこの 
+[CODE(MIME)[text/plain]] を採用しています。
+
+[2] また、 [CODE(MIME)[[[text/[VAR[*]]]]]] の媒体型で [[UA]] 
+が対応していないものは [CODE(MIME)[text/plain]]
+であるとして扱うことになっています。
+
+[[#comment]]
+
+* パラメーター
+
+,名前	,構文	,既定値	,説明,状態,出典
+,[CODE(MIME)[[[charset]]]]	,[CODE(ABNF)[[[charset]]]]	,(プロトコル依存)	,Charset,,[MIME]
+,[CODE(MIME)[[[charset-edition]]]]	,[CODE(ABNF)[4[[DIGIT]]]]	,(なし)	,Charset 制定年,,[[RFC 1922]]
+,[CODE(MIME)[[[charset-extension]]]]	,[CODE(ABNF)[[[token]]]]	,(なし)	,Charset 拡張,,[[RFC 1922]]
+,[CODE(MIME)[[[delsp]]]],,[[間隔]]削除,,[RFC]
+,[CODE(MIME)[[[format]]]]	,[CODE(ABNF)["flowed" / "fixed"]],[CODE(MIME)[fixed]],書式,,"[[RFC 2646]], [RFC]"
+,[CODE(MIME)[[[type]]]]	,[CODE(ABNF)[[[token]]]]	,書式,(なし)	,非標準
+,[CODE(MIME)[[[x-rot]]]],[CODE(ABNF)[[[token]]]],(なし),簡易暗号化,非標準
+,[CODE(MIME)[[[x-type]]]]	,[CODE(ABNF)[[[token]]]]	,(なし)	,書式,非標準,[[Namazu]]
+
+[[#comment]]
+
+** "charset" parameter
+
+[3] [CODE[charset]] パラメーター本体は MIME により、それを補助する
+[CODE[charset-edition]] パラメーターと [CODE[charset-extension]]
+パラメーターが [[RFC 1922]] により定義されています。
+詳しくは [[charsetパラメーター]]を参照。
+[[#comment]]
+
+
+** "format" パラメーター
+
+[4] [[RFC 2646]] <urn:ietf:rfc:2646> で定義されています。
+
+値は大文字・小文字を区別しません。 "fixed" が既定値で、
+MIME の "text/plain", すなわち RFC 822 の本文の形式と同じ意味です。
+
+"flowed" の場合は、 RFC 2646 で定義されているように解釈します。
+
+[7] 実際のところ flowed 形式は (見た目こそ同様ではありますが意味的には)
+fixed の text/plain 形式と随分と差があります。
+標準化に際して別の媒体型にするかパラメーターにするかの激しい議論があったようですが、結局こうなりました。
+- [8] [[Message-pm]] では fixed と flowed を別モジュールに分けて実装しています。
+(というかそうしないととっても複雑になりそうだった。)
+- [19] [CODE(MIME)[delsp=yes]] ってのをつけてるのがいます。 [CODE(822)[[[X-Mailer]]: Apple Mail (2.552)]] なのが。
+- [20] [WEAK[2003-11-21 08:04:53 +00:00]] ''[[US-ASCII]]'': [[Hotmail]] なんかも format=flowed を送ってきます。
+- [21] Flowed って text/plain にかなり重大な意味的修正を加えてますよね。それを text/なんたらじゃなくて text/plain にしないといけなかったというのが、なんとも MIME の失敗を物語っているようで。 [WEAK[だって、 MIME がちゃんと実装されていれば、 text/なんたらは未対応でもちゃんと text/plain に fallback されるはずで、何も問題ないんだから。]]
+[[#comment]]
+
+
+** "type" パラメーター, "x-type" パラメーター
+
+[5] 小分類を示します。このパラメーターはどの [[RFC]] 
+でも定義されていませんが、用例が観測されています。
+
+[6] 値 "patch" は、内容がパッチであることを示します。
+パッチに使われる媒体型には、他に [[text/x-patch媒体型]]がありますが、
+"type" parameter も text/x-patch も、使用するべきではありません。
+[[text/*媒体型]]では改行の正規化などの制限があるからです。
+(See [[text/*媒体型の正規化]]) パッチには 
+[[application/octet-stream媒体型]]を使うべきです。
+(と、どこかの [[ML]] で[[守岡さん]]が書いてた。)
+
+[7] [[namazu]] は内部処理に "x-type" パラメーターを使っています。
+現在使われている値は "rfc" で、 [[RFC]] 形式であることをあらわします。
+
+[[#comment]]
+
+* WWW での使用
+
+[[#comment]]
+
+** フォーム提出形式として
+
+- [10] [[form]] 要素の [[enctype]] 属性に指定された時に、対応する [[UA]] は [[application/form-urlencoded]] と同じようにフォーム項目の値を用意し、 [[URI符号化]]は'''行わず'''、 "&" の代わりに改行を使います。
+- [11] >>10 但しこの動作はどの RFC や W3C の仕様書にも書かれていません。 de facto なものです。
+- [12] >>10-11 [[charset]] をちゃんと処理してるのかとか、もともとの改行はどうなるのかとか謎ですし
+
+[22] [[Web Forms 2.0]] では [CODE(HTMLa)[[[enctype]]]]
+が [CODE(MIME)[[[text/plain]]]] の時の UA の挙動も規定しています。
+
+[[#comment]]
+
+** 鯖の誤設定と逝かれたブラウザ
+
+- [13] 一部の [[WWWブラウザ]]は、内容に [[HTML]] の[[タグ]]らしきものがあると、媒体型が [CODE[text/plain]] であっても勝手に HTML とみなしてみたり、画像のヘッダらしきものがあると画像とみなしてみたりします。
+- [14] このような''誤動作''するのは、 WinIE/MacIE, Opera (こちらは設定で変更可。既定値 off にしとけよな。。。)です。
+
+[15] [[HTTP]] サーバーの設定不良が原因で、媒体型が無意味に 
+[CODE(MIME)[text/plain]] になっている資源は沢山あります。
+
+- [17] [[Mozilla]] は、標準モード以外では媒体型が [[text/css]] 以外である [[CSS]] の[[スタイル・シート]] (らしきもの) を「正しく」読み込んでしまいますし、画像などで媒体型を無視する挙動も見せます。 Mozilla はまだまともな方で、 IE などは媒体型よりも[[拡張子]]や内容を重視しているように思えます。
+- [18] このような挙動は、時に安全上の重大な問題をも引き起こします。 <IW:Tiki:"Tiki/クロスサイトスクリプティング"> では、 [[Tiki]] の [CODE[text/plain]] 出力の内容に HTML とも解釈し得るものが含まれていて、かつ危険な code も含まれている場合に問題 ([[クロスサイトスクリプティング脆弱性]]) が発生することについての議論です。 (どうして異常な [[UA]] の尻拭いをする必要があるのか, するとしたらどういう方法があるのか, 云々)
+
+[[#comment]]
+
+** 素片識別子
+
+[16] [CODE(MIME)[text/plain]] な資源の[[素片識別子]]の解釈についての公式な規定は現時点では存在しません。
+
+[[XPointer]] 風な書式を提案した [[I-D]] がありましたが、
+結局 [[RFC]] にはなりませんでした。
+
+[[w3m]] は素片識別子を行数 (最初が [CODE(URI)[1]] 行目) とみなすようです。
+
+[[#comment]]
+
+** メモ
+
+[[#comment]]
+
+* メモ
+
+[23] よく [CODE(MIME)[[[plain/text]]]] と間違えられます。
+言葉としてそちらの方が自然ですから、仕方がありません。
+
+(MIME で逆になったのは、元々 [[RFC 1049]] 式の
+[CODE(822)[[[text]]]] という型を細分化して [CODE(MIME)[plain]]
+という亜型名を付け足したからです。)
+
+しかし、ただ間違えただけならまだしも、
+そのまま実装しちゃう人もいるみたいですから呆れます。
+
+[24] [CODE(MIME)[text/plain]] として札付けされていても、
+実際には何らかの書式付けがなされていることはかなりあります。
+
+極端な話、 [[XML Schema]] の[[単純型]]で表されるものはすべて
+[CODE(MIME)[text/plain]] で札付けしろと言っている仕様もあったりします。
+「整数」とか「日付」のようなデータにまで媒体型名を割り振るのは阿呆らしいですし、
+人間が読んでも予備知識無しに分かりますから
+(しかしその整数が何を意味しているのかはやっぱり分からないかも)、
+[CODE(MIME)[text/plain]] を流用するのはまま妥当なことでしょう。
+(Plain text なのに [CODE(MIME)[[[application/octet-stream]]]]
+というのも嫌な感じです。)
+
+そのような細かなデータの札付けは元々媒体型の対象外でしょうから別としても
+(しかし[[フォーム]]の提出などで頻繁に用いられているのは事実)、
+プログラムのソース・コードや定型の文書など、
+書式のある文書が [CODE(MIME)[[[text/plain]]]] でよく札付けされています。
+
+[Q[Plain text]] の意味が非常に広くとられる傾向にあるというのもそうですが、
+よく考えてみれば、狭義の [Q[plain text]] 
+にしても改行や段落や引用やちょっとした見出しのように書式を持っています。
+結局は程度の問題ということになるでしょう。
+@
+
+
+1.5
+log
+@auto-committed
+@
+text
+@d1 150
+a150 99
+#?SuikaWiki/0.9 default-name="US-ASCII"
+
+[1] [CODE[text/plain]] はいわゆる plain text の[[媒体型]]で、もっとも基本的な形式として
+[[MIME]] <urn:ietf:rfc:2046> で定義されています。
+
+[9] [[MIME]] は[[媒体型]]が指定されていない時の既定値にこの [CODE[text/plain]]
+を採用しています。
+
+[2] また、 [[text/*媒体型]]で [[UA]] が対応していないものは [CODE[text/plain]]
+であるとして扱われます。
+
+[22]
+a
+([[名無しさん]] [WEAK[2004-05-19 09:35:33 +00:00]])
+
+[[#comment]]
+
+
+* パラメーター
+
+,名前	,構文	,既定値	,備考
+,charset	,token	,	,>>3 [MIME]
+,charset-edition	,token	,	,>>3 [RFC 1922]
+,charset-extension	,token	,	,>>3 [RFC 1922]
+,format	,flowed
+,type	,token	,	,>>5 非標準
+,z-type	,token	,	,>>5 非標準
+
+
+** "charset" parameter
+
+[3] [CODE[charset]] パラメーター本体は MIME により、それを補助する
+[CODE[charset-edition]] パラメーターと [CODE[charset-extension]]
+パラメーターが [[RFC1922]] により定義されています。
+詳しくは [[charsetパラメーター]]を参照。
+
+[23]
+あ
+([[名無しさん]] [WEAK[2004-07-13 05:28:14 +00:00]])
+
+[[#comment]]
+
+
+** "format" パラメーター
+
+[4] [[RFC2646]] <urn:ietf:rfc:2646> で定義されています。
+
+値は大文字・小文字を区別しません。 "fixed" が既定値で、
+MIME の "text/plain", すなわち RFC 822 の本文の形式と同じ意味です。
+
+"flowed" の場合は、 RFC 2646 で定義されているように解釈します。
+
+[7] 実際のところ flowed 形式は (見た目こそ同様ではありますが意味的には)
+fixed の text/plain 形式と随分と差があります。
+標準化に際して別の媒体型にするかパラメーターにするかの激しい議論があったようですが、結局こうなりました。
+- [8] [[Message-pm]] では fixed と flowed を別モジュールに分けて実装しています。
+(というかそうしないととっても複雑になりそうだった。)
+- [19] [CODE(MIME)[delsp=yes]] ってのをつけてるのがいます。 [CODE(822)[[[X-Mailer]]: Apple Mail (2.552)]] なのが。
+- [20] [WEAK[2003-11-21 08:04:53 +00:00]] ''[[US-ASCII]]'': [[Hotmail]] なんかも format=flowed を送ってきます。
+- [21] Flowed って text/plain にかなり重大な意味的修正を加えてますよね。それを text/なんたらじゃなくて text/plain にしないといけなかったというのが、なんとも MIME の失敗を物語っているようで。 [WEAK[だって、 MIME がちゃんと実装されていれば、 text/なんたらは未対応でもちゃんと text/plain に fallback されるはずで、何も問題ないんだから。]]
+[[#comment]]
+
+
+** "type" パラメーター, "x-type" パラメーター
+
+[5] 小分類を示します。このパラメーターはどの [[RFC]] 
+でも定義されていませんが、用例が観測されています。
+
+[6] 値 "patch" は、内容がパッチであることを示します。
+パッチに使われる媒体型には、他に [[text/x-patch媒体型]]がありますが、
+"type" parameter も text/x-patch も、使用するべきではありません。
+[[text/*媒体型]]では改行の正規化などの制限があるからです。
+(See [[text/*媒体型の正規化]]) パッチには 
+[[application/octet-stream媒体型]]を使うべきです。
+(と、どこかの [[ML]] で[[守岡さん]]が書いてた。)
+
+[7] [[namazu]] は内部処理に "x-type" パラメーターを使っています。
+現在使われている値は "rfc" で、 [[RFC]] 形式であることをあらわします。
+
+[[#comment]]
+
+
+* See also
+
+- [[RFC2046]] <urn:ietf:rfc:2046>
+- [[RFC2646]] <urn:ietf:rfc:2646>
+
+
+* メモ
+
+- [10] [[form]] 要素の [[enctype]] 属性に指定された時に、対応する [[UA]] は [[application/form-urlencoded]] と同じようにフォーム項目の値を用意し、 [[URI符号化]]は'''行わず'''、 "&" の代わりに改行を使います。
+- [11] >>10 但しこの動作はどの RFC や W3C の仕様書にも書かれていません。 de facto なものです。
+- [12] >>10-11 [[charset]] をちゃんと処理してるのかとか、もともとの改行はどうなるのかとか謎ですし
+- [13] 一部の [[WWWブラウザ]]は、内容に [[HTML]] の[[タグ]]らしきものがあると、媒体型が [CODE[text/plain]] であっても勝手に HTML とみなしてみたり、画像のヘッダらしきものがあると画像とみなしてみたりします。
+- [14] このような''誤動作''するのは、 WinIE/MacIE, Opera (こちらは設定で変更可。既定値 off にしとけよな。。。)です。
+- [15] [[HTTP]] サーバーのせっていふりゅおう
+- [16] 設定不良が原因で、媒体型が無意味に [CODE[text/plain]] になっている資源は沢山あります。
+- [17] [[Mozilla]] は、標準モード以外では媒体型が [[text/css]] 以外である [[CSS]] の[[スタイル・シート]] (らしきもの) を「正しく」読み込んでしまいますし、画像などで媒体型を無視する挙動も見せます。 Mozilla はまだまともな方で、 IE などは媒体型よりも[[拡張子]]や内容を重視しているように思えます。
+- [18] このような挙動は、時に安全上の重大な問題をも引き起こします。 <IW:Tiki:"Tiki/クロスサイトスクリプティング"> では、 [[Tiki]] の [CODE[text/plain]] 出力の内容に HTML とも解釈し得るものが含まれていて、かつ危険な code も含まれている場合に問題 ([[クロスサイトスクリプティング脆弱性]]) が発生することについての議論です。 (どうして異常な [[UA]] の尻拭いをする必要があるのか, するとしたらどういう方法があるのか, 云々)@
+
+
+1.4
+log
+@auto-committed
+@
+text
+@d36 5
+@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@d1 52
+a52 39
+#?SuikaWiki/0.9 default-name="US-ASCII"
+[1] [CODE[text/plain]] はいわゆる plain text の[[媒体型]]で、もっとも基本的な形式として
+[[MIME]] <urn:ietf:rfc:2046> で定義されています。
+
+[9] [[MIME]] は[[媒体型]]が指定されていない時の既定値にこの [CODE[text/plain]]
+を採用しています。
+
+[2] また、 [[text/*媒体型]]で [[UA]] が対応していないものは [CODE[text/plain]]
+であるとして扱われます。
+[[#comment]]
+*パラメーター
+,名前             ,構文       ,既定値  ,備考
+,charset          ,token     ,        ,>>3 [MIME]
+,charset-edition  ,token     ,        ,>>3 [RFC 1922]
+,charset-extension,token     ,        ,>>3 [RFC 1922]
+,format  ,"flowed" / "fixed" ,"fixed" ,>>4 [RFC 2646]
+,type    ,token              ,        ,>>5 非標準
+,z-type  ,token              ,        ,>>5 非標準
+**"charset" parameter
+
+[3] [CODE[charset]] パラメーター本体は MIME により、それを補助する
+[CODE[charset-edition]] パラメーターと [CODE[charset-extension]]
+パラメーターが [[RFC1922]] により定義されています。
+詳しくは [[charsetパラメーター]]を参照。
+[[#comment]]
+**"format" パラメーター
+
+[4] [[RFC2646]] <urn:ietf:rfc:2646> で定義されています。
+
+値は大文字・小文字を区別しません。 "fixed" が既定値で、
+MIME の "text/plain", すなわち RFC 822 の本文の形式と同じ意味です。
+
+"flowed" の場合は、 RFC 2646 で定義されているように解釈します。
+
+[7] 実際のところ flowed 形式は (見た目こそ同様ではありますが意味的には)
+fixed の text/plain 形式と随分と差があります。
+標準化に際して別の媒体型にするかパラメーターにするかの激しい議論があったようですが、結局こうなりました。
+-[8] [[Message-pm]] では fixed と flowed を別モジュールに分けて実装しています。
+(というかそうしないととっても複雑になりそうだった。)
+d56 30
+a85 22
+[[#comment]]
+**"type" パラメーター, "x-type" パラメーター
+
+[5] 小分類を示します。このパラメーターはどの [[RFC]] 
+でも定義されていませんが、用例が観測されています。
+
+[6] 値 "patch" は、内容がパッチであることを示します。
+パッチに使われる媒体型には、他に [[text/x-patch媒体型]]がありますが、
+"type" parameter も text/x-patch も、使用するべきではありません。
+[[text/*媒体型]]では改行の正規化などの制限があるからです。
+(See [[text/*媒体型の正規化]]) パッチには 
+[[application/octet-stream媒体型]]を使うべきです。
+(と、どこかの [[ML]] で[[守岡さん]]が書いてた。)
+
+[7] [[namazu]] は内部処理に "x-type" パラメーターを使っています。
+現在使われている値は "rfc" で、 [[RFC]] 形式であることをあらわします。
+
+[[#comment]]
+*See also
+-[[RFC2046]] <urn:ietf:rfc:2046>
+-[[RFC2646]] <urn:ietf:rfc:2646>
+*メモ
+d94 1
+a94 1
+- [18] このような挙動は、時に安全上の重大な問題をも引き起こします。 <IW:Tiki:"Tiki/クロスサイトスクリプティング"> では、 [[Tiki]] の [CODE[text/plain]] 出力の内容に HTML とも解釈し得るものが含まれていて、かつ危険な code も含まれている場合に問題 ([[クロスサイトスクリプティング脆弱性]]) が発生することについての議論です。 (どうして異常な [[UA]] の尻拭いをする必要があるのか, するとしたらどういう方法があるのか, 云々)
+@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@d41 2
+@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@d40 1
+@
+

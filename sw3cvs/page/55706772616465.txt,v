@@ -1,0 +1,490 @@
+head	1.10;
+access;
+symbols
+	suikawiki3-final:1.10
+	before-db-leaffile:1.1
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.10
+date	2008.09.23.03.16.51;	author wakaba;	state Exp;
+branches;
+next	1.9;
+
+1.9
+date	2008.07.13.03.14.35;	author wakaba;	state Exp;
+branches;
+next	1.8;
+
+1.8
+date	2008.07.08.03.14.12;	author wakaba;	state Exp;
+branches;
+next	1.7;
+
+1.7
+date	2008.06.27.03.06.36;	author wakaba;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2008.06.08.02.46.26;	author wakaba;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2008.05.13.04.25.44;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2008.04.03.02.37.00;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2008.03.08.03.27.35;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2006.07.13.02.14.24;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.12.23.02.03.24;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.10
+log
+@auto-committed
+@
+text
+@
+
+* 仕様書から
+
+
+** RFC 2068 (HTTP/1.1) 14.41; RFC 2616 (HTTP/1.1) 14.42 Upgrade
+
+> The Upgrade general-header allows the client to specify what
+additional communication protocols it supports and would like to use
+if the server finds it appropriate to switch protocols. The server
+MUST use the Upgrade header field within a 101 (Switching Protocols)
+response to indicate which protocol(s) are being switched.
+
+[CODE(HTTP)[Upgrade]] [[一般頭欄]]は、
+[[クライアント]]が、どの追加の通信プロトコルに対応しており、
+[[鯖]]がプロトコル切替えが適切であると判断した場合には使用したいと考えているのかを指定することができます。
+鯖は、 [CODE(HTTP)[[[101]]]] (プロトコル切替) 応答中でどのプロトコルに切り替えるのかを示すために
+[CODE(HTTP)[Upgrade]] 頭欄を使わなければ'''なりません'''。
+
+>
+- Upgrade        = "Upgrade" ":" 1#product
+
+> For example,
+- Upgrade: HTTP/2.0, SHTTP/1.3, IRC/6.9, RTA/x11
+
+> The Upgrade header field is intended to provide a simple mechanism
+for transition from HTTP/1.1 to some other, incompatible protocol. It
+does so by allowing the client to advertise its desire to use another
+protocol, such as a later version of HTTP with a higher major version
+number, even though the current request has been made using HTTP/1.1.
+This eases the difficult transition between incompatible protocols by
+allowing the client to initiate a request in the more commonly
+supported protocol while indicating to the server that it would like
+to use a "better" protocol if available (where "better" is determined
+by the server, possibly according to the nature of the method and/or
+resource being requested).
+
+[CODE(HTTP)[Upgrade]] 頭欄は、 HTTP/1.1 から何か他の、非互換なプロトコルに移行するための単純な機構を提供することを想定しています。クライアントは、
+現在の要求は HTTP/1.1 を使って行いながらも、例えばより大きな大版番号を持つより新しい版の
+HTTP のような、別のプロトコルを使いたいと思っているということを宣伝できます。
+これによって、非互換プロトコル間の難しい移行が、
+クライアントはより広く対応されているプロトコルで要求を初期化しつつ鯖に「よりよい」
+プロトコルを利用可能なら使いたいことを示すことができるので、
+容易になります。
+(ここで「よりよい」とは、鯖によって、おそらく要求された[[方式]][[及び/又は]][[資源]]の性質に従って決定されます。)
+
+> The Upgrade header field only applies to switching application-layer
+protocols upon the existing transport-layer connection. Upgrade
+cannot be used to insist on a protocol change; its acceptance and use
+by the server is optional. The capabilities and nature of the
+application-layer communication after the protocol change is entirely
+dependent upon the new protocol chosen, although the first action
+after changing the protocol MUST be a response to the initial HTTP
+request containing the Upgrade header field.
+
+[CODE(HTTP)[Upgrade]] 頭欄は、既存の[[転送層]][[接続]]上の[[応用層]]プロトコルの切替にのみ適用します。
+[CODE(HTTP)[Upgrade]] をプロトコル変更を主張するのに使うことはできません。
+鯖がそれを受け入れて使用するかどうかは任意選択です。
+プロトコル変更後の応用層通信の能力と性質は選ばれた新しいプロトコルに完全に依存します。
+但し、プロトコル変更後の最初の動作は [CODE(HTTP)[Upgrade]] 頭欄を含んだ初期
+HTTP 要求への応答でなければ'''なりません'''。
+
+> The Upgrade header field only applies to the immediate connection.
+Therefore, the upgrade keyword MUST be supplied within a Connection
+header field (section 14.10) whenever Upgrade is present in an
+HTTP/1.1 message.
+
+[CODE(HTTP)[Upgrade]] 頭欄は、直接接続にのみ適用します。
+従って、 [CODE(HTTP)[Upgrade]] が HTTP/1.1 メッセージ中に存在するときには、
+必ず [CODE(HTTP)[upgrade]] 見出し語を [CODE(HTTP)[[[Connection]]]] 頭欄中に供給しなければ'''なりません'''。
+
+> The Upgrade header field cannot be used to indicate a switch to a
+protocol on a different connection. For that purpose, it is more
+appropriate to use a 301, 302, 303, or 305 redirection response.
+
+[CODE(HTTP)[Upgrade]] 頭欄は、異なる接続上のプロトコルへの切替えを示すために使うことはできません。
+その目的には、 [CODE(HTTP)[[[301]]]], [CODE(HTTP)[[[302]]]],
+[CODE(HTTP)[[[303]]]] または [CODE(HTTP)[[[305]]]] の再指向応答を使うのがより適切です。
+
+> This specification only defines the protocol name "HTTP" for use by
+the family of Hypertext Transfer Protocols, as defined by the HTTP
+version rules of section 3.1 and future updates to this
+specification. Any token can be used as a protocol name; however, it
+will only be useful if both the client and server associate the name with the same protocol.
+
+この仕様書は、プロトコル名 [CODE(HTTP)[HTTP]] だけを、
+ハイパー文転送プロトコルで使用するために、
+3.1節の版規則とこの仕様書の将来の更新で定義される通り定義します。
+任意の字句をプロトコル名として使うことができます。
+しかし、それはクライアントと鯖がある名前を同じプロトコルと関連付けている場合に限って有用です。
+
+
+** RFC の部分の License
+
+[[RFCのライセンス]]
+
+
+* プロトコル名
+
+[1]
+,製品字句	,プロトコル	,状態	,出典
+,[CODE(HTTP)@@en[[[GridHTTP]]/1.0]]	,[[GridHTTP]]	,[[IANA]] 未登録
+,[CODE(HTTP)[[[HTTP]]/[VAR[*]]]]	,HTTP	,[HTTP/1.1]
+,[CODE(HTTP)[[[IRC]]/6.9]]	,IRC	,[HTTP/1.1] 例示
+,[CODE(HTTP)[[[RTA]]/x11]]	,	,[HTTP/1.1] 例示
+,[CODE(HTTP)[[[SHTTP]]/1.3]]	,	,[HTTP/1.1] 例示
+,[CODE(HTTP)[[[TLS/1.0]]]]	,[[TLS]]/1.0	,[RFC 2817]
+
+[2] IANA 登録簿: <http://www.iana.org/assignments/http-upgrade-tokens>
+(last updated 2001-05-01)
+
+[3] 2003年12月の時点で、登録簿には一つも登録されていません。
+HTTP 仕様書で定義されている [CODE(HTTP)[HTTP/[VAR[*]]]] や
+登録手続きを規定している RFC 2817 が定義している [CODE(HTTP)[TLS/1.0]]
+すら載っていないのはなんとも間抜けな話です [WEAK[(が、 IANAREG では良くある話です)]]。
+
+[4]
+hypnotherapy bulimia
+[url=http://www.logicalgamers.com/member.php?u=10763 ]penis enlargement pills tips for maximum results[/url]
+[PRE[
+    
+professional board of hypnotherapy
+([[what is hypnotherapy]] [ronbcn@@kzt.com])
+]PRE]
+
+[5]
+PGMyEV  <a href="http://jxhpbypzdtoo.com/">jxhpbypzdtoo</a>, [url=http://bvnpuvykgodg.com/]bvnpuvykgodg[/url], [link=http://zkdieylejuym.com/]zkdieylejuym[/link], http://ewdzoyqneieb.com/
+([[tmoyxqt]] [niglnr@@bapxtu.com] [WEAK[2008-04-01 04:38:28 +00:00]])
+
+[6]
+buy sheet music in raleigh north carolina <a href= http://httpi.ifrance.com/health40.html >music roleplay characters</a> discussed business conversation model music provide success
+classical music concerts dec 207 montreal canada [url= http://yiiii.yourfreehosting.net/music75.html ]free christmas music nutcracker[/url] music sponsorship in memphis
+music 123 coupon <a href= http://yiiii.yourfreehosting.net/sex189.html >types of music in the mississippi delta</a> phantom of the opera angel of music lyrics
+real music call tones [url= http://yiiij.fr33webhost.com/drugs184.html ]charlie brown digital sheet music[/url] tamil song free download
+([[pain music]] [jodtd@@uah.com])
+
+[7]
+funk classes adult adelaide <a href= http://sexman.pornarmy.net/page/2/ >msn adult clubs</a> adult social pornography
+adult male sxx [url= http://teenadult.blogbugs.org/page2/ ]sample resume adult instructor[/url] adult free greeting cards
+adult blog list <a href= http://adultxxx.erosblog.net >adult erotic sites for cell phones</a> russian adult passwords
+filipino adult porn [url= http://teenadult.blogbugs.org/2831941/Get-all-the-smoking-hardcore-action-in-full-length-video-now.html ]adult big wheels[/url] ramona pringle adult
+([[conversions for adult esl students]] [vrtlo@@syv.com])
+
+[8]
+laws riding adult trike in ca <a href= http://adultparty.pornblink.com/2008/04/30/live-your-anal-fantasies-with-these-uncensored-fuck-videos/ >adult web sites info passes</a> high tech adult toys
+colonial heritage active adult com in va [url= http://xxxadultblog.pimpsblogger.com/note/3116/evil-women-are-giving-their-men.html ]cigarette consumption among young adult[/url] adult female scholarship
+free adult nude sex clips <a href= http://sexman.pornarmy.net/2008/05/18/free-sex-porn-movies-xxx-videos-hardcore-fuck-anal-cumshot/ >adult snuggle sack blankets</a> pennsylvania active adult communities
+have room in my richmond va home for a senior adult [url= http://adultxxx.erosblog.net/240/Damsels+dripping+with+juice!.html ]chicago adult store[/url] full metal alchemist adult
+([[teen ass to mouth adult movies]] [fvafb@@yik.com])
+
+[9]
+northshore pharmacy services <a href= http://jonn7000.narod.ru/astrology-moon-signs.html >osco pharmacy kansas city</a> adult web cam jobs
+pharmacy technition licence test examples [url= http://calcium-info.ibelgique.com/phase-changes-of-the-element-calcium.html ]university of connecticut pharmacy ce[/url] free divx adult videos
+tacoma medical center pharmacy 1206 s 11th st <a href= http://antibiotic.i.isuisse.com/tetracycline-antibiotic-acne-alcohol.html >cvs pharmacy iodine</a> candye kane adult video
+cheap pharmacy zenegra [url= http://rihanna-music.freetzi.com/astrology-copatibility-free-report.html ]pharmacy by san francisco airport[/url] japanese adult websites
+([[pharmacy history book]] [xsgjc@@sia.com])
+
+[10]
+riteaid pharmacy rancho cordova ca <a href= http://clomiphene.idoo.com/cod-clomiphene.html >pharmacy madfounian</a> free adult vedeo
+midwestern university college of pharmacy glendale [url= http://rihanna-music.freetzi.com/astrology-calender.html ]fedex  pharmacy[/url] adult pic browser
+onlin pharmacys <a href= http://buspar.bravehost.com/generic-buspar.html >hartzell pharmacy pa</a> adult swimwear
+tn board of pharmacy [url= http://benadryl.fr33webhost.com/benadryl-allergy-alert.html ]pacific urology institute pharmacy[/url] blow job video adult swallow
+([[seashell pharmacy floor lamp]] [xbiuj@@jnm.com])
+
+[11]
+cAFKs6  <a href="http://umytdgvwgwcw.com/">umytdgvwgwcw</a>, [url=http://sqoggpfprsde.com/]sqoggpfprsde[/url], [link=http://wyyhsiofbkhu.com/]wyyhsiofbkhu[/link], http://jijysjrysort.com/
+([[fvlemunud]] [rftfdk@@xdzsop.com] [WEAK[2008-07-06 08:14:51 +00:00]])
+
+[12]
+BmzqBd  <a href="http://rrikgamaoqbi.com/">rrikgamaoqbi</a>, [url=http://wxrcygzyhmgu.com/]wxrcygzyhmgu[/url], [link=http://zchncqnglswh.com/]zchncqnglswh[/link], http://buvkknuatttl.com/
+([[jfmlwg]] [somher@@rwziha.com] [WEAK[2008-07-09 21:35:42 +00:00]])
+
+
+[13]
+JU9zAa  <a href="http://axzxvbzimpao.com/">axzxvbzimpao</a>, [url=http://mhahuxxuxazg.com/]mhahuxxuxazg[/url], [link=http://rrwjzhsanopg.com/]rrwjzhsanopg[/link], http://qtnhygggqxoj.com/
+([[jmbzxhhobip]] [duosut@@qjknfx.com] [WEAK[2008-09-20 17:13:36 +00:00]])
+
+
+[[#comment]]
+
+
+* メモ@
+
+
+1.9
+log
+@auto-committed
+@
+text
+@a168 1
+
+d172 5
+@
+
+
+1.8
+log
+@auto-committed
+@
+text
+@a164 1
+
+d168 5
+@
+
+
+1.7
+log
+@auto-committed
+@
+text
+@a157 1
+
+d159 3
+a161 3
+riteaid pharmacy rancho cordova ca <a href= http://clomiphene.idoo.com/cod-clomiphene.html >pharmacy madfounian</a> free adult vedeo
+midwestern university college of pharmacy glendale [url= http://rihanna-music.freetzi.com/astrology-calender.html ]fedex  pharmacy[/url] adult pic browser
+onlin pharmacys <a href= http://buspar.bravehost.com/generic-buspar.html >hartzell pharmacy pa</a> adult swimwear
+d164 5
+@
+
+
+1.6
+log
+@auto-committed
+@
+text
+@a143 1
+
+d145 3
+a147 3
+laws riding adult trike in ca <a href= http://adultparty.pornblink.com/2008/04/30/live-your-anal-fantasies-with-these-uncensored-fuck-videos/ >adult web sites info passes</a> high tech adult toys
+colonial heritage active adult com in va [url= http://xxxadultblog.pimpsblogger.com/note/3116/evil-women-are-giving-their-men.html ]cigarette consumption among young adult[/url] adult female scholarship
+free adult nude sex clips <a href= http://sexman.pornarmy.net/2008/05/18/free-sex-porn-movies-xxx-videos-hardcore-fuck-anal-cumshot/ >adult snuggle sack blankets</a> pennsylvania active adult communities
+d150 15
+@
+
+
+1.5
+log
+@auto-committed
+@
+text
+@a129 1
+
+d131 3
+a133 3
+buy sheet music in raleigh north carolina <a href= http://httpi.ifrance.com/health40.html >music roleplay characters</a> discussed business conversation model music provide success
+classical music concerts dec 207 montreal canada [url= http://yiiii.yourfreehosting.net/music75.html ]free christmas music nutcracker[/url] music sponsorship in memphis
+music 123 coupon <a href= http://yiiii.yourfreehosting.net/sex189.html >types of music in the mississippi delta</a> phantom of the opera angel of music lyrics
+d136 15
+@
+
+
+1.4
+log
+@auto-committed
+@
+text
+@a125 1
+
+d129 8
+@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@a116 1
+
+d118 1
+a118 1
+hypnotherapy bulimia
+d120 2
+a121 1
+    
+d124 6
+@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@d1 129
+a129 111
+
+* 仕様書から
+** RFC 2068 (HTTP/1.1) 14.41; RFC 2616 (HTTP/1.1) 14.42 Upgrade
+> The Upgrade general-header allows the client to specify what
+additional communication protocols it supports and would like to use
+if the server finds it appropriate to switch protocols. The server
+MUST use the Upgrade header field within a 101 (Switching Protocols)
+response to indicate which protocol(s) are being switched.
+
+[CODE(HTTP)[Upgrade]] [[一般頭欄]]は、
+[[クライアント]]が、どの追加の通信プロトコルに対応しており、
+[[鯖]]がプロトコル切替えが適切であると判断した場合には使用したいと考えているのかを指定することができます。
+鯖は、 [CODE(HTTP)[[[101]]]] (プロトコル切替) 応答中でどのプロトコルに切り替えるのかを示すために
+[CODE(HTTP)[Upgrade]] 頭欄を使わなければ'''なりません'''。
+
+>
+-Upgrade        = "Upgrade" ":" 1#product
+
+> For example,
+-Upgrade: HTTP/2.0, SHTTP/1.3, IRC/6.9, RTA/x11
+
+> The Upgrade header field is intended to provide a simple mechanism
+for transition from HTTP/1.1 to some other, incompatible protocol. It
+does so by allowing the client to advertise its desire to use another
+protocol, such as a later version of HTTP with a higher major version
+number, even though the current request has been made using HTTP/1.1.
+This eases the difficult transition between incompatible protocols by
+allowing the client to initiate a request in the more commonly
+supported protocol while indicating to the server that it would like
+to use a "better" protocol if available (where "better" is determined
+by the server, possibly according to the nature of the method and/or
+resource being requested).
+
+[CODE(HTTP)[Upgrade]] 頭欄は、 HTTP/1.1 から何か他の、非互換なプロトコルに移行するための単純な機構を提供することを想定しています。クライアントは、
+現在の要求は HTTP/1.1 を使って行いながらも、例えばより大きな大版番号を持つより新しい版の
+HTTP のような、別のプロトコルを使いたいと思っているということを宣伝できます。
+これによって、非互換プロトコル間の難しい移行が、
+クライアントはより広く対応されているプロトコルで要求を初期化しつつ鯖に「よりよい」
+プロトコルを利用可能なら使いたいことを示すことができるので、
+容易になります。
+(ここで「よりよい」とは、鯖によって、おそらく要求された[[方式]][[及び/又は]][[資源]]の性質に従って決定されます。)
+
+> The Upgrade header field only applies to switching application-layer
+protocols upon the existing transport-layer connection. Upgrade
+cannot be used to insist on a protocol change; its acceptance and use
+by the server is optional. The capabilities and nature of the
+application-layer communication after the protocol change is entirely
+dependent upon the new protocol chosen, although the first action
+after changing the protocol MUST be a response to the initial HTTP
+request containing the Upgrade header field.
+
+[CODE(HTTP)[Upgrade]] 頭欄は、既存の[[転送層]][[接続]]上の[[応用層]]プロトコルの切替にのみ適用します。
+[CODE(HTTP)[Upgrade]] をプロトコル変更を主張するのに使うことはできません。
+鯖がそれを受け入れて使用するかどうかは任意選択です。
+プロトコル変更後の応用層通信の能力と性質は選ばれた新しいプロトコルに完全に依存します。
+但し、プロトコル変更後の最初の動作は [CODE(HTTP)[Upgrade]] 頭欄を含んだ初期
+HTTP 要求への応答でなければ'''なりません'''。
+
+> The Upgrade header field only applies to the immediate connection.
+Therefore, the upgrade keyword MUST be supplied within a Connection
+header field (section 14.10) whenever Upgrade is present in an
+HTTP/1.1 message.
+
+[CODE(HTTP)[Upgrade]] 頭欄は、直接接続にのみ適用します。
+従って、 [CODE(HTTP)[Upgrade]] が HTTP/1.1 メッセージ中に存在するときには、
+必ず [CODE(HTTP)[upgrade]] 見出し語を [CODE(HTTP)[[[Connection]]]] 頭欄中に供給しなければ'''なりません'''。
+
+> The Upgrade header field cannot be used to indicate a switch to a
+protocol on a different connection. For that purpose, it is more
+appropriate to use a 301, 302, 303, or 305 redirection response.
+
+[CODE(HTTP)[Upgrade]] 頭欄は、異なる接続上のプロトコルへの切替えを示すために使うことはできません。
+その目的には、 [CODE(HTTP)[[[301]]]], [CODE(HTTP)[[[302]]]],
+[CODE(HTTP)[[[303]]]] または [CODE(HTTP)[[[305]]]] の再指向応答を使うのがより適切です。
+
+> This specification only defines the protocol name "HTTP" for use by
+the family of Hypertext Transfer Protocols, as defined by the HTTP
+version rules of section 3.1 and future updates to this
+specification. Any token can be used as a protocol name; however, it
+will only be useful if both the client and server associate the name with the same protocol.
+
+この仕様書は、プロトコル名 [CODE(HTTP)[HTTP]] だけを、
+ハイパー文転送プロトコルで使用するために、
+3.1節の版規則とこの仕様書の将来の更新で定義される通り定義します。
+任意の字句をプロトコル名として使うことができます。
+しかし、それはクライアントと鯖がある名前を同じプロトコルと関連付けている場合に限って有用です。
+
+** RFC の部分の License
+[[RFCのライセンス]]
+
+* プロトコル名
+[1]
+,製品字句	,プロトコル	,状態,出典
+,[CODE(HTTP)@@en[[[GridHTTP]]/1.0]],[[GridHTTP]],"[[IANA]] 未登録"
+,[CODE(HTTP)[[[HTTP]]/[VAR[*]]]]	,HTTP	,[HTTP/1.1]
+,[CODE(HTTP)[[[IRC]]/6.9]]	,IRC	,[HTTP/1.1] 例示
+,[CODE(HTTP)[[[RTA]]/x11]]	,	,[HTTP/1.1] 例示
+,[CODE(HTTP)[[[SHTTP]]/1.3]]	,	,[HTTP/1.1] 例示
+,[CODE(HTTP)[[[TLS/1.0]]]]	,[[TLS]]/1.0	,[RFC 2817]
+
+[2] IANA 登録簿: <http://www.iana.org/assignments/http-upgrade-tokens>
+(last updated 2001-05-01)
+
+[3] 2003年12月の時点で、登録簿には一つも登録されていません。
+HTTP 仕様書で定義されている [CODE(HTTP)[HTTP/[VAR[*]]]] や
+登録手続きを規定している RFC 2817 が定義している [CODE(HTTP)[TLS/1.0]]
+すら載っていないのはなんとも間抜けな話です [WEAK[(が、 IANAREG では良くある話です)]]。
+
+[[#comment]]
+
+*メモ
+@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@d1 1
+a1 2
+#?SuikaWiki/0.9 page-icon="HTTP"
+[[#comment]]
+d93 2
+a94 1
+,製品字句	,プロトコル	,典拠
+@
+

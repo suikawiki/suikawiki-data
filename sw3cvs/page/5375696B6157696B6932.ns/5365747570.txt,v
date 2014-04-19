@@ -1,0 +1,463 @@
+head	1.4;
+access;
+symbols
+	suikawiki3-final:1.4
+	before-db-leaffile:1.2
+	after-upgrade-to-suikawiki-3:1.2
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.4
+date	2006.10.31.02.22.21;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2005.01.31.02.08.38;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2004.03.13.06.40.14;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.12.23.02.04.02;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.4
+log
+@auto-committed
+@
+text
+@
+[15] '''重要''': [[SuikaWiki2]] 
+は既に維持管理されていません。 [[SuikaWiki3]] 
+を御利用下さい。
+
+事情があって SuikaWiki 2 を使用されたい方は、
+[[CVS]] から取り出す際に、 [CODE[branch-suikawiki-1]]
+枝を指定してください。 (枝名は 
+[CODE[branch-suikawiki-''1'']] ですが、実際には
+SuikaWiki 2 です。)
+
+
+* SuikaWiki を動かすためのメモ
+
+[13] 以下に書いてある通りに操作すると、 [[SuikaWiki]]
+が動くようになる'''可能性があります'''。
+
+
+** SuikaWiki 及び必要モジュールの入手と導入
+
+[14] 必要なものと入手先一覧:
+- [[perl]] : <http://www.cpan.org/> 辺りから探して。
+- [[SuikaWiki]] 本体 :
+<IW:SuikaCVS:"suikawiki/script/">
+- [[manakai]] : <IW:SuikaCVS:"messaging/manakai/">
+- [[Char::Class]] : <IW:SuikaCVS:"perl/charclass/">
+- [[Jcode.pm]] : <http://openlab.ring.gr.jp/Jcode/>
+
+[3] manakai と Char::Class の install は、
+それぞれの WikiPage を見て下さい。どちらも pure perl
+ですが、 Char::Class は直接使用可能な形式で配布されていないので、
+perl module を生成する必要があります。
+[WEAK[(一度生成すれば architecture に依存しないので他のサーバーに持っていっても OK。なお、現時点で必要なのは [CODE(perl)[Char::Class::XML]] だけなのでこれ1個作れば十分。)]]
+manakai も Char::Class も、他の script 
+で使用しないのなら、 SuikaWiki の [CODE(file)[lib]]
+directory に突っ込めば OK です。
+
+[4] SuikaWiki 本体は、[WEAK[もちろん httpd から見える]]適当な
+directory に配置します。
+[WEAK[といっても、見える必要があるのは [CODE(file)[wiki.cgi]] だけで、後のファイルは、 [CODE(file)[wiki.cgi]] と [CODE(file)[wikidata/suikawiki-config.ph]] の最初の方にある path を適当に指定すれば、どこにあっても問題ないです。]]
+
+[[#comment]]
+
+
+** WikiDatabase のための場所の確保
+
+[5] WikiPage database のための場所を用意します。既定値では CGI script
+の directory 内の [CODE[wikidata]] という subdirectory
+です。新しく作る時は CVS の同じ場所にある [CODE[default]]
+という directory の名前を変更します 
+[WEAK[(この中には最低限必要であろう WikiPage が含まれています)]]。
+
+[7] [CODE(file)[wikidata]] directory 内に、
+[CODE(file)[page]], [CODE(file)[lock]], 
+[CODE(file)[log]] という3つの directory
+を作っておきます。これらはそれぞれ、 WikiPage,
+lock file, 記録を入れるのに使われます。
+[WEAK[(これらを他の場所とか他の名前にしたいときは、 [CODE(file)[suikawiki-config.ph]] で書き換えてください。 [CODE(file)[suikawiki-config.ph]] 以外の書き換えが必要だとしたらそれは不具合なので、報告してください。)]]
+
+[[#comment]]
+
+
+** 設定ファイル
+
+[6] [CODE(file)[wikidata/suikawiki-config.ph]] は当該 wiki
+の設定ファイルです。
+>>4 で配置を変更した場合はこのファイル内の経路も正しく設定しないといけません。
+
+''重要'': CVS の [CODE(file)[default/suikawiki-config.ph]]
+は古くて使い物にならないかもしれません。
+<IW:SuikaCVS:"suikawiki/wikidata/suikawiki-config.ph">
+の最新版を使ってみてください。
+
+また、最初の方に wiki の [[URI]] を設定するところがありますから、
+ここも適当に直しておきます。
+
+[9] [CODE(file)[suikawiki-config.ph]]
+には他にも色々設定項目がありますが、
+とりあえず動かすだけならこれだけでいいはずです。
+
+[[#comment]]
+
+[8] Plugin を compile します。 [CODE(file)[lib/SuikaWiki/Plugin]]
+で、 [KBD[perl mkplugin.pl プラグイン名.pm]]
+として作っていきます。プラグイン名は同じ directory
+に入っている[VAR[プラグイン名]].wps というファイルと同じ名前を指定します。
+[WEAK[([[make]] があれば、 [KBD[make プラグイン名.pm]] でも OK です。将来は [KBD[make all]] で出来るようになるかもしれません。)]]
+[WEAK[Plugin の compile が終わったら、 [CODE[[VAR[*]].wps]] 及び [CODE(file)[mkplugin.pl]], [CODE(file)[Makefile]] は削除しても構いません。]]
+
+最近の CVS 版では、
+[CODE(file)[misc/plugins/]] で追加の plugin
+が提供されています。必要っぽい名前のものは compile
+しておきましょう。
+
+[WEAK[なお、 plugin によっては他のモジュールや外部命令が必要かもしれません。たとえば、 Image plugin では [[ImageMagick]] の [KBD[convert]] 命令があるといいです。 (なくてもいいです。形式変換が出来ないだけだから。)]]
+
+[[#comment]]
+
+
+** 管理者の合言葉
+
+[11] 管理用合言葉を設定します。
+[[#form:'%wiki-admin-change-password();':'':'%output(form=>0);']]
+
+なお、この合言葉入力欄は <IW:SuikaWiki:WikiPlugin> [CODE[WikiAdmin]]
+に含まれています。気になるなら、悪戯を防ぐために plugin の directory からこの plugin
+([CODE(filename)[lib/SuikaWiki/Plugin/WikiAdmin.pm]])
+を取り除いておけば欄は表示されません。
+
+[[#comment]]
+
+
+** WikiPage の用意
+
+[12] 正しく設定出来ていれば
+[WEAK[(そしてこの WikiPage の記述が古くなっていなければ)]]
+以上でとりあえず動きます。
+
+実用的には更に幾つかの WikiPage を用意する必要があります。
+- CVS or 本家 SuikaWiki のをそのまま流用すればよいもの
+-- [[Wiki//Page//Create]]
+-- [[Wiki//Page//Search]]
+-- [[IndexPage]]
+-- [[RecentChanges]]
+-- [[Wiki//Resource//ja]]
+-- [[Wiki//Resource//en]]
+-- [[NewPageTemplate]]
+-- [[Wiki//Style//List//HTML]]
+-- [[Wiki//Style//SuikaWiki//HTML]]
+-- [[Wiki//Plugin//Info]]
+-- このほか必要に応じて WikiResource//*
+- 適切な内容で書いておくべきもの
+-- [[HomePage]]
+-- [[Wiki//Admin]]
+-- [[Wiki//News]]
+-- [[Wiki//Help]]
+-- [[Wiki//Page//License]]
+-- [[Wiki//Referer//IgnoreSite]]
+- このほか、あると良いもの
+-- [[SandBox]]
+-- Wiki//Edit//Help
+-- [[Wiki//InterWikiName]]
+-- [[Wiki//Referer//SiteName]]
+
+[[#comment]]
+
+
+* SuikaWiki 2 導入メモ (2003年12月)
+
+[1] [[SuikaWiki2]] を実際に導入してみました。
+その時の手順をメモっておきます。
+作業内容は概略だけなので、詳細は [[SuikaWiki//Setup]]
+の方を見て下さい。 (内容は古いですけど。)
+
+= SuikaWiki の入手== CVS <IW:SuikaCVS:"suikawiki/script/"> から '''[CODE[branch-suikawiki-1]] 枝'''の一式を拾ってきて、適当なディレクトリに配置
+= 設定ファイルの修正
+== [CODE(file)[default/]] を [CODE(file)[wikidata/]] に rename
+== [CODE(file)[wikidata/log/]], [CODE(file)[wikidata/lock/]] を一応作っておく。
+== CVS から'''[CODE[branch-suikawiki-1]] 枝'''の <IW:SuikaCVS:"suikawiki/wikidata/suikawiki-config.ph">
+を拾ってきて、 [CODE(file)[wikidata/]] のものを上書き
+== [CODE(file)[suikawiki-config.ph]] の先頭にある自身の URI に関する設定を修正
+= 外部モジュールの準備
+== [[manakai]] <IW:SuikaCVS:"messaging/manakai/"> を拾ってきて、 SuikaWiki script から見えるようにする。[WEAK[(SuikaWiki の [CODE(file)[lib/]] に manakai の [CODE(file)[lib/Message/]] をコピれば十分。)]]
+== [[Char::Class]] <IW:SuikaCVS:"perl/charclass/"> を拾ってきて、 SuikaWiki script から見えるようにする。
+[WEAK[([CODE(file)[Char/Class/XML.pm]] を作って、 SuikaWiki の [CODE(file)[lib/]] にコピれば十分。蝕んだ perl では動かないので、不安なら [KBD[make test]] で確認すべし。)]]
+= WikiPlugin module 群の comiple
+== [CODE(file)[lib/SuikaWiki/Plugin/]] 以下にある plugin を compile。[WEAK[なくても動くものもあるが、確認するのが面倒なら全部 compile してしまう。]]
+== [CODE(file)[misc/plugin/]] 以下にある plugin を必要に応じて compile。
+= 初期 WikiPage の準備
+== [CODE[Referer]] plugin を使う場合、 [CODE(URI)[[VAR[wiki の URI]]?mycmd=edit;mypage=Wiki//Referer//IgnoreSite]]
+をブラウザで開いて、
+[VAR[wiki の URI]] を加える。 (書式はこの wiki の [[Wiki//Referer//IgnoreSite]] を参照されたい。)
+[WEAK[こうしないと、 wiki 内の移動の Referer が記録されてしまう。]]
+== この wiki の WikiPage を参考に、次の WikiPage を用意する。
+(面倒なら丸写しでいい。)
+--- [CODE(WikiPage)[[[Wiki//Resource//ja]]]]
+--- [CODE(WikiPage)[[[Wiki//Page//Create]]]]
+--- [CODE(WikiPage)[[[Wiki//Page//Search]]]]
+--- [CODE(WikiPage)[[[Wiki//Style//List//HTML]]]]
+--- [CODE(WikiPage)[[[Wiki//Style//SuikaWiki//HTML]]]]
+--- [CODE(WikiPage)[[[Wiki//Style//Plugin//HTML]]]]
+--- [CODE(WikiPage)[[[Wiki//Style//浮動物//HTML]]]]
+--- [CODE(WikiPage)[[[Wiki//MenuBar]]]]
+
+これくらいすれば、最低限使えるようになるでしょう。
+
+[[#comment]]
+
+
+* メモ
+
+[16]
+smizj idca qofka girsu noys xnltpym tewf
+([[tbzlecx cwjmgipfb]] [oxgcids@@mail.com])
+
+[17]
+smizj idca qofka girsu noys xnltpym tewf
+([[tbzlecx cwjmgipfb]] [oxgcids@@mail.com])
+
+[18]
+smizj idca qofka girsu noys xnltpym tewf
+([[tbzlecx cwjmgipfb]] [oxgcids@@mail.com])
+
+@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@d1 203
+a203 182
+
+[15] '''重要''': [[SuikaWiki2]] 
+は既に維持管理されていません。 [[SuikaWiki3]] 
+を御利用下さい。
+
+事情があって SuikaWiki 2 を使用されたい方は、
+[[CVS]] から取り出す際に、 [CODE[branch-suikawiki-1]]
+枝を指定してください。 (枝名は 
+[CODE[branch-suikawiki-''1'']] ですが、実際には
+SuikaWiki 2 です。)
+
+*SuikaWiki を動かすためのメモ
+
+[13] 以下に書いてある通りに操作すると、 [[SuikaWiki]]
+が動くようになる'''可能性があります'''。
+
+** SuikaWiki 及び必要モジュールの入手と導入
+
+[14] 必要なものと入手先一覧:
+- [[perl]] : <http://www.cpan.org/> 辺りから探して。
+- [[SuikaWiki]] 本体 :
+<IW:SuikaCVS:"suikawiki/script/">
+- [[manakai]] : <IW:SuikaCVS:"messaging/manakai/">
+- [[Char::Class]] : <IW:SuikaCVS:"perl/charclass/">
+- [[Jcode.pm]] : <http://openlab.ring.gr.jp/Jcode/>
+
+[3] manakai と Char::Class の install は、
+それぞれの WikiPage を見て下さい。どちらも pure perl
+ですが、 Char::Class は直接使用可能な形式で配布されていないので、
+perl module を生成する必要があります。
+[WEAK[(一度生成すれば architecture に依存しないので他のサーバーに持っていっても OK。なお、現時点で必要なのは [CODE(perl)[Char::Class::XML]] だけなのでこれ1個作れば十分。)]]
+manakai も Char::Class も、他の script 
+で使用しないのなら、 SuikaWiki の [CODE(file)[lib]]
+directory に突っ込めば OK です。
+
+[4] SuikaWiki 本体は、[WEAK[もちろん httpd から見える]]適当な
+directory に配置します。
+[WEAK[といっても、見える必要があるのは [CODE(file)[wiki.cgi]] だけで、後のファイルは、 [CODE(file)[wiki.cgi]] と [CODE(file)[wikidata/suikawiki-config.ph]] の最初の方にある path を適当に指定すれば、どこにあっても問題ないです。]]
+
+[[#comment]]
+
+** WikiDatabase のための場所の確保
+
+[5] WikiPage database のための場所を用意します。既定値では CGI script
+の directory 内の [CODE[wikidata]] という subdirectory
+です。新しく作る時は CVS の同じ場所にある [CODE[default]]
+という directory の名前を変更します 
+[WEAK[(この中には最低限必要であろう WikiPage が含まれています)]]。
+
+[7] [CODE(file)[wikidata]] directory 内に、
+[CODE(file)[page]], [CODE(file)[lock]], 
+[CODE(file)[log]] という3つの directory
+を作っておきます。これらはそれぞれ、 WikiPage,
+lock file, 記録を入れるのに使われます。
+[WEAK[(これらを他の場所とか他の名前にしたいときは、 [CODE(file)[suikawiki-config.ph]] で書き換えてください。 [CODE(file)[suikawiki-config.ph]] 以外の書き換えが必要だとしたらそれは不具合なので、報告してください。)]]
+
+[[#comment]]
+
+** 設定ファイル
+
+[6] [CODE(file)[wikidata/suikawiki-config.ph]] は当該 wiki
+の設定ファイルです。
+>>4 で配置を変更した場合はこのファイル内の経路も正しく設定しないといけません。
+
+''重要'': CVS の [CODE(file)[default/suikawiki-config.ph]]
+は古くて使い物にならないかもしれません。
+<IW:SuikaCVS:"suikawiki/wikidata/suikawiki-config.ph">
+の最新版を使ってみてください。
+
+また、最初の方に wiki の [[URI]] を設定するところがありますから、
+ここも適当に直しておきます。
+
+[9] [CODE(file)[suikawiki-config.ph]]
+には他にも色々設定項目がありますが、
+とりあえず動かすだけならこれだけでいいはずです。
+
+[[#comment]]
+
+[8] Plugin を compile します。 [CODE(file)[lib/SuikaWiki/Plugin]]
+で、 [KBD[perl mkplugin.pl プラグイン名.pm]]
+として作っていきます。プラグイン名は同じ directory
+に入っている[VAR[プラグイン名]].wps というファイルと同じ名前を指定します。
+[WEAK[([[make]] があれば、 [KBD[make プラグイン名.pm]] でも OK です。将来は [KBD[make all]] で出来るようになるかもしれません。)]]
+[WEAK[Plugin の compile が終わったら、 [CODE[[VAR[*]].wps]] 及び [CODE(file)[mkplugin.pl]], [CODE(file)[Makefile]] は削除しても構いません。]]
+
+最近の CVS 版では、
+[CODE(file)[misc/plugins/]] で追加の plugin
+が提供されています。必要っぽい名前のものは compile
+しておきましょう。
+
+[WEAK[なお、 plugin によっては他のモジュールや外部命令が必要かもしれません。たとえば、 Image plugin では [[ImageMagick]] の [KBD[convert]] 命令があるといいです。 (なくてもいいです。形式変換が出来ないだけだから。)]]
+
+[[#comment]]
+
+** 管理者の合言葉
+
+[11] 管理用合言葉を設定します。
+[[#form:'%wiki-admin-change-password();':'':'%output(form=>0);']]
+
+なお、この合言葉入力欄は <IW:SuikaWiki:WikiPlugin> [CODE[WikiAdmin]]
+に含まれています。気になるなら、悪戯を防ぐために plugin の directory からこの plugin
+([CODE(filename)[lib/SuikaWiki/Plugin/WikiAdmin.pm]])
+を取り除いておけば欄は表示されません。
+
+[[#comment]]
+
+** WikiPage の用意
+
+[12] 正しく設定出来ていれば
+[WEAK[(そしてこの WikiPage の記述が古くなっていなければ)]]
+以上でとりあえず動きます。
+
+実用的には更に幾つかの WikiPage を用意する必要があります。
+-CVS or 本家 SuikaWiki のをそのまま流用すればよいもの
+--[[Wiki//Page//Create]]
+--[[Wiki//Page//Search]]
+--[[IndexPage]]
+--[[RecentChanges]]
+--[[Wiki//Resource//ja]]
+--[[Wiki//Resource//en]]
+--[[NewPageTemplate]]
+--[[Wiki//Style//List//HTML]]
+--[[Wiki//Style//SuikaWiki//HTML]]
+--[[Wiki//Plugin//Info]]
+--このほか必要に応じて WikiResource//*
+-適切な内容で書いておくべきもの
+--[[HomePage]]
+--[[Wiki//Admin]]
+--[[Wiki//News]]
+--[[Wiki//Help]]
+--[[Wiki//Page//License]]
+--[[Wiki//Referer//IgnoreSite]]
+-このほか、あると良いもの
+--[[SandBox]]
+--Wiki//Edit//Help
+--[[Wiki//InterWikiName]]
+--[[Wiki//Referer//SiteName]]
+
+[[#comment]]
+
+* SuikaWiki 2 導入メモ (2003年12月)
+
+[1] [[SuikaWiki2]] を実際に導入してみました。
+その時の手順をメモっておきます。
+作業内容は概略だけなので、詳細は [[SuikaWiki//Setup]]
+の方を見て下さい。 (内容は古いですけど。)
+
+= SuikaWiki の入手== CVS <IW:SuikaCVS:"suikawiki/script/"> から '''[CODE[branch-suikawiki-1]] 枝'''の一式を拾ってきて、適当なディレクトリに配置
+= 設定ファイルの修正
+== [CODE(file)[default/]] を [CODE(file)[wikidata/]] に rename
+== [CODE(file)[wikidata/log/]], [CODE(file)[wikidata/lock/]] を一応作っておく。
+== CVS から'''[CODE[branch-suikawiki-1]] 枝'''の <IW:SuikaCVS:"suikawiki/wikidata/suikawiki-config.ph">
+を拾ってきて、 [CODE(file)[wikidata/]] のものを上書き
+== [CODE(file)[suikawiki-config.ph]] の先頭にある自身の URI に関する設定を修正
+= 外部モジュールの準備
+== [[manakai]] <IW:SuikaCVS:"messaging/manakai/"> を拾ってきて、 SuikaWiki script から見えるようにする。[WEAK[(SuikaWiki の [CODE(file)[lib/]] に manakai の [CODE(file)[lib/Message/]] をコピれば十分。)]]
+== [[Char::Class]] <IW:SuikaCVS:"perl/charclass/"> を拾ってきて、 SuikaWiki script から見えるようにする。
+[WEAK[([CODE(file)[Char/Class/XML.pm]] を作って、 SuikaWiki の [CODE(file)[lib/]] にコピれば十分。蝕んだ perl では動かないので、不安なら [KBD[make test]] で確認すべし。)]]
+= WikiPlugin module 群の comiple
+== [CODE(file)[lib/SuikaWiki/Plugin/]] 以下にある plugin を compile。[WEAK[なくても動くものもあるが、確認するのが面倒なら全部 compile してしまう。]]
+== [CODE(file)[misc/plugin/]] 以下にある plugin を必要に応じて compile。
+= 初期 WikiPage の準備
+== [CODE[Referer]] plugin を使う場合、 [CODE(URI)[[VAR[wiki の URI]]?mycmd=edit;mypage=Wiki//Referer//IgnoreSite]]
+をブラウザで開いて、
+[VAR[wiki の URI]] を加える。 (書式はこの wiki の [[Wiki//Referer//IgnoreSite]] を参照されたい。)
+[WEAK[こうしないと、 wiki 内の移動の Referer が記録されてしまう。]]
+== この wiki の WikiPage を参考に、次の WikiPage を用意する。
+(面倒なら丸写しでいい。)
+==- [CODE(WikiPage)[[[Wiki//Resource//ja]]]]
+==- [CODE(WikiPage)[[[Wiki//Page//Create]]]]
+==- [CODE(WikiPage)[[[Wiki//Page//Search]]]]
+==- [CODE(WikiPage)[[[Wiki//Style//List//HTML]]]]
+==- [CODE(WikiPage)[[[Wiki//Style//SuikaWiki//HTML]]]]
+==- [CODE(WikiPage)[[[Wiki//Style//Plugin//HTML]]]]
+==- [CODE(WikiPage)[[[Wiki//Style//浮動物//HTML]]]]
+==- [CODE(WikiPage)[[[Wiki//MenuBar]]]]
+
+これくらいすれば、最低限使えるようになるでしょう。
+
+[[#comment]]
+
+* メモ@
+
+
+1.2
+log
+@Upgrade to SuikaWiki 3
+@
+text
+@d1 1
+a1 1
+#?SuikaWiki/0.9
+d135 1
+a135 1
+--[[Wiki//Edit//Help]]
+@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@d2 141
+d179 4
+@
+

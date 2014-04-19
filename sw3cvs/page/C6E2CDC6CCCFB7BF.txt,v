@@ -1,0 +1,154 @@
+head	1.2;
+access;
+symbols
+	suikawiki3-final:1.2;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.2
+date	2005.04.03.02.05.58;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2004.05.31.02.04.46;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@
+[1]
+>
+:内容モデル (content model):
+許容できる[[要素内容]]を定義する[[モデル群]]及び[[例外]]を指定する[[要素宣言]]の[[引数]]。
+([[JIS X 4151]]‐1992 3. (192))
+
+- [12] 【SGML】 [CODE(ABNF)[[DFN[内容モデル]] := ([[モデル群]] / [[ANY]]) [1*[[ps]] [[例外]] ] ;; (126)]]
+- [13] [CODE(ABNF)[[DFN[例外]] := ([[排除要素]] [1*ps 添加要素]) / [[添加要素]] ;; (138)]]
+
+[16]
+> ある型の[[要素]]について、
+出現可能な[[子要素]]・子[[文字データ]]の種類とその順序を規定する単純な文法。
+(<http://www.w3.org/TR/REC-xml#dt-content-model>, 
+<http://www.w3.org/TR/REC-xml#sec-mixed-content>,
+<http://www.w3.org/TR/REC-xml#determinism> を参照。)
+
+[2] [[要素内容]]モデル:
+- children = (choice / seq) [ occur ] ;; [47]
+- cp = (child-type / choice / seq) [ occur ] ;; [48]
+- choice = "(" [ [[S]] ] cp 1*( [ S ] "|" [ S ] cp) [ S ] ")" ;; [49]
+- seq = "(" [ S ] *( [ S ] "," [ S ] cp) [ S ] ")" ;; [50]
+- occur = "?" / "*" / "+"
+- child-type = Name ;; 子要素型名
+
+[[混合内容]]モデル:
+- Mixed = "(" [S] '#PCDATA' *([S] "|" [S] child-type) [S] ")" "*" / "(" [S] '#PCDATA' [S] ")"
+
+[3] 非構文的制約:
+-[4] [決定的内容モデル] ある要素が内容モデル中の複数の要素型の指定に該当しうる時、[[互換性のため]]、これを[[誤り]]とする。 ([[決定的内容モデル]], [[SGML]] の言葉では[[曖昧でない内容モデル]]。)
+-[5] [群・引数実体が適当に入れ子になっていること] 開き括弧と閉じ括弧は同じ[[実体]]の[[置換文]]中になければなりません。 ([[妥当性制約]])
+-[6] [引数実体中の群の完全性] [[相互運用性のため]]、
+引数実体の置換文は1つ以上の非[[空白]]文字を含むべきです。
+また、その最初及び最後の非空白文字は接続子 ([CODE(XML)[|]] / [CODE(XML)[,]])
+ではないべきです。
+-[7] [要素型の重複がないこと] 混合内容モデルでは、1つの要素型は1度しか出現しては行けません。 (妥当性制約)
+
+[8] >>4 に反する例:
+-[SAMP(XML)[  ( (b , c) | (b , d) )  ]] (正 [SAMP(XML)[  ( b , ( c | d ) )  ]])
+- [11] [WEAK[2003-09-29 02:10:01 +00:00]] ''[[aaa]]'': aaa
+[[#comment]]
+
+[9] >>5 に反する例:
+-[SAMP(XML)[ ( %model; ]]
+[[#comment]]
+
+[10] >>6 に反する例:
+-[SAMP(XML)[<!ENTITY % model "   ">]]; [SAMP(XML)[ ( %model; foo ) ]]
+-[SAMP(XML)[<!ENTITY % model " bar | ">]]; [SAMP(XML)[ ( %model; foo ) ]]
+-[SAMP(XML)[<!ENTITY % con " | ">]]; [SAMP(XML)[ ( bar %con; foo ) ]]
+[[#comment]]
+
+
+[14] ''要素字句とパラメタ実体参照 - 2003年12月 - マーク付けノート'' 
+<http://www.satoshii.org/markup/notes/2003/12#date12-3>
+
+[15] >>14 は、 
+[SAMP(SGML)[<![[ENTITY]] % foo "foo"> <!ELEMENT bar (%foo;+)>]] 
+のように[[出現標識]]が別の実体に分断されていてはいけないという話。
+
+[17] >>14-15
+
+> 直接内容モデルに [CODE[%baz.qname;+]] 
+と記述すればエラーになることに注意して下さい。
+> ちなみに、XML にはこの辺りの規則についての明確な記述はありません。
+何らかのエラーになるのは間違いありませんが、invalid なのか 
+not well-formed なのかも判然としない状態です。
+
+という話の答えが今更ながら判った気がするので書いてみます。
+
+> When a parameter-entity reference is recognized in the DTD 
+and included, its replacement text MUST be enlarged by the 
+attachment of one leading and one following space (#x20) 
+character; the intent is to constrain the replacement text of 
+parameter entities to contain an integral number of 
+grammatical tokens in the DTD.
+(XML 4.4.8 Included as PE <http://www.w3.org/TR/REC-xml/#as-PE>,
+<http://www.w3.org/TR/xml11/#as-PE>)
+
+という規定 [WEAK[(XML にだけあって SGML にはない。)]]
+に従えば、 [SAMP(XML)[%baz.qname;+]]
+は引数実体参照を展開すると [SAMP(XML)[baz +]] のようになります。
+
+これは 48 番の生成規則
+<http://www.w3.org/TR/REC-xml/#NT-cp> に違反します。
+ですから非[[整形式]]になります。
+
+
+[[#comment]]
+
+* 内容模型 (XHTML 式文書型定義)
+
+[19]
+>
+:[RUBYB[内容模型][content model]]:
+ある[[要素型]]の[[実現値]]中で認められると宣言されたマーク構造。
+[[XML 1.0]] は[[要素内容]]だけを含む ([[文字データ]]なしの)
+[[要素]]と[[混合内容]] 
+([[文字データ]]に加えて[[子要素]]を散在させられる[[要素]])
+の2種類に分けています。後者は[[内容]]の規定が
+[CODE(XML)[#[[PCDATA]]]] ([[文字データ]]を表します。)
+で始まります。 [SRC[XHTML m12n Term]]
+
+[18] 仕様書:
+-[[XHTML m12n]]
+--[XHTML m12n Term] [CSECTION[2. Terms and Definitions]]
+<IW:XHTML1m12n:"terms.html#a_terms">
+
+[[#comment]]
+
+* メモ
+@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@d1 1
+a1 1
+#?SuikaWiki/0.9
+d89 23
+@
+

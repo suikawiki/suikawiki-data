@@ -1,0 +1,192 @@
+head	1.3;
+access;
+symbols
+	before-db-leaffile:1.2
+	after-upgrade-to-suikawiki-3:1.2
+	before-fork-suikawiki3:1.2
+	after-restore-20040122:1.2;
+locks; strict;
+comment	@# @;
+
+
+1.3
+date	2004.06.27.02.05.38;	author wakaba;	state dead;
+branches;
+next	1.2;
+
+1.2
+date	2003.01.26.04.49.33;	author w;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2002.07.29.12.01.58;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@*RFC 822 第5章
+
+**5.  DATE AND TIME SPECIFICATION
+
+***5.1.  SYNTAX
+
+     date-time   =  [ day "," ] date time        ; dd mm yy
+                                                 ;  hh:mm:ss zzz
+
+     day         =  "Mon"  / "Tue" /  "Wed"  / "Thu"
+                 /  "Fri"  / "Sat" /  "Sun"
+
+     date        =  1*2DIGIT month 2DIGIT        ; day month year
+                                                 ;  e.g. 20 Jun 82
+
+     month       =  "Jan"  /  "Feb" /  "Mar"  /  "Apr"
+                 /  "May"  /  "Jun" /  "Jul"  /  "Aug"
+                 /  "Sep"  /  "Oct" /  "Nov"  /  "Dec"
+
+     time        =  hour zone                    ; ANSI and Military
+
+     hour        =  2DIGIT ":" 2DIGIT [":" 2DIGIT]
+                                                 ; 00:00:00 - 23:59:59
+
+     zone        =  "UT"  / "GMT"                ; Universal Time
+                                                 ; North American : UT
+                 /  "EST" / "EDT"                ;  Eastern:  - 5/ - 4
+                 /  "CST" / "CDT"                ;  Central:  - 6/ - 5
+                 /  "MST" / "MDT"                ;  Mountain: - 7/ - 6
+                 /  "PST" / "PDT"                ;  Pacific:  - 8/ - 7
+                 /  1ALPHA                       ; Military: Z = UT;
+                                                 ;  A:-1; (J not used)
+                                                 ;  M:-12; N:+1; Y:+12
+                 / ( ("+" / "-") 4DIGIT )        ; Local differential
+                                                 ;  hours+min. (HHMM)
+
+***5.2.  SEMANTICS
+
+          If included, day-of-week must be the day implied by the date
+     specification.
+
+          Time zone may be indicated in several ways.  "UT" is Univer-
+     sal  Time  (formerly called "Greenwich Mean Time"); "GMT" is per-
+     mitted as a reference to Universal Time.  The  military  standard
+     uses  a  single  character for each zone.  "Z" is Universal Time.
+     "A" indicates one hour earlier, and "M" indicates 12  hours  ear-
+     lier;  "N"  is  one  hour  later, and "Y" is 12 hours later.  The
+     letter "J" is not used.  The other remaining two forms are  taken
+     from ANSI standard X3.51-1975.  One allows explicit indication of
+     the amount of offset from UT; the other uses  common  3-character
+     strings for indicating time zones in North America.
+
+*RFC 1123 第5.2.14節
+
+**5.2.14  RFC-822 Date and Time Specification: RFC-822 Section 5
+
+         The syntax for the date is hereby changed to:
+
+            date = 1*2DIGIT month 2*4DIGIT
+
+
+         All mail software SHOULD use 4-digit years in dates, to ease
+         the transition to the next century.
+
+         There is a strong trend towards the use of numeric timezone
+         indicators, and implementations SHOULD use numeric timezones
+         instead of timezone names.  However, all implementations MUST
+         accept either notation.  If timezone names are used, they MUST
+         be exactly as defined in RFC-822.
+
+         The military time zones are specified incorrectly in RFC-822:
+         they count the wrong way from UT (the signs are reversed).  As
+         a result, military time zones in RFC-822 headers carry no
+         information.
+
+         Finally, note that there is a typo in the definition of "zone"
+         in the syntax summary of appendix D; the correct definition
+         occurs in Section 3 of RFC-822.
+
+
+*説明
+
+「曜日(英略), 日 月(英略) 年 時:分:秒 時間帯」という形式です。
+このうち、曜日と秒は省略可能です。
+
+年は2桁の西暦年でしたが、 RFC 1123 で4桁に修正されました。
+(ちなみに、なぜか RFC 822 の前の世代の[[RFC733の日付形式]]では
+4桁も OK になっていました。)
+
+時間帯は数字で書く方法と文字列で書く方法がありますが、
+RFC 1123 (や後の[[RFC2822の日付形式]]) では数字で書く方法を推奨しています。
+[[時間帯を表す文字列]]は前の世代の[[RFC733の日付形式]]から種類が減っています。
+一方実際にはここで示されていないもの (例 JST = +0900) がしばしば
+使われました。
+
+時間帯を表す文字列には、軍の記法もありますが、 RFC 733, 822 の
+BNF の注釈では符号が逆になっています。このため実装により解釈が
+正反対になってしまい、 RFC 1123 は「この書き方は情報を伝達しない」、
+RFC 2822 は「不明な時間帯と解釈すべし」としています。
+
+*実装上の注意点
+
+RFC 822 の BNF には直接現れていませんが、 [[RFC822のlinear-white-space]]
+の挿入があり得ます。すなわち、
+
+  Wed (= Wednesday), 15 (th) Mar (March = 3rd month of year) 2002
+    12 (hour):32 (minute):23 (second) (timezone =) +0900 (JST)
+
+という書き方も仕様上は問題ありません。
+
+時間帯を表す文字列についての注釈に間違いがあります(前述)。
+また、仕様に定められていない[[時間帯を表す文字列]]が使われていることが
+少なからずあります。 (最近は少なくなりました。)
+
+RFC 822 の最後の BNF syntax は timezone が途中で途切れています。
+(RFC 1123 に言及あり。)
+
+RFC 822 の message 例中に登場する日付 「27 Aug 76 0932 PDT」
+は時・分の間に「:」が入らない RFC 733 以前の書き方で、
+不適当です。
+
+新しい実装は、 RFC 822 の日付形式の subset である [[RFC2822の日付形式]]
+に沿うことが望ましいと考えられます。
+
+*SEE ALSO
+
+-[[日付形式]]
+-[[RFC733の日付形式]]
+-[[RFC2822の日付形式]]
+
+*LICENSE
+
+See [[RFCのライセンス]]
+
+
+- [1] 1993年の調査では半分くらいのメッセージが4桁年号に移行していたとか。 (RFC 1123 は1989年。) 時間帯は数値指定も多いものの文字列指定のほうが圧倒的ですかね。非標準名もよく見かけます。
+- [2] [WEAK[2003-01-25 14:07]] ''>>1'': 今でも文字列名の時間帯はたまに見かけますね。2桁年号とか、秒指定がないのとかはもう何年も見ていませんが。
+@
+
+
+1.2
+log
+@auto-commited
+@
+text
+@@
+
+
+1.1
+log
+@Updated.
+@
+text
+@d136 2
+@
+

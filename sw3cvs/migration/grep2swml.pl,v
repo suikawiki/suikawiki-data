@@ -1,0 +1,56 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.1
+date	2010.05.04.00.56.31;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@added to the repository
+@
+text
+@#!/usr/bin/perl
+use strict;
+use warnings;
+
+use Encode::EUCJPSW;
+
+my @@entry;
+while (<>) {
+  if (s/^([^:]+)://) {
+    my $path = $1;
+    if ($path =~ s[^page/][]) {
+      $path =~ s/\.txt$//;
+      $path =~ s[\.ns/][//]g;
+      $path =~ s/([0-9A-Fa-f]{2})/pack 'C', hex $1/ge;
+      $path = Encode::decode ('euc-jp-sw', $path);
+      $path = "[[$path]]";
+    }
+    push @@entry, [$path, Encode::decode ('euc-jp-sw', $_)];
+  } else {
+    warn $_;
+  }
+}
+
+sub e ($) {
+  my $s = shift;
+  $s =~ s/([\[\]']|^[,-=*])/+{qw[' 1 , 1 - 1 = 1 * 1]}->{$1} ? "[SPAN[$1]]" : "'''$1'''"/ge;
+  return $s;
+} # e
+
+binmode STDOUT, ':encoding(utf8)';
+for (1..$#entry) {
+  printf "[%d] %s\n[PRE(code)[\n%s]PRE]\n\n", $_, $entry[$_]->[0], e ($entry[$_]->[1]);
+}
+@

@@ -1,0 +1,152 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1
+	before-db-leaffile:1.1
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2003.07.31.08.29.23;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9
+[1] [[RFC1738]] が [CODE(URI)[[[file:]]]]
+[[URI]] [[方式]]を定義しています。
+
+[[#comment]]
+
+*RFC 1738 3.10 FILES
+>The file URL scheme is used to designate files accessible on a
+particular host computer. This scheme, unlike most other URL schemes,
+does not designate a resource that is universally accessible over the
+Internet.
+
+[CODE(URI)[file]] URL 方式は、
+特定のホスト計算機で接続可能なファイルを指示するのに使います。
+この方式は、他のほとんどの URL
+方式とは異なり、インターネット上で普遍的に接続可能な資源を指示しません。
+
+>A file URL takes the form:
+
+[CODE(URI)[file]] URL は、
+
+>
+-       file://<host>/<path>
+
+>where <host> is the fully qualified domain name of the system on
+which the <path> is accessible, and <path> is a hierarchical
+directory path of the form <directory>/<directory>/.../<name>.
+
+の形式を取ります。ここで、
+[CODE[<host>]] は [CODE[<host>]]
+に接続可能なシステムの[[完全修飾ドメイン名]]で、
+[CODE[<path>]] は
+[CODE[<directory>/<directory>/.../<name>]]
+の形式の階層的ディレクトリ経路です。
+
+>For example, a VMS file
+
+例えば、 [[VMS]] ファイル
+>
+-     DISK$USER:[MY.NOTES]NOTE123456.TXT
+
+>might become
+
+は
+
+> 
+-   <URL:file://vms.host.edu/disk$user/my/notes/note12345.txt>
+
+となるでしょう。
+
+>As a special case, <host> can be the string "localhost" or the empty
+string; this is interpreted as `the machine from which the URL is
+being interpreted'.
+
+特別な場合として、 [CODE[<host>]]
+は文字列 [CODE(URI)[localhost]]
+又は空文字列となることができます。
+これは URL が解釈される機械と解釈します。
+
+>The file URL scheme is unusual in that it does not specify an
+Internet protocol or access method for such files; as such, its
+utility in network protocols between hosts is limited.
+
+[CODE[file]] URL 方式は、
+インターネットのプロトコルやファイルへの接続方法を指定しないという点で普通ではありません。
+ですから、ホスト間のネットワーク・プロトコル中での有用性は限られています。
+
+* BNF
+
+[2] RFC 1738 の5章では [[ABNF]]
+定義が挙げられています。
+[CODE(URI)[file:]] URI
+に関係する部分だけを抜粋します:
+
+- fileurl        = "file://" [ host | "localhost" ] "/" fpath
+- host           = hostname | hostnumber
+- hostname       = *[ domainlabel "." ] toplabel
+- domainlabel    = alphadigit | alphadigit *[ alphadigit | "-" ] alphadigit
+- toplabel       = alpha | alpha *[ alphadigit | "-" ] alphadigit
+- alphadigit     = alpha | digit
+- hostnumber     = digits "." digits "." digits "." digits
+- digits         = 1*digit
+- fpath          = fsegment *[ "/" fsegment ]
+- fsegment       = *[ uchar | "?" | ":" | "@@" | "&" | "=" ]
+- escape         = "%" hex hex
+- unreserved     = alpha | digit | safe | extra
+- uchar          = unreserved | escape
+- safe           = "$" | "-" | "_" | "." | "+"
+- extra          = "!" | "*" | "'" | "(" | ")" | ","
+
+[3] この定義をちょっと見やすく書き直してみます。
+
+- fileurl
+-- = "file:///" fpath
+-- / "file://localhost/" fpath
+-- / "file://" host "/" fpath 
+- host = hostname / hostnumber
+- hostname = 1*(domainlabel ".") toplabel
+-- ;; 元の定義では [CODE(BNF)[*]]
+になっていますから、 
+[SAMP(URI)[file://foo/]]
+が可能です。しかし、本文中の規定により [[FQDN]] でなければなりませんから、必ず [CODE(ABNF)[1*]]
+になります。
+- domainlabel = ([[ALPHA]] / [[DIGIT]]) [*(ALPHA / DIGIT / "-") (ALPHA / DIGIT)]
+- toplabel = domainlabel - (DIGIT 1*(ALPHA / DIGIT / "-"))
+-- ;; toplabel は数字で始まってはいけない。
+- hostnumber = [[IPv4address]]
+-- ;; 元の BNF では「1234.456.3.2」
+のような値も許されてしまうが、
+本文 (3.1) の規定により誤り。
+- fpath = fsegment *("/" fsegment)
+- fsegment = *(_fchar / escape)
+- escape = "%" 2[[HEXDIGIT]]
+- fchar = <[A-Za-z0-9?:@@&=$_.+!*'(),-]>
+
+- [4] [CODE(URI)[file:]] の部分は小文字で書くのが正式ですが、実装は大文字も受け付けるべきとされています。その他の部分 ([CODE(URI)[localhost]] の部分も含む。) の大文字・小文字の区別についての言及はありません。
+- [5] >>4 あ、 [CODE(URI)[escape]] に大文字も小文字も使えることは明記されています。
+- [6] [CODE[hostname]] は FQDN ですから、大文字・小文字は区別されないと予想されます。ですから [CODE(URI)[localhost]] もされないと予想は出来ますが、定かではありません。 [CODE[fpath]] の部分はシステム依存でしょうが、 [[Un|x]] など多くのシステムで区別しないと現実的に使い物になりませんから、少なくても区別を無視しないといけないということはないでしょう。 (そんな重要な要求は書き忘れるはずがないし。)
+- [7] まあ明記されてないのは常識で判断して問題ないということでしょうな。
+[[#comment]]
+
+*RFC の部分の License
+[[RFCのライセンス]]
+* メモ@

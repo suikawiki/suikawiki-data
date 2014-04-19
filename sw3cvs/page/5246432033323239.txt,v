@@ -1,0 +1,2497 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.1
+date	2004.08.03.02.03.25;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@'''Delta encoding in HTTP [INS[HTTP における差分符号化]]'''
+-Network Working Group                                          
+-Request for Comments: 3229                                   
+-Category: Standards Track                              
+- J. Mogul
+- Compaq WRL
+- B. Krishnamurthy
+-                                                              F. Douglis
+-                                                                    AT&T
+-                                                             A. Feldmann
+-                                                   Univ. of Saarbruecken
+-                                                               Y. Goland
+-                                                             A. van Hoff
+-                                                                 Marimba
+-                                                          D. Hellerstein
+-                                                                ERS/USDA
+-                                                            January 2002
+
+* Status of this Memo
+
+   This document specifies an Internet standards track protocol for the
+   Internet community, and requests discussion and suggestions for
+   improvements.  Please refer to the current edition of the "Internet
+   Official Protocol Standards" (STD 1) for the standardization state
+   and status of this protocol.  Distribution of this memo is unlimited.
+
+* Copyright Notice
+
+   Copyright (C) The Internet Society (2002).  All Rights Reserved.
+
+* Abstract
+> This document describes how delta encoding can be supported as a
+compatible extension to HTTP/1.1.
+
+この文書は、 HTTP/1.1 に互換な拡張としてどう差分符号化に対応することができるかを記述します。
+
+> Many HTTP (Hypertext Transport Protocol) requests cause the retrieval
+of slightly modified instances of resources for which the client
+already has a cache entry.  Research has shown that such modifying
+updates are frequent, and that the modifications are typically much
+smaller than the actual entity.  In such cases, HTTP would make more
+efficient use of network bandwidth if it could transfer a minimal
+description of the changes, rather than the entire new instance of
+the resource.  This is called "delta encoding."
+
+多くの HTTP (ハイパーテキスト転送プロトコル) 要求は
+クライアントが既にキャッシュ項目を持つ資源を微妙に修正した実現値を取り出すこととなります。
+研究によればそのような修正による更新は頻繁にあり、
+その修正は典型的なところでは実体の実体より小さいのです。
+そのような場合、 HTTP は資源の新しい実現値全体を転送するのではなく、
+変更の最小限の記述を転送することができればネットワーク帯域のより効率的な使用が行えるでしょう。
+これを「差分符号化」と呼びます。
+
+* Table of Contents
+
+   1 Introduction....................................................  3
+        1.1 Related research and proposals...........................  4
+   2 Goals...........................................................  5
+   3 Terminology.....................................................  6
+   4 The HTTP message-generation sequence............................  8
+        4.1 Relationship between deltas and ranges................... 11
+   5 Basic mechanisms................................................ 13
+        5.1 Background: an overview of HTTP cache validation......... 13
+        5.2 Requesting the transmission of deltas.................... 14
+        5.3 Choice of delta algorithm and format..................... 16
+        5.4 Identification of delta-encoded responses................ 16
+        5.5 Guaranteeing cache safety................................ 17
+        5.6 Transmission of delta-encoded responses.................. 18
+        5.7 Examples of requests combining Range and delta encoding.. 19
+   6 Encoding algorithms and formats................................. 22
+   7 Management of base instances.................................... 23
+        7.1 Multiple entity tags in the If-None-Match header......... 24
+        7.2 Hints for managing the client cache...................... 25
+   8 Deltas and intermediate caches.................................. 27
+   9 Digests for data integrity...................................... 28
+   10 Specification.................................................. 28
+        10.1 Protocol parameter specifications....................... 28
+        10.2 IANA Considerations..................................... 30
+        10.3 Basic requirements for delta-encoded responses.......... 30
+        10.4 Status code specifications.............................. 30
+             10.4.1 226 IM Used...................................... 31
+        10.5 Header specifications................................... 31
+             10.5.1 Delta-Base....................................... 31
+             10.5.2 IM............................................... 32
+             10.5.3 A-IM............................................. 33
+        10.6 Caching rules for 226 responses......................... 35
+        10.7 Rules for deltas in the presence of content-codings..... 36
+             10.7.1 Rules for generating deltas in the presence of
+                    content-codings.................................. 37
+             10.7.2 Rules for applying deltas in the presence of
+                    content-codings.................................. 37
+             10.7.3 Examples for using A-IM, IM, and content-codings. 38
+        10.8 New Cache-Control directives............................ 40
+             10.8.1 Retain directive................................. 40
+             10.8.2 IM directive..................................... 40
+        10.9 Use of compression with delta encoding.................. 41
+        10.10 Delta encoding and multipart/byteranges................ 42
+   11 Quantifying the protocol overhead.............................. 42
+   12 Security Considerations........................................ 44
+   13 Acknowledgements............................................... 44
+   14 Intellectual Property Rights................................... 44
+   15 References..................................................... 44
+   16 Authors' addresses............................................. 47
+   17 Full Copyright Statement....................................... 49
+
+* 1 Introduction
+> The World Wide Web is a distributed system, and so often benefits
+from caching to reduce retrieval delays.  Retrieval of a Web resource
+(such as a  document, image, icon, or applet) over the Internet or
+other wide-area networks usually takes enough time that the delay is
+over the human threshold of perception.  Often, that delay is
+measured in seconds.  Caching can often eliminate or significantly
+reduce retrieval delays.
+
+World Wide Web は分散システムであり、したがってしばしば取出しの遅延を削減するために[[キャッシュ付け]]から利益を得ます。[[インターネット]]や他の広域網上の
+Web [[資源]] ([[文書]], [[画像]], [[アイコン]]や [[applet]])
+の取出しは通常遅延が人間の認識の閾値を超えるのに十分な時間がかかります。
+しばしば、この遅延は秒単位となります。キャッシュ付けはしばしば取出し遅延を除去したり著しく削減したりすることができます。
+
+> Many Web resources change over time, so a practical caching approach
+must include a coherency mechanism, to avoid presenting stale
+information to the user.  Originally, the Hypertext Transfer Protocol
+(HTTP) provided little support for caching, but under operational
+pressures, it quickly evolved to support a simple mechanism for
+maintaining cache coherency.
+
+多くの [[Web]] 資源は刻々と変化するので、現実的なキャッシュ付け手法は[[腐敗]]した情報を[[利用者]]に提示することを避けるための密着機構を含まなければなりません。元々、ハイパーテキスト転送プロトコル
+([[HTTP]]) はキャッシュ付けにほとんど対応していませんでしたが、運用の圧力の元、キャッシュの密着性を維持するための単純な仕組みを提供するようにすばやく改良されました。
+
+> In HTTP/1.0 [2], the server may supply a "last-modified" timestamp
+with a response.  If a client stores this response in a cache entry,
+and then later wishes to re-use the response, it may transmit a
+request message with an "If-modified-since" field containing that
+timestamp; this is known as a conditional retrieval.  Upon receiving
+a conditional request, the server may either reply with a full
+response, or, if the resource has not changed, it may send an
+abbreviated reply, indicating that the client's cache entry is still
+valid.  HTTP/1.0 also includes a means for the server to indicate,
+via an "Expires" timestamp, that a response will be valid until that
+time; if so, a client may use a cached copy of the response until
+that time, without first validating it using a conditional retrieval.
+
+[[HTTP/1.0]] では、[[鯖]]は[[応答]]に「最終修正」[[時刻印]]を供給することができます。[[クライアント]]がこの応答を[[キャッシュ項目]]に蓄積していて、後からその応答を再利用したいと思うなら、時刻印を含めた
+[CODE(HTTP)[If-modified-since]] 欄を添えて[[要求メッセージ]]を転送することができます。
+これは[[条件付取出し]]と言われています。鯖は、[[条件付要求]]を受信したら、
+完全な応答で返答しても構いませんし、その資源が変更されていなければ、
+クライアントのキャッシュ項目が依然[[妥当]]であることを示す、
+省略した返答を送信しても構いません。 HTTP/1.0
+はある応答がある時刻までは妥当であると鯖が示すための
+[CODE(HTTP)[[[Expires]]]] 時刻印という手段をも含んでいます。
+その場合は、クライアントは応答のキャッシュした複製をその時刻までは条件付取出しを使って最初に健勝しなくても使用して構いません。
+
+> HTTP/1.1 [10] adds many new features to improve cache coherency and
+performance.  However, it preserves the all-or-none model for
+responses to conditional retrievals: either the server indicates that
+the resource value has not changed at all, or it must transmit the
+entire current value.
+
+[[HTTP/1.1]] はキャッシュの密着性と効率を向上させるための新しい機能を多く加えました。
+しかし、条件付取出しに対する応答の「すべてまたは何もなし」模型はそのままにしています。
+鯖は資源値が全く変更されていないことを示すか、または現在値全体を転送しなければなりません。
+
+> Common sense suggests (and traces confirm), however, that even when a
+Web resource does change, the new instance is often substantially
+similar to the old one.  If the difference, or "delta", between the
+two instances could be sent to the client instead of the entire new
+instance, a client holding a cached copy of the old instance could
+apply the delta to construct the new version.  In a world of finite
+bandwidth, the reduction in response size and delay could be significant.
+
+しかし常識的に (そして追跡が裏付けるように)、
+Web 資源が変更される時といっても、しばしば大抵は新しい[[実現値]]は古い実現値と似ています。
+その二つの実現値の差異、「差分」を新しい実現値全体の代わりにクライアントに送信することができれば、古い実現値のキャッシュした複製を保持しているクライアントは新しい版を構築するために差分を適用することができます。
+有限の帯域の世界では、応答の寸法と遅延の削減は重大となり得ます。
+
+> One can think of deltas as a way to squeeze as much benefit as
+possible from client and proxy caches.  Rather than treating an
+entire response as the "cache line", with deltas we can treat
+arbitrary pieces of a cached response as the replaceable unit, and
+avoid transferring pieces that have not changed.
+
+差分はクライアントと串のキャッシュから可能な限り利益を絞り取る方法であると考えることができます。応答全体を「キャッシュ線」として扱うよりもむしろ、
+差分をもってキャッシュした資源の任意の欠片を置換可能な単位として扱い、
+変更されていない欠片を転送することを避けることができます。
+
+> This document proposes a set of compatible extensions to HTTP/1.1
+that allow clients and servers to use delta encoding with minimal overhead.
+
+この文書は、クライアントと鯖が最小の overhead で差分符号化を使用することを可能にする HTTP/1.1 への互換な拡張の集合を提案します。
+
+> We assume that the reader is familiar with the HTTP/1.1 specification.
+
+読者は HTTP/1.1 仕様書に精通しているものと想定します。
+
+** 1.1 Related research and proposals
+> The idea of delta encoding to reduce communication or storage costs
+is not new.  For example, the MPEG-1 video compression standard
+transmits occasional still-image frames, but most of the frames sent
+are encoded (to oversimplify) as changes from an adjacent frame.  The
+SCCS and RCS [27] systems for software version control represent
+intermediate versions as deltas; SCCS starts with an original version
+and encodes subsequent ones with forward deltas, whereas RCS encodes
+previous versions as reverse deltas from their successors.
+Jacobson's technique for compressing IP and TCP headers over slow
+links [17] uses a clever, highly specialized form of delta encoding.
+
+通信や蓄積の経費の削減のために差分符号化を行うという考えは新しい物ではありません。例えば、 [[MPEG-1]] ビデオ圧縮規格は刻々の静止画こまを転送しますが、送られるこまのほとんどは (簡単に言えば) 隣のこまからの変更として符号化します。
+ソフトウェア版制御のための [[SCCS]] や [[RCS]] のシステムは、
+中間版を差分で表現します。 SCCS は元の版から開始し、後の版を正の差分で符号化し、逆に RCS は前の版を次の版からの逆向きの差分として符号化します。
+遅い連結で [[IP]] や [[TCP]] の頭を圧縮する Jacobson
+の技法は巧妙で非常に特化した形の差分符号化を使用しています。
+
+> In spite of this history, it appears to have taken several years
+before anyone thought of applying delta encoding to HTTP, perhaps
+because the development of HTTP caching has been somewhat haphazard.
+The first published suggestion for delta encoding appears to have
+been by Williams et al. in a paper about HTTP cache removal policies
+[30], but these authors did not elaborate on their design until later [29].
+
+このような歴史にもかかわらず、 [[HTTP]] に差分符号化を適用しようと考える人が出てくるまでには幾年も要しました。おそらくは、
+HTTP [[キャッシュ付け]]の開発に行き当たりばったりなどころがあるからでしょう。
+差分符号化についての最初の出版された提案は Williams 他の HTTP
+キャッシュ削除方針についての論文のようですが、この著者は後になるまでその設計を詰めてはいませんでした。
+
+> The WebExpress project [15] appears to be the first published
+description of an implementation of delta encoding for HTTP (which
+they call "differencing").  WebExpress is aimed specifically at
+wireless environments, and includes a number of orthogonal
+optimizations.  Also, the WebExpress design does not propose changing
+the HTTP protocol itself, but rather uses a pair of interposed
+proxies to convert the HTTP message stream into an optimized form.
+The results reported for WebExpress differencing are impressive, but
+are limited to a few selected benchmarks.
+
+[[WebExpress]] 計画は最初に HTTP の差分符号化の実装の記述を出版したようです
+(そこでは「差異取り」と呼ばれています)。 WebExpress は特に無線環境を考慮しており、数々の直交する最適化を含んでいました。
+また、 WebExpress の設計は HTTP プロトコル自体の変更を提案してはおらず、
+HTTP メッセージ流を最適化形に変換する仲介串の組を使用していました。
+WebExpress 差異取りの結果の報告は目覚しい物ではありますが、
+少数の選択された評価基準に限られています。
+
+> Banga et al. [1] describe the use of optimistic deltas, in which a
+layer of interposed proxies on either end of a slow link collaborate
+to reduce latency.  If the client-side proxy has a cached copy of a
+resource, the server-side proxy can simply send a delta (or a 304
+[Not Modified] response).  If only the server-side proxy has a cached
+copy, it may optimistically send its (possibly stale) copy to the
+client-side proxy, followed (if necessary) by a delta once the
+server-side proxy has validated its own cache entry with the origin
+server.  The use of optimistic deltas, unlike delta encoding,
+actually increases the number of bytes sent over the network, in an
+attempt to improve latency by anticipating a "Not Modified" response
+from the origin server.  The optimistic delta paper, like the
+WebExpress paper, did not propose a change to the HTTP protocol
+itself, and reported results only for a small set of selected URLs.
+
+Banga 他は、遅い連結の一端で仲介串の層が待ち時間の削減に協力するという楽天的差分の使用を記述しています。クライアント側串が[[資源]]のキャッシュした複製を有していれば、鯖側串は単に差分 (または [CODE(HTTP)[[[204]]]] (未修正) 応答) を送ることができます。鯖側串がキャッシュした複製を有していれば、楽観的に ([[腐敗]]しているかもしれない) 複製をクライアント側串に送り、 (必要なら) 鯖側串は自身のキャッシュ項目を[[起源鯖]]で[[検証]]して差分を続けて送ります。
+楽天的差分を使用すると、差分符号化とは異なり、起源鯖からの「未修正」応答を先回りすることで待ち時間を改善しようとする中で、実際にはネットワーク上に送信するバイトの数は増加します。
+楽天的差分の論文は、 WebExpress の論文と同様に、 HTTP
+プロトコル自体の変更は提案せず、選択された [[URL]]
+の小さな集合についてのみの結果を報告していました。
+
+> Mogul et al. [23] collected lengthy traces, at two different sites,
+of the full contents of HTTP messages, to quantify the potential
+benefits of delta-encoded responses.  They showed that delta encoding
+can provide remarkable improvements in response-size and response-delay for an important subset of HTTP content types.  They proposed a
+set of HTTP extensions, but without the level of detail required for
+a specification.  Douglis et al. [8] used the same sets of full-content traces to quantify the rate at which resources change in the Web.
+
+Mogul 他は、二つの異なるサイトにおいて、 HTTP メッセージの完全な内容の長さ的追跡を集成し、差分符号化応答の潜在的利益を数量化しました。
+そこでは差分符号化が HTTP 内容型の重要な部分集合で応答の寸法と遅延において著しい改善を行えることを示しました。
+彼らは HTTP 拡張の集合を提案しましたが、仕様書に必要な詳細度ではありませんでした。
+Douglis 他は完全な内容の追跡の同じ集合を使用して Web の資源の変更率を数量化しました。
+
+> The HTTP Distribution and Replication Protocol (DRP), proposed to W3C
+by Marimba, Netscape, Sun, Novell, and At Home, aims to provide a
+collection of new features for HTTP, to support "the efficient
+replication of data over HTTP" [13].  One aspect of the DRP proposal
+is the use of "differential downloading," which is essentially a form
+of delta encoding.  The original DRP proposal uses a different
+approach than is described here, but a forthcoming revision of DRP
+will be revised to conform to the proposal in this document.
+
+HTTP 配布模造プロトコルは Marimba, Netscape, Sun, Novell, At Home
+が W3C に提案した物でありますが、これは
+「HTTP 上でデータの効率的な模造」を支援するために HTTP
+に新しい機能の集成を提供することを目指しています。
+DRP プロトコルの一つの側面は「差異取り寄せ」の使用であり、
+これは本質的には差分符号化の一形態です。元の DRP
+プロトコルはここで説明する物とは異なる手法を使っていますが、
+いずれ改訂された時には DRP はこの文書での提案に適合するものとなります。
+
+> Tridgell and Mackerras [28] describe the "rsync" algorithm, which
+accomplishes something similar to delta encoding.  In rsync, the
+client breaks a cache entry into a series of fixed-sized blocks,
+computes a digest value for each block, and sends the series of
+digest values to the server as part of its request.  The origin
+server does the same block-based computation, and returns only those
+blocks whose digest values differ.  We believe that it might be
+possible to support rsync using the "instance manipulation" framework
+described later in this document, but this has not been worked out in
+any detail.
+
+Tridgell と Mackerras は、差分符号化と似た物を実現する「[[rsync]]」
+算法を記述しています。 rsync では、クライアントはキャッシュ項目を固定長の塊の系列に分割し、各塊の要約値を計算し、要約値の系列を要求の一部として鯖に送信します。起源鯖は同じ塊をもとにした計算を行い、
+要約値が異なる塊のみを返します。この文書で後から説明する
+「[[実現値操作]]」の枠組みを使用して rsync に対応することは可能であろうと考えていますが、その詳細な作業は行われていません。
+
+* 2 Goals
+> The goals of this proposal are:
+
+この提案の目標は、
+
+>
+-1. Reduce the mean size of HTTP responses, thereby improving
+latency and network utilization.
+-2. Avoid any extra network round trips.
+-3. Minimize the amount of per-request and per-response overheads.
+-4. Support a variety of encoding algorithms and formats.
+-5. Interoperate with HTTP/1.0 and HTTP/1.1.
+-6. Be fully optional for clients, proxies, and servers.
+-7. Allow moderately simple implementations.
+
+- HTTP 応答の平均的寸法を削減し、それによって待ち時間とネットワーク性能を改善すること
+- 余計なネットワーク往復を避けること
+- 要求毎や応答毎の overhead の量を最小化すること
+- 種々の符号化算法・書式に対応すること
+- [[HTTP/1.0]] および [[HTTP/1,1]] を相互運用できること
+- クライアント, 串, 鯖にとって完全に任意選択機能であること
+- 適度に簡単に実装できること
+
+です。目標には次のことは含みません。
+
+> The goals do not include:
+-  Reducing the number of HTTP requests sent to an origin server.
+-  Reducing the size of every HTTP message.
+-  Increasing the cache-hit ratio of HTTP caches.
+-  Allowing excessively simplistic implementations of delta encoding.
+-  Delta encoding of request messages, or of responses to methods other than GET.
+
+- 起源鯖に送信する HTTP 要求の数の削減。
+- 各 HTTP メッセージの寸法の削減。
+- HTTP キャッシュのキャッシュ打率の増幅。
+- 極端に簡単な差分符号化の実装の実現。
+- 要求メッセージの差分符号化や、 [CODE(HTTP)[[[GET]]]] 以外の方式に対する応答の差分符号化。
+
+>Nothing in this specification specifically precludes the use of
+a delta encoding for the body of a PUT request.  However, no
+mechanism currently exists for the client to discover if the
+server can interpret such messages, and so we do not attempt to
+specify how they might be used.
+
+この仕様書は特に [CODE(HTTP)[[[PUT]]]] 要求の[[本体]]で差分符号化を使用することを妨げはしません。
+しかし、現在のところ鯖がそのようなメッセージを解釈できるかどうかをクライアントが発見する仕組みは存在していませんから、
+これをどう使用するのかを述べようとはしません。
+
+* 3 Terminology
+> HTTP/1.1 [10] defines the following terms:
+
+[[HTTP/1.1]] は次の用語を定義しています。
+
+>
+:   resource        :
+A network data object or service that can be
+identified by a URI, as defined in section 3.2.
+Resources may be available in multiple
+representations (e.g. multiple languages, data
+formats, size, resolutions) or vary in other ways.
+
+[[資源]]
+
+>
+:   entity          :
+The information transferred as the payload of a
+request or response.  An entity consists of
+metainformation in the form of entity-header fields
+and content in the form of an entity-body, as
+described in section 7.
+
+[[実体]]
+
+>
+:   variant         :
+A resource may have one, or more than one,
+representation(s) associated with it at any given
+instant.  Each of these representations is termed a
+`variant.' Use of the term `variant' does not
+necessarily imply that the resource is subject to
+content negotiation.
+
+[[変体]]
+
+> The dictionary definition for "entity" is "something that has
+separate and distinct existence and objective or conceptual reality" [21].  Unfortunately, the definition for "entity" in HTTP/1.1 is
+similar to that used in MIME [12], based on a false analogy between
+MIME and HTTP.
+
+「[[実体]]」の辞書的定義は「分離された異なる存在ならびに物体的または概念的現実性を有するもの」です。
+不幸にも、 HTTP/1.1 の「実体」の定義は [[MIME]] で使われているものと同様で、
+完全に間違った MIME と HTTP との類似性に基づいています。
+
+> In MIME, electronic mail messages do have distinct and separate
+existences.  MIME defines "entity" as something that "refers
+specifically to the MIME-defined header fields and contents of either
+a message or one of the parts in the body of a multipart entity."
+
+MIME では、電子メイル・メッセージは異なる分離された存在を有していました。
+MIME は「実体」を「メッセージまたは[[多部分実体]]の本体中の[[部分]]の一つのいずれかの MIME 定義[[頭欄]]および[[内容]]を特に指す」ものとして定義しています。
+
+> In HTTP, however, a response message to a GET does not have a
+distinct and separate existence.  Rather, it reflects the current
+state of a resource (or a variant, subject to a set of constraints).
+The HTTP/1.1 specification has no term to describe "the value that
+would be returned in response to a GET request at the current time
+for the selected variant of the specified resource."  This leads to
+awkward wordings in the HTTP/1.1 specification in places where this
+concept is necessary.
+
+しかし、 HTTP では、 [CODE(HTTP)[[[GET]]]] に対する[[応答メッセージ]]は異なる分離された存在を有していません。
+むしろ、応答メッセージは資源の現在の状態 (制約の集合の対象となる、[[変体]])
+を記述しています。 HTTP/1.1 仕様書は「指定された資源の選択された変体についての現時点で
+[CODE(HTTP)[GET]] 要求に対する応答で返されることになる値」
+を記述する用語を提供していません。このために、 HTTP/1.1
+仕様書でこの概念が必要なところでぐちゃぐちゃした言い方をしています。
+
+> To express this concept, we define a new term, for use in this document:
+
+HTTP/1.1 仕様書での用語遣いの失敗を修正するのにはもう遅すぎますので、
+代わりにこの文書で使用するために新しい用語を定義します。
+
+>
+:   instance        :
+The entity that would be returned in a status-200
+response to a GET request, at the current time, for
+the selected variant of the specified resource, with
+the application of zero or more content-codings, but
+without the application of any instance manipulations
+(see below) or transfer-codings.
+
+:実現値:
+特定の[[資源]]の選択された[[変体]]について、
+[CODE(HTTP)[[[GET]]]] [[要求]]に対する[[状態]]
+[CODE(HTTP)[[[200]]]] の[[応答]]で、現時点において返されるであろう、
+零個以上の[[内容符号化]]を適用した、
+[[実現値操作]]や[[転送符号化]]は適用していない[[実体]]。
+
+> It is convenient to think of an entity tag, in HTTP/1.1, as being
+associated with an instance, rather than an entity.  That is, for a
+given resource, two different response messages might include the
+same entity tag, but two different instances of the resource should
+never be associated with the same (strong) entity tag.
+
+HTTP/1.1 の[[実体札]]は、実体と関連付けられていると考えるよりは、
+実現値と関連付けられていると考えた方が便利です。
+すなわち、ある資源について、二つの異なる[[応答メッセージ]]は同じ実体札を返すかもしれませんが、
+その資源の二つの異なる実現値は決して同じ (強い) 実体札に関連付けられるべきではありません。
+
+> We will informally use the term "delta," in this document, to mean an
+HTTP response encoded as the difference between two instances.
+
+この文書では用語「差分」を非公式に、二つの実現値間の差異を符号化した
+HTTP [[応答]]を意味して使います。
+
+> More formally, delta encodings are members of a potentially larger
+class of transformations on instances, leading to this new term:
+
+より公式に、差分符号化はこの新しい用語を導く、
+潜在的により大きな実現値の変形の種別の一員です。
+
+>
+:   instance manipulation :
+An operation on one or more instances which may
+result in an instance being conveyed from server to
+client in parts, or in more than one response
+message.  For example, a range selection or a delta
+encoding.  Instance manipulations are end-to-end, and
+often involve the use of a cache at the client.
+
+:実現値操作:
+一つ以上の[[実現値]]についての演算であり、
+結果として一つの実現値が[[鯖]]から[[クライアント]]に部分的に、または複数の[[要求メッセージ]]によって運ばれてくることになるかもしれない。
+例えば、範囲選択や[[差分符号化]]である。
+実現値操作は[[末端対末端]]であり、しばしばクライアントでの[[キャッシュ]]の使用を伴う。
+
+>   For reasons that will become clear later on, it is convenient to
+think about subrange selection as a form of instance manipulation.
+In some contexts, compression might also be treated as an instance
+manipulation, rather than as a content-coding or transfer-coding.
+
+後々明らかになってくる理由から、部分範囲選択を実現値操作の一形式と考えると便利です。
+文脈によっては、圧縮もまた[[内容符号化]]や[[転送符号化]]ではなく実現値操作として扱われるかもしれません。
+
+* 4 The HTTP message-generation sequence
+→ [[HTTP//変形]]
+* 5 Basic mechanisms
+> In this section, we explain the concepts behind delta encoding.  This
+is not meant as a formal specification of the proposed extensions;
+see section 10 for that.
+
+この章では、差分符号化の背後にある概念を説明します。
+これは提案する拡張の正式な仕様を意味する物ではありません。
+正式な仕様は10章を参照して下さい。
+
+** 5.1 Background: an overview of HTTP cache validation
+> When a client has a response in its cache, and wishes to ensure that
+this cache entry is current, HTTP/1.1 allows the client to do a
+"conditional GET", using one of two forms of "cache validators."  In
+the traditional form, available in both HTTP/1.0 and in HTTP/1.1, the
+client may use the "If-Modified-Since" request-header to present to
+the server the "Last-Modified" timestamp (if any) that the server
+provided with the response.  If the server's timestamp for the
+resource has not changed, it may send a response with a status code
+of 304 (Not Modified), which does not transmit the body of the
+resource.  If the timestamp has changed, the server would normally
+send a response with a status code of 200 (OK), which carries a
+complete copy of the resource, and a new Last-Modified timestamp.
+
+クライアントがキャッシュに応答を有する時で、このキャッシュ項目が原稿の物であると確かめたい時には、 HTTP/1.1 ではクライアントは二つの
+「[[キャッシュ検証子]]」の書式の一つを用いて、「[[条件付GET]]」
+を行うことができます。 HTTP/1.0 と HTTP/1.1 の双方で利用可能な伝統的書式では、クライアントは、鯖が応答で示した [CODE(HTTP)[[[Last-Modified]]]] 時刻印を (あれば) 示すために [CODE(HTTP)[[[If-Modified-Since]]]] 要求頭を使用することができます。その資源についての鯖の時刻印が変更されていなければ、
+資源の[[本体]]は転送しない、 [CODE(HTTP)[[[304]]]] (未修正) [[状態符号]]の応答を送ることができます。時刻印が変更されていれば、鯖は通常のように状態符号 [CODE(HTTP)[[[200]]]] (了解) の応答を送り、資源の完全な複製と新しい [CODE(HTTP)[Last-Modified]] 時刻印を運搬することになります。
+
+> This timestamp-based approach is prone to error because of the lack
+of timestamp resolution: if a resource changes twice during one
+second, the change might not be detectable.  Therefore, HTTP/1.1 also
+allows the server to provide an entity tag with a response.  An
+entity tag is an opaque string, constructed by the server according
+to its own needs; the protocol specification imposes a bare minimum
+of requirements on entity tags.  (In particular, a "strong" entity
+tag must change if the value of the resource changes.) In this case,
+the client may validate its cache entry by sending its conditional
+request using the "If-None-Match" request-header, presenting the
+entity tag associated with the cached response.  (The protocol
+defines several other ways to transmit entity tags, such as the "If-Range" header, used for short-circuiting an otherwise necessary round
+trip.) If the presented entity tag matches the server's current tag
+for the resource, the server should send a 304 (Not Modified)
+response.  Otherwise, the server should send a 200 (OK) response,
+along with a complete copy of the resource.
+
+この時刻印を基にした手法は、時刻印の解像度の欠如のために誤りを起こす傾向にあります。資源が一秒の間に二度変更されれば、その変更は検出できないかもしれません。このため、 HTTP/1.1 では鯖が応答と共に[[実体札]]を提供することもできます。実体札は不透明な文字列であり、鯖が自身の必要に応じて構築します。
+プロトコル仕様は実体札に基本的な最低限の要件を課しています。
+(特に、「強い」実体札は資源の値が変更されたら変更しなければなりません。)
+この場合、クライアントはキャッシュ項目をキャッシュした資源に関連付けられた実体札を示した [CODE(HTTP)[[[If-None-Match]]]] 要求頭を用いた[[条件付要求]]を送信することによって検証できます。 (HTTP は他にも [CODE(HTTP)[[[If-Range]]]] 頭のような本来必要な往復を短絡するために使用する実体札を転送する方法を定義しています。)
+示された実態札が鯖の資源の現在の札に一致すれば、鯖は [CODE(HTTP)[304]]
+(未修正) 応答を送信するべきです。そうでなければ、鯖は資源の完全な複製と共に
+[CODE(HTTP)[200]] (了解) 応答を送信するべきです。
+
+> In the existing HTTP protocol (HTTP/1.0 or HTTP/1.1), a client
+sending a conditional request can expect either of two responses:
+
+既存の HTTP プロトコル (HTTP/1.0 または HTTP/1.1) では、
+条件付要求を送信するクライアントは次の二つの応答のいずれかを期待できます。
+
+>
+-  status = 200 (OK), with a full copy of the resource, because
+the server's copy of the resource is presumably different from
+the client's cached copy.
+-  status = 304 (Not Modified), with no body, because the server's
+copy of the resource is presumably the same as the client's
+cached copy.
+
+- 状態が [CODE(HTTP)[200]] (了解) で、資源の完全な複製付き。
+資源の鯖の複製がクライアントのキャッシュした複製とおそらく異なっている。
+- 状態が [CODE(HTTP)[304]] (未修正) で、本体なし。
+資源の鯖の複製がクライアントのキャッシュした複製とおそらく同じである。
+
+> Informally, one could think of these as "deltas" of 100% and 0% of
+the resource, respectively.  Note that these deltas are relative to a
+specific cached response.  That is, a client cannot request a delta
+without specifying, somehow, which two instances of a resource are
+being differenced.  The "new" instance is implicitly the current
+instance that the server would return for an unconditional request,
+and the "old" instance is the one that is currently in the client's
+cache.  The cache validator (last-modified time or entity tag) is
+what is used to communicate to the server the identity of the old instance.
+
+非公式に、この両者を資源のそれぞれ 100% と 0% の「差分」と考えることができます。これらの差分は特定のキャッシュした応答に対するものであることに注意して下さい。
+つまり、クライアントはともかくも資源のどの二つの[[実現値]]が異なっているのかを指定しなければ差分を要求できないのです。
+「新しい」実現値は陰に非条件付要求なら鯖が返すであろう現在の実現値であり、
+「古い」実現値は現在クライアントのキャッシュにある実現値です。
+キャッシュ検証子 (最終修正時刻または実体札)
+が古い実現値の識別について鯖と通信するために使用する物です。
+
+** 5.2 Requesting the transmission of deltas
+> In order to support the transmission of actual deltas, an extension
+to HTTP/1.1 needs to provide these features:
+
+実際の差分の転送に対応するために、 HTTP/1.1 への拡張は次の機能を提供する必要があります。
+
+>
+-1. A way to mark a request as conditional.
+-2. A way to specify the old instance, to which the delta will be
+applied by the client.
+-3. A way to indicate that the client is able to apply one or more
+specific forms of delta encoding.
+-4. A way to mark a response as being delta-encoded in a particular format.
+
+- 要求は[[条件付]]であると印をつける方法
+- クライアントが差分を適用する古い実現値を指定する方法
+- クライアントが適用することのできる一つ以上の差分符号化の書式を示す方法
+- 応答を特定の書式で差分符号化されていると印をつける方法
+
+> The first two features are already provided by HTTP/1.1: the presence
+of a conditional request-header (such as "If-Modified-Since" or "If-None-Match") marks a request as conditional, and the value of that
+header uniquely specifies the old instance (ignoring the problem of
+last-modified timestamp granularity).
+
+最初の二つの機能は既に HTTP/1.1 にあります。
+条件的要求頭 ([CODE(HTTP)[[[If-Modified-Since]]]] や
+[CODE(HTTP)[[[If-None-Match]]]]) の存在が要求を条件付であると印付けし、
+その頭の値が (差異修正時刻印の粒度の問題を無視すれば) 
+古い実現値を一意に指定します。
+
+> We defer discussion of the fourth feature, until section 5.6.
+
+四番目の機能の議論は5.5節まで先送りします。
+
+> The third feature, a way for the client to indicate that it is able
+to apply deltas (aside from the trivial 0% and 100% deltas), can be
+accomplished by transmitting a list of acceptable delta-encoding
+formats in a request-header field; specifically, the "A-IM" header.
+The presence of this list in a conditional request indicates that the
+client is able to apply delta-encoded cache updates.
+
+三番目の機能、クライアントが (自明な 0% や 100% の差分以外の) 差分を適用することができると示す方法は、
+受入れ可能差分符号化書式の一覧を要求頭欄 [CODE(HTTP)[[[A-IM]]]]
+で転送することにより実現できます。
+この一覧が条件付き要求に存在することは、クライアントが差分符号化キャッシュ更新を適用することができることを示します。
+
+> For example, a client might send this request:
+
+例えば、クライアントは次のような要求を送信するとします。
+
+>
+[PRE[
+GET /foo.html HTTP/1.1
+Host: bar.example.net
+If-None-Match: "123xyz"
+A-IM: vcdiff, diffe, gzip
+]PRE]
+
+> The meaning of this request is that:
+
+この要求の意味はこうです。
+
+>
+-  The client wants to obtain the current value of /foo.html.
+-  It already has a cached response (instance) for that resource,
+whose entity tag is "123xyz".
+-  It is willing to accept delta-encoded updates using either of
+two formats, "diffe" (i.e., output from the UNIX "diff -e"
+command), and "vcdiff".  (Encoding algorithms and formats, such
+as "vcdiff", are described in section 6.)
+-  It is willing to accept responses that have been compressed
+using "gzip," whether or not these are delta-encoded.  (It
+might be useful to compress the output of "diff -e".)  However,
+based on the mandatory ordering constraint specified in section
+10.5.3, if both delta encoding and compression are applied,
+then this "A-IM" request header specifies that compression
+should be done last.
+
+- クライアントは [CODE(URI)[/foo.html]] の現在値を得たい。
+- クライアントは既にこの資源の実体札が [CODE(HTTP)["123xyz"]]
+であるキャッシュ応答 (実現値) を有している。
+- クライアントは [CODE(HTTP)[[[diffe]]]] (すなわち、 [[UNIX]] [KBD[[[diff]] -e]]
+命令の出力) と [CODE(HTTP)[[[vcdiff]]]] ([CODE[vcdiff]] のような符号化算法・書式で、6章に記述されている) の二つの書式のいずれかを用いた差分符号化更新を受入れる意志がある。
+- クライアントは差分符号化されていようがいなかろうが、 [CODE(HTTP)[[[gzip]]]] を用いて圧縮された応答を受入れる意志がある。
+([CODE[gzip]] は [KBD[diff -e]] の出力を圧縮するのに有用かもしれない。)
+しかし、10.5.3節で規定する強制順序付け制約に基づき、差分符号化と圧縮の両方が適用されるのであれば、この [CODE(HTTP)[[[A-IM]]]] 要求頭は圧縮が後から行われれるべきであると指定している。
+
+> If, in this example, the server's current entity tag for the resource
+is still "123xyz", then it should simply return a 304 (Not Modified)
+response, as would a traditional server.
+
+この例において、鯖のこの資源の現在の実体札が依然 [CODE(HTTP)["123xyz"]]
+であれば、単に伝統的鯖のように [CODE(HTTP)[304]] (未修正)
+を返すべきです。
+
+> If the entity tag has changed, presumably but not necessarily because
+of a modification of the resource, the server could instead compute
+the delta between the instance whose entity tag was "123xyz" and the
+current instance.
+
+実体札が変更されていれば、資源の修正が絶対ではないにしろおそらくはなされているので、鯖は代わりに実体札が
+[CODE["123xyz"]] の実現値と現在の実現値の差分を計算することができます。
+
+> We defer discussion of what the server needs to store, in order to
+compute deltas, until section 7.
+
+差分を計算するために鯖が何を蓄積する必要があるのかの議論は7章に先送りします。
+
+> We note that if a client indicates it is willing to accept deltas,
+but the server does not support this form of instance-manipulation,
+the server will simply ignore this aspect of the request.  (HTTP
+always allows an implementation to ignore a header that is not
+required by a specification that the implementation complies with,
+and the specification of "A-IM" allows the server to ignore an
+instance-manipulation it does not understand.)  So if a server either
+does not implement the A-IM header at all, or does not implement any
+of the instance manipulations listed in the A-IM header, it acts as
+if the client had not requested a delta-encoded response: the server
+generates a status-200 response.
+
+クライアントが差分を受入れる意志を示しているものの鯖がその書式の[[実現値操作]]に対応していない時は、鯖は端に要求のその部分を無視することを注記しておきます。
+(HTTP は実装が従うことを仕様で要求していない頭を無視することを実装に常に認めており、 [CODE(HTTP)[[[A-IM]]]] の仕様は鯖が理解しない実現値操作を無視することを認めています。)
+ですから鯖が [CODE(HTTP)[A-IM]] 頭を全く実装していないか、
+または [CODE(HTTP)[A-IM]] 頭に列せられた実現値操作のいずれをも実装していないなら、クライアントが差分符号化応答を要求していない場合のように働きます。
+つまり、鯖は状態 [CODE(HTTP)[200]] 応答を生成します。
+
+** 5.3 Choice of delta algorithm and format
+> The server is not required to transmit a delta-encoded response.  For
+example, the result might be larger than the current size of the
+resource.  The server might not be able to compute a delta for this
+type of resource (e.g., a compressed binary format); the server might
+not have sufficient CPU cycles for the delta computation; the server
+might not support any of the delta formats supported by the client;
+or, the network bandwidth might be high enough that the delay
+involved in computing the delta is not worth the delay avoided by
+sending a smaller response.
+
+鯖は必ずしも差分符号化応答を転送する必要はありません。
+例えば、結果が資源の現在の寸法より大きくなるかもしれません。
+鯖はこの型の資源 (例えば圧縮されたバイナリ書式) の差分を計算することができないかもしれません。
+鯖は差分計算のための十分な CPU 周期を有しないかもしれません。
+鯖はクライアントが対応する差分書式のいずれにも対応していないかもしれません。
+ネットワーク帯域が十分広いので差分を計算することによる遅延に小さ目の応答を送信することによって回避される遅延分の価値がないかもしれません。
+
+> However, if the server does want to compute a delta, and the set of
+encodings it supports has more than one encoding in common with the
+set offered by the client, which encoding should it use?  This is
+mostly at the option of the server, although the client can express
+preferences using "Quality Values" (or "qvalues") in the "A-IM"
+header.  The HTTP/1.1 specification [10] describes qvalues in more
+detail.  (Clients may prefer one delta encoding format over another
+that generates a smaller encoding, if the decoding costs for the
+first format are lower and the client is resource-constrained.)
+
+しかし、鯖が差分を計算したいと思っており、その対応している符号化の集合とクライアントの提案する集合と複数個共通した符号化があるなら、
+どの符号化を使用するべきでしょうか。これはほとんど鯖の選択するところであります。ただしクライアントは希望を [CODE(HTTP)[[[A-IM]]]]
+頭中の「[[品質値]]」 ([CODE(ABNF)[[[qvalue]]]]) を使って表現できます。
+HTTP/1.1 仕様書は [CODE(ABNF)[qvalue]] をより詳しく記述しています。
+(クライアントは、そちらの方が復号経費が小さくて、クライアントに資源の上で制約があるなら、小さな符号化を生成する符号化よりも差分符号化を希望するかもしれません。)
+
+> Server implementations have a number of possible approaches.  For
+example, if CPU cycles are plentiful and network bandwidth is scarce,
+the server might compute each of the possible encodings and then send
+the smallest result.  Or the server might use heuristics to choose an
+encoding format, based on things such as the content-type of the
+resource, the current size of the resource, and the expected amount
+of change between instances of the resource.
+
+鯖実装は数々の可能な手法を有します。例えば、 CPU 周期が豊富でネットワーク帯域が乏しいなら、鯖は可能な符号化をそれぞれ計算して最小の結果を送信するかもしれません。
+あるいは鯖が符号化書式を選ぶに当たって資源の内容型や資源の現在の寸法や資源の実現値間の変更の想定量などの点を基にして発見的方法を使用するかもしれません。
+
+> Note that it might pay to cache the deltas internally to the server,
+if a resource is typically requested by several different delta-capable clients between modifications.  In this case, the cost of
+computing a delta may be amortized over many responses, and so the
+server might use a more expensive computation.
+
+資源が典型的に幾つもの異なる修正間の差分能力のあるクライアントから要求を受けるのであれば、
+鯖に内部的に差分をキャッシュするために支払うかもしれないことに注意して下さい。
+この場合、差分を計算する経費は多くの応答に分割されて、
+鯖はより高価な計算を行なうことになるかもしれません。
+
+** 5.4 Identification of delta-encoded responses
+> A response using delta encoding must be identified as such.  This is
+done using the "IM" response-header, specified in section 10.5.2.
+
+差分符号化を用いた応答はそのように識別されなければなりません。
+これは10.5.2節で規定する、 [CODE(HTTP)[[[IM]]]]
+応答頭を使用して行います。
+
+> However, a simplistic application of this approach would cause
+serious problems if a delta-encoded response flows through an
+intermediate (proxy) cache that is not cognizant of the delta
+mechanism.  Because the Internet still includes a significant number
+of HTTP/1.0 caches, which might never be entirely replaced, and
+because the HTTP specifications insist that message recipients ignore
+any header field that they do not understand, a non-delta-capable
+proxy cache that receives a delta-encoded response might store that
+response, and might later return it to a non-delta-capable client
+that has made a request for the same resource.  This naive client
+would believe that it has received a valid copy of the entire
+resource, with predictably unpleasant results.
+
+しかし、この手法の安易な応用は、差分符号化応答が差分機構を認識しない中間
+(串) キャッシュを流通する時に重大な問題を引き起こしかねません。
+インターネットは依然として多大な数の HTTP/1.0
+キャッシュを含んでいまして、それらはまったく置きかえられることがありませんし、 HTTP 仕様書はメッセージ受信者が理解しない頭欄は無視せよと主張していますから、差分能力の無い串キャッシュが差分符号化応答を受け取ったらこれを蓄積し、同じ資源に後から要求を行った差分能力の無いクライアントにこれを返すことになるやもしれません。この無邪気なクライアントは資源全体の妥当な複製を受信したと信じて、予想通り好ましくない結果となるでしょう。
+
+> To solve this problem, we propose that delta-encoded responses
+(actually, all instance-manipulated responses) be identified as such
+using a new HTTP status code.  For specificity in the discussion that
+follows, we will use the (currently unassigned) code of 226, with a
+reason phrase of "IM Used".  (We see no benefit in spelling out the
+words "Instance Manipulation Used," since this requires the
+transmission of unnecessary bytes, and this Reason-phrase should not
+normally be seen by human users.)  There is some precedent for this
+approach:  the HTTP/1.1 specification introduces the 206 (Partial
+Content) status code, for the transmission of sub-ranges of a
+resource.  Existing proxies apparently forward responses with unknown
+status codes, and do not attempt to cache them.
+
+この問題を解決するために、差分符号化応答
+(実際には、すべての実現値操作応答) は新しい HTTP [[状態符号]]を使って識別することを提案します。後の議論にあるように、
+(現在割り当てられていない) 符号 [CODE(HTTP)[[[236]]]]
+を、理由語句 [CODE(HTTP)[IM Used]] ([ABBR[IM]] 使用中) 
+と共に使用します。 ([CODE[Instance Manipulation Used]] と綴っても、
+不要なバイトの転送が必要で、この [CODE(ABNF)[Reason-phrase]]
+は通常人間利用者が見るべきではないので、特に利益にはなりません。)
+この方法には先例がありまして、 HTTP/1.1 仕様書は資源の部分範囲の転送のために [CODE(HTTP)[[[206]]]] (部分内容) 状態符号を導入しています。
+既存の串は未知の状態符号を転送するようで、
+これらをキャッシュしようとしません。
+
+> An alternative to using a new status code would be to use the
+"Expires" header to prevent HTTP/1.0 caches from storing the
+response, then use "Cache-Control: max-age" (defined in HTTP/1.1) to
+allow more modern caches to store delta-encoded responses.  This adds
+many bytes to the response headers, and so would reduce the
+effectiveness of delta encoding.  It is also not entirely clear that
+this approach suppresses all caching by all HTTP/1.0 proxies.
+
+新しい状態符号を使うのではない別の方法は、
+HTTP/1.0 キャッシュが蓄積するのを防ぐために [CODE(HTTP)[[[Expires]]]]
+頭を使用し、より現代的なキャッシュが差分符号化応答を蓄積することを認めるために (HTTP/1.1 で定義された) [CODE(HTTP)[[[Cache-Control: [[max-age]]]]
+を使用する方法です。これは応答頭に多くのバイトを追加しますから、
+差分符号化の効率性を削減してしまいます。
+また、この方法がすべての HTTP/1.0 串によるすべてのキャッシュ付けを抑制するのかはまったく不明です。
+
+> We were reluctant to define an additional status code as part of
+the support for delta encoding.  However, we see no other
+efficient way to remain compatible with the deployed base of
+HTTP/1.0 cache implementations.
+
+差分符号化への対応の一部として追加の状態符号を定義することは気が進みませんでした。しかし、現在運用中の HTTP/1.0 キャッシュ実装と互換性を保つ効率のよい他の手段は見つかっていません。
+
+** 5.5 Guaranteeing cache safety
+> Although we are not aware of any HTTP/1.1 proxy implementations that
+would attempt to cache a response with an unknown 2xx status code,
+the HTTP/1.1 specification does allow this behavior if the response
+carries an Expires or Cache-Control header field that explicitly
+allows caching.  This would present a problem when a 226 (IM Used)
+response carries such headers.
+
+未知の [CODE(HTTP)[[[2[VAR[xx]]]]]] 状態符号の応答をキャッシュ使用とする
+HTTP/1.1 串実装は知られていませんが、 HTTP/1.1 仕様書は 
+[CODE(HTTP)[[[Expires]]]] 頭欄や [CODE(HTTP)[[[Cache-Control]]]]
+頭欄が陽にキャッシュ付けを認めているのならこの動作を認めています。
+これは [CODE(HTTP)[226]] ([ABBR[IM]] 使用中)
+応答がこれらの頭を運ぶ時に問題を招きます。
+
+> The solution in that case is to exploit the Cache Control Extensions
+mechanism from the HTTP/1.1 specification.  We define a new cache-directive, "im", which indicates that the "no-store" cache-directive
+may be ignored by implementations that conform to the specification
+for the IM and A-IM headers.
+
+この場合の解決策として、 HTTP/1.1 仕様書のキャッシュ制御拡張機構を利用します。
+[CODE(HTTP)[[[IM]]]] 頭と [CODE(HTTP)[[[A-IM]]]]
+頭の仕様書に適合する実装が [CODE(HTTP)[[[no-store]]]] キャッシュ指令を無視してもよいことを示す新しい [CODE(HTTP)[[[im]]]] キャッシュ指令を定義します。
+
+> For example, this response:
+
+例えば、次の応答
+
+>
+[PRE[
+HTTP/1.1 226 IM Used
+ETag: "489uhw"
+IM: vcdiff
+Date: Tue, 25 Nov 1997 18:30:05 GMT
+Cache-Control: no-store, im, max-age=30
+
+...
+]PRE]
+
+> "MUST NOT" be stored by a cache that complies with the HTTP/1.1
+specification (which states that the max-age cache-directive "implies
+that the response is cacheable [...] unless some other, more
+restrictive cache directive is also present.").  However, a cache
+that does comply with the specification for the im cache-directive
+(i.e., a cache that complies with the specification for the A-IM and
+IM header fields, and the 226 status code) ignores the no-store
+directive, and therefore sees the max-age directive as allowing caching.
+
+は HTTP/1.1 仕様書に従うキャッシュは蓄積「'''してはなりません'''」
+(HTTP/1.1 仕様書では [CODE(HTTP)[[[max-age]]]] 指令が[Q[応答は、他のより制限的なキャッシュ指令も示されていない限り、[[キャッシュ可能]]であることを暗示し、[INS[(略)]]。]]と述べています)。
+しかし、 [CODE(HTTP)[[[im]]]] キャッシュ指令の仕様に従うキャッシュ
+(すなわち、 [CODE(HTTP)[[[A-IM]]]] 頭欄と [CODE(HTTP)[[[A-IM]]]] 頭欄と [CODE(HTTP)[[[226]]]] [[状態符号]]の仕様に適合するキャッシュ)
+は [CODE(HTTP)[no-store]] 指令を無視しますから、従って
+[CODE(HTTP)[max-age]] 指令をキャッシュ付けを認める物として見ます。
+
+> We are not entirely sure that all HTTP/1.1 caches obey the rule
+that the max-age directive is overridden by the no-store
+directive.  If operational testing reveals this to be a problem,
+more elaborate solutions are possible.
+
+すべての HTTP/1.1 キャッシュが [CODE(HTTP)[no-store]]
+指令で [CODE(HTTP)[max-age]] 指令が上書きされるという規則に従っているのかは完全には確かめられていません。
+運用上の検査でこれが問題であると分かれば、より緻密な解決が可能です。
+
+> Warning to origin server implementors: it does not suffice to send
+
+起源鯖実装者へ警告。状態 [CODE(HTTP)[226]] 応答で
+
+>
+[PRE[
+Vary: If-None-Match, A-IM
+]PRE]
+in status-226 responses.  We have discovered at least one scenario
+where this does not prevent a proxy cache that does not implement IM
+and A-IM from incorrectly "validating" a cached 226 response.
+
+を送信するだけでは十分ではありません。最低一つの情景ではキャッシュした
+[CODE(HTTP)[226]] 応答を不正に「検証」する
+[CODE(HTTP)[IM]] と [CODE(HTTP)[A-IM]] を実装していない串キャッシュから防ぐことができないことを発見しています。
+
+** 5.6 Transmission of delta-encoded responses
+> A delta-encoded response differs from a standard response in four ways:
+
+差分符号化応答は標準応答と4つの点で異なります。
+
+>
+-1. It carries a status code of 226 (IM Used).
+-2. It carries an "IM" response-header field, indicating which
+delta encoding is used in this response.
+-3. Its message-body is a delta encoding of the current instance,
+rather than a full copy of the instance.
+-4. It might carry several other new headers, as described later in
+this document.
+
+- [[状態符号]] [CODE(HTTP)[[[226]]]] ([ABBR[IM]] 使用中) を運搬する。
+- この応答に差分符号化が使用されていることを示す
+[CODE(HTTP)[[[IM]]]] [[応答頭欄]]を運搬する。
+- [CODE(ABNF)[[[message-body]]]] は[[現在実現値]]の完全な複製ではなく、
+現在実現値の差分符号化である。
+- この文書の後で記述するほかの幾つかの新しい頭を運搬するかもしれない。
+
+> For example, a response to the request given in section 5.2 might
+look like:
+
+例えば、5.2節に与えた要求に対する応答は次のようになるかもしれません。
+
+>
+[PRE[
+HTTP/1.1 226 IM Used
+ETag: "489uhw"
+IM: vcdiff
+Date: Tue, 25 Nov 1997 18:30:05 GMT
+
+...
+]PRE]
+
+> (We do not show the actual contents of the response body, since this
+is a binary format.)
+
+([[応答本体]]の実際の内容は、バイナリ書式になりますから、示しません。)
+
+> Note: the Etag header in a 226 response with a delta encoding
+provides the entity tag of the current instance of the resource
+variant.  It is not meaningful to associate an entity tag with the
+delta value, which is not an instance.
+
+注意: 差分符号化の [CODE(HTTP)[[[226]]]] 応答の [CODE(HTTP)[Etag]]
+頭は資源[[変体]]の現在実現値の[[実体札]]を提供します。
+差分値は実現値ではなく、これと実体札を関連付けることには意味がありません。
+
+** 5.7 Examples of requests combining Range and delta encoding
+> In the example used in section 5.2, the client sends:
+
+5.2 節で使用した例で、クライアントは
+
+>
+[PRE[
+GET /foo.html HTTP/1.1
+Host: bar.example.net
+If-None-Match: "123xyz"
+A-IM: vcdiff, diffe, gzip
+]PRE]
+and the server either responds with a 304 (Not Modified) response, or
+with the appropriate delta encoding.
+
+と送信し、鯖は [CODE(HTTP)[[[304]]]] (未修正) 応答で応答するか、
+または適切な差分符号化で応答します。
+
+> Here are a few more examples, to clarify how the client request
+should be interpreted.
+
+ここに、クライアントの要求をどう解釈するべきかを説明する例をもう少し示します。
+
+> If the client sends
+
+クライアントが
+
+>
+[PRE[
+GET /foo.html HTTP/1.1
+Host: bar.example.net
+If-None-Match: "123xyz"
+A-IM: vcdiff, diffe, gzip, range
+Range: bytes=0-99
+]PRE]
+then the meaning is the same as in the example above, except that
+after the delta encoding (and compression, if any) is computed, the
+server then returns only the first 100 bytes of the output of the
+delta encoding.  (If it is shorter than 100 bytes, the entire delta
+encoding is returned.)  Because the "range" token appears last in the
+"A-IM" header, this tells the origin server to apply any range
+selection after the other instance-manipulations.
+
+と送信したとしますと、その意味は、差分符号化 (とあれば圧縮)
+を計算した後に鯖が差分符号化の出力の最初の100バイトだけを返すことを除いては、
+前述の例と同じです。 (差分符号化が100バイトより短ければ、
+差分符号化全体を返します。) [CODE(HTTP)[[[range]]]]
+字句は [CODE(HTTP)[[[A-IM]]]] 頭の最後に出現しますから、
+起源鯖は範囲選択を他の[[実現値操作]]の後に適用すると言っています。
+
+> The interaction between the If-Range mechanism and delta encoding is
+somewhat complex.  (If-Range means, informally, "if the entity is
+unchanged, send me the part(s) that I am missing; otherwise, send me
+the entire new entity.")  Here is an example that should clarify the
+use of this combination.
+
+[CODE(HTTP)[[[If-Range]]]] 機構と差分符号化の相互作用は何かと複雑です。
+([CODE(HTTP)[If-Range]] は、ぶっちゃけて言うと、
+[Q[実体が変更されていなければ、私が持っていない部分(群)を送信して下さい。そうでなければ、新しい実体の全体を送信して下さい。]]を意味します。)
+これはこの組み合わせでの使用の意味を明確にするための例です。
+
+> Suppose that the client wants to have the complete current instance
+of http://bar.example.net/foo.html.  It already has a (complete)
+cache entry for this URI, with entity tag "A", so it issues this request:
+
+クライアントが [SAMP(URI)[http://bar.example.net/foo.html]]
+の完全な現在実現値を持ちたいと思っているとします。
+クライアントは既にこの [[URI]] の (完全な)
+キャッシュ項目 (実体札 [CODE(HTTP)["A"]]) を持っていますから、
+この要求を発行します。
+
+>
+[PRE[
+GET /foo.html HTTP/1.1
+host: bar.example.net
+If-None-Match: "A"
+A-IM: vcdiff
+]PRE]
+
+> Suppose that the server's current instance has entity tag "B", and
+that the server also has retained a copy of the instance with entity
+tag "A".  Then, the server could compute the difference between "B"
+and "A", and respond with:
+
+鯖の現在の実現値は実体札 [CODE(HTTP)["B"]] を持ち、
+鯖は実体札 [CODE(HTTP)["A"]] の複製も残しているとします。
+この時、鯖は [CODE(HTTP)["B"]] と [CODE(HTTP)["A"]]
+の差異を計算し、次のように応答することができます。
+
+>
+[PRE[
+HTTP/1.1 226 IM Used
+Etag: "B"
+IM: vcdiff
+Date: Tue, 25 Nov 1997 18:30:05 GMT
+Content-Length: 1000
+
+...
+]PRE]
+
+> but the network connection is terminated after the client has
+received exactly 900 bytes of the message body for the delta-encoded content.
+
+しかしクライアントが差分符号化内容の[[メッセージ本体]]の丁度900バイトを受信した後でネットワーク接続が終端されました。
+
+> The client wants to retrieve the remaining 100 bytes of the delta
+encoding that was being sent in the interrupted response.  It
+therefore should send:
+
+クライアントは中断された応答で送信されていた差分符号化の続きの100バイトを取出したいと考えます。
+そこで、次のように送信するべきです。
+
+>
+[PRE[
+GET /foo.html HTTP/1.1
+host: bar.example.net
+If-None-Match: "A"
+If-Range: "B"
+A-IM: vcdiff,range
+Range: bytes=900-
+]PRE]
+
+> This rather elaborate request has a well-defined meaning, which
+depends on the current entity tag Tcur of the instance when the
+server receives the request:
+
+このなんとも凝った要求はよく定義された意味を有していまして、
+その意味は鯖が要求を受信した時点の実現値の現在実体札 [VAR[Tcur]]
+に依存します。
+
+>
+:   Tcur = "A"      :
+(i.e., for some reason, the instance has reverted to
+the value already in the client's cache).  The server
+should return a 304 (Not Modified) response, as
+required by the HTTP/1.1 specification for "If-None-Match".
+
+(つまり、何らかの理由で、実現値は既にクライアントのキャッシュにある値に差し戻された)。
+鯖は [CODE(HTTP)[[[If-None-Match]]]] についての HTTP/1.1 仕様が要求している通り、 [CODE(HTTP)[[[304]]]] (未修正)
+を返すべきです。
+
+>
+:   Tcur = "B"      :
+(i.e., the instance has not changed again).  The
+HTTP/1.1 specification for "If-None-Match", in this
+case, is that the header field is ignored (by a
+server that does not understand delta encoding).
+Therefore, this is equivalent to the client's
+previous request, except that the Range selection is
+applied after the vcdiff instance manipulation (if
+both are to be applied).  So the (delta-aware) server
+again computes the delta between the "A" instance and
+the "B" instance (or uses a cached computation of the
+delta), then applies the Range selection, and returns
+a 226 (IM Used) response, with an message-body
+containing bytes 900 to 999 of the result of the
+vcdiff encoding, with an "IM:vcdiff,range" response header.
+
+(つまり、実現値は再度変更されてはいない)。
+[CODE(HTTP)[If-None-Match]] の HTTP/1.1 仕様は、この場合、
+(差分符号化を理解しない鯖は)
+その頭欄を無視するとしています。従って、これは [CODE(HTTP)[[[vcdiff]]]]
+実現値操作の後に [CODE(HTTP)[[[Range]]]] 選択が (両者とも適用されるのであれば) 適用されることを除いては、クライアントの前の要求と同等です。
+ですから、 (差分を知っている) 鯖は再び [CODE(HTTP)["A"]] 実現値と
+[CODE(HTTP)["B"]] 実現値の差分を計算 (またはキャッシュしている差分の計算結果を使用) して、それから [CODE(HTTP)[Range]] 選択を適用し、
+[CODE(HTTP)[226]] ([ABBR[IM]] 使用中) 応答を [CODE(HTTP)[vcdiff]]
+符号化の結果のバイト 900〜999 を含む [CODE(ABNF)[[[message-body]]]]
+と [CODE(HTTP)[IM:vcdiff,range]] 応答頭と共に返します。
+
+>
+:   Tcur = "C"      :
+(i.e., the instance has changed again).  In this
+case, the HTTP/1.1 specification for "If-None-Match"
+again means that this is equivalent to an
+unconditional request for the current instance.  The
+specification for "If-Range" requires the server to
+return the entire current instance.  However, a
+delta-aware server can construct the delta between
+the "A" instance described by the "If-None-Match"
+field and the current ("C") instance, and return a
+226 (IM Used) response, with an "IM:vcdiff" response header.
+
+(つまり、実現値は再度変更された)。
+この場合、 [CODE(HTTP)[If-None-Match]] についての HTTP/1.1
+仕様ではやはりこれは現在実現値についての非条件付要求と同等を意味します。
+[CODE(HTTP)[If-Range]] の仕様は鯖が現在実現値全体を返すことを要求しています。
+しかし、差分を知っている鯖は [CODE(HTTP)[If-None-Match]]
+欄が記述する実現値 [CODE(HTTP)["A"]] と現在 ([CODE(HTTP)["C"]])
+実現値の差分を構築し、 [CODE(HTTP)[226]] ([ABBR[IM]] 使用中)
+応答を [CODE(HTTP)[IM:vcdiff]] 応答頭と共に返すことができます。
+
+> If the client's request had not included the "If-None-Match: "A""
+header field, the server could not have computed a delta, since it
+would not have known which entire instance was already available to
+the client.  If the request had not included the "If-Range: "B""
+header field, the server could not have distinguished between the
+latter two cases (Tcur = "B" or Tcur = "C") and would not have been
+able to apply the Range selection to the result of delta encoding.
+
+クライアントの要求が [CODE(HTTP)[If-None-Match: "A"]]
+頭欄を含んでいなかったなら、鯖はクライアントがどの実現値を既に完全に有しているのかを知ることができないので、差分を計算することができません。
+要求が [CODE(HTTP)[If-Range: "B"]] 頭欄を含んでいなかったなら、
+鯖は後の二つの場合 ([CODE(math)[[VAR[Tcur]] = [CODE(HTTP)["B"]]]]
+か [CODE(math)[[VAR[Tcur]] = [CODE(HTTP)["C"]]]] か)
+を区別することができませんし、差分符号化の結果に [CODE(HTTP)[Range]]
+選択を適用することができません。
+
+> On the other hand, suppose that the client has a cache entry for the
+"A" instance of http://bar.example.net/foo.html, and it has already
+received the first 900 bytes of a new instance "B" (perhaps as the
+result of an aborted transfer).  Now the client wants to receive the
+entire current instance, so it could send this request:
+
+他方で、クライアントが [SAMP(URI)[http://bar.example.net/foo.html]]
+の [CODE(HTTP)["A"]] 実現値のキャッシュ項目を有していて、
+既に新しい実現値 [CODE(HTTP)["B"]] の最初の 900 バイトを
+(多分中断した転送の結果として) 素手に受信しているとします。
+いま、クライアントは現在実現値を完全に受信したいと思ったとすると、
+この要求を送信することができます。
+
+>
+[PRE[
+GET /foo.html HTTP/1.1
+host: bar.example.net
+If-None-Match: "A"
+If-Range: "B"
+A-IM: range,vcdiff
+Range: bytes=900-
+]PRE]
+
+> In this example, as in the previous example, if Tcur = "A" then the
+server should send 304 (Not Modified), and if Tcur = "C", then the
+server should send the entire new instance, either as a 200 response
+or as a delta encoding against instance "A".
+
+この例では、前の例の通り、 [CODE(math)[[VAR[Tcur]] = [CODE(HTTP)["A"]]]]
+なら鯖は [CODE(HTTP)[304]] (未修正) を送信するべきであり、
+[CODE(math)[[VAR[Tcur]] = [CODE(HTTP)["C"]]]]
+なら鯖は完全な新しい実現値を [CODE(HTTP)[[[200]]]] 応答として、
+または実現値 [CODE(HTTP)["A"]] との差分符号化として送信するべきです。
+
+> However, if Tcur = "B", in this case the server should first select
+the specified range (bytes 900 through the end) from both instances
+"A" and "B", then compute the delta encoding between these ranges
+(using vcdiff), and then transmit the result using a 226 (IM Used)
+response with an "IM:range,vcdiff" response header.
+
+しかし、 [CODE(math)[[VAR[Tcur]] = [CODE(HTTP)["B"]]]]
+であるなら、この場合鯖は最初に特定の範囲 (バイト [CODE(HTTP)[900]]
+から最後まで) を [CODE(HTTP)["A"]] と
+[CODE(HTTP)["B"]] の両実現値から選択するべきであり、
+それから両範囲の差分符号化を ([CODE(HTTP)[[[vcdiff]]]] を使って)
+計算し、その結果を [CODE(HTTP)[226]] ([ABBR[IM]] 使用中)
+応答を使って [CODE(HTTP)[IM:range,vcdiff]] 応答頭と共に転送します。
+
+* 6 Encoding algorithms and formats
+> A number of delta encoding algorithms and formats have been described
+in the literature:
+
+数々の差分符号化算法・書式を文章で次に説明しています。
+
+>
+:   diff -e         :
+The UNIX "diff" program is ubiquitously available,
+and is relatively fast for both encoding and decoding
+(decoding is actually done using the "ed" program).
+However, the size of the resulting deltas is
+relatively large.  This algorithm can only be used on
+text-format files.
+
+[[UNIX]] [KBD[[[diff]]]] プログラムは偏在的に利用可能で、
+符号化も復号も比較的高速です (復号は通常 [KBD[[[ed]]]] プログラムを使って行います)。
+しかし、結果の差分の寸法は比較的大きいです。この算法は文書式ファイルにのみ使用出来ます。
+
+>
+:   diff -e | gzip  :
+Running the output of "diff" through a compression
+algorithm such as "gzip" [5] (or, perhaps better,
+"deflate" [7, 6]) yields a more compact encoding, but
+the costs of encoding and decoding are much higher
+than for "diff" by itself.  This algorithm can only
+be used on text-format files.
+
+[KBD[[[diff]]]] の出力に [CODE[[[gzip]]]] (あるいは、たぶん [CODE[[[deflate]]]] がよりよい) のような圧縮算法を通すとより短小な符号化ができますが、符号化と復号の経費は [KBD[diff]] 自体より高くつきます。
+この算法は文書式ファイルにのみ使用できます。
+
+>
+:   vcdiff (vdelta) :
+The algorithm that generates the "vcdiff" format [19,20] inherently compresses its output, and generally
+produces smaller results than the combination of
+"diff" and "gzip".  The algorithm also runs much
+faster, and can be applied to binary-format input.
+The "vcdiff" format is based on previous work on an
+algorithm named "vdelta."  (Note that the "vcdiff"
+format can be used either for delta encoding or as a
+compressed format, so two different instance-manipulation values would have to be registered in
+order to distinguish these two uses, should its use
+as a compressed format be adopted.)  The most recent
+published study suggests that "vdelta" is the best
+overall delta algorithm [16].
+
+[CODE[vcdiff]] 書式を生成する算法は元々出力を圧縮していまして、通常 [CODE[diff]] と [CODE[gzip]] の組み合わせより小さな結果が得られます。
+この算法はより早く実行することもできますし、バイナリ書式入力にも適用できます。 [CODE[vcdiff]] 書式は [CODE[vdelta]] という名前の算法についての以前の作業に基づいています。 ([CODE[vcdiff]] 書式は差分符号化にも圧縮書式にも使用出来るので、圧縮書式としての使用も採用するべきであるなら、両者を区別するために二つの別の実現値操作値を登録しなければならないことに注意。)
+最新の研究によれば [CODE[vdelta]] は最高の全体差分算法のようです。
+
+>
+:   gdiff           :
+The gdiff format [14] was specified as a generic,
+algorithm-independent format for expressing deltas.
+Because it is more generic it is easy to implement,
+but it may not be the most compact encoding format.
+
+[CODE[gdiff]] 書式は差分を表現するための一般的で算法独立の書式として指定されていました。この書式は一般的ですから実装するのは容易ですが、
+もっとも短小な符号化書式ではないかもしれません。
+
+> Our proposal does not recommend any specific algorithm or format, but
+rather encourages client and server implementors to choose the most
+appropriate one(s).  However, to avoid the possibility of excessively
+long "A-IM" headers, we suggest that, after some period of
+experimentation, it might be reasonable to specify a "recommended"
+set of delta formats for general-purpose HTTP implementations.
+
+我々の提案では、どの特定の算法や書式をも推奨はせず、
+むしろクライアントと鯖の実装者がもっとも適切なもの(達)を選ぶことをお勧めします。
+しかし、 [CODE(HTTP)[[[A-IM]]]] 頭が極端に長くなる可能性を避けるために、
+ある程度の実験期間の後に一般目的 HTTP 実装用の「推奨」
+差分書式の集合を規定することが合理的かもしれません。
+
+> We suspect that it should be possible to devise a delta encoding
+algorithm appropriate for use on typical image encodings, such as GIF
+and JPEG.  Although experiments with vdelta have not shown much
+potential [23], this may simply be because these experiments used
+vdelta directly on the already-compressed forms of these encodings.
+However, it might be necessary to devise a delta encoding algorithm
+that is aware of the two-dimensional nature of images.  We have some
+expectation that this is possible, since MPEG compression relies on
+computing deltas between successive frames of a video stream.
+
+典型的な[[画像符号化]]、例えば [[GIF]] や [[JPEG]] について使用するのに適切な差分符号化を工夫することも可能かもしれないと思っています。
+[CODE[vdelta]] での実験はそれほど可能性を示しませんでしたが、
+これはその実験で単に既にそれぞれの符号化で圧縮された形に直接 [CODE[vdelta]]
+を使用したからかもしれません。しかし、画像の二次元性を生かした差分符号化算法を考案することが必要かもしれません。
+[[MPEG]] 圧縮はビデオ流の前のこまとの差分を計算することに依っているのですから、これは可能であると期待しています。
+
+* 7 Management of base instances
+> If the time between modifications of a resource is less than the
+typical eviction time for responses in client caches, this means that
+the "old instance" indicated in a client's conditional request might
+not refer to the most recent prior instance.  This raises the
+question of how many old instances of a resource should be maintained
+by the server, if any.  We call these old instances "base instances."
+
+資源の修正と修正の間の時間がクライアントのキャッシュから応答が立ち退く典型的な時間より短いのであれば、このことはクライアントの条件付要求で示される
+「古い実現値」が直前の実現値を指していないかもしれません。
+ここから、資源の古い実現値を鯖が維持するとしたらどれだけ維持するべきかという疑問が生じます。その実現値を「基底実現値」と呼ぶことにします。
+
+> There are many possible options for server implementors.  For example:
+
+鯖実装者には多くの可能な選択肢があります。例えば、
+
+>
+-  The server might not store any old instances, and so would
+never respond with a delta.
+-  The server might only store the most recent prior instance;
+requests attempting to validate this instance could be answered
+with a delta, but requests attempting to validate older
+instances would be answered with a full copy of the resource.
+-  The server might store all prior instances, allowing it to
+provide a delta response for any client request.
+-  The server might store only a subset of the prior instances.
+The use of a Least Recently Used (LRU) algorithm to determine
+this kind of subset has proved effective in some similar
+circumstances, such as cache replacement.
+
+- 鯖は古い実現値を一切蓄積せず、差分で応答することも無い。
+- 鯖は直前の実現値のみを蓄積する。この実現値を検証しようとする要求には差分で答えることができるが、それより古い実現値を検証しようとする要求には資源の完全な複製で答える。
+- 鯖はすべての以前の実現値を蓄積し、どんなクライアントの要求にも差分応答を提供することができるようにする。
+- 鯖は以前の実現値の部分集合だけを蓄積する。
+この種の部分集合の決定には最長時間未使用 ([[LRU]])
+算法を使用すると同様の場面、例えばキャッシュ置換で効率的なことが証明されています。
+
+> The server might not have to store prior instances explicitly.  It
+might, instead, store just the deltas between specific base instances
+and subsequent instances (or the inverse deltas between base
+instances and prior instances).  This approach might be integrated
+with a cache of computed deltas.
+
+鯖は以前の実現値を陽に蓄積しなければならないわけではないでしょう。
+代わりに、単に特定の基底実現値と後続実現値の差分
+(や基底実現値と以前の実現値との逆差分) を蓄積するかもしれません。
+この手法は計算した差分のキャッシュと統合できるかもしれません。
+
+> None of these approaches necessarily requires additional protocol
+support.  However, if a server administrator wants to store only a
+subset of the prior instances, but would like the server to be able
+to respond using deltas as often as possible, then the client needs
+some additional information.  Otherwise, the client's "If-None-Match"
+header might specify a base instance not stored at the server, even
+though an appropriate base instance is held in the client's cache.
+
+これらの手法はいずれも、必ずしも追加のプロトコル支援を必要としていません。
+しかし、鯖管理者が以前の実現値の部分集合だけを蓄積することを望んでおりながら、鯖を可能な限り多くの機会に差分を使って応答できるようにしたいのであれば、クライアントは追加の情報が必要です。
+そうしなければ、クライアントの [CODE(HTTP)[[[If-None-Match]]]]
+頭は、クライアントのキャッシュに適切な基底実現値を別に保持していたとしても鯖に蓄積されていない基底実現値を指定してしまうかもしれません。
+
+> We identify two additional protocol changes to help solve this problem.
+
+この問題を解決するのを助ける二つの追加のプロトコルへの変更があります。
+
+** 7.1 Multiple entity tags in the If-None-Match header
+> Although the examples we have given so far show only one entity tag
+in an "If-None-Match" header, the HTTP/1.1 specification allows the
+header to carry more than one entity-tag.  This feature was included
+in HTTP/1.1 to support efficient caching of multiple variants of a
+resource, but it is not restricted to that use.
+
+我々の示した例は [CODE(HTTP)[If-None-Match]] 頭に一つの実体札しか示していませんが、
+HTTP/1.1 仕様はこの頭が複数個の [CODE(ABNF)[[[entity-tag]]]]
+を運搬することを認めています。この機能は一つの資源の複数の変体を効率よくキャッシュ付けするのを支援するために
+HTTP/1.1 に取り込まれましたが、その用途に制限されてはいません。
+
+> Suppose that a client has kept more than one instance of a resource
+in its cache.  That is, not only does it keep the most recent
+instance, but it also holds onto copies of one or more prior, invalid
+instances.  (Alternatively, it might retain sufficient delta or
+inverse-delta information to reconstruct older instances.)  In this
+case, it could use its conditional request to tell the server about
+all of the instances it could apply a delta to.  For example, the
+client might send:
+
+クライアントがある資源の複数の実現値をキャッシュに保持しているとします。
+つまり、最近の実現値を保持しているだけではなく、
+一つ以上の前の、[[非妥当]]な実現値の複製をも保持しています。
+(代わりに、古目の実現値を再構築するための十分な差分または逆差分を残しているかもしれません。)
+この場合、クライアントは鯖に差分を適用することのできるすべての実現値を伝える条件付要求を使用することができます。
+例えば、クライアントはキャッシュ中にこの資源の三つの実現値を有することを示すために
+
+>
+[PRE[
+GET /foo.html HTTP/1.1
+host: bar.example.net
+If-None-Match: "123xyz", "337pey", "489uhw"
+A-IM: vcdiff
+]PRE]
+to indicate that it has three instances of this resource in its
+cache.  If the server is able to generate a delta from any of these
+prior instances, it can select the appropriate base instance, compute
+the delta, and return the result to the client.
+
+と送信することができます。鯖が三つの以前の実現値のいずれかから差分を生成することができれば、適切な基底実現値を選択して差分を計算し、
+クライアントに結果を返すことができます。
+
+> In this case, however, the server must also tell the client which
+base instance to use, and so we need to define a response header,
+named "Delta-Base", for this purpose.  For example, the server might reply:
+
+しかし、この場合、鯖はクライアントにどの基底実現値を使用したのかも伝えなければなりませんから、そのために [CODE(HTTP)[[[Delta-Base]]]] という新しい応答頭を定義する必要があります。
+例えば、鯖は次のように返答するかもしれません。
+
+>
+[PRE[
+HTTP/1.1 226 IM Used
+ETag: "1acl059"
+IM: vcdiff
+Delta-Base: "337pey"
+Date: Tue, 25 Nov 1997 18:30:05 GMT
+]PRE]
+
+>   This response tells the client to apply the delta to the cached
+response with entity tag "337pey", and to associate the entity tag
+"1acl059" with the result.
+
+この応答は、クライアントに実体札 [CODE(HTTP)["337pey"]]
+のキャッシュした応答に差分を適用し、結果に実体札
+[CODE(HTTP)["lac1059"]] を関連付けるように言っています。
+
+> Of course, if the server has retained more than one of the prior
+instances identified by the client, this could complicate the problem
+of choosing the optimal delta to return, since now the server has a
+choice not only of the delta format, but also of the base instance to use.
+
+もちろん、鯖がクライアントの識別する前の実現値の複数個を残しておいていれば、
+返すべき最適な差分を選ぶ問題が複雑になるでしょう。
+その場合は差分書式についてだけではなく、
+使用する基底実現値についても鯖が選ばなければなりませんから。
+
+** 7.2 Hints for managing the client cache
+> Support for multiple entity tags in choosing the base instance
+implies that a client might benefit from storing multiple old
+instances of a resource in its cache.  A client with finite space
+would not want to keep all old instances, so it must manage its cache
+for maximal effectiveness by saving those instances most likely to be
+useful for future deltas.  Although this could be accomplished using
+information purely local to the client (e.g., an LRU algorithm),
+certain "hint" information from the server could improve the client's
+ability to manage its cache.  The use of hints for improving Web
+cache performance has been described previously [4, 22].
+
+基底実現値を選ぶに当たって複数の実体札に対応するためには、
+クライアントがキャッシュに資源の複数の古い実現値を蓄積することによる利益がなければなりません。
+有限空間のクライアントは古い実現値をすべて保持することを望まないでしょうから、クライアントは古い実現値を保存することによって最大の効率でもってキャッシュが将来の差分に最も有用であるように維持しなければなりません。
+これは純粋にクライアントに局所的な情報を使用して達成することもできますが
+(例えば [ABBR[LRU]] 算法)、鯖からのある「ヒント」でクライアントのキャッシュを維持する能力を向上させることができます。
+Web キャッシュの効率向上のためにヒントを使用することは以前に説明されています。
+
+> If the server intends to retain certain instances and not others, it
+can label the responses that transmit the retained instances.  This
+would help the client manage its cache, since it would not have to
+retain all prior instances on the possibility that only some of them
+might be useful later.  The label is a hint to the client, not a
+promise that the server will indefinitely retain an instance.
+
+鯖がある実現値は残して他は残さないことを予定しているのなら、
+残す実現値を転送する応答に札付けすることができます。
+これは、クライアントが一部だけしか後から有用ではないかもしれない前の実現値をすべて残さなくても構いませんから、クライアントがキャッシュを維持する助けとなるでしょう。
+札はクライアントへのヒントであって、鯖が際限なく実現値を残すことを約束はしません。
+
+> We propose adding a new directive to the existing "Cache-Control"
+header for this purpose, named "retain".  For example, in response to
+an unconditional request, the server might send:
+
+既存の [CODE(HTTP)[[[Cache-Control]]]] 頭にこの目的で
+[CODE(HTTP)[[[retain]]]] という新しい指令を加えることを提案します。
+例えば、非条件付要求に対する応答で、鯖は差分能力のあるクライアントがこの実現値を残すとよいと提案するために
+
+>
+[PRE[
+HTTP/1.1 200 OK
+ETag: "337pey"
+Date: Tue, 25 Nov 1997 18:30:05 GMT
+Cache-Control: retain
+]PRE]
+to suggest that a delta-capable client should retain this instance.
+The "retain" directive could also appear in a delta response,
+referring to the current instance:
+
+のような応答を送信するかもしれません。 [CODE(HTTP)[retain]]
+指令は現在実現値を指して差分応答にも出現するかもしれません。
+
+>
+[PRE[
+HTTP/1.1 226 IM Used
+ETag: "1acl059"
+Date: Tue, 25 Nov 1997 18:30:05 GMT
+Cache-Control: retain
+IM: vcdiff
+Delta-Base: "337pey"
+]PRE]
+
+> The "retain" directive includes an optional timeout parameter, which
+the server can use if it expects to delete an old base instance at a
+particular time.  For example,
+
+[CODE(HTTP)[retain]] 指令は省略可能な時間切れ引数を含みまして、
+鯖が古い基底実現値を特定の時刻に削除する予定であるならこれを使用できます。
+例えば、
+
+>
+[PRE[
+HTTP/1.1 200 OK
+ETag: "337pey"
+Date: Tue, 25 Nov 1997 18:30:05 GMT
+Cache-Control: retain=3600
+]PRE]
+means that the server intends to retain this base instance for one hour.
+
+は鯖がこの基底実現値を一時間残すつもりであることを意味します。
+
+>   Another situation where a server can provide a hint to a client is
+where the server supports the delta mechanism in general, but does
+not intend to provide delta-encoded responses for a particular
+resource.  By sending a "retain=0" directive, it indicates that the
+client should not waste request-header bytes attempting to obtain a
+delta-encoded response using this base instance (and, by implication,
+for this resource).  It also indicates that the client ought not
+waste cache space on this instance after it has become stale.  To
+avoid wasting response-header bytes, a server ought not send
+"retain=0", except in reply to a request that attempts to obtain a
+delta-encoded response.
+
+鯖がクライアントにヒントを提供できる他の状況は、
+鯖が差分機構に通常対応しているものの、
+特定の資源には差分符号化応答を提供するつもりが無い場合です。
+[CODE(HTTP)[retain=0]] 指令を送信することで、
+クライアントがこの基底実現値を使って (および、暗示により、この資源について) 差分符号化応答を得ようとして要求頭のバイトを無駄にするべきではないと示します。
+この指令は、クライアントがこの実現値が腐った後にもキャッシュ空間を浪費するべきではないことも示します。
+応答頭のバイトを浪費するのを避けるために、鯖は差分符号化応答を得ようとする要求に対する返答を除いて、
+[CODE(HTTP)[retain=0]] を送信するべきではありません。
+
+>     Note that the "retain" directive is orthogonal to the "max-age"
+directive.  The "max-age" directive indicates how long a cache
+entry remains fresh (i.e.,can be used without contacting the
+origin server for revalidation); the "retain" directive is of
+interest to a client AFTER the cache entry has become stale.
+
+[CODE(HTTP)[retain]] 指令は [CODE(HTTP)[[[max-age]]]] 指令とは直交することに注意して下さい。
+[CODE(HTTP)[max-age]] 指令はどれだけの間キャッシュ項目が[[新鮮]]であり続けるか
+(すなわち、起源鯖に[[再検証]]のために接触せずに使用できるか)
+を示します。 [CODE(HTTP)[retain]] 指令はキャッシュ項目が腐った'''後'''にクライアントがどうするかを示します。
+
+> In practice, the "Cache-Control" response-header field might already
+be present, so the cost (in bytes) of sending this directive might be
+smaller than these examples implies.
+
+実際には、 [CODE(HTTP)[Cache-Control]] [[応答頭欄]]は既に示されているかもしれませんから、この指令の送信に伴う (バイトでの)
+経費はこれらの例が暗示するのよりも小さいかもしれません。
+
+* 8 Deltas and intermediate caches
+> Although we have designed the delta-encoded responses so that they
+will not be stored by naive proxy caches, if a proxy does understand
+the delta mechanism, it might be beneficial for it to participate in
+sending and receiving deltas.
+
+差分符号化応答は無邪気な串キャッシュは蓄積しない様に設計していますが、
+串が差分機構を理解するのなら、串が差分の送受信に関与することは有益かもしれません。
+
+> A proxy could participate in several independent ways:
+
+串は幾つかの独立な方法で関与できます。
+
+>
+-  In addition to forwarding a delta-encoded response, the proxy
+might store it, and then use it to reply to a subsequent
+request with a compatible "If-None-Match" field (i.e., one that
+is either a superset of the corresponding field of the request
+that first elicited the response, or one that includes the
+"Delta-Base" value in the cached response), and with a
+compatible "IM" response-header field (one that includes the
+actual delta-encoding format used in the response.)  Of course,
+such uses are subject to all of the other HTTP rules concerning
+the validity of cache entries.
+
+- 串は、差分符号化応答の転送に加えて、これを蓄積し、互換な
+(つまり、最初に応答を引き出した要求の対応する欄の[[超集合]]であるか、またはキャッシュした応答の [CODE(HTTP)[[[Delta-Base]]]] 値を含む)
+[CODE(HTTP)[[[If-None-Match]]]] 欄と互換な
+(応答で使われた実際の差分符号化書式を含む)
+[CODE(HTTP)[[[IM]]]] [[応答頭欄]]のある[[後続要求]]への返答にそれを使用します。
+もちろん、この利用法はキャッシュ項目の妥当性に関する他のすべての
+HTTP の規則の対象です。
+
+>
+-  In addition to forwarding a delta-encoded response, the proxy
+might apply the delta to the appropriate entry in its own
+cache, which could then be used for later responses (even from
+non-delta-capable clients).
+-  When the proxy receives a conditional request from a delta-capable client, and the proxy has a complete copy of an up-to-date ("fresh," in HTTP/1.1 terminology) response in its cache,
+it could generate a delta locally and return it to the
+requesting client.
+-  When the proxy receives a request from a non-delta-capable
+client, it might convert this into a delta request before
+forwarding it to the server, and then (after applying a
+resulting delta response to one of its own cache entries) it
+would return a full-body response to the client (or a response
+with status code 206 or 304, as appropriate).
+
+- 串は、差分符号化応答の転送に加えて、自身のキャッシュの適切な項目に差分を適用して、 (差分能力の無いクライアントからのものであっても) 
+それを後の応答に使用することができるようにするかもしれません。
+- 串は、差分能力のあるクライアントからの条件付要求を受信した時で、
+串がそのキャッシュに最新の (HTTP/1.1 の用語で言えば「新鮮」な)
+完全な複製を有していれば、自分のところで差分を生成してこれを要求しているクライアントに返すことができるでしょう。
+- 串が差分能力の無いクライアントから要求を受信した時、
+これを鯖に転送する前に差分要求に変換して、それから
+(自身のキャッシュ項目の一つに結果の差分応答を適用した後に)
+クライアントに完全な本体の応答 (または適切なら状態符号 [CODE(HTTP)[[[206]]]]
+または [CODE(HTTP)[[[304]]]] の応答) を返すことができます。
+
+> All of these optional techniques increase proxy software complexity,
+and might increase proxy storage or CPU requirements.  However, if
+applied carefully, they should help to reduce the latencies seen by
+end users, and load on the network.  Generally, CPU speed and disk
+costs are improving faster than network latencies, so we expect to
+see increasing value available from complex proxy implementations.
+
+これらの任意選択の技法のすべてが串ソフトウェアの複雑性を増し、
+串の蓄積庫や CPU の要件を増加させるかもしれません。しかし、
+注意深く適用すれば、末端利用者から見える待ち時間やネットワークの負荷を削減する助けとなるはずです。
+一般に、 CPU 速度とディスク経費はネットワークの待ち時間より速く向上しますから、複雑な串実装から利用可能な値が増加するのを見ることができると期待しています。
+
+* 9 Digests for data integrity
+> When a recipient reassembles a complete HTTP response from several
+individual messages, it might be necessary to check the integrity of
+the complete response.  For example, the client's cache might be
+corrupt, or the implementation of delta encoding (either at client or
+server) might have a bug.
+
+受信者が幾つかの個々のメッセージから完全な HTTP 応答を組立てる際に、
+完全な応答の整合性の検査が必要かもしれません。
+例えば、クライアントのキャッシュが壊れているかもしれませんし、
+(クライアントか鯖の) 差分符号化の実装に虫がいるかもしれません。
+
+> HTTP/1.1 includes mechanisms for ensuring the integrity of individual
+messages.  A message may include a "Content-MD5" response header,
+which provides an MD5 message digest of the body of the message (but
+not the headers).  The Digest Authentication mechanism [11] provides
+a similar message-digest function, except that it includes certain
+header fields.  Neither of these mechanisms makes any provision for
+covering a set of data transmitted over several messages, as would be
+the case for the result of applying a delta-encoded response (or, for
+that matter, a Range response).
+
+HTTP/1.1 はここのメッセージの整合性を確保するために仕組みを含んでいます。
+メッセージは [CODE(HTTP)[[[Content-MD5]]]] 応答頭を含んでおり、
+この頭欄はメッセージの本体の [[MD5]] メッセージ要約を提供します
+(が頭群の要約は提供しません)。要約認証機構は、
+ある頭欄を含むのを除いて同様の [CODE[message-digest]]
+関数を提供しています。これらの機構のいずれもが、
+差分符号化応答を適用した結果
+(や、それを言うなら、 [CODE(HTTP)[[[Range]]]] 応答) の場合のような、
+幾つかのメッセージに亘って転送されるデータの集合を覆う準備はしていません。
+
+> Data integrity for reassembled messages requires the introduction of
+a new message header.  Such a mechanism is proposed in a separate
+document [24].  One might still want to use the Digest Authentication
+mechanism, or something stronger, to protect delta messages against tampering.
+
+再組立てメッセージのデータ整合性のためには新しいメッセージ頭の導入が必要です。
+その仕組みは別の文書で提案しています。それでも、
+改竄から差分メッセージを保護するために、要約認証機構やより強い物を使用することを望む人もいるかもしれません。
+
+* 10 Specification
+> In this specification, the key words "MUST", "MUST NOT", "SHOULD",
+"SHOULD NOT", and "MAY" are to be interpreted as described in RFC 2119 [3].
+
+この仕様書では、見出し語「'''しなければならない'''」、
+「'''してはならない'''」、「'''するべきである'''」、
+「'''するべきではない'''」、「'''して構わない'''」
+は [[RFC 2119]] で記述されている通りに解釈します。
+
+** 10.1 Protocol parameter specifications
+→ [[実現値操作]]
+** 10.2 IANA Considerations
+→ [[実現値操作]]
+** 10.3 Basic requirements for delta-encoded responses
+
+> A server MAY send a delta-encoded response if all of these conditions are true:
+
+[[鯖]]は、次の条件がすべて真であるなら、差分符号化応答を送って'''構いません'''。
+
+>
+- 1. The server would be able to send a 200 (OK) response for the request.
+- 2. The client's request includes an A-IM header field listing at
+least one delta-coding.
+- 3. The client's request includes an If-None-Match header field
+listing at least one valid entity tag for an instance of the
+Request-URI (a "base instance").
+
+- 鯖は要求に [CODE(HTTP)[[[200]]]] (了解) 応答を送ることができる。
+- クライアントの要求が最低一つの差分符号化を挙げた [CODE(HTTP)[[[A-IM]]]] 頭欄を含んでいる。
+- クライアントの要求が [CODE(ABNF)[[[Request-URI]]]] の[[実現値]] (「[[基底実現値]]」)
+についての最低一つの[[妥当]]な[[実体札]] を含んでいる。
+
+> A delta-encoded response:
+-  MUST carry a status code of 226 (IM Used).
+-  MUST include an IM header field listing, at least, the delta-coding employed.
+-  MAY include a Delta-Base header field listing the entity tag of
+the base-instance.
+
+差分符号化応答は、
+- [CODE(HTTP)[[[226]]]] ([ABBR[IM]] 使用中) [[状態符号]]を運搬しなければ'''なりません'''。
+- 最低、使用している差分符号化を挙げた [CODE(HTTP)[[[IM]]]]
+頭欄を含めなければ'''なりません'''。
+- [[基底実現値]]の[[実体札]]を挙げた [CODE(HTTP)[[[Delta-Base]]]]
+頭欄を含めなければ'''なりません'''。
+
+** 10.4 Status code specifications
+> The following new status code is defined for HTTP.
+
+次の新しい[[状態符号]]を [[HTTP]] 用に定義します。
+
+*** 10.4.1 226 IM Used
+→ [[226]]
+** 10.5 Header specifications
+> The following headers are defined, for use as entity-headers.  (Due
+to the terminological confusion discussed in section 3, some entity-headers are more properly associated with instances than with entities.)
+
+次の頭群を実体頭として使用する物として定義します。
+(3章で議論した用語の混乱により、実体頭の幾つかは[[実体]]よりも[[実現値]]に関連付けるのがより適切です。)
+
+*** 10.5.1 Delta-Base
+→ [[Delta-Base]]
+*** 10.5.2 IM
+→ [[HTTP//IM]]
+*** 10.5.3 A-IM
+→ [[A-IM]]
+** 10.6 Caching rules for 226 responses
+→ [[226]]
+** 10.7 Rules for deltas in the presence of content-codings
+> The use of delta encoding with content-encoded instances adds some
+slight complexity.  When a client (perhaps a proxy) has received a
+delta encoded response, either or both of that new response and a
+cached previous response may have non-identity content-codings.  We
+specify rules for the server and client, to prevent situations where
+the client is unable to make sense of the server's response.
+
+内容符号化実現値と差分符号化を共用することは甚だ複雑さを増します。
+クライアント (おそらくは串) が差分符号化応答を受信した時、
+その新しい応答とキャッシュした以前の応答の一方または両方が非[[同一]]内容符号化を有していても構いません。
+クライアントが鯖の応答を理解することができない状況を防ぐために、
+鯖とクライアントの規則を規定します。
+
+*** 10.7.1 Rules for generating deltas in the presence of content-codings
+> When a server generates a delta-encoded response, the list of
+content-codings the server uses (i.e., the value of the response's
+Content-Encoding header field) SHOULD be a prefix of the list of
+content-codings the server would have used had it not generated a
+delta encoding.
+
+鯖が差分符号化応答を生成する時、鯖が使用する内容符号化の並び
+(すなわち応答の [CODE(HTTP)[[[Content-Encoding]]]] 頭欄の値)
+は差分符号化を生成しないとしたらその鯖が使用する内容符号化の並びの頭の部分とする'''べきです'''。
+
+> This requirement allows a client receiving a delta-encoded response
+to apply the delta to a cached base instance without having to apply
+any content-codings during the process (although the client might, of
+course, be required to decode some content-codings).
+
+この要件を課すことで差分符号化応答を受信したクライアントが処理の間に内容符号化を適用する必要なしでキャッシュした[[基底実現値]]に差分を適用することができるようになります
+(が、もちろん、クライアントは幾つかの内容符号化を復号する必要があるかもしれません)。
+
+*** 10.7.2 Rules for applying deltas in the presence of content-codings
+> When a client receives a delta response with one or more non-identity
+content codings:
+
+クライアントが一つ以上の非[[同一]]内容符号化のなされた差分応答を受信した時、
+
+>
+- 1. If both the new (delta) response and the cached response
+(instance) have exactly the same set of content-codings, the
+client applies the delta response to the cached response
+without removing the content-codings from either response.
+- 2. If the new (delta) response and the cached response have a
+different set of content-codings, before applying the delta the
+client decodes one or more content-codings from the cached
+response, until the result has the same set of content-codings
+as the delta response.
+- 3. If a proxy or cache is forwarding the result of applying the
+delta response to a cached base instance response, or later
+forwards this result from a cache entry, the forwarded response
+MUST carry the same Content-Encoding header field as the new
+(delta) response (and so it must be content-encoded as
+indicated by that header field).
+
+- 新しい (差分) 応答とキャッシュした応答 (実現値) の両方がちょうど同じ内容符号化の集合を有する時は、クライアントはどちらの応答からも内容符号化を取り除かずにキャッシュした応答に差分応答を適用します。
+- 新しい (差分) 応答とキャッシュした応答が異なる内容符号化の集合を有する時は、差分を適用する前に、クライアントはキャッシュした応答から、
+結果が差分応答と同じ内容符号化の集合となるまで、
+一つ以上の内容符号化を復号します。
+- 串またはキャッシュがキャッシュした基底実現値応答に差分応答を適用した結果を転送するか、または後でこの結果をキャッシュ項目から転送する場合は、
+転送した応答は新しい (差分) 応答と同じ [CODE(HTTP)[[[Content-Encoding]]]]
+頭欄を運搬しなければ'''なりません''' (し、従ってその頭欄が示す内容符号化を行わなければなりません)。
+
+> The intent of these rules (and in particular, rule #3) is that the
+results are always consistent with the rule that the entity tag is
+associated with the result of the content-coding, and that any
+recipient after the application of the delta-coding receives exactly
+the same response it would have received as a status-200 response
+from the origin server (without any delta-coding).
+
+これらの規則 (特に規則 3) の意図は、
+[[実体札]]が内容符号化の結果に関連付けられるとの規則に常に整合することと、
+差分符号化を適用した後の受信者が[[起源鯖]]から (差分符号化なしの)
+状態 [CODE(HTTP)[[[200]]]] 応答を受信したとする場合と全く同じ応答を受信することです。
+
+*** 10.7.3 Examples for using A-IM, IM, and content-codings
+> Suppose a client, with an empty cache, sends this request:
+
+クライアントが、空の[[キャッシュ]]で、この要求を送ります。
+
+>
+[PRE[
+GET /foo.html HTTP/1.1
+Host: example.com
+Accept-encoding: gzip
+]PRE]
+
+> and the origin server responds with:
+
+そして起源鯖はこう応答します。
+
+>
+[PRE[
+HTTP/1.1 200 OK
+Date: Wed, 24 Dec 1997 14:00:00 GMT
+Etag: "abc"
+Content-encoding: gzip
+]PRE]
+
+> We will use the notation URI;entity-tag to denote specific instances,
+so this response would cause the client to store in its cache the
+entity GZIP(foo.html;"abc").
+
+特定の実現値を表すのに [SAMP[[VAR[URI]];[VAR[実体札]]]]という記法を使います。
+従ってこの応答でクライアントはきゃっ主に実体
+[CODE[GZIP(foo.html;"abc")]] を蓄積することとなります。
+
+> Then suppose that the client, a minute later, issues this conditional request:
+
+それからこのクライアントが一分後に次の[[条件付要求]]を発行するとします。
+
+>
+[PRE[
+GET /foo.html HTTP/1.1
+Host: example.com
+If-none-match: "abc"
+Accept-encoding: gzip
+A-IM: vcdiff
+]PRE]
+
+> If the server is able to generate a delta-encoded response, it might
+choose one of two alternatives.  The first is to compute the delta
+from the compressed instances (although this might not yield the most
+efficient coding):
+
+鯖が差分符号化応答を生成することができるなら、
+二つの選択肢から一つ選ぶことができます。
+最初は圧縮した実現値から差分を計算するものです
+(がそれは最も効率的な符号化を得ないかもしれません)。
+
+>
+[PRE[
+HTTP/1.1 226 IM Used
+Date: Wed, 24 Dec 1997 14:01:00 GMT
+Etag: "def"
+Delta-base: "abc"
+Content-encoding: gzip
+IM: vcdiff
+]PRE]
+
+> The body of this response would be the result of
+VCDIFF_DELTA(GZIP(foo.html;"abc"), GZIP(foo.html;"def")).  The client
+would store as a new cache entry the entity GZIP(foo.html;"def"),
+after recovering that entity by applying the delta to its previous
+cache entry.
+
+この応答の本体は [CODE[VCDIFF差分(GZIP(foo.html;"abc"), GZIP(foo.html;"def"))]]
+の結果となります。クライアントは以前のキャッシュ項目にこの差分を適用して実体 [CODE[GZIP(foo.html;"def")]] を回復した後にこの実体を新しいキャッシュ項目として蓄積します。
+
+> The server's other alternative would be to compute the delta from the
+uncompressed values, returning:
+
+鯖の他の選択肢は、未圧縮値の差分を計算することで、次の物を返すことになります。
+
+>
+[PRE[
+HTTP/1.1 226 IM Used
+Date: Wed, 24 Dec 1997 14:01:00 GMT
+Delta-base: "abc"
+Etag: "ghi"
+IM: vcdiff
+]PRE]
+
+> The body of this response would be the result of
+VCDIFF_DELTA(GUNZIP(GZIP(foo.html;"abc")), foo.html;"ghi"), or more
+simply VCDIFF_DELTA(foo.html;"abc", foo.html;"ghi").  The client
+would store as a new cache entry the entity foo.html;"ghi" (i.e.,
+without any content-coding), after recovering that entity by applying
+the delta to its previous cache entry.
+
+この応答の結果は、
+[CODE[VCDIFF差分(GUNZIP(GZIP(foo.html;"abc")), foo.html;"ghi")]]
+か、より簡単に
+[CODE[VCDIFF差分(foo.html;"abc", foo.html;"ghi")]]
+となります。クライアントは以前のキャッシュ項目にこの差分を適用して実体 [CODE[foo.html;"ghi"]] (つまり内容符号化一切無し) 
+を回復した後にこの実体を新しいキャッシュ項目として蓄積します。
+
+> Note that the new value of foo.html (at 14:01:00 GMT) without the
+gzip content-coding must have a different entity tag from the
+compressed instance of the same underlying file.
+
+[CODE(HTTP)[[[gzip]]]] 内容符号化無しの
+[CODE(URI)[foo.html]] の新しい値 (時刻 [CODE(HTTP)[14:01:00 [[GMT]]]])
+は同じ元ファイルの圧縮した実現値とは異なる[[実体札]]を持たなければならないことに注意して下さい。
+
+> The client's second request might have been:
+
+クライアントの二度目の要求はこうかもしれません。
+
+>
+[PRE[
+GET /foo.html HTTP/1.1
+Host: example.com
+If-none-match: "abc"
+Accept-encoding: gzip
+A-IM: diffe, gzip
+]PRE]
+
+> The client lists gzip in both the Accept-Encoding and A-IM headers,
+because if the server does not support delta encoding, the client
+would at least like to achieve the benefits of compression (as a
+content-coding).  However, if the server does support the diffe
+delta-coding, the client would like the result to be compressed, and
+this must be done as an instance-manipulation.
+
+鯖が差分符号化に対応していない時に、クライアントは少なくても
+(内容符号化としての) 圧縮の利益は得たいので、
+[CODE(HTTP)[gzip]] を [CODE(HTTP)[[[Accept-Encoding]]]] 頭と
+[CODE(HTTP)[[[A-IM]]]] 頭の両方に挙げています。しかし、
+鯖が [CODE(HTTP)[[[diffe]]]] 差分符号化に対応していれば、
+クライアントは結果が圧縮されることを望み、
+圧縮は実現値操作としてなされなければなりません。
+
+> A server that does support diffe might reply:
+
+[CODE(HTTP)[diffe]] に対応した鯖はこう返答するかもしれません。
+
+>
+[PRE[
+HTTP/1.1 226 IM Used
+Date: Wed, 24 Dec 1997 14:01:00 GMT
+Delta-base: "abc"
+Etag: "ghi"
+IM: diffe, gzip
+]PRE]
+
+> The body of this response would be the result of
+GZIP(DIFFE_DELTA(GUNZIP(GZIP(foo.html;"abc")), foo.html;"ghi")), or
+more simply GZIP(DIFFE_DELTA(foo.html;"abc", foo.html;"ghi")).
+Because the gzip compression is, in this case, an instance-manipulation and not a content-coding, it is not retained when the
+reassembled response is stored or forwarded, so the client would
+store as a new cache entry the entity foo.html;"ghi" (without any
+content-coding or compression).
+
+この応答の本体は
+[CODE[GZIP(DIFFE_DELTA(GUNZIP(GZIP(foo.html;"abc")), foo.html;"ghi"))]]
+またはより単純に [CODE[GZIP(DIFFE_DELTA(foo.html;"abc", foo.html;"ghi"))]]
+という結果になります。 [CODE(HTTP)[gzip]] 圧縮は、
+この場合では、実現値操作であって内容符号化ではないので、
+再組立て応答が蓄積されたり転送されたりする時には残らないので、
+クライアントは新しいキャッシュ項目を実体 [CODE[foo.html;"ghi"]]
+(内容符号化も圧縮も無し) として蓄積することになります。
+
+** 10.8 New Cache-Control directives
+> We define two new cache-directives (see section 14.9 of RFC 2616 [10]
+for the specification of cache-directive).
+
+新しい2つの[[キャッシュ指令]]を定義します。
+(キャッシュ指令の仕様は [[RFC 2616]] 14.9 節を参照。)
+
+*** 10.8.1 Retain directive
+→ [[retain]]
+*** 10.8.2 IM directive
+→ [[HTTP//IM]]
+** 10.9 Use of compression with delta encoding
+> The application of data compression to the diffe and gdiff delta
+codings has been shown to greatly reduce the size of the resulting
+message bodies, in many cases.  (The vcdiff coding, on the other
+hand, is inherently compressed and does not benefit from further
+compression.)  Therefore, it is strongly recommended that
+implementations that support the diffe and/or gdiff delta codings
+also support the gzip and/or deflate compression codings.  (The
+deflate coding provides a more compact result.)  However, this is not
+a requirement for the use of delta encoding, primarily because the
+CPU-time costs associated with compression and decompression may be
+excessive in some environments.
+
+[CODE(HTTP)[[[diffe]]]] 差分符号化や [CODE(HTTP)[[[gdiff]]]]
+差分符号化にデータ圧縮を応用すると、多くの場合において、
+結果のメッセージ本体の寸法を極めて削減できることが示されています。
+(他方 [CODE(HTTP)[[[vcdiff]]]] 符号化は、
+元々圧縮されており、更に圧縮しても利益はありません。)
+従って、 [CODE(HTTP)[diffe]] 差分符号化[[及び/又は]]
+[CODE(HTTP)[gdiff]] 差分符号化に対応する実装は
+[CODE(HTTP)[[[gzip]]]] 圧縮符号化[[及び/又は]]
+[CODE(HTTP)[[[deflate]]]] 圧縮符号化にも対応することを強く推奨します。
+([CODE(HTTP)[deflate]] 符号化がより短小な結果を得られます。)
+しかし、主として圧縮および展開に伴う CPU 時間経費が環境によっては高くつくかもしれないことから、
+差分符号化の使用の際の要件とはしません。
+
+> A client that supports both delta encoding and compression as
+instance-manipulations signals this by, for example
+
+差分符号化と圧縮の両方に[[実現値操作]]として対応するクライアントは、
+そのことを例えば次のように通知します。
+
+>
+
+[PRE[
+A-IM: diffe, deflate
+]PRE]
+
+> The ordering rule stated in section 10.5.3 requires, if the server
+uses both instance-manipulations in the response, that compression be
+applied to the result of the delta encoding, rather than vice versa.
+I.e., the response in this case would include
+
+10.5.3 節で述べた順序付け規則により、鯖が応答で両方の実現値操作を使用する場合には、差分符号化の結果に圧縮を適用する必要があり、
+その逆ではいけません。つまり、この場合の応答は次の頭欄を含みます。
+
+>
+-      IM: diffe, deflate
+
+> Note that a client might accept compression either as a content-coding or as an instance-manipulation.  For example:
+
+クライアントは圧縮を内容符号化としても実現値操作としても受入れるかもしれないことに注意して下さい。例:
+
+>
+[PRE[
+Accept-Encoding: gzip
+A-IM: gzip, gdiff
+]PRE]
+
+> In this example, the server may apply the gzip compression, either as
+a content-coding or as an instance-manipulation, before delta
+encoding.  Remember that the entity tag is assigned after content-coding but before instance-manipulation, so this choice does affect
+the semantics of delta encoding.
+
+この例では、鯖は差分符号化の前に [CODE(HTTP)[[[gzip]]]] 圧縮を、
+内容符号化としても実現値操作としても適用して構いません。
+実体札は内容符号化の後で実現値操作の後に割当てることに注意すると、
+この選択は差分符号化の意味に影響してしまうことがわかります。
+
+** 10.10 Delta encoding and multipart/byteranges
+> A client may request multiple, non-contiguous byte ranges in a single
+request.  The server's response uses the "multipart/byteranges" media
+type (section 19.2 of [10]) to convey multiple ranges in a response.
+If a multipart/byteranges response is delta encoded (i.e, uses a
+delta-coding as an instance-manipulation), the delta-related headers
+are associated with the entire response, not with the individual
+parts.  (This is because there is only one base instance and one
+current instance involved.)  A delta-encoded response with multiple
+ranges MUST use the same delta-coding for all of the ranges.
+
+クライアントは複数の連続していないバイト範囲を一つの要求で要求することができます。鯖の応答は複数の範囲を一つの応答で運搬するために
+[CODE(MIME)[[[multipart/byteranges]]]] 媒体型を使用します。
+[CODE(MIME)[multipart/byteranges]] 応答が差分符号化されている
+(つまり差分符号化を実現値操作として使用する) 場合、
+差分符号化頭群は個々の部分にではなく、応答全体に関連付けられています。
+(これは、一つの[[基底実現値]]と一つの[[現在実現値]]だけが関係しているからです。)
+複数の範囲の差分符号化応答はすべての範囲について同じ差分符号化を使用しなければ'''なりません'''。
+
+> If a server chooses to use a delta encoding for a
+multipart/byteranges response, it MUST generate a response in
+accordance with the following rules.
+
+鯖が [CODE(HTTP)[multipart/byteranges]] 応答に差分符号化を使用することを選ぶ場合、次の規則に従って応答を生成しなければ'''なりません'''。
+
+> When a multipart/byteranges response uses a delta-coding prior to a
+range selection, the A-IM and IM header fields list the delta-coding
+before the "range" literal.  (Recall that this is the approach taken
+to obtain a partial response after a premature termination of a
+message transmission.)  The server firsts generates a sequence of
+bytes representing the difference (delta) between the base instance
+and the current instance, then selects the specified ranges of bytes,
+and transmits each such range in a part of the multipart/byteranges media type.
+
+[CODE(HTTP)[multipart/byteranges]] 応答が範囲選択の前に差分符号化を使用する時は、 [CODE(HTTP)[[[A-IM]]]] 頭欄および [CODE(HTTP)[[[IM]]]]
+頭欄は [CODE(HTTP)[[[range]]]] 表記の前に差分符号化を挙げます。
+(これはメッセージ転送の早すぎる終端の後に部分応答を得るために取る方法であることを思い出して下さい。)
+鯖は最初に基底実現値と現在実現値の差異 (差分)を表現するバイト列を生成し、それから指定されたバイトの範囲群を選択し、
+各範囲を [CODE(MIME)[multipart/byteranges]] 媒体型の[[部分]]として転送します。
+
+> When a multipart/byteranges response uses a delta-coding after a
+range selection, the A-IM and IM header fields list the delta-coding
+after the "range" literal.  (Recall that this is the approach taken
+to obtain an updated version just of selected sections of an
+instance.)  The server first selects the specified ranges from the
+current instance, and also selects the same specified ranges from the
+base instance.  (Some of these selected ranges might be the empty
+sequence, if the instance is not long enough.)  The server then
+generates the individual differences (deltas) between the pairs of
+ranges, and transmits each such difference in a part of the
+multipart/byteranges media type.
+
+[CODE(MIME)[multipart/byteranges]] 応答が範囲選択の後に差分符号化を用いる時は、 [CODE(HTTP)[A-IM]] 頭欄および [CODE(HTTP)[IM]] 頭欄は
+[CODE(HTTP)[range]] 表記の後に差分符号化を挙げます。
+(これは単に実現値の選択した節の更新版を得るために取る方法であることを思い出して下さい。)
+鯖はまず現在実現値から指定された範囲を選択すると共に基底実現値からも指定された範囲を選択します。
+(実現値が十分長くなければ、選択された範囲の幾つかは空の列となるかもしれません。)
+鯖はそれから範囲の部分間の個々の差異 (差分) を生成し、
+各差異を [CODE(MIME)[multipart/byteranges]] 媒体型の部分として転送します。
+
+* 11 Quantifying the protocol overhead
+> The proposed protocol changes increase the size of the HTTP message
+headers slightly.  In the simplest case, a conditional request (i.e.,
+one for a URI for which the client already has a cache entry) would
+include one more header, e.g.:
+
+提案しているプロトコル変更は HTTP メッセージ頭群の寸法を著しく増加させます。
+単純な場合で、[[条件付要求]] (すなわち、クライアントが既に[[キャッシュ項目]]を持っている [[URI]] についての要求)
+では一つ余分の頭を例えば次のように含みます。
+
+>
+-      A-IM:vcdiff
+
+> This is about 13 extra bytes.  A recent study [23] reports mean
+request sizes from two different traces of 281 and 306 bytes, so the
+net increase in request size would be between 4% and 5%.
+
+これは約13バイト余分に使います。最新の研究によると二つの異なる追跡による平均要求寸法は281バイトと306バイトであり、
+従って要求寸法の増加は4%と5%となります。
+
+> Because a client must have an existing cache entry to use as a base
+for a delta-encoded response, it would never send "A-IM: vcdiff" (or
+listing other delta encoding formats) for its unconditional requests.
+The same study showed that at least 46% of the requests in lengthy
+traces were for URLs not seen previously in the trace; this means
+that no more than about half of typical client requests could be
+conditional (and the actual fraction is likely to be smaller, given
+the finite size of real caches).
+
+クライアントは差分符号化応答についての基底として使用する既存のキャッシュ項目を有しなければなりませんから、
+非条件付要求では [SAMP(HTTP)[[[A-IM]]: [[vcdiff]]]]
+(や他の差分符号化書式の列挙) を送信することはありません。
+同じ研究は長さにして要求の46%が追跡中で以前に見ていない [[URL]]
+についてのものであると示しています。これは、典型的要求の高々おおよそ半分が条件付となり得ることを意味します
+(そして実際の割合は、実際のキャッシュは有限の寸法なので、より小さくなるでしょう)。
+
+> The study also showed that 64% of the responses in a lengthy trace
+were for image content-types (GIF and JPEG).  As noted in section 6,
+we do not currently know of a delta-encoding format suitable for such
+image types.  Unless a client did support such a delta-encoding
+format, it would presumably not ask for a delta when making a
+conditional request for image content-types.
+
+研究は、長さにして応答の64%が画像内容型 ([[GIF]] や [[JPEG]])
+であることも示しています。6章で記したように、
+現在このような画像型に適当な差分符号化書式は知られていません。
+クライアントがそのような差分符号化書式に対応していない限り、
+画像の内容型について[[条件付要求]]するときには差分を頼まないのももっともらしいことでしょう。
+
+> Taken together, these factors suggest that the mean increase in
+request header size would be much less than 5%, and probably below 1%.
+
+まとめると、これらの因子によれば要求頭の平均増加が5%未満、
+おそらくは1%未満となると思われます。
+
+> Delta-encoded responses carry slightly longer headers.  In the
+simplest case, a response carries one more header, e.g.:
+
+差分符号化応答は甚だ長い頭を運搬します。
+最も簡単な場合、応答は例えば次のような一つ余分な頭を運搬します。
+
+>
+-      IM:vcdiff
+
+> This is about 11 bytes.  Other headers (such as "Delta-Base") might
+also be included.  However, none of these extra headers would be
+included except in cases where a delta encoding is actually employed,
+and the sender of the response can avoid sending a delta encoding if
+this results in a net increase in response size.  Thus, a delta-encoded response should never be larger than a regular response for
+the same request.
+
+これは約11バイトです。他の頭 (例えば [SAMP(HTTP)[[[Delta-Base]]]])
+も含まれるかもしれません。しかし、これら余分な頭は差分符号化が実際に行われる場合以外には含まれることとはならず、
+応答の送信者はこの結果が応答寸法の増加を招くのであれば避けることができます。
+従って、差分符号化応答は同じ要求に対する通常の応答より大きくなることはないはずです。
+
+> Simulations suggest that, when delta encoding pays off at all, it
+saves several thousand bytes [23].  Thus, adding a few dozen bytes to
+the response headers should almost never obviate the savings in the
+message-body size.
+
+シミュレーションによれば、差分符号化が完全にうまくいけば、
+数千バイトを節約できます。従って、応答頭群に何十バイトか加えることで
+[CODE(ABNF)[[[message-body]]]] の寸法の節約が無駄になることはほとんどないはずです。
+
+> Finally, the use of the "retain" Cache-Control directive might cause
+some additional overhead.  Some server heuristics might be successful
+in limiting the use of these headers to situations where they would
+probably optimize future responses.  Neither of these headers is
+necessary for the simpler uses of delta encoding.
+
+最後に、 [CODE(HTTP)[[[retain]]]] [CODE(HTTP)[[[Cache-Control]]]]
+指令の使用によって、幾らかの overhead が更に必要かもしれません。
+幾つかの鯖での学習で、おそらく将来の応答を最適化するであろう状況でこれらの頭群を使用することを制限することに成功するかもしれません。
+これらの頭群のいずれもが、差分符号化のより簡単な使用には必要ではありません。
+
+* 12 Security Considerations
+> We are not aware of any aspects of the basic delta encoding mechanism
+that affect the existing security considerations for the HTTP/1.1 protocol.
+
+基本差分符号化機構が HTTP/1.1 プロトコルの既存の安全についての考察に影響する点は見つかっていません。
+
+* 13 Acknowledgements
+> Phong Vo has provided a great deal of guidance in the choice of delta
+encoding algorithms and formats.  Issac Goldstand and Mike Dahlin
+provided a number of useful comments on the specification.  Dave
+Kristol suggested many textual corrections.
+
+Phong Vo には差分符号化算法・書式の選択の指導で多大な協力を頂きました。
+Issac Goldstand と Mike Dahlin には仕様書に数々の有用な意見を頂きました。
+Dave Kristol は多くの文面の修正を提案して下さいました。
+
+* 14 Intellectual Property Rights
+
+   The IETF has been notified of intellectual property rights claimed in
+   regard to some or all of the specification contained in this
+   document.  For more information consult the online list of claimed
+   rights, at <http://www.ietf.org/ipr.html>.
+
+   The IETF takes no position regarding the validity or scope of any
+   intellectual property or other rights that might be claimed to
+   pertain to the implementation or use of the technology described in
+   this document or the extent to which any license under such rights
+   might or might not be available; neither does it represent that it
+   has made any effort to identify any such rights.  Information on the
+   IETF's procedures with respect to rights in standards-track and
+   standards-related documentation can be found in BCP 11.  Copies of
+   claims of rights made available for publication and any assurances of
+   licenses to be made available, or the result of an attempt made to
+   obtain a general license or permission for the use of such
+   proprietary rights by implementors or users of this specification can
+   be obtained from the IETF Secretariat.
+
+* 15 References
+
+   1.  Gaurav Banga, Fred Douglis, and Michael Rabinovich.  Optimistic
+       Deltas for WWW Latency Reduction.  Proc. 1997 USENIX Technical
+       Conference, Anaheim, CA, January, 1997, pp. 289-303.
+
+   2.  Berners-Lee, T., Fielding, R. and H. Frystyk, "Hypertext Transfer
+       Protocol -- HTTP/1.0", RFC 1945, May 1996.
+
+   3.  Bradner, S., "Key words for use in RFCs to Indicate Requirement
+       Levels", BCP 14, RFC 2119, March 1997.
+
+   4.  Edith Cohen, Balachander Krishnamurthy, and Jennifer Rexford.
+       Improving End-to-End Performance of the Web Using Server Volumes
+       and Proxy Filters.  Proc. SIGCOMM '98, September, 1998, pp. 241-
+       253.
+
+   5.  Deutsch, P., "GZIP file format specification version 4.3", RFC
+       1952, May 1996.
+
+   6.  Deutsch, P., "DEFLATE Compressed Data Format Specification
+       version 1.3", RFC 1951, May 1996.
+
+   7.  Deutsch, P. and J-L. Gailly, "ZLIB Compressed Data Format
+       Specification version 3.3", RFC 1950, May 1996.
+
+   8.  Fred Douglis, Anja Feldmann, Balachander Krishnamurthy, and
+       Jeffrey Mogul.  Rate of Change and Other Metrics:  a Live Study
+       of the World Wide Web.  Proc. Symposium on Internet Technologies
+       and Systems, USENIX, Monterey, CA, December, 1997, pp. 147-158.
+
+   9.  Fielding, R., Gettys, J., Mogul, J., Nielsen, H. and T. Berners-
+       Lee, "Hypertext Transfer Protocol -- HTTP/1.1", RFC 2068, January
+       1997.
+
+   10. Fielding, R., Gettys, J., Mogul, J., Nielsen, H., Masinter, L.,
+       Leach, P. and T. Berners-Lee, "Hypertext Transfer Protocol --
+       HTTP/1.1", RFC 2616, June 1999.
+
+   11. Franks, J., Hallam-Baker, P., Hostetler, J., Leach, P., Luotonen,
+       A., Luotonen, L. and L. Stewart, "HTTP Authentication:  Basic and
+       Digest Access Authnetication", RFC 2617, June 1999.
+
+   12. Freed, N. and N. Borenstein, "Multipurpose Internet Mail
+       Extensions (MIME) Part One:  Format of Internet Message Bodies",
+       RFC 2045, November 1996.
+
+   13. Arthur van Hoff, John Giannandrea, Mark Hapner, Steve Carter, and
+       Milo Medin.  The HTTP Distribution and Replication Protocol.
+       Technical Report NOTE-DRP, World Wide Web Consortium, August,
+       1997.
+
+   14. Arthur van Hoff and Jonathan Payne.  Generic Diff Format
+       Specification.  Technical Report NOTE-GDIFF, World Wide Web
+       Consortium, August, 1997.
+
+   15. Barron C. Housel and David B. Lindquist.  WebExpress: A System
+       for Optimizing Web Browsing in a Wireless Environment.  Proc. 2nd
+       Annual Intl. Conf. on Mobile Computing and Networking, ACM, Rye,
+       New York, November, 1996, pp. 108-116.
+
+   16. James J. Hunt, Kiem-Phong Vo, and Walter F. Tichy.  An Empirical
+       Study of Delta Algorithms.  IEEE Soft. Config. and Maint.
+       Workshop, 1996.
+
+   17. Jacobson, V., "Compressing TCP/IP Headers for Low-Speed Serial
+       Links", RFC 1144, February 1990.
+
+   18. Khare, R. and S. Lawrence, "Upgrading to TLS Within HTTP/1.1",
+       RFC 2817, May 2000.
+
+   19. David G. Korn and Kiem-Phong Vo.  A Generic Differencing and
+       Compression Data Format.  Technical Report HA1630000-021899-02TM,
+       AT&T Labs - Research, February, 1999.
+
+   20. Korn, D. and K. Vo, "The VCDIFF Generic Differencing and
+       Compression Data Format", Work in Progress.
+
+   21. Merriam-Webster.   Webster's Seventh New Collegiate Dictionary.
+       G. & C. Merriam Co., Springfield, MA, 1963.
+
+   22. Jeffrey C. Mogul.  Hinted caching in the Web.  Proc. Seventh ACM
+       SIGOPS European Workshop, Connemara, Ireland, September, 1996,
+       pp.  103-108.
+
+   23. Jeffrey C. Mogul, Fred Douglis, Anja Feldmann, and Balachander
+       Krishnamurthy.  Potential benefits of delta encoding and data
+       compression for HTTP.  Research Report 97/4, DECWRL, July, 1997.
+
+   24. Mogul, J. and A. Van Hoff, "Instance Digests in HTTP", RFC 3230,
+       January 2002.
+
+   25. Narten, T. and H. Alvestrand, "Guidelines for Writing an IANA
+       Considerations Section in RFCs", BCP 26, RFC 2434, October 1998.
+
+   26. The Open Group.  The Single UNIX Specification, Version 2 - 6 Vol
+       Set for UNIX 98.  Document number T912, The Open Group, February,
+       1997.
+
+   27. W. Tichy.  "RCS - A System For Version Control".  Software -
+       Practice and Experience 15, 7 (July 1985), 637-654.
+
+   28. Andrew Tridgell and Paul Mackerras.  The rsync algorithm.
+       Technical Report TR-CS-96-05, Department of Computer Science,
+       Australian National University, June, 1996.
+
+   29. Stephen Williams.  Personal communication.
+       http://ei.cs.vt.edu/~williams/DIFF/prelim.html.
+
+   30. Stephen Williams, Marc Abrams, Charles R. Standridge, Ghaleb
+       Abdulla, and Edward A. Fox.  Removal Policies in Network Caches
+       for World-Wide Web Documents.  Proc. SIGCOMM '96, Stanford, CA,
+       August, 1996, pp. 293-305.
+
+* 16 Authors' addresses
+
+   Jeffrey C. Mogul
+   Western Research Laboratory
+   Compaq Computer Corporation
+   250 University Avenue
+   Palo Alto, California, 94305, U.S.A.
+
+   Phone: 1 650 617 3304 (email preferred)
+   EMail: JeffMogul@@acm.org
+
+   Balachander Krishnamurthy
+   AT&T Labs - Research
+   180 Park Ave, Room D-229
+   Florham Park, NJ 07932-0971, U.S.A.
+
+   EMail: bala@@research.att.com
+
+   Fred Douglis
+   AT&T Labs - Research
+   180 Park Ave, Room B-137
+   Florham Park, NJ 07932-0971, U.S.A.
+
+   Phone: 1 973 360-8775
+   EMail: douglis@@research.att.com
+
+   Anja Feldmann
+   University of Saarbruecken, Germany,
+   Computer Science Department
+   Im Stadtwald, Geb. 36.1, Zimmer 310
+   D-66123 Saarbruecken, Germany
+
+   EMail: anja@@cs.uni-sb.de
+
+   Yaron Y. Goland
+
+   Email: yaron@@goland.org
+
+   Arthur van Hoff
+   Marimba, Inc.
+   440 Clyde Avenue
+   Mountain View, CA 94043, U.S.A.
+
+   Phone: 1 650 930 5283
+   EMail: avh@@marimba.com
+
+   Daniel M. Hellerstein
+   Economic Research Service, USDA
+   1909 Franwall Ave, Wheaton MD 20902
+
+   Phone: 1 202 694-5613 or 1 301 649-4728
+   EMail: danielh@@crosslink.net or webmaster@@srehttp.org
+
+* 17 Full Copyright Statement
+
+   Copyright (C) The Internet Society (2002).  All Rights Reserved.
+
+   This document and translations of it may be copied and furnished to
+   others, and derivative works that comment on or otherwise explain it
+   or assist in its implementation may be prepared, copied, published
+   and distributed, in whole or in part, without restriction of any
+   kind, provided that the above copyright notice and this paragraph are
+   included on all such copies and derivative works.  However, this
+   document itself may not be modified in any way, such as by removing
+   the copyright notice or references to the Internet Society or other
+   Internet organizations, except as needed for the purpose of
+   developing Internet standards in which case the procedures for
+   copyrights defined in the Internet Standards process must be
+   followed, or as required to translate it into languages other than
+   English.
+
+   The limited permissions granted above are perpetual and will not be
+   revoked by the Internet Society or its successors or assigns.
+
+   This document and the information contained herein is provided on an
+   "AS IS" basis and THE INTERNET SOCIETY AND THE INTERNET ENGINEERING
+   TASK FORCE DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING
+   BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE INFORMATION
+   HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED WARRANTIES OF
+   MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+
+[[RFCのライセンス]]参照。
+
+* Acknowledgement
+
+   Funding for the RFC Editor function is currently provided by the
+   Internet Society.
+
+* memo
+@

@@ -1,0 +1,683 @@
+head	1.5;
+access;
+symbols
+	suikawiki3-final:1.5
+	before-db-leaffile:1.3
+	after-upgrade-to-suikawiki-3:1.3
+	before-fork-suikawiki3:1.3
+	after-restore-20040122:1.3;
+locks; strict;
+comment	@# @;
+
+
+1.5
+date	2006.12.13.02.24.54;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2006.07.13.02.19.57;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2003.11.18.02.04.11;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2003.09.03.02.00.19;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.06.28.10.15.08;	author make;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.5
+log
+@auto-committed
+@
+text
+@
+[18] [[相対URI]]とその[[基底URI]]の取り方にも色々と問題があります。
+大きく、
+- 何を基準に基底 URI を設定するか
+- 基底 URI が得られない時 [WEAK[(URI のない空間上の情報を扱う時や、階層のない URI 空間の資源を扱う時など)]] どうするか
+- 識別子としての URI で相対 URI を認めるか
+
+辺りに集約できるでしょう。
+
+- [32] [WEAK[2003-08-27 02:43:18 +00:00]] ''[[asf]]'': 
+
+[35]
+test!!!!!!!!   http://regdom.org/Alesse-28/Alesse-28.html#Alesse-28 Alesse-28
+([[batirjan]] [batirjan@@mail.kz])
+
+
+[36]
+test!!!!!!!! http://regdom.org/Alesse-28/Alesse-28.html#Alesse-28 Alesse-28
+([[dauren]] [ahmet@@mail.kz])
+
+
+[[#comment]]
+
+
+* 基底 URI の存在
+
+[25] [[XML]] では、次のものに構造的に基底 URI
+が存在します。
+:[[文書実体]]:文書実体そのものを取得するのに使った URI
+:([[外部解析実体]]):[WEAK[実体が参照された時その実体とまわりとの境界は失われるので、実質的には基底 URI を持てない。]]
+:[[要素]]:[CODE(XML)[xml:base]] 属性の値又は親構造から継承
+:外部解析実体内の[[外部識別子]]を持つ[[マーク宣言]]:外部解析実体の基底 URI
+
+[[#comment]]
+
+
+* 基底 URI の決定
+
+
+** 文書実体を含む外部解析実体の基底 URI
+
+[26] (参照: <http://www.w3.org/TR/xmlbase/#granularity>)
+= カプセル化している実体 [WEAK[(ここで[DFN[実体]]とは、 [[MIME]] 的な意味。)]] の基底 URI。
+-- 例えば MIME/[[HTTP]] の [CODE(MIME)[[[Content-Location:]]]]
+欄とか。
+= 実体を取り出すのに使用した URI。
+-- HTTP の [[redirect]] などが使われた場合は、
+最終的に使用した URI。
+= [[応用]]の[[文脈]]で決定する URI。
+
+[[#comment]]
+
+
+** 要素の基底 URI
+
+[27] (参照: <http://www.w3.org/TR/xmlbase/#granularity>)
+= その要素の [CODE(XML)[xml:base]] 属性の値による URI。
+= その要素が外部解析実体に直接に含まれる 
+[WEAK[(例: [SAMP(XML)[<?xml encoding="iso-2022-jp"?>なんたら<whatIsBase>The Element</whatIsBase>かんたら]])]]
+なら、その実体の基底 URI (>>26)。
+= そうでないなら、その要素の親要素の基底 URI (>>27)。
+
+- [29] なお、 [CODE(XML)[xml:base]] 属性の値が相対 URI であることもあり得ます。この値は更に上位の情報を元に [WEAK[(要素自体の兄弟としてその相対 URI が存在したかのような感じで)]] 解決されます。
+[[#comment]]
+
+
+** その他の基底 URI
+
+[28] [[属性]], [[文字]], 実体 (の置換文) は基底 URI
+を持ちません。それを含む・参照する構造の基底 URI
+が使われます。
+
+例えば、
+[PRE[
+<!ENTITY ent "relative/URI">
+<!ENTITY ext SYSTEM "entities/ext.ent">
+ [INS[...]]
+<element xml:base="http://example/base/URI/of/element">
+  <el attribute="relative/URI"/>
+  <uri>relative/URI</uri>
+  &ent;
+  &ext;
+</element>
+ 
+ [INS[entities/ext.ent]]
+relative/URI
+<uri>relative/URI/2</uri>
+]PRE]
+
+で、 [CODE(URI)[relative/URI]] はすべて
+[CODE(URI)[http://example/base/URI/of/relative/URI]],
+[CODE(URI)[relative/URI/2]] は
+[CODE(URI)[http://example/base/URI/of/entities/relative/URI]]
+に解決されます。
+
+[[#comment]]
+
+
+** まとめ
+
+[30] 以上の説明と重複ではありますが、
+<http://www.w3.org/TR/xmlbase/#matching> から:
+
+- 文内容にある URI 参照の基底 URI は、その文が含まれる要素の基底 URI とする。
+- [CODE(XML)[xml:base]] 属性の中にある URI 参照の基底 URI
+は、
+-- その要素のその文書実体又は外部解析実体中にある親要素で [CODE(XML)[xml:base]] 属性を持っている香具師がいれば、その基底 URI とし,
+-- そうでなければ、その要素を含んでいる文書実体又は外部解析実体の基底 URI とする。
+- これ以外の属性の値 (既定属性値を含む。) にある URI 
+参照の基底 URI は、その属性を持っている要素の基底 URI とする。
+- 処理指令の内容にある URI 参照の基底 URI は、
+-- その処理指令の親要素がその文書実体又は外部解析実体中にあれば、その基底 URI とし,
+-- そうでなければその処理指令を含む文書実体又は外部解析実体の基底 URI とする。
+
+- [31] で、結局 XML 基底の仕様書には DTD 中の構造の基底 URI についての言及はないんですけど、その辺は >>1- に書いてある、システム識別子の基底 URI の計算方法と同じと見ていいんでしょうかね? まあ同じじゃないと困るんですが。
+[[#comment]]
+
+
+* システム識別子の基底 URI について
+
+[1] [[SE]] の errata の修正 E18
+<http://www.w3.org/XML/xml-V10-2e-errata#E18>
+(2001-04-24) について。
+
+4.2.2 節 <http://www.w3.org/TR/REC-xml#sec-external-ent>
+で、
+
+> XML 1.0 仕様書の適用範囲外の情報が提供されない限り、
+(例えば特定の DTD で規定された特別な XML 要素型とか、
+特定の応用の仕様で定義されている[[処理指令]]とかで指定されない限り、)
+相対 URI はその実体宣言が出現する資源の位置からの関係とします。
+従って URI は[[文書実体]]からの関係であったり、外部 DTD
+部分集合を含んでいる実体からのであったり、
+或いは他の外部引数実体からのものであったりします。
+
+とある件について、次の規定が追加されました。
+
+> これは宣言を開始させる [CODE(XML)[<]] が、
+宣言の解釈される時点で含まれている外部実体であると定義します。
+
+[2] >>1 の修正の説明。
+
+> この修正は、相対 URI の基底を決定する目的において、
+正確にはどこで宣言が行われたかを明確にします。
+
+[PRE[
+[CODE(file)[example.xml]]
+ <!DOCTYPE foo [
+ <!ENTITY % pe SYSTEM "subdir1/pe">
+ %pe;
+ %intpe;
+ ]>
+ <foo>&ent;</foo>
+]PRE]
+
+[PRE[
+[CODE(file)[subdir1/pe]]
+ <!ENTITY % extpe SYSTEM "../subdir2/extpe">
+ <!ENTITY % intpe "%extpe;">
+]PRE]
+
+[PRE[
+[CODE(file)[subdir2/extpe]]
+ <!ENTITY ent SYSTEM 'entfile'>
+]PRE]
+
+> [CODE(XML)[ent]] の宣言を構成する文字は 
+[CODE(file)[subdir2/extpe]] 中に出現しますが、
+ここでは宣言として解析されません。
+単に [CODE(XML)[intpe]] の置換文を構成する文字として扱われるだけです。
+それは [CODE(XML)[intpe]] が解析されるまでは宣言として解析されません。
+[CODE(XML)[intpe]] が解析されるのはそれを含めている外部実体が文書実体である所です。
+従って適切な基底 URI は [CODE(file)[example.xml]]
+の基底 URI となります。
+> 使用されるのは含めている外部実体である理由は、
+内部実体がその基底 URI 情報を伝達しないことであると言えるでしょう。
+確かに、内部実体はその置換文だけを持っています。
+> [CODE(file)[example.xml]] が [CODE(XML)[%intpe;]]
+ではなく [CODE(XML)[%extpe;]] を含んでいたとすると、
+話は変わってきます。 [CODE(file)[subdir2/extpe]]
+の内容は宣言として解析され、適当な基底 URI
+は [CODE(file)[subdir2]] の基底 URI となります。
+
+[3] >>2 の後半の例:
+[PRE[
+[CODE(file)[example.xml]]
+ <!DOCTYPE foo [
+ <!ENTITY % extpe SYSTEM "../subdir2/extpe">
+ %extpe;
+ ]>
+ <foo>&ent;</foo>
+]PRE]
+
+[PRE[
+[CODE(file)[subdir2/extpe]]
+ <!ENTITY ent SYSTEM 'entfile'>
+]PRE]
+
+[4] [[SGML]] 的にはどっちの例も、宣言が評価されるのは
+DTD であって外部解析実体にはならないと思うのですが、
+この考えは間違ってますか?
+(実体宣言で宣言された解析実体の内部実体と外部実体の差異は置換文の段階で存在しない (どちらも基底 URI を保持し得ない) のではないでしょうか?)
+
+[5] >>4 SGML も XML も参照を[[置換文]]で置き換える,
+置換結果はその文脈の構文と意味を満たさねばならない、
+という規定は共通。ただ、 SGML の仕様的にはこういう処理を意図しているような臭いがぷんぷんする。 (あってる? 教えて、偉い人。)
+[PRE[
+文書実体 <foo>aiueo &ent;          abcdef</foo>
+               1) ^ ^ 2)           ^ 5)
+実体 ent            いろはにほへと[CODE(SGML)[[[Ee]]]]
+                    ^ 3)          ^ 4)
+]PRE]
+= 文書実体を [SAMP(SGML)[o]] [WEAK[(実体参照の直前)]] まで処理する。
+= 実体 [SAMP(SGML)[ent]] への参照を発見。
+= -- [[実体管理系]]に実体 [SAMP(SGML)[ent]] を要求。
+-- 処理は実体 [SAMP(SGML)[ent]] に移る。
+= 実体 [SAMP(SGML)[ent]] が終了。
+= 処理は文書実体に戻る。 [SAMP(SGML)[a]] から処理続行。
+
+この処理モデルなら、実体 [SAMP(SGML)[ent]]
+中で発見された[[マーク]] (を反映した物体)
+の属性として元々どこの実体に所属していたのかという情報を与える余地はある。
+
+でも、このやり方なら内部実体だろうが外部実体だろうが元の
+URI は覚えてられるよなあ。。。
+
+[6] 実際問題としては、今の XML errata の解釈辺りで手を売っとかないと、モジュール化 DTD で酷い目に合いますから、妥当なところではあります。
+
+[8] >>4-5  >>2 の説明によれば重要な意義を持つのは内部実体か外部実体かです。
+つまり言い換えると、引数実体の参照が評価される場所が実体宣言の中 [WEAK[([SAMP(SGML)[<!ENTITY % ent2 "%ent;">]])]] か
+DTD の地の場所 ([CODE(SGML)[[[ds]]]])
+[WEAK[([SAMP(SGML)[<!foo>%ent;<!bar>]])]] かです。
+
+>>5 の処理とこのことを考え合わせればうまく説明が付きません?
+
+- [7] ''システム識別子の相対パスについて - SGML から XML へ'' <http://math.oheya.to/markup/sgml/sysid-uri>: 同じ問題を扱ってます。
+- [33] ''システム識別子の基底 - XML Core 関連'' <http://www.satoshii.org/markup/xml/sysid-base>
+
+[34]
+[3]>>2 の後半の例: の"extpe"のURIの記述は正しいのでしょうか? "../"が余計な様に思うんですが&#65381;&#65381;&#65381;
+([[名無しさん]] [WEAK[2006-07-12 04:10:54 +00:00]])
+
+[[#comment]]
+
+
+* XML 名前空間における名前空間名と相対 URI
+
+[19] [[XML名前空間]]ではその名前空間を識別する[[名前空間名]]として
+URI 参照を用いますが、最初の[[勧告]]ではその[[同一]]性の定義
+[同一] にて、相対 URI を使うと基底 URI
+との絡みで面倒なことになるのが示唆されています。
+
+この問題についての討論会 [xppa] が行われ、結果として相対 URI
+の使用は[[非推奨]]とし、その[[解決]]は将来の W3C
+の仕様書で規定するかもしれないとされました [修正4]。
+
+その後、更に修正が加えられ、相対 URI の意味については将来の
+W3C 仕様書でも規定しないことになりました [修正9]。
+
+[[DOM]] や [[XPath]] などの XML 名前空間を扱う関連仕様でも、
+その挙動は未定義となっています。 [[XMLBase]]
+も [CODE(XML)[[[xml]]:[[base]]]] 
+属性の名前空間名に対する効力は未定義にしています。
+
+[20] 空の URI (長さ 0 の文字列) は一般には基底 URI
+そのものを指しますが、これが使えるかははっきりしません。
+
+[[既定名前空間]]の定義 [既定 NS] には、
+既定名前空間の宣言では空の文字列が指定
+([CODE(XML)[[[xmlns]]=""]]) できると書かれています。
+但しこの場合は URI 参照としてではなく、
+「名前空間なし」の指定とみなされます。
+
+既定名前空間の宣言では、と書かれていることから推測して、
+既定名前空間以外の宣言では使用できないと解釈できるかもしれませんが、
+現時点で勧告にも Errata にもなんとも書いてありません。
+ただ、 [修正 9] には「 The use of relative URI references, including ''same-document references'', in namespace declarations is deprecated.」
+と書かれています (強調引用者)。
+[修正 4] にはなかった注記がわざわざ加えられているのですから、
+使えると考えられるかもしれません。
+[WEAK[(でも同じ文書の参照には [CODE(URI)[#]]]]
+というのもあります...)]]
+
+[21] XML 名前空間 1.1 では空の属性値の宣言だとその[[接頭辞]]についての関連付けを取り消すという意味に解釈されることになっています。
+[修正 9] の修正はこの「非互換性」への配慮かもしれませんが...
+
+[22] ちなみに、 [[Mozilla]] の XML parser
+は [SAMP(XML)[xmlns:[VAR[ns]]=""]] を文句なしに解釈してくれますが、
+[[M$XML]] は[[致命的誤り]]と解釈しています。
+
+[23] 名前空間 1.1 では [[IRI]] を URI の代わりに使いますが、
+そこ [1.1 IRI] で「空文字列も妥当な IRI 参照であるが、
+XML 名前空間では使わない」と言っています。
+これは 1.0 にはない文ですが、これから推測するとやはり
+1.0 で空文字列 URI 参照は妥当なのかもしれません。
+
+[24] ところで、 XML 名前空間 1.1 でも、「将来の仕様書でも解釈は規定しない」
+としながらも相対 IRI を認めています。
+なんで禁止しないんでしょう? >>23 が真であるなら 1.0 と 1.1
+は非互換なので、これも禁止しちゃえばいいのに。
+それともやっぱり互換性を保つ必要があるから禁止はしないのかなあ。
+やっぱりわからん...
+
+- [同一] <http://www.w3.org/TR/REC-xml-names/#dt-identical>
+- [既定 NS] <http://www.w3.org/TR/REC-xml-names/#dt-defaultNS>
+- [xppa] ''W3C XML Plenary Ballot on URIs and Namespaces'' <http://www.w3.org/2000/09/xppa>
+- [修正4] <http://www.w3.org/XML/xml-names-19990114-errata#NE09>
+- [修正9] <http://www.w3.org/XML/xml-names-19990114-errata#NE09>
+- [1.1 IRI] <http://www.w3.org/TR/xml-names11/#iri-use>
+[[#comment]]
+
+
+* メモ@
+
+
+1.4
+log
+@auto-committed
+@
+text
+@d11 11
+@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@d1 9
+a9 10
+#?SuikaWiki/0.9
+
+[18] [[相対URI]]とその[[基底URI]]の取り方にも色々と問題があります。
+大きく、
+- 何を基準に基底 URI を設定するか
+- 基底 URI が得られない時 [WEAK[(URI のない空間上の情報を扱う時や、階層のない URI 空間の資源を扱う時など)]] どうするか
+- 識別子としての URI で相対 URI を認めるか
+
+辺りに集約できるでしょう。
+
+d11 93
+a103 86
+[[#comment]]
+
+* 基底 URI の存在
+
+[25] [[XML]] では、次のものに構造的に基底 URI
+が存在します。
+:[[文書実体]]:文書実体そのものを取得するのに使った URI
+:([[外部解析実体]]):[WEAK[実体が参照された時その実体とまわりとの境界は失われるので、実質的には基底 URI を持てない。]]
+:[[要素]]    :[CODE(XML)[xml:base]] 属性の値又は親構造から継承
+:外部解析実体内の[[外部識別子]]を持つ[[マーク宣言]]:外部解析実体の基底 URI
+
+[[#comment]]
+
+* 基底 URI の決定
+
+** 文書実体を含む外部解析実体の基底 URI
+
+[26] (参照: <http://www.w3.org/TR/xmlbase/#granularity>)
+= カプセル化している実体 [WEAK[(ここで[DFN[実体]]とは、 [[MIME]] 的な意味。)]] の基底 URI。
+=- 例えば MIME/[[HTTP]] の [CODE(MIME)[[[Content-Location:]]
+欄とか。
+= 実体を取り出すのに使用した URI。
+=- HTTP の [[redirect]] などが使われた場合は、
+最終的に使用した URI。
+= [[応用]]の[[文脈]]で決定する URI。
+
+[[#comment]]
+
+** 要素の基底 URI
+
+[27] (参照: <http://www.w3.org/TR/xmlbase/#granularity>)
+= その要素の [CODE(XML)[xml:base]] 属性の値による URI。
+= その要素が外部解析実体に直接に含まれる 
+[WEAK[(例: [SAMP(XML)[<?xml encoding="iso-2022-jp"?>なんたら<whatIsBase>The Element</whatIsBase>かんたら]])]]
+なら、その実体の基底 URI (>>26)。
+= そうでないなら、その要素の親要素の基底 URI (>>27)。
+
+- [29] なお、 [CODE(XML)[xml:base]] 属性の値が相対 URI であることもあり得ます。この値は更に上位の情報を元に [WEAK[(要素自体の兄弟としてその相対 URI が存在したかのような感じで)]] 解決されます。
+[[#comment]]
+
+** その他の基底 URI
+
+[28] [[属性]], [[文字]], 実体 (の置換文) は基底 URI
+を持ちません。それを含む・参照する構造の基底 URI
+が使われます。
+
+例えば、
+[PRE[
+<!ENTITY ent "relative/URI">
+<!ENTITY ext SYSTEM "entities/ext.ent">
+ [INS[...]]
+<element xml:base="http://example/base/URI/of/element">
+  <el attribute="relative/URI"/>
+  <uri>relative/URI</uri>
+  &ent;
+  &ext;
+</element>
+ 
+ [INS[entities/ext.ent]]
+relative/URI
+<uri>relative/URI/2</uri>
+]PRE]
+で、 [CODE(URI)[relative/URI]] はすべて
+[CODE(URI)[http://example/base/URI/of/relative/URI]],
+[CODE(URI)[relative/URI/2]] は
+[CODE(URI)[http://example/base/URI/of/entities/relative/URI]]
+に解決されます。
+
+[[#comment]]
+
+** まとめ
+
+[30] 以上の説明と重複ではありますが、
+<http://www.w3.org/TR/xmlbase/#matching> から:
+
+- 文内容にある URI 参照の基底 URI は、その文が含まれる要素の基底 URI とする。
+- [CODE(XML)[xml:base]] 属性の中にある URI 参照の基底 URI
+は、
+-- その要素のその文書実体又は外部解析実体中にある親要素で [CODE(XML)[xml:base]] 属性を持っている香具師がいれば、その基底 URI とし,
+-- そうでなければ、その要素を含んでいる文書実体又は外部解析実体の基底 URI とする。
+- これ以外の属性の値 (既定属性値を含む。) にある URI 
+参照の基底 URI は、その属性を持っている要素の基底 URI とする。
+- 処理指令の内容にある URI 参照の基底 URI は、
+-- その処理指令の親要素がその文書実体又は外部解析実体中にあれば、その基底 URI とし,
+-- そうでなければその処理指令を含む文書実体又は外部解析実体の基底 URI とする。
+
+d105 121
+a225 114
+[[#comment]]
+
+*システム識別子の基底 URI について
+
+[1] [[SE]] の errata の修正 E18
+<http://www.w3.org/XML/xml-V10-2e-errata#E18>
+(2001-04-24) について。
+
+4.2.2 節 <http://www.w3.org/TR/REC-xml#sec-external-ent>
+で、
+> XML 1.0 仕様書の適用範囲外の情報が提供されない限り、
+(例えば特定の DTD で規定された特別な XML 要素型とか、
+特定の応用の仕様で定義されている[[処理指令]]とかで指定されない限り、)
+相対 URI はその実体宣言が出現する資源の位置からの関係とします。
+従って URI は[[文書実体]]からの関係であったり、外部 DTD
+部分集合を含んでいる実体からのであったり、
+或いは他の外部引数実体からのものであったりします。
+
+とある件について、次の規定が追加されました。
+> これは宣言を開始させる [CODE(XML)[<]] が、
+宣言の解釈される時点で含まれている外部実体であると定義します。
+
+[2] >>1 の修正の説明。
+>この修正は、相対 URI の基底を決定する目的において、
+正確にはどこで宣言が行われたかを明確にします。
+
+[PRE[
+[CODE(file)[example.xml]]
+ <!DOCTYPE foo [
+ <!ENTITY % pe SYSTEM "subdir1/pe">
+ %pe;
+ %intpe;
+ ]>
+ <foo>&ent;</foo>
+]PRE]
+[PRE[
+[CODE(file)[subdir1/pe]]
+ <!ENTITY % extpe SYSTEM "../subdir2/extpe">
+ <!ENTITY % intpe "%extpe;">
+]PRE]
+[PRE[
+[CODE(file)[subdir2/extpe]]
+ <!ENTITY ent SYSTEM 'entfile'>
+]PRE]
+> [CODE(XML)[ent]] の宣言を構成する文字は 
+[CODE(file)[subdir2/extpe]] 中に出現しますが、
+ここでは宣言として解析されません。
+単に [CODE(XML)[intpe]] の置換文を構成する文字として扱われるだけです。
+それは [CODE(XML)[intpe]] が解析されるまでは宣言として解析されません。
+[CODE(XML)[intpe]] が解析されるのはそれを含めている外部実体が文書実体である所です。
+従って適切な基底 URI は [CODE(file)[example.xml]]
+の基底 URI となります。
+> 使用されるのは含めている外部実体である理由は、
+内部実体がその基底 URI 情報を伝達しないことであると言えるでしょう。
+確かに、内部実体はその置換文だけを持っています。
+> [CODE(file)[example.xml]] が [CODE(XML)[%intpe;]]
+ではなく [CODE(XML)[%extpe;]] を含んでいたとすると、
+話は変わってきます。 [CODE(file)[subdir2/extpe]]
+の内容は宣言として解析され、適当な基底 URI
+は [CODE(file)[subdir2]] の基底 URI となります。
+
+[3] >>2 の後半の例:
+[PRE[
+[CODE(file)[example.xml]]
+ <!DOCTYPE foo [
+ <!ENTITY % extpe SYSTEM "../subdir2/extpe">
+ %extpe;
+ ]>
+ <foo>&ent;</foo>
+]PRE]
+[PRE[
+[CODE(file)[subdir2/extpe]]
+ <!ENTITY ent SYSTEM 'entfile'>
+]PRE]
+
+[4] [[SGML]] 的にはどっちの例も、宣言が評価されるのは
+DTD であって外部解析実体にはならないと思うのですが、
+この考えは間違ってますか?
+(実体宣言で宣言された解析実体の内部実体と外部実体の差異は置換文の段階で存在しない (どちらも基底 URI を保持し得ない) のではないでしょうか?)
+
+[5] >>4 SGML も XML も参照を[[置換文]]で置き換える,
+置換結果はその文脈の構文と意味を満たさねばならない、
+という規定は共通。ただ、 SGML の仕様的にはこういう処理を意図しているような臭いがぷんぷんする。 (あってる? 教えて、偉い人。)
+[PRE[
+文書実体 <foo>aiueo &ent;          abcdef</foo>
+               1) ^ ^ 2)           ^ 5)
+実体 ent            いろはにほへと[CODE(SGML)[[[Ee]]]]
+                    ^ 3)          ^ 4)
+]PRE]
+= 文書実体を [SAMP(SGML)[o]] [WEAK[(実体参照の直前)]] まで処理する。
+= 実体 [SAMP(SGML)[ent]] への参照を発見。
+=
+=- [[実体管理系]]に実体 [SAMP(SGML)[ent]] を要求。
+=- 処理は実体 [SAMP(SGML)[ent]] に移る。
+= 実体 [SAMP(SGML)[ent]] が終了。
+= 処理は文書実体に戻る。 [SAMP(SGML)[a]] から処理続行。
+
+この処理モデルなら、実体 [SAMP(SGML)[ent]]
+中で発見された[[マーク]] (を反映した物体)
+の属性として元々どこの実体に所属していたのかという情報を与える余地はある。
+
+でも、このやり方なら内部実体だろうが外部実体だろうが元の
+URI は覚えてられるよなあ。。。
+
+[6] 実際問題としては、今の XML errata の解釈辺りで手を売っとかないと、モジュール化 DTD で酷い目に合いますから、妥当なところではあります。
+
+[8] >>4-5  >>2 の説明によれば重要な意義を持つのは内部実体か外部実体かです。
+つまり言い換えると、引数実体の参照が評価される場所が実体宣言の中 [WEAK[([SAMP(SGML)[<!ENTITY % ent2 "%ent;">]])]] か
+DTD の地の場所 ([CODE(SGML)[[[ds]]]])
+[WEAK[([SAMP(SGML)[<!foo>%ent;<!bar>]])]] かです。
+
+>>5 の処理とこのことを考え合わせればうまく説明が付きません?
+
+- [7] ''システム識別子の相対パスについて - SGML から XML へ'' <http://math.oheya.to/markup/sgml/sysid-uri>: 同じ問題を扱ってます。
+d227 76
+a302 69
+[[#comment]]
+
+*XML 名前空間における名前空間名と相対 URI
+
+[19] [[XML名前空間]]ではその名前空間を識別する[[名前空間名]]として
+URI 参照を用いますが、最初の[[勧告]]ではその[[同一]]性の定義
+[同一] にて、相対 URI を使うと基底 URI
+との絡みで面倒なことになるのが示唆されています。
+
+この問題についての討論会 [xppa] が行われ、結果として相対 URI
+の使用は[[非推奨]]とし、その[[解決]]は将来の W3C
+の仕様書で規定するかもしれないとされました [修正4]。
+
+その後、更に修正が加えられ、相対 URI の意味については将来の
+W3C 仕様書でも規定しないことになりました [修正9]。
+
+[[DOM]] や [[XPath]] などの XML 名前空間を扱う関連仕様でも、
+その挙動は未定義となっています。 [[XMLBase]]
+も [CODE(XML)[[[xml]]:[[base]]]] 
+属性の名前空間名に対する効力は未定義にしています。
+
+[20] 空の URI (長さ 0 の文字列) は一般には基底 URI
+そのものを指しますが、これが使えるかははっきりしません。
+
+[[既定名前空間]]の定義 [既定 NS] には、
+既定名前空間の宣言では空の文字列が指定
+([CODE(XML)[[[xmlns]]=""]]) できると書かれています。
+但しこの場合は URI 参照としてではなく、
+「名前空間なし」の指定とみなされます。
+
+既定名前空間の宣言では、と書かれていることから推測して、
+既定名前空間以外の宣言では使用できないと解釈できるかもしれませんが、
+現時点で勧告にも Errata にもなんとも書いてありません。
+ただ、 [修正 9] には「 The use of relative URI references, including ''same-document references'', in namespace declarations is deprecated.」
+と書かれています (強調引用者)。
+[修正 4] にはなかった注記がわざわざ加えられているのですから、
+使えると考えられるかもしれません。
+[WEAK[(でも同じ文書の参照には [CODE(URI)[#]]
+というのもあります...)]]
+
+[21] XML 名前空間 1.1 では空の属性値の宣言だとその[[接頭辞]]についての関連付けを取り消すという意味に解釈されることになっています。
+[修正 9] の修正はこの「非互換性」への配慮かもしれませんが...
+
+[22] ちなみに、 [[Mozilla]] の XML parser
+は [SAMP(XML)[xmlns:[VAR[ns]]=""]] を文句なしに解釈してくれますが、
+[[M$XML]] は[[致命的誤り]]と解釈しています。
+
+[23] 名前空間 1.1 では [[IRI]] を URI の代わりに使いますが、
+そこ [1.1 IRI] で「空文字列も妥当な IRI 参照であるが、
+XML 名前空間では使わない」と言っています。
+これは 1.0 にはない文ですが、これから推測するとやはり
+1.0 で空文字列 URI 参照は妥当なのかもしれません。
+
+[24] ところで、 XML 名前空間 1.1 でも、「将来の仕様書でも解釈は規定しない」
+としながらも相対 IRI を認めています。
+なんで禁止しないんでしょう? >>23 が真であるなら 1.0 と 1.1
+は非互換なので、これも禁止しちゃえばいいのに。
+それともやっぱり互換性を保つ必要があるから禁止はしないのかなあ。
+やっぱりわからん...
+
+-[同一] <http://www.w3.org/TR/REC-xml-names/#dt-identical>
+-[既定 NS] <http://www.w3.org/TR/REC-xml-names/#dt-defaultNS>
+-[xppa] ''W3C XML Plenary Ballot on URIs and Namespaces'' <http://www.w3.org/2000/09/xppa>
+-[修正4] <http://www.w3.org/XML/xml-names-19990114-errata#NE09>
+-[修正9] <http://www.w3.org/XML/xml-names-19990114-errata#NE09>
+-[1.1 IRI] <http://www.w3.org/TR/xml-names11/#iri-use>
+[[#comment]]
+
+*メモ
+@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@d213 1
+@
+
+
+1.1
+log
+@auto-commited
+@
+text
+@d11 1
+@
+

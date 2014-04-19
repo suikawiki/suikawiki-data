@@ -1,0 +1,572 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.1
+date	2005.02.27.02.06.51;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@
+*5.  Normalization and Comparison
+>      Note: The structure and much of the material for this section is
+taken from section 6 of [RFC3986]; the differences are due to the
+specifics of IRIs.
+
+この章の構造と大部分の内容は [[RFC 3968]] の6章から取りました。
+違いは IRI 特有のことによります。
+
+>   One of the most common operations on IRIs is simple comparison:
+Determining whether two IRIs are equivalent without using the IRIs or
+the mapped URIs to access their respective resource(s).  A comparison
+is performed whenever a response cache is accessed, a browser checks
+its history to color a link, or an XML parser processes tags within a
+namespace.  Extensive normalization prior to comparison of IRIs may
+be used by spiders and indexing engines to prune a search space or
+reduce duplication of request actions and response storage.
+
+IRI にもっともよく行われる操作の一つに単純比較があります。
+単純比較は、2つの IRI や写像した URI 
+をそれぞれの資源にアクセスせずに同値かどうか決定します。
+比較は応答キャッシュにアクセスする時やブラウザがリンクを色付けするために履歴を調べる時や 
+XML 構文解析器が名前空間付きタグを処理する時に行われます。
+蜘蛛や索引付け機関は検索範囲を狭めたり要求行為や応答蓄積域を削減したりするために 
+URI の比較に先立って大規模な正規化を行うこともあります。
+
+>   IRI comparison is performed for some particular purpose.  Protocols
+or implementations that compare IRIs for different purposes will
+often be subject to differing design trade-offs in regards to how
+much effort should be spent in reducing aliased identifiers.  This
+section describes various methods that may be used to compare IRIs,
+the trade-offs between them, and the types of applications that might
+use them.
+
+IRI 比較は何らかの特定の目的で行います。 IRI を比較するプロトコルや実装は、
+比較の目的によって別名識別子を減らすためにどれだけの労力を費やすべきかの算段により異なる設計をすることにもなります。
+この章では IRI を比較するために使うことができる様々な方法とそれぞれの優劣、
+そしてそれぞれが使われそうな応用の種類を説明します。
+
+**5.1.  Equivalence
+>   Because IRIs exist to identify resources, presumably they should be
+considered equivalent when they identify the same resource.  However,
+this definition of equivalence is not of much practical use, as there
+is no way for an implementation to compare two resources unless it
+has full knowledge or control of them. For this reason, determination
+of equivalence or difference of IRIs is based on string comparison,
+perhaps augmented by reference to additional rules provided by URI
+scheme definitions.  We use the terms "different" and "equivalent" to
+describe the possible outcomes of such comparisons, but there are
+many application-dependent versions of equivalence.
+
+IRI は資源を識別するために存在するのですから、おそらくは同じ資源を識別するのであれば同値と考えるべきでしょう。しかし、ある実装が2つの資源を比較するためには両資源についての完全な知識と制御権が必要となりますから、これはあまり現実的な同値性の定義ではありません。そのため、 IRI が等価か異なるかの決定は文字列としての比較と URI scheme の定義による追加の規則による補正で行います。この比較の結果となるものを説明するために 異なると同値という言葉を使いますが、実際には多くの応用依存の同値性が存在しています。
+
+>   Even though it is possible to determine that two IRIs are equivalent,
+IRI comparison is not sufficient to determine whether two IRIs
+identify different resources.  For example, an owner of two different
+domain names could decide to serve the same resource from both,
+resulting in two different IRIs.  Therefore, comparison methods are
+designed to minimize false negatives while strictly avoiding false positives.
+
+2つの IRI が同値かどうかを決定することは可能ですが、 2つの IRI が異なる資源を識別しているかどうかを決定するのに IRI の比較は不十分です。例えば、2つの異なるドメイン名の所有者は両方で、つまり2つの別の IRI で同じ資源を供給することができます。従って、比較法は偽陽性を厳密に避けつつ偽陰性を最小化するように設計されています。
+
+>   In testing for equivalence, applications should not directly compare
+relative references; the references should be converted to their
+respective target IRIs before comparison.  When IRIs are compared to
+select (or avoid) a network action, such as retrieval of a
+representation, fragment components (if any) should be excluded from
+the comparison.
+
+応用は同値性の試験の際に相対参照を直接比較するべきではありません。参照は比較に先立ってそれぞれ対象 IRI に変換するべきです。 IRI の比較が表現の取出しなどのネットワーク動作の選択 (または回避) のためなら、 
+[CODE(ABNF)[fragment]] 部品を (あれば) 比較の対象から外すべきです。
+
+>   Applications using IRIs as identity tokens with no relationship to a
+protocol MUST use the Simple String Comparison (see section 5.3.1).
+All other applications MUST select one of the comparison practices
+from the Comparison Ladder (see section 5.3 or, after IRI-to-URI
+conversion, select one of the comparison practices from the URI
+comparison ladder in [RFC3986], section 6.2)
+
+IRI をプロトコルと関係ない識別字句として使う応用は単純文字列比較を使わなければ'''なりません'''。
+他のすべての応用は比較梯子から比較方法を一つ選ばなければ
+(5.3節か、 IRI から URI に変換した後 [[RFC 3986]] 6.2節の URI
+比較梯子から比較方法を一つ選択しなければ) '''なりません'''。
+
+** 5.2.  Preparation for Comparison
+>   Any kind of IRI comparison REQUIRES that all escapings or encodings
+in the protocol or format that carries an IRI are resolved.  This is
+usually done when the protocol or format is parsed.  Examples of such
+escapings or encodings are entities and numeric character references
+in [HTML4] and [XML1].  As an example,
+"http://example.org/ros&eacute;" (in HTML),
+"http://example.org/ros&#233"; (in HTML or XML), and
+"http://example.org/ros&#xE9"; (in HTML or XML) are all resolved into
+what is denoted in this document (see section 1.4) as
+"http://example.org/ros&#xE9"; (the "&#xE9;" here standing for the
+actual e-acute character, to compensate for the fact that this
+document cannot contain non-ASCII characters).
+
+どんな IRI 比較法であってもIRI 
+を伝達してきたプロトコルや書式のすべての逃避や符号化を解決する'''必要があります'''。
+これは通常プロトコルや書式の構文解析の際に行われます。
+逃避や符号化の例には [[HTML 4]] や [[XML 1.0]] の[[実体参照]]や[[数値文字参照]]があります。
+例えば [SAMP(HTML)[http://example.org/ros&eacute;]] (HTML)、
+[SAMP(HTML)[http://example.org/ros&#233;]] (HTML や XML)、
+[SAMP(HTML)[http://example.org/ros&#xE9;]] (HTML や XML)
+はすべてこの文書での表記法でいう [SAMP(URI)[http://example.org/ros'''&#xE9;''']]
+に解決されます
+(ここで [SAMP(URI)['''&#xE9;''']] は実際のアキュート・アクセント付き文字 e
+で、この文書は非 ASCII 文字を含めることができないのでこう表記しています)。
+
+>   Similar considerations apply to encodings such as Transfer Codings in
+HTTP (see [RFC2616]) and Content Transfer Encodings in MIME
+([RFC2045]), although in these cases, the encoding is based not on
+characters but on octets, and additional care is required to make
+sure that characters, and not just arbitrary octets, are compared
+(see section 5.3.1).
+
+同じことが [[HTTP]] の[[転送符号化]]や [[MIME]] の[[内容転送符号化]]にも言えますが、
+これらの場合は符号化は文字ではなくオクテットによっていますから、
+単にオクテットを比較するのではなく文字を比較するように特に注意する必要があります。
+
+**5.3.  Comparison Ladder
+>   In practice, a variety of methods are used, to test IRI equivalence.
+These methods fall into a range distinguished by the amount of
+processing required and the degree to which the probability of false
+negatives is reduced.  As noted above, false negatives cannot be
+eliminated.  In practice, their probability can be reduced, but this
+reduction requires more processing and is not cost-effective for all applications.
+
+IRI の同値性を試験するために様々な方法が実際に用いられています。それらの方法は必要な処理の量と偽陰性の可能性を減らせる度合で分類できます。前述のように、偽陰性は見積もることができません。実際にはその可能性を減らすことはできますが、減らすためにはより処理が必要となり、すべての応用にとって経費的に有効ではありません。
+
+>  If this range of comparison practices is considered as a ladder, the
+following discussion will climb the ladder, starting with practices
+that are cheap but have a relatively higher chance of producing false
+negatives, and proceeding to those that have higher computational
+cost and lower risk of false negatives.
+
+この比較法の分類は梯子のように考えることができます。以後の議論では安価ながら偽陰性を生成する機会が比較的高い方法からはじめ、梯子をのぼって計算経費が高つくものの偽陰性の虞が減る方法へと進んでいきます。
+
+***5.3.1.  Simple String Comparison
+>   If two IRIs, when considered as character strings, are identical,
+then it is safe to conclude that they are equivalent.  This type of
+equivalence test has very low computational cost and is in wide use
+in a variety of applications, particularly in the domain of parsing.
+It is also used when a definitive answer to the question of IRI
+equivalence is needed that is independent of the scheme used and that
+can be calculated quickly and without accessing a network.  An
+example of such a case is XML Namespaces ([XMLNamespace]).
+
+2つの URI が文字列として見た時に同一であれば、両者は同値であると安全に結論できます。この種類の同値性試験は計算経費が極めて低く、様々な応用で、特に構文解析の分野で広く使われています。
+この方法は使用されている scheme と独立に、
+しかも素早くネットワークにアクセスせずに IRI
+の同値性の決定的な答えが求められる時にも使われます。
+その例が XML 名前空間です。
+
+>   Testing strings for equivalence requires some basic precautions. This
+procedure is often referred to as "bit-for-bit" or "byte-for-byte"
+comparison, which is potentially misleading.  Testing strings for
+equality is normally based on pair comparison of the characters that
+make up the strings, starting from the first and proceeding until
+both strings are exhausted and all characters are found to be equal,
+until a pair of characters compares unequal, or until one of the
+strings is exhausted before the other.
+
+文字列の同値性の試験にはいくつかの基本的な用意が必要です。この方法はしばしば[Q[ビット毎]]の比較だとか[Q[バイト毎]]の比較だとか言われますが、それには誤解の虞があります。文字列の同値性の検査は通常文字列を構成している文字を最初から順に見て、両文字列の最後まで来てすべての文字が等しかったと分かるか、どれかの文字の組が等しくないか、一方の文字列が他方よりも先に終わってしまうまで文字の組毎に比較を行います。
+
+>   This character comparison requires that each pair of characters be
+put in comparable encoding form.  For example, should one IRI be
+stored in a byte array in UTF-8 encoding form and the second in a
+UTF-16 encoding form, bit-for-bit comparisons applied naively will
+produce errors.  It is better to speak of equality on a
+character-for-character rather than on a byte-for-byte or bit-for-bit
+basis.  In practical terms, character-by-character comparisons should
+be done codepoint by codepoint after conversion to a common character
+encoding form.  When comparing character by character, the comparison
+function MUST NOT map IRIs to URIs, because such a mapping would
+create additional spurious equivalences.  It follows that an IRI
+SHOULD NOT be modified when being transported if there is any chance
+that this IRI might be used as an identifier.
+
+この文字比較のためには文字の組の両方が比較できる形である必要があります。
+例えば、ある IRI が UTF-8 符号化形のバイト配列に蓄積されており、
+もう一つの IRI が UTF-16 符号化形で蓄積されているとしますと、
+ビット毎の比較は当然誤りとなります。ですからバイト毎とかビット毎とかではなくて、
+文字毎の同値性というのがよいのです。
+実際上は文字毎の比較は共通の文字符号化に変換した後に符号位置毎に行うべきです。
+比較関数は文字毎の比較の際に IRI を URI に写像しては'''なりません'''。
+URI に写像してしまうと偽の同値という結果が増えてしまいます。
+IRI が識別子として使われる可能性がある場合には輸送中に IRI
+を修正する'''べきではありません'''。
+
+>   False negatives are caused by the production and use of IRI aliases.
+Unnecessary aliases can be reduced, regardless of the comparison
+method, by consistently providing IRI references in an already
+normalized form (i.e., a form identical to what would be produced
+after normalization is applied, as described below). Protocols and
+data formats often limit some IRI comparisons to simple string
+comparison, based on the theory that people and implementations will,
+in their own best interest, be consistent in providing IRI
+references, or at least be consistent enough to negate any efficiency
+that might be obtained from further normalization.
+
+偽陰性は IRI 別名の生成や使用によって起こります。 IRI 参照を正規化済みの形 
+(後述の正規化を適用した結果生成されるであろうものと同一の形) 
+を一貫して生成することによって不必要なべうt名を比較方法によらず減らすことができます。
+プロトコルやデータ書式はしばしば人々と実装がそれぞれの最高の利益のために、
+あるいは少なくても更に正規化を行って得られる効果を打ち消す程度には一貫した
+IRI 参照を提供するであろうとの論理に基づいて IRI 
+の比較を単純な文字列の比較に限定していたりします。
+
+***5.3.2.  Syntax-Based Normalization
+>   Implementations may use logic based on the definitions provided by
+this specification to reduce the probability of false negatives. This
+processing is moderately higher in cost than character-for-character
+string comparison.  For example, an application using this approach
+could reasonably consider the following two IRIs equivalent:
+
+実装は偽陰性の可能性を減らすためにこの仕様書にある定義に基づいた論理を用いて構いません。この処理は文字毎の文字列比較より若干高価です。例えば、この方法を使った応用は次の 2つの IRI は同値であるというもっともらしい考えができます。
+
+>
+-      [SAMP(URI)[example://a/b/c/%7Bfoo%7D/ros'''&#xE9;''']]
+-      [SAMP(URI)[eXAMPLE://a/./b/../b/%63/%7bfoo%7d/ros%C3%A9]]
+
+>   Web user agents, such as browsers, typically apply this type of IRI
+normalization when determining whether a cached response is
+available.  Syntax-based normalization includes such techniques as
+case normalization, character normalization, percent-encoding
+normalization, and removal of dot-segments.
+
+Web 利用者エージェント、例えばブラウザは、普通キャッシュした応答が利用できるかどうか決定する時にこの種の IRI の正規化を行います。構文を基にした正規化には大文字・小文字の正規化、百分率符号化の正規化、点部分の削除などの技術があります。
+
+***5.3.2.1.  Case Normalization
+>   For all IRIs, the hexadecimal digits within a percent-encoding
+triplet (e.g., "%3a" versus "%3A") are case-insensitive and therefore
+should be normalized to use uppercase letters for the digits A - F.
+
+すべての IRI について百分率符号化3文字組の中の十六進数字 
+(例えば [SAMP(URI)[%3a]] と [SAMP(URI)[%3A]]) は大文字・小文字の区別がなく、
+故に大文字の数字 A〜F に正規化するべきです。
+
+>   When an IRI uses components of the generic syntax, the component
+syntax equivalence rules always apply; namely, that the scheme and
+US-ASCII only host are case insensitive and therefore should be
+normalized to lowercase.  For example, the URI
+"HTTP://www.EXAMPLE.com/" is equivalent to "http://www.example.com/".
+Case equivalence for non-ASCII characters in IRI components that are
+IDNs are discussed in section 5.3.3.  The other generic syntax
+components are assumed to be case sensitive unless specifically
+defined otherwise by the scheme.
+
+IRI が一般構文の部品を使う場合、部品構文の同値性の規則が常に適用されます。
+すなわち、 [CODE(ABNF)[[[scheme]]]] と [[US-ASCII]] だけの [CODE(ABNF)[[[host]]]] 
+は大文字と小文字を区別せず、小文字に正規化するべきです。例えば IRI 
+<HTTP://www.EXAMPLE.com/> は <http://www.example.com/> と同値です。
+IRI 部品中の非 ASCII 文字であって [[IDN]] たるものの大文字・
+小文字の同値性は5.3.3節で議論します。
+他の一般構文の部品は scheme が特に規定していない限り大文字・
+小文字を区別するものとします。
+
+>   Creating schemes that allow case-insensitive syntax components
+containing non-ASCII characters should be avoided. Case normalization
+of non-ASCII characters can be culturally dependent and is always a
+complex operation.  The only exception concerns non-ASCII host names
+for which the character normalization includes a mapping step derived
+from case folding.
+
+非 ASCII 文字を含む構文部品で大文字・小文字を区別しないようにした
+scheme を作ることは避けるべきです。非 ASCII
+文字の大文字・小文字の正規化は文化に依存することがあり、常に複雑な操作となります。
+唯一の例外は非 ASCII ホスト名についてで、文字正規化が大文字・
+小文字の揃えによる写像の段階を含んでいます。
+
+****5.3.2.2.  Character Normalization
+>   The Unicode Standard [UNIV4] defines various equivalences between
+sequences of characters for various purposes.  Unicode Standard Annex
+#15 [UTR15] defines various Normalization Forms for these
+equivalences, in particular Normalization Form C (NFC, Canonical
+Decomposition, followed by Canonical Composition) and Normalization
+Form KC (NFKC, Compatibility Decomposition, followed by Canonical Composition).
+
+Unicode 規格は様々な目的での様々な文字列の同値性を定義しています。
+Unicode 規格附属書 15 は同値性についての色々な正規化形、
+特に正規化形 C (NFC、正準分解の後に正準合成) と正規化形 KC
+(NFKC、互換分解の後に正準合成) を定義しています。
+
+>   Equivalence of IRIs MUST rely on the assumption that IRIs are
+appropriately pre-character-normalized rather than apply character
+normalization when comparing two IRIs.  The exceptions are conversion
+from a non-digital form, and conversion from a non-UCS-based
+character encoding to a UCS-based character encoding. In these cases,
+NFC or a normalizing transcoder using NFC MUST be used for
+interoperability.  To avoid false negatives and problems with
+transcoding, IRIs SHOULD be created by using NFC.  Using NFKC may
+avoid even more problems; for example, by choosing half-width Latin
+letters instead of full-width ones, and full-width instead of half-width Katakana.
+
+IRI の同値性は2つの IRI を比較する際に文字正規化を行うのではなく、
+IRI は適切に文字毎に正規化されていると仮定して行わなければ'''なりません'''。
+例外は非デジタル形からの変換と UCS を基にしていない文字符号化から
+UCS を基にした文字符号化への変換です。これらの場合には相互運用性のため NFC
+か NFC を使った正規化転符号化器を使わなければ'''なりません'''。
+偽陰性と転符号化の問題を避けるため、 IRI は NFC を使って作成する'''べきです'''。
+NFKC を使うと更に問題を回避できるかもしれません。例えば、全角ラテン文字ではなく半角ラテン文字を選び、
+半角片仮名の代わりに全角片仮名を選ぶと良いかもしれません。
+
+>   As an example, "http://www.example.org/r&#xE9;sum&#xE9;.html" (in XML
+Notation) is in NFC.  On the other hand,
+"http://www.example.org/re&#x301;sume&#x301;.html" is not in NFC.
+
+例えば、 [SAMP(URI)[http://www.example.org/r'''&#xE9;'''sum'''&#xE9;'''.html]]
+(XML 表記) は NFC です。一方、
+[SAMP(URI)[http://www.example.org/re'''&#x301;'''sume'''&#x301;'''.html]]
+は NFC ではありません。
+
+>   The former uses precombined e-acute characters, and the latter uses
+"e" characters followed by combining acute accents.  Both usages are
+defined as canonically equivalent in [UNIV4].
+
+前者は合成済みアキュート・アクセント付き文字 e を使っており、
+後者は文字 e と合成用アキュート・アクセントを使っています。
+両者は[[正準等価]]と定義されています。
+
+>   Note: Because it is unknown how a particular sequence of characters
+is being treated with respect to character normalization, it would
+be inappropriate to allow third parties to normalize an IRI
+arbitrarily.  This does not contradict the recommendation that
+when a resource is created, its IRI should be as character
+normalized as possible (i.e., NFC or even NFKC).  This is similar
+to the uppercase/lowercase problems.  Some parts of a URI are case
+insensitive (domain name).  For others, it is unclear whether they
+are case sensitive, case insensitive, or something in between
+(e.g., case sensitive, but with a multiple choice selection if the
+wrong case is used, instead of a direct negative result).  The
+best recipe is that the creator use a reasonable capitalization
+and, when transferring the URI, capitalization never be changed.
+
+注意: 特定の文字列が文字正規化に関してどう扱われるかはわかりませんから、
+第三者が勝手に IRI を正規化するのを認めるのは不適切です。
+これは資源を作成するときに IRI を可能な限り文字正規化 (NFC かもっと強く NFKC に)
+するべきであるという推奨と矛盾しません。これは大文字・小文字の問題と同様です。
+URI は部分的に大文字・小文字を区別しません (ドメイン名)。
+他の部分は大文字・小文字を区別するかしないか中間か 
+(例えば区別はするものの間違っていたらすぐに失敗になるのではなく選択肢が示されるとか)
+はわかりません。一番よいのは作者が適度な大文字化を行い、 URI
+を転送する時に決して大文字・小文字を変えないことです。
+
+>   Various IRI schemes may allow the usage of Internationalized Domain
+Names (IDN) [RFC3490] either in the ireg-name part or elsewhere.
+Character Normalization also applies to IDNs, as discussed in section 5.3.3.
+
+各 IRI scheme は国際化ドメイン名 (IDN) を [CODE(ABNF)[[[ireg-name]]]]
+部やその他の部分で使うことを認めているかもしれません。
+文字正規化は5.3.3節で議論する通り IRI にも適用します。
+
+**** 5.3.2.3.  Percent-Encoding Normalization
+>   The percent-encoding mechanism (section 2.1 of [RFC3986]) is a
+frequent source of variance among otherwise identical IRIs.  In
+addition to the case normalization issue noted above, some IRI
+producers percent-encode octets that do not require percent-encoding,
+resulting in IRIs that are equivalent to their non encoded
+counterparts.  These IRIs should be normalized by decoding any
+percent-encoded octet sequence that corresponds to an unreserved
+character, as described in section 2.3 of [RFC3986].
+
+百分率符号化法は本来同一の IRI を色々に変えてしまう大きな原因です。前述の大文字・小文字の正規化の問題に加えて、 IRI 生成器によっては百分率符号化が必要ではないオクテットを百分率符号化するものもあります。そのような IRI は百分率符号化オクテットを対応する非予約文字に復号して正規化するべきです。
+
+>   For actual resolution, differences in percent-encoding (except for
+the percent-encoding of reserved characters) MUST always result in
+the same resource.  For example, "http://example.org/~user",
+"http://example.org/%7euser", and "http://example.org/%7Euser", must
+resolve to the same resource.
+
+実際の解決では百分率符号化だけの違いは (予約文字の百分率符号化を除き)
+常に同じ資源が得られなければ'''なりません'''。例えば、
+[SAMP(URI)[http://example.org/~user]], [SAMP(URI)[http://example.org/%7euser]],
+[SAMP(URI)[http://example.org/%7Euser]] は同じ資源に解決されなければなりません。
+
+>   If this kind of equivalence is to be tested, the percent-encoding of
+both IRIs to be compared has to be aligned; for example, by
+converting both IRIs to URIs (see section 3.1), eliminating escape
+differences in the resulting URIs, and making sure that the case of
+the hexadecimal characters in the percent-encoding is always the same
+(preferably uppercase).  If the IRI is to be passed to another
+application or used further in some other way, its original form MUST
+be preserved.  The conversion described here should be performed only
+for local comparison.
+
+この種の同値性を試験する時には比較する両方の百分率符号化を揃えなければなりません。
+例えば、両方の IRI を URI に変換し、その URI で異なる逃避を除去し、
+百分率符号化の十六進数字の大文字・小文字を常に同じに (できれば大文字に)
+します。 IRI を他の応用に渡したり皿に他の形で使ったりする時は、
+元の形を保存しなければ'''なりません'''。ここで説明した変換は局所的な比較のためにのみ行うべきです。
+
+****5.3.2.4.  Path Segment Normalization
+>   The complete path segments "." and ".." are intended only for use
+within relative references (section 4.1 of [RFC3986]) and are removed
+as part of the reference resolution process (section 5.2 of
+[RFC3986]).  However, some implementations may incorrectly assume
+that reference resolution is not necessary when the reference is
+already an IRI, and thus fail to remove dot-segments when they occur
+in non-relative paths.  IRI normalizers should remove dot-segments by
+applying the remove_dot_segments algorithm to the path, as described
+in section 5.2.4 of [RFC3986].
+
+[CODE(URI)[.]] や [CODE(URI)[..]] だけの [CODE(ABNF)[[[path]]]] 
+[CODE(ABNF)[[[segment]]]] は[[相対参照]]でのみ使うことが想定されており、
+参照解決処理で削除されます。しかし、実際に使用されている実装の中には参照が既に
+IRI である場合には参照解決が不要であると誤って仮定して非相対 
+[CODE(ABNF)[[[path]]]] に現れる[[点部分]]を削除しないものがあります。 
+IRI 正規化器は [CODE(ABNF)[[[path]]]] に[[点部分削除]]の算法を適用して正規化するべきです。
+
+***5.3.3.  Scheme-Based Normalization
+>   The syntax and semantics of IRIs vary from scheme to scheme, as
+described by the defining specification for each scheme.
+Implementations may use scheme-specific rules, at further processing
+cost, to reduce the probability of false negatives.  For example,
+because the "http" scheme makes use of an authority component, has a
+default port of "80", and defines an empty path to be equivalent to
+"/", the following four IRIs are equivalent:
+
+IRI の構文と意味は scheme 毎の仕様で定義されていますが、 
+scheme 毎に実に様々です。実装は偽陰性の可能性を削減するために更に処理費を掛けて 
+scheme 規定の規則を使っても構いません。例えば、 
+[SAMP(URI)[[[http]]]] scheme は [CODE(ABNF)[[[authority]]]] 部品を使い、
+既定のポートは [CODE[80]] であり、空の [CODE(ABNF)[[[path]]]] は 
+[CODE(URI)[/]] と同値であると定義していますから、次の 4つの IRI は同値です。
+
+>
+-      [SAMP(URI)[http://example.com]]
+-      [SAMP(URI)[http://example.com/]]
+-      [SAMP(URI)[http://example.com:/]]
+-      [SAMP(URI)[http://example.com:80/]]
+
+>   In general, an IRI that uses the generic syntax for authority with an
+empty path should be normalized to a path of "/".  Likewise, an
+explicit ":port", for which the port is empty or the default for the
+scheme, is equivalent to one where the port and its ":" delimiter are
+elided and thus should be removed by scheme-based normalization.  For
+example, the second IRI above is the normal form for the "http" scheme.
+
+一般に [CODE(ABNF)[authority]] と空の [CODE(ABNF)[path]] を一般構文に使う 
+IRI は [CODE(ABNF)[path]] を [CODE(URI)[/]] に正規化するべきです。同様に、 
+[CODE(URI)[:[VAR[ポート]]]] が明示されていて[VAR[ポート]]が空か、
+その scheme の既定の値であるなら、その[VAR[ポート]]と区切子の [CODE(URI)[:]] 
+を除去したものと同値であり、 scheme を基にした正規化では削除するべきです。
+例えば、前記の2番目の IRI が [CODE(URI)[[[http]]]] scheme での正規形です。
+
+>   Another case where normalization varies by scheme is in the handling
+of an empty authority component or empty host subcomponent.  For many
+scheme specifications, an empty authority or host is considered an
+error; for others, it is considered equivalent to "localhost" or the
+end-user's host.  When a scheme defines a default for authority and
+an IRI reference to that default is desired, the reference should be
+normalized to an empty authority for the sake of uniformity, brevity,
+and internationalization.  If, however, either the userinfo or port
+subcomponents are non-empty, then the host should be given explicitly
+even if it matches the default.
+
+正規化が scheme によって変わる別の事例が空の [CODE(ABNF)[[[authority]]]] 
+部品や空の [CODE(ABNF)[[[host]]]] 部分部品の扱いです。多くの scheme 
+の仕様では空の [CODE(ABNF)[[[authority]]]] や [CODE(ABNF)[[[host]]]] 
+は誤りと考えています。ものによっては [CODE(URI)[[[localhost]]]] 
+(末端利用者のホスト) と同値と考えています。 Scheme が 
+[CODE(ABNF)[[[authority]]]] の既定値を定義していて、その既定値への IRI 
+参照を望む場合には、参照は統一性, 簡潔性, 国際化のため、空の 
+[CODE(ABNF)[[[authority]]]] に正規化するべきです。しかし、 
+[CODE(ABNF)[[[userinfo]]]] 部分部品や [CODE(ABNF)[[[port]]]] 
+部分部品が空でない場合は、 [CODE(ABNF)[[[host]]]] 
+が既定値に一致しても明示しておくべきです。
+
+>   Normalization should not remove delimiters when their associated
+component is empty unless it is licensed to do so by the scheme
+specification.  For example, the IRI "http://example.com/?" cannot be
+assumed to be equivalent to any of the examples above.  Likewise, the
+presence or absence of delimiters within a userinfo subcomponent is
+usually significant to its interpretation.  The fragment component is
+not subject to any scheme-based normalization; thus, two IRIs that
+differ only by the suffix "#" are considered different regardless of the scheme.
+
+対応する部品が空の区切子は scheme 
+の仕様がそうしてもよいと規定しない限り削除するべきではありません。例えば、 
+IRI [SAMP(URI)[http://example.com/?]] 
+は先の例のいずれとも同値と考えることはできません。同様に、
+[CODE(ABNF)[[[userinfo]]]] 部分部品中の区切子の有無は通常解釈に影響を持ちます。 
+[CODE(ABNF)[[[fragment]]]] 部品は scheme を基にした正規化の対象ではありません。
+ですから、末尾の [CODE(URI)[#]] だけが異なる2つの IRI は scheme 
+に関わらず異なると考えます。
+
+>   Some IRI schemes may allow the usage of Internationalized Domain
+Names (IDN) [RFC3490] either in their ireg-name part or elsewhere.
+When in use in IRIs, those names SHOULD be validated by using the
+ToASCII operation defined in [RFC3490], with the flags
+"UseSTD3ASCIIRules" and "AllowUnassigned".  An IRI containing an
+invalid IDN cannot successfully be resolved.  Validated IDN
+components of IRIs SHOULD be character normalized by using the
+Nameprep process [RFC3491]; however, for legibility purposes, they
+SHOULD NOT be converted into ASCII Compatible Encoding (ACE).
+
+IRI scheme いよっては国際化ドメイン名 ([[IDN]]) の使用を [CODE(ABNF)[[[ireg-name]]]]
+部や他の部分で認めています。 IRI で使う際には国際化ドメイン名は
+[[RFC 3490]] で定義された [CODE[[[ToASCII]]]] 操作で旗
+[CODE[[[UseSTD3ASCIIRules]]]] および [CODE[[[AllowUnassigned]]]]
+の下検証する'''べきです'''。不当な IDN を含んだ IRI
+は解決に成功することがありません。 IRI の検証した IDN 部品は
+[[Nameprep]] 処理を使って文字正規化する'''べきです'''。しかし、
+判読性のために [[ASCII互換符号化]] ([[ACE]]) に変換する'''べきではありません'''。
+
+>   Scheme-based normalization may also consider IDN components and their
+conversions to punycode as equivalent.  As an example,
+"http://r&#xE9;sum&#xE9;.example.org" may be considered equivalent to
+"http://xn--rsum-bpad.example.org".
+
+Scheme に基づく正規化は IDN 部品と [[Punycode]] に変換したものをも同値と考えて構いません。
+例えば、 [SAMP(URI)[http://r'''&#xE9;'''sum'''&#xE9;'''.example.org]]
+は [SAMP(URI)[http://xn--rsum-bpad.example.org]]
+と同値と考えても構いません。
+
+>   Other scheme-specific normalizations are possible.
+
+他の scheme 規定の正規化もあり得ます。
+
+***5.3.4.  Protocol-Based Normalization
+>   Substantial effort to reduce the incidence of false negatives is
+often cost-effective for web spiders. Consequently, they implement
+even more aggressive techniques in IRI comparison.  For example, if
+they observe that an IRI such as
+
+偽陰性の発生を削減する実際的な試みもしばしば蜘蛛の巣の蜘蛛にとって経費に見合うだけのものです。ですから、蜘蛛はもっと積極的な IRI の比較の方法を実装しています。例えば、
+
+>      [SAMP(URI)[http://example.com/data]]
+
+>   redirects to an IRI differing only in the trailing slash
+
+という IRI が末尾の斜線だけが違う
+
+>      [SAMP(URI)[http://example.com/data/]]
+
+>   they will likely regard the two as equivalent in the future.  This
+kind of technique is only appropriate when equivalence is clearly
+indicated by both the result of accessing the resources and the
+common conventions of their scheme's dereference algorithm (in this
+case, use of redirection by HTTP origin servers to avoid problems
+with relative references).
+
+という IRI を再指向すると分かれば、将来も2つが同値と考えます。この種の技法は資源へのアクセスの結果とその scheme の参照を解く方法で広く行われている慣習の両方によって明らかに同値性が示されている時にのみ適切であります (この場合、相対参照での問題を避けるため HTTP 起点鯖により再指向が使われています)。
+
+* メモ
+@

@@ -1,0 +1,869 @@
+head	1.2;
+access;
+symbols
+	suikawiki3-final:1.2
+	before-db-leaffile:1.1;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.2
+date	2007.11.18.02.35.18;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2004.04.18.02.00.30;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9 import="RFC訳語集" page-icon="HTTP"
+
+'''Use and Interpretation of HTTP Version Numbers [INS[HTTP 版番号の使用と解釈]]'''
+- Network Working Group                                        
+- Request for Comments: 2145                                           
+- Category: Informational                                      
+- J. C. Mogul
+- DEC
+- R. Fielding
+- UC Irvine
+- J. Gettys
+- DEC
+- H. Frystyk
+- MIT/LCS
+- May 1997
+__&&InfoStatus&&__
+
+> Distribution of this document is unlimited.  Please send comments to
+the HTTP working group at <http-wg@@cuckoo.hpl.hp.com>.  Discussions
+of the working group are archived at
+<URL:http://www.ics.uci.edu/pub/ietf/http/>.  General discussions
+about HTTP and the applications which use HTTP should take place on
+the <www-talk@@w3.org> mailing list.
+
+このメモの配布は制限しません。 HTTP 作業部会 <MAIL:http-wg@@cuckoo.hpl.hp.com>
+にコメントを送ってください [INS[訳注: HTTP WG は終了しました]]。
+作業部会の議論は <http://www.ics.uci.edu/pub/ietf/http/> に記録されています。
+HTTP 及び HTTP を使った応用についての一般的議論は <MAIL:www-talk@@w3.org>
+メイリング・リストを使うのが良いです。
+
+
+* Abstract [INS[概要]]
+
+> HTTP request and response messages include an HTTP protocol version
+number.  Some confusion exists concerning the proper use and
+interpretation of HTTP version numbers, and concerning
+interoperability of HTTP implementations of different protocol
+versions.  This document is an attempt to clarify the situation.  It
+is not a modification of the intended meaning of the existing
+HTTP/1.0 and HTTP/1.1 documents, but it does describe the intention
+of the authors of those documents, and can be considered definitive
+when there is any ambiguity in those documents concerning HTTP
+version numbers, for all versions of HTTP.
+
+HTTP 要求・応答メッセージは HTTP のプロトコル版番号を含んでいます。
+HTTP 版番号の適切な使用及び解釈並びに異なるプロトコルの版の HTTP
+実装の相互通信性に関しては混乱があります。
+この文書はこの状況を明確化しようとするものです。この文書は既存の HTTP/1.0
+及び HTTP/1.1 両文書の意図していた意味を変更するものではありませんが、両文書の著者の意図を説明し、両文書に
+HTTP 版番号に関わる曖昧性がある時に、全ての HTTP の版について、決定的なものと考えることが出来るものです。
+
+
+* TABLE OF CONTENTS [INS[目次]]
+
+[PRE[
+   1 Introduction. . . . . . . . . . . . . . . . . . . . . . . . . .  2
+        1.1 Robustness Principle . . . . . . . . . . . . . . . . . .  3
+   2 HTTP version numbers. . . . . . . . . . . . . . . . . . . . . .  3
+   2.1 Proxy behavior. . . . . . . . . . . . . . . . . . . . . . . .  4
+        2.2 Compatibility between minor versions of the same major
+            version. . . . . . . .  . . . . . . . .  . . . . . . . .  4
+        2.3 Which version number to send in a message. . . . . . . .  5
+   3 Security Considerations . . . . . . . . . . . . . . . . . . . .  6
+   4 References. . . . . . . . . . . . . . . . . . . . . . . . . . .  6
+   5 Authors' addresses. . . . . . . . . . . . . . . . . . . . . . .  6
+]PRE]
+
+
+* 1 Introduction [INS[はじめに]]
+
+> HTTP request and response messages include an HTTP protocol version
+number.  According to section 3.1 of the HTTP/1.1 specification [2],
+
+HTTP 要求・応答メッセージは HTTP のプロトコル版番号を含みます。
+HTTP/1.1 仕様書 [INS[(RFC 2068]]) の3.1節によると、
+
+>> HTTP uses a "<major>.<minor>" numbering scheme to indicate
+versions of the protocol. The protocol versioning policy is
+intended to allow the sender to indicate the format of a message
+and its capacity for understanding further HTTP communication,
+rather than the features obtained via that communication.  No
+change is made to the version number for the addition of message
+components which do not affect communication behavior or which
+only add to extensible field values.  The <minor> number is
+incremented when the changes made to the protocol add features
+which do not change the general message parsing algorithm, but
+which may add to the message semantics and imply additional
+capabilities of the sender. The <major> number is incremented when
+the format of a message within the protocol is changed.
+
+HTTP はプロトコルの版を示すために「[VAR[<majpr>]].[VAR[<minor>]]」
+という番号付け方式を使います。
+プロトコルの版付け方針は、 HTTP 
+通信により行われる機能を示すというよりは、送信者が受信者にメッセージの形式を示したり以降の
+HTTP 通信を理解するための送信者の能力を示したりすることを可能にするというものです。
+通信動作に影響しない又は拡張可能な欄の値を追加するだけのメッセージ部品の追加では版番号は変更しません。
+[VAR[<minor>]] 番号は一般的メッセージ解析算法は変更しないがメッセージの意味を追加し、送信者の能力を更に課すかもしれない機能の追加がプロトコルに行われた時に増加します。
+[VAR[<major>]] 番号はプロトコル中のメッセージ形式が変更された時に増加します。
+
+> The same language appears in the description of HTTP/1.0 [1].
+
+同じことが [[HTTP/1.0]] [INS[(RFC 1945)]] の説明中にもあります。
+
+> Many readers of these documents have expressed some confusion about
+the intended meaning of this policy.  Also, some people who wrote
+HTTP implementations before RFC1945 [1] was issued were not aware of
+the intentions behind the introduction of version numbers in
+HTTP/1.0.  This has led to debate and inconsistency regarding the use
+and interpretation of HTTP version numbers, and has led to
+interoperability problems in certain cases.
+
+両文書の多くの読者がこの方針の意図するところについて混乱を見せています。
+また、 RFC 1945 が発行された以前に HTTP 実装を書いた人の中には HTTP/1.0
+での版番号の導入の意図に気づかない人もいます。
+これが HTTP 版番号の使用と解釈に関する議論と不一致につながり、またある場合には相互通信性上の問題にもなっています。
+
+> This document is an attempt to clarify the situation.  It is not a
+modification of the intended meaning of the existing HTTP/1.0 and
+HTTP/1.1 documents, but it does describe the intention of the authors
+of those documents.  In any case where either of those two documents
+is ambiguous regarding the use and interpretation of HTTP version
+numbers, this document should be considered the definitive as to the
+intentions of the designers of HTTP.
+
+この文書はこの状況を明確化しようとするものです。この文書は既存の HTTP/1.0
+及び HTTP/1.1 両文書の意図していた意味を変更するものではありませんが、両文書の著者の意図を説明するものです。
+この2つの文書が HTTP 版番号の使用と解釈に関して曖昧であるいかなる場合においても、この文書は
+HTTP の設計者の意図についての決定打と考えるのがよいです。
+
+> The specification described in this document is not part of the
+specification of any individual version of HTTP, such as HTTP/1.0 or
+HTTP/1.1.  Rather, this document describes the use of HTTP version
+numbers in any version of HTTP (except for HTTP/0.9, which did not
+include version numbers).
+
+この文書で説明する仕様は HTTP/1.0 や HTTP/1.1
+のようなどの個々の HTTP の版の仕様ではありません。
+むしろ、この文書はいずれの版 (版番号を含まない [[HTTP/0.9]] を除く。)
+での HTTP の版番号の使用についても説明するものです。
+
+> No vendor or other provider of an HTTP implementation should claim
+any compliance with any IETF HTTP specification unless the
+implementation conditionally complies with the rules in this document.
+
+HTTP 実装の販売者やその他提供者は、実装がこの文書中の規則に条件付に従うのでは無い限り、いかなる
+[[IETF]] HTTP 仕様への適合も主張するべきではありません。
+
+
+** 1.1 Robustness Principle [INS[頑強性原則]]
+
+> RFC791 [4] defines the "robustness principle" in section 3.2:
+
+[[RFC791]] は3.2節で「頑強性原則」について定義しています。
+
+>> an implementation must be conservative in its sending
+behavior, and liberal in its receiving behavior.
+
+実装は送信動作においては控え目でなければならず、受信動作においては寛大でなければなりません [INS[(人に優しく、自分に厳しく)]]。
+
+> This principle applies to HTTP, as well.  It is the fundamental basis
+for interpreting any part of the HTTP specification that might still
+be ambiguous.  In particular, implementations of HTTP SHOULD NOT
+reject messages or generate errors unnecessarily.
+
+この原則は HTTP にも同様に当てはまります。
+この原則は依然曖昧であるかもしれない HTTP 仕様書の各部分の解釈で重要な基本です。
+特に、 HTTP の実装は不必要にメッセージを拒絶したりエラーを生成し'''ないのが良いです'''。
+
+
+* 2 HTTP version numbers [INS[HTTP 版番号]]
+
+> We start by restating the language quoted above from section 3.1 of
+the HTTP/1.1 specification [2]:
+
+先に引用した HTTP/1.1 仕様書の3.1節からの引用の部分を言い直すことから始めます。
+
+> It is, and has always been, the explicit intent of the
+HTTP specification that the interpretation of an HTTP message
+header does not change between minor versions of the same major version.
+
+HTTP メッセージの頭の解釈は同じ[RUBYB[大] [major]]版の[RUBYB[小] [minor]]版の間では変更しないことが
+HTTP 仕様の明確に意図するところであり、また常にそうであるのです。
+
+> It is, and has always been, the explicit intent of the
+HTTP specification that an implementation receiving a message
+header that it does not understand MUST ignore that header.  (The
+word "ignore" has a special meaning for proxies; see section 2.1 below.)
+
+実装がその理解しないメッセージの頭を受け取ったら、この頭を無視しなければ'''ならない'''ということは
+HTTP 仕様の明確に意図するところであり、また常にそうであるのです。
+(「無視」という言葉は串には特別な意味を持ちます。下記 2.1節参照。)
+
+> To make this as clear as possible:  The major version sent in a
+message MAY indicate the interpretation of other header fields.  The
+minor version sent in a message MUST NOT indicate the interpretation
+of other header fields.  This reflects the principle that the minor
+version labels the capability of the sender, not the interpretation
+of the message.
+
+これを出来る限り明確にします。メッセージ中で送られる大版は他の頭欄の解釈を示しても'''構いません'''。
+メッセージ中で送られる小版は他の頭欄の解釈を示しては'''なりません'''。
+これは小版が送信者の能力を札付けするものであってメッセージの解釈を札付けするものではないという方針を反映しています。
+
+> Note: In a future version of HTTP, we may introduce a mechanism
+that explicitly requires a receiving implementation to reject a
+message if it does not understand certain headers.  For example,
+this might be implemented by means of a header that lists a set of
+other message headers that must be understood by the recipient.
+Any implementation claiming at least conditional compliance with
+this future version of HTTP would have to implement this
+mechanism.  However, no implementation claiming compliance with a
+lower HTTP version (in particular, HTTP/1.1) will have to implement this mechanism.
+
+注意: 将来の版の HTTP では、受信した実装がある頭を理解しなければメッセージを拒絶することを明示的に要求する仕組みを導入するかもしれません。
+例えば、受信者が理解しなければならない他のメッセージ頭の一覧である頭を使ってこれを実装するかもしれません。
+この将来の版の HTTP に少なくても条件的に適合することを主張する全ての実装はこの仕組みを実装しなければならないでしょう。
+しかし、下位の版の HTTP (特に [[HTTP/1.1]]) 
+に適合を主張する実装はこの仕組みを実装しなければならないことはありません。
+
+> This future change may be required to support the Protocol
+Extension Protocol (PEP) [3].
+
+この将来の拡張はプロトコル拡張プロトコル ([[PEP]])
+の対応のために必須であるかもしれません。
+
+> One consequence of these rules is that an HTTP/1.1 message sent to an
+HTTP/1.0 recipient (or a recipient whose version is unknown) MUST be
+constructed so that it remains a valid HTTP/1.0 message when all
+headers not defined in the HTTP/1.0 specification [1] are removed.
+
+これらの規則の結果、 HTTP/1.0 受信者 (又は版が不明な受信者)
+へ送られる HTTP/1.1 メッセージは HTTP/1.0 仕様書に定義されていない全ての頭を削除した時に妥当な
+HTTP/1.0 メッセージが残るように構築されていなければ'''なりません'''。
+
+[INS[
+
+訳注: しかし HTTP/1.1 メッセージは最初の行に「HTTP/1.1」と書いてあるのでどんなに頑張っても
+HTTP/1.0 メッセージにはなりません:-)
+]INS]
+
+
+** 2.1 Proxy behavior [INS[串の動作]]
+
+> A proxy MUST forward an unknown header, unless it is protected by a
+Connection header.  A proxy implementing an HTTP version >= 1.1 MUST
+NOT forward unknown headers that are protected by a Connection
+header, as described in section 14.10 of the HTTP/1.1 specification [2].
+
+串は、 [CODE(HTTP)[Connection]] 頭で保護されている場合を除いて、未知の頭を転送しなければ'''なりません'''。
+1.1 以上の HTTP の版を実装する串は、 HTTP/1.1 仕様書の14.10節で説明されているように、
+Connection 頭で保護されている未知の頭を転送しては'''なりません'''。
+
+[INS[
+
+訳注: 2.0 以降の版の HTTP では (上述の規則に従えば)
+頭の解釈その他諸々が 1.[VAR[x]] と異なっている可能性があるのですから、この段落のように断言するのは危険じゃないんでしょうか。
+]INS]
+
+> We remind the reader that that HTTP version numbers are hop-by-hop
+components of HTTP messages, and are not end-to-end.  That is, an
+HTTP proxy never "forwards" an HTTP version number in either a
+request or response.
+
+HTTP 版番号は HTTP メッセージの hop-by-hop 部品であって end-to-end
+部品ではないことを思い出して下さい。つまり、 HTTP 串は要求においても応答においても、
+HTTP 版番号は決して「転送」しません。
+
+
+** 2.2 Compatibility between minor versions of the same major version [INS[同じ大版の小版間の互換性]]
+
+> An implementation of HTTP/x.b sending a message to a recipient whose
+version is known to be HTTP/x.a, a < b, MAY send a header that is not
+defined in the specification for HTTP/x.a.  For example, an HTTP/1.1
+server may send a "Cache-control" header to an HTTP/1.0 client; this
+may be useful if the immediate recipient is an HTTP/1.0 proxy, but
+the ultimate recipient is an HTTP/1.1 client.
+
+[VAR[a]] < [VAR[b]] とする時、 HTTP/[VAR[x]].[VAR[b]] の実装がメッセージを、その版が
+HTTP/[VAR[x]].[VAR[a]] であると分かっている受信者に送信する時、 
+HTTP/[VAR[x]].[VAR[a]] の仕様書で定義されていない頭を送信しても'''構いません'''。
+例えば、 HTTP/1.1 サーバーは [CODE["Cache-control"]] 頭を HTTP/1.0
+クライアントに送っても構いません。これは直接の受信者が HTTP/1.0 串で、最終受信者が
+HTTP/1.1 クライアントである時に役に立つかもしれません。
+
+> An implementation of HTTP/x.b sending a message to a recipient whose
+version is known to be HTTP/x.a, a < b, MUST NOT depend on the
+recipient understanding a header not defined in the specification for
+HTTP/x.a.  For example, HTTP/1.0 clients cannot be expected to
+understand chunked encodings, and so an HTTP/1.1 server must never
+send "Transfer-Encoding: chunked" in response to an HTTP/1.0 request.
+
+[VAR[a]] < [VAR[b]] とする時、 HTTP/[VAR[x]].[VAR[b]] の実装がメッセージを、その版が
+HTTP/[VAR[x]].[VAR[a]] であると分かっている受信者に送信する時、 
+HTTP/[VAR[x]].[VAR[a]] の仕様書で定義されていない頭を受信者が理解することに依存しては'''なりません'''。
+例えば、 HTTP/1.0 クライアントは塊符号化を理解することが期待出来ないので、
+HTTP/1.1 サーバーは HTTP/1.0 要求への応答に [CODE["Transfer-encoding: chunked"]]
+を送っては決してなりません。
+
+
+** 2.3 Which version number to send in a message [INS[メッセージ中でどの版番号が送られるか]]
+
+> The most strenuous debate over the use of HTTP version numbers has
+centered on the problem of implementations that do not follow the
+robustness principle, and which fail to produce useful results when
+they receive a message with an HTTP minor version higher than the
+minor version they implement.  We consider these implementations
+buggy, but we recognize that the robustness principle also implies
+that message senders should make concessions to buggy implementations
+when this is truly necessary for interoperation.
+
+HTTP 版番号の使用についての最も精力的な議論は頑強性原則に従わない実装の問題に集中しておりまして、そのような実装はその実装する HTTP
+小版より大きな小版のメッセージを受信した時に有用な結果を生成することに失敗します。
+私達はこのような実装は[RUBYB[蝕んでいる] [buggy]]と考えますが、しかし頑強性原則は本当に相互通信のために必要であるならメッセージの送信者が蝕んだ実装に譲歩してやるのが良いともほのめかしていることを認識しています。
+
+> An HTTP client SHOULD send a request version equal to the highest
+version for which the client is at least conditionally compliant, and
+whose major version is no higher than the highest version supported
+by the server, if this is known.  An HTTP client MUST NOT send a
+version for which it is not at least conditionally compliant.
+
+HTTP クライアントは、その少なくとも条件的に適合する最大の版であって、その大版がサーバーが対応する最大の版が分かっているならそれ以下である版と等しい要求版を送信する'''のが良いです'''。
+HTTP クライアントは最低限条件的にさえ適合していない版を送っては'''なりません'''。
+
+> An HTTP client MAY send a lower request version, if it is known that
+the server incorrectly implements the HTTP specification, but only
+after the client has determined that the server is actually buggy.
+
+HTTP クライアントは、サーバーが間違って HTTP 仕様を実装していると分かっている時は低めの要求版を送っても'''構いません'''が、サーバーが実際に蝕んでいるとクライアントが決定した後に限ります。
+
+> An HTTP server SHOULD send a response version equal to the highest
+version for which the server is at least conditionally compliant, and
+whose major version is less than or equal to the one received in the
+request.  An HTTP server MUST NOT send a version for which it is not
+at least conditionally compliant.  A server MAY send a 505 (HTTP
+Version Not Supported) response if cannot send a response using the
+major version used in the client's request.
+
+HTTP サーバーは、そのサーバーが少なくても条件付で適合している最大の版と等しい応答版でその大版が要求中で受信したもの以下である版を送信する'''のが良いです'''。
+HTTP サーバーは最低限条件的にさえ適合していない版を送っては'''なりません'''。
+サーバーはクライアントの要求で使われている大版を使った応答が送信できない場合は
+[[505]] (HTTP 版未対応) を送っても'''構いません'''。
+
+> An HTTP server MAY send a lower response version, if it is known or
+suspected that the client incorrectly implements the HTTP
+specification, but this should not be the default, and this SHOULD
+NOT be done if the request version is HTTP/1.1 or greater.
+
+HTTP サーバーは、クライアントが HTTP 仕様を間違って実装していると分かっているか又は疑わしい時には低めの応答版を送っても'''構いません'''が、これは既定値とするべきではなく、またこれは要求版が
+HTTP/1.1 以上である場合にはし'''ないのが良い'''です。
+
+
+* 3 Security Considerations [INS[安全性に関して]]
+
+> None, except to the extent that security mechanisms introduced in one
+version of HTTP might depend on the proper interpretation of HTTP
+version numbers in older implementations.
+
+但しある版の HTTP で導入された安全性の仕組みが古い実装の HTTP
+版番号の適切な解釈に依存するようなことを除いて、ありません。
+
+
+* 4 References [INS[参考文献]]
+
+[PRE[
+   1.  Berners-Lee, T.,  R. Fielding, and H. Frystyk.  Hypertext
+   Transfer Protocol -- HTTP/1.0.  RFC 1945, HTTP Working Group, May,
+   1996.
+]PRE]
+
+[PRE[
+   2.  Fielding, Roy T., Jim Gettys, Jeffrey C. Mogul, Henrik Frystyk
+   Nielsen, and Tim Berners-Lee.  Hypertext Transfer Protocol --
+   HTTP/1.1.  RFC 2068, HTTP Working Group, January, 1997.
+]PRE]
+
+[PRE[
+   3.  Khare, Rohit.  HTTP/1.2 Extension Protocol (PEP).  HTTP Working
+   Group, Work in Progress.
+]PRE]
+
+[PRE[
+   4.  Postel, Jon.  Internet Protocol.  RFC 791, NIC, September, 1981.
+]PRE]
+
+
+* 5 Authors' addresses [INS[著者の連絡先]]
+
+[PRE[
+   Jeffrey C. Mogul
+   Western Research Laboratory
+   Digital Equipment Corporation
+   250 University Avenue
+   Palo Alto, California, 94305, USA
+   Email: mogul@@wrl.dec.com
+]PRE]
+
+[PRE[
+   Roy T. Fielding
+   Department of Information and Computer Science
+   University of California
+   Irvine, CA 92717-3425, USA
+   Fax: +1 (714) 824-4056
+   Email: fielding@@ics.uci.edu
+]PRE]
+
+[PRE[
+   Jim Gettys
+   MIT Laboratory for Computer Science
+   545 Technology Square
+   Cambridge, MA 02139, USA
+   Fax: +1 (617) 258 8682
+   Email: jg@@w3.org
+]PRE]
+
+[PRE[
+   Henrik Frystyk Nielsen
+   W3 Consortium
+   MIT Laboratory for Computer Science
+   545 Technology Square
+   Cambridge, MA 02139, USA
+   Fax: +1 (617) 258 8682
+   Email: frystyk@@w3.org
+*License
+]PRE]
+
+See [[RFCのライセンス]]
+
+
+* メモ
+
+- [1] [[HTTP/1.1]] の [[chunked符号化]] 及び [[keep-alive]] の導入は「メッセージの解釈」に関する極めて重大な変更だと思うので、大版番号を上げて欲しかったですねぇ。
+- [2] [[method]] や[[状態符号]]については触れられてないですけど、これも頭欄と同様に取り扱っても良いものですかねぇ?
+
+[3]
+buy herbal viagra
+([[book buy guest viagra]] [mnwnyjeo@@yahoo.com])
+
+@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@d1 431
+a431 389
+#?SuikaWiki/0.9 import="RFC訳語集" page-icon="HTTP"
+'''Use and Interpretation of HTTP Version Numbers [INS[HTTP 版番号の使用と解釈]]'''
+-Network Working Group                                        
+-Request for Comments: 2145                                           
+-Category: Informational                                      
+-J. C. Mogul
+-DEC
+-R. Fielding
+-                                                               UC Irvine
+-                                                               J. Gettys
+-                                                                     DEC
+-                                                              H. Frystyk
+-                                                                 MIT/LCS
+-                                                                May 1997
+__&&InfoStatus&&__
+
+>Distribution of this document is unlimited.  Please send comments to
+the HTTP working group at <http-wg@@cuckoo.hpl.hp.com>.  Discussions
+of the working group are archived at
+<URL:http://www.ics.uci.edu/pub/ietf/http/>.  General discussions
+about HTTP and the applications which use HTTP should take place on
+the <www-talk@@w3.org> mailing list.
+
+このメモの配布は制限しません。 HTTP 作業部会 <MAIL:http-wg@@cuckoo.hpl.hp.com>
+にコメントを送ってください [INS[訳注: HTTP WG は終了しました]]。
+作業部会の議論は <http://www.ics.uci.edu/pub/ietf/http/> に記録されています。
+HTTP 及び HTTP を使った応用についての一般的議論は <MAIL:www-talk@@w3.org>
+メイリング・リストを使うのが良いです。
+
+*Abstract [INS[概要]]
+>HTTP request and response messages include an HTTP protocol version
+number.  Some confusion exists concerning the proper use and
+interpretation of HTTP version numbers, and concerning
+interoperability of HTTP implementations of different protocol
+versions.  This document is an attempt to clarify the situation.  It
+is not a modification of the intended meaning of the existing
+HTTP/1.0 and HTTP/1.1 documents, but it does describe the intention
+of the authors of those documents, and can be considered definitive
+when there is any ambiguity in those documents concerning HTTP
+version numbers, for all versions of HTTP.
+
+HTTP 要求・応答メッセージは HTTP のプロトコル版番号を含んでいます。
+HTTP 版番号の適切な使用及び解釈並びに異なるプロトコルの版の HTTP
+実装の相互通信性に関しては混乱があります。
+この文書はこの状況を明確化しようとするものです。この文書は既存の HTTP/1.0
+及び HTTP/1.1 両文書の意図していた意味を変更するものではありませんが、両文書の著者の意図を説明し、両文書に
+HTTP 版番号に関わる曖昧性がある時に、全ての HTTP の版について、決定的なものと考えることが出来るものです。
+
+*TABLE OF CONTENTS [INS[目次]]
+
+   1 Introduction. . . . . . . . . . . . . . . . . . . . . . . . . .  2
+        1.1 Robustness Principle . . . . . . . . . . . . . . . . . .  3
+   2 HTTP version numbers. . . . . . . . . . . . . . . . . . . . . .  3
+   2.1 Proxy behavior. . . . . . . . . . . . . . . . . . . . . . . .  4
+        2.2 Compatibility between minor versions of the same major
+            version. . . . . . . .  . . . . . . . .  . . . . . . . .  4
+        2.3 Which version number to send in a message. . . . . . . .  5
+   3 Security Considerations . . . . . . . . . . . . . . . . . . . .  6
+   4 References. . . . . . . . . . . . . . . . . . . . . . . . . . .  6
+   5 Authors' addresses. . . . . . . . . . . . . . . . . . . . . . .  6
+
+*1 Introduction [INS[はじめに]]
+>HTTP request and response messages include an HTTP protocol version
+number.  According to section 3.1 of the HTTP/1.1 specification [2],
+
+HTTP 要求・応答メッセージは HTTP のプロトコル版番号を含みます。
+HTTP/1.1 仕様書 [INS[(RFC 2068]]) の3.1節によると、
+
+>>HTTP uses a "<major>.<minor>" numbering scheme to indicate
+versions of the protocol. The protocol versioning policy is
+intended to allow the sender to indicate the format of a message
+and its capacity for understanding further HTTP communication,
+rather than the features obtained via that communication.  No
+change is made to the version number for the addition of message
+components which do not affect communication behavior or which
+only add to extensible field values.  The <minor> number is
+incremented when the changes made to the protocol add features
+which do not change the general message parsing algorithm, but
+which may add to the message semantics and imply additional
+capabilities of the sender. The <major> number is incremented when
+the format of a message within the protocol is changed.
+
+HTTP はプロトコルの版を示すために「[VAR[<majpr>]].[VAR[<minor>]]」
+という番号付け方式を使います。
+プロトコルの版付け方針は、 HTTP 
+通信により行われる機能を示すというよりは、送信者が受信者にメッセージの形式を示したり以降の
+HTTP 通信を理解するための送信者の能力を示したりすることを可能にするというものです。
+通信動作に影響しない又は拡張可能な欄の値を追加するだけのメッセージ部品の追加では版番号は変更しません。
+[VAR[<minor>]] 番号は一般的メッセージ解析算法は変更しないがメッセージの意味を追加し、送信者の能力を更に課すかもしれない機能の追加がプロトコルに行われた時に増加します。
+[VAR[<major>]] 番号はプロトコル中のメッセージ形式が変更された時に増加します。
+
+>The same language appears in the description of HTTP/1.0 [1].
+
+同じことが [[HTTP/1.0]] [INS[(RFC 1945)]] の説明中にもあります。
+
+>Many readers of these documents have expressed some confusion about
+the intended meaning of this policy.  Also, some people who wrote
+HTTP implementations before RFC1945 [1] was issued were not aware of
+the intentions behind the introduction of version numbers in
+HTTP/1.0.  This has led to debate and inconsistency regarding the use
+and interpretation of HTTP version numbers, and has led to
+interoperability problems in certain cases.
+
+両文書の多くの読者がこの方針の意図するところについて混乱を見せています。
+また、 RFC 1945 が発行された以前に HTTP 実装を書いた人の中には HTTP/1.0
+での版番号の導入の意図に気づかない人もいます。
+これが HTTP 版番号の使用と解釈に関する議論と不一致につながり、またある場合には相互通信性上の問題にもなっています。
+
+>This document is an attempt to clarify the situation.  It is not a
+modification of the intended meaning of the existing HTTP/1.0 and
+HTTP/1.1 documents, but it does describe the intention of the authors
+of those documents.  In any case where either of those two documents
+is ambiguous regarding the use and interpretation of HTTP version
+numbers, this document should be considered the definitive as to the
+intentions of the designers of HTTP.
+
+この文書はこの状況を明確化しようとするものです。この文書は既存の HTTP/1.0
+及び HTTP/1.1 両文書の意図していた意味を変更するものではありませんが、両文書の著者の意図を説明するものです。
+この2つの文書が HTTP 版番号の使用と解釈に関して曖昧であるいかなる場合においても、この文書は
+HTTP の設計者の意図についての決定打と考えるのがよいです。
+
+>The specification described in this document is not part of the
+specification of any individual version of HTTP, such as HTTP/1.0 or
+HTTP/1.1.  Rather, this document describes the use of HTTP version
+numbers in any version of HTTP (except for HTTP/0.9, which did not
+include version numbers).
+
+この文書で説明する仕様は HTTP/1.0 や HTTP/1.1
+のようなどの個々の HTTP の版の仕様ではありません。
+むしろ、この文書はいずれの版 (版番号を含まない [[HTTP/0.9]] を除く。)
+での HTTP の版番号の使用についても説明するものです。
+
+>No vendor or other provider of an HTTP implementation should claim
+any compliance with any IETF HTTP specification unless the
+implementation conditionally complies with the rules in this document.
+
+HTTP 実装の販売者やその他提供者は、実装がこの文書中の規則に条件付に従うのでは無い限り、いかなる
+[[IETF]] HTTP 仕様への適合も主張するべきではありません。
+
+**1.1 Robustness Principle [INS[頑強性原則]]
+>RFC791 [4] defines the "robustness principle" in section 3.2:
+
+[[RFC791]] は3.2節で「頑強性原則」について定義しています。
+
+>>an implementation must be conservative in its sending
+behavior, and liberal in its receiving behavior.
+
+実装は送信動作においては控え目でなければならず、受信動作においては寛大でなければなりません [INS[(人に優しく、自分に厳しく)]]。
+
+>This principle applies to HTTP, as well.  It is the fundamental basis
+for interpreting any part of the HTTP specification that might still
+be ambiguous.  In particular, implementations of HTTP SHOULD NOT
+reject messages or generate errors unnecessarily.
+
+この原則は HTTP にも同様に当てはまります。
+この原則は依然曖昧であるかもしれない HTTP 仕様書の各部分の解釈で重要な基本です。
+特に、 HTTP の実装は不必要にメッセージを拒絶したりエラーを生成し'''ないのが良いです'''。
+
+*2 HTTP version numbers [INS[HTTP 版番号]]
+>We start by restating the language quoted above from section 3.1 of
+the HTTP/1.1 specification [2]:
+
+先に引用した HTTP/1.1 仕様書の3.1節からの引用の部分を言い直すことから始めます。
+
+>It is, and has always been, the explicit intent of the
+HTTP specification that the interpretation of an HTTP message
+header does not change between minor versions of the same major version.
+
+HTTP メッセージの頭の解釈は同じ[RUBYB[大] [major]]版の[RUBYB[小] [minor]]版の間では変更しないことが
+HTTP 仕様の明確に意図するところであり、また常にそうであるのです。
+
+>It is, and has always been, the explicit intent of the
+HTTP specification that an implementation receiving a message
+header that it does not understand MUST ignore that header.  (The
+word "ignore" has a special meaning for proxies; see section 2.1 below.)
+
+実装がその理解しないメッセージの頭を受け取ったら、この頭を無視しなければ'''ならない'''ということは
+HTTP 仕様の明確に意図するところであり、また常にそうであるのです。
+(「無視」という言葉は串には特別な意味を持ちます。下記 2.1節参照。)
+
+>To make this as clear as possible:  The major version sent in a
+message MAY indicate the interpretation of other header fields.  The
+minor version sent in a message MUST NOT indicate the interpretation
+of other header fields.  This reflects the principle that the minor
+version labels the capability of the sender, not the interpretation
+of the message.
+
+これを出来る限り明確にします。メッセージ中で送られる大版は他の頭欄の解釈を示しても'''構いません'''。
+メッセージ中で送られる小版は他の頭欄の解釈を示しては'''なりません'''。
+これは小版が送信者の能力を札付けするものであってメッセージの解釈を札付けするものではないという方針を反映しています。
+
+>Note: In a future version of HTTP, we may introduce a mechanism
+that explicitly requires a receiving implementation to reject a
+message if it does not understand certain headers.  For example,
+this might be implemented by means of a header that lists a set of
+other message headers that must be understood by the recipient.
+Any implementation claiming at least conditional compliance with
+this future version of HTTP would have to implement this
+mechanism.  However, no implementation claiming compliance with a
+lower HTTP version (in particular, HTTP/1.1) will have to implement this mechanism.
+
+注意: 将来の版の HTTP では、受信した実装がある頭を理解しなければメッセージを拒絶することを明示的に要求する仕組みを導入するかもしれません。
+例えば、受信者が理解しなければならない他のメッセージ頭の一覧である頭を使ってこれを実装するかもしれません。
+この将来の版の HTTP に少なくても条件的に適合することを主張する全ての実装はこの仕組みを実装しなければならないでしょう。
+しかし、下位の版の HTTP (特に [[HTTP/1.1]]) 
+に適合を主張する実装はこの仕組みを実装しなければならないことはありません。
+
+>This future change may be required to support the Protocol
+Extension Protocol (PEP) [3].
+
+この将来の拡張はプロトコル拡張プロトコル ([[PEP]])
+の対応のために必須であるかもしれません。
+
+>One consequence of these rules is that an HTTP/1.1 message sent to an
+HTTP/1.0 recipient (or a recipient whose version is unknown) MUST be
+constructed so that it remains a valid HTTP/1.0 message when all
+headers not defined in the HTTP/1.0 specification [1] are removed.
+
+これらの規則の結果、 HTTP/1.0 受信者 (又は版が不明な受信者)
+へ送られる HTTP/1.1 メッセージは HTTP/1.0 仕様書に定義されていない全ての頭を削除した時に妥当な
+HTTP/1.0 メッセージが残るように構築されていなければ'''なりません'''。
+
+[INS[
+訳注: しかし HTTP/1.1 メッセージは最初の行に「HTTP/1.1」と書いてあるのでどんなに頑張っても
+HTTP/1.0 メッセージにはなりません:-)
+]INS]
+
+**2.1 Proxy behavior [INS[串の動作]]
+>A proxy MUST forward an unknown header, unless it is protected by a
+Connection header.  A proxy implementing an HTTP version >= 1.1 MUST
+NOT forward unknown headers that are protected by a Connection
+header, as described in section 14.10 of the HTTP/1.1 specification [2].
+
+串は、 [CODE(HTTP)[Connection]] 頭で保護されている場合を除いて、未知の頭を転送しなければ'''なりません'''。
+1.1 以上の HTTP の版を実装する串は、 HTTP/1.1 仕様書の14.10節で説明されているように、
+Connection 頭で保護されている未知の頭を転送しては'''なりません'''。
+
+[INS[
+訳注: 2.0 以降の版の HTTP では (上述の規則に従えば)
+頭の解釈その他諸々が 1.[VAR[x]] と異なっている可能性があるのですから、この段落のように断言するのは危険じゃないんでしょうか。
+]INS]
+
+>We remind the reader that that HTTP version numbers are hop-by-hop
+components of HTTP messages, and are not end-to-end.  That is, an
+HTTP proxy never "forwards" an HTTP version number in either a
+request or response.
+
+HTTP 版番号は HTTP メッセージの hop-by-hop 部品であって end-to-end
+部品ではないことを思い出して下さい。つまり、 HTTP 串は要求においても応答においても、
+HTTP 版番号は決して「転送」しません。
+
+**2.2 Compatibility between minor versions of the same major version [INS[同じ大版の小版間の互換性]]
+
+>An implementation of HTTP/x.b sending a message to a recipient whose
+version is known to be HTTP/x.a, a < b, MAY send a header that is not
+defined in the specification for HTTP/x.a.  For example, an HTTP/1.1
+server may send a "Cache-control" header to an HTTP/1.0 client; this
+may be useful if the immediate recipient is an HTTP/1.0 proxy, but
+the ultimate recipient is an HTTP/1.1 client.
+
+[VAR[a]] < [VAR[b]] とする時、 HTTP/[VAR[x]].[VAR[b]] の実装がメッセージを、その版が
+HTTP/[VAR[x]].[VAR[a]] であると分かっている受信者に送信する時、 
+HTTP/[VAR[x]].[VAR[a]] の仕様書で定義されていない頭を送信しても'''構いません'''。
+例えば、 HTTP/1.1 サーバーは [CODE["Cache-control"]] 頭を HTTP/1.0
+クライアントに送っても構いません。これは直接の受信者が HTTP/1.0 串で、最終受信者が
+HTTP/1.1 クライアントである時に役に立つかもしれません。
+
+>An implementation of HTTP/x.b sending a message to a recipient whose
+version is known to be HTTP/x.a, a < b, MUST NOT depend on the
+recipient understanding a header not defined in the specification for
+HTTP/x.a.  For example, HTTP/1.0 clients cannot be expected to
+understand chunked encodings, and so an HTTP/1.1 server must never
+send "Transfer-Encoding: chunked" in response to an HTTP/1.0 request.
+
+[VAR[a]] < [VAR[b]] とする時、 HTTP/[VAR[x]].[VAR[b]] の実装がメッセージを、その版が
+HTTP/[VAR[x]].[VAR[a]] であると分かっている受信者に送信する時、 
+HTTP/[VAR[x]].[VAR[a]] の仕様書で定義されていない頭を受信者が理解することに依存しては'''なりません'''。
+例えば、 HTTP/1.0 クライアントは塊符号化を理解することが期待出来ないので、
+HTTP/1.1 サーバーは HTTP/1.0 要求への応答に [CODE["Transfer-encoding: chunked"]]
+を送っては決してなりません。
+
+**2.3 Which version number to send in a message [INS[メッセージ中でどの版番号が送られるか]]
+>The most strenuous debate over the use of HTTP version numbers has
+centered on the problem of implementations that do not follow the
+robustness principle, and which fail to produce useful results when
+they receive a message with an HTTP minor version higher than the
+minor version they implement.  We consider these implementations
+buggy, but we recognize that the robustness principle also implies
+that message senders should make concessions to buggy implementations
+when this is truly necessary for interoperation.
+
+HTTP 版番号の使用についての最も精力的な議論は頑強性原則に従わない実装の問題に集中しておりまして、そのような実装はその実装する HTTP
+小版より大きな小版のメッセージを受信した時に有用な結果を生成することに失敗します。
+私達はこのような実装は[RUBYB[蝕んでいる] [buggy]]と考えますが、しかし頑強性原則は本当に相互通信のために必要であるならメッセージの送信者が蝕んだ実装に譲歩してやるのが良いともほのめかしていることを認識しています。
+
+>An HTTP client SHOULD send a request version equal to the highest
+version for which the client is at least conditionally compliant, and
+whose major version is no higher than the highest version supported
+by the server, if this is known.  An HTTP client MUST NOT send a
+version for which it is not at least conditionally compliant.
+
+HTTP クライアントは、その少なくとも条件的に適合する最大の版であって、その大版がサーバーが対応する最大の版が分かっているならそれ以下である版と等しい要求版を送信する'''のが良いです'''。
+HTTP クライアントは最低限条件的にさえ適合していない版を送っては'''なりません'''。
+
+>An HTTP client MAY send a lower request version, if it is known that
+the server incorrectly implements the HTTP specification, but only
+after the client has determined that the server is actually buggy.
+
+HTTP クライアントは、サーバーが間違って HTTP 仕様を実装していると分かっている時は低めの要求版を送っても'''構いません'''が、サーバーが実際に蝕んでいるとクライアントが決定した後に限ります。
+
+>An HTTP server SHOULD send a response version equal to the highest
+version for which the server is at least conditionally compliant, and
+whose major version is less than or equal to the one received in the
+request.  An HTTP server MUST NOT send a version for which it is not
+at least conditionally compliant.  A server MAY send a 505 (HTTP
+Version Not Supported) response if cannot send a response using the
+major version used in the client's request.
+
+HTTP サーバーは、そのサーバーが少なくても条件付で適合している最大の版と等しい応答版でその大版が要求中で受信したもの以下である版を送信する'''のが良いです'''。
+HTTP サーバーは最低限条件的にさえ適合していない版を送っては'''なりません'''。
+サーバーはクライアントの要求で使われている大版を使った応答が送信できない場合は
+[[505]] (HTTP 版未対応) を送っても'''構いません'''。
+
+>An HTTP server MAY send a lower response version, if it is known or
+suspected that the client incorrectly implements the HTTP
+specification, but this should not be the default, and this SHOULD
+NOT be done if the request version is HTTP/1.1 or greater.
+
+HTTP サーバーは、クライアントが HTTP 仕様を間違って実装していると分かっているか又は疑わしい時には低めの応答版を送っても'''構いません'''が、これは既定値とするべきではなく、またこれは要求版が
+HTTP/1.1 以上である場合にはし'''ないのが良い'''です。
+
+*3 Security Considerations [INS[安全性に関して]]
+>None, except to the extent that security mechanisms introduced in one
+version of HTTP might depend on the proper interpretation of HTTP
+version numbers in older implementations.
+
+但しある版の HTTP で導入された安全性の仕組みが古い実装の HTTP
+版番号の適切な解釈に依存するようなことを除いて、ありません。
+
+*4 References [INS[参考文献]]
+
+   1.  Berners-Lee, T.,  R. Fielding, and H. Frystyk.  Hypertext
+   Transfer Protocol -- HTTP/1.0.  RFC 1945, HTTP Working Group, May,
+   1996.
+
+   2.  Fielding, Roy T., Jim Gettys, Jeffrey C. Mogul, Henrik Frystyk
+   Nielsen, and Tim Berners-Lee.  Hypertext Transfer Protocol --
+   HTTP/1.1.  RFC 2068, HTTP Working Group, January, 1997.
+
+   3.  Khare, Rohit.  HTTP/1.2 Extension Protocol (PEP).  HTTP Working
+   Group, Work in Progress.
+
+   4.  Postel, Jon.  Internet Protocol.  RFC 791, NIC, September, 1981.
+
+*5 Authors' addresses [INS[著者の連絡先]]
+
+   Jeffrey C. Mogul
+   Western Research Laboratory
+   Digital Equipment Corporation
+   250 University Avenue
+   Palo Alto, California, 94305, USA
+   Email: mogul@@wrl.dec.com
+
+   Roy T. Fielding
+   Department of Information and Computer Science
+   University of California
+   Irvine, CA 92717-3425, USA
+   Fax: +1 (714) 824-4056
+   Email: fielding@@ics.uci.edu
+
+   Jim Gettys
+   MIT Laboratory for Computer Science
+   545 Technology Square
+   Cambridge, MA 02139, USA
+   Fax: +1 (617) 258 8682
+   Email: jg@@w3.org
+
+   Henrik Frystyk Nielsen
+   W3 Consortium
+   MIT Laboratory for Computer Science
+   545 Technology Square
+   Cambridge, MA 02139, USA
+   Fax: +1 (617) 258 8682
+   Email: frystyk@@w3.org
+*License
+
+See [[RFCのライセンス]]
+*メモ
+- [1] [[HTTP/1.1]] の [[chunked符号化]] 及び [[keep-alive]] の導入は「メッセージの解釈」に関する極めて重大な変更だと思うので、大版番号を上げて欲しかったですねぇ。
+d433 5
+@
+

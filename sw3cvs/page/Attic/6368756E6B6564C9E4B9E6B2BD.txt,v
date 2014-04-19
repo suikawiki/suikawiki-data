@@ -1,0 +1,323 @@
+head	1.5;
+access;
+symbols
+	after-upgrade-to-suikawiki-3:1.4
+	before-fork-suikawiki3:1.4
+	after-restore-20040122:1.4;
+locks; strict;
+comment	@# @;
+
+
+1.5
+date	2004.04.13.02.01.10;	author wakaba;	state dead;
+branches;
+next	1.4;
+
+1.4
+date	2003.03.27.07.25.01;	author make;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2002.12.30.09.23.15;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2002.10.22.09.24.50;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2002.07.29.12.01.58;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.5
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9 obsoleted="yes"
+→[[chunked]]@
+
+
+1.4
+log
+@pre-namespace
+@
+text
+@@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@d1 2
+a2 183
+#?SuikaWiki/0.9
+[1] 塊 (chunked) 符号化は、 [[HTTP/1.1]] で導入された[[転送符号化]]です。
+(転送符号化自体、 [[HTTP/1.1]] で導入されたものです。また現時点で利用出来る唯一の転送符号化でもあります。)
+
+[2] HTTP/1.1 は[[持続可能接続]] ([[Keep-Alive]])
+を導入しましたが、このためには内容の長さ
+(あるいは内容の終了の位置) を知る必要があります。
+[[HTTP]] は非常に単純なプロトコルで、 [[HTTP/1.0]]
+以前には終了の位置を知る方法はありませんでした。
+その代わりに、接続が切れたらそこで終わりでした。
+([[Content-Length:欄]]があれば、切れた接続が正常切断だったのかを判断出来ます。)
+
+しかし持続可能接続ではこの方法は使えません。
+そこで導入されたのがこの塊転送符号化です。
+HTTP/1.1 では塊転送符号化の実装が必須とされています。
+(だけど実装が面倒 (というか見たらやる気を失くす。)
+なので、塊符号化を実装せず、それだけのために
+HTTP/1.1 非対応の [[UA]] も少なくはありません。)
+
+[3] もちろん、 [[Content-Length:欄]]を必ずつけることにすればそれで長さは特定できるのですが、
+[[CGI]] 出力のように長さが事前に定まらない
+(定まるのを待っていたら時間が掛かる可能性のある)
+ことがありますので不便です。
+
+[4] 塊符号化は、符号化の内容を任意の長さの塊に分け、それぞれの塊の最初に塊の長さを書いておきます。一番最後におまけで長さ
+0 と書いた塊をつけときます。これだけです。実はそんなに厄介でもありません。
+
+[5] この塊符号化に関する部分の実装の不具合が問題になったこともありました。
+([[Apache]] などの古い版を使っている人は新しい版にしましょう。)
+
+[6] [[HTTP]] と似た仕組みを使う [[SIP]] では、この塊符号化の使用は禁止されています。
+
+*RFC 2616 より、 3.6.1 Chunked Transfer Coding
+
+>The chunked encoding modifies the body of a message in order to
+transfer it as a series of chunks, each with its own size indicator,
+followed by an OPTIONAL trailer containing entity-header fields. This
+allows dynamically produced content to be transferred along with the
+information necessary for the recipient to verify that it has
+received the full message.
+
+chunked (塊) 符号化は、メッセージの本体を、転送のためにいじって
+塊の連続とします。各塊は大きさ指示が付きますし、
+最後には'''任意'''で、 trailer (おまけ) 
+実体頭欄を続けることが出来ます。
+これにより、動的に生成した内容が、受信者が完全なメッセージを受け取ったか確認するのに必要な情報と共に転送出来るようになります。
+
+       Chunked-Body   = *chunk
+                        last-chunk
+                        trailer
+                        CRLF
+
+       chunk          = chunk-size [ chunk-extension ] CRLF
+                        chunk-data CRLF
+       chunk-size     = 1*HEX
+       last-chunk     = 1*("0") [ chunk-extension ] CRLF
+
+       chunk-extension= *( ";" chunk-ext-name [ "=" chunk-ext-val ] )
+       chunk-ext-name = token
+       chunk-ext-val  = token | quoted-string
+       chunk-data     = chunk-size(OCTET)
+       trailer        = *(entity-header CRLF)
+
+>The chunk-size field is a string of hex digits indicating the size of
+the chunk. The chunked encoding is ended by any chunk whose size is
+zero, followed by the trailer, which is terminated by an empty line.
+
+chunk-siuze (塊長)領域は、塊の長さを表す16進数字の文字列です。
+chunked (塊)符号化は、長さ 0 の chunk (塊)、それに続く,
+空行で終わる trailer (おまけ)で終わります。
+
+>The trailer allows the sender to include additional HTTP header
+fields at the end of the message. The Trailer header field can be
+used to indicate which header fields are included in a trailer (see
+section 14.40).
+
+trailer により、送信者はメッセージの終わりに追加の HTTP 頭領域を
+入れることが出来ます。 Trailer 頭領域は trailer に含まれている
+頭領域を示すのに使うことが出来ます。 (14.40節参照)
+
+>A server using chunked transfer-coding in a response MUST NOT use the
+trailer for any header fields unless at least one of the following is true:
+
+応答に chunked 転送符号化を使うサーバーは
+次の条件の一つ以上を満たさずに trailer を使っては'''いけません'''。
+
+>a)the request included a TE header field that indicates "trailers" is
+acceptable in the transfer-coding of the  response, as described in
+section 14.39; or,
+
+a) 14.39節で説明するように、要求が、 「trailers」を応答の転送符号化で
+使っても良いと示す TE 頭領域を含んでいる場合
+
+>b)the server is the origin server for the response, the trailer
+fields consist entirely of optional metadata, and the recipient
+could use the message (in a manner acceptable to the origin server)
+without receiving this metadata.  In other words, the origin server
+is willing to accept the possibility that the trailer fields might
+be silently discarded along the path to the client.
+
+b) サーバーが、応答の原サーバーで、 trailer 領域が
+完全に任意のメタ情報であって、受信者がそのメタ情報を受信せずとも
+(原サーバー的に認められる方法で) メッセージを使うことが出来る場合。
+別の言い方をすると、原サーバーが、 trailer 領域がクライアントへの
+経路中に黙って捨てられる可能性があることを認める意思があるという場合
+
+>This requirement prevents an interoperability failure when the
+message is being received by an HTTP/1.1 (or later) proxy and
+forwarded to an HTTP/1.0 recipient. It avoids a situation where
+compliance with the protocol would have necessitated a possibly
+infinite buffer on the proxy.
+
+この要求事項は、メッセージが HTTP/1.1 (以上) の串が受信して
+HTTP/1.0 受信者に転送される時に、相互通信性的に失敗するのを
+防ぐものです。これにより、このプロトコルに従うことが、
+串で不定バッファーが必要になるかもしれない状況を避けることが出来ます。
+
+>An example process for decoding a Chunked-Body is presented in appendix 19.4.6.
+
+塊本体の復号処理の例を附属書 19.4.6 に示しました。
+
+>All HTTP/1.1 applications MUST be able to receive and decode the
+"chunked" transfer-coding, and MUST ignore chunk-extension extensions
+they do not understand.
+
+全ての HTTP/1.1 応用は「chunked」転送符号化を受信して復号する
+ことが出来なければ'''ならず'''、理解できない chunk-extension (塊拡張)
+を無視し'''なければなりません'''。
+
+*RFC 2616 より、 19.4.6 Introduction of Transfer-Encoding
+
+>HTTP/1.1 introduces the Transfer-Encoding header field (section
+14.41). Proxies/gateways MUST remove any transfer-coding prior to
+forwarding a message via a MIME-compliant protocol.
+
+HTTP/1.1 は Transfer-Encoding (転送符号化) 頭領域 (14.41節)
+を導入しました。串・関門は MIME 従順プロトコルにメッセージを
+転送する前に転送符号化を消さなければ'''なりません'''。
+
+>A process for decoding the "chunked" transfer-coding (section 3.6)
+can be represented in pseudo-code as:
+
+「chunked」(塊)転送符号化 (3.6節)を復号する処理は、擬似符号で
+次の様に表すことが出来ましょう:
+
+       length := 0
+       read chunk-size, chunk-extension (if any) and CRLF
+       while (chunk-size > 0) {
+          read chunk-data and CRLF
+          append chunk-data to entity-body
+          length := length + chunk-size
+          read chunk-size and CRLF
+       }
+       read entity-header
+       while (entity-header not empty) {
+          append entity-header to existing header fields
+          read entity-header
+       }
+       Content-Length := length
+       Remove "chunked" from Transfer-Encoding
+
+ 長さ := 0
+ chunk-size (塊長), chunk-extension (塊拡張) と CRLF を(あれば)読む
+ (chunk-size > 0) の間 {
+   chunk-data (塊データ) と CRLF を読む
+   entity-body (実体本体) に chunk-data を付け加える
+   長さ := 長さ + chunk-size
+   chunk-size と CRLF を読む
+ }
+ entity-header (実体頭) を読む
+ (entity-header が空でない) 間 {
+   entity-header を既存の頭領域に付け加える
+   entity-header を読む
+ }
+ Content-Length (内容長) := 長さ
+ 「chunked」を Transfer-Encoding (転送符号化) から削除
+
+*RFC の部分の LICENSE
+
+See [[RFCのライセンス]]
+
+*メモ
+- [7] >>6 [[RTSP]] も禁止。 [CODE[chunked]] は嫌われ者だねぇ
+@
+
+
+1.2
+log
+@Updated.
+@
+text
+@d183 1
+@
+
+
+1.1
+log
+@Updated.
+@
+text
+@d1 32
+d35 1
+a35 1
+The chunked encoding modifies the body of a message in order to
+d44 3
+a46 3
+最後には'''任意'''で、 trailer (おまけ) 実体頭領域を続けることが出来ます。
+これにより、動的に生成した内容が、受信者が完全なメッセージを受け取ったか
+確認するのに必要な情報と共に転送出来るようになります。
+d64 1
+a64 1
+The chunk-size field is a string of hex digits indicating the size of
+d72 1
+a72 1
+The trailer allows the sender to include additional HTTP header
+d81 1
+a81 1
+A server using chunked transfer-coding in a response MUST NOT use the
+d87 1
+a87 1
+a)the request included a TE header field that indicates "trailers" is
+d94 1
+a94 1
+b)the server is the origin server for the response, the trailer
+d107 1
+a107 1
+This requirement prevents an interoperability failure when the
+d118 1
+a118 1
+An example process for decoding a Chunked-Body is presented in appendix 19.4.6.
+d122 1
+a122 1
+All HTTP/1.1 applications MUST be able to receive and decode the
+d132 1
+a132 1
+HTTP/1.1 introduces the Transfer-Encoding header field (section
+d140 1
+a140 1
+A process for decoding the "chunked" transfer-coding (section 3.6)
+d178 1
+a178 10
+*See also
+-[[符号化]]
+--[[転送符号化]]
+--[[圧縮]]
+--[[RFC822と仲間達の頭領域名]]
+---[[Content-Transfer-Encoding:領域]]
+---[[Content-Encoding:領域]]
+---[[Transfer-Encoding:領域]]
+---[[TE:領域]]
+---[[Content-Type:領域]]
+d180 1
+a180 1
+*ライセンス
+d182 1
+a182 1
+See [[RFCのライセンス]]
+@
+

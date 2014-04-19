@@ -1,0 +1,254 @@
+head	1.7;
+access;
+symbols
+	before-db-leaffile:1.6
+	after-upgrade-to-suikawiki-3:1.6
+	before-fork-suikawiki3:1.6
+	after-restore-20040122:1.6;
+locks; strict;
+comment	@# @;
+
+
+1.7
+date	2004.09.13.02.03.54;	author wakaba;	state dead;
+branches;
+next	1.6;
+
+1.6
+date	2003.03.27.07.24.50;	author make;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2002.10.25.13.24.49;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2002.08.28.11.24.09;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2002.08.26.10.24.01;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2002.08.25.14.24.24;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2002.08.16.14.24.02;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.7
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9 page-icon="字β" default-name="US-ASCIIさん"
+[2] [[RFC2130]] は、 [[CCS]] と [[CES]] を次のように定義しています。
+
+>A Coded Character Set (CCS) is a mapping from a set of abstract
+>characters to a set of integers.  Examples of coded character sets
+>are ISO 10646 [ISO-10646], US-ASCII [ASCII], and ISO-8859 series
+>[ISO-8859].
+
+CCS: 抽象文字の集合から整数の集合への写像
+
+>A Character Encoding Scheme (CES) is a mapping from a Coded Character
+>Set or several coded character sets to a set of octets. Examples of
+>Character Encoding Schemes are ISO 2022 [ISO-2022] and UTF-8 [UTF-8].
+>A given CES is typically associated with a single CCS; for example,
+>UTF-8 applies only to ISO 10646.
+
+CES: (単数又は複数の) CCS からオクテットの集合への写像
+
+もともとこの定義が変なのですが(笑)、この[[文字コード]] = CCS + CES
+説は人気を集め、よく分からない方向に拡大解釈されつつ、現在では
+[[符号化文字モデル]]の解釈の主流となってます。
+
+何がおかしいかって、おやっさん、誰の目にも明らかです。 CCS
+は''符号化''文字集合で、 CES は文字''符号化''方法なわけです。
+RFC 2130 では前者の符号化は文字を整数に対応させたもので、
+後者は整数を[[オクテット]]に対応させたものだと言ってます。
+随分苦しい解釈です。
+
+CES は CCS の一部、というか CES = (文字と符号の対応) の結果が
+CCS であると考える方が自然です。
+
+    文字                    符号
+   .....
+  {: a : --------------->   0x41 }
+  {: b : --------------->   0x42 }  (←全体) CCS
+  {: c : --------------->   0x43 }
+   '''''        ↑
+   文字集合    CES
+
+ISO/IEC での[[符号化文字集合]]の定義は CCS と CES をごっちゃにしている
+という批判がありますが、むしろ IETF の CCS の定義の方がおかしくないですか。
+
+もっとも、この話には直接関係してきませんが、 ISO/IEC の符号化文字集合の定義
+もおかしくて、''符号''化文字集合と''符号''は同義語だったりします。
+
+*狭義 CCS と CES の独立 (符号平面媒介説)
+
+IETF CCS を狭義 CCS, ISO/IEC CCS を広義 CCS とでも呼びましょうか。
+とすると、幾つかの広義 CCS を例に取ると、狭義 CCS と CES
+の関係は次のように説明できます。 (但し、狭義 CCS と CES
+は完全には独立していない(あるいは出来ない)ことに注意して下さい。)
+
+,広義 CCS        ,CES                 ,狭義 CCS
+,[[ISO-2022-JP]] ,junet (7ビットJIS)  ,"ASCII, JIS X 0201, JIS X 0208"
+,[[ISO-2022-CN]] ,7ビット[[ISO/IEC2022]],"ASCII, GB 2312, CNS 11643"
+,[[ISO-2022-INT-1]],ISO-2022-INT-*    ,"ASCII, JIS, GB,..."
+,[[EUC-JP]]      ,[[EUC]]             ,"ASCII, JIS X 0208, JIS X 0201, JIS X 0212"
+,[[EUC-CN]]      ,[[EUC]]             ,"ASCII, GB 2312"
+,[[Shift_JIS]]   ,シフト符号化表現    ,"JIS X 0201, JIS X 0208"
+,シフトGB        ,シフト符号化表現    ,"ASCII, GB 2312"
+,[[UTF-8]]       ,UTF-8               ,[[ISO/IEC10646]]
+,[[US-ASCII]]    ,7ビット平面         ,ANSI N3.4
+,[[ISO-8859-1]]  ,8ビット平面         ,[[ISO/IEC8859]]-1
+,[[UCS-4]]       ,4オクテット平面     ,[[ISO/IEC10646]]
+
+ですから、次のように定義すれば、綺麗に収まるはずです。
+
+:狭義 CCS:一定の大きさの符号平面に配置した文字の集合。
+:CES     :1つ以上の狭義 CCS をビット組合せと結びつける規則の集合。
+
+CES は単純に、狭義 CCS で定義された符号平面をビット組合せにそのまま
+対応させるものでもいいわけです。
+
+で、 IETF CCS/CES の定義と比べてみると、なんのことはない、
+「整数」が「符号平面」に置き換わっただけでした:-)
+
+閑話休題。CCS・CES 説というのは元々こういう話だったと思うんですが、
+素晴らしき拡大解釈というかうまく話が摩り替えられて、
+ややこしくなって現在に至ってる訳です。 (←説明してるようで
+実は何も説明してないような...)
+
+*整数媒介説
+
+[[電子メイル]]の [[MIME]] [[charset]]="[[EUC-JP]]"
+と、 [[XML]] の encoding="EUC-JP" とでは、意味がかなり異なります。
+MIME では文字通り、[[文字コード]]に EUC-JP を使っていることを
+表しますが、 XML では CCS は [[ISO/IEC10646]] に固定されていて、
+CES が EUC-JP であることを表します(CCS, CES ともに IETF の定義と同じ)。
+
+この考え方を支える理論こそが、 IETF の定義による CCS, CES
+の関係です。これを整数媒介説とでも呼びましょうか。
+
+符号平面媒介説では狭義 CCS から CES への変換は符号平面の演算と
+説明されていましたから、符号平面を丸ごと一定の演算で変換した
+ものが完成品[[文字コード]]となります。しかしこれでは先程の
+CCS = ISO/IEC 10646, CES = EUC-JP という[[文字コード]]
+は存在出来ません。 (狭義 CCS の ISO/IEC 10646 (4オクテット平面)は、
+CES の [[EUC]] が想定する種類の符号平面(94^n or 96^n平面)
+ではないからです。)
+
+整数媒介説では、狭義 CCS の符号平面は考えずに、狭義 CCS 
+によって与えられた文字の値それぞれが、 CES によってそれぞれの値を
+与えられると考えます。この与え方、すなわち CES は、計算式
+によって変換するもの (つまり、符号平面説による CES)
+であっても構いませんし、狭義 CCS と CES 結果に何らの関係もない、
+変換表を引くというものでも構いません。
+
+これでは狭義 CCS が値を持った文字の集合であることの意味が
+ありません。狭義 CCS の値をそのまま使うとか、狭義 CCS
+ではなく値の無い文字集合を使うとかで十分なはずです。
+(←この2つの例はどちらも同じ事をいってますが。)
+
+この論理は後付でそれっぽく見せただけであって、実際は、
+[[Unicode]] で済ませたいんだけど、既存の[[文字コード]]
+を一朝一夕に無くすことは出来ないから、既存の文字コード
+は Unicode の一部を取り出したことにしてしまって乗っ取ろう
+という策略です。 (おまけに、既存の文字コードは legacy charset
+などとふざけた分類を与えられています。)
+
+この調子で逝くと何でもありです。 CCS = ISO/IEC 8859-7
++ CES = EUC-JP とか、 CCS = [[EBCDIC]] + CES = GB 18030
+とか、 CCS = [[新字源]] + CES = [[SCSU]] とか。
+こうした世界では最早 CCS にも CES にも存在意義すらありません。
+
+- 2002-08-28 (Wed) 18:18:05 ''[[名無しさん]]'' : 先生、うに厨に[[レパートリ]]という言葉をおすえてやって下さい
+- 2002-08-28 (Wed) 18:19:45 ''[[名無しさん]]'' : mohta先生、うに厨にプロファイリングという言葉をおすえてやってください
+- [1] ''妄想''なんて随分大胆に言い切りますね
+- [3] う〜ん、 >>2 の言うことも分からなくはないんだけど、例えば CCS は[[マーク付け言語]], CES は[[スタイル・シート]]だと考えてみたらどうだろう。 [[CSS]] (紛らわしい。) のような簡単なスタイル・シートだと、要素の順番を入れ替えたりとかできないから、94[SUP[2]] を [[EUC]] にするような変換はできても、 [[UCS-4]] にするのは不可能だわな。でも、 [[XSL]] ([[XSLT]]) を使えば [[UTF-16]] だろうが [[Punycode]] だろうがなんとかなりそうな気がしてくる。符号化されていない文字集合が、マークの付いていない自然言語文と対応するとすると、似てると思うんだけどどうかなあ。
+@
+
+
+1.6
+log
+@pre-namespace
+@
+text
+@@
+
+
+1.5
+log
+@Updated.
+@
+text
+@d1 2
+a2 2
+#?SuikaWiki/0.9
+RFC 2130 は、 [[CCS]] と [[CES]] を次のように定義しています。
+d127 2
+@
+
+
+1.4
+log
+@Updated.
+@
+text
+@d1 1
+d125 2
+a126 4
+- 2002-08-28 (Wed) 18:18:05 ''[[名無しさん]]'' : 先生、うに厨に[[レパートリ]]という言葉をおすえてやって下さい
+- 2002-08-28 (Wed) 18:19:45 ''[[名無しさん]]'' : 先生、うに厨にプロファイリングという言葉をおすえてやってください
+[[#comment]]
+
+@
+
+
+1.3
+log
+@Updated.
+@
+text
+@d124 2
+@
+
+
+1.2
+log
+@Updated.
+@
+text
+@d45 1
+a45 1
+*狭義 CCS と CES の独立
+d81 42
+a122 1
+続く(?)
+@
+
+
+1.1
+log
+@Updated.
+@
+text
+@d44 41
+@
+

@@ -1,0 +1,1182 @@
+head	1.9;
+access;
+symbols
+	suikawiki3-final:1.9;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.9
+date	2008.06.03.02.49.49;	author wakaba;	state Exp;
+branches;
+next	1.8;
+
+1.8
+date	2008.05.23.02.45.58;	author wakaba;	state Exp;
+branches;
+next	1.7;
+
+1.7
+date	2008.01.23.02.41.01;	author wakaba;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2007.10.23.02.47.48;	author wakaba;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2006.10.08.02.14.36;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2005.11.23.02.18.21;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2004.11.27.02.05.29;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2004.11.18.02.08.00;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2004.07.23.02.04.15;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.9
+log
+@auto-committed
+@
+text
+@
+
+* data: URI scheme
+
+[10] [DFN[[CODE(URI)[data:]]]] は、[[実体]]を直接記述する [[URI scheme]] です。
+
+[11] 仕様書:
+- [[RFC 2397]] <urn:ietf:rfc:2397>
+
+[[#comment]]
+
+
+** 構文
+
+[22] (他の [[URI scheme]] 同様) [CODE(URI)@@en[[[data]]:]] [[URI scheme]] 
+の仕様は非常に曖昧です。古い時代の仕様書なので仕方がありませんが、
+どこまでが[[規定]]でどこからが[[参考]]なのかも明確ではありません。
+
+[12] '''構文の概要''':
+[[RFC 2397]] の2章によると、 [CODE(URI)@@en[[[data]]:]] URI 
+の構文を簡単にあらわすと
+
+> [CODE(URI)[data:[<[VAR[mediatype]]>][;base64],<[VAR[data]]>]]
+
+となります。
+
+[13] '''構文の定義''':
+[[RFC 2397]] の3章は更に詳しく
+
+>
+- dataurl    := "data:" [ mediatype ] [ ";base64" ] "," data
+- mediatype  := [ type "/" subtype ] *( ";" parameter )
+- data       := *urlchar
+- parameter  := attribute "=" value
+
+;; - [CODE(ABNF)@@en[[[urlchar]]]]: [[RFC 2396]] の定義を参照
+- [CODE(ABNF)@@en[[[type]]]], [CODE(ABNF)@@en[[[subtype]]]], 
+[CODE(ABNF)@@en[[[attribute]]]], [CODE(ABNF)@@en[[[value]]]]: [[RFC 2045]] 
+の定義を参照
+
+と定義しています。
+
+[23] '''構文の定義自体の問題''':
+自明だからどうでも良いと思ったのか、
+この構文定義自体が何で書かれているのか説明がありません[AA[wwwww]]
+[[ABNF]] の一種だろうと思いますが・・・。
+
+[24] '''[CODE(ABNF)@@en[[[urlc]]]]''':
+[CODE(ABNF)@@en[[[urlc]]]] は [[RFC 2396]] の定義を参照していることになっていますが、
+実のところ [[RFC 2396]] で [CODE(ABNF)@@en[[[urlc]]]] は定義されていません。
+おそらく [CODE(ABNF)@@en[[[uric]]]] の誤りなのでしょうが、これは致命的です。
+
+;; そもそも、 [[RFC 2396]] を参照しておきながらなぜ [Q@@en[[[UR''L'' scheme]]]]
+なのかが謎です。
+
+[14] '''[CODE(ABNF)@@en[[[value]]]]''':
+[CODE(ABNF)[[[value]]]] は [[RFC 2045]] で [CODE(ABMF)@@en[[[token]]]] または
+[CODE(ABNF)@@en[[[quoted-string]]]] と定義されています。しかし、 
+[CODE(ABNF)@@en[[[quoted-string]]]]
+は URI で直接使えない ([CODE(ABNF)@@en[[[unsafe]]]] な) [CODE(char)[[["]]]] や 
+[CODE(char)[[[\]]]] を使います。
+つまり、構文通り解釈すると使えるはずのものが [[URI]] 
+仕様との整合性を考慮すると使えないのです。
+
+実は使えないのはこの2文字だけではなく、[[改行]]を含む[[C0制御文字]]や[[空白]]なども
+[[URI]] ではそのまま使えません。更に、この [CODE(ABNF)@@en[[[value]]]] や、
+[CODE(ABNF)@@en[[[token]]]] として定義されている [CODE(ABNF)@@en[[[attribute]]]]
+には [CODE(char)@@en[[[%]]]] を含めることができますが、 [[URI]]
+では [CODE(char)@@en[[[%]]]] は[[百分率符号化]]のための特別な文字として使われます。
+
+[25] '''百分率符号化''':
+[[RFC 2397]] の[[著者]]も馬鹿ではありませんから、[[百分率符号化]]
+(当時の名称は [[URI逃避符号化]]、[[RFC 2396]] における呼称は
+[[URL逃避符号化]]) との関係に言及しています。
+
+[26]
+まず一点目に、[Q[必要に応じて[[百分率符号化]]を用いて表現する]]との旨が規定されています
+[SRC@@en[[[RFC 2397]] 3.]]:
+
+>
+[PRE[
+   [INS[(ABNF 構文定義)]]
+   where "urlchar" is imported from [RFC2396], and "type", "subtype",
+   "attribute" and "value" are the corresponding tokens from [RFC2045],
+   represented using URL escaped encoding of [RFC2396] as necessary.
+]PRE]
+
+この最後の部分がどこに係っているのかが曖昧なので、3通りの解釈が可能です:
+- [[百分率符号化]]は [CODE(ABNF)@@en[[[type]]]], [CODE(ABNF)@@en[[[subtype]]]],
+[CODE(ABNF)@@en[[[attribute]]]], [CODE(ABNF)@@en[[[value]]]] で使用可能
+- [[百分率符号化]]は [CODE(ABNF)@@en[[[urlc]]]],
+[CODE(ABNF)@@en[[[type]]]], [CODE(ABNF)@@en[[[subtype]]]],
+[CODE(ABNF)@@en[[[attribute]]]], [CODE(ABNF)@@en[[[value]]]] で使用可能
+- [[百分率符号化]]は [CODE(URI)@@en[[[data]]:]] URI 全体で使用可能
+
+普通修飾するのは直前のものでしょうから、3つ目の解釈は少々無理があるかもしれませんが、
+あり得ないとまではいえません。ちなみに3つ目の解釈に従うなら
+[CODE(URI)@@en[[[base64]]]] の部分に[[百分率符号化]]が使えます。
+1つ目と2つ目の解釈の違いは [CODE(ABNF)@@en[[[urlc]]]] で[[百分率符号化]]が使えるか否かですが、
+そもそも [CODE(ABNF)@@en[[[ur''i''c]]]] には [CODE(ABNF)@@en[[[escaped]]]]
+([[百分率符号化]]) が含まれているので、どちらでも同じことになります。
+
+[Q@@en[as necessary]] というのも曲者で、穿った読み方をすれば、
+必要でない場合には使ってもよいとされていないとも解釈し得ます。
+(流石にこれは深読みしすぎでしょうが。)
+
+[27] 2点目に、[CODE(ABNF)@@en[[[value]]]] での[[百分率符号化]]について、
+
+>
+[PRE[
+   However, within a "data" URL, the
+   "quoted-string" representation would be awkward, since the quote mark
+   is itself not a valid urlchar. For this reason, parameter values
+   should use the URL Escaped encoding instead of quoted string if the
+   parameter values contain any "tspecial".
+]PRE]
+
+と言及しています [SRC@@en[[[RFC 2397]] 3.]]。ここで、
+前述の構文が[[百分率符号化]]込みのものと理解するべきかという問題が発生します。
+この引用部をそのまま解釈すると、 [CODE(ABNF)@@en[[[token]]]] の部分に[[百分率符号化]]が使えることになります。
+
+[CODE(ABNF)@@en[[[token]]]] を定義している [[RFC 2045]] は [[URI]]
+のことなど気にしていないので、当然[[百分率符号化]]が使えるかどうか、
+その使い方には言及していません。ただし、[CODE(ABNF)@@en[[[token]]]]
+で使える[[文字]]には [CODE(char)[[[%]]]] が含まれています
+(この辺の事情は引用部の [Q@@en[should not]] を無視して
+[CODE(ABNF)@@en[[[quoted-string]]]] を使う場合にも該当します)。
+たとえば [CODE(example)@@en[100%!]] は[[妥当]]な [CODE(ABNF)@@en[[[token]]]] です。しかし、
+[[16進数字]]が2つ続かない [CODE(char)[[[%]]]] を [[URI]] で使うことはできません。
+[[URI]] の仕様に従うなら、
+[[百分率記号]]を表したいときは [CODE(URI)[[[%]]25]] と書かなければなりません。
+
+[28]
+また、[[百分率符号化]]を前述の部分のどんな[[文字]]にも使ってよいのかも明確ではありません。
+たとえば [CODE(ABNF)@@en[[[subtype]]]]
+が [SAMP(MIME example)@@en[svg+xml]] であったとして、 [[URI]] に
+[CODE(example URI)[svg+xm%6C]] と書いても、 (どんな [[URI scheme]]
+でも[[非予約]]な[[文字]]は[[百分率符号化]]してもしなくても[[等価]]なので)
+問題ありません。
+しかし、 [CODE(URI example)[svg%2Bxml]] 
+が前2例と[[等価]]であるのか否かは明らかではありません。
+([CODE(char)[+]] は [CODE(char)[[[reserved]]]] なので。)
+意図としては[[百分率符号化]]を使っても構わないのでしょうが。。。
+
+;; 
+URI の構文の一部に URI 以外のプロトコル要素の定義を引用することはよくありますが、
+このような解釈の問題が起きないように、慎重に設計することをお願いしたいものです。
+
+[15] '''Base64''':
+また、 [CODE(ABNF)[";base64"]] が指定されると、 [CODE(ABNF)[data]] は [[Base64]] と解釈されます。
+(この指定で大文字と小文字が区別されるかどうかがよくわからないのも問題です。)
+
+ところが、その [Q[Base64]] の定義が何を参照しているのかが全然書かれていません。
+他のところで RFC 2045 を参照しているので、そこで定義されているものと解釈するのが一番もっともらしそうですが、
+Base64 は色々な変種が知られているので、油断できません。 (その変種のほとんどが、  RFC 2045 の [[MIME]] にべったりな部分に手を加えたものです。)
+
+たとえば、改行や空白の問題があります。
+RFC 2045 の Base64 では一行の字数制限があるのですが、それが適用されるかどうかわかりません。
+
+4. には次のような例が載っています。
+
+>
+[PRE(HTML)[
+   <IMG
+   SRC="data:image/gif;base64,R0lGODdhMAAwAPAAAAAAAP///ywAAAAAMAAw
+   AAAC8IyPqcvt3wCcDkiLc7C0qwyGHhSWpjQu5yqmCYsapyuvUUlvONmOZtfzgFz
+   ByTB10QgxOR0TqBQejhRNzOfkVJ+5YiUqrXF5Y5lKh/DeuNcP5yLWGsEbtLiOSp
+   a/TPg7JpJHxyendzWTBfX0cxOnKPjgBzi4diinWGdkF8kjdfnycQZXZeYGejmJl
+   ZeGl9i2icVqaNVailT6F5iJ90m6mvuTS4OK05M0vDk0Q4XUtwvKOzrcd3iq9uis
+   F81M1OIcR7lEewwcLp7tuNNkM3uNna3F2JQFo97Vriy/Xl4/f1cf5VWzXyym7PH
+   hhx4dbgYKAAA7"
+   ALT="Larry">
+]PRE]
+
+行頭の[[間隔]]は RFC としての余白です。
+それを無視したとしても、行を折り返しているのが
+RFC としての行字数制約によるだけで本来いれては'''ならない'''ものなのか、
+RFC の制限だけど実際にも入れても'''よい'''
+'''ものなのか、説明が全然ありません。'''
+(かりに入れてもよいとしても、 URI 逃避符号化しない限り URI 全体の構文に違反しますがね。)
+
+[16]
+>>15 のようなことが気になるのは、実際に生の改行入りで [[XLink]] の属性なんかに指定した例が存在するからです。
+(XLink の [CODE(XMLa)[[VAR[xlink:]][[href]]]] 属性値は [[URI参照]]そのものではなく、
+[Q[URI 逃避符号化すれば URI 参照になるもの]]なので、 XLink 的にも一般の URI 的にもこの指定自体は一応合法。)
+
+[29] '''空白''':
+[[RFC 2045]] [[MIME]] を [[RFC 822]] [[電子メイル]]の文脈で使う場合、
+[[構文]]定義上は明記されていませんが、[[字句]]間に[[空白]]
+([[RFC 822]] では [CODE(ABNF)@@en[[[LWS]]]] や [CODE(ABNF)@@en[[[comment]]]]、後の 
+[[RFC 2822]] では [CODE(ABNF)@@en[[[CFWS]]]]) を挿入してもよいことになっています。
+それに従えば [CODE(ABNF)@@en[[[type]]]], [CODE(ABNF)@@en[[[subtype]]]],
+[CODE(ABNF)@@en[[[attribute]]]], [CODE(ABNF)@@en[[[value]]]] の前後に[[空白]]を挿入できることになりますが、
+[[RFC 2397]] ではそのことにまったく言及していません (>>23
+で指摘したように、そもそも構文定義自体の記述方法の説明がありません)。
+
+[30] '''[[RFC 2231]] [[引数値]]拡張''':
+[[RFC 2231]] は [[RFC 2045]] の [CODE(MIME)@@en[[[Content-Type]]:]] [[頭欄]]で用いられるような[[引数値]]の構文の拡張を定義しています。
+[CODE(URI)@@en[[[data]]:]] [[URI scheme]] でこの拡張を使うことができるのかは不明です。
+
+[31] '''素片識別子''':
+[[RFC 2397]] は[[素片識別子]]にまったく言及していません。
+[[RFC 2396]] は[[素片識別子]]は [[URI]] の一部ではなく、
+[[URI参照]]の一部であるという立場をとっていたので
+(後の [[RFC 3986]] では[[素片識別子]]も [[URI]]
+の一部)、その考えに従っているのかもしれません。
+
+[[Ian Hickson]] はかつて、 [CODE(URI)@@en[[[data]]:]] [[URI]]
+では[[素片識別子]]が使えないと主張していたように見えますが
+(>>21 にあるテストのソースを参照)、この事実以外に何か根拠があるのかは不明ですし、
+現在もそのように主張しているのかは不明です。
+
+[34]
+>>27 の引用部の本来の意図はどう読んでも [Q[[CODE(ABNF)@@en[[[quoted-string]]]] の代わりに [CODE(ABNF)@@en[[[token]]]] + [[百分率符号化]]を使うのがよい]]なのですが、
+>>27 のように解釈しても問題がありますし、[CODE(ABNF)@@en[[[value]]]] は 
+[WEAK[([[百分率符号化]]を前提としていない [[RFC 2045]] の構文規則なので)]]
+[[百分率符号化]]を解いた後の[[文字列]]に対する構文規則である、と解釈しても問題があります。
+[CODE(ABNF)@@en[[[tspecials]]]] を含むような[[文字列]]は[[妥当]]な
+[CODE(ABNF)@@en[[[token]]]] ではありませんから、
+[CODE(example URI)@@en[a%40b]] を元に戻した [CODE(example MIME)@@en[a@@b]]
+は [CODE(ABNF)@@en[[[token]]]] 足りえません
+[WEAK[(元の意図は、 [CODE(example MIME)@@en[a@@b]] を [CODE(example URI)@@en["a@@b"]] としなくてもよいとするもののはずです)]]。
+
+([[名無しさん]])
+
+[[#comment]]
+
+
+** 処理モデル
+
+[32]
+他の [[URI scheme]] の仕様書と同様、 [[RFC 2397]] は
+[CODE(URI)@@en[[[data]]:]] [[URI scheme]] の構文を定義するだけで
+[WEAK[(それすらも前述のように満足にできていないわけですが)]]、
+どのように処理するべきか、構文的に誤った [CODE(URI)@@en[[[data]]:]]
+[[URI]] をどう扱うべきかに一切言及していません。
+
+[33]
+'''百分率符号化された8ビット部''':
+[[百分率符号化]]された[[オクテット]]があった場合、
+[CODE(ABNF)@@en[[[data]]]] 部なら指定された[[媒体型]]に従って解釈するのでいいのでしょうが、
+それ以外の部分ならどう解釈するべきなのかが問題になり得ます。
+[CODE(ABNF)@@en[[[type]]]] や [CODE(ABNF)@@en[[[subtype]]]] や
+[CODE(ABNF)@@en[[[attribute]]]] の部分はそもそも [[ASCII]] [[文字]]だけで定義されているので、
+8ビット部が [[ASCII]] に写像されない限りどう解釈しようが問題にはなりません。
+
+;; たとえば8ビット目を落とすとか、[[UTF-8]] で [[Unicode case-insensitive]]
+に処理したりすると問題になりますが。
+
+[CODE(ABNF)@@en[[[value]]]] の部分は任意の文字列を指定し得るので、
+[[文字コード]]が問題となります。[[MIME]] 的に正しいのはそれでもやはり
+[[ASCII]] [[文字]]だけですが。。。
+
+([[名無しさん]])
+
+[[#comment]]
+
+
+** テスト
+
+[19]
+[CITE[data: URL tests]] ([CODE[2008-05-15 05:24:13 +09:00]] 版) <http://www.mozilla.org/quality/networking/testing/datatests.html>
+
+[20]
+[CITE[Opera Browser Wiki :: Data: URI Test Page]] ([CODE[2008-05-18 19:13:55 +09:00]] 版) <http://operawiki.info/DataURIs>
+
+[21]
+[CITE[Index of /tests/adhoc/data]] ([CODE[2008-05-18 19:24:49 +09:00]] 版) <http://www.hixie.ch/tests/adhoc/data/>
+
+[35]
+[CITE@@en[data: URIs]] ([CODE[2008-06-01 20:50:55 +09:00]] 版) <http://suika.fam.cx/~wakaba/-temp/test/uri/data/test.cgi#>
+([[名無しさん]])
+
+[[#comment]]
+
+
+** メモ
+
+[9]
+[CITE[The data: URI kitchen]] <http://software.hixie.ch/utilities/cgi/data/data>
+任意のデータから [CODE(URI)[data:]] URI をつくってくれます。
+
+[18]
+[CITE[Bug 16968 - Security violations in Acid3 test]] ([CODE[2008-01-22 20:19:03 +09:00]] 版) <http://bugs.webkit.org/show_bug.cgi?id=16968>
+
+
+[36]
+3ブラウザとも、 [CODE(MIME)@@en[[[name]]]] [[引数]]を[[ファイル名]]に使うことはないようです。
+
+;; [CITE@@en[data: URIs]] ([TIME[2008-06-01 21:08:32 +09:00]] 版) <http://suika.fam.cx/~wakaba/-temp/test/uri/data/test.cgi#tag=name%20parameter>
+
+
+([[名無しさん]])
+
+
+[[#comment]]
+
+
+* object 要素 data 属性 (HTML, XHTML 1)
+
+[1] [[HTML]] の [CODE(HTMLe)[[[object]]]] 要素の
+[DFN[[CODE(HTMLa)[data]] 属性]]は、[[物体]]のデータ
+(例えば、画像を定義する物体の実現値画像データ。
+より一般的に言えば、再生かのうな物体の[[直列化]]形) を指定します。
+
+[2] 仕様書: 
+- [[HTML 4]] 
+-- [CITE[13.3 Generic inclusion: the [CODE(HTMLe)[OBJECT]] element]]
+<IW:HTML4:"struct/objects.html#include-objects">
+-- [CODE(HTMLe)[object]] 要素 [CODE(HTMLa)[data]] 属性 
+<IW:HTML4:"struct/objects.html#adef-data">
+-- [CITE[HTML 4 Changes]]
+<IW:HTML4:"appendix/changes.html#h-A.1.1.9">
+
+[[#comment]]
+
+
+** 属性値
+
+[3] この属性の値は [CODE(SGML)[%[[URI]]]] です。
+[[SGML]] 的には [CODE(SGML)[[[CDATA]]]] です。
+
+指定された [[URI参照]]が[[相対URI参照]]である場合には、 [CODE(HTMLa)[[[codebase]]]]
+属性値が (あれば) [[基底URI]] として解決に使われます。
+
+[4] この属性は省略可能です。
+
+[[#comment]]
+
+
+** 他との関係
+
+[5] [CODE(HTMLa)[[[codebase]]]] 属性が相対 URI 参照の解決に使われます。
+[CODE(HTMla)[[[archive]]]] 属性で指定された資源から
+[CODE(HTMLa)[data]] で指定された資源が得られるかもしれません。
+[CODE(HTMLa)[data]] 資源の[[媒体型]]のヒントが
+[CODE(HTMLa)[[[type]]] 属性から得られます。]]
+
+[6] [CODE(HTMLa)[[[classid]]]] (実装) と [CODE(HTMLa)[data]] (データ)
+は両方指定しても構いませんし、一方だけでも構いません。
+しかし、両方指定したときの挙動は未定義です。
+可搬性のために、実装が取り寄せる追加のデータは [CODE(HTMLa)[data]]
+ではなく [CODE(HTMLe)[[[param]]]] で指定するべきです。 [SRC[HTML 4.01 13.3]]
+
+[8]
+>>6 とかいいながら、仕様書には併用した例が随分と沢山出てきます。
+
+[[#comment]]
+
+
+** 例
+
+[7] データを [CODE(URI)[[[data]]:]] URI で HTML
+中に埋込む例
+[PRE(HTML)[
+<P>
+<OBJECT id="clock1"
+        classid="clsid:663C8FEF-1EF9-11CF-A3DB-080036F12502"
+        data="data:application/x-oleobject;base64,[VAR[...base64 data...]]">
+    A clock.
+</OBJECT>
+]PRE]
+
+[WEAK[(HTML 4 仕様書より)]]
+
+[17]
+[CITE@@ja[★お友達のお店★|♪Naoの神コレブログ♪]] ([CODE[2007-10-21 20:34:09 +09:00]] 版) <http://ameblo.jp/kobe-naoko/entry-10047146028.html>
+
+>
+[PRE(HTML example code)[
+		<li>
+		<object data="http://stat.ameba.jp/blog/genre/girlsblog/checker/kobe-collection/bloglist.swf" type="application/x-shockwave-flash" width="170" height="620">
+		<param name="movie" value="http://stat.ameba.jp/blog/genre/girlsblog/checker/kobe-collection/bloglist.swf" />
+		Flashプラグインの使用について。
+   		GiRLS GATEでは、コンテンツの一部にFlashを使用しております。Flashが表示されない方は、Flash Playerをインストールしてからご覧下さい。<a href="www.adobe.com/go/getflashplayer_jp">Flash Playerダウンロードページへ。</a>
+  		</object></li>
+]PRE]
+
+[[Flash]] を [CODE(HTMLa)@@en[[[data]]]] で埋め込んでいる珍しい例。
+([[名無しさん]])
+
+[[#comment]]
+
+
+** メモ
+
+[[#comment]]
+
+
+* フォーム制御子 [CODE(HTMLa)@@en[data]] 属性 (HTML)
+
+@@@@ - [[Web Forms 2.0]]
+- [CSECTION@@en[2.12. The [CODE(HTMLe)@@en[[[datalist]]]] element and the [CODE(HTMLa)@@en[[[list]]]] attribute]]
+<IW:WF2:"#the-datalist">
+
+> The datalist element may be prefilled from an external file with the data attribute.
+
+[[#comment]]
+
+
+* メモ@
+
+
+1.8
+log
+@auto-committed
+@
+text
+@a212 1
+
+d214 9
+a222 9
+>>27 の引用部の本来の意図はどう読んでも [Q[[CODE(ABNF)@@en[[[quoted-string]]]] の代わりに [CODE(ABNF)@@en[[[token]]]] + [[百分率符号化]]を使うのがよい]]なのですが、
+>>27 のように解釈しても問題がありますし、[CODE(ABNF)@@en[[[value]]]] は 
+[WEAK[([[百分率符号化]]を前提としていない [[RFC 2045]] の構文規則なので)]]
+[[百分率符号化]]を解いた後の[[文字列]]に対する構文規則である、と解釈しても問題があります。
+[CODE(ABNF)@@en[[[tspecials]]]] を含むような[[文字列]]は[[妥当]]な
+[CODE(ABNF)@@en[[[token]]]] ではありませんから、
+[CODE(example URI)@@en[a%40b]] を元に戻した [CODE(example MIME)@@en[a@@b]]
+は [CODE(ABNF)@@en[[[token]]]] 足りえません
+[WEAK[(元の意図は、 [CODE(example MIME)@@en[a@@b]] を [CODE(example URI)@@en["a@@b"]] としなくてもよいとするもののはずです)]]。
+a225 1
+
+d270 4
+d285 10
+@
+
+
+1.7
+log
+@auto-committed
+@
+text
+@d15 7
+a21 1
+[12] [CODE(URI)[data:]] URI の構文は次のように簡単に表せます [SRC[RFC 2397 2.]]。
+d25 4
+a28 1
+[13] 正式には次のように定義されます [SRC[RFC 2397 3.]]。
+a34 2
+- urlchar ・・・ [[RFC 2396]] 参照 
+- type, subtype, attribute, value ・・・ [[RFC 2045]] 参照
+d36 106
+a141 24
+自明だからどうでも良いと思ったのか、この構文定義自体が何で書かれているのか説明がありません:)
+[[ABNF]] だろうと思いますが・・・。そして致命的なことに、 RFC 2396 で
+[Q[urlchar]] なるものは定義されていません。たぶん [CODE(ABNF)[[[uric]]]]
+のことを言っているつもりなのでしょうが。。。
+
+[14] [CODE(ABNF)[value]] は [[RFC 2045]] で [CODE(ABMF)[[[token]]]] または
+[CODE(ABNF)[[[quoted-string]]]] と定義されています。しかし、 [CODE(ABNF)[quoted-string]]
+は URI で直接使えない ([CODE(ABNF)[[[unsafe]]]] な) [CODE(char)["]] や 
+[CODE(char)[\]] を使います。そこで、 RFC 2397 3. は、
+[CODE(ABNF)[quoted-string]] ではなく [[URI逃避符号化]]するべきだと述べています。
+
+ここで、 >>13 に示されている構文には不備があることがわかります。
+[CODE(ABNF)[token]] で使える文字には [CODE(char)[%]] が含まれますから、
+たとえば [Q[100%!]] は妥当な [CODE(ABNF)[token]] です。しかし、
+16進数字が2つ続かない [CODE(char)[%]] を URI で使うことはできません。
+百分率記号を表したいときは、 [CODE(char)[%25]] と書かなければなりません。
+しかし、 [Q[100%25!]] と書いたとしても、構文を素直に解釈して
+[Q[100%25!]] という値であると理解されてしまうかもしれません。
+
+URI 逃避符号化に関する問題は他にもあります。たとえば [CODE(ABNF)[subtype]]
+が [SAMP(MIME)[svg+xml]] であったとして、 URI に [SAMP(URI)[svg+xm%6C]]
+と書くことは、問題ありません。 (あらゆる種類の URI 
+で英数字は逃避符号化であるか否かの区別に意味がないと規定されています。)
+しかし、 [SAMP(URI)[svg%2Bxml]] が前2例と等価であるのか否かは明らかではありません。
+d143 1
+d145 1
+d149 1
+a149 1
+[15]
+a180 1
+([[名無しさん]])
+d186 39
+d227 45
+a280 1
+
+d282 1
+a282 3
+[CITE[Bug 16968 - Security violations in Acid3 test]] ([TIME[2008-01-22 20:19:03 +09:00]] 版) <http://bugs.webkit.org/show_bug.cgi?id=16968>
+([[名無しさん]])
+
+@
+
+
+1.6
+log
+@auto-committed
+@
+text
+@d107 6
+d183 12
+a195 14
+[17]
+[CITE@@ja[★お友達のお店★|♪Naoの神コレブログ♪]] ([TIME[2007-10-21 20:34:09 +09:00]] 版) <http://ameblo.jp/kobe-naoko/entry-10047146028.html>
+
+>
+[PRE(HTML example code)[
+		<li>
+		<object data="http://stat.ameba.jp/blog/genre/girlsblog/checker/kobe-collection/bloglist.swf" type="application/x-shockwave-flash" width="170" height="620">
+		<param name="movie" value="http://stat.ameba.jp/blog/genre/girlsblog/checker/kobe-collection/bloglist.swf" />
+		Flashプラグインの使用について。
+   		GiRLS GATEでは、コンテンツの一部にFlashを使用しております。Flashが表示されない方は、Flash Playerをインストールしてからご覧下さい。<a href="www.adobe.com/go/getflashplayer_jp">Flash Playerダウンロードページへ。</a>
+
+  		</object></li>
+]PRE]
+
+a198 1
+
+d210 1
+a210 1
+-- [CSECTION@@en[2.12. The [CODE(HTMLe)@@en[[[datalist]]]] element and the [CODE(HTMLa)@@en[[[list]]]] attribute]]
+@
+
+
+1.5
+log
+@auto-committed
+@
+text
+@d1 179
+a179 18
+
+* data: URI scheme
+
+[10] [DFN[[CODE(URI)[data:]]]] は、[[実体]]を直接記述する [[URI scheme]] です。
+
+[11] 仕様書:
+- [[RFC 2397]] <urn:ietf:rfc:2397>
+
+[[#comment]]
+
+
+** 構文
+
+[12] [CODE(URI)[data:]] URI の構文は次のように簡単に表せます [SRC[RFC 2397 2.]]。
+
+> [CODE(URI)[data:[<[VAR[mediatype]]>][;base64],<[VAR[data]]>]]
+
+[13] 正式には次のように定義されます [SRC[RFC 2397 3.]]。
+d182 6
+a187 87
+- dataurl    := "data:" [ mediatype ] [ ";base64" ] "," data
+- mediatype  := [ type "/" subtype ] *( ";" parameter )
+- data       := *urlchar
+- parameter  := attribute "=" value
+- urlchar ・・・ [[RFC 2396]] 参照 
+- type, subtype, attribute, value ・・・ [[RFC 2045]] 参照
+
+自明だからどうでも良いと思ったのか、この構文定義自体が何で書かれているのか説明がありません:)
+[[ABNF]] だろうと思いますが・・・。そして致命的なことに、 RFC 2396 で
+[Q[urlchar]] なるものは定義されていません。たぶん [CODE(ABNF)[[[uric]]]]
+のことを言っているつもりなのでしょうが。。。
+
+[14] [CODE(ABNF)[value]] は [[RFC 2045]] で [CODE(ABMF)[[[token]]]] または
+[CODE(ABNF)[[[quoted-string]]]] と定義されています。しかし、 [CODE(ABNF)[quoted-string]]
+は URI で直接使えない ([CODE(ABNF)[[[unsafe]]]] な) [CODE(char)["]] や 
+[CODE(char)[\]] を使います。そこで、 RFC 2397 3. は、
+[CODE(ABNF)[quoted-string]] ではなく [[URI逃避符号化]]するべきだと述べています。
+
+ここで、 >>13 に示されている構文には不備があることがわかります。
+[CODE(ABNF)[token]] で使える文字には [CODE(char)[%]] が含まれますから、
+たとえば [Q[100%!]] は妥当な [CODE(ABNF)[token]] です。しかし、
+16進数字が2つ続かない [CODE(char)[%]] を URI で使うことはできません。
+百分率記号を表したいときは、 [CODE(char)[%25]] と書かなければなりません。
+しかし、 [Q[100%25!]] と書いたとしても、構文を素直に解釈して
+[Q[100%25!]] という値であると理解されてしまうかもしれません。
+
+URI 逃避符号化に関する問題は他にもあります。たとえば [CODE(ABNF)[subtype]]
+が [SAMP(MIME)[svg+xml]] であったとして、 URI に [SAMP(URI)[svg+xm%6C]]
+と書くことは、問題ありません。 (あらゆる種類の URI 
+で英数字は逃避符号化であるか否かの区別に意味がないと規定されています。)
+しかし、 [SAMP(URI)[svg%2Bxml]] が前2例と等価であるのか否かは明らかではありません。
+([CODE(char)[+]] は [CODE(char)[[[reserved]]]] なので。)
+
+URI の構文の一部に URI 以外のプロトコル要素の定義を引用することはよくありますが、
+このような解釈の問題が起きないように、慎重に設計することをお願いしたいものです。
+
+[15]
+また、 [CODE(ABNF)[";base64"]] が指定されると、 [CODE(ABNF)[data]] は [[Base64]] と解釈されます。
+(この指定で大文字と小文字が区別されるかどうかがよくわからないのも問題です。)
+
+ところが、その [Q[Base64]] の定義が何を参照しているのかが全然書かれていません。
+他のところで RFC 2045 を参照しているので、そこで定義されているものと解釈するのが一番もっともらしそうですが、
+Base64 は色々な変種が知られているので、油断できません。 (その変種のほとんどが、  RFC 2045 の [[MIME]] にべったりな部分に手を加えたものです。)
+
+たとえば、改行や空白の問題があります。
+RFC 2045 の Base64 では一行の字数制限があるのですが、それが適用されるかどうかわかりません。
+
+4. には次のような例が載っています。
+
+>
+[PRE(HTML)[
+   <IMG
+   SRC="data:image/gif;base64,R0lGODdhMAAwAPAAAAAAAP///ywAAAAAMAAw
+   AAAC8IyPqcvt3wCcDkiLc7C0qwyGHhSWpjQu5yqmCYsapyuvUUlvONmOZtfzgFz
+   ByTB10QgxOR0TqBQejhRNzOfkVJ+5YiUqrXF5Y5lKh/DeuNcP5yLWGsEbtLiOSp
+   a/TPg7JpJHxyendzWTBfX0cxOnKPjgBzi4diinWGdkF8kjdfnycQZXZeYGejmJl
+   ZeGl9i2icVqaNVailT6F5iJ90m6mvuTS4OK05M0vDk0Q4XUtwvKOzrcd3iq9uis
+   F81M1OIcR7lEewwcLp7tuNNkM3uNna3F2JQFo97Vriy/Xl4/f1cf5VWzXyym7PH
+   hhx4dbgYKAAA7"
+   ALT="Larry">
+]PRE]
+
+行頭の[[間隔]]は RFC としての余白です。
+それを無視したとしても、行を折り返しているのが
+RFC としての行字数制約によるだけで本来いれては'''ならない'''ものなのか、
+RFC の制限だけど実際にも入れても'''よい'''
+'''ものなのか、説明が全然ありません。'''
+(かりに入れてもよいとしても、 URI 逃避符号化しない限り URI 全体の構文に違反しますがね。)
+([[名無しさん]])
+
+[16]
+>>15 のようなことが気になるのは、実際に生の改行入りで [[XLink]] の属性なんかに指定した例が存在するからです。
+(XLink の [CODE(XMLa)[[VAR[xlink:]][[href]]]] 属性値は [[URI参照]]そのものではなく、
+[Q[URI 逃避符号化すれば URI 参照になるもの]]なので、 XLink 的にも一般の URI 的にもこの指定自体は一応合法。)
+([[名無しさん]])
+
+[[#comment]]
+
+
+** メモ
+
+[9]
+[CITE[The data: URI kitchen]] <http://software.hixie.ch/utilities/cgi/data/data>
+任意のデータから [CODE(URI)[data:]] URI をつくってくれます。
+
+[[#comment]]
+
+d189 1
+a189 63
+* object 要素 data 属性 (HTML, XHTML 1)
+
+[1] [[HTML]] の [CODE(HTMLe)[[[object]]]] 要素の
+[DFN[[CODE(HTMLa)[data]] 属性]]は、[[物体]]のデータ
+(例えば、画像を定義する物体の実現値画像データ。
+より一般的に言えば、再生かのうな物体の[[直列化]]形) を指定します。
+
+[2] 仕様書: 
+- [[HTML 4]] 
+-- [CITE[13.3 Generic inclusion: the [CODE(HTMLe)[OBJECT]] element]]
+<IW:HTML4:"struct/objects.html#include-objects">
+-- [CODE(HTMLe)[object]] 要素 [CODE(HTMLa)[data]] 属性 
+<IW:HTML4:"struct/objects.html#adef-data">
+-- [CITE[HTML 4 Changes]]
+<IW:HTML4:"appendix/changes.html#h-A.1.1.9">
+
+[[#comment]]
+
+
+** 属性値
+
+[3] この属性の値は [CODE(SGML)[%[[URI]]]] です。
+[[SGML]] 的には [CODE(SGML)[[[CDATA]]]] です。
+
+指定された [[URI参照]]が[[相対URI参照]]である場合には、 [CODE(HTMLa)[[[codebase]]]]
+属性値が (あれば) [[基底URI]] として解決に使われます。
+
+[4] この属性は省略可能です。
+
+[[#comment]]
+
+
+** 他との関係
+
+[5] [CODE(HTMLa)[[[codebase]]]] 属性が相対 URI 参照の解決に使われます。
+[CODE(HTMla)[[[archive]]]] 属性で指定された資源から
+[CODE(HTMLa)[data]] で指定された資源が得られるかもしれません。
+[CODE(HTMLa)[data]] 資源の[[媒体型]]のヒントが
+[CODE(HTMLa)[[[type]]] 属性から得られます。]]
+
+[6] [CODE(HTMLa)[[[classid]]]] (実装) と [CODE(HTMLa)[data]] (データ)
+は両方指定しても構いませんし、一方だけでも構いません。
+しかし、両方指定したときの挙動は未定義です。
+可搬性のために、実装が取り寄せる追加のデータは [CODE(HTMLa)[data]]
+ではなく [CODE(HTMLe)[[[param]]]] で指定するべきです。 [SRC[HTML 4.01 13.3]]
+
+[8]
+>>6 とかいいながら、仕様書には併用した例が随分と沢山出てきます。
+
+[[#comment]]
+
+
+** 例
+
+[7] データを [CODE(URI)[[[data]]:]] URI で HTML
+中に埋込む例
+[PRE(HTML)[
+<P>
+<OBJECT id="clock1"
+        classid="clsid:663C8FEF-1EF9-11CF-A3DB-080036F12502"
+        data="data:application/x-oleobject;base64,[VAR[...base64 data...]]">
+    A clock.
+</OBJECT>
+d192 23
+a214 22
+[WEAK[(HTML 4 仕様書より)]]
+
+
+
+[[#comment]]
+
+
+** メモ
+
+[[#comment]]
+
+* フォーム制御子 [CODE(HTMLa)@@en[data]] 属性 (HTML)
+
+@@@@
+- [[Web Forms 2.0]]
+-- [CSECTION@@en[2.12. The [CODE(HTMLe)@@en[[[datalist]]]] element and the [CODE(HTMLa)@@en[[[list]]]] attribute]]
+<IW:WF2:"#the-datalist">
+
+> The datalist element may be prefilled from an external file with the data attribute.
+
+[[#comment]]
+
+@
+
+
+1.4
+log
+@auto-committed
+@
+text
+@d1 195
+a195 190
+
+
+* data: URI scheme
+
+[10] [DFN[[CODE(URI)[data:]]]] は、[[実体]]を直接記述する [[URI scheme]] です。
+
+[11] 仕様書:
+- [[RFC 2397]] <urn:ietf:rfc:2397>
+
+[[#comment]]
+
+
+** 構文
+
+[12] [CODE(URI)[data:]] URI の構文は次のように簡単に表せます [SRC[RFC 2397 2.]]。
+
+> [CODE(URI)[data:[<[VAR[mediatype]]>][;base64],<[VAR[data]]>]]
+
+[13] 正式には次のように定義されます [SRC[RFC 2397 3.]]。
+
+>
+- dataurl    := "data:" [ mediatype ] [ ";base64" ] "," data
+- mediatype  := [ type "/" subtype ] *( ";" parameter )
+- data       := *urlchar
+- parameter  := attribute "=" value
+- urlchar ・・・ [[RFC 2396]] 参照 
+- type, subtype, attribute, value ・・・ [[RFC 2045]] 参照
+
+自明だからどうでも良いと思ったのか、この構文定義自体が何で書かれているのか説明がありません:)
+[[ABNF]] だろうと思いますが・・・。そして致命的なことに、 RFC 2396 で
+[Q[urlchar]] なるものは定義されていません。たぶん [CODE(ABNF)[[[uric]]]]
+のことを言っているつもりなのでしょうが。。。
+
+[14] [CODE(ABNF)[value]] は [[RFC 2045]] で [CODE(ABMF)[[[token]]]] または
+[CODE(ABNF)[[[quoted-string]]]] と定義されています。しかし、 [CODE(ABNF)[quoted-string]]
+は URI で直接使えない ([CODE(ABNF)[[[unsafe]]]] な) [CODE(char)["]] や 
+[CODE(char)[\]] を使います。そこで、 RFC 2397 3. は、
+[CODE(ABNF)[quoted-string]] ではなく [[URI逃避符号化]]するべきだと述べています。
+
+ここで、 >>13 に示されている構文には不備があることがわかります。
+[CODE(ABNF)[token]] で使える文字には [CODE(char)[%]] が含まれますから、
+たとえば [Q[100%!]] は妥当な [CODE(ABNF)[token]] です。しかし、
+16進数字が2つ続かない [CODE(char)[%]] を URI で使うことはできません。
+百分率記号を表したいときは、 [CODE(char)[%25]] と書かなければなりません。
+しかし、 [Q[100%25!]] と書いたとしても、構文を素直に解釈して
+[Q[100%25!]] という値であると理解されてしまうかもしれません。
+
+URI 逃避符号化に関する問題は他にもあります。たとえば [CODE(ABNF)[subtype]]
+が [SAMP(MIME)[svg+xml]] であったとして、 URI に [SAMP(URI)[svg+xm%6C]]
+と書くことは、問題ありません。 (あらゆる種類の URI 
+で英数字は逃避符号化であるか否かの区別に意味がないと規定されています。)
+しかし、 [SAMP(URI)[svg%2Bxml]] が前2例と等価であるのか否かは明らかではありません。
+([CODE(char)[+]] は [CODE(char)[[[reserved]]]] なので。)
+
+URI の構文の一部に URI 以外のプロトコル要素の定義を引用することはよくありますが、
+このような解釈の問題が起きないように、慎重に設計することをお願いしたいものです。
+
+[15]
+また、 [CODE(ABNF)[";base64"]] が指定されると、 [CODE(ABNF)[data]] は [[Base64]] と解釈されます。
+(この指定で大文字と小文字が区別されるかどうかがよくわからないのも問題です。)
+
+ところが、その [Q[Base64]] の定義が何を参照しているのかが全然書かれていません。
+他のところで RFC 2045 を参照しているので、そこで定義されているものと解釈するのが一番もっともらしそうですが、
+Base64 は色々な変種が知られているので、油断できません。 (その変種のほとんどが、  RFC 2045 の [[MIME]] にべったりな部分に手を加えたものです。)
+
+たとえば、改行や空白の問題があります。
+RFC 2045 の Base64 では一行の字数制限があるのですが、それが適用されるかどうかわかりません。
+
+4. には次のような例が載っています。
+
+>
+[PRE(HTML)[
+   <IMG
+   SRC="data:image/gif;base64,R0lGODdhMAAwAPAAAAAAAP///ywAAAAAMAAw
+   AAAC8IyPqcvt3wCcDkiLc7C0qwyGHhSWpjQu5yqmCYsapyuvUUlvONmOZtfzgFz
+   ByTB10QgxOR0TqBQejhRNzOfkVJ+5YiUqrXF5Y5lKh/DeuNcP5yLWGsEbtLiOSp
+   a/TPg7JpJHxyendzWTBfX0cxOnKPjgBzi4diinWGdkF8kjdfnycQZXZeYGejmJl
+   ZeGl9i2icVqaNVailT6F5iJ90m6mvuTS4OK05M0vDk0Q4XUtwvKOzrcd3iq9uis
+   F81M1OIcR7lEewwcLp7tuNNkM3uNna3F2JQFo97Vriy/Xl4/f1cf5VWzXyym7PH
+   hhx4dbgYKAAA7"
+   ALT="Larry">
+]PRE]
+
+行頭の[[間隔]]は RFC としての余白です。
+それを無視したとしても、行を折り返しているのが
+RFC としての行字数制約によるだけで本来いれては'''ならない'''ものなのか、
+RFC の制限だけど実際にも入れても'''よい'''
+'''ものなのか、説明が全然ありません。'''
+(かりに入れてもよいとしても、 URI 逃避符号化しない限り URI 全体の構文に違反しますがね。)
+([[名無しさん]])
+
+[16]
+>>15 のようなことが気になるのは、実際に生の改行入りで [[XLink]] の属性なんかに指定した例が存在するからです。
+(XLink の [CODE(XMLa)[[VAR[xlink:]][[href]]]] 属性値は [[URI参照]]そのものではなく、
+[Q[URI 逃避符号化すれば URI 参照になるもの]]なので、 XLink 的にも一般の URI 的にもこの指定自体は一応合法。)
+([[名無しさん]])
+
+[[#comment]]
+
+
+** メモ
+
+[9]
+[CITE[The data: URI kitchen]] <http://software.hixie.ch/utilities/cgi/data/data>
+任意のデータから [CODE(URI)[data:]] URI をつくってくれます。
+
+[[#comment]]
+
+
+* object 要素 data 属性 (HTML, XHTML 1)
+
+[1] [[HTML]] の [CODE(HTMLe)[[[object]]]] 要素の
+[DFN[[CODE(HTMLa)[data]] 属性]]は、[[物体]]のデータ
+(例えば、画像を定義する物体の実現値画像データ。
+より一般的に言えば、再生かのうな物体の[[直列化]]形) を指定します。
+
+[2] 仕様書: 
+- [[HTML 4]] 
+-- [CITE[13.3 Generic inclusion: the [CODE(HTMLe)[OBJECT]] element]]
+<IW:HTML4:"struct/objects.html#include-objects">
+-- [CODE(HTMLe)[object]] 要素 [CODE(HTMLa)[data]] 属性 
+<IW:HTML4:"struct/objects.html#adef-data">
+-- [CITE[HTML 4 Changes]]
+<IW:HTML4:"appendix/changes.html#h-A.1.1.9">
+
+[[#comment]]
+
+
+** 属性値
+
+[3] この属性の値は [CODE(SGML)[%[[URI]]]] です。
+[[SGML]] 的には [CODE(SGML)[[[CDATA]]]] です。
+
+指定された [[URI参照]]が[[相対URI参照]]である場合には、 [CODE(HTMLa)[[[codebase]]]]
+属性値が (あれば) [[基底URI]] として解決に使われます。
+
+[4] この属性は省略可能です。
+
+[[#comment]]
+
+
+** 他との関係
+
+[5] [CODE(HTMLa)[[[codebase]]]] 属性が相対 URI 参照の解決に使われます。
+[CODE(HTMla)[[[archive]]]] 属性で指定された資源から
+[CODE(HTMLa)[data]] で指定された資源が得られるかもしれません。
+[CODE(HTMLa)[data]] 資源の[[媒体型]]のヒントが
+[CODE(HTMLa)[[[type]]] 属性から得られます。]]
+
+[6] [CODE(HTMLa)[[[classid]]]] (実装) と [CODE(HTMLa)[data]] (データ)
+は両方指定しても構いませんし、一方だけでも構いません。
+しかし、両方指定したときの挙動は未定義です。
+可搬性のために、実装が取り寄せる追加のデータは [CODE(HTMLa)[data]]
+ではなく [CODE(HTMLe)[[[param]]]] で指定するべきです。 [SRC[HTML 4.01 13.3]]
+
+[8]
+>>6 とかいいながら、仕様書には併用した例が随分と沢山出てきます。
+
+[[#comment]]
+
+
+** 例
+
+[7] データを [CODE(URI)[[[data]]:]] URI で HTML
+中に埋込む例
+[PRE(HTML)[
+<P>
+<OBJECT id="clock1"
+        classid="clsid:663C8FEF-1EF9-11CF-A3DB-080036F12502"
+        data="data:application/x-oleobject;base64,[VAR[...base64 data...]]">
+    A clock.
+</OBJECT>
+]PRE]
+
+[WEAK[(HTML 4 仕様書より)]]
+
+
+[17]
+ zxcz
+([[zxc]] [zxc] [WEAK[2005-11-22 04:04:59 +00:00]])
+
+
+[[#comment]]
+
+
+** メモ
+
+[[#comment]]
+
+
+@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@a2 1
+
+a91 1
+
+d93 2
+a94 2
+>>15 のようなことが気になるのは、実際に生の改行入りで [[XLink]] の属性なんかに指定した例が存在するからです。
+(XLink の [CODE(XMLa)[[VAR[xlink:]][[href]]]] 属性値は [[URI参照]]そのものではなく、
+a97 1
+
+d176 6
+@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@d1 187
+a187 79
+#?SuikaWiki/0.9
+
+
+* object 要素 data 属性 (HTML, XHTML 1)
+
+[1] [[HTML]] の [CODE(HTMLe)[[[object]]]] 要素の
+[DFN[[CODE(HTMLa)[data]] 属性]]は、[[物体]]のデータ
+(例えば、画像を定義する物体の実現値画像データ。
+より一般的に言えば、再生かのうな物体の[[直列化]]形) を指定します。
+
+[2] 仕様書: 
+- [[HTML 4]] 
+-- [CITE[13.3 Generic inclusion: the [CODE(HTMLe)[OBJECT]] element]]
+<IW:HTML4:"struct/objects.html#include-objects">
+-- [CODE(HTMLe)[object]] 要素 [CODE(HTMLa)[data]] 属性 
+<IW:HTML4:"struct/objects.html#adef-data">
+-- [CITE[HTML 4 Changes]]
+<IW:HTML4:"appendix/changes.html#h-A.1.1.9">
+
+[[#comment]]
+
+
+** 属性値
+
+[3] この属性の値は [CODE(SGML)[%[[URI]]]] です。
+[[SGML]] 的には [CODE(SGML)[[[CDATA]]]] です。
+
+指定された [[URI参照]]が[[相対URI参照]]である場合には、 [CODE(HTMLa)[[[codebase]]]]
+属性値が (あれば) [[基底URI]] として解決に使われます。
+
+[4] この属性は省略可能です。
+
+[[#comment]]
+
+
+** 他との関係
+
+[5] [CODE(HTMLa)[[[codebase]]]] 属性が相対 URI 参照の解決に使われます。
+[CODE(HTMla)[[[archive]]]] 属性で指定された資源から
+[CODE(HTMLa)[data]] で指定された資源が得られるかもしれません。
+[CODE(HTMLa)[data]] 資源の[[媒体型]]のヒントが
+[CODE(HTMLa)[[[type]]] 属性から得られます。]]
+
+[6] [CODE(HTMLa)[[[classid]]]] (実装) と [CODE(HTMLa)[data]] (データ)
+は両方指定しても構いませんし、一方だけでも構いません。
+しかし、両方指定したときの挙動は未定義です。
+可搬性のために、実装が取り寄せる追加のデータは [CODE(HTMLa)[data]]
+ではなく [CODE(HTMLe)[[[param]]]] で指定するべきです。 [SRC[HTML 4.01 13.3]]
+
+[8]
+>>6 とかいいながら、仕様書には併用した例が随分と沢山出てきます。
+
+
+[[#comment]]
+
+
+** 例
+
+[7] データを [CODE(URI)[[[data]]:]] URI で HTML
+中に埋込む例
+[PRE(HTML)[
+<P>
+<OBJECT id="clock1"
+        classid="clsid:663C8FEF-1EF9-11CF-A3DB-080036F12502"
+        data="data:application/x-oleobject;base64,[VAR[...base64 data...]]">
+    A clock.
+</OBJECT>
+]PRE]
+
+[WEAK[(HTML 4 仕様書より)]]
+
+[[#comment]]
+
+
+** メモ
+
+[[#comment]]
+
+
+@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@d1 79
+a79 78
+#?SuikaWiki/0.9
+
+
+* object 要素 data 属性 (HTML, XHTML 1)
+
+[1] [[HTML]] の [CODE(HTMLe)[[[object]]]] 要素の
+[DFN[[CODE(HTMLa)[data]] 属性]]は、[[物体]]のデータ
+(例えば、画像を定義する物体の実現値画像データ。
+より一般的に言えば、再生かのうな物体の[[直列化]]形) を指定します。
+
+[2] 仕様書: 
+- [[HTML 4]] 
+-- 13.3 Generic inclusion: the [CODE(HTMLe)[OBJECT]] element
+<IW:HTML4:"struct/objects.html#include-objects">
+--- <IW:HTML4:"struct/objects.html#adef-data">
+
+[[#comment]]
+
+
+** 属性値
+
+[3] この属性の値は [CODE(SGML)[%[[URI]]]] です。
+[[SGML]] 的には [CODE(SGML)[[[CDATA]]]] です。
+
+指定された [[URI参照]]が[[相対URI参照]]である場合には、 [CODE(HTMLa)[[[codebase]]]]
+属性値が (あれば) [[基底URI]] として解決に使われます。
+
+[4] この属性は省略可能です。
+
+[[#comment]]
+
+
+** 他との関係
+
+[5] [CODE(HTMLa)[[[codebase]]]] 属性が相対 URI 参照の解決に使われます。
+[CODE(HTMla)[[[archive]]]] 属性で指定された資源から
+[CODE(HTMLa)[data]] で指定された資源が得られるかもしれません。
+[CODE(HTMLa)[data]] 資源の[[媒体型]]のヒントが
+[CODE(HTMLa)[[[type]]] 属性から得られます。]]
+
+[6] [CODE(HTMLa)[[[classid]]]] (実装) と [CODE(HTMLa)[data]] (データ)
+は両方指定しても構いませんし、一方だけでも構いません。
+しかし、両方指定したときの挙動は未定義です。
+可搬性のために、実装が取り寄せる追加のデータは [CODE(HTMLa)[data]]
+ではなく [CODE(HTMLe)[[[param]]]] で指定するべきです。 [HTML 4]
+
+
+[8]
+>>6 とかいいながら、仕様書には併用した例が随分と沢山出てきます。
+([[名無しさん]])
+
+
+[[#comment]]
+
+
+** 例
+
+[7] データを [CODE(URI)[[[data]]:]] URI で HTML
+中に埋込む例
+[PRE(HTML)[
+<P>
+<OBJECT id="clock1"
+        classid="clsid:663C8FEF-1EF9-11CF-A3DB-080036F12502"
+        data="data:application/x-oleobject;base64,[VAR[...base64 data...]]">
+    A clock.
+</OBJECT>
+]PRE]
+
+[WEAK[(HTML 4 仕様書より)]]
+
+[[#comment]]
+
+
+** メモ
+
+[[#comment]]
+
+
+@
+

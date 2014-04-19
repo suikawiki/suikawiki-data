@@ -1,0 +1,96 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1
+	before-db-leaffile:1.1
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+
+
+1.1
+date	2003.06.28.10.14.51;	author make;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-commited
+@
+text
+@#?SuikaWiki/0.9
+[1] 【[[SGML]]】 [[マーク区間宣言]]の中で、その[[マーク区間]]の目的を識別するのが、
+[DFN[状態見出し語]] (Status keyword) です。
+([[JISX4151]]‐1992 9.4.2, 定義 (130) 参照。)
+
+[2]
+-状態見出し語指定 = *(1*[[ps]] (状態見出し語 / [[TEMP]])) *ps ;; (97)
+-状態見出し語 = [[CDATA]] / [[IGNORE]] / [[INCLUDE]] / [[RCDATA]] ;; (100)
+
+[3]
+,状態見出し語 ([[規格参照具象構文]]),意味
+,[CODE(SGML)[[[IGNORE]]]]           ,文字がないものとして扱う
+,[CODE(SGML)[[[INCLUDE]]]]          ,無視しない
+,[CODE(SGML)[[[CDATA]]]]            ,[[文字データ]]として扱う
+,[CODE(SGML)[[[RCDATA]]]]           ,[[置換可能文字データ]]として扱う
+,[CODE(SGML)[[[TEMP]]]]             ,いずれ取り除くことになるかもしれない一時的な部分として扱う
+指定に重複がある場合、
+=[CODE(SGML)[IGNORE]]
+=[CODE(SGML)[CDATA]]
+=[CODE(SGML)[RCDATA]]
+=[CODE(SGML)[INCLUDE]]
+
+という優先順を持ちます。
+
+[4] [CODE(SGML)[IGNORE]] が有効な状態であるマーク区間では、
+入れ子になったマーク区間宣言の終わりを識別するために、
+[[マーク区間開始]]及び[[マーク区間終了]]の認知だけ行います。
+
+有効な状態見出し語が [CODE(SGML)[IGNORE]]
+であるマーク区間には、 [CODE(SGML)[[[Ee]]]]
+は現れてはなりません。 (というか現れ得ません。)
+
+[5] [CODE(SGML)[CDATA]] 又は [CODE(SGML)[RCDATA]]
+が有効な状態であるマーク区間では、
+最初に現れたマーク区間終了によってマーク区間は終わります。
+[WEAK[(マーク区間開始の認知が行われないので、入れ子にはなり得ません。)]]
+
+[6] >>5 について、規格では
+> 備考 [CODE(SGML)[CDATA]] 又は [CODE(SGML)[RCDATA]]
+のマーク区間では、それが1個の実体の中にある限り、
+マークの認知を行わないので、その中に入れ子になったマーク区間宣言が表れることはない。
+
+と書いてありますけど、「それが1個の実体の中にある限り」
+というのは [CODE(SGML)[RCDATA]] で、一般実体参照が含まれる場合のみですよね?
+
+で、
+[PRE[
+<!ENTITY ent "
+  <![ IGNORE [
+    foo
+  ]]>
+">
+ [INS[...]]
+<![RCDATA[
+&ent;
+]]>
+]PRE]
+だったら結局 [SAMP(SGML)[foo]] は無視されるんですか?
+
+[8] >>6 [[W3CのValidator]] に解釈させてみたら、実体 [SAMP(SGML)[ent]] の[[置換文]]も [CODE(SGML)[RCDATA]] と解釈されるみたいです。だから、 [SAMP(SGML)[foo]] もそのまわりのマーク区間宣言に見えるものも、文字データとして扱われます。
+
+[9] >>8 [SAMP(SGML)[<!ENTITY ent ''PCDATA'' "[VAR[...]]"> ]] として宣言しておけば、、、と思ったら、
+この場所で見出し語 [CODE(SGML)[[[PCDATA]]]]
+は使えないのでした。
+- [10] [CODE(SGML)[状態見出し語指定]]の部分は [CODE(SGML)[ps]] が入る領域ですから、[[引数実体参照]]が使えます。例えば: [SAMP(SGML)[<!ENTITY % systemA "INCLUDE">]]...[SAMP(SGML)[<![ %systemA [ <? systemA dependent command ?> ] ]> ]] [WEAK[(都合上 [CODE(SGML)[[[msc]]]] は [CODE(SGML)[ ] ]>]] にしてます。)]]
+- [11] 状態見出し語の指定が1つも無い場合には、 [CODE(SGML)[INCLUDE]] として扱われます。
+- [12] 規則 (100), 定義 (130) に従えば [CODE(SGML)[TEMP]] は状態見出し語ではありませんが、普通状態見出し語の一種として扱われます。当の JIS X 4151 でさえ、 9.4.2 で構文規則を提示したすぐ後で状態見出し語に [CODE(SGML)[TEMP]] を含めています。
+- [13] ただ、 [CODE(SGML)[TEMP]] が、他の見出し語とは異なり SGML 処理系ではなく人間を対象とするものである (単なる備忘である) 点に注意したいところです。
+@

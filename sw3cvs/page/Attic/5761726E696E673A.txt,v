@@ -1,0 +1,290 @@
+head	1.3;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.3
+date	2003.11.03.02.02.40;	author wakaba;	state dead;
+branches;
+next	1.2;
+
+1.2
+date	2003.09.03.02.00.13;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.06.28.10.14.23;	author make;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@*HTTP での Warning: 欄
+
+**RFC 2616 14.46 Warning
+
+   The Warning general-header field is used to carry additional
+   information about the status or transformation of a message which
+   might not be reflected in the message. This information is typically
+   used to warn about a possible lack of semantic transparency from
+   caching operations or transformations applied to the entity body of
+   the message.
+
+Warning headers are sent with responses using:
+
+       Warning    = "Warning" ":" 1#warning-value
+
+       warning-value = warn-code SP warn-agent SP warn-text
+                                             [SP warn-date]
+
+       warn-code  = 3DIGIT
+       warn-agent = ( host [ ":" port ] ) | pseudonym
+                       ; the name or pseudonym of the server adding
+                       ; the Warning header, for use in debugging
+       warn-text  = quoted-string
+       warn-date  = <"> HTTP-date <">
+
+A response MAY carry more than one Warning header.
+
+応答は1つ以上の Warning 頭を運んで'''構いません'''。
+
+   The warn-text SHOULD be in a natural language and character set that
+   is most likely to be intelligible to the human user receiving the
+   response. This decision MAY be based on any available knowledge, such
+   as the location of the cache or user, the Accept-Language field in a
+   request, the Content-Language field in a response, etc. The default
+   language is English and the default character set is ISO-8859-1.
+
+warn-text は応答を受け取る人間利用者が理解可能と最も思われる
+自然言語と文字集合を使う'''べきです'''。この決定はいかなる利用可能な知識、
+例えばキャッシュや利用者の位置, 要求の Accept-Language 欄,
+要求の Content-Language 欄, などなどを基にして'''構いません'''。
+既定言語は英語で既定文字集合は ISO-8859-1 です。
+
+If a character set other than ISO-8859-1 is used, it MUST be encoded
+in the warn-text using the method described in RFC 2047 [14].
+
+ISO-8859-1 以外の文字集合が使われる場合は、 RFC 2047
+で説明されている方法を使って warn-text を符号化しなければ'''なりません'''。
+
+   Warning headers can in general be applied to any message, however
+   some specific warn-codes are specific to caches and can only be
+   applied to response messages. New Warning headers SHOULD be added
+   after any existing Warning headers. A cache MUST NOT delete any
+   Warning header that it received with a message. However, if a cache
+   successfully validates a cache entry, it SHOULD remove any Warning
+   headers previously attached to that entry except as specified for
+   specific Warning codes. It MUST then add any Warning headers received
+   in the validating response. In other words, Warning headers are those
+   that would be attached to the most recent relevant response.
+
+   When multiple Warning headers are attached to a response, the user
+   agent ought to inform the user of as many of them as possible, in the
+   order that they appear in the response. If it is not possible to
+   inform the user of all of the warnings, the user agent SHOULD follow
+   these heuristics:
+
+      - Warnings that appear early in the response take priority over
+        those appearing later in the response.
+
+      - Warnings in the user's preferred character set take priority
+        over warnings in other character sets but with identical warn-
+        codes and warn-agents.
+
+   Systems that generate multiple Warning headers SHOULD order them with
+   this user agent behavior in mind.
+
+   Requirements for the behavior of caches with respect to Warnings are
+   stated in section 13.1.2.
+
+   This is a list of the currently-defined warn-codes, each with a
+   recommended warn-text in English, and a description of its meaning.
+
+   110 Response is stale
+     MUST be included whenever the returned response is stale.
+
+   111 Revalidation failed
+     MUST be included if a cache returns a stale response because an
+     attempt to revalidate the response failed, due to an inability to
+     reach the server.
+
+   112 Disconnected operation
+     SHOULD be included if the cache is intentionally disconnected from
+     the rest of the network for a period of time.
+
+   113 Heuristic expiration
+     MUST be included if the cache heuristically chose a freshness
+     lifetime greater than 24 hours and the response's age is greater
+     than 24 hours.
+
+   199 Miscellaneous warning
+     The warning text MAY include arbitrary information to be presented
+     to a human user, or logged. A system receiving this warning MUST
+     NOT take any automated action, besides presenting the warning to
+     the user.
+
+   214 Transformation applied
+     MUST be added by an intermediate cache or proxy if it applies any
+     transformation changing the content-coding (as specified in the
+     Content-Encoding header) or media-type (as specified in the
+     Content-Type header) of the response, or the entity-body of the
+     response, unless this Warning code already appears in the response.
+
+   299 Miscellaneous persistent warning
+     The warning text MAY include arbitrary information to be presented
+     to a human user, or logged. A system receiving this warning MUST
+     NOT take any automated action.
+
+   If an implementation sends a message with one or more Warning headers
+   whose version is HTTP/1.0 or lower, then the sender MUST include in
+   each warning-value a warn-date that matches the date in the response.
+
+   If an implementation receives a message with a warning-value that
+   includes a warn-date, and that warn-date is different from the Date
+   value in the response, then that warning-value MUST be deleted from
+   the message before storing, forwarding, or using it. (This prevents
+   bad consequences of naive caching of Warning header fields.) If all
+   of the warning-values are deleted for this reason, the Warning header
+   MUST be deleted as well.
+
+**参考
+
+warn-text は[[ドキュソ]]な仕様だなぁ。ここに encoded-word を使ってもいい
+ってことは、 [[quoted-string]] の中身が encoded-word,
+ということですよねぇ? (でないと構文に適合しないし、
+encoded-word が複数個になった時に面倒だし。)
+
+RFC 2047 の符号化方式らしいですけど、 RFC 2231 の改訂
+(言語指定可能化) は適用されるのでしょうか。この仕様書は RFC 2616
+ですから、 RFC 2231 の発行より後なのでして・・。
+
+**RFC 2068 での Warning: 欄
+
+warn-date は定義されていません。
+
+warn-code は 2DIGIT でした。
+
+-10 Response is stale
+-11 Revalidation failed
+-12 Disconnected operation
+-13 Heuristic expiration
+-14 Transformation applied
+-99 Miscellaneous warning
+
+[[#comment]]
+
+*SIP/2.0 の Warning: 欄
+
+[[SIP/1.0]] では warn-text は [[UTF-8]] であり、 [[encoded-word]]
+が使えるとは書かれていません。
+
+warn-text の既定の言語は [[i-default言語]] です。
+
+また、 warn-date はそもそも定義されていません。
+
+300番台の warn-code が定義されています。
+
+[[#comment]]
+
+*MDN での Warning: 欄
+
+[19] [[MDN]]
+([[message/disposition-notification]])
+において。
+
+-[20] [CODE(ABNF)[warning-field = "Warning" ":" *text]]
+
+"warning" disposition-modifier の追加情報。
+
+[[#comment]]
+
+* RFC の部分の License
+[[RFCのライセンス]]
+
+* 警告符号
+
+[18]
+,10 ,Response is stale   ,[RFC 2068]
+,11 ,Revalidation failed ,[RFC 2068]
+,12 ,Disconnected operation,[RFC 2068]
+,13 ,Heuristic expiration,[RFC 2068]
+,14 ,Transformation applied,[RFC 2068]
+,99 ,Miscellaneous warning,[RFC 2068]
+,110,Response is stale  ,[RFC 2616]
+,111,Revalidation failed,[RFC 2616]
+,112,Disconnected operation,[RFC 2616]
+,113,Heuristic expiration,[RFC 2616]
+,199,Miscellaneous warning,[RFC 2616]
+,214,Transformation applied,[RFC 2616]
+,299,Miscellaneous persistent warning,[RFC 2616]
+,300,Incompatible network protocol,"[RFC 2543], [RFC 3261]"
+,301,Incompatible network address formats,"[RFC 2543], [RFC 3261]"
+,302,Incompatible transport protocol,"[RFC 2543], [RFC 3261]"
+,303,Incompatible bandwidth units,"[RFC 2543], [RFC 3261]"
+,304,Media type not available,"[RFC 2543], [RFC 3261]"
+,305,Incompatible media format,"[RFC 2543], [RFC 3261]"
+,306,Attribute not understood,"[RFC 2543], [RFC 3261]"
+,307,Session description parameter not understood,"[RFC 2543], [RFC 3261]"
+,330,Multicast not available,"[RFC 2543], [RFC 3261]"
+,331,Unicast not available,"[RFC 2543], [RFC 3261]"
+,370,Insufficient bandwidth,"[RFC 2543], [RFC 3261]"
+,399,Miscellaneous warning,"[RFC 2543], [RFC 3261]"
+
+- [21] [IANAREG] <http://www.iana.org/assignments/sip-parameters> 2003-08-06
+- [22] [[300]]〜[[329]] は、[[セッション記述]]中の[[見出し語]]に問題があったことを示します。
+- [23] [[330]] 番台はセッション記述中で要求された基本的なネットワーク・サービスに問題があることを示します。
+- [24] [[370]] 番台はセッション記述中で要求された quantitative [[QoS]] 引数に問題があることを示します。
+- [25] [[390]] 番台はその他です。
+[[#comment]]
+
+* memo
+- [15] [WEAK[2002-11-12 (火) 20:58]] ''[[名無しさん]]'': [[Message-pm]] では [[Message::Field::Warning]] (<http://suika.fam.cx/gate/cvs/perl/lib/Message/Field/Warning.pm>) で実装していますね
+- [16] [WEAK[2002-11-12 (火) 20:59]] ''15'': どこに ''[14]'' があったんだろう? >>14
+- [17] [WEAK[2002-11-12 (火) 21:00]] ''16'': ないじゃん・・・
+- [26] [[HTTP]] では、 [[RFC2068]] では[[応答頭欄]]とされていましたが、 [[RFC2616]] で[[一般頭欄]]に改められ、[[要求]]でも使うことが可能となりました。[WEAK[キャッシュの関係みたいですね。]] 一方、 [[SIP]] では依然[[応答]]にのみ使用可能とされています。ちなみに [[RTSP]] にはこの欄はありません。
+@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@@
+
+
+1.1
+log
+@auto-commited
+@
+text
+@d153 2
+d166 2
+d170 3
+a172 1
+[[message/disposition-notification媒体型]]において。
+d174 1
+a174 1
+=warning-field = "Warning" ":" *text
+d178 6
+a183 1
+*License
+d185 39
+a223 4
+[[RFCのライセンス]]
+- [15] [WEAK[2002-11-12 (火) 20:58]] ''[[名無しさん]]'': [[Message-pm]] では [[Message::Field::Warning]] (<http://suika.fam.cx/gate/cvs/perl/lib/Message/Field/Warning.pm>) で実装していますね
+- [16] [WEAK[2002-11-12 (火) 20:59]] ''15'': どこに ''[14]'' があったんだろう? >>14
+- [17] [WEAK[2002-11-12 (火) 21:00]] ''16'': ないじゃん・・・
+@
+

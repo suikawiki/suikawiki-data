@@ -1,0 +1,316 @@
+head	1.2;
+access;
+symbols
+	suikawiki3-final:1.2
+	before-db-leaffile:1.1
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+
+
+1.2
+date	2005.07.23.02.07.33;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.06.06.12.26.47;	author make;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@
+
+* 名前空間の仕様 (WikiName 編)
+
+[4] [DFN[WikiName]] を、任意の個数のWiki名前空間名と(狭義の) WikiName 
+を名前空間区切子で連結したものとして再定義します。
+[DFN[名前空間区切子]]には [CODE(wiki)[//]] を使います。
+
+([VAR[n]] + 1) 番目の部分の名前を持った Wiki 名前空間又は WikiPage
+は、 [VAR[n]] 番目の部分の名前を持った Wiki 名前空間に所属します。
+但し、 1 番目の部分の名前を持った Wiki 名前空間又は [[WikiPage]]
+は根名前空間 (従来における唯一の名前空間に相当。) に所属します。
+
+例:
+- WikiName [SAMP(wiki)[Foo//Bar]] は、根名前空間に属する Wiki 名前空間 
+[SAMP(wiki)[Foo]] に属し、(狭義の) WikiName が [SAMP(wiki)[Bar]]
+である WikiPage を表します。
+- WikiName [SAMP(wiki)[Foo//Bar//Baz]] は、根名前空間に属する  
+Wiki 名前空間 [SAMP(wiki)[Foo]] に属する 
+Wiki 名前空間 [SAMP(wiki)[Bar]] に属し、
+(狭義の) WikiName が [SAMP(wiki)[Baz]] である WikiPage を表します。
+- WikiName [SAMP(wiki)[Foo]] は、根名前空間に属する WikiPage 
+[SAMP(wiki)[Foo]] を表します。 (そしてこれは、従来の WikiPage
+[SAMP(wiki)[Foo]] と同じものを表します。)
+
+[5] WikiName の始めの名前空間区切子, 
+最後の名前空間区切子はあっても無くても同じです。
+また、連続した名前空間区切子は1つの名前空間区切子とみなします。
+
+但し、 WikiName と Wiki名前空間名を混在して扱う場面
+(あまりない。) では、 WikiName の最後が名前空間区切子である場合には
+Wiki名前空間名であるとみなすので、その有無で意味が異なってきます。
+
+例:
+- [SAMP(wiki)[//Foo]] と [SAMP(wiki)[Foo//]] と [SAMP(wiki)[Foo]] は同じです。
+- [SAMP(wiki)[Foo//Bar]] と [SAMP(wiki)[Foo////Bar]] は同じです。
+
+[6] ''一番最初の部分に限って''、自己参照子, 親参照子が使えます。
+[DFN[自己参照子]]は [CODE(wiki)[.]], [DFN[親参照子]]は
+[CODE(wiki)[..]] です。
+
+両参照子が含まれる WikiName は、基底 WikiName
+に従って解決されます。 [DFN[基底 WikiName]] は、普通参照がある
+WikiPage (リンク元 WikiPage。) になります。
+
+自己参照子は基底 WikiName を名前とする Wiki名前空間,
+親参照子は基底 WikiName の所属する Wiki名前空間に置き換えられます。
+
+例:
+- 基底 WikiName が [SAMP(wiki)[Foo//Bar]] である時、
+-- [SAMP(wiki)[.//Baz]] は [SAMP(wiki)[Foo//Bar//Baz]] になります。
+-- [SAMP(wiki)[..//Baz]] は [SAMP(wiki)[Foo//Baz]] になります。
+-- [SAMP(wiki)[..//..//Baz]] は不正です。
+-- [SAMP(wuiki)[..]] は [SAMP(wiki)[Foo]] になります。
+
+[7] (狭義の) WikiName 及び Wiki名前空間名には、名前空間区切子,
+自己参照子, 親参照子, 文字 [CODE[0]] は使えません。
+また、 Wiki名前空間名は斜線で終わることは出来ません。
+
+例:
+- WikiName [SAMP(wiki)[..]] は不正です。相対名とみなされます。
+- WikiName [SAMP(wiki)[Foo//..//Bar]] は不正です。
+- WikiName [SAMP(wiki)[Foo//0]] は不正です。
+- WikiName [SAMP(wiki)[text/plain//(^^)///顔文字。]] は、
+根名前空間に属する Wiki名前空間 [SAMP(wiki)[text/plain]]
+に属する Wiki名前空間 [SAMP(wiki)[(^^)]] に属する
+WikiPage [SAMP(wiki)[/顔文字。]] を表します。
+
+
+* メモ
+
+[1]  やっとですが、 [[WikiName]] の名前空間に対応しました。
+([[わかば]] [WEAK[2003-03-27 16:48]])
+
+[2]  2日間の実装・実験期間を経て [[CVS]] HEAD に merge しました。 (もっと実験する予定だったけど、待ちくたびれなくて(w)
+([[わかば]])
+
+[3]  名前空間を使ってみるテストには [[SandBox//NameSpace]] をご利用下さい。
+([[わかば]] [sage])
+
+[8]  斜線で終わる WikiName は今のところ禁止されていませんが、その名前を名前空間とする下位頁を考えると推奨できません。
+([[わかば]] [WEAK[2003-03-27 17:36]])
+
+[9]  ところで、 [[comment]] を分割して [[comment//MessageHeader]] と [[comment//SGML]] にしてみたんですが・・・なんかぴんときません。
+
+その理由はおそらく、これが本来「メッセージ・ヘッダーの comment」や「SGML の comment 要素」のような名前になるべきだからでしょう。
+
+SuikaWiki の、というか SuikaWiki の内容の現在の編集方針では、(もともと名前空間がなかったことも原因ではありますが) 特定の技術の何かという分類より、何かの特に特定技術について、という分類の仕方がされてます。名前が同じからには共通点や類似性や共有する歴史とかがあるはずで、そういう技術間の横のつながりに焦点を当てたいってのがあります。だから言語的な順番と内容的な順序が入れ替わってて、しっくりこないんでしょうね。
+
+で、このことを決定的に問題付けているのは、リンクの始点アンカーの文字列が終点アンカーの WikiName に固定されていることのように思えます。始点アンカーの文字列は普通その属する文章の一部であって、名前空間名つきの WikiName では齟齬が生じるのですね。当然といえば当然です。
+
+この解決として、世間の Wiki では狭義の WikiName を始点アンカーにする方策が採られていることが多いような気がしますが、前述の通り SuikaWiki でこれをやると、 [SAMP(ABNF)[comment]] を参照したいのに始点アンカーが [SAMP(wiki)[MessageHeader]] になっちゃって、話にならん。多分リンク元文書も message についての話題なんでしょうから、文書中「message」という始点アンカーだらけになりかねません。
+
+解決策はもう、始点アンカーを自由に設定できるようにするしかなさそうです。
+今まで SuikaWiki でこの機能を採用してこなかったのは、
+- リンク先が不透明になる
+-- [[title]] 属性の補助で ([[HTML4]] 以上対応の [[UA]] で読むなら) 解決済み。
+- WikiName のファイル名化の危惧
+-- 杞憂かも。
+
+なので、別に導入してもいいような気がします。
+
+([[わかば]])
+
+[10]  でも[[日本の祝日]]が[[祝日//日本]]になるのはなんだかなあ。かといって、逆転させて後ろを大分類にするのも何か違う気がする。
+([[わかば]] [WEAK[2003-03-27 17:54]])
+
+[11]  WikiName はファイル名化してしまうという選択子もあるね。どうかとは思うけど。つまり、リンク先 WikiPage に題名情報を持たせて、それを既定の始点アンカー文字列にしてしまう。
+
+SuikaWiki の画像埋め込み ([CODE(wiki)[#embed:IMG:]]) は既にそうなっているわけで。
+(始点アンカー = [[img]] 要素 [[alt]] 属性は画像のある WikiPage の [CODE(wiki)[image-alt]] 属性の値になる。)
+([[わかば]] [WEAK[2003-03-27 17:59]])
+
+[12]  >>11 のように思ったのは、例えば従来の [SAMP(wiki)[RFC1234]] は [SAMP(wiki)[RFC//1234]] にしてしまって、始点アンカー文字列は (題名として記録してある) [SAMP[RFC 1234]] を使うのはどうだろ、と思って。
+
+始点アンカーを [SAMP[Tunneling IPX Traffic through IP Networks]]
+とか任意の文字列にしたいなら、参照側でそう上書きすればいいわけで。
+([[わかば]])
+
+[13]  ところで話は変わりますけど、 [[HashedWiki]]
+みたいなことやってみたいと思ってます。
+モジュール書いて。文書 = 名前空間, 段落 = WikiPage にしてみるわけです。
+
+上手く利用者界面を実装すれば結構使い物になるんじゃないかと思うんですが、どうでしょう?
+([[わかば]] [WEAK[2003-03-27 18:05]])
+
+[14]  >>13 の問題は、段落 (WikiPage) の名前をどうするかということです。段落に一々名前付けるの? めんどくさ〜い。かといって[SAMP(wiki)[段落1]]みたいな匿名段落もちょっとなぁ。
+([[わかば]])
+
+[15]  しかしまあ、同じようなことはもう考えている人がいるわけで。 <IW:HashedWiki:ParagraphOrientedWiki>
+([[わかば]])
+
+[16]  >>14 名前を付けたい時は付けれて、つける必要のないときはつけなくてもいいスタイルでやってけばいいのかなあ。昔の [[HTML]] の [CODE(HTML)[[[nextid]]]] みたいな感じで。
+
+([[わ]][iif: undef])
+
+[[#form:'%submit(label=>書込む); %text(label=>"名前:",id=>name,size=>6); %text(label=>"メイル:",id=>mail,size=>5); [WEAK[%check(default,id=>record-date,label=>日付を記録);]]%n;%textarea(id=>msg,size=>20,lines=>3);':'[%index;]  %text(source=>msg);%n;(%name;%text(source=>mail,prefix=>" [",suffix=>"]");%iif(source=>record-date,true=>" [WEAK[%date;]]");)%n;':'%require(msg);']]
+
+[17]
+2年経ったわけだけど結局名前空間が有効に機能したのは
+[[Wiki]] 以下の階層に管理用のものを押し込めただけ。
+やっぱり名前空間は失敗だったかも (と2年前からずっと思ってたわけですが。。。。)
+([[名無しさん]] [WEAK[2005-07-21 04:47:42 +00:00]])
+
+[18]
+一応うまく行った例にはあと [[BugTrack]] と [[Calendar]]
+もあった。
+
+でも >>17-18 の3つのどれも WikiName を title
+でなくファイル名として扱っているところがあるわけで。
+
+([[名無しさん]] [sage])
+
+@
+
+
+1.1
+log
+@auto-commited
+@
+text
+@d1 80
+a80 78
+#?SuikaWiki/0.9
+*名前空間の仕様 (WikiName 編)
+
+[4] [DFN[WikiName]] を、任意の個数のWiki名前空間名と(狭義の) WikiName 
+を名前空間区切子で連結したものとして再定義します。
+[DFN[名前空間区切子]]には [CODE(wiki)[//]] を使います。
+
+([VAR[n]] + 1) 番目の部分の名前を持った Wiki 名前空間又は WikiPage
+は、 [VAR[n]] 番目の部分の名前を持った Wiki 名前空間に所属します。
+但し、 1 番目の部分の名前を持った Wiki 名前空間又は [[WikiPage]]
+は根名前空間 (従来における唯一の名前空間に相当。) に所属します。
+
+例:
+-WikiName [SAMP(wiki)[Foo//Bar]] は、根名前空間に属する Wiki 名前空間 
+[SAMP(wiki)[Foo]] に属し、(狭義の) WikiName が [SAMP(wiki)[Bar]]
+である WikiPage を表します。
+-WikiName [SAMP(wiki)[Foo//Bar//Baz]] は、根名前空間に属する  
+Wiki 名前空間 [SAMP(wiki)[Foo]] に属する 
+Wiki 名前空間 [SAMP(wiki)[Bar]] に属し、
+(狭義の) WikiName が [SAMP(wiki)[Baz]] である WikiPage を表します。
+-WikiName [SAMP(wiki)[Foo]] は、根名前空間に属する WikiPage 
+[SAMP(wiki)[Foo]] を表します。 (そしてこれは、従来の WikiPage
+[SAMP(wiki)[Foo]] と同じものを表します。)
+
+[5] WikiName の始めの名前空間区切子, 
+最後の名前空間区切子はあっても無くても同じです。
+また、連続した名前空間区切子は1つの名前空間区切子とみなします。
+
+但し、 WikiName と Wiki名前空間名を混在して扱う場面
+(あまりない。) では、 WikiName の最後が名前空間区切子である場合には
+Wiki名前空間名であるとみなすので、その有無で意味が異なってきます。
+
+例:
+-[SAMP(wiki)[//Foo]] と [SAMP(wiki)[Foo//]] と [SAMP(wiki)[Foo]] は同じです。
+-[SAMP(wiki)[Foo//Bar]] と [SAMP(wiki)[Foo////Bar]] は同じです。
+
+[6] ''一番最初の部分に限って''、自己参照子, 親参照子が使えます。
+[DFN[自己参照子]]は [CODE(wiki)[.]], [DFN[親参照子]]は
+[CODE(wiki)[..]] です。
+
+両参照子が含まれる WikiName は、基底 WikiName
+に従って解決されます。 [DFN[基底 WikiName]] は、普通参照がある
+WikiPage (リンク元 WikiPage。) になります。
+
+自己参照子は基底 WikiName を名前とする Wiki名前空間,
+親参照子は基底 WikiName の所属する Wiki名前空間に置き換えられます。
+
+例:
+-基底 WikiName が [SAMP(wiki)[Foo//Bar]] である時、
+--[SAMP(wiki)[.//Baz]] は [SAMP(wiki)[Foo//Bar//Baz]] になります。
+--[SAMP(wiki)[..//Baz]] は [SAMP(wiki)[Foo//Baz]] になります。
+--[SAMP(wiki)[..//..//Baz]] は不正です。
+--[SAMP(wuiki)[..]] は [SAMP(wiki)[Foo]] になります。
+
+[7] (狭義の) WikiName 及び Wiki名前空間名には、名前空間区切子,
+自己参照子, 親参照子, 文字 [CODE[0]] は使えません。
+また、 Wiki名前空間名は斜線で終わることは出来ません。
+
+例:
+-WikiName [SAMP(wiki)[..]] は不正です。相対名とみなされます。
+-WikiName [SAMP(wiki)[Foo//..//Bar]] は不正です。
+-WikiName [SAMP(wiki)[Foo//0]] は不正です。
+-WikiName [SAMP(wiki)[text/plain//(^^)///顔文字。]] は、
+根名前空間に属する Wiki名前空間 [SAMP(wiki)[text/plain]]
+に属する Wiki名前空間 [SAMP(wiki)[(^^)]] に属する
+WikiPage [SAMP(wiki)[/顔文字。]] を表します。
+
+*メモ
+
+[1]  やっとですが、 [[WikiName]] の名前空間に対応しました。
+([[わかば]] [WEAK[2003-03-27 16:48]])
+
+[2]  2日間の実装・実験期間を経て [[CVS]] HEAD に merge しました。 (もっと実験する予定だったけど、待ちくたびれなくて(w)
+([[わかば]])
+
+[3]  名前空間を使ってみるテストには [[SandBox//NameSpace]] をご利用下さい。
+([[わかば]] [sage])
+
+d84 18
+a101 18
+[9]  ところで、 [[comment]] を分割して [[comment//MessageHeader]] と [[comment//SGML]] にしてみたんですが・・・なんかぴんときません。
+
+その理由はおそらく、これが本来「メッセージ・ヘッダーの comment」や「SGML の comment 要素」のような名前になるべきだからでしょう。
+
+SuikaWiki の、というか SuikaWiki の内容の現在の編集方針では、(もともと名前空間がなかったことも原因ではありますが) 特定の技術の何かという分類より、何かの特に特定技術について、という分類の仕方がされてます。名前が同じからには共通点や類似性や共有する歴史とかがあるはずで、そういう技術間の横のつながりに焦点を当てたいってのがあります。だから言語的な順番と内容的な順序が入れ替わってて、しっくりこないんでしょうね。
+
+で、このことを決定的に問題付けているのは、リンクの始点アンカーの文字列が終点アンカーの WikiName に固定されていることのように思えます。始点アンカーの文字列は普通その属する文章の一部であって、名前空間名つきの WikiName では齟齬が生じるのですね。当然といえば当然です。
+
+この解決として、世間の Wiki では狭義の WikiName を始点アンカーにする方策が採られていることが多いような気がしますが、前述の通り SuikaWiki でこれをやると、 [SAMP(ABNF)[comment]] を参照したいのに始点アンカーが [SAMP(wiki)[MessageHeader]] になっちゃって、話にならん。多分リンク元文書も message についての話題なんでしょうから、文書中「message」という始点アンカーだらけになりかねません。
+
+解決策はもう、始点アンカーを自由に設定できるようにするしかなさそうです。
+今まで SuikaWiki でこの機能を採用してこなかったのは、
+-リンク先が不透明になる
+--[[title]] 属性の補助で ([[HTML4]] 以上対応の [[UA]] で読むなら) 解決済み。
+-WikiName のファイル名化の危惧
+--杞憂かも。
+
+なので、別に導入してもいいような気がします。
+d108 3
+a110 3
+[11]  WikiName はファイル名化してしまうという選択子もあるね。どうかとは思うけど。つまり、リンク先 WikiPage に題名情報を持たせて、それを既定の始点アンカー文字列にしてしまう。
+
+SuikaWiki の画像埋め込み ([CODE(wiki)[#embed:IMG:]]) は既にそうなっているわけで。
+d114 3
+a116 3
+[12]  >>11 のように思ったのは、例えば従来の [SAMP(wiki)[RFC1234]] は [SAMP(wiki)[RFC//1234]] にしてしまって、始点アンカー文字列は (題名として記録してある) [SAMP[RFC 1234]] を使うのはどうだろ、と思って。
+
+始点アンカーを [SAMP[Tunneling IPX Traffic through IP Networks]]
+d120 4
+a123 4
+[13]  ところで話は変わりますけど、 [[HashedWiki]]
+みたいなことやってみたいと思ってます。
+モジュール書いて。文書 = 名前空間, 段落 = WikiPage にしてみるわけです。
+
+d133 1
+a133 1
+[16]  >>14 名前を付けたい時は付けれて、つける必要のないときはつけなくてもいいスタイルでやってけばいいのかなあ。昔の [[HTML]] の [CODE(HTML)[[[nextid]]]] みたいな感じで。
+d137 17
+a153 1
+[[#form:'%submit(label=>書込む); %text(label=>"名前:",id=>name,size=>6); %text(label=>"メイル:",id=>mail,size=>5); [WEAK[%check(default,id=>record-date,label=>日付を記録);]]%n;%textarea(id=>msg,size=>20,lines=>3);':'[%index;]  %text(source=>msg);%n;(%name;%text(source=>mail,prefix=>" [",suffix=>"]");%iif(source=>record-date,true=>" [WEAK[%date;]]");)%n;':'%require(msg);']]@
+

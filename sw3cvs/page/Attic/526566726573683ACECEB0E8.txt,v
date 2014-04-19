@@ -1,0 +1,143 @@
+head	1.3;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.3
+date	2003.06.06.12.26.24;	author make;	state dead;
+branches;
+next	1.2;
+
+1.2
+date	2002.11.15.09.25.44;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2002.07.29.12.01.58;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.3
+log
+@auto-commited
+@
+text
+@#?SuikaWiki/0.9 obsoleted="yes"
+→[[Refresh:欄]]@
+
+
+1.2
+log
+@Updated.
+@
+text
+@@
+
+
+1.1
+log
+@Updated.
+@
+text
+@d1 2
+a2 90
+[[HTTP]] とか [[HTML]]の[[META要素]]で頻用されるけど、
+[[HTTP/1.0]]や[[HTTP/1.1]]には載ってない。 HTTP 応答頭領域らしい。
+
+HTML 4.0 には例示がある (4.01 にはない) けど、
+一般に使われているパラメーター型ではなくてコンマ区切り型になってる。
+
+ Refresh               = "Refresh" [FWS] ":" [FWS] refresh-content
+ refresh-content       = refresh-param-content / refresh-comma-content
+ refresh-param-content = refresh-second [[FWS] ";" [FWS] "URL=" value]
+ refresh-comma-content = refresh-second [FWS] "," [FWS] refresh-uri
+ refresh-second        = 1*DIGIT
+ refresh-uri           = absoluteURI / relativeURI
+ value                 = http-token
+                       / quoted-string  ;; refresh-uri
+                       / non-token
+
+refresh-second 秒''後''に(一度だけ)指定 URL または自 URI を読む
+(そしてそれに移動する)。
+(refresh-second 秒''毎''に URI を読むわけではない。)
+
+reload-second が 0 の場合、実質的に (標準的な) HTTP の 
+redirect と同じになる。
+でも Netscape の説明文はこんなことも言ってるぞ。
+
+> a "Refresh" header can be returned as part of any HTTP response, 
+> including a redirection. So a single HTTP response can say 
+> "go get this URL now, and then go get this other URL in 10 seconds". 
+
+> This means you can have a continuous random URL generator! Have a normal 
+> random URL generator (such as URouLette 
+><http://kuhttp.cc.ukans.edu/cwis/organizations/kucia/uroulette/uroulette.html>)
+> that returns as 
+> part of its redirection response a "Refresh" directive that causes the
+> browser to go get another random URL from the random URL generator 
+> in 18 seconds. 
+
+[[WAI]] とか [[HTML4]] はアクセス性の観点から使用しないように
+薦めている。
+
+value の部分は、他の頭領域の作法からすると http-token 以外の文字は
+quoted-string にしないといけないはず。
+
+この頭領域は [[HTML]] の [[META要素]] で使われる事が多い。
+HTTP 頭領域なのに HTTP で使ってもらえないなんて不憫だね。
+
+META 要素の属性値で既に「"」で囲まれているので、その中で更に
+(「"」で) 囲もうとする意識は無い。みっともないし。
+そもそもその必要性に気付かないのだろうかね? ってことで、
+主に CGI 出力 (Web chat CGI とか。) で、 http-token 以外が
+生で出てきたりする。
+
+-○ <meta http-equiv="refresh" content="0;URL="foo.cgi?hoge=foo& amp;bar=aa& quot;">
+-× <meta http-equiv="refresh" content="0;URL=foo.cgi?hoge=foo&bar=aa">
+
+※「=」が URL に含まれるので quoted-string にするべき。
+それから「&」は「&」でないと HTML として異常。
+
+そもそも URI は(絶対だと)「:」を含むので http-token には
+ならないことも多いじゃないか。
+
+ non-token = absoluteURI / relativeURI  ;; 救済措置
+
+Netscape 社の説明文によると絶対 URL のみで相対 URL は使ってはいけない。
+けど、現実には結構使われている。
+
+fragment は要らないでしょう。多分。あってもそこに飛ぶのは
+あんまり好ましくないような... (それを言うなら Refresh: 領域が
+あっても飛ぶのは宜しくないなあ。) 属性名が「URL」だから、
+URN とかは駄目なのかなあ...
+
+ non-token /= 1*octet  ;; 人にやさしく・・にも程がある。
+
+CGI の出力で、例えば Web chat CGI で名前とかが URI 符号化
+されてなかったりすることもままある。それだと URI として
+すら正しくない。そんなのまで救済してあげる必要があるのかどうか。
+
+*例
+
+-Refresh: 20; URL="http://suika.fam.cx/"
+-Refresh: 30
+-Refresh: 0,refreshed.html
+-<meta http-equiv="refresh" content="0;URL=hoge.html">
+
+*See also
+-<http://www.netscape.com/assist/net_sites/pushpull.html>
+-<http://www.w3.org/TR/1998/REC-html40-19980424/struct/global.html#h-7.4.4.2>
+-[[RFC822と仲間達の頭領域名]]
+-[[URI]]
+--[[URL]]
+
+@
+

@@ -1,0 +1,202 @@
+head	1.4;
+access;
+symbols
+	suikawiki3-final:1.4
+	before-db-leaffile:1.4
+	after-upgrade-to-suikawiki-3:1.4
+	before-fork-suikawiki3:1.4
+	after-restore-20040122:1.4;
+locks; strict;
+comment	@# @;
+
+
+1.4
+date	2003.07.18.00.11.06;	author w;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2002.12.29.06.23.14;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2002.12.28.06.26.12;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2002.11.13.13.25.17;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.4
+log
+@auto-commited
+@
+text
+@#?SuikaWiki/0.9
+[1] InterWiki とは、 (主に) 他の [[Wiki]]
+への[[ハイパーリンク]]のための仕組みのことです。
+
+ちょっとした応用として、飛び先が[[検索円陣]]だったりもします。
+うまく使えばとっても格好よくなります(謎)。
+
+[2] 思うに, Wiki 版 [[URN]] だと思います(謎)。
+[[#comment]]
+*SuikaWiki 以外での実装
+-[13] <IW:Tiki:InterWiki>
+-- <IW:Tiki:InterWikiテクニカル>
+-[5] <IW:YukiWiki:InterWiki>
+--<IW:YukiWiki:InterWikiName>
+--<IW:Tiki:InterWikiテクニカル>
+[[#comment]]
+*SuikaWiki での実装
+→[[SuikaWiki//InterWiki]] 参照
+*その他のメモ@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@d18 1
+a18 92
+
+[3] [[SuikaWiki]] は [[YukiWiki]] を base
+にしていますが、 YukiWiki の実装
+(See <IW:YukiWiki:InterWikiテクニカル>) とは異なります。
+
+[4] '''歴史についてのメモ''': SuikaWiki の最初の実装は YukiWiki 1
+でしたが、これは InterWiki を実装していませんでした。
+その時に (YukiWiki2 で) InterWiki 
+のために使われる構文を別の意味で使ってしまっていたので、
+YukiWiki2 base に移行するときに InterWiki
+を無効としていました。
+
+**InterWiki でリンクをはる
+
+[6] InterWiki を使った参照は、 '<IW:' [VAR[site-name]] ':'
+[VAR[WikiName]] '>'
+と書きます。例えば '<IW:' 'YukiWiki:InterWiki' '>'
+を書くと、 <IW:YukiWiki:InterWiki> のように「YukiWiki」内の
+Wiki 名が「InterWiki」のところへの[[ハイパーリンク]]となります。
+
+[7] なお、 [VAR[WikiName]] に[[ラテン文字]], [[数字]],
+[[仮名]], [[漢字]]など以外の[[文字]] ([[記号]]など)
+が入る場合は、 <"> ([[二重引用符]]) で括って、
+'<IW:' 'SuikaSearch:"愛 勇気"' '>' のようにします。
+
+**InterWiki の site の定義
+
+[8] [VAR[site-name]] は [[InterWikiName]]
+で定義します。 InterWikiName は、先頭行が
+'#?SuikaWikiConfig/1.0' で、二行目以降が
+( [VAR[site-name]] 1*WSP [VAR[site-uri-template]] )
+になります。
+
+[VAR[site-name]] にはラテン文字, 数字, 仮名, 漢字などが使えます。
+(記号類をどうするかは未定です。使わないで下さい。)
+
+[VAR[site-uri-template]] には [VAR[site-name]] に相当する [[URI]]
+(の雛形) を書きます。これは [[Message::Util::Formatter]]
+を使って展開されます。
+
+M::U::F の詳しい展開規則はここでは述べませんが、
+''%[VAR[hogehoge]]([VAR[parameters]);'' が (規則 
+''[VAR[hogehoge]]'' が定義されているなら) 適切なものに置換されます。
+
+''%'' 自体は ''%percent;'' と書きますが、曖昧でない場合はそのまま
+''%'' と書いて構いません。
+
+有効な展開規則の例は次の通りです。
+
+,%encoded(charset=>iso-2022-jp);,[[ISO-2022-JP]] + [[URI]] encode
+,%encoded(charset=>euc-jp);     ,[[EUC-JP]] + URI encode
+,%encoded(charset=>shift_jis);  ,[[Shift_JIS]] + URI encode
+,%ykwk;   ,YukiWiki1 形式 ('[[' を名前に含める)
+,%percent;,''%''
+
+[14] 展開規則は plugin で定義されています。 M::U::F で組込み定義されている
+[CODE[%percent]] 以外は plugin 「InterWikiCore」で実装しています。
+追加の plugin による展開規則については [[WikiPluginInfo]]
+をご覧下さい。
+
+[15] 実際には多分ありえない、使用例。
+(強調した部分が展開されます。)
+
+ WikiSite  http://foo/bar%5B%20''%percent;''5D;mode=edit/wiki/''%encoded(charset=>iso-2022-jp);''/''%ykwk;''
+
+この例で、 '<IW' ':' 'WikiSite:Inter-Wiki' '>'
+を書いたとすると、次のような URI に展開されます。
+
+ http://foo/bar%5B%20''%''5D;mode=edit/wiki/''Inter-Wiki''/''%5B%5BInter-Wiki%5D%5D''
+
+[[#comment]]
+**Q&A
+***こんな展開規則無いですか?
+
+[16] '''質問''': 他の WikiClone によくある [CODE[asis]] のようなものはないのですか?
+
+[17] ありません。 [[URI]] として不適当な文字を含んでしまう可能性があって危険だからです。
+その代わり、 [CODE[%encoded]] に [CODE[except]] option を指定することで、特定の文字を
+escape しないことが出来ます。 (この場合でも、 URI に含むことが出来ない文字は必ず
+escape します。) 例えば、 [SAMP[%encoded(charset=>iso-2022-jp,except=>"/")]]
+とすると、斜線を [CODE[%2F]] と変換しなくなります。
+
+[[#form:'%radio(id=>type,label=>回答,value=>false,default); or %radio(id=>type,label=>追加質問,value=>true);: %text(label=>"名前 : ",id=>name,size=>"9.5"); %text(label=>"メイル: ",id=>mail,size=>9.5);%n;%textarea(id=>a,size=>20);':'[%index;] %iif(source=>type,true=>"\'\'\'質問\'\'\' ",false=>"");\'\'%name;\'\'%text(source=>mail,prefix=>" [",suffix=>"]"); [WEAK[%date;]]: %text(source=>a);%n;':'%require(a);']]
+[[#form(newq):'':'**%text(source=>qsum);%n;%n;[%index;] \'\'\'質問\'\'\' (\'\'%name;\'\'%text(source=>mail,prefix=>" [",suffix=>"]"); [WEAK[%date;]]): %text(source=>q);%n;%n;[[#form:\'%percent;radio(id=>type,label=>回答,value=>false,default); or %percent;radio(id=>type,label=>追加質問,value=>true);: %percent;text(label=>"名前 : ",id=>name,size=>"9.5"); %percent;text(label=>"メイル: ",id=>mail,size=>9.5);%percent;n;%percent;textarea(id=>a,size=>20);\':\'[%percent;index;] %percent;iif(source=>type,true=>"\\\'\\\'\\\'質問\\\'\\\'\\\' ",false=>"");\\\'\\\'%percent;name;\\\'\\\'%percent;text(source=>mail,prefix=>" [",suffix=>"]"); [WEAK[%percent;date;]]: %percent;text(source=>a);%percent;n;\':\'%percent;require(a);\']]']]
+***新しい質問の追加
+[[#form:'%text(id=>qsum,label=>質問要約,size=>10); %text(label=>"名前 : ",id=>name,size=>"9.5"); %text(label=>"メイル: ",id=>mail,size=>9.5);%n;%textarea(id=>q,label=>質問,size=>20);':'':'%output(id=>newq);']]
+**メモ
+- [9] [WEAK[2002-11-13 (水) 21:04]] ''[[わかば]]'': '<' ... '>' を使う方が、 '[[' ... ']]' を使うより (SuikaWiki 的には) 整合性があるでしょ? [[]] は SW 内部, <> は SW 外部へのリンクってことで。
+- [10] [WEAK[2002-11-13 (水) 21:06]] ''[[わかば]]'': 稀に必要になりそうな encode の入れ子とかは考え中。 (でもほんとに稀だと思う。) それから、複雑なの (変数を2つ以上持つものとか。) を実装したら面白く使えそうだけど、これも考え中。
+- [11] [WEAK[2002-11-13 (水) 21:06]] ''[[わかば]]'': 一応は今の実装でほとんど足りると思います。
+- [12] [WEAK[2002-11-13 (水) 21:07]] ''[[わかば]]'': あ, [[UTF-8]] 対応も要りますね, ほんとは。これも待ってちょ。
+[[#comment]]
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d101 1
+a101 1
+[[#form(newq):'':'***%text(source=>qsum);%n;%n;[%index;] \'\'\'質問\'\'\' (\'\'%name;\'\'%text(source=>mail,prefix=>" [",suffix=>"]"); [WEAK[%date;]]): %text(source=>q);%n;%n;[[#form:\'%percent;radio(id=>type,label=>回答,value=>false,default); or %percent;radio(id=>type,label=>追加質問,value=>true);: %percent;text(label=>"名前 : ",id=>name,size=>"9.5"); %percent;text(label=>"メイル: ",id=>mail,size=>9.5);%percent;n;%percent;textarea(id=>a,size=>20);\':\'[%percent;index;] %percent;iif(source=>type,true=>"\'\'\'質問\'\'\' ",false=>"");\\\'\\\'%percent;name;\\\'\\\'%percent;text(source=>mail,prefix=>" [",suffix=>"]"); [WEAK[%percent;date;]]: %percent;text(source=>a);%percent;n;\':\'%percent;require(a);\']]']]
+@
+
+
+1.1
+log
+@Updated.
+@
+text
+@d9 8
+a16 4
+
+[5] See also <IW:YukiWiki:InterWiki>,
+<IW:YukiWiki:InterWikiName>
+
+d65 1
+a65 1
+有効な展開規則の例は次のとおりです。
+d73 6
+a78 1
+実際には多分ありえない、使用例。
+d88 23
+a110 5
+*メモ
+- [9] [WEAK[2002-11-13 (水) 21:04]] ''[[わかば]]'': '<' ... '>' を使う方が、 '[[' ... ']]' を使うより (SuikaWiki 的には) 整合性があるでしょ? [[]] は SW 内部, <> は SW 外部へのリンクってことで。
+- [10] [WEAK[2002-11-13 (水) 21:06]] ''[[わかば]]'': 稀に必要になりそうな encode の入れ子とかは考え中。 (でもほんとに稀だと思う。) それから、複雑なの (変数を2つ以上持つものとか。) を実装したら面白く使えそうだけど、これも考え中。
+- [11] [WEAK[2002-11-13 (水) 21:06]] ''[[わかば]]'': 一応は今の実装でほとんど足りると思います。
+- [12] [WEAK[2002-11-13 (水) 21:07]] ''[[わかば]]'': あ, [[UTF-8]] 対応も要りますね, ほんとは。これも待ってちょ。
+@
+

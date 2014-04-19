@@ -1,0 +1,132 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1
+	before-db-leaffile:1.1
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2003.09.13.02.02.01;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9
+[1] [[XHTML]] 文書における [[XML名前空間]]の使用について。
+
+[2] ''Modularization of XHTML - Building DTD Modules'' <http://www.w3.org/TR/xhtml-modularization/dtd_module_rules.html#s_module_namespace>
+によれば、
+- [[XHTML]] の名前空間 ([CODE(URI)[[[http://www.w3.org/1999/xhtml]]]])
+は、[[名前空間を知らない]]実装との互換性のため、
+[[接頭辞]]無しの[[既定名前空間]]とするべきです。
+- 非 XHTML 名前空間は、[[名前空間を知っている]]実装でその文書を処理することを想定するならば、
+[[名前空間接頭辞]]を使うべきです。
+- なお、 [[XHTMLモジュール]]として実装するためには XML
+名前空間を必ず使う必要があります。
+
+[[#comment]]
+
+* XHTML モジュールの作り方 : XML 名前空間まわり
+
+[3] [[DTDモジュール]]として実装する時は、
+次のようにします。
+= まず、修飾名[[部分モジュール]]を作ります。
+== [[引数実体]] [CODE[[VAR[MODULE]].prefixed]] を定義します。
+==- その(既定)値は [CODE[%NS.prefixed;]] とするべきです。
+==-- 引数実体 [CODE[NS.prefixed]] は、 [[XHTML枠組]]で定義されています。既定値は [CODE(XML)[[[IGNORE]]]] です。
+==- 値は[[条件区間]]の[[状態見出し語]]なので、
+[CODE(XML)[[[INCLUDE]] 又は [CODE(XML)[IGNORE]]
+です。
+== 引数実体 [CODE[[VAR[MODULE]].xmlns]] を定義します。
+その値は、モジュールで定義するものの[[名前空間名]]とします。
+== 引数実体 [CODE[[VAR[MODULE]].prefix]] を定義します。
+その値は、既定の名前空間接頭辞とします。
+== 引数実体 [CODE[[VAR[MODULE]].pfx]] を定義します。
+この引数実体の値は、名前空間接頭辞を使う場合は
+[CODE[%[VAR[MODULE]].prefix;:]] に、
+そうでない場合は [CODE[]] (空文字列) にします。
+== 引数実体 [CODE[[VAR[MODULE]].xmlns.extra.attrib]]
+を定義します。その値は、このモジュールが参照する XML
+名前空間属性(群)の宣言とします。
+==- 例えば、 [CODE[xmlns:xlink %URI.datatype; #FIXED '[VAR[URI]]']] とか。
+==- 名前空間接頭辞を使用する場合は、
+[CODE[xmlns:[VAR[MODULE]] %URI.datatype; #FIXED "[VAR[%[VAR[MODULE]].xmlns;]]"]]
+も含めるべきです。
+== 引数実体 [CODE[XHTML.xmlns.extra.attrib]] を定義します。
+値は [VAR[%[VAR[MODULE]].xmlns.extra.attrib;]]
+とします。
+==- この引数実体は、普通は[[駆動ファイル]]で先に定義されているものが使われるので、無視されます。
+== このモジュールで定義する全ての要素型について、引数実体 [CODE[[VAR[MODULE]].[VAR[NAME]].qname]]
+を用意し、[[要素型宣言]]などで使います。その値は
+[CODE[%[VAR[MODULE]].pfx;[VAR[NAME]]]]
+にします。
+==- こうすることで、接頭辞を使うときは
+[CODE[[VAR[接頭辞]]:[VAR[NAME]]]] が、
+使わないときには [CODE[[VAR[NAME]]]] が得られます。
+== このモジュールで定義する接頭辞を持つ属性についても同様に
+[CODE[[VAR[MODULE]].[VAR[NAME]].[VAR[ATTRNAME]].qname]]
+というような名前の引数実体を定義し、その値を
+[CODE[%[VAR[MODULE]].pfx;[VAR[ATTRNAME]]]]
+とします。
+==- こうすると、接頭辞を使わないときに属性の接頭辞も消滅しちゃいますけど、そういう仕様ですかね?
+=- <http://www.w3.org/TR/xhtml-modularization/dtd_module_rules.html#qnames>
+に、以上の結果できる修飾名部分モジュールの例が載っています。
+雛形に丁度いいでしょう。
+= 次に、宣言部分モジュールを作成します。
+このモジュールでは、要素型及び属性並びを宣言します。
+== 引数実体 [CODE[[VAR[MODULE]].xmlns.attrib]]
+を定義します。値には
+[CODE[%NS.decl.attrib;]] を含めるべきです。
+[CODE[[VAR[MODULE]].prefixed]] が [CODE(XML)[IGNORE]]
+になっている (接頭辞を使わないことになっている)
+時には、更に
+[CODE[xmlns %URI.datatype; #FIXED '%MODULE.xmlns;']]
+も含めるべきです。
+== 全ての要素型と属性並びを定義します。
+全ての要素型について、属性並び宣言に
+[CODE[%[VAR[MODULE]].xmlns.attrib;]]
+を含めます。
+==- ただし、要素型名及び接頭辞を持つ属性は前述の通り
+[CODE[[VAR[name]].qname]] という引数実体を参照する形とします。
+=- 宣言部分モジュールは実際の文書型の語彙を定義する部分ですから、形式的な修飾名部分モジュールほどきちんと規定されていません。
+引数実体の名前や使い方などは当たり障りのない範囲でなら好きなようにしてかまいません。
+=- 宣言部分モジュールの例が、
+<http://www.w3.org/TR/xhtml-modularization/dtd_module_rules.html#declaration>
+にあります。
+前半の名前空間属性に関する部分は定型なのでコピペして使っちゃいましょう。
+
+[[#comment]]
+
+* XHTML モジュール DTD 実装の限界
+
+[6] XHTML モジュールの DTD 実装では、
+名前空間の接頭辞を文書実現値の途中で変更したりできません。
+例えば、
+[PRE[
+<!DOCTYPE html
+  SYSTEM "http://markup.example/some/xhtml/family/dtd">
+<html>
+<h:head xmlns:h="http://www.w3.org/1999/xhtml">
+  <title>Title</title>
+</h:head>
+<body/>
+</html>
+]PRE]
+のような文書を、 XHTML モジュールの設計の趣旨にのっとって実現する方法はありません。
+[WEAK[(無理矢理宣言の一部を書き換えたりすれば実現できなくもないですが、それでは XHTML モジュールを使う意味が余りないというものです。)]]
+@

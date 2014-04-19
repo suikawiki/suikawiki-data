@@ -1,0 +1,440 @@
+head	1.3;
+access;
+symbols
+	suikawiki3-final:1.3
+	before-db-leaffile:1.2
+	after-upgrade-to-suikawiki-3:1.2
+	before-fork-suikawiki3:1.2
+	after-restore-20040122:1.2;
+locks; strict;
+comment	@# @;
+
+
+1.3
+date	2007.03.13.02.40.10;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2003.06.06.12.26.30;	author make;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2002.09.07.09.24.04;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@                                                             h12-06-01
+                                                             h12-06-09
+                                                             h12-10-01
+
+
+                      八橋の経Internet転送法
+                      Yatsuhashi transferring via the Internet
+
+*要約 Abstract
+
+        この文書は、Internetの各種通信手順により、八橋を転送するための
+      方法を解説する。特に、八橋の機械可読表現, object/yatsuhashi 媒体
+      型を定義している。
+            This document describe how to transfer Yatsuhashi via the
+      Internet protocols.  In particular, this document define the
+      machine readable form of YUatsuhashi, object/yatsuhashi media
+      type.
+
+*序 Introduction
+
+        八橋(やつはし, yatsuhashi)は、京都銘菓として知られ、世界中の多
+      くの人々に愛されている。京都に旅行するなら、土産物は八橋一つで十
+      分な位である。
+        ところで、Internetの広域化は、遠方, たとえそれが地球の裏側であっ
+      ても、簡単に連絡を取れるようになった。一切保証されてはいないもの
+      の、瞬時に、そして確実に、Internetは情報を相手に伝えることが出来
+      るのが現実である。
+        こうなると、御土産である八橋をInternetで送ることが出来たらと考
+      えるのは、当然の成り行きである。例えばメイルに添付して八橋を送れ
+      るなら、帰りの荷物が軽くなるだろうし、わざわざ相手の家を訪問する
+      必要もない。勿論、宅配料金も掛かることは無い。「全国どこでも送料
+      無料サービス」のようなものである。尤も、そのサービスとは違い、  
+      Internetなら世界中どこへだって送ることが出来る。
+            Yatsuhashi is widely known as special product of Kyouto,
+      and loved by all over the world.  No more presents need if you
+      sent Yatsuhashi.
+            Now, spreading of the Internet makes the situation we can
+      get in touch of the person who is on the other side of the earth.
+            And, needs of sending Yatsuhashi via the Internet is natulal.
+      If we can attach Yatsuhashi with Internet mail, it ease us, and
+      you needn't see him/her.  What is more, we must pay only few money.
+      
+        この文書は、八橋を経Internet転送する方法について説明する。
+            This document provide a way to send Yatsuhashi via the
+      Internet.
+      
+      注意: この文書の適用範囲は、Internet空間に限定される。即ち、     
+            Internet関門やその向こう側の異構造網における扱いや、八橋実
+            体から八橋Internet媒体型への相互変換時の扱いなどに関しては、
+            適用範囲外である。
+      Note: Scope of this document is only the Internet.  Other side
+            of Internet gateway and Yatsuhashi <-> Internet media type
+            conversion is out of scope.
+      
+*記法について Notation Convention
+
+        ここで使用する記法は、RFC 822[RFC822] で定義されたABNF記法であ
+      る。
+            Notation is the ABNF syntax defined in RFC 822[RFC822].
+
+*八橋Internet媒体型 Yatsuhashi Internet Media Type
+
+       八橋を符号化したものを、encoded-yatsuhashiと呼ぶ。
+     encoded-yatsuhashiは、headerと本体からなり、headerには八橋そのもの
+     に関する情報, 本体には概観等に関する情報が含まれる。
+     
+          encoded-yatsuhashi = header CRLF [body CRLF]
+     
+     ※記法は、RFC 822で使用されているものと同じである。以下同じ。
+
+*header領域
+
+       header領域は、RFC 822のheaderに似た構造をもつが、多少制限されて
+     いる。
+     
+       header領域全体及び領域の一般的な定義は、次の通りである。
+     
+          header = 1*field
+          field = field-name ":" linear-white-space field-body
+                  *linear-white-space CRLF
+          field-name = 1*<any CHAR, excluding CTLs, SPACE, and ":"> 
+                             ;field-nameは大文字小文字を区別しない。
+          field-body = *text
+     
+       但し実際には、headerは次のheader2で表される。
+     
+          header2 = *fields *user-defined-fields
+          fields = yatsuhashi-make-date yatsuhashi-shoumi-kigen
+                   yatsuhashi-maker yatsuhashi-genryou
+                   yatsuhashi-size yatsuhashi-shitsuryou 
+                   [yatsuhashi-maker-comment] [yatsuhashi-id] 
+                   from [sender-comment] to [reply-to]
+
+       RFC822のheaderと同様、各header領域は互いに独立しており、順番は
+     意味を持たない。
+
+*yatsuhashi-* header領域
+
+       yatsuhashi- で始まるheader領域には、八橋そのものに関する情報を
+     指定する。この領域は、受信者側において八橋を復号するための重要な
+     情報であり、間違いは八橋の味の保存に影響し、引いては送受信者間の
+     信頼関係の問題にも発展しかねない。扱いは慎重にすべきである。
+     
+
+     o yatsuhashi-make-date:
+                    八橋の製造年月日。通常は時刻まで示す必要は無いので、
+                  timeは00:00:00 time-zoneとすると良い。
+                  
+                  yatsuhashi-make-date = "yatsuhashi-make-date:" 
+                                         linear-white-space date-time 
+                                         *linear-white-space CRLF
+
+     o yatsuhashi-shoumi-kigen:
+                    八橋の賞味期限。timeについてはyatsuhashi-make-date
+                  と同様である。
+                  
+                  yatsuhashi-shoumi-kigen = "yatsuhashi-shoumi-kigen:" 
+                                            linear-white-space date-time
+                                            *linear-white-space CRLF
+
+     o yatsuhashi-maker:
+                    八橋の製造者。製造所名などの詳細な情報も含めるべき
+                  である。
+                  
+                  yatsuhashi-maker = "yatsuhashi-maker:" linear-white-space
+                                     *text *linear-white-space CRLF
+
+     o yatsuhashi-made-in:
+                    八橋の製造所。正確な住所で指定しなければならない。
+                  現在の所八橋は地球でのみ製造されているので、住所の最
+                  初の「太陽系第三惑星地球」は省略しても良い。
+                    このheader領域は、品質に関する苦情などの連絡先とし
+                  ても用いられる。
+                  
+                  yatsuhashi-maker = "yatsuhashi-maker:" linear-white-space
+                                     *text *linear-white-space CRLF
+
+     o yatsuhashi-genryou:
+                    八橋の原料を","(comma)で区切って指定する。原料は一
+                  つでも抜けていると復元が困難になるので、慎重を期した
+                  い。
+                  
+                  yatsuhashi-genryou = "yatsuhashi-genryou:" 
+                                       linear-white-space word 
+                                       *[*linear-white-space ","
+                                       *linear-white-space word]
+                                       *linear-white-space CRLF
+
+     o yatsuhashi-kaori:
+                    八橋の香りの成分を指定する。各成分は","(comma)によ
+                  り区切られる。
+                  注意: 香りの感じ方には個人差がある。復元装置は、使用
+                        者の指定により特定の香りの生成を行わないような
+                        配慮が出来ることが好ましい。
+                  
+                  yatsuhashi-kaori = "yatsuhashi-kaori:" linear-white-space 
+                                     word *[*linear-white-space ","
+                                     *linear-white-space word]
+
+     o yatsuhashi-size:
+                    八橋の大きさを指定する。sizeの単位はmm(粍)である。
+                  どの軸をx,y,zとするかは、当事者間の合意によるものとす
+                  る。
+                  
+                  yatsuhashi-size = "yatsuhashi-size:" linear-white-space 
+                                    "x=" size ";" linear-white-space 
+                                    "y=" size ";" linear-white-space 
+                                    "z=" size [";"] *linear-white-space CRLF
+                  size = 1*DIGIT
+
+     o yatsuhashi-shitsuryou:
+                    八橋の質量を指定する。単位はmg(瓱)である。送信者側
+                  は他の指定と矛盾する値を指定してはならない。受信者側
+                  は他の指定と矛盾した値が指定されていた場合適当に処理
+                  してもよいが、復元を中止してはならない。
+                  
+                  yatsuhashi-shitsuryou = "yatsuhashi-shitsuryou:" 
+                                          linear-white-space size 
+                                          *linear-white-space CRLF
+
+     o yatsuhashi-making:
+                    八橋の製造工程。"yaku"(焼く)とか"musu"(蒸す)とか
+                  "tataku"(叩く)といった工程を、その順で並べる。
+                    抜けていた場合正確に再現できないことがあるので、
+                  慎重に指定する必要がある。
+                  
+                  yatsuhashi-making = "yatsuhashi-making:" linear-white-space 
+                                     word *[*linear-white-space ","
+                                     *linear-white-space word]
+
+     o yatsuhashi-maker-comment:
+                    八橋の製造者によるcomment。例えば、「御買い上げ有
+                  難うございました」のようなメッセイジに便利である。
+                  
+                  yatsuhashi-maker-comment = "yatsuhashi-maker-comment:"
+                                             linear-white-space
+                                             *text *linear-white-space CRLF
+
+     o yatsuhashi-id:
+                    八橋IDは、転送された八橋を識別するためのIDであり、
+                  world-uniqueでなければならない。
+                    八橋IDは例えば、複数送信した八橋のどれが美味しかっ
+                  たかの議論などに有用であろう。
+                  
+                  yatsuhashi-id = "yatsuhashi-id:" "<" <RFC822 msg-id>
+                                  ">" *linear-white-space CRLF
+
+*その他のheader領域
+
+       その他のheader領域は、送受信者の情報などを記述する。又、贈り物
+     に一言添えるのにも便利である。
+     
+          from = "from:" linear-white-space 1#<RFC 822 mailbox>
+                                 *linear-white-space CRLF
+          sender-comment = "sender-comment:" linear-white-space
+                           *text *linear-white-space CRLF
+          to = "to:" linear-white-space <RFC 822 mailbox>
+                                 *linear-white-space CRLF
+          reply-to = "reply-to:" linear-white-space <RFC 822 mailbox>
+                                 *linear-white-space CRLF
+
+私用のheader領域
+
+       一時的・局地的にheader領域を定義して使用することが出来るが、そ
+     のためには送受信者双方の合意が必要である。合意が無い場合、その意
+     味の伝達は期待できない。
+     
+     user-defined-field = "X-" atom ":" linear-white-space *text
+                                 *linear-white-space CRLF
+
+*日付, その他
+
+       日付その他の形式は、概ねRFC 822に拠っている。linear-white-space
+     の定義はRFC 822と異なっているので、注意せよ。
+     
+     date-time = date linear-white-space time
+     date = 2DIGIT linear-white-space month linear-white-space 2DIGIT
+     month = "Jan" / "Feb" / "Mar" / "Apr" / "May" / "Jun" 
+           / "Jul" / "Aug" / "Sep" / "Oct" / "Nov" / "Dec"
+     time = hour linear-white-space zone
+     hour = 2DIGIT ":" 2DIGIT [":" 2DIGIT]
+     zone = "GMT" / ( ("+" / "-") 2DIGIT ":" 2DIGIT )
+     
+     DIGIT 	= <any ASCII decimal degit>    	; ( 60- 71, 48.- 57.)
+     text 	= atom / quoted-string
+     atom 	= 1*<any CHAR except specials, SPACE and CTLs>
+     quoted-string = <"> *linear-white-space *(qtest/quoted-pair)
+                         *linear-white-space <">
+     qtext 	= <any CHAR excepting <">, "\" & CR and 
+           	   including linear-white-space>
+     quoted-pair = "\" CHAR
+     CHAR 	= <any ASCII character> 	; ( 0-177, 0.-127.)
+     CR 	= <ASCII CR, carriage return> 	; ( 15, 13.)
+     CRLF 	= CR LF
+     LF 	= <ASCII LF, linefeed> 		; ( 12, 10.)
+     linear-white-space = 1*([CRLF] LWSP-char)
+     LWSP-char 	= SPACE / HTAB
+     HTAB 	= <ASCII HT, horizontal-tab> 	; ( 11, 9.)
+     SPACE 	= <ASCII SP, space> 		; ( 40, 32.)
+     specials 	= "(" / ")" / "<" / ">" / "@@" / "," / ";" 
+                / ":" / "\" / <"> / "." / "[" / "]"
+     CTL = <any ASCII control character and DEL> ; ( 0-37,177 , 0.-31,127.)
+
+*本体
+
+       本体部分は、八橋の箱を2次元の画像化したものとする。省略された場
+     合、八橋は箱なしとなる。画像はPNG[PNG]形式とし、MIMEのBase64
+     [RFC2045] encodeする。
+     
+          body = *(1*76<RFC2045 Base64 alphabet> CRLF)
+
+*Content-Type指定
+
+       Internetメッセイジ中に八橋を含む場合、Content-Type[RFC2045]には
+     次の様に指定する。
+     
+          Content-Type: object/yatsuhashi
+          Content-Transfer-Encoding: 7bit
+
+*例
+
+     From: gankaiji@@ma2.radium.example (ラジウム)
+     To: wakaba (わかば) @@ foo.example
+     Subject: おすそわけです。
+     Content-Type: object/yatsuhashi
+     Message-id: <king.gankaiji.yatsuhashi@@radium.example>
+     
+     yatsuhashi-make-date: 09 Jun 2000 00:00:00 +0900
+     yatsuhashi-shoumi-kigen: 09 Sep 2001 00:00:00 +0900
+     yatsuhashi-genryou: komugiko, shio-koshou, gyuuniku, takenoko
+     yatsuhashi-making: kaku, yomu, kiku, hanasu
+     yatsuhashi-kaori: shinamon
+     yatsuhashi-size: x=130; y=50; z=3
+     yatsuhashi-shitsuryou: 12000
+     yatsuhashi-maker: 京都乃八橋合名会社二十五条大通工場
+     yatsuhashi-made-in: 日本国京都府京都市鳥九二十五条南西入ル
+     yatsuhashi-maker-comment: 当店の八橋は100%国産原料を使用。
+                               おいしさにはわけがあります。
+     yatsuhashi-id: <yatsuhashi.h12-06-09.utsubi@@example.net>
+     From: utubi@@example.net (暇人の帝王兼宇津美帝国元首宇津美上)
+     Sender-Comment: 京都へ行ってきました。御土産の八橋です。
+     To: gankaiji@@radium.example (ラジウム)
+     
+     saFikGkaafaAsaAsdafaTyavFSSDAAsgssdSAf....
+     .... (Base64ed PNG[PNG] Image data of package)....
+
+*多言語対応に関して
+
+        object/yatsuhashi は、RFC 822[RFC822] を基に設計されている。多
+      言語対応に関しても同様である。即ち、ISO 2022[ISO2022] 符号拡張法
+      が利用可能である。
+
+*安全性に関して
+
+        object/yatsuhashi media typeは、八橋を伝送するためのものである
+      が、悪意のある使用者により八橋以外のものが八橋と詐称される可能性が
+      ある。
+        又、賞味期限が切れた八橋を食べた場合、おなかを壊すかもしれない。
+      user agentは、八橋が届けられたが腐っている可能性があることのみを
+      伝え、破棄した方が良いかもしれない。
+      
+        八橋も他の食物と同様好みが支配する領域であり、受信前に何味が良
+      いか等の当事者間での合意を形成しておいた方が、安全性に関して問題
+      無いかもしれない。
+      
+        人の八橋を横取りした場合、横取りされた者は横取りした者に対して
+      どのような行動に出るかは予測不可能だ。特に、大の八橋好きだった場
+      合、尚更である。
+      
+        八橋のカスをInternet配管に流すと、Internet配管を詰まらせてしま
+      い、Internet水道屋さんの世話になることがある[HTCPCP]
+
+*謝辞
+
+       元々八橋をInternetの中をくぐらせることはラジウム氏がideaを出し
+     たものである。又、宇津美帝国の元首である宇津美氏は補助金だけでは
+     なく、実際の実験にも協力していただいた。
+       尚、この文書はInternet-yatsuhashi working-group
+     (himajin@@suika.fam.cx)により検討された結果である。
+
+*参考文献
+
+      [ASCII]   『7ビットの情報交換用米国標準符号』, ANS N3.4,
+                  米国国家標準協会(ANSI)
+      [HTCPCP]  『超テキスト珈琲ポット制御手順』, L. Masinter, RFC 2324,
+                  1998年4月1日。
+      [ISO2022] 『ISO 7ビット及び8ビットの符号化文字集合 - 符号拡張法』,
+                  ISO 2022, 国際規格。
+      [RFC822]  『ARPA Internetテキスト・メッセイジの書式』, RFC 822
+      [RFC1036] 『USENETメッセイジの交換』, RFC 1036
+      [RFC2045] 『MIME(多目的Internetメイル拡張) 第1部-Internetメッセイ
+                  ジ本文の書式』, RFC 2045
+      [RFC2068] 『超テキスト転送手順』, Fielding, R., Gettys, J., Mogul,
+                  J., Frystyk, H., T. Berners-Lee, RFC 2068, 1997年12月。
+      [PNG]     『Portable Network Graphic Format 1.0』, 
+                  世界規模蜘蛛巣コンソーシアム
+
+*01->02の差異
+
+     ・yatsuhashi-* headerの追加と説明の整理。
+     ・sizeの定義が抜けていたので追加。
+     ・適用範囲を明記。
+
+*メモ
+-この draft 作成の経緯については、 [[Internet八橋]]の項参照。
+-最初の方は英語がついてますが、かなり怪しいですが、気にしないよう。
+-この draft は draft のまま [[expire]] されました。
+-例のめいる・アドレスは [[SuikaWiki]] 転載時に .example domain に改竄しました:)
+- [1] [[Referer]] で来た人達、たぶん全く関係ないよなあ。
+@
+
+
+1.2
+log
+@auto-commited
+@
+text
+@d299 2
+a300 2
+     yatsuhashi-id: <yatsuhashi.h12-06-09.utsubi@@sr.incle.ne.jp>
+     From: utubi@@sr.incl.ne.jp (暇人の帝王兼宇津美帝国元首宇津美上)
+d302 1
+a302 1
+     To: gankaiji@@ma2.justnet.ne.jp (ラジウム)
+d339 1
+a339 1
+     (himajin@@c4.easyml.com)により検討された結果である。
+d368 2
+a369 2
+-例のめいる・アドレスは [[SuikaWiki]] 転載時に .example domain に改竄しました:)
+- [1] [[Referer]] で来た人達、たぶん全く関係ないよなあ。
+@
+
+
+1.1
+log
+@Updated.
+@
+text
+@d368 2
+a369 1
+-例のめいる・アドレスは [[SuikaWiki]] 転載時に .example domain に改竄しました:)@
+

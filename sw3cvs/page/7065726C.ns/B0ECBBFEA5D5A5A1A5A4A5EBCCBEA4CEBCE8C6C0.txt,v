@@ -1,0 +1,69 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1
+	before-db-leaffile:1.1
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2003.10.27.02.03.24;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9
+[1] [[ActivePerl]] (on [[Windoze]])
+で、一時ディレクトリ中の一時ファイルの名前を取得します。
+
+一時ファイルは Windoze により自動的に空のファイルとして作成されているので、
+名前は取得したものの不要になった場合でも陽に削除しないとそのまま残ってしまいます。
+
+[PRE[
+sub get_temp_path_name (;$$) {
+  use Win32::API;
+  my ($temp_path, $prefix) = @@_;
+  $prefix ||= 'tmp';
+  sub MAX_PATH () { 255 }
+  unless ($temp_path) {
+    my $temp_path = "\x00" x MAX_PATH;
+    # DWORD GetTempPath (
+    #   DWORD nBufferLength,
+    #   LPTSTR lpBuffer
+    # );
+    my $GetTempPath = new Win32::API (kernel32=>"GetTempPath", 'NP'=>'N');
+    my $len = $GetTempPath->Call (MAX_PATH, $temp_path);
+    $temp_path = substr ($temp_path, 0, $len);
+  }
+  
+  my $temp_file = "\x00" x MAX_PATH;
+  # UINT GetTempFileName (
+  #   LPCTSTR lpPathName,
+  #   LPCTSTR lpPrefixString,
+  #   UINT uUnique,
+  #   LPTSTR lpTempFileName
+  # );
+  my $GetTempFileName = new Win32::API (kernel32=>"GetTempFileName", 'PPIP'=>'I');
+  if ($GetTempFileName->Call ($temp_path, $prefix, 0, $temp_file) != 0) {
+    $temp_file = substr ($temp_file, 0, index ($temp_file, "\x00"));
+  } else {
+    die "$0: $^E (@@{[$^E+0]})";
+  }
+  return $temp_file;
+}
+]PRE]
+@

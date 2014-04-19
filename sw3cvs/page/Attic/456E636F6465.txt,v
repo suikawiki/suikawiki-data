@@ -1,0 +1,1119 @@
+head	1.8;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.8
+date	2003.06.06.12.26.18;	author make;	state dead;
+branches;
+next	1.7;
+
+1.7
+date	2002.12.29.06.23.14;	author wakaba;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2002.12.14.13.25.50;	author wakaba;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2002.12.14.09.25.53;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2002.12.13.13.25.51;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2002.11.05.09.25.01;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2002.10.13.01.24.22;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2002.10.12.13.27.23;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.8
+log
+@auto-commited
+@
+text
+@#?SuikaWiki/0.9
+
+*Perl 5.8 付属の Encode モジュール
+
+**NAME
+
+Encode - character encodings 文字符号化
+
+**SYNOPSIS
+
+    use Encode;
+
+***Table of Contents 目次
+
+Encode consists of a collection of modules whose details are too big
+to fit in one document.  This POD itself explains the top-level APIs
+and general topics at a glance.  For other topics and more details,
+see the PODs below:
+
+Encode は、詳細を一つの文書にまとめるには大きすぎる
+モジュール群で構成されます。この [[POD]] 自体は上位 [[API]]
+と一般的事項に簡単に触れます。他の話題や詳細については、
+次に示す POD を参照して下さい。
+
+,Name 名前        ,Description                ,説明
+,[[Encode::Alias]]         ,Alias definitions to encodings,符号化の別名の定義
+,[[Encode::Encoding]]      ,Encode Implementation Base Class,Encode 実装基底クラス
+,[[Encode::Supported]]     ,List of Supported Encodings   ,対応符号化の一覧
+,[[Encode::CN]]            ,Simplified Chinese Encodings  ,簡体字中文符号化
+,[[Encode::JP]]            ,Japanese Encodings      ,日本語符号化
+,[[Encode::KR]]            ,Korean Encodings        ,韓語符号化
+,[[Encode::TW]]            ,Traditional Chinese Encodings ,伝統字中文符号化
+
+**DESCRIPTION
+
+The C<Encode> module provides the interfaces between Perl's strings
+and the rest of the system.  Perl strings are sequences of
+B<characters>.
+
+Encode モジュールは [[Perl]] の文字列と処理系の rest
+との間の界面を提供します。 Perl 文字列は文字の連続です。
+
+The repertoire of characters that Perl can represent is at least that
+defined by the Unicode Consortium. On most platforms the ordinal
+values of the characters (as returned by C<ord(ch)>) is the "Unicode
+codepoint" for the character (the exceptions are those platforms where
+the legacy encoding is some variant of EBCDIC rather than a super-set
+of ASCII - see L<perlebcdic>).
+
+Perl が表現可能な文字の[[レパートリ]]は、最低 [[UnicodeConsortium]]
+で定義されています。ほとんどの環境では文字の序数
+(ord(ch) で返る) は文字の「[[Unicode]] [[符号位置]]」です
+(例外は[[遺産]]符号化が [[ASCII]] の super-set ではなく
+[[EBCDIC]] の変種である環境です。 [[perlebcdic]] 参照)。
+
+Traditionally, computer data has been moved around in 8-bit chunks
+often called "bytes". These chunks are also known as "octets" in
+networking standards. Perl is widely used to manipulate data of many
+types - not only strings of characters representing human or computer
+languages but also "binary" data being the machine's representation of
+numbers, pixels in an image - or just about anything.
+
+伝統的に、計算機データはしばしば「[[バイト]]」と呼ばれる8ビット塊
+の辺りになってます。この塊はネットワーク規格では「[[オクテット]]」
+とも呼ばれます。 Perl はいろんな種類のデータを扱うのに
+広く使われています。人間の言語または計算機言語をあらわす文字の列
+だけではなく、数値・画像の画素などなどの機械の表現の
+「[[バイナリ]]」データだったりもします。
+
+[INS[
+訳注: バイトとオクテットは、本来厳密に区別されるべきものです。
+(Perl の世界ではそうする意義はそれほどないので、こう説明
+しているのでしょうが。) See [[バイト]]。
+]INS]
+
+When Perl is processing "binary data", the programmer wants Perl to
+process "sequences of bytes". This is not a problem for Perl - as a
+byte has 256 possible values, it easily fits in Perl's much larger
+"logical character".
+
+Perl が「バイナリ・データ」を処理する時に、プログラマーは
+Perl が「バイトの列」を処理することを望みます。これは Perl
+にとっては問題ではなく、バイトは256種類の値を取りえますが、
+Perl のより広範囲にわたる「論理文字」には簡単に合います。
+
+***TERMINOLOGY 用語
+
+I<character>: a character in the range 0..(2**32-1) (or more).
+(What Perl's strings are made of.)
+
+[[文字]]: 0..(2**32-1) (またはこれ以上) の範囲の文字。
+(Perl の文字列の構成要素)
+
+I<byte>: a character in the range 0..255
+(A special case of a Perl character.)
+
+[[バイト]]: 0..255 の範囲の文字 (Perl 文字の特殊な場合。)
+
+I<octet>: 8 bits of data, with ordinal values 0..255
+(Term for bytes passed to or from a non-Perl context, e.g. a disk file.)
+
+オクテット: データの8ビットで、序数値は 0..255
+(ディスクのファイルなどの非 Perl 文脈へまたはそうした文脈から
+バイトが渡される時の用語。)
+
+[INS[
+訳注: この文章中の定義であって、一般的な定義ではないことに注意。
+]INS]
+
+**PERL ENCODING API
+
+-$octets  = encode(ENCODING, $string [, CHECK])
+
+Encodes a string from Perl's internal form into I<ENCODING> and returns
+a sequence of octets.  ENCODING can be either a canonical name or
+an alias.  For encoding names and aliases, see L</"Defining Aliases">.
+For CHECK, see L</"Handling Malformed Data">.
+
+文字列を Perl の内部形式から ENCODING に符号化し、
+オクテットの列を返します。 ENCODING は正規名でも別名でも
+構いません。符号化名と別名については「別名を定義する」をご覧下さい。
+CHECK については、「不正データの取り扱い」をご覧下さい。
+
+For example, to convert a string from Perl's internal format to
+iso-8859-1 (also known as Latin1),
+
+例えば、 Perl の内部形式の文字列を iso-8859-1 (aka Latin1)
+に変換するには、次のようにします。
+
+  $octets = encode("iso-8859-1", $string);
+
+B<CAVEAT>: When you run C<$octets = encode("utf8", $string)>, then $octets
+B<may not be equal to> $string.  Though they both contain the same data, the utf8 flag
+for $octets is B<always> off.  When you encode anything, utf8 flag of
+the result is always off, even when it contains completely valid utf8
+string. See L</"The UTF-8 flag"> below.
+
+'''警告''': $octets = encode ("utf8", $string) をしたとき、 $octets
+は $string と'''同じでないかもしれません'''。両者は同じデータから
+成っていますが、 $octets の utf8 旗は'''常に''' off です。
+符号化が何であれ、結果の utf8 旗はそれが完全に妥当な utf8
+文字列であっても常に off です。下の「UTF-8 旗」をご覧下さい。
+
+encode($valid_encoding, undef) is harmless but warns you for 
+C<Use of uninitialized value in subroutine entry>. 
+encode($valid_encoding, '') is harmless and warnless.
+
+encode ($valid_encoding, undef) は無害ですが、
+「Use of uninitialized value in subroutine entry
+(小 routine 項目中に初期化されていない値が使われている)」
+警告が出ます。 encode ($valid_encoding, '') は無害で無警告です。
+
+-$string = decode(ENCODING, $octets [, CHECK])
+
+Decodes a sequence of octets assumed to be in I<ENCODING> into Perl's
+internal form and returns the resulting string.  As in encode(),
+ENCODING can be either a canonical name or an alias. For encoding names
+and aliases, see L</"Defining Aliases">.  For CHECK, see
+L</"Handling Malformed Data">.
+
+オクテットの連続を ENCODING で書かれていると仮定して
+Perl の内部形に変換し、結果の文字列を返します。 encode() 同様、
+ENCODING は正規名でも別名でも構いません。
+
+For example, to convert ISO-8859-1 data to a string in Perl's internal format:
+
+例えば、 ISO-8859-1 のデータを Perl 内部形式の文字列に
+変換するには、このようにします。
+
+  $string = decode("iso-8859-1", $octets);
+
+B<CAVEAT>: When you run C<$string = decode("utf8", $octets)>, then $string
+B<may not be equal to> $octets.  Though they both contain the same data,
+the utf8 flag for $string is on unless $octets entirely consists of
+ASCII data (or EBCDIC on EBCDIC machines).  See L</"The UTF-8 flag">
+below.
+
+'''警告''': $string = decode("utf8", $octets) したときに、
+$string は $octet と'''同一でないかもしれません'''。
+両者は同じデータを持ちますが、 $string の utf8 旗は
+$octets 全体が ASCII データ (EBCDIC 機では EBCDIC)
+で構成されていない時は on になります。
+
+decode($valid_encoding, undef) is harmless but warns you for 
+C<Use of uninitialized value in subroutine entry>. 
+decode($valid_encoding, '') is harmless and warnless.
+
+decode($valid_encoding, undef) は無害ですが
+C<Use of uninitialized value in subroutine entry>
+(小 routine 項目中での未初期化値の使用) を警告されます。
+decode($valid_encoding, '') は無害かつ無警告です。
+
+-[$length =] from_to($octets, FROM_ENC, TO_ENC [, CHECK])
+
+Converts B<in-place> data between two encodings. The data in $octets
+must be encoded as octets and not as characters in Perl's internal
+format. For example, to convert ISO-8859-1 data to Microsoft's CP1250 encoding:
+
+'''その場で'''データを2つの符号化間で変換します。 $octets
+中のデータはオクテットで符号化されている必要があり、
+Perl の内部形式の文字であってはなりません。 ISO-8859-1
+データを Microsoft の CP1250 符号化に変換するには、
+次のようにします。
+
+  from_to($octets, "iso-8859-1", "cp1250");
+
+and to convert it back:
+
+この逆変換は次のようにします。
+
+  from_to($octets, "cp1250", "iso-8859-1");
+
+Note that because the conversion happens in place, the data to be
+converted cannot be a string constant; it must be a scalar variable.
+
+変換はその場で行われることに注意して下さい。変換されるデータは
+文字列定数ではなく、スカラー値でなければなりません。
+
+from_to() returns the length of the converted string in octets on success, undef
+otherwise.
+
+from_to() は変換した文字列のオクテット長を成功した場合は返し、
+そうでなければ undef を返します。
+
+B<CAVEAT>: The following operations look the same but are not quite so;
+
+'''警告''': 次の処理は同じ様に見えますが、そうではありません。
+
+  from_to($data, "iso-8859-1", "utf8"); #1
+  $data = decode("iso-8859-1", $data);  #2
+
+Both #1 and #2 make $data consist of a completely valid UTF-8 string
+but only #2 turns utf8 flag on.  #1 is equivalent to
+
+#1, #2 共に $data を完全に妥当な UTF-8 文字列としますが、
+#2 だけが utf8 旗を on にします。 #1 は
+
+  $data = encode("utf8", decode("iso-8859-1", $data));
+
+See L</"The UTF-8 flag"> below.
+
+と同等です。
+
+-$octets = encode_utf8($string);
+
+Equivalent to C<$octets = encode("utf8", $string);> The characters
+that comprise $string are encoded in Perl's internal format and the
+result is returned as a sequence of octets. All possible
+characters have a UTF-8 representation so this function cannot fail.
+
+$octets = encode("utf8", $string); と同等です。 $string
+を構成する文字は Perl の内部形式で符号化されており、
+結果にはオクテットの連続として返されます。全ての考えられる
+文字は UTF-8 表現をもちますから、この関数は失敗しません。
+
+-$string = decode_utf8($octets [, CHECK]);
+
+equivalent to C<$string = decode("utf8", $octets [, CHECK])>.
+The sequence of octets represented by
+$octets is decoded from UTF-8 into a sequence of logical
+characters. Not all sequences of octets form valid UTF-8 encodings, so
+it is possible for this call to fail.  For CHECK, see
+L</"Handling Malformed Data">.
+
+$string = decode("utf8", $octets [, CHECK]) と同等です。
+$octets で表現されるオクテットの連続を UTF-8 から復号して
+論理文字の列にします。全てのオクテットの連続形が妥当な UTF-8
+符号化ではありませんから、この呼び出しは失敗し得ます。
+CHECK については不正なデータの取り扱いを参照。
+
+***Listing available encodings 利用可能符号化を列挙
+
+  use Encode;
+  @@list = Encode->encodings();
+
+Returns a list of the canonical names of the available encodings that
+are loaded.  To get a list of all available encodings including the
+ones that are not loaded yet, say
+
+読み込まれている利用可能な符号化の正規名の一覧を返します。
+まだ読み込まれていないものを含めた全ての利用可能な符号化の
+一覧を得るには、
+
+  @@all_encodings = Encode->encodings(":all");
+
+Or you can give the name of a specific module.
+
+とするか、特定モジュールの名前を与えることも出来ます。
+
+  @@with_jp = Encode->encodings("Encode::JP");
+
+When "::" is not in the name, "Encode::" is assumed.
+
+"::" が名前中に無ければ、 "Encode::" を補います。
+
+  @@ebcdic = Encode->encodings("EBCDIC");
+
+To find out in detail which encodings are supported by this package,
+see L<Encode::Supported>.
+
+この package で対応している符号化の詳細については
+Encode::Supported を参照。
+
+***Defining Aliases 別名を定義する
+
+To add a new alias to a given encoding, use:
+
+ある符号化に新しい別名を追加するには、こうします。
+
+  use Encode;
+  use Encode::Alias;
+  define_alias(newName => ENCODING);
+
+After that, newName can be used as an alias for ENCODING.
+ENCODING may be either the name of an encoding or an
+I<encoding object>
+
+この後、 newName は ENCODING の別名として使用出来ます。
+ENCODING は符号化の名前か ''encoding object'' のどちらかです。
+
+But before you do so, make sure the alias is nonexistent with
+C<resolve_alias()>, which returns the canonical name thereof.
+i.e.
+
+しかしこうする前に、別名が resolve_alias() で存在しないことを
+確認してください。この関数は別名の正規名を返します。
+
+  Encode::resolve_alias("latin1") eq "iso-8859-1" # true
+  Encode::resolve_alias("iso-8859-12")   # false; nonexistent  # 偽; 存在しない
+  Encode::resolve_alias($name) eq $name  # true if $name is canonical  # $name が正規名なら真
+
+resolve_alias() does not need C<use Encode::Alias>; it can be
+exported via C<use Encode qw(resolve_alias)>.
+
+resolve_alias() は use Encode::Alias する必要はありません。
+use Encode qw(resolve_alias) で輸出出来ます。
+
+See L<Encode::Alias> for details.
+
+**Encoding via PerlIO PerlIO を介した符号化
+
+If your perl supports I<PerlIO> (which is the default), you can use a PerlIO layer to decode
+and encode directly via a filehandle.  The following two examples
+are totally identical in their functionality.
+
+お使いの perl が ''[[PerlIO]]'' に対応していれば 
+(既定状態では対応しています)、 filehandle から直接復号や
+符号化するのに PerlIO 層を使えます。次の2つの例は機能的には
+全く同等です。
+
+  # via PerlIO
+  open my $in,  "<:encoding(shiftjis)", $infile  or die;
+  open my $out, ">:encoding(euc-jp)",   $outfile or die;
+  while(<$in>){ print $out $_; }
+
+  # via from_to
+  open my $in,  "<", $infile  or die;
+  open my $out, ">", $outfile or die;
+  while(<$in>){
+    from_to($_, "shiftjis", "euc-jp", 1);
+    print $out $_;
+  }
+
+Unfortunately, it may be that encodings are PerlIO-savvy.  You can check
+if your encoding is supported by PerlIO by calling the C<perlio_ok>
+method.
+
+生憎、符号化は PerlIO を知っているかもしれません。
+ある符号化が PerlIO に対応しているかを perlio_ok
+method を呼ぶことで検査出来ます。
+
+  Encode::perlio_ok("hz");             # False  # 偽
+  find_encoding("euc-cn")->perlio_ok;  # True where PerlIO is available  # PerlIO が利用可能なら真
+
+  use Encode qw(perlio_ok);            # exported upon request  # 要求により輸出
+  perlio_ok("euc-jp")
+
+Fortunately, all encodings that come with Encode core are PerlIO-savvy
+except for hz and ISO-2022-kr.  For gory details, see L<Encode::Encoding> and L<Encode::PerlIO>.
+
+幸い、 Encode 核の全ての符号化は hz と iso-2022-kr
+を除いてすべて PerlIO を知っています。詳しくは
+[[Encode::Encoding]] と [[Encode::PerlIO]] を参照。
+
+**Handling Malformed Data 不正なデータの取り扱い
+
+The I<CHECK> argument is used as follows.  When you omit it,
+the behaviour is the same as if you had passed a value of 0 for
+I<CHECK>.
+
+CHECK 引数は次のように使います。これを省略した場合、
+その動作は CHECK に 0 の値を渡した時と同じになります。
+
+-I<CHECK> = Encode::FB_DEFAULT ( == 0)
+
+If I<CHECK> is 0, (en|de)code will put a I<substitution character>
+in place of a malformed character.  For UCM-based encodings,
+E<lt>subcharE<gt> will be used.  For Unicode, the code point C<0xFFFD> is used.
+If the data is supposed to be UTF-8, an optional lexical warning
+(category utf8) is given.
+
+CHECK が 0 なら、 (en|de)code は不正な文字の場所に
+''代替文字''を挿入します。基 [[UCM]] 符号化では、「subchar」 
+が使われます。 [[Unicode]] では、[[符号位置]] 0xFFFD
+が使われます。データが UTF-8 と想定されているなら、
+optional lexical 警告 (分類 utf8) が出ます。
+
+-I<CHECK> = Encode::FB_CROAK ( == 1)
+
+If I<CHECK> is 1, methods will die on error immediately with an error
+message.  Therefore, when I<CHECK> is set to 1,  you should trap the
+fatal error with eval{} unless you really want to let it die on error.
+
+CHECK が 1 なら、 method はエラー・メッセージと共に即座に
+死にます。従って、 CHECK が 1 に設定されているなら、
+本当にエラーと共に死んで欲しいのでない限り eval{}
+で致命的エラーを逃れるのが良いでしょう。
+
+-I<CHECK> = Encode::FB_QUIET
+
+If I<CHECK> is set to Encode::FB_QUIET, (en|de)code will immediately
+return the portion of the data that has been processed so far when
+an error occurs. The data argument will be overwritten with
+everything after that point (that is, the unprocessed part of data).
+This is handy when you have to call decode repeatedly in the case
+where your source data may contain partial multi-byte character
+sequences, for example because you are reading with a fixed-width
+buffer. Here is some sample code that does exactly this:
+
+CHECK が Encode::FB_QUIET に設定されていると、 (en|de)code
+はエラーが起こった時に即座にデータの処理済みの部分を返します。
+データ引数はその位置以降全体 (つまりデータの処理できなかった部分)
+で上書きします。
+これは例えば固定長バッファーを読んでいる時の様に
+元データが分割された多バイト文字列で構成されていて
+decode を繰り返し呼ばないといけない時に便利です。
+この例を次に示します。
+
+[INS[
+[2] 訳注: 分割された多バイト文字とは、たとえば[[シフトJIS]]の短い文字列「あ、い」
+を3オクテット毎に分割すると、 (SJIS では仮名1文字 = 2バイトなので)
+真ん中の「、」 = [CODE[0x8141]] が [CODE[0x81]] と [CODE[0x41]]
+でばらばらになってしまいます。
+
+こういう無茶苦茶なことする実装や仕様って多いんでしょうかね?
+(英語版のプログラムを日本語 M$-DOS/Windows に移植したものとかでありそうかも。)
+[[MIMEのparameter値拡張]]は確かにこれですけど、これは比較的短い文字列対象だと思うから、予め全部合体させてから
+decode する方が楽だろうし。
+]INS]
+
+  my $data = '';
+  my $utf8 = '';
+  while(defined(read $fh, $buffer, 256)){
+    # buffer may end in a partial character so we append
+    [INS[# バッファーは分割された文字で終わるかもしれないのでくっつける]]
+    $data .= $buffer;
+    $utf8 .= decode($encoding, $data, Encode::FB_QUIET);
+    # $data now contains the unprocessed partial character
+    [INS[# $data はここで未処理の分割された文字を含んでいます。]]
+  }
+
+-''CHECK'' = Encode::FB_WARN
+
+This is the same as above, except that it warns on error.  Handy when
+you are debugging the mode above.
+
+これは上と同じですが、エラー警告します。上のモードのバグ取りに
+便利です。
+
+-perlqq mode (I<CHECK> = Encode::FB_PERLQQ)
+-HTML charref mode (I<CHECK> = Encode::FB_HTMLCREF)
+-XML charref mode (I<CHECK> = Encode::FB_XMLCREF)
+
+For encodings that are implemented by Encode::XS, CHECK ==
+Encode::FB_PERLQQ turns (en|de)code into C<perlqq> fallback mode.
+
+Encode::XS で実装された符号化で、 CHECK == Encode::FB_PERLQQ
+の時 (en|de)code は perlqq fallback モードになります。
+
+When you decode, C<\xI<HH>> will be inserted for a malformed character,
+where I<HH> is the hex representation of the octet  that could not be
+decoded to utf8.  And when you encode, C<\x{I<HHHH>}> will be inserted,
+where I<HHHH> is the Unicode ID of the character that cannot be found
+in the character repertoire of the encoding.
+
+decode の時、 \x''HH'' が不正文字の所に挿入されます。ここで ''HH''
+は utf8 に復号出来なかったオクテットの16進表現です。また
+符号化の時、 \x{''HHHH''} が挿入されます。ここで ''HHHH''
+は符号化の文字レパートリに見つからなかった文字の Unicode ID
+です。
+
+HTML/XML character reference modes are about the same, in place of
+C<\x{I<HHHH>}>, HTML uses C<&#I<NNNN>>; where I<NNNN> is a decimal digit and
+XML uses C<&#xI<HHHH>>; where I<HHHH> is the hexadecimal digit.
+
+[[HTML]]/[[XML]] 文字参照モードは上と同じですが、 \x{''HHHH''}
+の所で HTML では &#''NNNN'';, XML では &#x''HHHH'';
+を使います。ここで ''NNNN'' は10進数字で ''HHHH'' は16進数字です。
+
+-The bitmask
+
+These modes are actually set via a bitmask.  Here is how the FB_XX
+constants are laid out.  You can import the FB_XX constants via
+C<use Encode qw(:fallbacks)>; you can import the generic bitmask
+constants via C<use Encode qw(:fallback_all)>.
+
+これらのモードは実際には bitmask で設定します。
+ここに FB_XX 定数がどう配置してあるかを示します。 FB_XX
+定数は use Encode qw(:fallbacks) で輸入できます。
+一般 bitmask 定数は use Encode qw(:fallback_all) で輸入できます。
+
+,             ,      ,FB_DEFAULT,FB_CROAK,FB_QUIET,FB_WARN,FB_PERLQQ
+,DIE_ON_ERR   ,0x0001,          ,  X
+,WARN_ON_ERR  ,0x0002,          ,                 ,  X
+,RETURN_ON_ERR,0x0004,          ,        ,  X     ,  X
+,LEAVE_SRC    ,0x0008,
+,PERLQQ       ,0x0100,          ,        ,        ,       ,   X
+,HTMLCREF     ,0x0200,
+,XMLCREF      ,0x0400,
+
+**Unimplemented fallback schemes 未実装 fallback 方式
+
+In the future, you will be able to use a code reference to a callback
+function for the value of I<CHECK> but its API is still undecided.
+
+将来、 callback 関数の code 参照を CHECK の値に使えるように
+なるかもしれませんが、その API はまだ決まっていません。
+
+The fallback scheme does not work on EBCDIC platforms.
+
+fallback 方式は EBCDIC 環境では動作しません。
+
+**Defining Encodings 符号化の定義
+
+To define a new encoding, use:
+
+新しい符号化を定義するには、こうします。
+
+    use Encode qw(define_encoding);
+    define_encoding($object, 'canonicalName' [, alias...]);
+
+I<canonicalName> will be associated with I<$object>.  The object
+should provide the interface described in L<Encode::Encoding>.
+If more than two arguments are provided then additional
+arguments are taken as aliases for I<$object>.
+
+canonicalName (正規名)は $object と関連付けられます。
+object は [[Encode::Encoding]] で説明する界面を提供
+するのがよいです。2つ以上の引数があるときは
+追加の引数は $object の別名とみなします。
+
+See L<Encode::Encoding> for more details.
+
+**The UTF-8 flag UTF-8 旗
+
+Before the introduction of utf8 support in perl, The C<eq> operator
+just compared the strings represented by two scalars. Beginning with
+perl 5.8, C<eq> compares two strings with simultaneous consideration
+of I<the utf8 flag>. To explain why we made it so, I will quote page
+402 of C<Programming Perl, 3rd ed.>
+
+utf8 対応が perl に入る前は、 eq 演算子は単に2つのスカラーで
+表される文字列を比較していました。 perl 5.8 からは
+eq は2つの文字列を ''utf8 旗''も考慮に入れて比較します。
+どうしてそうしたかについては、 Programming Perl 第3版の
+402頁を引用します。
+
+-Goal #1: 目標1
+
+Old byte-oriented programs should not spontaneously break on the old
+byte-oriented data they used to work on.
+
+古いバイト指向プログラムがその扱う古いバイト指向データを
+勝手に壊さないのがよい。
+
+-Goal #2: 目標2
+
+Old byte-oriented programs should magically start working on the new
+character-oriented data when appropriate.
+
+古いバイト指向プログラムは適当なら魔的にも新しい文字指向データ
+を扱えるのが良い。
+
+-Goal #3: 目標3
+
+Programs should run just as fast in the new character-oriented mode
+as in the old byte-oriented mode.
+
+プログラムは古いバイト指向モードと等速で新しい文字施行モードでも
+動くのが良い。
+
+-Goal #4: 目標4
+
+Perl should remain one language, rather than forking into a
+byte-oriented Perl and a character-oriented Perl.
+
+Perl は1つの言語であり続けるのが良い。バイト指向 Perl
+と文字指向 Perl に分裂するのより。
+
+Back when C<Programming Perl, 3rd ed.> was written, not even Perl 5.6.0
+was born and many features documented in the book remained
+unimplemented for a long time.  Perl 5.8 corrected this and the introduction
+of the UTF-8 flag is one of them.  You can think of this perl notion as of a
+byte-oriented mode (utf8 flag off) and a character-oriented mode (utf8
+flag on).
+
+Programming Perl 第3版の書かれた時に戻ると、
+Perl 5.6.0 さえ出ておらず、この本に書かれた多くの機能は
+長らく未実装のままでした。 Perl 5.8 はこれを打開するもので
+UTF-8 旗の導入はその一つです。この perl の観念は
+バイト指向モード (utf8 旗下がり) と文字指向モード
+(utf8 旗上がり) と捉えることが出来ます。
+
+Here is how Encode takes care of the utf8 flag.
+
+ここに Encode が utf8 旗をどう扱うかを示します。
+
+-When you encode, the resulting utf8 flag is always off.
+符号化の時、結果では utf8 旗は常に下がってます。
+-When you decode, the resulting utf8 flag is on unless you can
+unambiguously represent data.  Here is the definition of
+dis-ambiguity.
+復号の時、結果では utf8 は常に上がってます。但し曖昧無く
+データを表現出来る場合を除きます。曖昧でないことの定義は
+次に示します。
+
+After C<$utf8 = decode('foo', $octet);>, の後、
+
+,When $octet is...,$octet は   ,The utf8 flag in $utf8 is
+,                 ,            ,$utf8 の  utf8 旗は
+,In ASCII only (or EBCDIC only),ASCII のみ (又は EBCDIC のみ),OFF
+,In ISO-8859-1                 ,,ON
+,In any other Encoding        ,その他の符号化,ON
+
+As you see, there is one exception, In ASCII.  That way you can assue
+Goal #1.  And with Encode Goal #2 is assumed but you still have to be
+careful in such cases mentioned in B<CAVEAT> paragraphs.
+
+ご覧の通り、例外は ASCII です。これにより目標 1 が達成されます。
+符号化目標 2 も達成されますが、依然''警告''段落で述べた
+場合について注意する必要があります。
+
+This utf8 flag is not visible in perl scripts, exactly for the same
+reason you cannot (or you I<don't have to>) see if a scalar contains a
+string, integer, or floating point number.   But you can still peek
+and poke these if you will.  See the section below.
+
+utf8 旗は、スカラーが文字列であるか整数であるか浮動小数点値
+であるか見えない (あるいは''見る必要が無い'') のと同様に
+perl script には見えません。但し除いたり突っついたりは
+出来ます。下の章をご覧あれ。
+
+***Messing with Perl's Internals Perl 内部をいじくる
+
+The following API uses parts of Perl's internals in the current
+implementation.  As such, they are efficient but may change.
+
+次の API は現在の実装での Perl 内部の部分を使います。
+ですから、有能ですが変更される可能性もあります。
+
+-is_utf8(STRING [, CHECK])
+
+[INTERNAL] Tests whether the UTF-8 flag is turned on in the STRING.
+If CHECK is true, also checks the data in STRING for being well-formed
+UTF-8.  Returns true if successful, false otherwise.
+
+(''内部'') STRING で UTF-8 旗が揚がっているかを試験します。
+CHECK が真なら、 STRING が[[整形式]] UTF-8 であるかも
+検査します。成功なら真を返し、そうでなければ偽を返します。
+
+-_utf8_on(STRING)
+
+[INTERNAL] Turns on the UTF-8 flag in STRING.  The data in STRING is
+B<not> checked for being well-formed UTF-8.  Do not use unless you
+B<know> that the STRING is well-formed UTF-8.  Returns the previous
+state of the UTF-8 flag (so please don't treat the return value as
+indicating success or failure), or C<undef> if STRING is not a string.
+
+(''内部'') STRING の UTF-8 旗を揚げます。 STRING
+中のデータが整形式 UTF-8 かは検査'''しません'''。 STRING
+が整形式 UTF-8 であると'''分かっている'''場合を除いて
+使ってはいけません。 UTF-8 旗の以前の状態を返す
+(ので成功したか失敗したかを示すのに返し値を使わないで下さい。)
+か、 STRING が文字列でない時には undef を返します。
+
+-_utf8_off(STRING)
+
+[INTERNAL] Turns off the UTF-8 flag in STRING.  Do not use frivolously.
+Returns the previous state of the UTF-8 flag (so please don't treat the
+return value as indicating success or failure), or C<undef> if STRING is
+not a string.
+
+(''内部'') STRING の UTF-8 旗を降ろします。軽率に使わないで下さい。
+UTF-8 旗の以前の状態を返す
+(ので成功したか失敗したかを示すのに返し値を使わないで下さい。)
+か、 STRING が文字列でない時には undef を返します。
+
+**SEE ALSO
+
+[[Encode::Encoding]],
+[[Encode::Supported]],
+[[Encode::PerlIO]],
+[[encoding]],
+[[perlebcdic]],
+[[perlfunc]]/open,
+[[perlunicode]],
+[[utf8]],
+the Perl Unicode Mailing List <MAIL:perl-unicode@@perl.org>
+
+**MAINTAINER
+
+This project was originated by Nick Ing-Simmons and later maintained
+by Dan Kogai <MAIL:dankogai@@dan.co.jp>.  See AUTHORS for a full
+list of people involved.  For any questions, use
+<MAIL:perl-unicode@@perl.org> so we can all share.
+
+この計画は Nick Ing-Simmons により始められ、後に
+小飼弾により管理されています。関係者の完全な表は
+AUTHORS をご覧下さい。疑問点があれば perl-unicode
+を使って下さい。そうすれば我々皆が共有できます。
+
+**この部分の License
+
+[[perlと同じライセンス]]。
+*Q&A
+**Wide character としかられて死ぬ
+
+[9] '''質問''': >Wide character in subroutine entry at /path/to/perl/lib/Encode.pm line 154.
+
+と言われて死にます。 Encode の bug ですか?
+
+[10] いえ、おそらく仕様です。
+
+このエラーが出て死ぬ原因は、 [CODE[decode]] の入力文字列が utf8 (Wide character)
+形式になっている、つまり [CODE[U+0100]] 以上の文字が含まれていることにあります。
+
+[CODE[Encode::decode]] は実際には [CODE[Encode::find_encoding ($encoding)->decode ($string)]]
+をしていますが、この後半の [CODE[decode]] が [[carp]]
+しているので、エラー出力には Encode モジュール内で死んだと出るのです。
+
+[[#form:'%radio(id=>type,label=>回答,value=>false,default); or %radio(id=>type,label=>追加質問,value=>true);: %text(label=>"名前 : ",id=>name,size=>"9.5"); %text(label=>"メイル: ",id=>mail,size=>9.5);%n;%textarea(id=>a,size=>20);':'[%index;] %iif(source=>type,true=>"\'\'\'質問\'\'\' ",false=>"");\'\'%name;\'\'%text(source=>mail,prefix=>" [",suffix=>"]"); [WEAK[%date;]]: %text(source=>a);%n;':'%require(a);']]
+[[#form(newq):'':'**%text(source=>qsum);%n;%n;[%index;] \'\'\'質問\'\'\' (\'\'%name;\'\'%text(source=>mail,prefix=>" [",suffix=>"]"); [WEAK[%date;]]): %text(source=>q);%n;%n;[[#form:\'%percent;radio(id=>type,label=>回答,value=>false,default); or %percent;radio(id=>type,label=>追加質問,value=>true);: %percent;text(label=>"名前 : ",id=>name,size=>"9.5"); %percent;text(label=>"メイル: ",id=>mail,size=>9.5);%percent;n;%percent;textarea(id=>a,size=>20);\':\'[%percent;index;] %percent;iif(source=>type,true=>"\\\'\\\'\\\'質問\\\'\\\'\\\' ",false=>"");\\\'\\\'%percent;name;\\\'\\\'%percent;text(source=>mail,prefix=>" [",suffix=>"]"); [WEAK[%percent;date;]]: %percent;text(source=>a);%percent;n;\':\'%percent;require(a);\']]']]
+**新しい質問の追加
+[[#form:'%text(id=>qsum,label=>質問要約,size=>10); %text(label=>"名前 : ",id=>name,size=>"9.5"); %text(label=>"メイル: ",id=>mail,size=>9.5);%n;%textarea(id=>q,label=>質問,size=>20);':'':'%output(id=>newq);']]
+*メモ
+- [1] [[一般動詞]]の ''encode'' のことは、[[符号化]]を参照して下さい。
+- [3] [WEAK[2002-12-13 (金) 19:24]] ''[[名無しさん]]'': 幾つか誤訳があったので修正しました。
+- [4] fallback は界面としてひどいと思いません? 数値定数のビットマスクも perl 的じゃないと思うし。
+- [5] [CODE(perl)[FB_QUIET]] とか上の方のは [CODE(perl)[decode]] で使われることを想定しているような感じですねぇ。 [CODE(perl)[encode]] に使ってもいいんでしょうか?
+- [6] >>5 使ってもいいとして、状態を持ち、しかも終了状態が規定されている[[符号]]での[[符号化]]でその場合どうしたらいいんでしょう? (たとえば [[ISO-2022-JP]] 出力で、 ISO-2022-JP で表現出来ない文字があり、 [CODE(perl)[FB_QUIET]] が指定されている時に、しかも [[JISX0208]] が[[指示]]されている状態であったとして、 [[ASCII]] に戻る [CODE[ESC 02/08 04/02]] を出力してから終わるのか、しないで終わるのか。)
+- [7] [CODE(perl)[Encode::FB_QUIET]] の例の script って本当に機能するのだろうか? [CODE(perl)[Encode::decode]] ではなく [CODE(perl)[Encode::find_encoding]] を呼ばないといけないような。
+- [8] 説明の欠けている [CODE(perl)[Encode::LEAVE_SRC]] は、 [CODE[encode.h]] の注釈によると [CODE[$src updated unless set]] です。
+@
+
+
+1.7
+log
+@*** empty log message ***
+@
+text
+@@
+
+
+1.6
+log
+@Updated.
+@
+text
+@d725 20
+d751 2
+a752 2
+- [7] [CODE(perl)[Encode::FB_QUIET]] の例の script って本当に機能するのだろうか? [CODE(perl)[Encode::decode]] ではなく [CODE(perl)[Encode::find_encoding]] を呼ばないといけないような。
+- [8] 説明の欠けている [CODE(perl)[Encode::LEAVE_SRC]] は、 [CODE[encode.h]] の注釈によると [CODE[$src updated unless set]] です。
+@
+
+
+1.5
+log
+@Updated.
+@
+text
+@d732 1
+@
+
+
+1.4
+log
+@Updated.
+@
+text
+@d727 5
+a731 2
+- [3] [WEAK[2002-12-13 (金) 19:24]] ''[[名無しさん]]'': 幾つか誤訳があったので修正しました。
+- [4] fallback は界面としてひどいと思いません? 数値定数のビットマスクも perl 的じゃないと思うし。
+@
+
+
+1.3
+log
+@Updated.
+@
+text
+@d1 1
+a1 1
+SuikaWiki/0.9
+d431 1
+a431 1
+はエラーが起こった時に即座にデータの処理中の場所を返します。
+d433 1
+a433 1
+で上書きされます。
+d439 14
+a452 1
+  my $data = ''; my $utf8 = '';
+d455 1
+a455 1
+    # バッファーは分割文字で終わるかもしれないのでくっつける
+d459 1
+a459 1
+    # $data はここで未処理文活文字を含みます。
+d659 1
+a659 1
+ですから、有能ではなく変更される可能性もあります。
+d703 1
+a703 1
+L<encoding>,
+d707 2
+a708 2
+L<utf8>,
+the Perl Unicode Mailing List <mailto:perl-unicode@@perl.org>
+d713 1
+a713 1
+by Dan Kogai <mailto:dankogai@@dan.co.jp>.  See AUTHORS for a full
+d715 1
+a715 1
+<mailto:perl-unicode@@perl.org> so we can all share.
+d720 1
+a720 1
+を使って下さい。そうすれば全て共有できます。
+d725 4
+a728 1
+- [1] [[一般動詞]]の ''encode'' のことは、[[符号化]]を参照して下さい。
+@
+
+
+1.2
+log
+@Updated.
+@
+text
+@d712 1
+@
+
+
+1.1
+log
+@Updated.
+@
+text
+@d138 1
+a138 1
+警告: $octets = encode ("utf8", $string) をしたとき、 $octets
+d140 3
+a142 3
+成っていますが、 $octets の utf8 札は'''常に''' off です。
+符号化が何であれ、結果の utf8 札はそれが完全に妥当な utf8
+文字列であっても常に off です。下の「UTF-8 札」をご覧下さい。
+d161 4
+d167 3
+d178 6
+d188 6
+a193 1
+=item [$length =] from_to($octets, FROM_ENC, TO_ENC [, CHECK])
+d199 6
+d209 2
+d216 3
+d222 3
+d227 2
+d235 3
+d242 3
+a244 1
+=item $octets = encode_utf8($string);
+d251 4
+d256 1
+a256 1
+=item $string = decode_utf8($octets [, CHECK]);
+d265 5
+a269 1
+=back
+d271 1
+a271 1
+=head2 Listing available encodings
+d280 4
+d288 2
+d294 2
+d301 4
+a304 1
+=head2 Defining Aliases
+d308 2
+d318 3
+d325 3
+d329 2
+a330 2
+  Encode::resolve_alias("iso-8859-12")   # false; nonexistent
+  Encode::resolve_alias($name) eq $name  # true if $name is canonical
+d335 3
+d340 1
+a340 1
+=head1 Encoding via PerlIO
+d346 5
+d368 6
+a373 2
+  Encode::perlio_ok("hz");             # False
+  find_encoding("euc-cn")->perlio_ok;  # True where PerlIO is available
+d375 1
+a375 1
+  use Encode qw(perlio_ok);            # exported upon request
+d381 3
+a383 1
+=head1 Handling Malformed Data
+d385 1
+a385 1
+=over 2
+d391 4
+a394 1
+=item I<CHECK> = Encode::FB_DEFAULT ( == 0)
+d402 7
+a408 1
+=item I<CHECK> = Encode::FB_CROAK ( == 1)
+d414 6
+a419 1
+=item I<CHECK> = Encode::FB_QUIET
+d430 9
+d442 1
+d446 1
+d449 1
+a449 1
+=item I<CHECK> = Encode::FB_WARN
+d454 2
+a455 3
+=item perlqq mode (I<CHECK> = Encode::FB_PERLQQ)
+
+=item HTML charref mode (I<CHECK> = Encode::FB_HTMLCREF)
+d457 3
+a459 1
+=item XML charref mode (I<CHECK> = Encode::FB_XMLCREF)
+d464 3
+d473 6
+d483 5
+a487 1
+=item The bitmask
+d494 13
+a506 8
+                     FB_DEFAULT FB_CROAK FB_QUIET FB_WARN  FB_PERLQQ
+ DIE_ON_ERR    0x0001             X
+ WARN_ON_ERR   0x0002                               X
+ RETURN_ON_ERR 0x0004                      X        X
+ LEAVE_SRC     0x0008
+ PERLQQ        0x0100                                        X
+ HTMLCREF      0x0200
+ XMLCREF       0x0400
+d508 1
+a508 1
+=head2 Unimplemented fallback schemes
+d513 3
+d518 3
+a520 1
+=head1 Defining Encodings
+d524 2
+d534 5
+d541 1
+a541 1
+=head1 The UTF-8 flag
+d549 5
+a553 1
+=over 2
+d555 1
+a555 1
+=item Goal #1:
+d560 4
+a563 1
+=item Goal #2:
+d568 4
+a571 1
+=item Goal #3:
+d576 4
+a579 1
+=item Goal #4:
+d584 2
+a585 1
+=back
+d594 7
+d603 1
+a603 5
+=over 2
+
+=item *
+
+When you encode, the resulting utf8 flag is always off.
+d605 3
+a607 3
+=item
+
+When you decode, the resulting utf8 flag is on unless you can
+d610 11
+a620 9
+
+After C<$utf8 = decode('foo', $octet);>,
+
+  When $octet is...   The utf8 flag in $utf8 is
+  ---------------------------------------------
+  In ASCII only (or EBCDIC only)            OFF
+  In ISO-8859-1                              ON
+  In any other Encoding                      ON
+  ---------------------------------------------
+d626 4
+d635 4
+a638 1
+=back
+d640 1
+a640 1
+=head2 Messing with Perl's Internals
+d645 2
+a646 1
+=over 2
+d648 1
+a648 1
+=item is_utf8(STRING [, CHECK])
+d654 5
+a658 1
+=item _utf8_on(STRING)
+d666 8
+a673 1
+=item _utf8_off(STRING)
+d680 10
+a689 7
+=back
+
+=head1 SEE ALSO
+
+L<Encode::Encoding>,
+L<Encode::Supported>,
+L<Encode::PerlIO>,
+d691 3
+a693 3
+L<perlebcdic>,
+L<perlfunc/open>,
+L<perlunicode>,
+d695 1
+a695 1
+the Perl Unicode Mailing List E<lt>perl-unicode@@perl.orgE<gt>
+d697 1
+a697 1
+=head1 MAINTAINER
+d700 1
+a700 1
+by Dan Kogai E<lt>dankogai@@dan.co.jpE<gt>.  See AUTHORS for a full
+d702 6
+a707 1
+E<lt>perl-unicode@@perl.orgE<gt> so we can all share.
+@
+

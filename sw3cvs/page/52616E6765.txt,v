@@ -1,0 +1,775 @@
+head	1.5;
+access;
+symbols
+	suikawiki3-final:1.5
+	before-db-leaffile:1.1
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.5
+date	2008.10.08.02.53.41;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2005.03.03.02.05.10;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2005.01.23.02.05.27;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2004.05.08.02.04.05;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.12.23.02.03.24;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.5
+log
+@auto-committed
+@
+text
+@
+
+* [CODE(HTTP)[Range:]] 要求頭欄
+
+[9] [[HTTP]] などで使われている [DFN[[CODE(HTTP)[Range:]] 要求頭欄]]は、
+ある[[資源]]の一部分を[[要求]]することを表します。
+同時に、要求する部分も指定します。
+
+HTTP では[[バイト]]単位で[[実体]]の一部を取得する方法が、
+[[RTSP]] では時刻を指定する方法が標準化されています。
+
+HTTP のバイト範囲指定を使うと、大きなファイルの転送を分割して行ったり、
+分割再生可能に設計された[[音声]]や[[動画]]を部分ごとにデータ転送しながら再生するなどの大規模データ転送の工夫が可能になります。
+
+[[#comment]]
+
+
+** 仕様書から
+
+
+*** RFC 2068 (HTTP/1.1) 14.36・RFC 2616 (HTTP/1.1) 14.35 Range
+
+
+**** RFC 2068 14.36.1・RFC 2616 14.35.1 Byte Ranges
+
+> Since all HTTP entities are represented in HTTP messages as sequences
+of bytes, the concept of a byte range is meaningful for any HTTP
+entity. (However, not all clients and servers need to support byte-range operations.)
+
+[[HTTP]] [[実体]]は HTTP [[メッセージ]]中ではすべて[[バイト列]]として表現されますから、
+任意の HTTP 実体に対してバイト範囲という概念が意味を持ちます。
+(しかし、すべてのクライアントと鯖がバイト範囲操作に対応する必要はありません。)
+
+> Byte range specifications in HTTP apply to the sequence of bytes in
+the entity-body (not necessarily the same as the message-body).
+
+HTTP でのバイト範囲指定は、 [CODE(ABNF)[[[entity-body]]]]
+(必ずしも [CODE(ABNF)[[[message-body]]]] と同じではない。) のバイト列に適用します。
+
+> A byte range operation [DEL[may]] [INS[MAY]] specify a single range of bytes, or a set
+of ranges within a single entity.
+
+バイト範囲操作は単一の範囲か、または単一の実体内の範囲の集合を指定して'''構いません'''。
+
+>
+- ranges-specifier = byte-ranges-specifier
+- byte-ranges-specifier = bytes-unit "=" byte-range-set
+- byte-range-set  = 1#( byte-range-spec | suffix-byte-range-spec )
+- byte-range-spec = first-byte-pos "-" [last-byte-pos]
+- first-byte-pos  = 1*DIGIT
+- last-byte-pos   = 1*DIGIT
+
+> The first-byte-pos value in a byte-range-spec gives the byte-offset
+of the first byte in a range. The last-byte-pos value gives the
+byte-offset of the last byte in the range; that is, the byte
+positions specified are inclusive. Byte offsets start at zero.
+
+[CODE(ABNF)[byte-range-spec]] の [CODE(ABNF)[first-byte-pos]]
+値は、範囲中の最初のバイトのバイト offset
+を与えます。 [CODE(ABNF)[last-byte-pos]] 値は範囲中の最後のバイトのバイト
+offset を与えます。つまり、指定されたバイト位置は範囲に含まれます。
+バイト offset は零から始めます。
+
+> If the last-byte-pos value is present, it [DEL[must]] [INS[MUST]] be greater than or
+equal to the first-byte-pos in that byte-range-spec, or the byte-range-spec
+is [INS[syntactically]] invalid. The recipient of [INS[a byte-range-set that includes one or more syntactically]] [DEL[an]] invalid byte-range-spec [INS[values MUST]] [DEL[must]] ignore [DEL[it]] [INS[the header field that includes that byte-range-set]].
+
+[CODE(ABNF)[last-byte-pos]] 値が示されるときは、その [CODE(ABNF)[byte-range-spec]]
+の [CODE(ABNF)[first-byte-pos]] 以上でなければ'''なりません'''。
+そうでなければ[INS[構文的に]]不当です。[INS[一つ以上の構文的に]]不正な 
+[CODE(ABNF)[byte-range-spec]] [INS[値を含む [CODE(ABNF)[byte-range-set]]]]
+の受信者は、[INS[その [CODE(ABNF)[byte-range-set]] を含む頭欄を]]無視しなければ'''なりません'''。
+
+> If the last-byte-pos value is absent, or if the value is greater than
+or equal to the current length of the entity-body, last-byte-pos is
+taken to be equal to one less than the current length of the entity-body in bytes.
+
+[CODE(ABNF)[last-byte-pos]] が欠けている場合、あるいは [CODE(ABNF)[entity-body]]
+の現在の長さ以上のときは、 [CODE(ABNF)[last-byte-pos]] は現在の
+[CODE(ABNF)[entity-body]] のバイト長より一小さいものと取ります。
+
+> By its choice of last-byte-pos, a client can limit the number of
+bytes retrieved without knowing the size of the entity.
+
+[CODE(ABNF)[last-byte-pos]] を選ぶことにより、クライアントは実体の寸法を知らなくても取り出すバイト数を制限できます。
+
+>
+- suffix-byte-range-spec = "-" suffix-length
+- suffix-length = 1*DIGIT
+
+> A suffix-byte-range-spec is used to specify the suffix of the
+entity-body, of a length given by the suffix-length value. (That is,
+this form specifies the last N bytes of an entity-body.) If the
+entity is shorter than the specified suffix-length, the entire
+entity-body is used.
+
+[CODE(ABNF)[suffix-byte-range-spec]] は、 [CODE(ABNF)[entity-body]]
+の接尾部を [CODE(ABNF)[suffix-length]] 値で与えた長さ分指定するのに使います。
+(つまり、この書式は [CODE(ABNF)[entity-body]] の最後の [VAR[N]]
+バイトを指定します。) [[実体]]が指定された [CODE(ABNF)[suffix-length]]
+よりも短い場合には、 [CODE(ABNF)[entity-body]] 全体を使います。
+
+[INS[
+
+> If a syntactically valid byte-range-set includes at least one byte-range-spec whose first-byte-pos is less than the current length of
+the entity-body, or at least one suffix-byte-range-spec with a non-zero suffix-length, then the byte-range-set is satisfiable.
+Otherwise, the byte-range-set is unsatisfiable. If the byte-range-set
+is unsatisfiable, the server SHOULD return a response with a status
+of 416 (Requested range not satisfiable). Otherwise, the server
+SHOULD return a response with a status of 206 (Partial Content)
+containing the satisfiable ranges of the entity-body.
+
+構文的に妥当な [CODE(ABNF)[byte-range-set]] が [CODE(ABNF)[entity-body]]
+の現在の長さより小さい [CODE(ABNF)[first-byte-pos]] の
+[CODE(ABNF)[byte-range-spec]] を最低一つ含んでいる場合や、
+非零 [CODE(ABNF)[suffix-length]] の [CODE(ABNF)[suffix-byte-range-spec]]
+を最低一つ含んでいる場合には、 [CODE(ABNF)[byte-range-set]] は満足可能です。
+そうでなければ、 [CODE(ABNF)[byte-range-set]] は満足不能です。
+[CODE(ABNF)[byte-range-set]] が満足不能であれば、鯖は状態
+[CODE(HTTP)[[[416]]]] (要求範囲満足不能) で[[応答]]を返す'''べきです'''。
+そうでなければ、鯖は満足可能範囲の [CODE(ABNF)[entity-body]]
+を含んだ [CODE(HTTP)[[[206]]]] (部分内容) 状態で応答を返す'''べきです'''。
+]INS]
+
+> Examples of byte-ranges-specifier values (assuming an entity-body of length 10000):
+
+[CODE(ABNF)[byte-ranges-specifier]] 値の例
+(長さ 10000 の [CODE(ABNF)[entity-body]] を仮定):
+
+>
+- [DEL[o]] [INS[-]] The first 500 bytes (byte offsets 0-499, inclusive): bytes=0-499
+- [DEL[o]] [INS[-]] The second 500 bytes (byte offsets 500-999, inclusive):
+bytes=500-999
+- [DEL[o]] [INS[-]] The final 500 bytes (byte offsets 9500-9999, inclusive):
+bytes=-500
+- [DEL[o]] [INS[-]] Or bytes=9500-
+- [DEL[o]] [INS[-]] The first and last bytes only (bytes 0 and 9999):  bytes=0-0,-1
+- [DEL[o]] [INS[-]] Several legal but not canonical specifications of the second 500
+bytes (byte offsets 500-999, inclusive):
+-- bytes=500-600,601-999
+-- bytes=500-700,601-999
+
+
+**** RFC 2068 14.36.2・RFC 2616 14.35.2 Range Retrieval Requests
+
+> HTTP retrieval requests using conditional or unconditional GET
+methods [DEL[may]] [INS[MAY]] request one or more sub-ranges of the entity, instead of
+the entire entity, using the Range request header, which applies to
+the entity returned as the result of the request:
+
+条件付または条件付でない [CODE(HTTP)[[[GET]]]] 方式の HTTP 取り出し要求は、
+要求の結果として返される実体に適用されるものである [CODE(HTTP)[Range]] 要求頭を使って、
+実体全体ではなく、実体の一つ以上の部分範囲を要求して'''構いません'''。
+
+>
+- Range = "Range" ":" ranges-specifier
+
+> A server MAY ignore the Range header. However, HTTP/1.1 origin
+servers and intermediate caches [DEL[SHOULD]] [INS[ought to]] support byte ranges when
+possible, since Range supports efficient recovery from partially
+failed transfers, and supports efficient partial retrieval of large
+entities.
+
+鯖は、 [CODE(HTTP)[Range]] 頭を無視しても'''構いません'''。
+しかし、 HTTP/1.1 [[起点鯖]]と[[中間キャッシュ]]は、
+可能な時にはバイト範囲に対応するべきです。なぜなら、
+[CODE(HTTP)[Range]] は部分的に失敗した転送から効率よく回復することや大きな実体の部分を効率的に取り出すことを支援するからです。
+
+> If the server supports the Range header and the specified range or
+ranges are appropriate for the entity:
+- [DEL[o]] [INS[-]] The presence of a Range header in an unconditional GET modifies
+what is returned if the GET is otherwise successful. In other
+words, the response carries a status code of 206 (Partial
+Content) instead of 200 (OK).
+- [DEL[o]] [INS[-]] The presence of a Range header in a conditional GET (a request
+using one or both of If-Modified-Since and If-None-Match, or
+one or both of If-Unmodified-Since and If-Match) modifies what
+is returned if the GET is otherwise successful and the condition
+is true. It does not affect the 304 (Not Modified) response
+returned if the conditional is false.
+
+鯖が [CODE(HTTP)[Range]] 頭に対応し、指定された範囲(群)がその実体について適当であるなら、
+- 条件付きでない [CODE(HTTP)[GET]] での [CODE(HTTP)[Range]] 頭の存在は、
+[CODE(HTTP)[GET]] が本来成功であるなら返されるものを修飾します。
+言い換えれば、応答は状態符号 [CODE(HTTP)[[[200]]]] (了解) 
+の代わりに [CODE(HTTP)[[[206]]]] (部分内容) となります。
+- 条件付き [CODE(HTTP)[GET]]
+([CODE(HTTP)[[[If-Modified-Since]]]] と
+[CODE(HTTP)[[[If-None-Match]]]] の一方又は両方、もしくは
+[CODE(HTTP)[[[If-Unmodified-Since]]]] と
+[CODE(HTTP)[[[If-Match]]]] の一方又は両方を使った要求) での
+[CODE(HTTP)[Range]] 頭の存在は、 [CODE(HTTP)[GET]]
+が本来成功であって、条件が真であるなら返されるものを修飾します。
+条件が偽であるときに返される [CODE(HTTP)[[[304]]]] (未修正)
+応答には影響しません。
+
+> In some cases, it [DEL[may]] [INS[might]] be more appropriate to use the If-Range
+header (see section 14.27) in addition to the Range header.
+
+場合によっては、 [CODE(HTTP)[Range]] 頭に加えて [CODE(HTTP)[[[If-Range]]]]
+頭もあわせて使ったほうがより適切かもしれません。
+
+> If a proxy that supports ranges receives a Range request, forwards
+the request to an inbound server, and receives an entire entity in
+reply, it SHOULD only return the requested range to its client. It
+SHOULD store the entire received response in its cache[DEL[,]] if that is
+consistent with its cache allocation policies.
+
+範囲に対応した[[串]]が [CODE(HTTP)[Range]] 要求を受信し、
+[[上り]]サーバーに要求を[[転送]]し、返事の実体全体を受信したら、
+クライアントには要求された範囲だけを返す'''べきです'''。
+受信した応答が[[キャッシュ]]割当て方針に沿っているなら、
+受信した応答全体をキャッシュに蓄積する'''べきです'''。
+
+
+*** RFC 2326 (RTSP/1.0) 12.29 Range
+
+> This request and response header field specifies a range of time.
+The range can be specified in a number of units. This specification
+defines the smpte (Section 3.5), npt (Section 3.6), and clock
+(Section 3.7) range units. Within RTSP, byte ranges [H14.36.1] are
+not meaningful and MUST NOT be used. The header may also contain a
+time parameter in UTC, specifying the time at which the operation is
+to be made effective. Servers supporting the Range header MUST
+understand the NPT range format and SHOULD understand the SMPTE range
+format. The Range response header indicates what range of time is
+actually being played or recorded. If the Range header is given in a
+time format that is not understood, the recipient should return "501
+Not Implemented".
+
+[1] この要求・応答頭欄は時刻の範囲を指定します。
+範囲は単位の数で指定出来ます。
+この仕様書は smpte, npt, clock 範囲単位を定義します。 RTSP
+では、 byte 範囲には意味がなく、使用しては'''いけません'''。
+この頭には time パラメーターも含めて、操作が有効となる UTC 
+での時刻を指定しても構いません。
+Range 頭に対応したサーバーは NPT 範囲形式を理解し'''なければならず'''、
+SMPTE 範囲形式を理解'''するのが良いです'''。 Range
+応答頭は実際に演奏又は録音されている時刻の範囲を示します。 Range
+頭が理解不能な時刻形式で与えられている場合は、受信者は
+「501 未実装」を返すのが良いです。
+
+> Ranges are half-open intervals, including the lower point, but
+excluding the upper point. In other words, a range of a-b starts
+exactly at time a, but stops just before b. Only the start time of a
+media unit such as a video or audio frame is relevant. As an example,
+assume that video frames are generated every 40 ms. A range of 
+10.0-10.1 would include a video frame starting at 10.0 or later time and
+would include a video frame starting at 10.08, even though it lasted
+beyond the interval. A range of 10.0-10.08, on the other hand, would
+exclude the frame at 10.08.
+
+[2] 範囲は半分開間隔で、低位置は含んで高位置を含まないものです。
+つまり、範囲''[VAR[甲]]-[VAR[乙]]''は丁度時刻[VAR[甲]]に始まりますが、時刻[VAR[乙]]の丁度前に止まります。
+動画や音声の[RUBY[枠] [frame]]のような媒体単位の開始時刻だけが適切です。
+例として、動画枠が 40 ms 毎に生成されるとします。範囲 [SAMP[10.0-10.1]]
+は [CODE[10.0]] かそれ以降の時刻に始まる動画枠を含み、
+[CODE[10.08]] に始まる動画枠も (終わるのは間隔を超えますが) 含みます。
+一方範囲 [SAMP[10.0-10.08]] は [CODE[10.08]] の枠を除きます。
+
+- [3] Range = "Range" ":" 1[DEL[\]]#ranges-specifier [ ";" "time" "=" utc-time ]
+- [4] ranges-specifier = npt-range | utc-range | smpte-range
+
+[INS[
+
+訳注: >>3 にはゴミが入ってます。注意。
+>>3-4 の時刻の定義については [[RFC 2326の日付形式]], 
+[[RFC 2326の時刻形式]]を参照。
+]INS]
+
+> Example:
+- [5]     Range: clock=19960213T143205Z-;time=19970123T143720Z
+
+> The notation is similar to that used for the HTTP/1.1 [2] 
+byte-range header. It allows clients to select an excerpt from the media
+object, and to play from a given point to the end as well as from
+the current location to a given point. The start of playback can be
+scheduled for any time in the future, although a server may refuse
+to keep server resources for extended idle periods.
+
+[6] この記法は HTTP/1.1 の [CODE[byte]] 
+範囲頭に使われているものと似ています。
+これによりクライアントが媒体物体からの除外を選択出来、指定点から演奏して指定点で終えることや現在位置から指定点まで演奏することが出来ます。
+録音再生の開始は将来のどの時刻にも予定出来ますが、サーバーは待機期間を延ばすためのサーバー資源の確保を拒むかもしれません。
+
+
+** メモ
+
+[7] [SAMP(HTTP)[Range: lats=; lons=100-120 "10.0N 20.0S 100.1E 120W"]] : ''Met-cast HTTP'' <http://zowie.metnet.navy.mil/~spawar/JMV-TNG/Met-Cast-HTTP.html#req.header.accept>。データを要求する地域を表すらしい。 HTTP/1.1 の一応用なんだけど、これじゃあ不適合じゃないのかね?
+
+[8] >>7 最後の[[引用文字列]]の部分が引数にしてあれば、
+「HTTP/1.1 には不適合だけど RTSP を考慮しても整合性のある拡張だ」
+とかなんとか好意的に評価することも可能だけど。。。
+
+[10]
+[CITE[A Semantic Web Resource Protocol: XPointer and HTTP]]
+<http://www.mindswap.org/papers/swrp-iswc04.pdf>
+
+この論文では [[XPointer]] を使って資源の一部分を取り出す方法を提案しています。
+
+[PRE(HTTP example)[
+Range: xpointer=element(a12)
+]PRE]
+
+結果は [CODE(MIME)[[[multipart/mixed]]]]
+で複数の XML 実体として返します。
+
+XPointer scheme として [[RDF]]
+のグラフに照会するようなものを使う場合には単一の
+[CODE(MIME)[[[application/rdf+xml]]]]
+実体として返す使い方もできます。
+
+大変面白いアイデアですが、技術的問題点を指摘しておくなら、
+- もっと [[822]] や [[HTTP]] の全体と整合的であるように細かいところを詰める必要がある。
+- HTTP 頭欄では実質 [[US-ASCII]] しか安全に転送できない。
+[[XPointer]] は [CODE(char)[[[U+0000]]]]〜[CODE(char)[[[U+10FFFF]]]] の任意の文字を扱えるので、
+どう折り合いをつけるのか。
+
+などの問題を解決する必要があります。
+([[名無しさん]])
+
+[11]
+>>10 の論文の別の例は [Q[xpointer=]] が抜けた構文になっていて、 HTTP 的には最悪な状況になっています。
+([[名無しさん]])
+
+[12]
+[CITE[search.cpan.org: Apache::XPointer - mod_perl handler to address XML fragments.]] <http://search.cpan.org/~ascope/Apache-XPointer-1.1/lib/Apache/XPointer.pm>
+
+これは [[mod_perl]] を使った >>10-11 の実装です。 [WEAK[(まさに >>11 を使った最悪な。)]]
+
+[CODE(perl)[[[Apache::XPointer::XPath]]]]
+は [CODE(XPointerScheme)[[[xpointer]]()]]
+を使って [[XML実体]]の一部を [CODE(MIME)[[[multipart/mixed]]]] で送ったり、独自の[[封筒]]でまとめて一つの
+XML 実体として送ったりできます。
+
+[CODE(perl)[[[Apache::XPointer::RDQL]]]]
+は [[RDF]] のデータベースから [[RDQL]]
+による照会を使って [[RDF/XML]]
+実体を取り出すことができます。
+([CODE(HTTP)[Range]] の構文は更にひどくて、 XPointer ですらなく、単なる RDQL
+直書きになってしまっています。)
+結果は複数の [CODE(MIME)[[[application/rdf+xml]]]]
+の [CODE(MIME)[[[multipart/mixed]]]]
+にしたり、一つにまとめて順序情報の RDF 文付きで得たりできます。
+([[名無しさん]])
+
+[13]
+[CITE[Index of /javascript/xpointerhttprequest]] <http://aaronland.info/javascript/xpointerhttprequest/>
+
+こちらは >>12 に対応する [[JavaScript]] の実装。
+([[名無しさん]])
+
+[[#comment]]
+
+
+* メモ
+
+[14]
+[CITE[Jorgen’s weblog about me - my thoughts - work &#187; Blog Archive &#187; W3c Range in Internet Explorer]] ([TIME[2008-10-07 14:18:43 +09:00]] 版) <http://jorgenhorstink.nl/2006/03/11/w3c-range-in-internet-explorer/>
+([[名無しさん]])
+
+@
+
+
+1.4
+log
+@auto-committed
+@
+text
+@a2 1
+
+d347 2
+a349 3
+[13]
+[CITE[Index of /javascript/xpointerhttprequest]] <http://aaronland.info/javascript/xpointerhttprequest/>
+
+d353 1
+a354 1
+[[#comment]]
+d356 5
+a361 1
+* メモ@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@d1 359
+a359 282
+* [CODE(HTTP)[Range:]] 要求頭欄
+
+[9] [[HTTP]] などで使われている [DFN[[CODE(HTTP)[Range:]] 要求頭欄]]は、
+ある[[資源]]の一部分を[[要求]]することを表します。
+同時に、要求する部分も指定します。
+
+HTTP では[[バイト]]単位で[[実体]]の一部を取得する方法が、
+[[RTSP]] では時刻を指定する方法が標準化されています。
+
+HTTP のバイト範囲指定を使うと、大きなファイルの転送を分割して行ったり、
+分割再生可能に設計された[[音声]]や[[動画]]を部分ごとにデータ転送しながら再生するなどの大規模データ転送の工夫が可能になります。
+
+[[#comment]]
+
+** 仕様書から
+*** RFC 2068 (HTTP/1.1) 14.36・RFC 2616 (HTTP/1.1) 14.35 Range
+**** RFC 2068 14.36.1・RFC 2616 14.35.1 Byte Ranges
+> Since all HTTP entities are represented in HTTP messages as sequences
+of bytes, the concept of a byte range is meaningful for any HTTP
+entity. (However, not all clients and servers need to support byte-range operations.)
+
+[[HTTP]] [[実体]]は HTTP [[メッセージ]]中ではすべて[[バイト列]]として表現されますから、
+任意の HTTP 実体に対してバイト範囲という概念が意味を持ちます。
+(しかし、すべてのクライアントと鯖がバイト範囲操作に対応する必要はありません。)
+
+> Byte range specifications in HTTP apply to the sequence of bytes in
+the entity-body (not necessarily the same as the message-body).
+
+HTTP でのバイト範囲指定は、 [CODE(ABNF)[[[entity-body]]]]
+(必ずしも [CODE(ABNF)[[[message-body]]]] と同じではない。) のバイト列に適用します。
+
+> A byte range operation [DEL[may]] [INS[MAY]] specify a single range of bytes, or a set
+of ranges within a single entity.
+
+バイト範囲操作は単一の範囲か、または単一の実体内の範囲の集合を指定して'''構いません'''。
+
+>
+-        ranges-specifier = byte-ranges-specifier
+-        byte-ranges-specifier = bytes-unit "=" byte-range-set
+-        byte-range-set  = 1#( byte-range-spec | suffix-byte-range-spec )
+-        byte-range-spec = first-byte-pos "-" [last-byte-pos]
+-        first-byte-pos  = 1*DIGIT
+-        last-byte-pos   = 1*DIGIT
+
+> The first-byte-pos value in a byte-range-spec gives the byte-offset
+of the first byte in a range. The last-byte-pos value gives the
+byte-offset of the last byte in the range; that is, the byte
+positions specified are inclusive. Byte offsets start at zero.
+
+[CODE(ABNF)[byte-range-spec]] の [CODE(ABNF)[first-byte-pos]]
+値は、範囲中の最初のバイトのバイト offset
+を与えます。 [CODE(ABNF)[last-byte-pos]] 値は範囲中の最後のバイトのバイト
+offset を与えます。つまり、指定されたバイト位置は範囲に含まれます。
+バイト offset は零から始めます。
+
+> If the last-byte-pos value is present, it [DEL[must]] [INS[MUST]] be greater than or
+equal to the first-byte-pos in that byte-range-spec, or the byte-range-spec
+is [INS[syntactically]] invalid. The recipient of [INS[a byte-range-set that includes one or more syntactically]] [DEL[an]] invalid byte-range-spec [INS[values MUST]] [DEL[must]] ignore [DEL[it]] [INS[the header field that includes that byte-range-set]].
+
+[CODE(ABNF)[last-byte-pos]] 値が示されるときは、その [CODE(ABNF)[byte-range-spec]]
+の [CODE(ABNF)[first-byte-pos]] 以上でなければ'''なりません'''。
+そうでなければ[INS[構文的に]]不当です。[INS[一つ以上の構文的に]]不正な 
+[CODE(ABNF)[byte-range-spec]] [INS[値を含む [CODE(ABNF)[byte-range-set]]]]
+の受信者は、[INS[その [CODE(ABNF)[byte-range-set]] を含む頭欄を]]無視しなければ'''なりません'''。
+
+> If the last-byte-pos value is absent, or if the value is greater than
+or equal to the current length of the entity-body, last-byte-pos is
+taken to be equal to one less than the current length of the entity-body in bytes.
+
+[CODE(ABNF)[last-byte-pos]] が欠けている場合、あるいは [CODE(ABNF)[entity-body]]
+の現在の長さ以上のときは、 [CODE(ABNF)[last-byte-pos]] は現在の
+[CODE(ABNF)[entity-body]] のバイト長より一小さいものと取ります。
+
+> By its choice of last-byte-pos, a client can limit the number of
+bytes retrieved without knowing the size of the entity.
+
+[CODE(ABNF)[last-byte-pos]] を選ぶことにより、クライアントは実体の寸法を知らなくても取り出すバイト数を制限できます。
+
+>
+-suffix-byte-range-spec = "-" suffix-length
+-suffix-length = 1*DIGIT
+
+> A suffix-byte-range-spec is used to specify the suffix of the
+entity-body, of a length given by the suffix-length value. (That is,
+this form specifies the last N bytes of an entity-body.) If the
+entity is shorter than the specified suffix-length, the entire
+entity-body is used.
+
+[CODE(ABNF)[suffix-byte-range-spec]] は、 [CODE(ABNF)[entity-body]]
+の接尾部を [CIDE(ABNF)[suffix-length]] 値で与えた長さ分指定するのに使います。
+(つまり、この書式は [CODE(ABNF)[entity-body]] の最後の [VAR[N]]
+バイトを指定します。) [[実体]]が指定された [CODE(ABNF)[suffix-length]]
+よりも短い場合には、 [CODE(ABNF)[entity-body]] 全体を使います。
+
+[INS[
+> If a syntactically valid byte-range-set includes at least one byte-range-spec whose first-byte-pos is less than the current length of
+the entity-body, or at least one suffix-byte-range-spec with a non-zero suffix-length, then the byte-range-set is satisfiable.
+Otherwise, the byte-range-set is unsatisfiable. If the byte-range-set
+is unsatisfiable, the server SHOULD return a response with a status
+of 416 (Requested range not satisfiable). Otherwise, the server
+SHOULD return a response with a status of 206 (Partial Content)
+containing the satisfiable ranges of the entity-body.
+
+構文的に妥当な [CODE(ABNF)[byte-range-set]] が [CODE(ABNF)[entity-body]]
+の現在の長さより小さい [CODE(ABNF)[first-byte-pos]] の
+[CODE(ABNF)[byte-range-spec]] を最低一つ含んでいる場合や、
+非零 [CODE(ABNF)[suffix-length]] の [CODE(ABNF)[suffix-byte-range-spec]]
+を最低一つ含んでいる場合には、 [CODE(ABNF)[byte-range-set]] は満足可能です。
+そうでなければ、 [CODE(ABNF)[byte-range-set]] は満足不能です。
+[CODE(ABNF)[byte-range-set]] が満足不能であれば、鯖は状態
+[CODE(HTTP)[[[416]]]] (要求範囲満足不能) で[[応答]]を返す'''べきです'''。
+そうでなければ、鯖は満足可能範囲の [CODE(ABNF)[entity-body]]
+を含んだ [CODE(HTTP)[[[206]]]] (部分内容) 状態で応答を返す'''べきです'''。
+]INS]
+
+> Examples of byte-ranges-specifier values (assuming an entity-body of length 10000):
+
+[CODE(ABNF)[byte-ranges-specifier]] 値の例
+(長さ 10000 の [CODE(ABNF)[entity-body]] を仮定):
+
+>
+-[DEL[o]] [INS[-]] The first 500 bytes (byte offsets 0-499, inclusive): bytes=0-499
+-[DEL[o]] [INS[-]] The second 500 bytes (byte offsets 500-999, inclusive):
+bytes=500-999
+-[DEL[o]] [INS[-]] The final 500 bytes (byte offsets 9500-9999, inclusive):
+bytes=-500
+-[DEL[o]] [INS[-]] Or bytes=9500-
+-[DEL[o]] [INS[-]] The first and last bytes only (bytes 0 and 9999):  bytes=0-0,-1
+-[DEL[o]] [INS[-]] Several legal but not canonical specifications of the second 500
+bytes (byte offsets 500-999, inclusive):
+-- bytes=500-600,601-999
+-- bytes=500-700,601-999
+
+**** RFC 2068 14.36.2・RFC 2616 14.35.2 Range Retrieval Requests
+> HTTP retrieval requests using conditional or unconditional GET
+methods [DEL[may]] [INS[MAY]] request one or more sub-ranges of the entity, instead of
+the entire entity, using the Range request header, which applies to
+the entity returned as the result of the request:
+
+条件付または条件付でない [CODE(HTTP)[[[GET]]]] 方式の HTTP 取り出し要求は、
+要求の結果として返される実体に適用されるものである [CODE(HTTP)[Range]] 要求頭を使って、
+実体全体ではなく、実体の一つ以上の部分範囲を要求して'''構いません'''。
+
+>
+-Range = "Range" ":" ranges-specifier
+
+> A server MAY ignore the Range header. However, HTTP/1.1 origin
+servers and intermediate caches [DEL[SHOULD]] [INS[ought to]] support byte ranges when
+possible, since Range supports efficient recovery from partially
+failed transfers, and supports efficient partial retrieval of large
+entities.
+
+鯖は、 [CODE(HTTP)[Range]] 頭を無視しても'''構いません'''。
+しかし、 HTTP/1.1 [[起点鯖]]と[[中間キャッシュ]]は、
+可能な時にはバイト範囲に対応するべきです。なぜなら、
+[CODE(HTTP)[Range]] は部分的に失敗した転送から効率よく回復することや大きな実体の部分を効率的に取り出すことを支援するからです。
+
+> If the server supports the Range header and the specified range or
+ranges are appropriate for the entity:
+-[DEL[o]] [INS[-]] The presence of a Range header in an unconditional GET modifies
+what is returned if the GET is otherwise successful. In other
+words, the response carries a status code of 206 (Partial
+Content) instead of 200 (OK).
+-[DEL[o]] [INS[-]] The presence of a Range header in a conditional GET (a request
+using one or both of If-Modified-Since and If-None-Match, or
+one or both of If-Unmodified-Since and If-Match) modifies what
+is returned if the GET is otherwise successful and the condition
+is true. It does not affect the 304 (Not Modified) response
+returned if the conditional is false.
+
+鯖が [CODE(HTTP)[Range]] 頭に対応し、指定された範囲(群)がその実体について適当であるなら、
+- 条件付きでない [CODE(HTTP)[GET]] での [CODE(HTTP)[Range]] 頭の存在は、
+[CODE(HTTP)[GET]] が本来成功であるなら返されるものを修飾します。
+言い換えれば、応答は状態符号 [CODE(HTTP)[[[200]]]] (了解) 
+の代わりに [CODE(HTTP)[[[206]]]] (部分内容) となります。
+- 条件付き [CODE(HTTP)[GET]]
+([CODE(HTTP)[[[If-Modified-Since]]]] と
+[CODE(HTTP)[[[If-None-Match]]]] の一方又は両方、もしくは
+[CODE(HTTP)[[[If-Unmodified-Since]]]] と
+[CODE(HTTP)[[[If-Match]]]] の一方又は両方を使った要求) での
+[CODE(HTTP)[Range]] 頭の存在は、 [CODE(HTTP)[GET]]
+が本来成功であって、条件が真であるなら返されるものを修飾します。
+条件が偽であるときに返される [CODE(HTTP)[[[304]]]] (未修正)
+応答には影響しません。
+
+> In some cases, it [DEL[may]] [INS[might]] be more appropriate to use the If-Range
+header (see section 14.27) in addition to the Range header.
+
+場合によっては、 [CODE(HTTP)[Range]] 頭に加えて [CODE(HTTP)[[[If-Range]]]]
+頭もあわせて使ったほうがより適切かもしれません。
+
+> If a proxy that supports ranges receives a Range request, forwards
+the request to an inbound server, and receives an entire entity in
+reply, it SHOULD only return the requested range to its client. It
+SHOULD store the entire received response in its cache[DEL[,]] if that is
+consistent with its cache allocation policies.
+
+範囲に対応した[[串]]が [CODE(HTTP)[Range]] 要求を受信し、
+[[上り]]サーバーに要求を[[転送]]し、返事の実体全体を受信したら、
+クライアントには要求された範囲だけを返す'''べきです'''。
+受信した応答が[[キャッシュ]]割当て方針に沿っているなら、
+受信した応答全体をキャッシュに蓄積する'''べきです'''。
+
+***RFC 2326 (RTSP/1.0) 12.29 Range
+>This request and response header field specifies a range of time.
+The range can be specified in a number of units. This specification
+defines the smpte (Section 3.5), npt (Section 3.6), and clock
+(Section 3.7) range units. Within RTSP, byte ranges [H14.36.1] are
+not meaningful and MUST NOT be used. The header may also contain a
+time parameter in UTC, specifying the time at which the operation is
+to be made effective. Servers supporting the Range header MUST
+understand the NPT range format and SHOULD understand the SMPTE range
+format. The Range response header indicates what range of time is
+actually being played or recorded. If the Range header is given in a
+time format that is not understood, the recipient should return "501
+Not Implemented".
+
+[1] この要求・応答頭欄は時刻の範囲を指定します。
+範囲は単位の数で指定出来ます。
+この仕様書は smpte, npt, clock 範囲単位を定義します。 RTSP
+では、 byte 範囲には意味がなく、使用しては'''いけません'''。
+この頭には time パラメーターも含めて、操作が有効となる UTC 
+での時刻を指定しても構いません。
+Range 頭に対応したサーバーは NPT 範囲形式を理解し'''なければならず'''、
+SMPTE 範囲形式を理解'''するのが良いです'''。 Range
+応答頭は実際に演奏又は録音されている時刻の範囲を示します。 Range
+頭が理解不能な時刻形式で与えられている場合は、受信者は
+「501 未実装」を返すのが良いです。
+
+>Ranges are half-open intervals, including the lower point, but
+excluding the upper point. In other words, a range of a-b starts
+exactly at time a, but stops just before b. Only the start time of a
+media unit such as a video or audio frame is relevant. As an example,
+assume that video frames are generated every 40 ms. A range of 
+10.0-10.1 would include a video frame starting at 10.0 or later time and
+would include a video frame starting at 10.08, even though it lasted
+beyond the interval. A range of 10.0-10.08, on the other hand, would
+exclude the frame at 10.08.
+
+[2] 範囲は半分開間隔で、低位置は含んで高位置を含まないものです。
+つまり、範囲''[VAR[甲]]-[VAR[乙]]''は丁度時刻[VAR[甲]]に始まりますが、時刻[VAR[乙]]の丁度前に止まります。
+動画や音声の[RUBY[枠] [frame]]のような媒体単位の開始時刻だけが適切です。
+例として、動画枠が 40 ms 毎に生成されるとします。範囲 [SAMP[10.0-10.1]]
+は [CODE[10.0]] かそれ以降の時刻に始まる動画枠を含み、
+[CODE[10.08]] に始まる動画枠も (終わるのは間隔を超えますが) 含みます。
+一方範囲 [SAMP[10.0-10.08]] は [CODE[10.08]] の枠を除きます。
+
+-[3] Range = "Range" ":" 1[DEL[\]]#ranges-specifier [ ";" "time" "=" utc-time ]
+-[4] ranges-specifier = npt-range | utc-range | smpte-range
+
+[INS[
+訳注: >>3 にはゴミが入ってます。注意。
+>>3-4 の時刻の定義については [[RFC 2326の日付形式]], 
+[[RFC 2326の時刻形式]]を参照。
+]INS]
+
+>Example:
+-[5]     Range: clock=19960213T143205Z-;time=19970123T143720Z
+
+>The notation is similar to that used for the HTTP/1.1 [2] 
+byte-range header. It allows clients to select an excerpt from the media
+object, and to play from a given point to the end as well as from
+the current location to a given point. The start of playback can be
+scheduled for any time in the future, although a server may refuse
+to keep server resources for extended idle periods.
+
+[6] この記法は HTTP/1.1 の [CODE[byte]] 
+範囲頭に使われているものと似ています。
+これによりクライアントが媒体物体からの除外を選択出来、指定点から演奏して指定点で終えることや現在位置から指定点まで演奏することが出来ます。
+録音再生の開始は将来のどの時刻にも予定出来ますが、サーバーは待機期間を延ばすためのサーバー資源の確保を拒むかもしれません。
+
+** メモ
+
+[7] [SAMP(HTTP)[Range: lats=; lons=100-120 "10.0N 20.0S 100.1E 120W"]] : ''Met-cast HTTP'' <http://zowie.metnet.navy.mil/~spawar/JMV-TNG/Met-Cast-HTTP.html#req.header.accept>。データを要求する地域を表すらしい。 HTTP/1.1 の一応用なんだけど、これじゃあ不適合じゃないのかね?
+
+[8] >>7 最後の[[引用文字列]]の部分が引数にしてあれば、
+「HTTP/1.1 には不適合だけど RTSP を考慮しても整合性のある拡張だ」
+とかなんとか好意的に評価することも可能だけど。。。
+
+[[#comment]]
+
+* メモ
+@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@d1 12
+a12 1
+#?SuikaWiki/0.9 page-icon="HTTP"
+d14 4
+a17 3
+* 仕様書から
+** RFC 2068 (HTTP/1.1) 14.36・RFC 2616 (HTTP/1.1) 14.35 Range
+*** RFC 2068 14.36.1・RFC 2616 14.35.1 Byte Ranges
+d22 3
+a24 4
+すべての [[HTTP]] [[実体]]は HTTP [[メッセージ]]中で[[バイト]]列として表現されますかあr、
+[DFN[バイト範囲]]の概念は任意の HTTP 実体に対して有意です。
+(しかし、すべての[[クライアント]]と[[鯖]]が
+[CODE(ABNF)[byte-range]] 操作に対応する必要はありません。)
+d134 1
+a134 1
+*** RFC 2068 14.36.2・RFC 2616 14.35.2 Range Retrieval Requests
+d154 1
+a154 1
+しかし、 HTTP/1.1 [[起源鯖]]と[[中間キャッシュ]]は、
+d204 1
+a204 1
+**RFC 2326 (RTSP/1.0) 12.29 Range
+d253 2
+a254 2
+>>3-4 の時刻の定義については [[RFC2326の日付形式]], 
+[[RFC2326の時刻形式]]を参照。
+d271 2
+a272 3
+** RFC の部分の License
+[[RFCのライセンス]]
+* メモ
+d279 4
+@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@d10 1
+a10 1
+すべての [[HTTP]] [[実態]]は HTTP [[メッセージ]]中で[[バイト]]列として表現されますかあr、
+@
+

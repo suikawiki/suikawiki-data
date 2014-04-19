@@ -1,0 +1,1763 @@
+head	1.6;
+access;
+symbols
+	suikawiki3-final:1.6
+	before-db-leaffile:1.4
+	after-upgrade-to-suikawiki-3:1.4
+	before-fork-suikawiki3:1.4
+	after-restore-20040122:1.4;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.6
+date	2005.08.23.02.06.43;	author wakaba;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2004.12.08.02.06.33;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2003.12.08.02.03.39;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2003.10.03.02.02.08;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2003.09.13.02.01.46;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.09.03.02.00.12;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.6
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9 page-icon="HTTP"
+
+[[#comment]]
+
+
+* 仕様書から
+
+
+** RFC 2068・2616 (HTTP/1.1) 14.9 Cache-Control
+
+> The Cache-Control general-header field is used to specify directives
+that MUST be obeyed by all caching mechanisms along the
+request/response chain. The directives specify behavior intended to
+prevent caches from adversely interfering with the request or
+response. These directives typically override the default caching
+algorithms. Cache directives are unidirectional in that the presence
+of a directive in a request does not imply that the same directive [DEL[should]] [INS[is to]] be given in the response.
+
+Cache-control 一般頭欄は全てのキャッシュ機構が要求・応答の鎖に沿って
+従わ'''なければならない'''指示を指定するのに使います。
+指示はキャッシュが要求や応答の不利な妨害となるのを防ぐのを
+目的として振舞いを指定します。これらの指示は典型的には既定の
+キャッシュ算法を上書きします。キャッシュ指示は一方向性のものであって、
+要求に指示が使われていることは同じ指示が応答にも使われることを
+暗示するものではありません。
+
+> Note that HTTP/1.0 caches may not implement Cache-Control and [DEL[may]] [INS[might]]
+only implement Pragma: no-cache (see section 14.32).
+
+なお、 HTTP/1.0 キャッシュは Cache-Control を実装しておらず、
+Pragma: no-cache だけを実装しているかもしれませぬ。
+
+> Cache directives [DEL[must]] [INS[MUST]] be passed through by a proxy or gateway
+application, regardless of their significance to that application,
+since the directives [DEL[may]] [INS[might]] be applicable to all recipients along the
+request/response chain. It is not possible to specify a cache-
+directive for a specific cache.
+
+キャッシュ指示は串や関門応用を通り抜けなければ'''なりません'''。
+当該応用に対する意義の如何に関わらずです。なぜなら指示は
+要求・応答の鎖にある全ての受信者に対して適用され得るからです。
+特定キャッシュに対して cache-directive を指定することは不可能です。
+
+>
+- Cache-Control   = "Cache-Control" ":" 1#cache-directive
+- cache-directive = cache-request-directive | cache-response-directive
+
+>
+[DEL[
+
+[PRE[
+          cache-request-directive =
+                            "no-cache" [ "=" <"> 1#field-name <"> ]
+                          | "no-store"
+                          | "max-age" "=" delta-seconds
+                          | "max-stale" [ "=" delta-seconds ]
+                          | "min-fresh" "=" delta-seconds
+                          | "only-if-cached"
+                          | cache-extension
+]PRE]
+]DEL]
+>
+[INS[
+
+[PRE[
+    cache-request-directive =
+           "no-cache"                          ; Section 14.9.1
+         | "no-store"                          ; Section 14.9.2
+         | "max-age" "=" delta-seconds         ; Section 14.9.3, 14.9.4
+         | "max-stale" [ "=" delta-seconds ]   ; Section 14.9.3
+         | "min-fresh" "=" delta-seconds       ; Section 14.9.3
+         | "no-transform"                      ; Section 14.9.5
+         | "only-if-cached"                    ; Section 14.9.4
+         | cache-extension                     ; Section 14.9.6
+]PRE]
+]INS]
+>
+[DEL[
+
+[PRE[
+          cache-response-directive =
+                            "public"
+                          | "private" [ "=" <"> 1#field-name <"> ]
+                          | "no-cache" [ "=" <"> 1#field-name <"> ]
+                          | "no-store"
+                          | "no-transform"
+                          | "must-revalidate"
+                          | "proxy-revalidate"
+                          | "max-age" "=" delta-seconds
+                          | cache-extension
+]PRE]
+]DEL]
+>
+[INS[
+
+[PRE[
+     cache-response-directive =
+           "public"                               ; Section 14.9.1
+         | "private" [ "=" <"> 1#field-name <"> ] ; Section 14.9.1
+         | "no-cache" [ "=" <"> 1#field-name <"> ]; Section 14.9.1
+         | "no-store"                             ; Section 14.9.2
+         | "no-transform"                         ; Section 14.9.5
+         | "must-revalidate"                      ; Section 14.9.4
+         | "proxy-revalidate"                     ; Section 14.9.4
+         | "max-age" "=" delta-seconds            ; Section 14.9.3
+         | "s-maxage" "=" delta-seconds           ; Section 14.9.3
+         | cache-extension                        ; Section 14.9.6
+]PRE]
+]INS]
+>
+- cache-extension = token [ "=" ( token | quoted-string ) ]
+
+> When a directive appears without any 1#field-name parameter, the
+directive applies to the entire request or response. When such a
+directive appears with a 1#field-name parameter, it applies only to
+the named field or fields, and not to the rest of the request or
+response.  This mechanism supports extensibility; implementations of
+future versions of the HTTP protocol [DEL[may]] [INS[might]] apply these directives to
+header fields not defined in HTTP/1.1.
+
+指示が 1#field-name パラメーターなしに現れる時、その指示は
+要求又は応答全体に適用されます。その様な指示が 1#field-name
+パラメーターつきで現れる時、これはその名前の欄(達)にのみ
+適用され、要求や応答の残りには適用されません。この機構は拡張性をもちます。
+将来の版の HTTP プロトコルの実装はこれらの指示を HTTP/1.1
+で定義されていない頭欄に適用するかもしれません。
+
+> The cache-control directives can be broken down into these general
+categories:
+
+cache-control 指示は次の一般分類に分けることが出来ます。
+
+>
+- [DEL[o]] [INS[-]]  Restrictions on what is cach[INS[e]]able; these may only be imposed by the origin server.
+- [DEL[o]] [INS[-]] Restrictions on what may be stored by a cache; these may be imposed
+by either the origin server or the user agent.
+- [DEL[o]] [INS[-]] Modifications of the basic expiration mechanism; these may be
+imposed by either the origin server or the user agent.
+- [DEL[o]] [INS[-]] Controls over cache revalidation and reload; these may only be
+imposed by a user agent.
+- [DEL[o]] [INS[-]] Control over transformation of entities.
+- [DEL[o]] [INS[-]] Extensions to the caching system.
+
+- 何がキャッシュ可能かの制限。これは源サーバーのみ課せる。
+- 何がキャッシュに蓄積可能かの制限。これは源サーバーと利用者代理者の
+両者が課せる。
+- 基本期限機構の編集。これは源サーバーと利用者代理者の
+両者が課せる。
+- キャッシュの再検証と再読み込みの制御。これは利用者代理者のみ課せる。
+- 実体の転送に係る制御
+- キャッシュ系統の拡張
+
+
+*** 14.9.1 What is Cach[INS[e]]able [INS[何がキャッシュ可能か]]
+
+> By default, a response is cach[INS[e]]able if the requirements of the request
+method, request header fields, and the response status indicate that
+it is cach[INS[e]]able. Section 13.4 summarizes these defaults for
+cach[INS[e]]ability. The following Cache-Control response directives allow an
+origin server to override the default cach[INS[e]]ability of a response:
+
+既定では、応答はその要求 method, 要求頭欄及び応用状態がキャッシュ可能であると示していればキャッシュ可能です。
+13.4節がキャッシュ可能性の既定をまとめています。
+次の [CODE(HTTP)[Cache-Control]] 応答指示によって、
+応答の既定のキャッシュ可能性を起源サーバーが上書きすることができます。
+
+>
+:public:
+Indicates that the response [DEL[is cachable]] [INS[MAY be cached]] by any cache, even if it
+would normally be non-cach[INS[e]]able or cach[INS[e]]able only within a non-shared
+cache. (See also Authorization, section 14.8, for additional
+details.)
+
+その応答は、通常ならキャッシュ可能でないか又は非共有キャッシュ中でのみキャッシュ可能なキャッシュを含めてどんなキャッシュでもキャッシュして'''構いません'''。
+(追加の詳細については14.8節の [CODE(HTTP)[[[Authorization]]]] をご覧下さい。)
+
+>
+:private:
+Indicates that all or part of the response message is intended for a
+single user and MUST NOT be cached by a shared cache. This allows an
+origin server to state that the specified parts of the response are
+intended for only one user and are not a valid response for requests
+by other users. A private (non-shared) cache [DEL[may]] [INS[MAY]] cache the response.
+
+応答メッセージの全部又は一部が単独の利用者向けのものであって、
+共有キャッシュはキャッシュしては'''ならない'''ことを示します。
+これによって起源サーバーは、応答の特定の部分が唯一の利用者向けのものであって他の利用者による要求に対する妥当な応答ではないと表明できます。
+私的 (非共有) キャッシュは応答をキャッシュしても'''構いません'''。
+
+> Note: This usage of the word private only controls where the
+response may be cached, and cannot ensure the privacy of the
+message content.
+
+注意 : 単語 [CODE(HTTP)[private]] のこの用法は応答をキャッシュしても良いかを制御するだけであって、
+メッセージ内容のプライバシーを保護することは出来ません。
+
+>
+:no-cache:[DEL[Indicates that all or part of the response message MUST NOT be cached anywhere.]] [INS[If the no-cache directive does not specify a field-name, then a cache MUST NOT use the response to satisfy a subsequent request without successful revalidation with the origin server.]]
+This allows an origin server to prevent caching even by
+caches that have been configured to return stale responses to client
+requests.
+
+;[DEL[応答メッセージの全部又は一部がどこにおいてもキャッシュ'''してはならない'''ことを示します。]] [INS[[CODE(HTTP)[no-cache]] 指令が [CODE(ABNF)[field-name]] を指定していなければ、キャッシュは起源サーバーの再検証で成功を得なければ後続の要求を満足するためにこの応答を使っては'''なりません'''。]]
+この指令により、起源サーバーは、
+クライアントの要求に対して腐った応答を返すように設定されているキャッシュでさえキャッシュすることを防ぐことができます。
+
+[INS[
+
+> If the no-cache directive does specify one or more field-names,
+then a cache MAY use the response to satisfy a subsequent request,
+subject to any other restrictions on caching. However, the
+specified field-name(s) MUST NOT be sent in the response to a
+subsequent request without successful revalidation with the origin
+server. This allows an origin server to prevent the re-use of
+certain header fields in a response, while still allowing caching
+of the rest of the response.
+
+[CODE(HTTP)[no-cache]] 指令が1つ以上の [CODE(ABNF)[field-name]]
+を指定していれば、キャッシュは、キャッシュに関する他の制約の対象である
+後続の要求を満足するのにこの応答を使っても'''構いません'''。
+しかし、指定された [CODE(ABNF)[field-name]]
+は、起源サーバーによる再検証で成功を得ない限り後続の要求に対する応答では送っては'''なりません'''。
+これによって、起源サーバーは、応答中の特定の頭欄が再利用されることを防ぎつつも、
+応答の残りをキャッシュすることを認めることが出来ます。
+]INS]
+
+> Note: Most HTTP/1.0 caches will not recognize or obey this directive.
+
+注意 : ほとんどの HTTP/1.0 キャッシュはこの指令を認識も従いもしません。
+
+
+*** 14.9.2 What May be Stored by Caches [INS[キャッシュは何を蓄積してもよいか]]
+
+>
+:[INS[no-store]]:
+The purpose of the no-store directive is to prevent the inadvertent
+release or retention of sensitive information (for example, on backup
+tapes). The no-store directive applies to the entire message, and [DEL[may]] [INS[MAY]]
+be sent either in a response or in a request. If sent in a request, a
+cache MUST NOT store any part of either this request or any response
+to it. If sent in a response, a cache MUST NOT store any part of
+either this response or the request that elicited it. This directive
+applies to both non-shared and shared caches. "MUST NOT store" in
+this context means that the cache MUST NOT intentionally store the
+information in non-volatile storage, and MUST make a best-effort
+attempt to remove the information from volatile storage as promptly
+as possible after forwarding it.
+
+[CODE(HTTP)[no-store]] 指令の目的は、 (例えば、バックアップ・テープ上に)
+繊細な情報が不注意で放出・記憶されるのを防ぐことです。
+[CODE(HTTP)[no-store]] 指令はメッセージ全体に適用され、
+応答中でも要求中でも送信して'''構いません'''。要求中で送る場合、
+キャッシュはこの要求及びそれに対する応答のどの部分も蓄積しては'''なりません'''。
+この指令は、非共有キャッシュにも共有キャッシュにも適用されます。
+この文脈で、「蓄積'''してはならない'''」とは。
+キャッシュが情報を非揮発性記憶装置に意図的に蓄積しては'''ならず'''、
+その情報を送信した後に可及的速やかに揮発性の蓄積装置からも消去する最善の努力を行わなければ'''ならない'''ことを意味します。
+
+> Even when this directive is associated with a response, users [DEL[may]] [INS[might]]
+explicitly store such a response outside of the caching system (e.g.,
+with a "Save As" dialog). History buffers [DEL[may]] [INS[MAY]] store such responses as
+part of their normal operation.
+
+この指令が応答に関連付けられている時であっても、利用者はそのような応答をキャッシュ・システムの外部で
+(例えば「名前をつけて保存」対話によって)
+陽に蓄積しても構いません。記憶バッファーはそのような応答を通常の操作で蓄積して構いません。
+
+> The purpose of this directive is to meet the stated requirements of
+certain users and service authors who are concerned about accidental
+releases of information via unanticipated accesses to cache data
+structures. While the use of this directive [DEL[may]] [INS[might]] improve privacy in
+some cases, we caution that it is NOT in any way a reliable or
+sufficient mechanism for ensuring privacy. In particular, malicious
+or compromised caches [DEL[may]] [INS[might]] not recognize or obey this directive[DEL[;]][INS[,]] and
+communications networks [DEL[may]] [INS[might]] be vulnerable to eavesdropping.
+
+この指令に目的は、キャッシュのデータ構造に対する予想外の接続によって情報が偶発的に放出されることを心配する利用者やサービス著者の要求に応えることです。
+この指令の使用は幾つかの場合に個人情報の扱いを改善するかもしれませんが、
+プライバシーの確保には信頼可能で十分な仕組みでは'''ない'''ことを警告します。
+特に、悪意のあるキャッシュや怪しげなキャッシュは、
+この指令を認識したりしたがったりしないかもしれず、
+通信網には盗聴の危険があるかもしれません。
+
+
+*** 14.9.3 Modifications of the Basic Expiration Mechanism [INS[基本満期機構の修正]]
+
+> The expiration time of an entity [DEL[may]] [INS[MAY]] be specified by the origin
+server using the Expires header (see section 14.21). Alternatively,
+it [DEL[may]] [INS[MAY]] be specified using the max-age directive in a response. [INS[When the max-age cache-control directive is present in a cached response, the response is stale if its current age is greater than the age value given (in seconds) at the time of a new request for that resource. The max-age directive on a response implies that the response is cacheable (i.e., "public") unless some other, more restrictive cache directive is also present.]]
+
+> If a response includes both an Expires header and a max-age
+directive, the max-age directive overrides the Expires header, even
+if the Expires header is more restrictive. This rule allows an origin
+server to provide, for a given response, a longer expiration time to
+an HTTP/1.1 (or later) cache than to an HTTP/1.0 cache. This [DEL[may]] [INS[might]] be
+useful if certain HTTP/1.0 caches improperly calculate ages or
+expiration times, perhaps due to desynchronized clocks.
+
+[INS[
+
+> Many HTTP/1.0 cache implementations will treat an Expires value that
+is less than or equal to the response Date value as being equivalent
+to the Cache-Control response directive "no-cache". If an HTTP/1.1
+cache receives such a response, and the response does not include a
+Cache-Control header field, it SHOULD consider the response to be
+non-cacheable in order to retain compatibility with HTTP/1.0 servers.
+
+> Note: An origin server might wish to use a relatively new HTTP
+cache control feature, such as the "private" directive, on a
+network including older caches that do not understand that
+feature. The origin server will need to combine the new feature
+with an Expires field whose value is less than or equal to the
+Date value. This will prevent older caches from improperly
+caching the response.
+
+>
+:s-maxage:
+If a response includes an s-maxage directive, then for a shared
+cache (but not for a private cache), the maximum age specified by
+this directive overrides the maximum age specified by either the
+max-age directive or the Expires header. The s-maxage directive
+also implies the semantics of the proxy-revalidate directive (see
+section 14.9.4), i.e., that the shared cache must not use the
+entry after it becomes stale to respond to a subsequent request
+without first revalidating it with the origin server. The s-
+maxage directive is always ignored by a private cache.
+]INS]
+
+> Note[DEL[:]] [INS[that]] most older caches, not compliant with this specification,
+do not implement any [DEL[Cache-Control]] [INS[cache-control]] directives.  An origin server
+wishing to use a [DEL[Cache-Control]] [INS[cache-control]] directive that restricts, but does not
+prevent, caching by an HTTP/1.1-compliant cache [DEL[may]] [INS[MAY]] exploit the
+requirement that the max-age directive overrides the Expires header,
+and the fact that pre-HTTP/1.1-compliant caches do not observe the
+max-age directive.
+
+> Other directives allow a[DEL[n]] user agent to modify the basic expiration
+mechanism. These directives [DEL[may]] [INS[MAY]] be specified on a request:
+
+>
+:max-age:
+Indicates that the client is willing to accept a response whose age
+is no greater than the specified time in seconds. Unless max-stale
+directive is also included, the client is not willing to accept a
+stale response.
+
+>
+:min-fresh:
+Indicates that the client is willing to accept a response whose
+freshness lifetime is no less than its current age plus the
+specified time in seconds. That is, the client wants a response
+that will still be fresh for at least the specified number of
+seconds.
+
+>
+:max-stale:
+Indicates that the client is willing to accept a response that has
+exceeded its expiration time. If max-stale is assigned a value,
+then the client is willing to accept a response that has exceeded
+its expiration time by no more than the specified number of
+seconds. If no value is assigned to max-stale, then the client is
+willing to accept a stale response of any age.
+
+> If a cache returns a stale response, either because of a max-stale
+directive on a request, or because the cache is configured to
+override the expiration time of a response, the cache MUST attach a
+Warning header to the stale response, using Warning [INS[1]]10 (Response is
+stale).
+
+[INS[
+
+> A cache MAY be configured to return stale responses without
+validation, but only if this does not conflict with any "MUST"-level
+requirements concerning cache validation (e.g., a "must-revalidate"
+cache-control directive).
+> If both the new request and the cached entry include "max-age"
+directives, then the lesser of the two values is used for determining
+the freshness of the cached entry for that request.
+]INS]
+
+
+*** 14.9.4 Cache Revalidation and Reload Controls [INS[キャッシュ再検証及び再読み込み制御]]
+
+> Sometimes a[DEL[n]] user agent [DEL[may]] [INS[might]] want or need to insist that a cache
+revalidate its cache entry with the origin server (and not just with
+the next cache along the path to the origin server), or to reload its
+cache entry from the origin server. End-to-end revalidation [DEL[may]] [INS[might]] be
+necessary if either the cache or the origin server has overestimated
+the expiration time of the cached response. End-to-end reload may be
+necessary if the cache entry has become corrupted for some reason.
+
+> End-to-end revalidation may be requested either when the client does
+not have its own local cached copy, in which case we call it
+"unspecified end-to-end revalidation", or when the client does have a
+local cached copy, in which case we call it "specific end-to-end
+revalidation."
+
+> The client can specify these three kinds of action using Cache-Control request directives:
+
+>
+:End-to-end reload:
+The request includes a "no-cache" [DEL[Cache-Control]] [INS[cache-control]] directive or, for
+compatibility with HTTP/1.0 clients, "Pragma: no-cache". [DEL[No field]] [INS[Field]]
+names [DEL[may]] [INS[MUST NOT]] be included with the no-cache directive in a request. The
+server MUST NOT use a cached copy when responding to such a
+request.
+
+>
+:Specific end-to-end revalidation:
+The request includes a "max-age=0" [DEL[Cache-Control]] [INS[cache-control] directive, which]]
+forces each cache along the path to the origin server to revalidate
+its own entry, if any, with the next cache or server. The initial
+request includes a cache-validating conditional with the client's
+current validator.
+
+>
+:Unspecified end-to-end revalidation:
+The request includes "max-age=0" [DEL[Cache-Control]] [INS[cache-control] directive, which]]
+forces each cache along the path to the origin server to revalidate
+its own entry, if any, with the next cache or server. The initial
+request does not include a cache-validating conditional; the first
+cache along the path (if any) that holds a cache entry for this
+resource includes a cache-validating conditional with its current
+validator.
+
+>
+:[INS[max-age]]:
+When an intermediate cache is forced, by means of a max-age=0
+directive, to revalidate its own cache entry, and the client has
+supplied its own validator in the request, the supplied validator [DEL[may]] [INS[might]]
+differ from the validator currently stored with the cache entry. In
+this case, the cache [DEL[may]] [INS[might]] use either validator in making its own
+request without affecting semantic transparency.
+
+However, the choice of validator may affect performance. The best
+approach is for the intermediate cache to use its own validator when
+making its request. If the server replies with 304 (Not Modified),
+then the cache should return its now validated copy to the client
+with a 200 (OK) response. If the server replies with a new entity and
+cache validator, however, the intermediate cache [DEL[should]] [INS[can]] compare the
+returned validator with the one provided in the client's request,
+using the strong comparison function. If the client's validator is
+equal to the origin server's, then the intermediate cache simply
+returns 304 (Not Modified). Otherwise, it returns the new entity with
+a 200 (OK) response.
+
+If a request includes the no-cache directive, it [DEL[should not]] [INS[SHOULD NOT]] include
+min-fresh, max-stale, or max-age.
+
+>
+:[INS[only-if-cached]]:
+In some cases, such as times of extremely poor network connectivity,
+a client may want a cache to return only those responses that it
+currently has stored, and not to reload or revalidate with the origin
+server. To do this, the client may include the only-if-cached
+directive in a request. If it receives this directive, a cache SHOULD
+either respond using a cached entry that is consistent with the other
+constraints of the request, or respond with a 504 (Gateway Timeout)
+status. However, if a group of caches is being operated as a unified
+system with good internal connectivity, such a request MAY be
+forwarded within that group of caches.
+
+>
+:[INS[must-revalidate]]:
+Because a cache [DEL[may]] [INS[MAY]] be configured to ignore a server's specified
+expiration time, and because a client request [DEL[may]] [INS[MAY]] include a max-stale
+directive (which has a similar effect), the protocol also includes a
+mechanism for the origin server to require revalidation of a cache
+entry on any subsequent use. When the must-revalidate directive is
+present in a response received by a cache, that cache MUST NOT use
+the entry after it becomes stale to respond to a subsequent request
+without first revalidating it with the origin server. (I.e., the
+cache [DEL[must]] [INS[MUST]] do an end-to-end revalidation every time, if, based solely
+on the origin server's Expires or max-age value, the cached response is stale.)
+
+> The must-revalidate directive is necessary to support reliable
+operation for certain protocol features. In all circumstances an
+HTTP/1.1 cache MUST obey the must-revalidate directive; in
+particular, if the cache cannot reach the origin server for any
+reason, it MUST generate a 504 (Gateway Timeout) response.
+
+> Servers [DEL[should]] [INS[SHOULD]] send the must-revalidate directive if and only if
+failure to revalidate a request on the entity could result in
+incorrect operation, such as a silently unexecuted financial
+transaction.  Recipients MUST NOT take any automated action that
+violates this directive, and MUST NOT automatically provide an
+unvalidated copy of the entity if revalidation fails.
+
+> Although this is not recommended, user agents operating under severe
+connectivity constraints [DEL[may]] [INS[MAY]] violate this directive but, if so, MUST
+explicitly warn the user that an unvalidated response has been
+provided.  The warning MUST be provided on each unvalidated access,
+and SHOULD require explicit user confirmation.
+
+>
+:[INS[proxy-revalidate]]:
+The proxy-revalidate directive has the same meaning as the must-revalidate
+directive, except that it does not apply to non-shared
+user agent caches. It can be used on a response to an authenticated
+request to permit the user's cache to store and later return the
+response without needing to revalidate it (since it has already been
+authenticated once by that user), while still requiring proxies that
+service many users to revalidate each time (in order to make sure
+that each user has been authenticated). Note that such authenticated
+responses also need the public cache control directive in order to
+allow them to be cached at all.
+
+
+*** 14.9.5 No-Transform Directive [INS[非変換指令]]
+
+>
+:[INS[no-transform]]:
+Implementers of intermediate caches (proxies) have found it useful to
+convert the media type of certain entity bodies. A [INS[non-transparent]]
+proxy might, for example, convert between image formats in order to save cache space
+or to reduce the amount of traffic on a slow link. [DEL[HTTP has to date been silent on these transformations.]]
+
+> Serious operational problems [DEL[have already occurred]] [INS[occur]], however, when
+these transformations [DEL[have been]] [INS[are]] applied to entity bodies intended for
+certain kinds of applications. For example, applications for medical
+imaging, scientific data analysis and those using end-to-end
+authentication, all depend on receiving an entity body that is bit
+for bit identical to the original entity-body.
+
+> Therefore, if a response includes the no-transform directive, an
+intermediate cache or proxy MUST NOT change those headers that are
+listed in section 13.5.2 as being subject to the no-transform
+directive.  This implies that the cache or proxy [DEL[must not]] [INS[MUST NOT]]
+change any aspect of the entity-body that is specified by these headers[DEL[.]][INS[,]] including the value of the entity-body itself.
+
+
+*** 14.9.6 Cache Control Extensions [INS[キャッシュ制御拡張]]
+
+> The Cache-Control header field can be extended through the use of one
+or more cache-extension tokens, each with an optional assigned value.
+Informational extensions (those which do not require a change in
+cache behavior) [DEL[may]] [INS[MAY]] be added without changing the semantics of other
+directives. Behavioral extensions are designed to work by acting as
+modifiers to the existing base of cache directives. Both the new
+directive and the standard directive are supplied, such that
+applications which do not understand the new directive will default
+to the behavior specified by the standard directive, and those that
+understand the new directive will recognize it as modifying the
+requirements associated with the standard directive.  In this way,
+extensions to the [DEL[Cache-Control]] [INS[cache-control]] directives can be made without
+requiring changes to the base protocol.
+
+> This extension mechanism depends on a[INS[n]] HTTP cache obeying all of the
+cache-control directives defined for its native HTTP-version, obeying
+certain extensions, and ignoring all directives that it does not
+understand.
+
+> For example, consider a hypothetical new response directive 
+called [DEL["]]community[DEL["]] which acts as a modifier to the [DEL["]]private[DEL["]] directive. We
+define this new directive to mean that, in addition to any non-shared
+cache, any cache which is shared only by members of the community
+named within its value may cache the response. An origin server
+wishing to allow the [DEL["]]UCI[DEL["]] community to use an otherwise private
+response in their shared cache(s) [DEL[may]] [INS[could]] do so by including
+
+>
+- [SAMP(HTTP)[Cache-Control: private, community="UCI"]]
+
+> A cache seeing this header field will act correctly even if the cache
+does not understand the [DEL["]]community[DEL["]] cache-extension, since it will
+also see and understand the [DEL["]]private[DEL["]] directive and thus default to
+the safe behavior.
+
+> Unrecognized cache-directives MUST be ignored; it is assumed that any
+cache-directive likely to be unrecognized by an HTTP/1.1 cache will
+be combined with standard directives (or the response's default
+cach[INS[e]]ability) such that the cache behavior will remain minimally
+correct even if the cache does not understand the extension(s).
+
+
+** RFC の部分の License
+
+[[RFCのライセンス]]
+
+
+* メモ
+
+- [1] [[Google]] からの応答に [CODE(HTTP)[x-gzip-ok=""]] ってのがついてました。
+- [2] ''Q234067 - HOWTO: Prevent Caching in Internet Explorer'' <http://web.archive.org/web/20010810040821/support.microsoft.com/support/kb/articles/Q234/0/67.ASP>: [[M$]] も [CODE(HTTP)[[[Pragma]]]] より [CODE(HTTP)[Cache-Control]] を推奨していました。ところで、この文書によると、 [CODE(HTTP)[Cache-Control: no-cache]] には対応しているけど [CODE(HTML)[<[CODE(HTMLe)[[[meta]]]] [CODE(HTMLa)[[[http-equiv]]]]="cache-control" [CODE(HTMLa)[[[content]]]]="no-cache">]] には対応していないとか。妥当な態度ですね。
+
+[3]
+[CODE(HTTP example code)@@en[Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0]]
+[SRC@@en[[[XOOPS]]]]
+
+([[名無しさん]] [sage] [WEAK[2005-08-18 10:50:21 +00:00]])
+
+@
+
+
+1.5
+log
+@auto-committed
+@
+text
+@d1 591
+a591 552
+#?SuikaWiki/0.9 page-icon="HTTP"
+[[#comment]]
+* 仕様書から
+** RFC 2068・2616 (HTTP/1.1) 14.9 Cache-Control
+>The Cache-Control general-header field is used to specify directives
+that MUST be obeyed by all caching mechanisms along the
+request/response chain. The directives specify behavior intended to
+prevent caches from adversely interfering with the request or
+response. These directives typically override the default caching
+algorithms. Cache directives are unidirectional in that the presence
+of a directive in a request does not imply that the same directive [DEL[should]] [INS[is to]] be given in the response.
+
+Cache-control 一般頭欄は全てのキャッシュ機構が要求・応答の鎖に沿って
+従わ'''なければならない'''指示を指定するのに使います。
+指示はキャッシュが要求や応答の不利な妨害となるのを防ぐのを
+目的として振舞いを指定します。これらの指示は典型的には既定の
+キャッシュ算法を上書きします。キャッシュ指示は一方向性のものであって、
+要求に指示が使われていることは同じ指示が応答にも使われることを
+暗示するものではありません。
+
+>Note that HTTP/1.0 caches may not implement Cache-Control and [DEL[may]] [INS[might]]
+only implement Pragma: no-cache (see section 14.32).
+
+なお、 HTTP/1.0 キャッシュは Cache-Control を実装しておらず、
+Pragma: no-cache だけを実装しているかもしれませぬ。
+
+>Cache directives [DEL[must]] [INS[MUST]] be passed through by a proxy or gateway
+application, regardless of their significance to that application,
+since the directives [DEL[may]] [INS[might]] be applicable to all recipients along the
+request/response chain. It is not possible to specify a cache-
+directive for a specific cache.
+
+キャッシュ指示は串や関門応用を通り抜けなければ'''なりません'''。
+当該応用に対する意義の如何に関わらずです。なぜなら指示は
+要求・応答の鎖にある全ての受信者に対して適用され得るからです。
+特定キャッシュに対して cache-directive を指定することは不可能です。
+
+>
+- Cache-Control   = "Cache-Control" ":" 1#cache-directive
+- cache-directive = cache-request-directive | cache-response-directive
+
+>
+[DEL[
+[PRE[
+          cache-request-directive =
+                            "no-cache" [ "=" <"> 1#field-name <"> ]
+                          | "no-store"
+                          | "max-age" "=" delta-seconds
+                          | "max-stale" [ "=" delta-seconds ]
+                          | "min-fresh" "=" delta-seconds
+                          | "only-if-cached"
+                          | cache-extension
+]PRE]
+]DEL]
+[INS[
+[PRE[
+    cache-request-directive =
+           "no-cache"                          ; Section 14.9.1
+         | "no-store"                          ; Section 14.9.2
+         | "max-age" "=" delta-seconds         ; Section 14.9.3, 14.9.4
+         | "max-stale" [ "=" delta-seconds ]   ; Section 14.9.3
+         | "min-fresh" "=" delta-seconds       ; Section 14.9.3
+         | "no-transform"                      ; Section 14.9.5
+         | "only-if-cached"                    ; Section 14.9.4
+         | cache-extension                     ; Section 14.9.6
+]PRE]
+]INS]
+>
+[DEL[
+[PRE[
+          cache-response-directive =
+                            "public"
+                          | "private" [ "=" <"> 1#field-name <"> ]
+                          | "no-cache" [ "=" <"> 1#field-name <"> ]
+                          | "no-store"
+                          | "no-transform"
+                          | "must-revalidate"
+                          | "proxy-revalidate"
+                          | "max-age" "=" delta-seconds
+                          | cache-extension
+]PRE]
+]DEL]
+[INS[
+[PRE[
+     cache-response-directive =
+           "public"                               ; Section 14.9.1
+         | "private" [ "=" <"> 1#field-name <"> ] ; Section 14.9.1
+         | "no-cache" [ "=" <"> 1#field-name <"> ]; Section 14.9.1
+         | "no-store"                             ; Section 14.9.2
+         | "no-transform"                         ; Section 14.9.5
+         | "must-revalidate"                      ; Section 14.9.4
+         | "proxy-revalidate"                     ; Section 14.9.4
+         | "max-age" "=" delta-seconds            ; Section 14.9.3
+         | "s-maxage" "=" delta-seconds           ; Section 14.9.3
+         | cache-extension                        ; Section 14.9.6
+]PRE]
+]INS]
+- cache-extension = token [ "=" ( token | quoted-string ) ]
+
+> When a directive appears without any 1#field-name parameter, the
+directive applies to the entire request or response. When such a
+directive appears with a 1#field-name parameter, it applies only to
+the named field or fields, and not to the rest of the request or
+response.  This mechanism supports extensibility; implementations of
+future versions of the HTTP protocol [DEL[may]] [INS[might]] apply these directives to
+header fields not defined in HTTP/1.1.
+
+指示が 1#field-name パラメーターなしに現れる時、その指示は
+要求又は応答全体に適用されます。その様な指示が 1#field-name
+パラメーターつきで現れる時、これはその名前の欄(達)にのみ
+適用され、要求や応答の残りには適用されません。この機構は拡張性をもちます。
+将来の版の HTTP プロトコルの実装はこれらの指示を HTTP/1.1
+で定義されていない頭欄に適用するかもしれません。
+
+>The cache-control directives can be broken down into these general
+categories:
+
+cache-control 指示は次の一般分類に分けることが出来ます。
+
+>
+- [DEL[o]] [INS[-]]  Restrictions on what is cach[INS[e]]able; these may only be imposed by the origin server.
+- [DEL[o]] [INS[-]] Restrictions on what may be stored by a cache; these may be imposed
+by either the origin server or the user agent.
+- [DEL[o]] [INS[-]] Modifications of the basic expiration mechanism; these may be
+imposed by either the origin server or the user agent.
+- [DEL[o]] [INS[-]] Controls over cache revalidation and reload; these may only be
+imposed by a user agent.
+- [DEL[o]] [INS[-]] Control over transformation of entities.
+- [DEL[o]] [INS[-]] Extensions to the caching system.
+
+- 何がキャッシュ可能かの制限。これは源サーバーのみ課せる。
+- 何がキャッシュに蓄積可能かの制限。これは源サーバーと利用者代理者の
+両者が課せる。
+- 基本期限機構の編集。これは源サーバーと利用者代理者の
+両者が課せる。
+- キャッシュの再検証と再読み込みの制御。これは利用者代理者のみ課せる。
+- 実体の転送に係る制御
+- キャッシュ系統の拡張
+
+***14.9.1 What is Cach[INS[e]]able [INS[何がキャッシュ可能か]]
+> By default, a response is cach[INS[e]]able if the requirements of the request
+method, request header fields, and the response status indicate that
+it is cach[INS[e]]able. Section 13.4 summarizes these defaults for
+cach[INS[e]]ability. The following Cache-Control response directives allow an
+origin server to override the default cach[INS[e]]ability of a response:
+
+既定では、応答はその要求 method, 要求頭欄及び応用状態がキャッシュ可能であると示していればキャッシュ可能です。
+13.4節がキャッシュ可能性の既定をまとめています。
+次の [CODE(HTTP)[Cache-Control]] 応答指示によって、
+応答の既定のキャッシュ可能性を起源サーバーが上書きすることができます。
+
+>
+:public: 
+Indicates that the response [DEL[is cachable]] [INS[MAY be cached]] by any cache, even if it
+would normally be non-cach[INS[e]]able or cach[INS[e]]able only within a non-shared
+cache. (See also Authorization, section 14.8, for additional
+details.)
+
+その応答は、通常ならキャッシュ可能でないか又は非共有キャッシュ中でのみキャッシュ可能なキャッシュを含めてどんなキャッシュでもキャッシュして'''構いません'''。
+(追加の詳細については14.8節の [CODE(HTTP)[[[Authorization]]]] をご覧下さい。)
+
+>
+:private: 
+Indicates that all or part of the response message is intended for a
+single user and MUST NOT be cached by a shared cache. This allows an
+origin server to state that the specified parts of the response are
+intended for only one user and are not a valid response for requests
+by other users. A private (non-shared) cache [DEL[may]] [INS[MAY]] cache the response.
+
+応答メッセージの全部又は一部が単独の利用者向けのものであって、
+共有キャッシュはキャッシュしては'''ならない'''ことを示します。
+これによって起源サーバーは、応答の特定の部分が唯一の利用者向けのものであって他の利用者による要求に対する妥当な応答ではないと表明できます。
+私的 (非共有) キャッシュは応答をキャッシュしても'''構いません'''。
+
+>Note: This usage of the word private only controls where the
+response may be cached, and cannot ensure the privacy of the
+message content.
+
+注意 : 単語 [CODE(HTTP)[private]] のこの用法は応答をキャッシュしても良いかを制御するだけであって、
+メッセージ内容のプライバシーを保護することは出来ません。
+
+>
+:no-cache: [DEL[Indicates that all or part of the response message MUST NOT be cached anywhere.]] [INS[If the no-cache directive does not specify a field-name, then a cache MUST NOT use the response to satisfy a subsequent request without successful revalidation with the origin server.]]
+This allows an origin server to prevent caching even by
+caches that have been configured to return stale responses to client
+requests.
+
+;[DEL[応答メッセージの全部又は一部がどこにおいてもキャッシュ'''してはならない'''ことを示します。]] [INS[[CODE(HTTP)[no-cache]] 指令が [CODE(ABNF)[field-name]] を指定していなければ、キャッシュは起源サーバーの再検証で成功を得なければ後続の要求を満足するためにこの応答を使っては'''なりません'''。]]
+この指令により、起源サーバーは、
+クライアントの要求に対して腐った応答を返すように設定されているキャッシュでさえキャッシュすることを防ぐことができます。
+
+[INS[
+>If the no-cache directive does specify one or more field-names,
+then a cache MAY use the response to satisfy a subsequent request,
+subject to any other restrictions on caching. However, the
+specified field-name(s) MUST NOT be sent in the response to a
+subsequent request without successful revalidation with the origin
+server. This allows an origin server to prevent the re-use of
+certain header fields in a response, while still allowing caching
+of the rest of the response.
+
+[CODE(HTTP)[no-cache]] 指令が1つ以上の [CODE(ABNF)[field-name]]
+を指定していれば、キャッシュは、キャッシュに関する他の制約の対象である
+後続の要求を満足するのにこの応答を使っても'''構いません'''。
+しかし、指定された [CODE(ABNF)[field-name]]
+は、起源サーバーによる再検証で成功を得ない限り後続の要求に対する応答では送っては'''なりません'''。
+これによって、起源サーバーは、応答中の特定の頭欄が再利用されることを防ぎつつも、
+応答の残りをキャッシュすることを認めることが出来ます。
+]INS]
+
+>Note: Most HTTP/1.0 caches will not recognize or obey this directive.
+
+注意 : ほとんどの HTTP/1.0 キャッシュはこの指令を認識も従いもしません。
+
+***14.9.2 What May be Stored by Caches [INS[キャッシュは何を蓄積してもよいか]]
+>
+:[INS[no-store]]: 
+The purpose of the no-store directive is to prevent the inadvertent
+release or retention of sensitive information (for example, on backup
+tapes). The no-store directive applies to the entire message, and [DEL[may]] [INS[MAY]]
+be sent either in a response or in a request. If sent in a request, a
+cache MUST NOT store any part of either this request or any response
+to it. If sent in a response, a cache MUST NOT store any part of
+either this response or the request that elicited it. This directive
+applies to both non-shared and shared caches. "MUST NOT store" in
+this context means that the cache MUST NOT intentionally store the
+information in non-volatile storage, and MUST make a best-effort
+attempt to remove the information from volatile storage as promptly
+as possible after forwarding it.
+
+[CODE(HTTP)[no-store]] 指令の目的は、 (例えば、バックアップ・テープ上に)
+繊細な情報が不注意で放出・記憶されるのを防ぐことです。
+[CODE(HTTP)[no-store]] 指令はメッセージ全体に適用され、
+応答中でも要求中でも送信して'''構いません'''。要求中で送る場合、
+キャッシュはこの要求及びそれに対する応答のどの部分も蓄積しては'''なりません'''。
+この指令は、非共有キャッシュにも共有キャッシュにも適用されます。
+この文脈で、「蓄積'''してはならない'''」とは。
+キャッシュが情報を非揮発性記憶装置に意図的に蓄積しては'''ならず'''、
+その情報を送信した後に可及的速やかに揮発性の蓄積装置からも消去する最善の努力を行わなければ'''ならない'''ことを意味します。
+
+>Even when this directive is associated with a response, users [DEL[may]] [INS[might]]
+explicitly store such a response outside of the caching system (e.g.,
+with a "Save As" dialog). History buffers [DEL[may]] [INS[MAY]] store such responses as
+part of their normal operation.
+
+この指令が応答に関連付けられている時であっても、利用者はそのような応答をキャッシュ・システムの外部で
+(例えば「名前をつけて保存」対話によって)
+陽に蓄積しても構いません。記憶バッファーはそのような応答を通常の操作で蓄積して構いません。
+
+>The purpose of this directive is to meet the stated requirements of
+certain users and service authors who are concerned about accidental
+releases of information via unanticipated accesses to cache data
+structures. While the use of this directive [DEL[may]] [INS[might]] improve privacy in
+some cases, we caution that it is NOT in any way a reliable or
+sufficient mechanism for ensuring privacy. In particular, malicious
+or compromised caches [DEL[may]] [INS[might]] not recognize or obey this directive[DEL[;]][INS[,]] and
+communications networks [DEL[may]] [INS[might]] be vulnerable to eavesdropping.
+
+この指令に目的は、キャッシュのデータ構造に対する予想外の接続によって情報が偶発的に放出されることを心配する利用者やサービス著者の要求に応えることです。
+この指令の使用は幾つかの場合に個人情報の扱いを改善するかもしれませんが、
+プライバシーの確保には信頼可能で十分な仕組みでは'''ない'''ことを警告します。
+特に、悪意のあるキャッシュや怪しげなキャッシュは、
+この指令を認識したりしたがったりしないかもしれず、
+通信網には盗聴の危険があるかもしれません。
+
+***14.9.3 Modifications of the Basic Expiration Mechanism [INS[基本満期機構の修正]]
+>
+The expiration time of an entity [DEL[may]] [INS[MAY]] be specified by the origin
+server using the Expires header (see section 14.21). Alternatively,
+it [DEL[may]] [INS[MAY]] be specified using the max-age directive in a response. [INS[When the max-age cache-control directive is present in a cached response, the response is stale if its current age is greater than the age value given (in seconds) at the time of a new request for that resource. The max-age directive on a response implies that the response is cacheable (i.e., "public") unless some other, more restrictive cache directive is also present.]]
+
+>If a response includes both an Expires header and a max-age
+directive, the max-age directive overrides the Expires header, even
+if the Expires header is more restrictive. This rule allows an origin
+server to provide, for a given response, a longer expiration time to
+an HTTP/1.1 (or later) cache than to an HTTP/1.0 cache. This [DEL[may]] [INS[might]] be
+useful if certain HTTP/1.0 caches improperly calculate ages or
+expiration times, perhaps due to desynchronized clocks.
+
+[INS[
+>Many HTTP/1.0 cache implementations will treat an Expires value that
+is less than or equal to the response Date value as being equivalent
+to the Cache-Control response directive "no-cache". If an HTTP/1.1
+cache receives such a response, and the response does not include a
+Cache-Control header field, it SHOULD consider the response to be
+non-cacheable in order to retain compatibility with HTTP/1.0 servers.
+
+>Note: An origin server might wish to use a relatively new HTTP
+cache control feature, such as the "private" directive, on a
+network including older caches that do not understand that
+feature. The origin server will need to combine the new feature
+with an Expires field whose value is less than or equal to the
+Date value. This will prevent older caches from improperly
+caching the response.
+
+>
+:s-maxage: 
+If a response includes an s-maxage directive, then for a shared
+cache (but not for a private cache), the maximum age specified by
+this directive overrides the maximum age specified by either the
+max-age directive or the Expires header. The s-maxage directive
+also implies the semantics of the proxy-revalidate directive (see
+section 14.9.4), i.e., that the shared cache must not use the
+entry after it becomes stale to respond to a subsequent request
+without first revalidating it with the origin server. The s-
+maxage directive is always ignored by a private cache.
+]INS]
+
+> Note[DEL[:]] [INS[that]] most older caches, not compliant with this specification,
+do not implement any [DEL[Cache-Control]] [INS[cache-control]] directives.  An origin server
+wishing to use a [DEL[Cache-Control]] [INS[cache-control]] directive that restricts, but does not
+prevent, caching by an HTTP/1.1-compliant cache [DEL[may]] [INS[MAY]] exploit the
+requirement that the max-age directive overrides the Expires header,
+and the fact that pre-HTTP/1.1-compliant caches do not observe the
+max-age directive.
+
+>Other directives allow a[DEL[n]] user agent to modify the basic expiration
+mechanism. These directives [DEL[may]] [INS[MAY]] be specified on a request:
+
+>
+:max-age: 
+Indicates that the client is willing to accept a response whose age
+is no greater than the specified time in seconds. Unless max-stale
+directive is also included, the client is not willing to accept a
+stale response.
+
+>
+:min-fresh: 
+Indicates that the client is willing to accept a response whose
+freshness lifetime is no less than its current age plus the
+specified time in seconds. That is, the client wants a response
+that will still be fresh for at least the specified number of
+seconds.
+
+>
+:max-stale: 
+Indicates that the client is willing to accept a response that has
+exceeded its expiration time. If max-stale is assigned a value,
+then the client is willing to accept a response that has exceeded
+its expiration time by no more than the specified number of
+seconds. If no value is assigned to max-stale, then the client is
+willing to accept a stale response of any age.
+
+>If a cache returns a stale response, either because of a max-stale
+directive on a request, or because the cache is configured to
+override the expiration time of a response, the cache MUST attach a
+Warning header to the stale response, using Warning [INS[1]]10 (Response is
+stale).
+
+[INS[
+>A cache MAY be configured to return stale responses without
+validation, but only if this does not conflict with any "MUST"-level
+requirements concerning cache validation (e.g., a "must-revalidate"
+cache-control directive).
+> If both the new request and the cached entry include "max-age"
+directives, then the lesser of the two values is used for determining
+the freshness of the cached entry for that request.
+]INS]
+
+***14.9.4 Cache Revalidation and Reload Controls [INS[キャッシュ再検証及び再読み込み制御]]
+>Sometimes a[DEL[n]] user agent [DEL[may]] [INS[might]] want or need to insist that a cache
+revalidate its cache entry with the origin server (and not just with
+the next cache along the path to the origin server), or to reload its
+cache entry from the origin server. End-to-end revalidation [DEL[may]] [INS[might]] be
+necessary if either the cache or the origin server has overestimated
+the expiration time of the cached response. End-to-end reload may be
+necessary if the cache entry has become corrupted for some reason.
+
+>End-to-end revalidation may be requested either when the client does
+not have its own local cached copy, in which case we call it
+"unspecified end-to-end revalidation", or when the client does have a
+local cached copy, in which case we call it "specific end-to-end
+revalidation."
+
+>The client can specify these three kinds of action using Cache-Control request directives:
+
+>
+:End-to-end reload: 
+The request includes a "no-cache" [DEL[Cache-Control]] [INS[cache-control]] directive or, for
+compatibility with HTTP/1.0 clients, "Pragma: no-cache". [DEL[No field]] [INS[Field]]
+names [DEL[may]] [INS[MUST NOT]] be included with the no-cache directive in a request. The
+server MUST NOT use a cached copy when responding to such a
+request.
+
+>
+:Specific end-to-end revalidation: 
+The request includes a "max-age=0" [DEL[Cache-Control]] [INS[cache-control] directive, which
+forces each cache along the path to the origin server to revalidate
+its own entry, if any, with the next cache or server. The initial
+request includes a cache-validating conditional with the client's
+current validator.
+
+>
+:Unspecified end-to-end revalidation: 
+The request includes "max-age=0" [DEL[Cache-Control]] [INS[cache-control] directive, which
+forces each cache along the path to the origin server to revalidate
+its own entry, if any, with the next cache or server. The initial
+request does not include a cache-validating conditional; the first
+cache along the path (if any) that holds a cache entry for this
+resource includes a cache-validating conditional with its current
+validator.
+
+>
+:[INS[max-age]]: 
+When an intermediate cache is forced, by means of a max-age=0
+directive, to revalidate its own cache entry, and the client has
+supplied its own validator in the request, the supplied validator [DEL[may]] [INS[might]]
+differ from the validator currently stored with the cache entry. In
+this case, the cache [DEL[may]] [INS[might]] use either validator in making its own
+request without affecting semantic transparency.
+
+However, the choice of validator may affect performance. The best
+approach is for the intermediate cache to use its own validator when
+making its request. If the server replies with 304 (Not Modified),
+then the cache should return its now validated copy to the client
+with a 200 (OK) response. If the server replies with a new entity and
+cache validator, however, the intermediate cache [DEL[should]] [INS[can]] compare the
+returned validator with the one provided in the client's request,
+using the strong comparison function. If the client's validator is
+equal to the origin server's, then the intermediate cache simply
+returns 304 (Not Modified). Otherwise, it returns the new entity with
+a 200 (OK) response.
+
+If a request includes the no-cache directive, it [DEL[should not]] [INS[SHOULD NOT]] include
+min-fresh, max-stale, or max-age.
+
+>
+:[INS[only-if-cached]]: 
+In some cases, such as times of extremely poor network connectivity,
+a client may want a cache to return only those responses that it
+currently has stored, and not to reload or revalidate with the origin
+server. To do this, the client may include the only-if-cached
+directive in a request. If it receives this directive, a cache SHOULD
+either respond using a cached entry that is consistent with the other
+constraints of the request, or respond with a 504 (Gateway Timeout)
+status. However, if a group of caches is being operated as a unified
+system with good internal connectivity, such a request MAY be
+forwarded within that group of caches.
+
+>
+:[INS[must-revalidate]]: 
+Because a cache [DEL[may]] [INS[MAY]] be configured to ignore a server's specified
+expiration time, and because a client request [DEL[may]] [INS[MAY]] include a max-stale
+directive (which has a similar effect), the protocol also includes a
+mechanism for the origin server to require revalidation of a cache
+entry on any subsequent use. When the must-revalidate directive is
+present in a response received by a cache, that cache MUST NOT use
+the entry after it becomes stale to respond to a subsequent request
+without first revalidating it with the origin server. (I.e., the
+cache [DEL[must]] [INS[MUST]] do an end-to-end revalidation every time, if, based solely
+on the origin server's Expires or max-age value, the cached response is stale.)
+
+>The must-revalidate directive is necessary to support reliable
+operation for certain protocol features. In all circumstances an
+HTTP/1.1 cache MUST obey the must-revalidate directive; in
+particular, if the cache cannot reach the origin server for any
+reason, it MUST generate a 504 (Gateway Timeout) response.
+
+>Servers [DEL[should]] [INS[SHOULD]] send the must-revalidate directive if and only if
+failure to revalidate a request on the entity could result in
+incorrect operation, such as a silently unexecuted financial
+transaction.  Recipients MUST NOT take any automated action that
+violates this directive, and MUST NOT automatically provide an
+unvalidated copy of the entity if revalidation fails.
+
+>Although this is not recommended, user agents operating under severe
+connectivity constraints [DEL[may]] [INS[MAY]] violate this directive but, if so, MUST
+explicitly warn the user that an unvalidated response has been
+provided.  The warning MUST be provided on each unvalidated access,
+and SHOULD require explicit user confirmation.
+
+>
+:[INS[proxy-revalidate]]: 
+The proxy-revalidate directive has the same meaning as the must-revalidate
+directive, except that it does not apply to non-shared
+user agent caches. It can be used on a response to an authenticated
+request to permit the user's cache to store and later return the
+response without needing to revalidate it (since it has already been
+authenticated once by that user), while still requiring proxies that
+service many users to revalidate each time (in order to make sure
+that each user has been authenticated). Note that such authenticated
+responses also need the public cache control directive in order to
+allow them to be cached at all.
+
+***14.9.5 No-Transform Directive [INS[非変換指令]]
+>
+:[INS[no-transform]]: 
+Implementers of intermediate caches (proxies) have found it useful to
+convert the media type of certain entity bodies. A [INS[non-transparent]]
+proxy might, for example, convert between image formats in order to save cache space
+or to reduce the amount of traffic on a slow link. [DEL[HTTP has to date been silent on these transformations.]]
+
+> Serious operational problems [DEL[have already occurred]] [INS[occur]], however, when
+these transformations [DEL[have been]] [INS[are]] applied to entity bodies intended for
+certain kinds of applications. For example, applications for medical
+imaging, scientific data analysis and those using end-to-end
+authentication, all depend on receiving an entity body that is bit
+for bit identical to the original entity-body.
+
+>Therefore, if a response includes the no-transform directive, an
+intermediate cache or proxy MUST NOT change those headers that are
+listed in section 13.5.2 as being subject to the no-transform
+directive.  This implies that the cache or proxy [DEL[must not]] [INS[MUST NOT]]
+change any aspect of the entity-body that is specified by these headers[DEL[.]][INS[,]] including the value of the entity-body itself.
+
+***14.9.6 Cache Control Extensions [INS[キャッシュ制御拡張]]
+>The Cache-Control header field can be extended through the use of one
+or more cache-extension tokens, each with an optional assigned value.
+Informational extensions (those which do not require a change in
+cache behavior) [DEL[may]] [INS[MAY]] be added without changing the semantics of other
+directives. Behavioral extensions are designed to work by acting as
+modifiers to the existing base of cache directives. Both the new
+directive and the standard directive are supplied, such that
+applications which do not understand the new directive will default
+to the behavior specified by the standard directive, and those that
+understand the new directive will recognize it as modifying the
+requirements associated with the standard directive.  In this way,
+extensions to the [DEL[Cache-Control]] [INS[cache-control]] directives can be made without
+requiring changes to the base protocol.
+
+>This extension mechanism depends on a[INS[n]] HTTP cache obeying all of the
+cache-control directives defined for its native HTTP-version, obeying
+certain extensions, and ignoring all directives that it does not
+understand.
+
+>For example, consider a hypothetical new response directive 
+called [DEL["]]community[DEL["]] which acts as a modifier to the [DEL["]]private[DEL["]] directive. We
+define this new directive to mean that, in addition to any non-shared
+cache, any cache which is shared only by members of the community
+named within its value may cache the response. An origin server
+wishing to allow the [DEL["]]UCI[DEL["]] community to use an otherwise private
+response in their shared cache(s) [DEL[may]] [INS[could]] do so by including
+
+>
+- [SAMP(HTTP)[Cache-Control: private, community="UCI"]]
+
+>A cache seeing this header field will act correctly even if the cache
+does not understand the [DEL["]]community[DEL["]] cache-extension, since it will
+also see and understand the [DEL["]]private[DEL["]] directive and thus default to
+the safe behavior.
+
+>Unrecognized cache-directives MUST be ignored; it is assumed that any
+cache-directive likely to be unrecognized by an HTTP/1.1 cache will
+be combined with standard directives (or the response's default
+cach[INS[e]]ability) such that the cache behavior will remain minimally
+correct even if the cache does not understand the extension(s).
+
+** RFC の部分の License
+[[RFCのライセンス]]
+* メモ
+- [1] [[Google]] からの応答に [CODE(HTTP)[x-gzip-ok=""]] ってのがついてました。
+- [2] ''Q234067 - HOWTO: Prevent Caching in Internet Explorer'' <http://web.archive.org/web/20010810040821/support.microsoft.com/support/kb/articles/Q234/0/67.ASP>: [[M$]] も [CODE(HTTP)[[[Pragma]]]] より [CODE(HTTP)[Cache-Control]] を推奨していました。ところで、この文書によると、 [CODE(HTTP)[Cache-Control: no-cache]] には対応しているけど [CODE(HTML)[<[CODE(HTMLe)[[[meta]]]] [CODE(HTMLa)[[[http-equiv]]]]="cache-control" [CODE(HTMLa)[[[content]]]]="no-cache">]] には対応していないとか。妥当な態度ですね。
+@
+
+
+1.4
+log
+@auto-committed
+@
+text
+@d179 1
+a179 1
+注意 : 単語 [CODE(HTTP)[privacy]] のこの用法は応答をキャッシュしても良いかを制御するだけであって、
+d552 1
+a552 1
+- [2] ''Q234067 - HOWTO: Prevent Caching in Internet Explorer'' <http://web.archive.org/web/20010810040821/support.microsoft.com/support/kb/articles/Q234/0/67.ASP>: [[M$]] も [CODE(HTTP)[[[Pragma]]]] より [CODE(HTTP)[Cache-Control]] を推奨していました。ところで、この文書によると、 [CODE(HTTP)[Cache-Control: no-cache]] には対応しているけど [CODE(HTML)[<[CODE(HTMLe)[[[meta]]]] [CODE(HTMLa)[[[http-equiv]]]]="cache-control" [CODE(HTMLa)[[[content]]]]="no-cache">]] には対応していないとか。妥当な態度ですね。
+@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@d552 1
+@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@d1 11
+a11 10
+*RFC 2616 14.9 Cache-Control
+
+   The Cache-Control general-header field is used to specify directives
+   that MUST be obeyed by all caching mechanisms along the
+   request/response chain. The directives specify behavior intended to
+   prevent caches from adversely interfering with the request or
+   response. These directives typically override the default caching
+   algorithms. Cache directives are unidirectional in that the presence
+   of a directive in a request does not imply that the same directive is
+   to be given in the response.
+d21 2
+a22 2
+Note that HTTP/1.0 caches might not implement Cache-Control and
+might only implement Pragma: no-cache (see section 14.32).
+d27 5
+a31 5
+   Cache directives MUST be passed through by a proxy or gateway
+   application, regardless of their significance to that application,
+   since the directives might be applicable to all recipients along the
+   request/response chain. It is not possible to specify a 
+ cache-directive for a specific cache.
+d38 19
+a56 5
+    Cache-Control   = "Cache-Control" ":" 1#cache-directive
+
+    cache-directive = cache-request-directive
+         | cache-response-directive
+
+d66 19
+a84 1
+
+d96 11
+a106 10
+
+    cache-extension = token [ "=" ( token | quoted-string ) ]
+
+   When a directive appears without any 1#field-name parameter, the
+   directive applies to the entire request or response. When such a
+   directive appears with a 1#field-name parameter, it applies only to
+   the named field or fields, and not to the rest of the request or
+   response. This mechanism supports extensibility; implementations of
+   future versions of the HTTP protocol might apply these directives to
+   header fields not defined in HTTP/1.1.
+d115 1
+a115 1
+The cache-control directives can be broken down into these general
+d120 10
+a129 4
+      - Restrictions on what are cacheable; these may only be imposed by
+        the origin server.
+
+何がキャッシュ可能かの制限。これは源サーバーのみ課せる。
+d131 2
+a132 4
+      - Restrictions on what may be stored by a cache; these may be
+        imposed by either the origin server or the user agent.
+
+何がキャッシュに蓄積可能かの制限。これは源サーバーと利用者代理者の
+d134 1
+a134 5
+
+      - Modifications of the basic expiration mechanism; these may be
+        imposed by either the origin server or the user agent.
+
+基本期限機構の編集。これは源サーバーと利用者代理者の
+d136 416
+a551 445
+
+      - Controls over cache revalidation and reload; these may only be
+        imposed by a user agent.
+
+キャッシュの再検証と再読み込みの制御。これは利用者代理者のみ課せる。
+
+      - Control over transformation of entities.
+
+実体の転送に係る制御
+
+      - Extensions to the caching system.
+
+キャッシュ系統の拡張
+
+***14.9.1 What is Cacheable
+
+   By default, a response is cacheable if the requirements of the
+   request method, request header fields, and the response status
+   indicate that it is cacheable. Section 13.4 summarizes these defaults
+   for cacheability. The following Cache-Control response directives
+   allow an origin server to override the default cacheability of a
+   response:
+
+   public
+      Indicates that the response MAY be cached by any cache, even if it
+      would normally be non-cacheable or cacheable only within a non-
+      shared cache. (See also Authorization, section 14.8, for
+      additional details.)
+
+   private
+      Indicates that all or part of the response message is intended for
+      a single user and MUST NOT be cached by a shared cache. This
+      allows an origin server to state that the specified parts of the
+
+
+
+
+
+Fielding, et al.            Standards Track                   [Page 109]
+
+RFC 2616                        HTTP/1.1                       June 1999
+
+
+      response are intended for only one user and are not a valid
+      response for requests by other users. A private (non-shared) cache
+      MAY cache the response.
+
+       Note: This usage of the word private only controls where the
+       response may be cached, and cannot ensure the privacy of the
+       message content.
+
+   no-cache
+       If the no-cache directive does not specify a field-name, then a
+      cache MUST NOT use the response to satisfy a subsequent request
+      without successful revalidation with the origin server. This
+      allows an origin server to prevent caching even by caches that
+      have been configured to return stale responses to client requests.
+
+      If the no-cache directive does specify one or more field-names,
+      then a cache MAY use the response to satisfy a subsequent request,
+      subject to any other restrictions on caching. However, the
+      specified field-name(s) MUST NOT be sent in the response to a
+      subsequent request without successful revalidation with the origin
+      server. This allows an origin server to prevent the re-use of
+      certain header fields in a response, while still allowing caching
+      of the rest of the response.
+
+       Note: Most HTTP/1.0 caches will not recognize or obey this
+       directive.
+
+14.9.2 What May be Stored by Caches
+
+   no-store
+      The purpose of the no-store directive is to prevent the
+      inadvertent release or retention of sensitive information (for
+      example, on backup tapes). The no-store directive applies to the
+      entire message, and MAY be sent either in a response or in a
+      request. If sent in a request, a cache MUST NOT store any part of
+      either this request or any response to it. If sent in a response,
+      a cache MUST NOT store any part of either this response or the
+      request that elicited it. This directive applies to both non-
+      shared and shared caches. "MUST NOT store" in this context means
+      that the cache MUST NOT intentionally store the information in
+      non-volatile storage, and MUST make a best-effort attempt to
+      remove the information from volatile storage as promptly as
+      possible after forwarding it.
+
+      Even when this directive is associated with a response, users
+      might explicitly store such a response outside of the caching
+      system (e.g., with a "Save As" dialog). History buffers MAY store
+      such responses as part of their normal operation.
+
+
+
+Fielding, et al.            Standards Track                   [Page 110]
+
+RFC 2616                        HTTP/1.1                       June 1999
+
+
+      The purpose of this directive is to meet the stated requirements
+      of certain users and service authors who are concerned about
+      accidental releases of information via unanticipated accesses to
+      cache data structures. While the use of this directive might
+      improve privacy in some cases, we caution that it is NOT in any
+      way a reliable or sufficient mechanism for ensuring privacy. In
+      particular, malicious or compromised caches might not recognize or
+      obey this directive, and communications networks might be
+      vulnerable to eavesdropping.
+
+14.9.3 Modifications of the Basic Expiration Mechanism
+
+   The expiration time of an entity MAY be specified by the origin
+   server using the Expires header (see section 14.21). Alternatively,
+   it MAY be specified using the max-age directive in a response. When
+   the max-age cache-control directive is present in a cached response,
+   the response is stale if its current age is greater than the age
+   value given (in seconds) at the time of a new request for that
+   resource. The max-age directive on a response implies that the
+   response is cacheable (i.e., "public") unless some other, more
+   restrictive cache directive is also present.
+
+   If a response includes both an Expires header and a max-age
+   directive, the max-age directive overrides the Expires header, even
+   if the Expires header is more restrictive. This rule allows an origin
+   server to provide, for a given response, a longer expiration time to
+   an HTTP/1.1 (or later) cache than to an HTTP/1.0 cache. This might be
+   useful if certain HTTP/1.0 caches improperly calculate ages or
+   expiration times, perhaps due to desynchronized clocks.
+
+   Many HTTP/1.0 cache implementations will treat an Expires value that
+   is less than or equal to the response Date value as being equivalent
+   to the Cache-Control response directive "no-cache". If an HTTP/1.1
+   cache receives such a response, and the response does not include a
+   Cache-Control header field, it SHOULD consider the response to be
+   non-cacheable in order to retain compatibility with HTTP/1.0 servers.
+
+       Note: An origin server might wish to use a relatively new HTTP
+       cache control feature, such as the "private" directive, on a
+       network including older caches that do not understand that
+       feature. The origin server will need to combine the new feature
+       with an Expires field whose value is less than or equal to the
+       Date value. This will prevent older caches from improperly
+       caching the response.
+
+
+
+
+
+
+
+Fielding, et al.            Standards Track                   [Page 111]
+
+RFC 2616                        HTTP/1.1                       June 1999
+
+
+   s-maxage
+       If a response includes an s-maxage directive, then for a shared
+       cache (but not for a private cache), the maximum age specified by
+       this directive overrides the maximum age specified by either the
+       max-age directive or the Expires header. The s-maxage directive
+       also implies the semantics of the proxy-revalidate directive (see
+       section 14.9.4), i.e., that the shared cache must not use the
+       entry after it becomes stale to respond to a subsequent request
+       without first revalidating it with the origin server. The s-
+       maxage directive is always ignored by a private cache.
+
+   Note that most older caches, not compliant with this specification,
+   do not implement any cache-control directives. An origin server
+   wishing to use a cache-control directive that restricts, but does not
+   prevent, caching by an HTTP/1.1-compliant cache MAY exploit the
+   requirement that the max-age directive overrides the Expires header,
+   and the fact that pre-HTTP/1.1-compliant caches do not observe the
+   max-age directive.
+
+   Other directives allow a user agent to modify the basic expiration
+   mechanism. These directives MAY be specified on a request:
+
+   max-age
+      Indicates that the client is willing to accept a response whose
+      age is no greater than the specified time in seconds. Unless max-
+      stale directive is also included, the client is not willing to
+      accept a stale response.
+
+   min-fresh
+      Indicates that the client is willing to accept a response whose
+      freshness lifetime is no less than its current age plus the
+      specified time in seconds. That is, the client wants a response
+      that will still be fresh for at least the specified number of
+      seconds.
+
+   max-stale
+      Indicates that the client is willing to accept a response that has
+      exceeded its expiration time. If max-stale is assigned a value,
+      then the client is willing to accept a response that has exceeded
+      its expiration time by no more than the specified number of
+      seconds. If no value is assigned to max-stale, then the client is
+      willing to accept a stale response of any age.
+
+   If a cache returns a stale response, either because of a max-stale
+   directive on a request, or because the cache is configured to
+   override the expiration time of a response, the cache MUST attach a
+   Warning header to the stale response, using Warning 110 (Response is
+   stale).
+
+
+
+Fielding, et al.            Standards Track                   [Page 112]
+
+RFC 2616                        HTTP/1.1                       June 1999
+
+
+   A cache MAY be configured to return stale responses without
+   validation, but only if this does not conflict with any "MUST"-level
+   requirements concerning cache validation (e.g., a "must-revalidate"
+   cache-control directive).
+
+   If both the new request and the cached entry include "max-age"
+   directives, then the lesser of the two values is used for determining
+   the freshness of the cached entry for that request.
+
+14.9.4 Cache Revalidation and Reload Controls
+
+   Sometimes a user agent might want or need to insist that a cache
+   revalidate its cache entry with the origin server (and not just with
+   the next cache along the path to the origin server), or to reload its
+   cache entry from the origin server. End-to-end revalidation might be
+   necessary if either the cache or the origin server has overestimated
+   the expiration time of the cached response. End-to-end reload may be
+   necessary if the cache entry has become corrupted for some reason.
+
+   End-to-end revalidation may be requested either when the client does
+   not have its own local cached copy, in which case we call it
+   "unspecified end-to-end revalidation", or when the client does have a
+   local cached copy, in which case we call it "specific end-to-end
+   revalidation."
+
+   The client can specify these three kinds of action using Cache-
+   Control request directives:
+
+   End-to-end reload
+      The request includes a "no-cache" cache-control directive or, for
+      compatibility with HTTP/1.0 clients, "Pragma: no-cache". Field
+      names MUST NOT be included with the no-cache directive in a
+      request. The server MUST NOT use a cached copy when responding to
+      such a request.
+
+   Specific end-to-end revalidation
+      The request includes a "max-age=0" cache-control directive, which
+      forces each cache along the path to the origin server to
+      revalidate its own entry, if any, with the next cache or server.
+      The initial request includes a cache-validating conditional with
+      the client's current validator.
+
+   Unspecified end-to-end revalidation
+      The request includes "max-age=0" cache-control directive, which
+      forces each cache along the path to the origin server to
+      revalidate its own entry, if any, with the next cache or server.
+      The initial request does not include a cache-validating
+
+
+
+
+Fielding, et al.            Standards Track                   [Page 113]
+
+RFC 2616                        HTTP/1.1                       June 1999
+
+
+      conditional; the first cache along the path (if any) that holds a
+      cache entry for this resource includes a cache-validating
+      conditional with its current validator.
+
+   max-age
+      When an intermediate cache is forced, by means of a max-age=0
+      directive, to revalidate its own cache entry, and the client has
+      supplied its own validator in the request, the supplied validator
+      might differ from the validator currently stored with the cache
+      entry. In this case, the cache MAY use either validator in making
+      its own request without affecting semantic transparency.
+
+      However, the choice of validator might affect performance. The
+      best approach is for the intermediate cache to use its own
+      validator when making its request. If the server replies with 304
+      (Not Modified), then the cache can return its now validated copy
+      to the client with a 200 (OK) response. If the server replies with
+      a new entity and cache validator, however, the intermediate cache
+      can compare the returned validator with the one provided in the
+      client's request, using the strong comparison function. If the
+      client's validator is equal to the origin server's, then the
+      intermediate cache simply returns 304 (Not Modified). Otherwise,
+      it returns the new entity with a 200 (OK) response.
+
+      If a request includes the no-cache directive, it SHOULD NOT
+      include min-fresh, max-stale, or max-age.
+
+   only-if-cached
+      In some cases, such as times of extremely poor network
+      connectivity, a client may want a cache to return only those
+      responses that it currently has stored, and not to reload or
+      revalidate with the origin server. To do this, the client may
+      include the only-if-cached directive in a request. If it receives
+      this directive, a cache SHOULD either respond using a cached entry
+      that is consistent with the other constraints of the request, or
+      respond with a 504 (Gateway Timeout) status. However, if a group
+      of caches is being operated as a unified system with good internal
+      connectivity, such a request MAY be forwarded within that group of
+      caches.
+
+   must-revalidate
+      Because a cache MAY be configured to ignore a server's specified
+      expiration time, and because a client request MAY include a max-
+      stale directive (which has a similar effect), the protocol also
+      includes a mechanism for the origin server to require revalidation
+      of a cache entry on any subsequent use. When the must-revalidate
+      directive is present in a response received by a cache, that cache
+      MUST NOT use the entry after it becomes stale to respond to a
+
+
+
+Fielding, et al.            Standards Track                   [Page 114]
+
+RFC 2616                        HTTP/1.1                       June 1999
+
+
+      subsequent request without first revalidating it with the origin
+      server. (I.e., the cache MUST do an end-to-end revalidation every
+      time, if, based solely on the origin server's Expires or max-age
+      value, the cached response is stale.)
+
+      The must-revalidate directive is necessary to support reliable
+      operation for certain protocol features. In all circumstances an
+      HTTP/1.1 cache MUST obey the must-revalidate directive; in
+      particular, if the cache cannot reach the origin server for any
+      reason, it MUST generate a 504 (Gateway Timeout) response.
+
+      Servers SHOULD send the must-revalidate directive if and only if
+      failure to revalidate a request on the entity could result in
+      incorrect operation, such as a silently unexecuted financial
+      transaction. Recipients MUST NOT take any automated action that
+      violates this directive, and MUST NOT automatically provide an
+      unvalidated copy of the entity if revalidation fails.
+
+      Although this is not recommended, user agents operating under
+      severe connectivity constraints MAY violate this directive but, if
+      so, MUST explicitly warn the user that an unvalidated response has
+      been provided. The warning MUST be provided on each unvalidated
+      access, and SHOULD require explicit user confirmation.
+
+   proxy-revalidate
+      The proxy-revalidate directive has the same meaning as the must-
+      revalidate directive, except that it does not apply to non-shared
+      user agent caches. It can be used on a response to an
+      authenticated request to permit the user's cache to store and
+      later return the response without needing to revalidate it (since
+      it has already been authenticated once by that user), while still
+      requiring proxies that service many users to revalidate each time
+      (in order to make sure that each user has been authenticated).
+      Note that such authenticated responses also need the public cache
+      control directive in order to allow them to be cached at all.
+
+14.9.5 No-Transform Directive
+
+   no-transform
+      Implementors of intermediate caches (proxies) have found it useful
+      to convert the media type of certain entity bodies. A non-
+      transparent proxy might, for example, convert between image
+      formats in order to save cache space or to reduce the amount of
+      traffic on a slow link.
+
+      Serious operational problems occur, however, when these
+      transformations are applied to entity bodies intended for certain
+      kinds of applications. For example, applications for medical
+
+
+
+Fielding, et al.            Standards Track                   [Page 115]
+
+RFC 2616                        HTTP/1.1                       June 1999
+
+
+      imaging, scientific data analysis and those using end-to-end
+      authentication, all depend on receiving an entity body that is bit
+      for bit identical to the original entity-body.
+
+      Therefore, if a message includes the no-transform directive, an
+      intermediate cache or proxy MUST NOT change those headers that are
+      listed in section 13.5.2 as being subject to the no-transform
+      directive. This implies that the cache or proxy MUST NOT change
+      any aspect of the entity-body that is specified by these headers,
+      including the value of the entity-body itself.
+
+14.9.6 Cache Control Extensions
+
+   The Cache-Control header field can be extended through the use of one
+   or more cache-extension tokens, each with an optional assigned value.
+   Informational extensions (those which do not require a change in
+   cache behavior) MAY be added without changing the semantics of other
+   directives. Behavioral extensions are designed to work by acting as
+   modifiers to the existing base of cache directives. Both the new
+   directive and the standard directive are supplied, such that
+   applications which do not understand the new directive will default
+   to the behavior specified by the standard directive, and those that
+   understand the new directive will recognize it as modifying the
+   requirements associated with the standard directive. In this way,
+   extensions to the cache-control directives can be made without
+   requiring changes to the base protocol.
+
+   This extension mechanism depends on an HTTP cache obeying all of the
+   cache-control directives defined for its native HTTP-version, obeying
+   certain extensions, and ignoring all directives that it does not
+   understand.
+
+   For example, consider a hypothetical new response directive called
+   community which acts as a modifier to the private directive. We
+   define this new directive to mean that, in addition to any non-shared
+   cache, any cache which is shared only by members of the community
+   named within its value may cache the response. An origin server
+   wishing to allow the UCI community to use an otherwise private
+   response in their shared cache(s) could do so by including
+
+       Cache-Control: private, community="UCI"
+
+   A cache seeing this header field will act correctly even if the cache
+   does not understand the community cache-extension, since it will also
+   see and understand the private directive and thus default to the safe
+   behavior.
+
+
+
+
+
+Fielding, et al.            Standards Track                   [Page 116]
+
+RFC 2616                        HTTP/1.1                       June 1999
+
+
+   Unrecognized cache-directives MUST be ignored; it is assumed that any
+   cache-directive likely to be unrecognized by an HTTP/1.1 cache will
+   be combined with standard directives (or the response's default
+   cacheability) such that the cache behavior will remain minimally
+   correct even if the cache does not understand the extension(s).
+
+*License
+
+[[RFCのライセンス]]
+- [1] [[Google]] からの応答に [CODE(HTTP)[x-gzip-ok=""]] ってのがついてました。
+@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@d545 2
+a546 1
+[[RFCのライセンス]]@
+

@@ -1,0 +1,673 @@
+head	1.5;
+access;
+symbols
+	suikawiki3-final:1.5
+	before-db-leaffile:1.2
+	after-upgrade-to-suikawiki-3:1.2
+	before-fork-suikawiki3:1.2
+	after-restore-20040122:1.2;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.5
+date	2005.07.23.02.06.32;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2005.02.13.02.07.52;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2004.05.13.02.08.26;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2003.12.23.02.03.24;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.11.03.02.02.40;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.5
+log
+@auto-committed
+@
+text
+@* [CODE(HTTP SIP)[Warning:]] 欄 (HTTP, SIP)
+
+[30] [[HTTP]] および [[SIP]] の頭欄
+[DFN[[CODE(HTTP SIP)[Warning:]]]] は、
+[[輸送路]]における[[メッセージ]]の取扱いに関する警告、
+特に[[キャッシュ]]関係の案内を運びます。
+
+[26] HTTP では、 [[RFC 2068]] で[[応答頭欄]]とされていましたが、 
+[[RFC 2616]] で[[一般頭欄]]に改められ、
+[[応答]]だけではなく[[要求]]でも使うことが可能となりました。
+[WEAK[キャッシュの関係で改められたみたいですね。]] 
+
+一方、 [[SIP]] では依然[[応答]]にのみ使用可能とされています。
+ちなみに [[RTSP]] にはこの欄自体がありません。
+
+[[#comment]]
+
+** 仕様書から
+*** RFC 2068 (HTTP/1.1) 14.45; RFC 2616 (HTTP/1.1) 14.46 Warning
+> The Warning [DEL[response-header]] [INS[general-header]] field is used to carry additional
+information about the status [INS[or transformation]] of a response which [DEL[may]] [INS[might]] not
+be reflected [DEL[by the response status code]] [INS[in the message]]. This information is typically[DEL[, though not exclusively,]]
+used to warn about a possible lack of semantic
+transparency from caching operations [INS[or transformations applied to the entity body of the message]].
+
+[CODE(HTTP)[Warning]] [[一般頭欄]]は、[DEL[応答[[状態符号]]に]][INS[メッセージ中に]]反映されていないかもしれない応答の状態[INS[や変形]]についての追加情報を伝達するために使います。
+この情報は、典型的にはキャッシュ操作の意味的透過性の欠如の可能性があること[INS[やメッセージの実体本体に変形が行われたこと]]を警告するために使います。
+
+> Warning headers are sent with responses using:
+
+[CODE(HTTP)[Warning]] 頭は、応答で次を使って送信します。
+
+>
+- Warning    = "Warning" ":" 1#warning-value
+- warning-value = warn-code SP warn-agent SP warn-text [INS[ [SP warn-date] ]]
+- [DEL[warn-code  = 2DIGIT]]
+- [DEL[warn-code  = 3DIGIT]]
+-warn-agent = ( host [ ":" port ] ) | pseudonym
+[PRE[
+; the name or pseudonym of the server adding
+; the Warning header, for use in debugging
+]PRE]
+- warn-text  = quoted-string
+- [INS[warn-date  = <"> HTTP-date <">]]
+
+> A response [DEL[may]] [INS[MAY]] carry more than one Warning header.
+
+応答は1つ以上の Warning 頭を運んで'''構いません'''。
+
+> The warn-text [DEL[should]] [INS[SHOULD]] be in a natural language and character set that
+is most likely to be intelligible to the human user receiving the response.
+This decision [DEL[may]] [INS[MAY]] be based on any available knowledge,
+such as the location of the cache or user, the Accept-Language field in a
+request, the Content-Language field in a response, etc.
+The default language is English and the default character set is ISO-8859-1.
+
+warn-text は応答を受け取る人間利用者が理解可能と最も思われる
+自然言語と文字集合を使う'''べきです'''。この決定はいかなる利用可能な知識、
+例えばキャッシュや利用者の位置, 要求の Accept-Language 欄,
+要求の Content-Language 欄, などなどを基にして'''構いません'''。
+既定言語は英語で既定文字集合は ISO-8859-1 です。
+
+> If a character set other than ISO-8859-1 is used, it MUST be encoded
+in the warn-text using the method described in RFC [DEL[1522]] [INS[2047]] [14].
+
+ISO-8859-1 以外の文字集合が使われる場合は、 RFC 2047
+で説明されている方法を使って warn-text を符号化しなければ'''なりません'''。
+
+> [INS[Warning headers can in general be applied to any message, however some specific warn-codes are specific to caches and can only be applied to response messages.]] [DEL[Any server or cache may add Warning headers to a response.]]
+New Warning headers [DEL[should]] [INS[SHOULD]] be added
+after any existing Warning headers. A cache MUST NOT delete any Warning header
+that it received with a [DEL[response]] [INS[message]]. However, if a cache successfully validates a
+cache entry, it SHOULD remove any Warning headers previously attached to that 
+entry except as specified for specific Warning codes.
+It MUST then add any Warning headers received in the validating response.
+In other words, Warning headers are those that would be attached to
+the most recent relevant response.
+
+[CODE(HTTP)[Warning]] 頭は、一般に任意のメッセージに適用できます。
+しかし、幾つかの特定の [CODE(ABNF)[warn-code]] は[[キャッシュ]]に特有のものであり、
+応答メッセージにのみ適用できます。
+新しい [CODE(HTTP)[Warning]] 頭は既存の [CODE(HTTP)[Warning]]
+頭群の後に追加する'''べきです'''、[[キャッシュ]]は、
+その受信したメッセージ内の [CODE(HTTP)[Warning]] 頭を削除しては'''なりません'''。
+しかし、キャッシュがキャッシュ項目を成功裏に[[妥当性検証]]したのなら、
+特定の [CODE(HTTP)[Warning]] 符号について指定されたものを除いて、
+その項目に以前に付された [CODE(HTTP)[Warning]] 頭群んは削除する'''べきです'''。
+キャッシュは、その際に検証応答で受信した [CODE(HTTP)[Warning]]
+頭欄をすべて追加しなければ'''なりません'''。言い換えれば、
+[CODE(HTTP)[Warning]] 頭は最近の関係する応答に付されたものとします。
+
+> When multiple Warning headers are attached to a response, the user
+agent [DEL[SHOULD display]] [INS[ought to inform the user of]] as many of them as possible, in the order that
+they appear in the response. If it is not possible to [DEL[display]] [INS[inform the user of]] all of
+the warnings, the user agent [DEL[should]] [INS[SHOULD]] follow these heuristics:
+
+複数の [CODE(HTTP)[Warning]] 頭群が応答に付されている時は、
+[[利用者エージェント]]はそのうちのできるだけ多くを、
+応答に出現した順で[[利用者]]に示すべきです。
+警告のすべてを利用者に示すことが不可能である時は、
+利用者エージェントは次の発見的方法に従う'''べきです'''。
+
+>
+- [DEL[o]] [INS[-]] Warnings that appear early in the response take priority over
+those appearing later in the response.
+- [DEL[o]] [INS[-]] Warnings in the user's preferred character set take priority
+over warnings in other character sets but with identical warn-codes
+and warn-agents.
+
+- 応答の先のほうで現れた [CODE(HTTP)[Warning]] は、
+応答の後のほうで現れたものよりも優先させる
+- 利用者の優先させている文字集合で書かれた [CODE(HTTP)[Warning]]
+は、 [CODE(ABNF)[warn-code]] と [CODE(ABNF)[warn-agent]] が同じでありながらも他の文字集合で書かれたものよりも優先させる。
+
+> Systems that generate multiple Warning headers [DEL[should]] [INS[SHOULD]] order them with
+this user agent behavior in mind.
+
+複数の [CODE(HTTP)[Warning]] 頭を生成するシステムは、この利用者エージェントの振る舞いを念頭に置いて順序を決める'''べきです'''。
+
+[INS[
+> Requirements for the behavior of caches with respect to Warnings are
+stated in section 13.1.2.
+
+[CODE(HTTP)[Warning]] に関する[[キャッシュ]]の振る舞いの要件は13.1.2節で述べています。
+]INS]
+
+> This is a list of the currently-defined warn-codes, each with a
+recommended warn-text in English, and a description of its meaning.
+
+これは、現在定義されている [CODE(ABNF)[warn-code]] と、それぞれについての推奨する英語での [CODE(ABNF)[warn-text]] とその意味の説明の一覧です。
+
+>
+:[INS[1]]10 Response is stale:
+MUST be included whenever the returned response is stale. [DEL[A cache may add this warning to any response, but may never remove it until the response is known to be fresh.]]
+
+: 110 応答は腐っています : 返される応答が[[腐敗]]しているときには必ず含めなければ'''なりません'''。[DEL[キャッシュはこの警告を任意の応答に追加して構いませんが、応答が[[新鮮]]と分かるまでは決して削除してはなりません。]]
+
+>
+:[INS[1]]11 Revalidation failed:
+MUST be included if a cache returns a stale response because an
+attempt to revalidate the response failed, due to an inability to reach the server. [DEL[A cache may add this warning to any response, but may never remove it until the response is successfully revalidated.]]
+
+: 111 再検証失敗 : キャッシュが、[[鯖]]に到達する能力がなかったために応答の妥当性を再検証する試行に失敗したため、腐った応答を返すときに含めなければ'''なりません'''。[DEL[キャッシュはこの警告を任意の応答に追加して構いませんが、応答を成功裏に再検証するまでは決して削除してはなりません。]]
+
+>
+:[INS[1]]12 Disconnected operation:
+SHOULD be included if the cache is intentionally disconnected from
+the rest of the network for a period of time.
+
+: 112 未接続操作 : キャッシュがある時間中ネットワークの他の部分と意図的に接続されていないときに含める'''べきです'''。
+
+>
+:[INS[1]]13 Heuristic expiration:
+MUST be included if the cache heuristically chose a freshness
+lifetime greater than 24 hours and the response's age is greater
+than 24 hours.
+
+: 113 発見的満期 : キャッシュが発見的に24時間よりも大きな[[新鮮寿命]]を選び、
+応答の[[齢]]が24時間よりも大きいときに含めなければ'''なりません'''。
+
+>
+:[INS[1]]99 Miscellaneous warning:
+The warning text [DEL[may]] [INS[MAY]] include arbitrary information to be presented
+to a human user, or logged. A system receiving this warning MUST NOT take any automated action[INS[, besides presenting the warning to the user]].
+
+: 119 その他の警告 : 警告文は、人間利用者に示される、または記録される、任意の情報を含めて'''構いません'''。
+この警告を受信したシステムは、[INS[利用者に警告を示す他に、]]自動の動作を行っては'''なりません'''。
+
+>
+:[INS[2]]14 Transformation applied:
+MUST be added by an intermediate cache or proxy if it applies any
+transformation changing the content-coding (as specified in the
+Content-Encoding header) or media-type (as specified in the
+Content-Type header) of the response, [INS[or the entity-body of the response,]]
+unless this Warning code already appears in the response. [DEL[MUST NOT be deleted from a response even after revalidation.]]
+
+: 214 変形適用済み : [[中間キャッシュ]]または[[串]]が、応答の
+[CODE(ABNF)[[[content-coding]]]] ([CODE(HTTP)[[[Content-Encoding]]]]
+頭で指定されます。) または [CODE(ABNF)[[[media-type]]]]
+([CODE(HTTP)[[[Content-Type]]]] で指定されます。) [INS[または応答の [CODE(ABNF)[[[entity-body]]]]]]
+を変更する何らかの変形を適用した場合に、
+この [CODE(HTTP)[Warning]] 符号が既に応答に現れている場合を除き、
+追加しなければ'''なりません'''。[DEL[再検証の後であっても応答から削除しては'''なりません'''。]]
+
+[INS[
+>
+:299 Miscellaneous persistent warning:
+The warning text MAY include arbitrary information to be presented
+to a human user, or logged. A system receiving this warning MUST
+NOT take any automated action.
+
+: 299 その他の持続警告 : 警告文は、人間利用者に示される、または記録される、任意の情報を含めて'''構いません'''。
+この警告を受信したシステムは、[INS[利用者に警告を示す他に、]]自動の動作を行っては'''なりません'''。
+
+> If an implementation sends a message with one or more Warning headers
+whose version is HTTP/1.0 or lower, then the sender MUST include in
+each warning-value a warn-date that matches the date in the response.
+
+実装が一つ以上の [CODE(HTTP)[Warning]] 頭群を含んだ版が HTTP/1.0 以下のメッセージを送信するときには、
+送信者は各 [CODE(ABNF)[warning-value]] に応答の日付と一致する
+[CODE(ABNF)[warn-date]] を含めなければ'''なりません'''。
+
+> If an implementation receives a message with a warning-value that
+includes a warn-date, and that warn-date is different from the Date
+value in the response, then that warning-value MUST be deleted from
+the message before storing, forwarding, or using it. (This prevents
+bad consequences of naive caching of Warning header fields.) If all
+of the warning-values are deleted for this reason, the Warning header
+MUST be deleted as well.
+
+実装が [CODE(ABNF)[warn-date]] を含む [CODE(ABNF)[warning-value]]
+を含み、その [CODE(ABNF)[warn-date]] が応答の [CODE(HTTP)[[[Date]]]]
+値と異なるメッセージを受信したら、その [CODE(ABNF)[warning-value]]
+は、そのメッセージを蓄積、転送、または使用する前にメッセージから削除しなければ'''なりません'''。
+(これは、 [CODE(HTTP)[Warning]] 頭欄を単純にキャッシュすることによる悪影響を防ぎます。)
+すべての [CODE(ABNF)[warning-value]] がこの理由により削除される場合は、
+[CODE(HTTP)[Warning]] 頭も同様に削除しなければ'''なりません'''。
+]INS]
+
+** warn-code 警告符号
+
+[18]
+,[CODE(HTTP)[[[10]]]]	,Response is stale	,[RFC 2068]
+,[CODE(HTTP)[[[11]]]]	,Revalidation failed	,[RFC 2068]
+,[CODE(HTTP)[[[12]]]]	,Disconnected operation	,[RFC 2068]
+,[CODE(HTTP)[[[13]]]]	,Heuristic expiration	,[RFC 2068]
+,[CODE(HTTP)[[[14]]]]	,Transformation applied	,[RFC 2068]
+,[CODE(HTTP)[[[99]]]]	,Miscellaneous warning	,[RFC 2068]
+,[CODE(HTTP)[[[110]]]]	,Response is stale	,[RFC 2616]
+,[CODE(HTTP)[[[111]]]]	,Revalidation failed	,[RFC 2616]
+,[CODE(HTTP)[[[112]]]]	,Disconnected operation	,[RFC 2616]
+,[CODE(HTTP)[[[113]]]]	,Heuristic expiration	,[RFC 2616]
+,[CODE(HTTP)[[[199]]]]	,Miscellaneous warning	,[RFC 2616]
+,[CODE(HTTP)[[[214]]]]	,Transformation applied	,[RFC 2616]
+,[CODE(HTTP)[[[299]]]]	,Miscellaneous persistent warning	,[RFC 2616]
+,[CODE(SIP)[[[300]]]]	,Incompatible network protocol	,"[RFC 2543], [RFC 3261]"
+,[CODE(SIP)[[[301]]]]	,Incompatible network address formats	,"[RFC 2543], [RFC 3261]"
+,[CODE(SIP)[[[302]]]]	,Incompatible transport protocol	,"[RFC 2543], [RFC 3261]"
+,[CODE(SIP)[[[303]]]]	,Incompatible bandwidth units	,"[RFC 2543], [RFC 3261]"
+,[CODE(SIP)[[[304]]]]	,Media type not available	,"[RFC 2543], [RFC 3261]"
+,[CODE(SIP)[[[305]]]]	,Incompatible media format	,"[RFC 2543], [RFC 3261]"
+,[CODE(SIP)[[[306]]]]	,Attribute not understood	,"[RFC 2543], [RFC 3261]"
+,[CODE(SIP)[[[307]]]]	,Session description parameter not understood	,"[RFC 2543], [RFC 3261]"
+,[CODE(SIP)[[[330]]]]	,Multicast not available	,"[RFC 2543], [RFC 3261]"
+,[CODE(SIP)[[[331]]]]	,Unicast not available	,"[RFC 2543], [RFC 3261]"
+,[CODE(SIP)[[[370]]]]	,Insufficient bandwidth	,"[RFC 2543], [RFC 3261]"
+,[CODE(SIP)[[[399]]]]	,Miscellaneous warning	,"[RFC 2543], [RFC 3261]"
+
+- [21] [IANAREG] <http://www.iana.org/assignments/sip-parameters> 2003-08-06
+
+-[33] RFC 2068 の2桁番号は、 RFC 2616 ですべて3桁番号に改められました。
+- [22] [[300]]〜[[329]] は、[[セッション記述]]中の[[見出し語]]に問題があったことを示します。
+- [23] [[330]] 番台はセッション記述中で要求された基本的なネットワーク・サービスに問題があることを示します。
+- [24] [[370]] 番台はセッション記述中で要求された quantitative [[QoS]] 引数に問題があることを示します。
+- [25] [[390]] 番台はその他です。
+
+[34] [[HTTP]] や [[SIP]] では同じような3桁の番号として[[状態符号]]がありますが、
+状態符号と警告符号にはまったく関係はありません。
+
+[[#comment]]
+
+** warn-text
+
+[27] 
+[CODE(ABNF)[warn-text]] は [[DQN]] な仕様だなぁ。
+ここに [CODE(ABNF)[encoded-word]] を使ってもいい
+ってことは、 [CODE(ABNF)[[[quoted-string]]]] の中身が 
+[CODE(ABNF)[encoded-word]],
+ということですよねぇ? (でないと構文に適合しないし、
+[CODE(ABNF)[encoded-word]] が複数個になった時に面倒だし。)
+でもそれは [[MIME]] の設計的には良いことではありません
+[WEAK[(もちろん HTTP は MIME ではありませんが...)]]。
+
+[Q[[[RFC 2047]] の符号化方式]]らしいですけど、 [[RFC 2231]] の改訂
+(言語指定) は適用されるのでしょうか。この仕様書は RFC 2616
+ですから、 RFC 2231 の発行より後なのでして・・。
+
+[28] [[SIP/2.0]] では [CODE(ABNF)[warn-text]] は [[UTF-8]] であり、 [CODE(ABNF)[encoded-word]]
+が使えるとは書かれていません。使えないのでしょう。
+
+[CODE(ABNF)[warn-text]] の既定の言語は 
+[CODE(lang)[[[i-default]]]] です。
+
+[[#comment]]
+
+** warn-date
+
+[29] RFC 2068 では、 [CODE(ABNF)[warn-date]] は定義されていません。
+[CODE(ABNF)[warn-date]] は RFC 2616 で追加されました。
+
+RFC 2068 から分家した SIP/2.0 でも [CODE(ABNF)[warn-date]] 
+は定義されていません。
+
+[[#comment]]
+
+** メモ
+
+[[#comment]]
+
+* Warning: 欄 (MDN)
+
+[19] [[MDN]] ([CODE(MIME)[[[message/disposition-notification]]]])
+メッセージにおいて、 [CODE(MDN)[Warning:]] 欄は、
+[CODE(MDN)[[[warning]]]] [[配置修飾子]]に関する追加情報を
+(人間可読文で) 記述するために使います。
+
+-[20] [CODE(ABNF)[[DFN[warning-field]] := "Warning" ":" *text]]
+
+実際には [CODE(ABNF)[[[FWS]]]] を挿入できます。
+
+
+[15] [WEAK[2002-11-12 (火) 20:58]] ''[[名無しさん]]'': [[Message-pm]] では [CODE(perl)[[[Message::Field::Warning]]]] 
+(<IW:SuikaCVS:"messaging/manakai/lib/Message/Field/Warning.pm">) 
+で実装していますね。実装と言っても大したことはしていませんが。
+
+[[#comment]]
+
+* RFC の部分の License
+[[RFCのライセンス]]
+* メモ
+@
+
+
+1.4
+log
+@auto-committed
+@
+text
+@a0 1
+
+@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@d1 2
+a2 2
+#?SuikaWiki/0.9
+* Warning: 欄 (HTTP, SIP)
+d5 1
+a5 1
+[DFN[[CODE(HTTP SIP)[Warning]]:]] は、
+d7 1
+a7 1
+特に[[キャッシュ]]の関係についての案内を運びます。
+d12 1
+a12 1
+[WEAK[キャッシュの関係みたいですね。]] 
+@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@d4 12
+a15 1
+[26] [[HTTP]] では、 [[RFC2068]] では[[応答頭欄]]とされていましたが、 [[RFC2616]] で[[一般頭欄]]に改められ、[[要求]]でも使うことが可能となりました。[WEAK[キャッシュの関係みたいですね。]] 一方、 [[SIP]] では依然[[応答]]にのみ使用可能とされています。ちなみに [[RTSP]] にはこの欄はありません。
+d221 1
+a221 4
+** warn-code
+
+
+* 警告符号
+d251 2
+d257 4
+d266 4
+a269 2
+warn-text は[[ドキュソ]]な仕様だなぁ。ここに encoded-word を使ってもいい
+ってことは、 [[quoted-string]] の中身が encoded-word,
+d271 3
+a273 1
+encoded-word が複数個になった時に面倒だし。)
+d275 2
+a276 2
+RFC 2047 の符号化方式らしいですけど、 RFC 2231 の改訂
+(言語指定可能化) は適用されるのでしょうか。この仕様書は RFC 2616
+d279 5
+a283 2
+[28] [[SIP/2.0]] では warn-text は [[UTF-8]] であり、 [[encoded-word]]
+が使えるとは書かれていません。
+d285 1
+a285 1
+warn-text の既定の言語は [[i-default]] です。
+d290 6
+a295 1
+RFC 2616 で追加されました。
+d297 1
+a297 1
+RFC 2068 から分家した SIP/2.0 でも [CODE(ABNF)[warn-date]] は定義されていません。
+d308 8
+a315 1
+-[20] [CODE(ABNF)[warning-field = "Warning" ":" *text]]
+a316 1
+- [15] [WEAK[2002-11-12 (火) 20:58]] ''[[名無しさん]]'': [[Message-pm]] では [[Message::Field::Warning]] (<http://suika.fam.cx/gate/cvs/perl/lib/Message/Field/Warning.pm>) で実装していますね
+@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@d1 2
+a2 1
+*HTTP での Warning: 欄
+d4 1
+a4 1
+**RFC 2616 14.46 Warning
+d6 1
+a6 13
+   The Warning general-header field is used to carry additional
+   information about the status or transformation of a message which
+   might not be reflected in the message. This information is typically
+   used to warn about a possible lack of semantic transparency from
+   caching operations or transformations applied to the entity body of
+   the message.
+
+Warning headers are sent with responses using:
+
+       Warning    = "Warning" ":" 1#warning-value
+
+       warning-value = warn-code SP warn-agent SP warn-text
+                                             [SP warn-date]
+d8 27
+a34 6
+       warn-code  = 3DIGIT
+       warn-agent = ( host [ ":" port ] ) | pseudonym
+                       ; the name or pseudonym of the server adding
+                       ; the Warning header, for use in debugging
+       warn-text  = quoted-string
+       warn-date  = <"> HTTP-date <">
+d36 1
+a36 1
+A response MAY carry more than one Warning header.
+d40 6
+a45 6
+   The warn-text SHOULD be in a natural language and character set that
+   is most likely to be intelligible to the human user receiving the
+   response. This decision MAY be based on any available knowledge, such
+   as the location of the cache or user, the Accept-Language field in a
+   request, the Content-Language field in a response, etc. The default
+   language is English and the default character set is ISO-8859-1.
+d53 2
+a54 2
+If a character set other than ISO-8859-1 is used, it MUST be encoded
+in the warn-text using the method described in RFC 2047 [14].
+d59 189
+a247 79
+   Warning headers can in general be applied to any message, however
+   some specific warn-codes are specific to caches and can only be
+   applied to response messages. New Warning headers SHOULD be added
+   after any existing Warning headers. A cache MUST NOT delete any
+   Warning header that it received with a message. However, if a cache
+   successfully validates a cache entry, it SHOULD remove any Warning
+   headers previously attached to that entry except as specified for
+   specific Warning codes. It MUST then add any Warning headers received
+   in the validating response. In other words, Warning headers are those
+   that would be attached to the most recent relevant response.
+
+   When multiple Warning headers are attached to a response, the user
+   agent ought to inform the user of as many of them as possible, in the
+   order that they appear in the response. If it is not possible to
+   inform the user of all of the warnings, the user agent SHOULD follow
+   these heuristics:
+
+      - Warnings that appear early in the response take priority over
+        those appearing later in the response.
+
+      - Warnings in the user's preferred character set take priority
+        over warnings in other character sets but with identical warn-
+        codes and warn-agents.
+
+   Systems that generate multiple Warning headers SHOULD order them with
+   this user agent behavior in mind.
+
+   Requirements for the behavior of caches with respect to Warnings are
+   stated in section 13.1.2.
+
+   This is a list of the currently-defined warn-codes, each with a
+   recommended warn-text in English, and a description of its meaning.
+
+   110 Response is stale
+     MUST be included whenever the returned response is stale.
+
+   111 Revalidation failed
+     MUST be included if a cache returns a stale response because an
+     attempt to revalidate the response failed, due to an inability to
+     reach the server.
+
+   112 Disconnected operation
+     SHOULD be included if the cache is intentionally disconnected from
+     the rest of the network for a period of time.
+
+   113 Heuristic expiration
+     MUST be included if the cache heuristically chose a freshness
+     lifetime greater than 24 hours and the response's age is greater
+     than 24 hours.
+
+   199 Miscellaneous warning
+     The warning text MAY include arbitrary information to be presented
+     to a human user, or logged. A system receiving this warning MUST
+     NOT take any automated action, besides presenting the warning to
+     the user.
+
+   214 Transformation applied
+     MUST be added by an intermediate cache or proxy if it applies any
+     transformation changing the content-coding (as specified in the
+     Content-Encoding header) or media-type (as specified in the
+     Content-Type header) of the response, or the entity-body of the
+     response, unless this Warning code already appears in the response.
+
+   299 Miscellaneous persistent warning
+     The warning text MAY include arbitrary information to be presented
+     to a human user, or logged. A system receiving this warning MUST
+     NOT take any automated action.
+
+   If an implementation sends a message with one or more Warning headers
+   whose version is HTTP/1.0 or lower, then the sender MUST include in
+   each warning-value a warn-date that matches the date in the response.
+
+   If an implementation receives a message with a warning-value that
+   includes a warn-date, and that warn-date is different from the Date
+   value in the response, then that warning-value MUST be deleted from
+   the message before storing, forwarding, or using it. (This prevents
+   bad consequences of naive caching of Warning header fields.) If all
+   of the warning-values are deleted for this reason, the Warning header
+   MUST be deleted as well.
+d249 1
+a249 1
+**参考
+d251 1
+d261 2
+a262 5
+**RFC 2068 での Warning: 欄
+
+warn-date は定義されていません。
+
+warn-code は 2DIGIT でした。
+d264 1
+a264 6
+-10 Response is stale
+-11 Revalidation failed
+-12 Disconnected operation
+-13 Heuristic expiration
+-14 Transformation applied
+-99 Miscellaneous warning
+d266 1
+a266 6
+[[#comment]]
+
+*SIP/2.0 の Warning: 欄
+
+[[SIP/1.0]] では warn-text は [[UTF-8]] であり、 [[encoded-word]]
+が使えるとは書かれていません。
+d268 2
+a269 1
+warn-text の既定の言語は [[i-default言語]] です。
+d271 1
+a271 3
+また、 warn-date はそもそも定義されていません。
+
+300番台の warn-code が定義されています。
+d275 1
+a275 1
+*MDN での Warning: 欄
+d277 4
+a280 3
+[19] [[MDN]]
+([[message/disposition-notification]])
+において。
+d284 1
+a284 2
+"warning" disposition-modifier の追加情報。
+
+d289 1
+a289 42
+
+* 警告符号
+
+[18]
+,10 ,Response is stale   ,[RFC 2068]
+,11 ,Revalidation failed ,[RFC 2068]
+,12 ,Disconnected operation,[RFC 2068]
+,13 ,Heuristic expiration,[RFC 2068]
+,14 ,Transformation applied,[RFC 2068]
+,99 ,Miscellaneous warning,[RFC 2068]
+,110,Response is stale  ,[RFC 2616]
+,111,Revalidation failed,[RFC 2616]
+,112,Disconnected operation,[RFC 2616]
+,113,Heuristic expiration,[RFC 2616]
+,199,Miscellaneous warning,[RFC 2616]
+,214,Transformation applied,[RFC 2616]
+,299,Miscellaneous persistent warning,[RFC 2616]
+,300,Incompatible network protocol,"[RFC 2543], [RFC 3261]"
+,301,Incompatible network address formats,"[RFC 2543], [RFC 3261]"
+,302,Incompatible transport protocol,"[RFC 2543], [RFC 3261]"
+,303,Incompatible bandwidth units,"[RFC 2543], [RFC 3261]"
+,304,Media type not available,"[RFC 2543], [RFC 3261]"
+,305,Incompatible media format,"[RFC 2543], [RFC 3261]"
+,306,Attribute not understood,"[RFC 2543], [RFC 3261]"
+,307,Session description parameter not understood,"[RFC 2543], [RFC 3261]"
+,330,Multicast not available,"[RFC 2543], [RFC 3261]"
+,331,Unicast not available,"[RFC 2543], [RFC 3261]"
+,370,Insufficient bandwidth,"[RFC 2543], [RFC 3261]"
+,399,Miscellaneous warning,"[RFC 2543], [RFC 3261]"
+
+- [21] [IANAREG] <http://www.iana.org/assignments/sip-parameters> 2003-08-06
+- [22] [[300]]〜[[329]] は、[[セッション記述]]中の[[見出し語]]に問題があったことを示します。
+- [23] [[330]] 番台はセッション記述中で要求された基本的なネットワーク・サービスに問題があることを示します。
+- [24] [[370]] 番台はセッション記述中で要求された quantitative [[QoS]] 引数に問題があることを示します。
+- [25] [[390]] 番台はその他です。
+[[#comment]]
+
+* memo
+- [15] [WEAK[2002-11-12 (火) 20:58]] ''[[名無しさん]]'': [[Message-pm]] では [[Message::Field::Warning]] (<http://suika.fam.cx/gate/cvs/perl/lib/Message/Field/Warning.pm>) で実装していますね
+- [16] [WEAK[2002-11-12 (火) 20:59]] ''15'': どこに ''[14]'' があったんだろう? >>14
+- [17] [WEAK[2002-11-12 (火) 21:00]] ''16'': ないじゃん・・・
+- [26] [[HTTP]] では、 [[RFC2068]] では[[応答頭欄]]とされていましたが、 [[RFC2616]] で[[一般頭欄]]に改められ、[[要求]]でも使うことが可能となりました。[WEAK[キャッシュの関係みたいですね。]] 一方、 [[SIP]] では依然[[応答]]にのみ使用可能とされています。ちなみに [[RTSP]] にはこの欄はありません。
+@
+

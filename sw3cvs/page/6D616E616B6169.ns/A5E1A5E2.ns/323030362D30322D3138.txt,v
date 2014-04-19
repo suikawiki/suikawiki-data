@@ -1,0 +1,125 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.1
+date	2006.02.23.02.22.52;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@
+[1]
+新しい[[XML]][[構文解析器]] (何個目だよ?) が一応完成しました。
+
+;; <IW:SuikaCVS:"messaging/manakai/lib/Message/DOM/XMLParser.dis">
+
+[[名前空間整形式]]な[[XML]][[文書実体]]から[[DOM]]を作ります。
+
+制限事項:
+- [[外部実体]]や[[引数実体]]は読みません。
+- 一応 [[DOM]] [[LS]] の[CODE(DOMi)@@en[[[LSParser]]]][[界面]]で定義された[[メソッド]]を介して利用できますが、
+[CODE(DOMi)@@en[[[LSParser]]]]のすべてを実装しては''いません''。
+また、幾つかの点で (まだ) [[DOM]] ''不''適合です。
+- 例えば、[[文字参照]]は1つの[CODE(DOMi)@@en[[[Text]]]][[節点]]になり、周りの[[文字データ]]と別扱いになります。
+
+([[名無しさん]] [WEAK[2006-02-18 06:48:17 +00:00]])
+
+[2]
+[[DOM]] [[LS]]を使って[[XML]][[文書]]を[[構文解析]]する例:
+[PRE(perl example code)[
+use Message::DOM::DOMLS;
+use Message::DOM::XMLParser;
+my $impl = $Message::DOM::ImplementationRegistry
+             ->get_dom_implementation ({LS => '3.0'});
+my $parser = $impl->create_ls_parser ($impl->MODE_SYNCHRONOUS);
+[CODE(comment)[## 文字列を構文解析]]
+my $document_source = q[<root/>];
+my $doc1 = $parser->parse ({string_data => $document_source});
+[CODE(comment)[## ファイルを構文解析]]
+open my $document_file, '<:encoding(iso-2022-jp)',
+                        'file.xml' or die "$0: file.xml: $!";
+my $doc2 = $parser->parse ({character_stream => $document_file});
+]PRE]
+
+;; 注意: [CODE(DOMi)@@en[[[LSInput]]]]のうち、
+[CODE(DOMa)@@en[[[characterStream]]]] ([[ファイルハンドル]]) と
+[CODE(DOMa)@@en[[[stringData]]]] ([[文字列]])
+''しか''まだ実装していません。
+
+([[名無しさん]] [WEAK[2006-02-18 06:58:46 +00:00]])
+
+[3]
+[[GenericLS]]モジュールを使った例:
+[PRE(perl example code)[
+[CODE(keyword)@@en[[[use]]]] Message::DOM::GenericLS;
+[CODE(keyword)@@en[[[use]]]] Message::DOM::XMLParser;
+[CODE(keyword)@@en[[[my]]]] $impl = $Message::DOM::ImplementationRegistry
+             ->get_implementation ({
+                 q<http://suika.fam.cx/www/2006/feature/GenericLS> => '3.0',
+               });
+[CODE(keyword)@@en[[[my]]]] $parser = $impl->create_gls_parser ({
+                      LS => '3.0',
+                    });
+[CODE(comment)[## 以後 >>2 と同じ。]]
+]PRE]
+
+([[名無しさん]] [WEAK[2006-02-18 07:08:22 +00:00]])
+
+[4]
+'''[CODE(DOMm)@@en[[[createLSParser]]]]と[CODE(DOMm)@@en[[[createGLSParser]]]]の対応''':
+
+[[DOM]] [[LS]]モジュールの[CODE(DOMm)@@en[[[createLSParser]]]][[メソッド]]と、
+[[GenericLS]]おジュールの[CODE(DOMm)@@en[[[createGLSParser]]]][[メソッド]]の対応関係について。
+
+;; [[LS]]モジュール実装:
+<IW:SuikaCVS:"messaging/manakai/lib/Message/DOM/DOMLS.dis">
+
+;; [[GenericLS]]モジュール実装:
+<IW:SuikaCVS:"messaging/manakai/lib/Message/DOM/GenericLS.dis">
+
+([[名無しさん]])
+
+[5]
+'''[CODE(DOMm)@@en[createGLSParser]]メソッドの引数[CODE(DOMp)@@en[mode]]''':
+:[CODE(DOMc)@@en[[[MODE_SYNCHRONOUS]]]]:
+[[機能]][CODE(DOM)@@en[[[LS]]]] [CODE(DOM)@@en[[[3.0]]]]
+:[CODE(DOMc)@@en[[[MODE_ASYNCHRONOUS]]]]:
+[[機能]][CODE(DOM)@@en[[[LS-Async]]]] [CODE(DOM)@@en[[[3.0]]]]
+
+;; [CODE(DOM)@@en[[[LS-Async]]]]を実装していれば[CODE(DOM)@@en[[[LS]]]]も実装していなければならない
+[SRC@@en[DOM3 LS]]ので、両方指定した場合は[CODE(DOMc)@@en[[[MODE_ASYNCHRONOUS]]]]の意味になる。
+
+([[名無しさん]])
+
+
+[6]
+'''[CODE(DOMm)@@en[createLSParser]]メソッドの引数[CODE(DOMp)@@en[schemaType]]''':
+[CODE(DOMm)@@en[[[createLSParser]]]]に指定する[[スキーマ言語]]を表す[[URI]]は、頭に
+<http://suika.fam.cx/www/2006/schema/> を付け足すことで、
+[CODE(DOMm)@@en[[[createGLSParser]]]]に与える[[機能]]の[[名前]]とする。
+(版番号は無指定と等価とする。)
+
+;;
+[[スキーマ言語]]を表す[[URI]]は怪しい
+(特に[[XML 1.0]] [[DTD]]を表す[[URI]]は[[XML 1.0]]仕様書の[[URI]]だしw)
+ので、直接[[機能]]名として使うことは避ける。
+
+
+([[名無しさん]])
+
+@

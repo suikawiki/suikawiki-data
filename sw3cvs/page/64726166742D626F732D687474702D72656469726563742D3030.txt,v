@@ -1,0 +1,303 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1
+	before-db-leaffile:1.1
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2003.10.13.02.02.15;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9 page-icon="HTTP"
+'''Handling of fragment identifiers in redirected URLs'''
+-INTERNET-DRAFT                                                
+-draft-bos-http-redirect-00.txt                            
+-Expires 1 January 2000         
+-    B. Bos
+-         W3C/INRIA
+-                         30 June 1999
+
+*Status of this memo
+> This document is [probably going to be] an Internet-Draft and is in
+full conformance with all provisions of Section 10 of RFC 2026[RFC2026].
+> Internet-Drafts are working documents of the Internet Engineering
+Task Force (IETF), its areas, and its working groups. Note that other
+groups may also distribute working documents as Internet-Drafts.
+> Internet-Drafts are draft documents valid for a maximum of six months
+and may be updated, replaced, or obsoleted by other documents at any
+time. It is inappropriate to use Internet- Drafts as reference
+material or to cite them other than as "work in progress."
+> The list of current Internet-Drafts can be accessed at
+http://www.ietf.org/ietf/1id-abstracts.txt
+> The list of Internet-Draft Shadow Directories can be accessed at
+http://www.ietf.org/shadow.html.
+
+*Abstract
+> The HTTP 1.1 specification describes how a server can answer a
+request with a redirection, instructing the client to get the
+resource from a different URL. It doesn't explain what to do with any
+fragment identifier that might have been on the original URL, and
+this omission has resulted in different clients handling fragments in
+different ways. This draft gives rules towards a more consistent
+handling by future HTTP clients.
+
+HTTP 1.1 仕様書はサーバーが redirect ―異なる URL
+から資源を取得するようにとのクライアントへの指示の要求にどう答えるかを説明しています。
+しかし元の URL にあったかもしれない素片識別子をどうするかは説明していませんで、
+この省略のせいで異なるクライアントが異なる方法で素片を取り扱うことになってしまってます。
+この原案では将来の HTTP クライアントがより一貫した取扱いをするよう規則を与えます。
+
+> Comments on this draft can be sent to bert@@w3.org
+
+*Description of the problem
+> The HTTP 1.1 protocol[HTTP] contains a facility whereby servers can
+inform clients that the resource they requested is not available at
+the requested address, but at some other. The server sends back a
+status code such as 301 or 302 and the correct URI of the resource.
+Clients then typically issue a new request, to the same or to a
+different server, with the new URI.
+
+HTTP 1.1 プロトコルは、サーバーがクライアントにその要求した資源は要求した番地では利用可能でないが、他の場所で利用可能であることを通知する機能を持っています。
+サーバーは [CODE(HTTP)[[[301]]]] や [CODE(HTTP)[[[302]]]]
+のような状態符号とその資源の正しい URI を送り返します。
+クライアントはその時典型的には新しい URI で同じ又は異なるサーバーに新しい要求を発行します。
+
+> URIs may contain a fragment identifier, indicated by a # (hash mark)
+in the URI[URI]. For example
+
+URI は素片識別子 ― URI 中の [CODE(URI)[#]]  で示される ―
+を含んでいるかもしれません。例:
+
+>      http://www.w3.org/TR/REC-xml-names#NT-NCName
+
+> A client that is retrieving this fragment will ask a server for the
+resource "http://www.w3.org/TR/REC-xml-names" and will then locate
+the fragment "NT-NCName" in that resource. It depends on the client
+and on the type of the resource what is done with the fragment.  A
+browser displaying an HTML[HTML] page usually scrolls the view port
+so that the indicated fragment is at the top.
+
+この素片を取り出しすクライアントは、サーバーに資源
+[CODE(URI)[http://www.w3.org/TR/REC-xml-names]]
+を頼み、それからその資源中の素片 [CODE(URI)NT-NCName[]]
+を探します。その素片について何が行われるかはクライアントおよび資源の型に依存します。
+HTML 頁を表示するブラウザは通常表示を示された素片が先頭に来るように巻きます。
+
+> In the example, the fragment identifier is a single name, but again
+depending on the type of resource, it may be a complex expression.
+
+この例では、素片識別子は単一の名前ですが、やはり資源の型に依存して、
+複雑な式であるかもしれません。
+
+> The problem is what happens when a URI with a fragment identifier
+gets redirected. Assume that when the client sends the URL
+"http://www.w3.org/TR/REC-xml-names" to a server, it will receive a
+status code 301, which means "Moved permanently", and a new URL.
+Let's assume the new URL is
+
+問題は、素片識別子つきの URI が再指向されたときに何が起こるかです。
+クライアントが URL [CODE(URI)[http://www.w3.org/TR/REC-xml-names]]
+をサーバーに送ったとしますと、
+[CODE(HTTP)[301]] 状態符号を受信しますが、これは「永続的に移動」
+を意味し、新しい URL をも受信します。新しい URL が
+
+>      http://www.w3.org/TR/REC-xml-names/
+
+> i.e., with an extra slash compared to the original URL. The question
+is whether the client should interpret this as
+
+すなわち、元の URL と比べると1個余計に斜線がついたものであると仮定します。
+問題なのは、クライアントがこれを
+
+>      http://www.w3.org/TR/REC-xml-names/#NT-NCName
+
+> or as
+
+と解釈するべきであるか、それとも
+
+>      http://www.w3.org/TR/REC-xml-names/
+
+と解釈するべきであるかです。
+
+> The former assumes that the document may have changed location, but
+that it is still the same document and it still contains the same
+fragment. The latter assumes that, because the document changed
+location, it probably also changed contents, and doesn't have that fragment anymore.
+
+前者は、文書は位置が変わったかもしれないが、
+依然同じ文書であって、依然同じ素片を含んでいると仮定しています。
+後者は、文書の位置が変わったのであるから、おそらくその内容も変わっており、
+元の素片も最早持っていないと仮定しています。
+
+> The HTTP 1.1 specification talks about a single resource which is
+available at one or more locations or in one or more representations,
+so the former interpretation appears to be the right one. It may be
+the case that some of those alternative representations do not allow
+fragments to be identified, but we will have to assume that at least one of them does.
+
+HTTP 1.1 仕様書は、単一の資源が複数の場所や複数の表現でで利用可能であったりすると言っているので、
+前者の解釈がもっともっぽく思えます。その代替表現の幾つかが識別される素片を認めていない場合もあるかもしれませんが、
+少なくてもそのうちの1つは持っていると仮定しなければならないでしょう。
+
+> But HTTP 1.1 doesn't talk explicitly about fragment identifiers,
+which has resulted in the sad fact that at the time of writing, there
+are clients that drop the fragment identifier upon a redirect.
+Anecdotal evidence suggests that in fact only about one third of Web
+browsers re-applies the fragment identifier to the redirected URL.
+
+しかし HTTP 1.1 は素片識別子について陽に話しておらず、
+執筆の時点では悲しい現実になっていまして、
+再指向の際に素片識別子を落としてしまうクライアントが存在します。
+逸話的証拠によればたった三分の一くらいの Web ブラウザしか再指向先 URL
+に素片識別子を再適用しません。
+
+> This draft therefore explains how to apply the fragment identifier in
+case of a redirection.
+
+従ってこの原案は再指向の場合にどう素片識別子を適用するかを説明します。
+
+*Detailed specification
+> There are different cases, depending on which type of redirection is
+used, and on whether the new URI itself contains a fragment identifier.
+
+どの種類の再指向であるかや新しい URI 自体が素片識別子を含むかに依って幾つかの場合があります。
+
+> We assume that a client issued an HTTP GET request for a particular
+URI (referred to as the "original URI"). This draft does not specify
+what happens with other kinds of requests, such as HEAD, PUT and POST.
+
+クライアントが HTTP GET 要求を特定の URI ([CODE[元の URI]] という。)
+に発行したとします。この原案は他の種類の要求 ([CODE(HTTP)[[[HEAD]]]],
+[CODE(HTTP)[[[PUT]]]], [CODE(HTTP)[[[POST]]]] など)
+で何が起こるかは規定しません。
+
+> If the server returns a response code of 300 ("multiple choice"), 301
+("moved permanently"), 302 ("moved temporarily") or 303 ("see
+other"), and if the server also returns one or more URIs where the
+resource can be found, then the client SHOULD treat the new URIs as
+if the fragment identifier of the original URI was added at the end.
+
+サーバーが [CODE(HTTP)[[[300]]]] (「複数の選択肢」),
+[CODE(HTTP)[[[301]]]] (「永続的移動」),
+[CODE(HTTP)[[[302]]]] (「一時的移動」),
+[CODE(HTTP)[[[303]]]] (「他をみよ」)
+を返し、かつサーバーがその資源の見つかる1つ以上の URI
+をも返したとすると、その時クライアントは新しい URI
+を、元の URI の素片識別子を最後に加えたものとして扱う'''べきです'''。
+
+> The exception is when a returned URI already has a fragment
+identifier. In that case the original fragment identifier MUST NOT be not added to it.
+
+例外は返された URI が既に素片識別子を持っているときです。
+この場合元の素片識別子を加えては'''なりません'''。
+
+> If the client retrieves the resource using the new URI and the
+resource turns out to be of a type that doesn't allow fragments to be
+identified, then the client SHOULD silently ignore the fragment ID
+and not issue an error message.
+
+クライアントが新しい URI を使って資源を取り出して、
+その資源の型が素片を識別することができないものだとわかった時は、
+クライアントは黙って素片 ID を無視する'''べき'''で、
+誤りメッセージは発行しない'''べきです'''。
+
+> The response codes 304 ("not modified") and 305 ("use proxy") both
+indicate that the resource can be found in a different way, but do
+not specify a new URI. The resource is still identified by the
+original URI with the original fragment identifier.
+
+応答符号 [CODE(HTTP)[[[304]]]] (「編集されてません」)
+及び [CODE(HTTP)[[[305]]]] (「串使え」)
+は共にその資源が異なる方法で見つかることを示していますが、
+新しい URI は指定していません。資源は依然その元の URI
+に元の素片識別子が付いたもので識別されます。
+
+*Open issue
+> If a resource is available in several representations (as indicated
+by the 300 response code), it may be the case that some of these
+representations would be able to identify the fragment, but not using
+the same fragment identifier. For example, one of the representations
+may be an HTML file with elements carrying ID attributes, while
+another may be a Postscript file with page numbers. The author of
+both may consider them to be the same resource and may want to map
+page numbers to IDs and vice versa. There is currently no way for a
+server to tell a client about such mappings of fragment identifiers
+between different representations of a resource.
+
+資源が幾つかの表現で利用可能な場合 ([CODE(HTTP)[300]] 応答符号で示されるように。)
+には、幾つかの表現は素片を識別できるが、
+同じ素片識別子を使っていない場合があるかもしれません。
+例えば、表現の1つが HTML ファイルで [CODE(HTMLa)[ID]]
+属性のついたものであり、他のものは [[Postscript]]
+ファイルで頁番号が付いたものであったりします。
+両方の著者が両者を同じ資源と考え、
+頁番号を ID に対応付けたりその逆をしたりしたいかもしれません。
+現時点でサーバーがクライアントに資源の異なる表現間での素片識別子の対応関係を伝える方法はありません。
+
+> A suggestion for a future version of HTTP may be to add an (optional)
+Fragment header to the request, which holds the fragment identifier.
+
+将来の版の HTTP への提案として、素片識別子を保持する (省略可能な) 
+[CODE(HTTP)[Fragment]] 頭を要求に加えたらいいかもしれません。
+
+> Even simpler may be to allow an HTTP request to contain a fragment identifier.
+
+もっと簡単な方法は、 HTTP 要求に素片識別子を含めることでしょう。
+
+*Security considerations
+> No new security considerations are added to those already present in HTTP 1.1.
+
+*References
+>
+:[HTML]: 
+Dave Raggett, Arnaud Le Hors, Ian Jacobs. "HTML 4.0 Specification." December 1997, revised April 1998. W3C Recommendation REC-html40-19980424. Available at URL http://www.w3.org/TR/REC-html40/
+:[HTTP]: 
+R. Fielding, J. Gettys, J. Mogul, H. Frystyk, T. Berners-Lee.
+"Hypertext Transfer Protocol -- HTTP/1.1." January 1997. Internet
+RFC 2068. Available at URL
+http://www.w3.org/Protocols/rfc2068/rfc2068
+:[RFC2026]: 
+S. Bradner. "The Internet Standards Process -- Revision 3."
+October 1996. Internet RFC 2026. Available at URL
+ftp://ftp.nordu.net/rfc/rfc2026.txt
+:[URI]: 
+T. Berners-Lee, L. Masinter, M. McCahill. "Uniform Resource Locators (URL)." December 1994. Internet RFC 1738. Available at URL
+ftp://ftp.nordu.net/rfc/rfc1738.txt
+
+*Author's address
+[PRE[
+      Bert Bos
+      W3C/INRIA
+      2004, route des Lucioles
+      B.P. 93
+      06902 Sophia Antipolis Cedex
+      France
+
+      tel: +33 (0)4 92 38 76 92
+      e-mail: bert@@w3.org
+]PRE]
+*License
+[[RFCのライセンス]]
+* メモ
+
+[1] [CODE(WikiPage)[[[Location]]]] 参照。
+- [2] 詳しくは >>1 を参照して欲しいのですが、結局この [[I-D]] が扱っている素片識別子の問題は最新の HTTP RFC errata でも、どうするよ? と言っていて、はっきり決まってない状態です <http://purl.org/NET/http-errata#location-fragments>。
+@

@@ -1,0 +1,303 @@
+head	1.3;
+access;
+symbols
+	suikawiki3-final:1.3
+	before-db-leaffile:1.2
+	after-upgrade-to-suikawiki-3:1.2
+	before-fork-suikawiki3:1.2
+	after-restore-20040122:1.2;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.3
+date	2006.10.31.02.14.11;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2003.10.03.02.02.08;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.09.03.02.00.12;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9 page-icon="HTTP"
+
+[1]
+[CITE[Bug 41489 - http authentication does not support non-ASCII characters]] <https://bugzilla.mozilla.org/show_bug.cgi?id=41489>
+([[名無しさん]])
+
+
+[[#comment]]
+
+
+* 仕様書から
+
+
+** RFC 1945 (HTTP/1.0) 10.2; RFC 2068・2616 (HTTP/1.1) 14.8 Authorization
+
+> A user agent that wishes to authenticate itself with a server--
+usually, but not necessarily, after receiving a 401 response--[DEL[[DEL[[INS[{1945}]] may]] [INS[[INS[{2068}]] MAY]] do]] [INS[[INS[{2616}]] does]]
+so by including an Authorization request-header field with the
+request. The Authorization field value consists of credentials
+containing the authentication information of the user agent for the
+realm of the resource being requested.
+
+サーバーに (普通は、でも必要ではないけど、 401 応答を受け取った後に)、
+認証されたいと思う利用者代理者は、 Authorization 要求頭欄を要求に
+含めることでそう出来ます。 Authorization 欄の値は
+要求されている資源の領域に対しての利用者代理者の認証情報を含んだ
+証明書で構成されます。
+
+>
+- Authorization  = "Authorization" ":" credentials
+
+> HTTP access authentication is described in [DEL[[INS[{1945・2068}]] section 11]] [INS[[INS[{2616}]] "HTTP Authentication: Basic and Digest Access Authentication" [43]]]. If a request
+is authenticated and a realm specified, the same credentials [DEL[[INS[{1945}]] should]] [INS[[INS[{2068}]] SHOULD]]
+be valid for all other requests within this realm [INS[[INS[{2616}]] (assuming that the authentication scheme itself does not require otherwise, such as credentials that vary according to a challenge value or using synchronized clocks)]].
+
+HTTP 接続認証は『HTTP 認証: 基本接続認証と要約接続認証』
+で説明されています。要求が認証されて領域が指定されていれば、
+同じ証明書が当該領域内のすべての他の要求に対して妥当である
+'''べきです'''。 (認証方式自体はそうでないことを必要としない
+(例えば挑戦値により変化する証明書や同期時計の使用が無い)
+と仮定します。)
+
+[DEL[
+
+> [INS[{1945}]] Responses to requests containing an Authorization field are not
+cachable.
+
+[CODE(HTTP)[Authorization]] 欄を含んだ要求に対する応答はキャッシュ可能ではありません。
+]DEL]
+
+[INS[
+
+> [INS[{2068〜}]] When a shared cache (see section 13.7) receives a request containing
+an Authorization field, it MUST NOT return the corresponding response
+as a reply to any other request, unless one of the following specific
+exceptions holds:
+
+共有キャッシュが Authorization 欄を含んだ要求を受け取った時、
+他のどの要求への返信としても対応する応答を返しては'''いけません'''。
+但し次のうちのいずれかの例外を除きます。
+
+>
+= 1. If the response includes the [DEL[[INS[{2068}]] "proxy-revalidate" Cache-Control]] [INS[[INS[{2616}]] "s-maxage" cache-control]]
+directive, the cache MAY use that response in replying to a
+subsequent request[DEL[, but [INS[{2068}]] ]][INS[. But (if the specified maximum age has passed) [INS[{2616}]]]] a proxy cache MUST first revalidate it with
+the origin server, using the request-headers from the new request
+to allow the origin server to authenticate the new request. [INS[[INS[{2616}]] (This is the defined behavior for s-maxage.) If the response includes "s-maxage=0", the proxy MUST always revalidate it before re-using it.]]
+= 2. If the response includes the "must-revalidate" [DEL[Cache-Control]] [INS[cache-control]]
+directive, the cache MAY use that response in replying to a
+subsequent request[DEL[, but]][INS[. But if the response is stale, ]] all caches MUST first revalidate it with
+the origin server, using the request-headers from the new request
+to allow the origin server to authenticate the new request.
+= 3. If the response includes the "public" [DEL[Cache-Control]] [INS[cache-control]] directive, it [DEL[may]] [INS[MAY]] be returned in reply to any subsequent request.
+
+= 応答が "s-maxage" cache-control 指令を含んでいたら、キャッシュは
+後続要求に返信するのにその応答を使っても'''構いません'''。
+しかし (指定された最大年令が経過したら) 串キャッシュはまず
+源サーバーと再検証し'''なければなりません'''。
+そのとき新しい要求からの要求頭を使って源サーバーが新しい要求を
+認証出来るようにします。 (これは s-maxage に定義された振舞いです。)
+応答が "s-maxage=0" を含んでいる場合、串は再利用する前に常に
+再検証し'''なければなりません'''。
+= 応答が "must-revalidate" cache-control 指示を含んでいる場合、
+キャッシュはその応答を後続要求への返信に使っても'''構いません'''。
+しかし要求が腐ったら全てのキャッシュはまず源サーバーで
+再検証し'''なければなりません'''。この時新しい要求からの
+要求頭を使って源サーバーが新しい要求を認証出来るようにします。
+= 要求が "public" cache-control 指示を含んでいる場合、
+どの後続要求への返信でも返して'''構いません'''。
+]INS]
+
+
+** RFC の部分の License
+
+[[RFCのライセンス]]
+
+
+* メモ@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@d1 98
+a98 82
+#?SuikaWiki/0.9 page-icon="HTTP"
+[[#comment]]
+* 仕様書から
+** RFC 1945 (HTTP/1.0) 10.2; RFC 2068・2616 (HTTP/1.1) 14.8 Authorization
+>A user agent that wishes to authenticate itself with a server--
+usually, but not necessarily, after receiving a 401 response--[DEL[[DEL[[INS[{1945}]] may]] [INS[[INS[{2068}]] MAY]] do]] [INS[[INS[{2616}]] does]]
+so by including an Authorization request-header field with the
+request. The Authorization field value consists of credentials
+containing the authentication information of the user agent for the
+realm of the resource being requested.
+
+サーバーに (普通は、でも必要ではないけど、 401 応答を受け取った後に)、
+認証されたいと思う利用者代理者は、 Authorization 要求頭欄を要求に
+含めることでそう出来ます。 Authorization 欄の値は
+要求されている資源の領域に対しての利用者代理者の認証情報を含んだ
+証明書で構成されます。
+
+>
+- Authorization  = "Authorization" ":" credentials
+
+> HTTP access authentication is described in [DEL[[INS[{1945・2068}]] section 11]] [INS[[INS[{2616}]] "HTTP Authentication: Basic and Digest Access Authentication" [43]]]. If a request
+is authenticated and a realm specified, the same credentials [DEL[[INS[{1945}]] should]] [INS[[INS[{2068}]] SHOULD]]
+be valid for all other requests within this realm [INS[[INS[{2616}]] (assuming that the authentication scheme itself does not require otherwise, such as credentials that vary according to a challenge value or using synchronized clocks)]].
+
+HTTP 接続認証は『HTTP 認証: 基本接続認証と要約接続認証』
+で説明されています。要求が認証されて領域が指定されていれば、
+同じ証明書が当該領域内のすべての他の要求に対して妥当である
+'''べきです'''。 (認証方式自体はそうでないことを必要としない
+(例えば挑戦値により変化する証明書や同期時計の使用が無い)
+と仮定します。)
+
+[DEL[
+> [INS[{1945}]] Responses to requests containing an Authorization field are not
+cachable.
+
+[CODE(HTTP)[Authorization]] 欄を含んだ要求に対する応答はキャッシュ可能ではありません。
+]DEL]
+
+[INS[
+> [INS[{2068〜}]] When a shared cache (see section 13.7) receives a request containing
+an Authorization field, it MUST NOT return the corresponding response
+as a reply to any other request, unless one of the following specific
+exceptions holds:
+
+共有キャッシュが Authorization 欄を含んだ要求を受け取った時、
+他のどの要求への返信としても対応する応答を返しては'''いけません'''。
+但し次のうちのいずれかの例外を除きます。
+
+>
+= 1. If the response includes the [DEL[[INS[{2068}]] "proxy-revalidate" Cache-Control]] [INS[[INS[{2616}]] "s-maxage" cache-control]]
+directive, the cache MAY use that response in replying to a
+subsequent request[DEL[, but [INS[{2068}]] ]][INS[. But (if the specified maximum age has passed) [INS[{2616}]]]] a proxy cache MUST first revalidate it with
+the origin server, using the request-headers from the new request
+to allow the origin server to authenticate the new request. [INS[[INS[{2616}]] (This is the defined behavior for s-maxage.) If the response includes "s-maxage=0", the proxy MUST always revalidate it before re-using it.]]
+= 2. If the response includes the "must-revalidate" [DEL[Cache-Control]] [INS[cache-control]]
+directive, the cache MAY use that response in replying to a
+subsequent request[DEL[, but]][INS[. But if the response is stale, ]] all caches MUST first revalidate it with
+the origin server, using the request-headers from the new request
+to allow the origin server to authenticate the new request.
+= 3. If the response includes the "public" [DEL[Cache-Control]] [INS[cache-control]] directive, it [DEL[may]] [INS[MAY]] be returned in reply to any subsequent request.
+
+= 応答が "s-maxage" cache-control 指令を含んでいたら、キャッシュは
+後続要求に返信するのにその応答を使っても'''構いません'''。
+しかし (指定された最大年令が経過したら) 串キャッシュはまず
+源サーバーと再検証し'''なければなりません'''。
+そのとき新しい要求からの要求頭を使って源サーバーが新しい要求を
+認証出来るようにします。 (これは s-maxage に定義された振舞いです。)
+応答が "s-maxage=0" を含んでいる場合、串は再利用する前に常に
+再検証し'''なければなりません'''。
+= 応答が "must-revalidate" cache-control 指示を含んでいる場合、
+キャッシュはその応答を後続要求への返信に使っても'''構いません'''。
+しかし要求が腐ったら全てのキャッシュはまず源サーバーで
+再検証し'''なければなりません'''。この時新しい要求からの
+要求頭を使って源サーバーが新しい要求を認証出来るようにします。
+= 要求が "public" cache-control 指示を含んでいる場合、
+どの後続要求への返信でも返して'''構いません'''。
+]INS]
+
+
+** RFC の部分の License
+[[RFCのライセンス]]
+* メモ
+@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@d1 10
+a10 8
+*RFC 2616 14.8 Authorization
+
+      A user agent that wishes to authenticate itself with a server--
+   usually, but not necessarily, after receiving a 401 response--does
+   so by including an Authorization request-header field with the
+    request.  The Authorization field value consists of credentials
+      containing the authentication information of the user agent for
+      the realm of the resource being requested.
+d18 2
+a19 1
+          Authorization  = "Authorization" ":" credentials
+d21 3
+a23 7
+      HTTP access authentication is described in "HTTP Authentication:
+      Basic and Digest Access Authentication" [43]. If a request is
+      authenticated and a realm specified, the same credentials SHOULD
+      be valid for all other requests within this realm (assuming that
+      the authentication scheme itself does not require otherwise, such
+      as credentials that vary according to a challenge value or using
+      synchronized clocks).
+d32 12
+a43 4
+      When a shared cache (see section 13.7) receives a request
+      containing an Authorization field, it MUST NOT return the
+      corresponding response as a reply to any other request, unless one
+      of the following specific exceptions holds:
+d49 12
+a60 9
+      1. If the response includes the "s-maxage" cache-control
+         directive, the cache MAY use that response in replying to a
+         subsequent request. But (if the specified maximum age has
+         passed) a proxy cache MUST first revalidate it with the origin
+         server, using the request-headers from the new request to allow
+         the origin server to authenticate the new request. (This is the
+         defined behavior for s-maxage.) If the response includes "s-
+         maxage=0", the proxy MUST always revalidate it before re-using
+         it.
+d62 2
+a63 2
+応答が "s-maxage" cache-control 指令を含んでいたら、キャッシュは
+皇族要求に返信するのにその応答を使っても'''構いません'''。
+d70 1
+a70 9
+
+      2. If the response includes the "must-revalidate" cache-control
+         directive, the cache MAY use that response in replying to a
+         subsequent request. But if the response is stale, all caches
+         MUST first revalidate it with the origin server, using the
+         request-headers from the new request to allow the origin server
+         to authenticate the new request.
+
+応答が "must-revalidate" cache-control 指示を含んでいる場合、
+d75 1
+a75 5
+
+      3. If the response includes the "public" cache-control directive,
+         it MAY be returned in reply to any subsequent request.
+
+要求が "public" cache-control 指示を含んでいる場合、
+d77 1
+a78 1
+*License
+d80 3
+a82 1
+[[RFCのライセンス]]@
+

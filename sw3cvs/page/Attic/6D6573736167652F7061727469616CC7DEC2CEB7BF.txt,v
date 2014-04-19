@@ -1,0 +1,636 @@
+head	1.3;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.3
+date	2003.06.06.12.26.31;	author make;	state dead;
+branches;
+next	1.2;
+
+1.2
+date	2002.10.27.13.24.55;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2002.07.29.12.01.58;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.3
+log
+@auto-commited
+@
+text
+@#?SuikaWiki/0.9
+*どれだけの大きさで分割するか。
+
+[1] message/partial で分割する場合、
+=行ごとにしか区切れない。
+=配送中に頭が増えてく。 (主に[[Received:欄]])
+ので、厳密な大きさを決めて区切ることには意味は無いでしょう。
+
+分割の目安としては、 [[SMTP]] サーバーの送信制限 (自主規制。
+プロトコル的にはもっといけるはず。), 受信側 SMTP サーバーの
+制限, 各種 [[ML]] での受け取り制限とかから考えると、 
+40〜100Ko あたりでしょーか。
+
+とはいえ、回線が昔よりは整備されていますから、 (無知も相まって)
+数 Mo の無圧縮の画像とかをそのまま送りつけてくる
+人もいます:-)
+
+各種 UA の既定値:
+,[[M$OE]]5.5 ([[Windoze]]),60Ko,
+[[#comment]]
+*頭欄の扱い
+
+[2] 内側に包まないといけない頭領域が、 [[MIME]] [[RFC]]
+の版によって規定が違っているので、
+実装間で相互通信性上の問題が発生し得ます。
+
+Content-*: 欄 (See [[MIME頭欄]]) と
+[[Message-ID:欄]]は、 RFC 1341 以来ずっと、
+内側に入れなければなりません。復元の時も、外側のは消去して、
+内側のを使う、もし無ければ MID なし、となるでしょう。
+
+他の3欄は、 RFC 1521 または 2046 で内側に入れるのに
+追加されてます。ですから、これらが内側に無く、外側にある
+メッセージというのが存在しえます。ここは、 RFC 2046
+には反しますが、互換性のため内側になくて外側にあれば
+それを使う、とするのが良いでしょう。
+
+分割の時にこれらのうち次の2つは、内側に入れて、''外側には残さない''
+(つまり RFC 2046 に従う) のが良いと思われます。
+[[MIME-Version:欄]]と [[Encrypted:欄]]は、
+そうしないとその指す対象が曖昧になります。
+
+[[Subject:欄]]については、もとの Subject の末尾に (1/4)
+みたいに入れるのが多かったので、仕様が変更されたのだと思います。
+ですから、内側に元の Subject を入れて、外側は
+「Subject: 元の Subject (1/*)」にするか、元の Subject
+を入れるかのどちらかにするのが良いでしょう。
+(2番目以降は、 (2/4) みたいのを必ず入れる。2番目以降は
+捨てられて解釈に影響しないから。)
+
+[3] RFC 2298 <urn:ietf:rfc:2298> は、
+[[Disposition-Notification-To:欄]],
+[[Disposition-Notification-Options:欄]],
+[[Original-Recipient:欄]]の3欄も「内側」
+に入れるように指示しています。
+
+*壊れたメッセージsの復元
+
+[4] [[ML]] なんかで、てきとーに[[メッセージ]]とか[[広告]]とかを付け足すところがありますが、
+message/partial にとってもこれは致命的であることが多いでしょう。
+復元したら、変なのが間に挟まります。
+
+内側のメッセージが [[Base64]] になってたりしたら、
+運が悪いと復元できなくなります。
+
+[5] 復元実装は、利用者の操作によって、途中幾つかの部分が抜けていても無理矢理(飛ばして)復元できれば便利かもしれません。
+何かの事故で途中幾つかが届かなかったとしても、
+運がよければ中身が大体分かります。
+
+*RFC 2046 5.2.2.  Partial Subtype
+
+>The "partial" subtype is defined to allow large entities to be
+delivered as several separate pieces of mail and automatically
+reassembled by a receiving user agent.  (The concept is similar to IP
+fragmentation and reassembly in the basic Internet Protocols.)  This
+mechanism can be used when intermediate transport agents limit the
+size of individual messages that can be sent.  The media type
+"message/partial" thus indicates that the body contains a fragment of
+a larger entity.
+
+"partial" 亜型は、大きな実体を幾つかのメイル片に分割して配達し、
+受信した利用者代理者が自動的に復元することが出来るように定義するものです。
+(この概念は、基本 Internet Protocol 中での IP
+の断片化と結合 [INS[(訳注: なんて訳すのが一般的ですか?)]]
+と同様のものです。)
+この機構は、中間転送代理者が個々のメッセージの送信出来る大きさを
+制限している場合に使うことが出来ます。媒体型 "message/partial"
+は従って、本文がより大きな実体の断片であることを示します。
+
+>Because data of type "message" may never be encoded in base64 or
+quoted-printable, a problem might arise if "message/partial" entities
+are constructed in an environment that supports binary or 8bit
+transport.  The problem is that the binary data would be split into
+multiple "message/partial" messages, each of them requiring binary
+transport.  If such messages were encountered at a gateway into a
+7bit transport environment, there would be no way to properly encode
+them for the 7bit world, aside from waiting for all of the fragments,
+reassembling the inner message, and then encoding the reassembled
+data in base64 or quoted-printable.  Since it is possible that
+different fragments might go through different gateways, even this is
+not an acceptable solution.  For this reason, it is specified that
+entities of type "message/partial" must always have a 
+content-transfer-encoding of 7bit (the default).  In particular, even in
+environments that support binary or 8bit transport, the use of a
+content-transfer-encoding of "8bit" or "binary" is explicitly
+prohibited for MIME entities of type "message/partial". This in turn
+implies that the inner message must not use "8bit" or "binary" encoding.
+
+型 "message" のデータが base64 や [[Quoted-Printable]]
+で符号化されることは無いので、 "message/partial" 実体が
+binary・8bit 転送に対応した環境で構築された時に問題が起こり得ます。
+問題とは、バイナリ・データが複数の "message/partial"
+[[メッセージ]]に分割された時に、その各々は[[バイナリ]]転送が必要になります。
+その様なメッセージが7ビット転送環境への[[関門]]に差し掛かったときに、
+7ビット世界用に適切に符号化する方法は、全ての断片が届くのを待って、
+内側のメッセージを復元して、復元データを
+base64 か quoted-printable で符号化する以外にはありません。
+別の断片が別の関門を通ることもあり得るでしょうから、
+これも可能な解とは言えません。このような理由から、型
+"message/partial"  の実体は 7bit (既定値) の
+content-transfer-encoding でなければならないと規定します。
+特に、バイナリや8ビットの転送に対応した環境にあっても、型
+"message/partial" の MIME [[実体]]に content-transfer-encoding 
+"8bit"・"binary" を使用することはここに明示的に禁止します。
+これはすなわち内側のメッセージが "8bit" や "binary"
+の符号化であってはならないことを示します。
+
+>Because some message transfer agents may choose to automatically
+fragment large messages, and because such agents may use very
+different fragmentation thresholds, it is possible that the pieces of
+a partial message, upon reassembly, may prove themselves to comprise
+a partial message.  This is explicitly permitted.
+
+自動的に大きなメッセージを断片化することを選ぶメッセージ転送代理者も
+あるでしょうから、そしてその様な代理者は非常に異なった断片化閾値を
+採用するかもしれませんから、部分メッセージ片が、復元してみたら、
+それ自体が部分メッセージであったということがあり得ます。
+これは明示的に認めます。
+
+>Three parameters must be specified in the Content-Type field of type
+"message/partial":  The first, "id", is a unique identifier, as close
+to a world-unique identifier as possible, to be used to match the
+fragments together. (In general, the identifier is essentially a
+message-id; if placed in double quotes, it can be ANY message-id, in
+accordance with the BNF for "parameter" given in RFC 2045.)  The
+second, "number", an integer, is the fragment number, which indicates
+where this fragment fits into the sequence of fragments.  The third,
+"total", another integer, is the total number of fragments.  This
+third subfield is required on the final fragment, and is optional
+(though encouraged) on the earlier fragments.  Note also that these
+parameters may be given in any order.
+
+型 "message/partial" の Content-Type 領域には、
+3つのパラメーターを指定しなければなりません。最初に、 "id"
+は、唯一識別子で、可能な限り世界的に唯一の識別子として選んだもので、
+断片を互いに一致させるのに使います。
+(通常、識別子は本質的には message-id です。
+二重引用符中にあるなら、 RFC 2045 の "parameter" の BNF に従って、
+'''どんな''' message-id であっても構いません。) 二番目は、
+"number" で整数値で、断片番号であり、
+その断片が断片列中のどの位置に当たるかを示します。
+三番目、 "third" も整数値で、断片の合計数です。
+この3番目の小領域は最後の断片で必須で、それ以前の断片では省略可能
+(推奨だけど。) です。
+なお、これらのパラメーターはどんな順番でも構いません。
+
+>Thus, the second piece of a 3-piece message may have either of the
+following header fields:
+
+よって、3片メッセージの2番目の片は次の様な頭欄のいずれかを持ち得ます。
+
+     Content-Type: Message/Partial; number=2; total=3;
+                   id="oc=jpbe0M2Yt4s@@thumper.bellcore.com"
+
+     Content-Type: Message/Partial;
+                   id="oc=jpbe0M2Yt4s@@thumper.bellcore.com";
+                   number=2
+
+>But the third piece MUST specify the total number of fragments:
+
+しかし、3番目の片は断片の総数を指定し'''なければなりません'''。
+
+     Content-Type: Message/Partial; number=3; total=3;
+                   id="oc=jpbe0M2Yt4s@@thumper.bellcore.com"
+
+>Note that fragment numbering begins with 1, not 0.
+
+断片の番号付けは 0 ではなく 1 から始まることに注意して下さい。
+
+>When the fragments of an entity broken up in this manner are put
+together, the result is always a complete MIME entity, which may have
+its own Content-Type header field, and thus may contain any other
+data type.
+
+この方法で分割されている断片を合成した時、結果は常に完全な
+MIME 実体になります。これは自身の Content-Type
+欄を持つことが出来て、従ってどんなデータ型をも含めることが出来ます。
+
+**5.2.2.1.  Message Fragmentation and Reassembly [INS[メッセージの断片化と復元]]
+
+>The semantics of a reassembled partial message must be those of the
+"inner" message, rather than of a message containing the inner
+message.  This makes it possible, for example, to send a large audio
+message as several partial messages, and still have it appear to the
+recipient as a simple audio message rather than as an encapsulated
+message containing an audio message.  That is, the encapsulation of
+the message is considered to be "transparent".
+
+復元した部分メッセージの意味するところは、「内側」
+のメッセージを含むメッセージのものというよりは、
+内側のメッセージのものなのであります。
+これにより、例えば、
+大きな音声メッセージを幾つかの部分メッセージとして送って、
+それでもこれを受信者には音声メッセージを含むカプセル化メッセージとしてではなく単一のメッセージとして見せることが可能になります。
+つまり、メッセージのカプセル化は「透明」と見なします。
+
+>When generating and reassembling the pieces of a "message/partial"
+message, the headers of the encapsulated message must be merged with
+the headers of the enclosing entities.  In this process the following
+rules must be observed:
+
+"message/partial" メッセージ片の生成・復元に際して、
+カプセル化されるメッセージの頭は、
+囲んでいる実体の頭と併合しなければなりません。
+この時、次の規則を適用しなければなりません。
+
+    (1)   Fragmentation agents must split messages at line
+          boundaries only. This restriction is imposed because
+          splits at points other than the ends of lines in turn
+          depends on message transports being able to preserve
+          the semantics of messages that don't end with a CRLF
+          sequence. Many transports are incapable of preserving
+          such semantics.
+
+断片化代理者は、行の境目でのみメッセージを区切らなければなりません。
+この制限を課すのは、行末以外の場所で区切ると、 CRLF
+で終わらないというメッセージの意味を保持することが出来るメッセージ転送系に依存してしまうからです。
+多くの転送系は、このような意味を保持する能力がありません。
+
+    (2)   All of the header fields from the initial enclosing
+          message, except those that start with "Content-" and
+          the specific header fields "Subject", "Message-ID",
+          "Encrypted", and "MIME-Version", must be copied, in
+          order, to the new message.
+
+最初の囲んでいるメッセージの全ての頭欄のうち、 "Content-"
+で始まるもの及び頭欄 "Subject", "Message-ID", "Encrypted", 
+"MIME-Version" を除いたものを、そのままの順で、
+新しいメッセージに複写しなければなりません。
+
+[INS[
+"Subject" は、 RFC 1521 では含まれていません。
+更に、 RFC 1341 では、 "Content-" と "Message-ID" だけでした。
+以下同じ。 >>4 も参照。
+]INS]
+
+    (3)   The header fields in the enclosed message which start
+          with "Content-", plus the "Subject", "Message-ID",
+          "Encrypted", and "MIME-Version" fields, must be
+          appended, in order, to the header fields of the new
+          message.  Any header fields in the enclosed message
+          which do not start with "Content-" (except for the
+          "Subject", "Message-ID", "Encrypted", and "MIME-
+          Version" fields) will be ignored and dropped.
+
+囲まれたメッセージ中の "Content-" で始まる頭欄, 
+それに "Subject", "Message-ID", "Encrypted", "MIME-Version" 
+各欄は、そのままの順で、新しいメッセージの頭欄に付け加えます。
+囲まれたメッセージ中の "Content-" で始まらない頭欄
+("Subject", "Message-ID", "Encrypted", "MIME-Version" 欄を除く。)
+は無視し、落とします。
+
+    (4)   All of the header fields from the second and any
+          subsequent enclosing messages are discarded by the
+          reassembly process.
+
+2番目以降の囲むメッセージからの頭欄は全て、復元の過程で捨てます。
+
+**5.2.2.2.  Fragmentation and Reassembly Example [INS[断片化と復元の例]]
+
+>If an audio message is broken into two pieces, the first piece might
+look something like this:
+
+音声メッセージが2片に分割された時、最初の片はこのようになります。
+
+     X-Weird-Header-1: Foo
+     From: Bill@@host.com
+     To: joe@@otherhost.com
+     Date: Fri, 26 Mar 1993 12:59:38 -0500 (EST)
+     Subject: Audio mail (part 1 of 2)
+     Message-ID: <id1@@host.com>
+     MIME-Version: 1.0
+     Content-type: message/partial; id="ABC@@host.com";
+                   number=1; total=2
+
+     X-Weird-Header-1: Bar
+     X-Weird-Header-2: Hello
+     Message-ID: <anotherid@@foo.com>
+     Subject: Audio mail
+     MIME-Version: 1.0
+     Content-type: audio/basic
+     Content-transfer-encoding: base64
+
+       ... first half of encoded audio data goes here ...
+
+>and the second half might look something like this:
+
+で、2番目の半分はこんな感じになるでしょう。
+
+     From: Bill@@host.com
+     To: joe@@otherhost.com
+     Date: Fri, 26 Mar 1993 12:59:38 -0500 (EST)
+     Subject: Audio mail (part 2 of 2)
+     MIME-Version: 1.0
+     Message-ID: <id2@@host.com>
+     Content-type: message/partial;
+                   id="ABC@@host.com"; number=2; total=2
+
+       ... second half of encoded audio data goes here ...
+
+>Then, when the fragmented message is reassembled, the resulting
+message to be displayed to the user should look something like this:
+
+この時、断片化メッセージを復元したら、利用者に表示される
+結果のメッセージはこのようになるはずであります。
+
+     X-Weird-Header-1: Foo
+     From: Bill@@host.com
+     To: joe@@otherhost.com
+     Date: Fri, 26 Mar 1993 12:59:38 -0500 (EST)
+     Subject: Audio mail
+     Message-ID: <anotherid@@foo.com>
+     MIME-Version: 1.0
+     Content-type: audio/basic
+     Content-transfer-encoding: base64
+
+       ... first half of encoded audio data goes here ...
+       ... second half of encoded audio data goes here ...
+
+>The inclusion of a "References" field in the headers of the second
+and subsequent pieces of a fragmented message that references the
+Message-Id on the previous piece may be of benefit to mail readers
+that understand and track references.  However, the generation of
+such "References" fields is entirely optional.
+
+2番目以降の断片化メッセージの欠片に前の欠片の Message-ID を指す 
+"References" 欄を入れることで、 references
+を理解して追跡するメイル読者には有益になるかもしれません。
+しかし、こうした "References" 欄の生成は、完全に任意のものです。
+
+>Finally, it should be noted that the "Encrypted" header field has
+been made obsolete by Privacy Enhanced Messaging (PEM) [RFC-1421,
+RFC-1422, RFC-1423, RFC-1424], but the rules above are nevertheless
+believed to describe the correct way to treat it if it is encountered
+in the context of conversion to and from "message/partial" fragments.
+
+最後に、注意されたいのは、 "Encrypted" 頭欄は高度秘密メッセージ
+(Privacy Enhanced Messaging; [[PEM]]) で廃止にされていますが、
+それでも上記の規則は、 "message/partial" 断片へ, あるいは
+断片からの変換の場面での正しい取り扱い方法を説明していると
+信じています。
+
+**RFC の部分の License
+
+See [[RFCのライセンス]]
+*メモ
+@
+
+
+1.2
+log
+@Updated.
+@
+text
+@@
+
+
+1.1
+log
+@Updated.
+@
+text
+@d1 1
+d4 1
+a4 2
+message/partial で分割する場合、
+
+d6 1
+a6 2
+=配送中に頭が増えてく。 (主に[[Received:領域]])
+
+d9 1
+a9 1
+分割の目安としては、 SMTP サーバーの送信制限 (自主規制。
+d11 1
+a11 1
+制限, 各種 ML での受け取り制限とかから考えると、 
+d19 7
+d27 2
+a28 9
+,M$OE5.5 (Windows),60Ko,
+
+*頭領域の扱い
+
+内側に包まないといけない頭領域が、 MIME RFC の版によって
+規定が違っているので、実装間で相互通信性上の問題が
+発生し得ます。
+
+Content-* 領域と [[Message-ID:領域]]は、 RFC 1341 以来ずっと、
+d32 1
+a32 1
+他の3領域は、 RFC 1521 または 2046 で内側に入れるのに
+d39 2
+a40 2
+(つまり RFC 2046) に従うのが良いと思われます。
+[[MIME-Version:領域]]と[[Encrypted:領域]]は、
+d43 1
+a43 1
+[[Subject:領域]]については、もとの Subject の末尾に (1/4)
+d51 5
+a55 3
+RFC 2298 <urn:ietf:rfc:2298> は、 [[Disposition-Notification-To:領域]],
+[[Disposition-Notification-Options:領域]], [[Original-Recipient:領域]]
+も「内側」に入れるように指示しています。
+d59 10
+a68 11
+ML なんかで、てきとーにメッセージとか広告とかを付け足す
+ところがありますが、 message/partial にとっても致命的
+であることが多いでしょう。復元したら、変なのが間に挟まります。
+
+内側のメッセージが Base64 になってたりしたら、運が悪いと
+復元できなくなります。
+
+復元実装は、利用者の操作によって、途中幾つかの部分が抜けていても
+無理矢理(飛ばして)復元できれば便利かもしれません。
+何かの事故で途中幾つかが届かなかったとしても、運がよければ
+中身が大体分かります。
+d72 1
+a72 1
+The "partial" subtype is defined to allow large entities to be
+d83 3
+a85 2
+(この概念は、基本 Internet Protocol 中での IP 断片化・結合 
+(訳注: なんて訳すのが一般的ですか?) と同様のものです。)
+d90 1
+a90 1
+Because data of type "message" may never be encoded in base64 or
+d109 8
+a116 7
+型 "message" のデータが base64 や quoted-printable で符号化されることは
+無いので、 "message/partial" 実体が binary ・ 8bit 転送に対応した環境で
+構築された時に問題が起こり得ます。問題とは、バイナリ・データが
+複数の "message/partial" メッセージに分割された時に、その各々は
+バイナリ転送が必要になります。その様なメッセージが7ビット転送環境への
+関門に差し掛かったときに、7ビット世界用に適切に符号化する方法は、
+全ての断片が届くのを待って、内側のメッセージを復元して、復元データを
+d118 6
+a123 5
+別の断片が別の関門を通ることもあり得るでしょうから、これも
+可能な解とは言えません。このような理由から、型 "message/partial" 
+の実体は 7bit (既定値)の content-transfer-encoding でなければならない
+と規定します。特に、バイナリや8ビットの転送に対応した環境にあっても、
+型 "message/partial" の MIME 実体に content-transfer-encoding 
+d125 2
+a126 2
+これはすなわち内側のメッセージが "8bit" や "binary" の符号化であっては
+ならないことを示します。
+d128 1
+a128 1
+Because some message transfer agents may choose to automatically
+d138 1
+a138 1
+これは明示的に認められます。
+d140 1
+a140 1
+Three parameters must be specified in the Content-Type field of type
+d153 5
+a157 4
+型 "message/partial" の Content-Type 領域には、3つのパラメーターを
+指定しなければなりません。最初に、 "id" は、唯一識別子で、
+可能な限り世界的に唯一の識別子として選んだもので、断片を互いに
+一致させるのに使います。 (通常、識別子は本質的には message-id です。
+d160 3
+a162 2
+"number" で整数値で、断片番号であり、その断片が断片列中のどの位置
+に当たるかを示します。三番目、 "third" も整数値で、断片の合計数です。
+d164 2
+a165 2
+(推奨だけど。) です。なお、これらのパラメーターはどんな順番でも
+構いません。
+d167 1
+a167 1
+Thus, the second piece of a 3-piece message may have either of the
+d170 1
+a170 2
+よって、3片メッセージの2番目の片は次の様な頭領域のいずれかを
+持ち得ます。
+d179 1
+a179 1
+But the third piece MUST specify the total number of fragments:
+d186 1
+a186 1
+Note that fragment numbering begins with 1, not 0.
+d190 1
+a190 1
+When the fragments of an entity broken up in this manner are put
+d196 2
+a197 2
+MIME 実体になります。これは自身の Content-Type 領域を持つことが出来て、
+従ってどんなデータ型をも含めることが出来ます。
+d199 1
+a199 2
+**5.2.2.1.  Message Fragmentation and Reassembly
+メッセージの断片化と復元
+d201 1
+a201 1
+The semantics of a reassembled partial message must be those of the
+d209 6
+a214 6
+復元した部分メッセージの意味するところは、「内側」のメッセージ
+を含むメッセージのものというよりは、内側のメッセージのもの
+なのであります。これにより、例えば、大きな音声メッセージを
+幾つかの部分メッセージとして送って、それでもこれを
+受信者には音声メッセージを含むカプセル化メッセージとしてではなく
+単一のメッセージとして見せることが可能になります。
+d217 1
+a217 1
+When generating and reassembling the pieces of a "message/partial"
+d223 3
+a225 2
+カプセル化されるメッセージの頭は、囲んでいる実体の頭と
+併合しなければなりません。この時、次の規則を適用しなければなりません。
+d236 3
+a238 4
+この制限を課すのは、行末以外の場所で区切ると、 CRLF で終わらない
+というメッセージの意味を保持することが出来るメッセージ転送系
+に依存してしまうからです。多くの転送系は、このような意味を
+保持する能力がありません。
+d246 4
+a249 4
+最初の囲んでいるメッセージの全ての頭領域、但し "Content-" で始まる
+ものと特定の頭領域 "Subject", "Message-ID", "Encrypted", 
+"MIME-Version" を除いたものを、その順で、新しいメッセージに
+複写しなければなりません。
+d251 2
+a252 1
+[["Subject" は、 RFC 1521 では含まれていません。
+d254 2
+a255 1
+以下同じ。]]
+d266 1
+a266 1
+囲まれたメッセージ中の "Content-" で始まる頭領域, 
+d268 3
+a270 3
+領域は、その順で、新しいメッセージの頭領域に付け加えます。
+囲まれたメッセージ中の "Content-" で始まらない頭領域
+("Subject", "Message-ID", "Encrypted", "MIME-Version" 領域を除く。)
+d277 1
+a277 1
+2番目以降の囲むメッセージからの頭領域は全て、復元の過程で捨てます。
+d279 1
+a279 2
+**5.2.2.2.  Fragmentation and Reassembly Example
+断片化と復元の例
+d281 1
+a281 1
+If an audio message is broken into two pieces, the first piece might
+d306 2
+a307 1
+and the second half might look something like this:
+d321 1
+a321 1
+Then, when the fragmented message is reassembled, the resulting
+d325 1
+a325 1
+結果のメッセージはこのようになるべきであります。
+d340 1
+a340 1
+The inclusion of a "References" field in the headers of the second
+d347 3
+a349 3
+"References" 領域を入れることで、 references を理解して追跡する
+メイル読者には有益になるかもしれません。しかし、こうした
+"References" 領域の生成は、完全に任意のものです。
+d351 1
+a351 1
+Finally, it should be noted that the "Encrypted" header field has
+d357 2
+a358 2
+最後に、注意されたいのは、 "Encrypted" 頭領域は秘密向上メッセージ
+(Privacy Enhanced Messaging; PEM) で廃止にされていますが、
+d363 1
+a363 7
+*See also
+-[[媒体型]]
+--[[message/*媒体型]]
+---[[message/rfc822媒体型]]
+-[[MIME]]
+-[[RFC822]]
+*License
+d366 1
+@
+

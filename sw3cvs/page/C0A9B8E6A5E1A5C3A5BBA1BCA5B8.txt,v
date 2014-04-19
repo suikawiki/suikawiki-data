@@ -1,0 +1,323 @@
+head	1.2;
+access;
+symbols
+	suikawiki3-final:1.2
+	before-db-leaffile:1.1
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+
+
+1.2
+date	2008.01.31.02.52.11;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2002.07.29.12.01.59;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@
+
+* 動作 (verb)
+
+[PRE[
+  cancel	850	1036	son	usefor
+  checkgroups		1036	son	usefor
+  ihave 	850	1036	son	usefor
+  mvgroup				usefor
+  newgroup	850	1036	son	usefor
+  rmgroup	850	1036	son	usefor
+  sendme	850	1036	son	usefor
+  sendsys	850	1036	son
+  senduuname	850
+  version	850	1036	son
+  whogets			son
+]PRE]
+
+
+* 各仕様書による定義
+
+- [[RFC850の制御メッセージ]]
+- [[RFC1036の制御メッセージ]]
+- [[son-of-RFC1036の制御メッセージ]]
+- [[draft-usefor-articleの制御メッセージ]]
+
+
+* 制御メッセージに使う領域
+
+[[Control:領域]]。通常はここを使います。この領域があると、
+記事全体が制御メッセージ関連の内容のみと見なされます。
+RFC 850, RFC 1036, son-of-RFC1036, draft-usefor-article。
+
+[[Also-Control:領域]]。 son-of-RFC1036 が定義していましたが、
+draft-usefor-article が廃止しています。この領域は Control: 領域とは
+異なり、メッセージそのものは通常の記事と同様に扱われます。
+
+[[Supersedes:領域]]は、[[Also-Control:領域]]から cancel だけを
+取り出したようなもので、 (歴史的にはこちらが元祖のようですが、)
+指定した記事の更新版となります。 See also [[Article-Updates:領域]],
+[[Obsoletes:領域]]
+
+[[Subject:領域]]は、かつて「cmsg」から始まる場合に、
+続く内容が[[Control:領域]]同様に解釈されました。
+
+[[Newsgroups:領域]]は、新聞組名の最後に「.ctl」をつけることで、
+制御メッセージと見なしていた時代がありました。
+
+
+* SEE ALSO
+
+- [[RFC822と仲間達の頭領域名]]
+-- [[Also-Control:領域]]
+-- [[Control:領域]]
+-- [[Newsgroups:領域]]
+-- [[Subject:領域]]
+-- [[Supersedes:領域]]
+- [[電子ニュース]]
+-- [[RFC850]]
+-- [[RFC1036]]
+-- [[son-of-RFC1036]]
+-- [[draft-usefor-article]]
+-- [[UUCP]]
+-- [[NNTP]]
+
+
+* BNF
+
+;; RFC 850, RFC 1036, son-of-RFC1036, draft-usefor-article (06) から
+
+[PRE[
+  control-field = Control / obs-control-field
+  Control = "Control:" FWS Control-content
+  
+  Control-content     = CONTROL-verb-arguments
+  CONTROL-verb-arguments = CONTROL-newgroup / CONTROL-rmgroup
+                      / CONTROL-mvgroup / CONTROL-checkgroup
+                      / CONTROL-cancel / CONTROL-ihave
+                      / CONTROL-sendme
+                      / verb token	;; future extension
+                      / obs-CONTROL-verb-arguments
+  verb                = token
+  arguments           = *(CFWS value) / obs-arguments
+  
+  CONTROL-newgroup    = "newgroup" newgroup-arguments
+  newgroup-arguments  = CFWS newsgroup-name [CFWS newgroup-flag]
+  newgroup-flag       = "moderated" / obs-newgroup-flag
+  
+  CONTROL-rmgroup     = "rmgroup" rmgroup-arguments
+  rmgroup-arguments   = CFWS newsgroup-name
+  
+  CONTROL-mvgroup     = "mvgroup" mvgroup-arguments
+  mvgroup-arguments   = CFWS newsgroup-name CFWS newsgroup-name
+                             [CFWS newgroup-flag]
+  
+  CONTROL-checkgroup  = "checkgroups" checkgroup-arguments
+  checkgroup-arguments= [chkscope] [chksernr]
+  chkscope            = 1*(CFWS ["!"] newsgroup-name)
+  chksernr            = CFWS "#" 1*DIGIT
+  
+  CONTROL-cancel      = "cancel" cancel-arguments
+  cancel-arguments    = CFWS msg-id / obs-cancel-arguments
+  
+  CONTROL-ihave       = "ihave" ihave-arguments
+  CONTROL-sendme      = "sendme" ihave-arguments
+  ihave-arguments     = CFWS *(msg-id SP) relayer-name
+                      / obs-ihave-arguments
+  relayer-name        = path-identity
+  ihave-body          = *(msg-id CRLF)
+  
+  obs-control-field   = Also-Control
+  Also-Control        = "Also-Control:" FWS Control-content
+                        	;; son-of-RFC1036
+  Subject-content    /= obs-Subject-control
+  obs-Subject-control = "cmsg" FWS Control-content
+  obs-CONTROL-verb-arguments = CONTROL-sendsys	;; son-of-RFC1036
+                      / CONTROL-whogets / CONTROL-version
+                      / CONTROL-senduuname	;; RFC 850
+  obs-arguments       = *(WSP 1*(%x21-7E))	;; son-of-RFC1036
+  obs-newgroup-flag   = "y" / "m"	;; See usefor-article 7.2.1 NOTE
+                      / "unmoderated"	;; son-of-RFC1036
+  obs-cancel-arguments= WSP msg-id *(WSP msg-id)	;; son-of-RFC1036
+  obs-ihave-arguments = WSP *(msg-id WSP)	;; son-of-RFC1036
+  
+  CONTROL-sendsys     = "sendsys" sendsys-arguments
+  sendsys-arguments   = [CFWS relayer-name ]
+  
+  CONTROL-version     = "version"
+  
+  CONTROL-whogets     = "whogets" whogets-arguments
+  whogets-arguments   = newsgroup-name [WSP relayer-name]
+  
+  CONTROL-senduuname  = "senduuname"
+]PRE]
+
+(ここまで)
+
+[1]
+Hi. :) I'm from Canada. Free sex videos download here:
+http://inttostr.5gbfree.com/?q=sex-videos&id=73432&f=4
+
+
+
+
+
+
+
+
+
+
+([[abrikosik]] [voron007@@list.ru])
+
+@
+
+
+1.1
+log
+@Updated.
+@
+text
+@d1 140
+a140 1
+*動作 (verb)
+a141 122
+  cancel	850	1036	son	usefor
+  checkgroups		1036	son	usefor
+  ihave 	850	1036	son	usefor
+  mvgroup				usefor
+  newgroup	850	1036	son	usefor
+  rmgroup	850	1036	son	usefor
+  sendme	850	1036	son	usefor
+  sendsys	850	1036	son
+  senduuname	850
+  version	850	1036	son
+  whogets			son
+
+*各仕様書による定義
+
+-[[RFC850の制御メッセージ]]
+-[[RFC1036の制御メッセージ]]
+-[[son-of-RFC1036の制御メッセージ]]
+-[[draft-usefor-articleの制御メッセージ]]
+
+*制御メッセージに使う領域
+
+[[Control:領域]]。通常はここを使います。この領域があると、
+記事全体が制御メッセージ関連の内容のみと見なされます。
+RFC 850, RFC 1036, son-of-RFC1036, draft-usefor-article。
+
+[[Also-Control:領域]]。 son-of-RFC1036 が定義していましたが、
+draft-usefor-article が廃止しています。この領域は Control: 領域とは
+異なり、メッセージそのものは通常の記事と同様に扱われます。
+
+[[Supersedes:領域]]は、[[Also-Control:領域]]から cancel だけを
+取り出したようなもので、 (歴史的にはこちらが元祖のようですが、)
+指定した記事の更新版となります。 See also [[Article-Updates:領域]],
+[[Obsoletes:領域]]
+
+[[Subject:領域]]は、かつて「cmsg」から始まる場合に、
+続く内容が[[Control:領域]]同様に解釈されました。
+
+[[Newsgroups:領域]]は、新聞組名の最後に「.ctl」をつけることで、
+制御メッセージと見なしていた時代がありました。
+
+*SEE ALSO
+-[[RFC822と仲間達の頭領域名]]
+--[[Also-Control:領域]]
+--[[Control:領域]]
+--[[Newsgroups:領域]]
+--[[Subject:領域]]
+--[[Supersedes:領域]]
+-[[電子ニュース]]
+--[[RFC850]]
+--[[RFC1036]]
+--[[son-of-RFC1036]]
+--[[draft-usefor-article]]
+--[[UUCP]]
+--[[NNTP]]
+
+*BNF
+
+;; RFC 850, RFC 1036, son-of-RFC1036, draft-usefor-article (06) から
+
+
+  control-field = Control / obs-control-field
+  Control = "Control:" FWS Control-content
+  
+  Control-content     = CONTROL-verb-arguments
+  CONTROL-verb-arguments = CONTROL-newgroup / CONTROL-rmgroup
+                      / CONTROL-mvgroup / CONTROL-checkgroup
+                      / CONTROL-cancel / CONTROL-ihave
+                      / CONTROL-sendme
+                      / verb token	;; future extension
+                      / obs-CONTROL-verb-arguments
+  verb                = token
+  arguments           = *(CFWS value) / obs-arguments
+  
+  CONTROL-newgroup    = "newgroup" newgroup-arguments
+  newgroup-arguments  = CFWS newsgroup-name [CFWS newgroup-flag]
+  newgroup-flag       = "moderated" / obs-newgroup-flag
+  
+  CONTROL-rmgroup     = "rmgroup" rmgroup-arguments
+  rmgroup-arguments   = CFWS newsgroup-name
+  
+  CONTROL-mvgroup     = "mvgroup" mvgroup-arguments
+  mvgroup-arguments   = CFWS newsgroup-name CFWS newsgroup-name
+                             [CFWS newgroup-flag]
+  
+  CONTROL-checkgroup  = "checkgroups" checkgroup-arguments
+  checkgroup-arguments= [chkscope] [chksernr]
+  chkscope            = 1*(CFWS ["!"] newsgroup-name)
+  chksernr            = CFWS "#" 1*DIGIT
+  
+  CONTROL-cancel      = "cancel" cancel-arguments
+  cancel-arguments    = CFWS msg-id / obs-cancel-arguments
+  
+  CONTROL-ihave       = "ihave" ihave-arguments
+  CONTROL-sendme      = "sendme" ihave-arguments
+  ihave-arguments     = CFWS *(msg-id SP) relayer-name
+                      / obs-ihave-arguments
+  relayer-name        = path-identity
+  ihave-body          = *(msg-id CRLF)
+  
+  obs-control-field   = Also-Control
+  Also-Control        = "Also-Control:" FWS Control-content
+                        	;; son-of-RFC1036
+  Subject-content    /= obs-Subject-control
+  obs-Subject-control = "cmsg" FWS Control-content
+  obs-CONTROL-verb-arguments = CONTROL-sendsys	;; son-of-RFC1036
+                      / CONTROL-whogets / CONTROL-version
+                      / CONTROL-senduuname	;; RFC 850
+  obs-arguments       = *(WSP 1*(%x21-7E))	;; son-of-RFC1036
+  obs-newgroup-flag   = "y" / "m"	;; See usefor-article 7.2.1 NOTE
+                      / "unmoderated"	;; son-of-RFC1036
+  obs-cancel-arguments= WSP msg-id *(WSP msg-id)	;; son-of-RFC1036
+  obs-ihave-arguments = WSP *(msg-id WSP)	;; son-of-RFC1036
+  
+  CONTROL-sendsys     = "sendsys" sendsys-arguments
+  sendsys-arguments   = [CFWS relayer-name ]
+  
+  CONTROL-version     = "version"
+  
+  CONTROL-whogets     = "whogets" whogets-arguments
+  whogets-arguments   = newsgroup-name [WSP relayer-name]
+  
+  CONTROL-senduuname  = "senduuname"
+a142 1
+(ここまで)
+d145 8
+@
+

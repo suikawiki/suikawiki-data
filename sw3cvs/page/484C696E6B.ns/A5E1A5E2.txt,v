@@ -1,0 +1,447 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1
+	before-db-leaffile:1.1
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+
+
+1.1
+date	2003.07.18.00.11.31;	author w;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-commited
+@
+text
+@#?SuikaWiki/0.9
+[1] 
+HLink メモ
+
+HLink [HLINK] を使ってみた。
+
+xhtml1-hlink.xml
+    HLink と、その勝手な拡張を使って XHTML 1 のリンク系要素を表現してみた。
+    applet 要素以外を実装。
+
+hlink-ext.dtd
+    HLink と、その勝手な拡張を使うための文書型定義。
+
++//IDN suika.fam.cx//DTD Extended HLink 20030228//EN
+    hlink-ext.dtd の公開識別子。
+
+urn:x-suika-fam-cx:markup:hlink:extension
+    HLink の勝手な拡張部分の語彙の名前空間 URI
+
+HLink の問題点
+    1. html:object/@@archive や html:head/@@profile 方式
+       (1つの属性値に複数の URI。) での一対多対応が表現できない。
+       (HLink WD でもこの問題は触れられており、将来の版の HLink
+       (が出るとしたら。) では考慮されるかもしれない。)
+    2. 「@@」で始まる相対 URI を直接表現できない。
+         回避策:
+           ・相対 URI は使わない。
+           ・「./」を頭につける。
+           ・「%40」に逃げる。
+           ・そもそも「@@」で資源名を始めない。
+           ・URI との共存を諦める。
+    3. リンク先などが属性値以外で指定されていた場合が考慮されていない。
+         例:
+             <item>
+               <link>http://www.example.com/</link>
+               <title>The Example Corporation</title>
+             </item>
+           で、 item 要素がリンクの要素にすることはできない。
+       また、リンク先などが親要素などで指定されている場合 (input[@@type='submit']
+       に対する form/@@action など。) も使えない。 (submit の近辺は HLink WD
+       では未確定とされており、将来の WD が出るとすればこの問題は解決されている
+       かもしれない。)
+    4. 特定の属性値が存在する場合のみリンク、を表現できない。
+       (例: @@type='submit' の時のみ input はリンク。)
+
+HLink への勝手な拡張
+    HLink の次版が出るかは謎だし、出るとしてもそれまで指をくわえて
+    待つよりはと拡張してみる。 (以下、 W3C HLink 名前空間を既定とし、拡張の
+    名前空間接頭辞を x とする。 XSLT 名前空間接頭辞を xslt とする。)
+    
+    1. hlink 要素の内容モデルを空から x の特定の要素と xslt:if, xslt:choose
+       に改める。 (xslt:if 要素及び xslt:when 要素の内容もこれと同じにする。)
+         x の特定の要素:
+           x:target
+           x:replacement
+           x:role
+           ...
+    2. リンクかどうかの条件判断が必要な時は xslt:if または xslt:choose 及び
+       xslt:when を使う。 (XSLT の要素を使うのは、単に語彙を借りただけで
+       深い意味は無い。)
+    3. リンク先は次の手順で決定する。
+         1. xslt:* があればそれを評価する。
+         2. x:locators 要素があってその内容があれば、それをリンク先とする。
+         3. x:locators/@@node 属性があれば、その node をリンク先とする。
+         4. hlink/@@locator が @@ で始まれば、その属性をリンク先とする。
+         5. hlink/@@locator が URI なら、それをリンク先とする。
+         *. リンク先が node または属性の場合は当該 node を探し、
+            存在すればその値をリンク先とする。
+            以上でリンク先が決定しなければその要素はリンクではないとする。
+            (空文字列である URI (自分自身。) と、値が存在しない場合を区別する
+            必要がある。)
+    4. hlink/@@* に対応する拡張要素が存在する時は、拡張要素を採用する。
+       拡張に対応しない UA との互換性のため、拡張要素による指定値を標準属性で
+       表現可能な時はそうしてもよい (MAY)。
+
+x:target 要素
+    内容: (x:locators | x:langs | ...)+
+    
+    リンク先資源について。
+
+x:* 要素
+    属性:
+      node  値を与える node を、 XPath で表現。 (当該要素が self。)
+      type  値の形式。 Case sensitive。
+    内容: #PCDATA
+    
+    直接値を与える場合は node 属性を省略し、内容にその値を入れる。
+    (しかしこれは hlink/@@* 属性で実現可能だから、そちらを使うほうがいい。)
+    
+    type 属性は既定値未定。 "space-separated" 以外の値は未定義。
+    「単独の値」の指定以外の場合は必ず指定するべし (SHOULD)。
+    独自拡張する時は名前空間接頭辞で始めるべし。
+
+x:onSuccess, x:onFailure, x:loading 各要素
+    属性: node, type
+    内容: #PCDATA
+    
+    hlink/@@* 属性の対応するものと定義が異なるので注意。
+    代替内容などを XPath で指定する。例えば html:object なら
+    <x:onFailure node="self"/>, html:img なら <x:onFailure node="@@alt"/>。
+    x:loading はリンク先を読み込み中の場合。 html:object なら
+    <x:loading node="@@standby"/>。
+
+文書との関連付け
+    HLink WD には hlink:definition 属性の方法と (HTML なら) html/head/hlink:hlink
+    要素 (html/head/hlink:hlinks 要素にした方が適切だと思うんだが。)
+    の方法が挙がっているけど、いっそスタイル・シートにしたらどうかと。
+    例:
+      <?xml-stylesheet href="foo.hlink" type="application/x-hlink+xml"?>
+      <html:link rel="stylesheet" href="bar1.hlink" type="application/x-hlink+xml"
+                 media="screen" />
+      <html:link rel="stylesheet" href="bar2.hlink" type="application/x-hlink+xml"
+                 media="print" />
+      <html:style type="application/x-hlink+xml">
+        <hlinks><!-- 冗長だけど。 -->
+          <hlink />
+          <hlink />
+        </hlinks>
+      </html:style>
+
+利用者リンク・シート
+    HLink をリンクの表現に関するスタイル・シートとみなせば、当然利用者スタイル・
+    シートを用意してみたくなる。例えば、標準の HTML UA では blockquote/@@cite
+    は onRequestSecondary だけど、よく使うのに面倒だから onRequest にしたいとか、
+    iframe 要素が embed なのは癪だから replace にしちゃえ、とか。
+    画像表示を最初からはしないとか、新窓で開くのを抑制とかの既存の UA
+    の機能も再現できそうな予感。
+    
+    # そうなると継承問題があるから、 <hlink stylesheet:important="important"/>
+    # のようなものが必要かも。
+
+実装
+    完全実装は面倒そうだけど、簡単なものだけならこんな感じで実装できそう。
+    
+      <html:style type="application/x-hlink+xml">
+        <hlinks>
+          <hlink />
+          <hlink />
+        </hlinks>
+      </html:style>
+      <html:style type="text/css">
+        @@namespace html 'http://www.w3.org/1999/xhtml';
+        html|style[type="application/x-hlink+xml"] hlink {
+          -moz-binding: url(hlink.xbl#hlink);
+        }
+      </html:style>
+    
+    hlink.xbl#hlink は、文書の onLoad の時にでも、 {@@namespace}:{@@element}
+    要素を検索して、 @@effect='replace' and @@actuate='onRequest' なら
+    html:a 要素を捏造して・・・とやっていけばよさそう。
+    (捏造要素には適当な flag になる属性をつけておくのを忘れずに。)
+
+hlink-test.xml
+    HLink を上記の方法で style 要素に使ってみた。適当にでっち上げた fooml
+    で書いてある。
+
+hlink-xbl.xml
+    XBL による簡単な HLink の実装。非常に基本的な機能しか実装していないし、
+    style 要素の方法しか対応していない。 (実用的には style 要素ではなく
+    外部ファイルにする必要があるから、まだ使えないだろう。)
+    
+    html:style/hlinks/hlink にこの XBL を binding すると、この XBL はその hlink
+    要素の情報を元に当該文書の要素をリンク化する。 html:a 要素的なリンクは
+    内部的に XLink の属性を与え、 hlink/@@effect='embed' なリンクには内部的に
+    html:object 要素を挿入する。
+    
+    理論上は xlink:* や html:object を直接使わずに、当該要素に更に XBL binding
+    を与えることが出来るはずで、そうすればリンクの種類ごとに別の xbl:binding
+    要素で処理することが出来て、 XBL code がきれいになって表現の幅も広がる
+    (かもしれない) のだが、 document.addBinding () で Mozilla が落ちてしまう
+    ので使えない。 (XBL の中で XBL を呼ぶから?)
+
+hlink-script.js
+    HLink 文書を html:link[@@rel='stylesheet'] を使って外部スタイル・シート
+    として利用するための外部スクリプト。
+    
+    test.xml
+	<?xml version="1.0"?>
+	<foo:root xmlns:foo="http://foo.example/markup"
+	          xmlns:h="http://www.w3.org/1999/xhtml">
+	  <h:link rel="stylesheet" href="test-hlink1.xml" type="application/x-hlink+xml"/>
+	  <h:link rel="stylesheet" href="test-hlink2.xml" type="application/x-hlink+xml"/>
+	  
+	  <!-- 本来ならこの部分は XBL で隠匿したいが、うまくいかない。
+	       h:script[@@src] があると XBL 的にはまずいらしい。 -->
+	  <h:script type="application/x-javascript" src="hlink-script.js"/>
+	  <h:script type="application/x-javascript">linkizeHTML(document)</h:script>
+	  
+	  <foo:anchor uri="http://www.w3.org/">World Wide Web Consortium</foo:anchor>
+	  <foo:home/>
+	</foo:root>
+    
+    test-hlink1.xml
+	<hlinks xmlns="http://www.w3.org/2002/06/hlink">
+	  <hlink namespace="http://foo.example/markup" element="anchor"
+	         locator="@@uri" effect="replace" actuate="onRequest"/>
+	</hlinks>
+    
+    test-hlink2.xml
+	<hlinks xmlns="http://www.w3.org/2002/06/hlink">
+	      <hlink namespace="http://foo.example/markup" element="home"
+	             locator="/" effect="replace" actuate="onRequest"/>
+	      <hlink namespace="http://foo.example/markup" element="home"
+	             locator="internal-gopher-menu" effect="embed" actuate="onLoad"
+	             mediaType="image/png"/>
+	</hlinks>
+    
+    未解決の問題点:
+      1. html:script 要素がないといけない。
+      2. html:link 要素が無いといけない。 xml-stylesheet 処理命令に対応するには
+         擬似属性を解析する必要がある。 (処理命令の書式も標準化して、 DOM
+         で簡単に扱えるようになっていれば良かったのに。)
+      3. 代替スタイル・シートに未対応。 Mozilla は text/css など対応しているもの
+         以外のスタイル・シートを document.styleSheet やメニューの選択肢に
+         入れてくれないし、 onStyleSetChanged のような event もない。
+         代替スタイルを認識すること自体は簡単に可能だから、 html:select
+         要素を使って文書内で切り替えるような方法で個別に実装することは可能だろう
+         (但し既に与えたリンク属性を一旦破棄する処理が必要になる)。
+         Moz に手を入れずに汎用的な形で実装するのは骨が折れそうだ。
+      4. HLink stylesheet の媒体型は application/xml (または text/xml)
+         でないといけない。 Mozilla が XML として認識してくれない場合は動作せず、
+         保存しますか?と聞かれたりする。 (外部文書の DOM 木を得るために html:object
+         要素を使っている。他にもっと良い方法は無いか?)
+      5. HLink stylesheet が異なるホストにある場合、 Mozilla の安全上の制限から
+         使用できない。 (html:object 要素の中の DOM 木を取得できない。)
+      *. xbl:script 要素は実装されていないようだ。 (XBL 内で html:script 要素を
+         使った場合も効果なし。) hlink-xbl.xml と hlink-script.js は大部分の code
+         が一致するので統合したいんだけど。
+
+HLink definition for RFC 2629
+    <hlinks xmlns="http://www.w3.org/2002/06/hlink"
+            xmlns:x="urn:x-suika-fam-cx:markup:hlink:extension"
+            xmlns:xslt="http://www.w3.org/1999/XSL/Transform">
+      <hlink namespace="" element="xref"
+             effect="replace" actuate="onRequest">
+             <x:target>
+               <x:locator>#<xslt:value-of select="@@target"/></x:locator>
+             </x:target>
+      </hlink>
+      <hlink namespace="" element="eref" locator="@@target"
+             effect="replace" actuate="onRequest">
+             <x:target>
+               <x:locator node="@@target"/>
+             </x:target>
+      </hlink>
+      <hlink namespace="" element="uri"
+             effect="replace" actuate="onRequest">
+             <x:target>
+               <x:locator node="self"/>
+             </x:target>
+      </hlink>
+      <hlink namespace="" element="email"
+             effect="replace" actuate="onRequest">
+             <x:target>
+               <x:locator>mailto:<xslt:value-of select="self"/></x:locator>
+             </x:target>
+      </hlink>
+      <hlink namespace="" element="reference" locator="@@target"
+             effect="replace" actuate="onRequest">
+             <x:target>
+               <x:locator node="@@target"/>
+             </x:target>
+      </hlink>
+      <hlink namespace="" element="seriesInfo"
+             effect="replace" actuate="onRequest">
+             <xslt:choose>
+             <xslt:when test="@@name='RFC'">
+               <x:target>
+                 <x:locator>urn:ietf:rfc:<xslt:value-of select="@@value"/></x:locator>
+               </x:target>
+             </xslt:when>
+             <xslt:when test="@@name='STD'">
+               <x:target>
+                 <x:locator>urn:ietf:std:<xslt:value-of select="@@value"/></x:locator>
+               </x:target>
+             </xslt:when>
+             <!-- BCP, FYI,... -->
+             </xslt:choose>
+      </hlink>
+    </hlinks>
+    
+    注: 属性値が URI でないリンク要素がある。このため x:locator 要素を拡張し、
+        内容に xslt:value-of 要素を入れてみた。
+        この機能により (実装は更に複雑になるが) 様々な形態のマーク付けを処理
+        出来る。 XPath や XSLT の関数が使えるから、属性値から特定の文字 (SP とか)
+        を除去したりも出来よう。 uri:escape() という関数を用意しておくとして、
+        次の文書片から辞書へのリンクを実現できたら素敵だ。
+          XML 文書片
+            <item>リンク</item>
+          HLink 文書片
+            <hlink element="item">
+              <x:target>
+                <x:locator>http://dict.example/ja?<xslt:value-of select="uri:escape(self)"/></x:locator>
+              </x:target>
+            </hlink>
+        しかしここまで来るともう最初から XSLT でやってしまえという気もしなくはない。
+        HLink が Link recognition for the *XHTML Family* である以上、
+        こんなに拡張してしまってはいけないのかもしれない。
+
+hlink-xbl.xml 改訂版
+    hlink-script.js で XBL 化できなかったのは html:script のせいだが、
+    あえて外部スクリプトにする必要はない。スクリプトは XBL に埋め込んでしまえば
+    いいのだ。
+    
+    test.xml 改訂版
+	<foo:root xmlns:foo="http://foo.example/markup"
+	          xmlns:h="http://www.w3.org/1999/xhtml">
+	  <h:link rel="stylesheet" href="test-hlink1.xml" type="application/x-hlink+xml"/>
+	  <h:link rel="stylesheet" href="test-hlink2.xml" type="application/x-hlink+xml"/>
+	  
+	  <h:style type="text/css"><![CDATA[
+	    @@namespace h 'http://www.w3.org/1999/xhtml';
+	    h|link:first-child {
+	      -moz-binding: url(hlink-xbl.xml#link-hlink);
+	    }
+	  ]]></h:style>
+	  
+	  <foo:anchor uri="http://www.w3.org/">World Wide Web Consortium</foo:anchor>
+	  <foo:home/>
+	</foo:root>
+    
+    実際に使うときは html:style の内容を外部スタイル・シートとして xml-stylesheet
+    処理命令で XML 文書と関連付ければよい。
+    
+    上例では html|link:first-child に bind しているが、これは実際どの要素でもいい。
+    (実際にやっていることは HTML Transitional で言うところの html:body/@@onload
+    の指定だから。) 但し foo:root 要素に指定したらなぜか何も表示されなくなるとか
+    相性?があるみたいだから、表示上特別な意味を持つ要素は避けた方がよさげ。
+    文書に必ず1度だけ登場する要素型があれば最適だ。
+    (なお、複数条件に該当する要素があれば複数回処理が行われる。
+    あまり影響はない (ようになっているはずだ) が、あまり良いことでもない。
+    なんなら実行チェックを入れて1度しか実行されないようにしても良いだろう。)
+    
+    かくして上述の問題点1は解決した。
+
+Magic attribute
+	hlink 要素の多くの属性は、実際の値又は属性値参照の2種類の値をとり得る。
+	これに違和感を感じる人は多い。 [HLINKWG]
+
+拡張可能な値の指定
+	<hlink:hlink>
+	  <destination>
+	    <locator><uri>http://foo.example/bar</uri></locator>
+	    <type><nodeValue>@@mediaType</nodeValue></type>
+	  </destination>
+	  <effect><xslt:choose>
+	    <xslt:when test="@@embed = 'yes'">embed</xslt:when>
+	    <xslt:otherwise>replace</xslt:otherwise>
+	  </xslt:choose></effect>
+	</hlink:hlink>
+
+ID & IDREF
+	XML で規定されているリンクが ID と IDREF だ。 W3C HLink 
+	ではこのいずれも表すことは出来ない。
+	
+	<locator><idRef>@@attrName</idRef></locator>
+	
+	XML の規定にこだわることはない。こんなのもありか。
+	
+	<locator><idRef>childElement/text()</idRef></locator>
+	
+	でもこれと同じことだ。
+	
+	<locator><uri>#{x:uriEscape(@@attrName)}</uri></locator>
+	<locator><uri>#{x:uriEscape(childElement/text())}</uri></locator>
+	
+	但し x:uriEscape() は適当に URI escape する関数。
+
+新窓で開く
+	target=_blank を嫌う声は多い。一方で支持する声も多い。 XLink や HLink
+	でもそういうものがあるし、 XHTML 2.0 でも XFrames の関係で復活するだろう。
+	
+	新窓で開くのを支持する最大の理由は、著者の想定する文書の流れが乱れることだ。
+	それならそんなところにリンクをはらなければ良いと思うのだが、
+	気持ちは分からなくもない。
+	
+	そんな場合でも、著者の想定する流れのリンクなら、もちろん新窓は開かない。
+	つまり、著者は2種類の性質のリンクを想定しているのだ。
+	
+		<p><a dest="http://html.example/target/_blank" class="ref">target=_blank</a>
+		を嫌う声は多い。一方で支持する声も多い。
+		<a dest="http://xml.example/xlink" class="ref">XLink</a> や 
+		<a dest="http://html.example/hlink" class="ref">HLink</a> 
+		でもそういうものがあるし、 XHTML 2.0 でも XFrames 
+		の関係で復活するだろう。</p>
+			<nav><a rel="next" dest="para2">次の段落</a></nav>
+		
+	この例に、次のような著者スタイル・シート (の断片) を適用すれば、
+	著者の要求は満たされるはずだ。
+	
+		<replacement><xslt:choose>
+		  <xslt:when test="@@class='ref'">new</xslt:when>
+		  <xslt:otherwise>_self</xslt:otherwise>
+		</xslt:choose></replacement>
+	
+	そして、この挙動を嫌う利用者は次のようなスタイル・シート(片)を適用しておけばいい。
+	
+		<replacement weight="important">_self</replacement>
+
+TO DO
+    ・XML1 + HLink + XSLT -> XML2 + XLink
+    ・role/reverseRole と profile URIs
+
+まとめ
+    ・HLink WD 仕様ではまだ表現できないリンクがある。
+    ・HLink をスタイル・シートとして扱ってはどうか。
+    ・XML 及び DOM を実装した UA では、 UA そのものに手を加えなくてもある程度まで
+      なら文書側で HLink を使用できる。
+    ・調子に載って拡張すると限定版 XSLT になる危険性がある(w
+
+参考文献
+
+    [HLINK]  『HLink: Link recognition for the XHTML Family』 <http://www.w3.org/TR/hlink>
+    [HLINKWG] HTML Working Group Voyager Issue Tracking System - HLink <http://hades.mn.aptest.com/cgi-bin/voyager-issues/HLink?user=guest>
+    [XBL]
+    [XHTML]
+    [XLINK]
+    [XPATH]
+    [XSLT]
+@

@@ -1,0 +1,761 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.1
+date	2005.02.13.02.08.40;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@* 3.  Syntax Components
+>   The generic URI syntax consists of a hierarchical sequence of
+components referred to as the scheme, authority, path, query, and fragment.
+
+一般の URI の構文は scheme, 命名権者, 経路, 紹介, 
+素片という階層的部品列により構成されます。
+
+>
+-      [CODE(ABNF)[[DFN[URI]]         = scheme ":" hier-part [ "?" query ] [ "#" fragment ] ]]
+-      [CODE(ABNF)[[DFN[hier-part]]   = "//" authority path-abempty]]
+                  [CODE(ABNF)[/ path-absolute]]
+                  [CODE(ABNF)[/ path-rootless]]
+                  [CODE(ABNF)[/ path-empty]]
+
+>   The scheme and path components are required, though the path may be
+empty (no characters).  When authority is present, the path must
+either be empty or begin with a slash ("/") character.  When
+authority is not present, the path cannot begin with two slash
+characters ("//").  These restrictions result in five different ABNF
+rules for a path (Section 3.3), only one of which will match any
+given URI reference.
+
+Scheme 部品と経路部品は必須です。ただし経路は空 (文字なし) でも構いません。
+命名権者が存在する時は、経路は空か、または斜線文字 ([CODE(URI)[/]])
+で始まらなければなりません。命名権者が存在しない時は、
+経路を斜線文字2つ ([CODE(URI)[//]]) から始めることはできません。
+こうした制限の結果として経路には5つの ABNF 規則があり、ある URI
+参照はそのうちの1つだけに一致します。
+
+>   The following are two example URIs and their component parts:
+
+次に示すのは、2つの URI を部品に分解した例です。
+
+>
+         foo://example.com:8042/over/there?name=ferret#nose
+         \_/   \______________/\_________/ \_________/ \__/
+          |           |            |            |        |
+       scheme     authority       path        query   fragment
+          |   _____________________|__
+         / \ /                        \
+         urn:example:animal:ferret:nose
+
+**3.1.  Scheme
+>   Each URI begins with a scheme name that refers to a specification for
+assigning identifiers within that scheme.  As such, the URI syntax is
+a federated and extensible naming system wherein each scheme's
+specification may further restrict the syntax and semantics of
+identifiers using that scheme.
+
+URI は scheme 名で始まります。 Scheme 名はその scheme
+内に識別子を割当てる仕様を参照しています。そのため URI
+の構文は各 scheme の仕様がその scheme を使う識別子の構文や意味を更に制限できる、
+連合的で拡張可能な命名システムとなっています。
+
+>   Scheme names consist of a sequence of characters beginning with a
+letter and followed by any combination of letters, digits, plus
+("+"), period ("."), or hyphen ("-").  Although schemes are 
+case-insensitive, the canonical form is lowercase and documents that
+specify schemes must do so with lowercase letters.  An implementation
+should accept uppercase letters as equivalent to lowercase in scheme
+names (e.g., allow "HTTP" as well as "http") for the sake of
+robustness but should only produce lowercase scheme names for consistency.
+
+Scheme 名は[RUBYB[文字][letter]]で始まり、その後に文字、数字、
+正 ([CODE(URI)[+]]), 句点 ([CODE(URI)[.]]), ハイフン ([CODE(URI)[-]])
+の任意の組合せが続く列です。 Scheme は大文字・小文字を区別しませんが、
+正準系は小文字であり、 scheme を規定する文書は小文字で規定しなければなりません。
+実装は頑強性のため scheme 名の大文字を小文字と同値なものとして受け入れるべきです
+(例えば [CODE(URI)[HTTP]] を [CODE(URI)[http]] 同様に認めるべきです)
+が、一貫性のため小文字の scheme 名のみを生成するべきです。
+
+>
+-      [CODE(ABNF)[[DFN[scheme]]      = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )]]
+
+>   Individual schemes are not specified by this document.  The process
+for registration of new URI schemes is defined separately by [BCP35].
+The scheme registry maintains the mapping between scheme names and
+their specifications.  Advice for designers of new URI schemes can be
+found in [RFC2718].  URI scheme specifications must define their own
+syntax so that all strings matching their scheme-specific syntax will
+also match the <absolute-URI> grammar, as described in Section 4.3.
+
+具体的な scheme はこの文書では規定しません。新しい URI scheme
+を登録する手続きは別に [[BCP 35]] で定義されています。 Scheme
+登録簿は scheme 名と scheme の仕様の写像を管理します。
+新しい URI scheme の設計者への助言が [[RFC 2718]] にあります。
+URI scheme 仕様は、 scheme 規定の構文に一致する文字列がすべて4.3節の
+[CODE(ABNF)[absolute-URI]] 文法にも一致するように構文を定義しなければなりません。
+
+>   When presented with a URI that violates one or more scheme-specific
+restrictions, the scheme-specific resolution process should flag the
+reference as an error rather than ignore the unused parts; doing so
+reduces the number of equivalent URIs and helps detect abuses of the
+generic syntax, which might indicate that the URI has been
+constructed to mislead the user (Section 7.6).
+
+URI が scheme 規定の制限に違反する場合は、 scheme 規定の解決処理は未使用の部分を無視するのではなく、
+その参照は誤りであると印をつけるべきです。そうすることで同値な URI
+の数を減らすことができ、一般的構文の乱用を発見するのを助けることができ、
+その URI が利用者を誤解させるように構築されていると示すことができるかもしれません。
+
+** 3.2.  Authority
+>   Many URI schemes include a hierarchical element for a naming
+authority so that governance of the name space defined by the
+remainder of the URI is delegated to that authority (which may, in
+turn, delegate it further).  The generic syntax provides a common
+means for distinguishing an authority based on a registered name or
+server address, along with optional port and user information.
+
+多くの URI scheme は階層的要素として命名権者を含めており、
+URI の残りの部分の名前空間の支配をその命名権者に委譲しています。
+(そして命名権者が更に委譲するかもしれません。)
+一般構文は登録名や鯖番地, 省略可能なポート情報や利用者情報によって命名権者を区別する共通の方法を提供します。
+
+>   The authority component is preceded by a double slash ("//") and is
+terminated by the next slash ("/"), question mark ("?"), or number
+sign ("#") character, or by the end of the URI.
+
+命名権者部品は二重斜線 ([CODE(URI)[//]]) が前に来て、
+次の斜線文字 [CODE(URI)[/]], 疑問符 ([CODE(URI)[?]]),
+数字符 ([CODE(URI)[#]]) または URI の終わりが終端となります。
+
+>
+-      [CODE(ABNF)[[DFN[authority]]   = [ userinfo "@@" ] host [ ":" port ] ]]
+
+>   URI producers and normalizers should omit the ":" delimiter that
+separates host from port if the port component is empty.  Some
+schemes do not allow the userinfo and/or port subcomponents.
+
+URI の生成器と正規化器は、ポート部品が空であれば、ホストとポートを分ける
+[CODE(URI)[:]] 区切子を省略するべきです。 Scheme
+によっては部分部品 [CODE(ABNF)[userinfo]] [[及び/又は]]部分部品
+[CODE(ABNF)[port]] の使用を認めていません。
+
+>   If a URI contains an authority component, then the path component
+must either be empty or begin with a slash ("/") character.  
+Non-validating parsers (those that merely separate a URI reference into
+its major components) will often ignore the subcomponent structure of
+authority, treating it as an opaque string from the double-slash to
+the first terminating delimiter, until such time as the URI is dereferenced.
+
+URI が命名権者部品を含んでいる場合は、経路部品は空か、または斜線文字
+([CODE(URI)[/]]) から始まらなければありません。非検証構文解析器
+(単に URI 参照を大部品に分ける構文解析器) は時に URI
+の参照が解かれるまでの間命名権者の部分部品構造を無視し、
+二重斜線から最初の終端区切子までを不透明な文字列として扱います。
+
+*** 3.2.1.  User Information
+>   The userinfo subcomponent may consist of a user name and, optionally,
+scheme-specific information about how to gain authorization to access
+the resource.  The user information, if present, is followed by a
+commercial at-sign ("@@") that delimits it from the host.
+
+[CODE(ABNF)[userinfo]] 部分部品は利用者名と任意選択で資源への接近手段を得る方法についての
+scheme 規定の情報を含めることができます。利用者情報が存在する場合は、
+単価記号 ([CODE(URI)[@@]]) が後に来て、 [CODE(ABNF)[host]]
+との区切りとします。
+
+>
+-      [CODE(ABNF)[[DFN[userinfo]]    = *( unreserved / pct-encoded / sub-delims / ":" )]]
+
+>   Use of the format "user:password" in the userinfo field is
+deprecated.  Applications should not render as clear text any data
+after the first colon (":") character found within a userinfo
+subcomponent unless the data after the colon is the empty string
+(indicating no password).  Applications may choose to ignore or
+reject such data when it is received as part of a reference and
+should reject the storage of such data in unencrypted form.  The
+passing of authentication information in clear text has proven to be
+a security risk in almost every case where it has been used.
+
+[CODE(ABNF)[userinfo]] 欄で [SAMP(URI)[[VAR[利用者]]:[VAR[合言葉]]]]
+という書式を使うのは非推奨です。応用は、 [CODE(ABNF)[userinfo]]
+部分部品にコロン文字 ([CODE(URI)[:]]) が見つかった場合、
+その後のデータが空文字列 (すなわち合言葉なし) でない限り、
+このデータを平文でレンダリングするべきではありません。
+応用は参照の一部としてそのようなデータを受け取った時にはこれを無視したり拒絶したりしても構いませんし、
+暗号化しない形でそのようなデータを蓄積することは拒むべきです。
+認証情報を平文で渡すことはほとんどすべての場合において安全上の危険であることが証明されています。
+
+>   Applications that render a URI for the sake of user feedback, such as
+in graphical hypertext browsing, should render userinfo in a way that
+is distinguished from the rest of a URI, when feasible.  Such
+rendering will assist the user in cases where the userinfo has been
+misleadingly crafted to look like a trusted domain name (Section 7.6).
+
+利用者への feedback のため URI をレンダリングする応用、
+例えば図形的ハイパーテキスト閲覧応用は、
+可能なら [CODE(ABNF)[userinfo]] を URI の残りの部分とは区別できるような方法でレンダリングするべきです。
+区別してレンダリングすることで [CODE(ABNF)[userinfo]]
+が信頼できるドメイン名のように見えるように細工されている場合に利用者の助けとなります。
+
+*** 3.2.2.  Host
+>   The host subcomponent of authority is identified by an IP literal
+encapsulated within square brackets, an IPv4 address in dotted-decimal 
+form, or a registered name.  The host subcomponent is case-insensitive.  
+The presence of a host subcomponent within a URI does
+not imply that the scheme requires access to the given host on the
+Internet.  In many cases, the host syntax is used only for the sake
+of reusing the existing registration process created and deployed for
+DNS, thus obtaining a globally unique name without the cost of
+deploying another registry.  However, such use comes with its own
+costs: domain name ownership may change over time for reasons not
+anticipated by the URI producer.  In other cases, the data within the
+host component identifies a registered name that has nothing to do
+with an Internet host.  We use the name "host" for the ABNF rule
+because that is its most common purpose, not its only purpose.
+
+[CODE(ABNF)[authority]] 部品の [CODE(ABNF)[host]] 部分部品は四角括弧で囲まれた
+IP 生表現や点付き十進数表現による IPv4 番地や登録名によって識別します。
+[CODE(ABNF)[host]] 部分部品は大文字・小文字を区別しません。
+URI に [CODE(ABNF)[host]] 部分部品が存在しても、
+必ずしも scheme がインターネットのそのホストへの接続を要求していることを意味しません。
+多くの場合、 [[DNS]] で作成・利用されている既存の登録手続きを再利用して、
+新しい登録簿を採用する経費を払わずに大域固有名を得るためだけに
+[CODE(ABNF)[host]] 構文が使われています。しかし、 DNS
+を使用することによる経費もあります。ドメイン名の所有権は時々において URI
+生成器の予期せぬ理由により変わり得ます。別の場合には、
+[CODE(ABNF)[host]] 部品のデータはインターネット・ホストとは関係のない登録名を識別します。
+ABNF 規則では最も一般的な目的である [Q[host]] という名前を使いましたが、
+それが唯一の目的ではありません。
+
+>
+-      [CODE(ABNF)[[DFN[host]]        = IP-literal / IPv4address / reg-name]]
+
+>   The syntax rule for host is ambiguous because it does not completely
+distinguish between an IPv4address and a reg-name.  In order to
+disambiguate the syntax, we apply the "first-match-wins" algorithm:
+If host matches the rule for IPv4address, then it should be
+considered an IPv4 address literal and not a reg-name.  Although host
+is case-insensitive, producers and normalizers should use lowercase
+for registered names and hexadecimal addresses for the sake of
+uniformity, while only using uppercase letters for percent-encodings.
+
+構文規則 [CODE(ABNF)[host]] では [CODE(ABNF)[IPv4address]] と
+[CODE(ABNF)[reg-name]] を完全には区別できないので、曖昧です。
+構文を曖昧なくするため、[Q[早い者勝ち]]法を適用します。
+[CODE(ABNF)[host]] が [CODE(ABNF)[IPv4address]] の規則と一致すれば、
+[CODE(ABNF)[reg-name]] ではなく IPv4 番地生表現と考えるべきです。
+[CODE(ABNF)[host]] は大文字・小文字を区別しませんが、生成器と正規化器は統一性のため登録名と十六進番地には小文字を使い、
+百分率符号化だけは大文字を使うべきです。
+
+>   A host identified by an Internet Protocol literal address, version 6
+[RFC3513] or later, is distinguished by enclosing the IP literal
+within square brackets ("[" and "]").  This is the only place where
+square bracket characters are allowed in the URI syntax.  In
+anticipation of future, as-yet-undefined IP literal address formats,
+an implementation may use an optional version flag to indicate such a
+format explicitly rather than rely on heuristic determination.
+
+インターネット・プロトコル生番地第6版以降で識別される
+[CODE(ABNF)[host]] は IP 生表現を四角括弧 ([CODE(URI)['''[''']]],
+[CODE(URI)[''']''']]) で囲んで区別します。
+URI 構文の中で四角括弧文字が認められるのはここだけです。
+実装は任意選択で将来のまだ定義されていない IP 生番地書式を使っていることを示すための
+(発見的決定法に拠らず明確に示す) 版の印を使うことができます。
+
+>
+-      [CODE(ABNF)[[DFN[IP-literal]] = "[" ( IPv6address / IPvFuture  ) "]"]]
+-      [CODE(ABNF)[[DFN[IPvFuture]]  = "v" 1*HEXDIG "." 1*( unreserved / sub-delims / ":" )]]
+
+>   The version flag does not indicate the IP version; rather, it
+indicates future versions of the literal format.  As such,
+implementations must not provide the version flag for the existing
+IPv4 and IPv6 literal address forms described below.  If a URI
+containing an IP-literal that starts with "v" (case-insensitive),
+indicating that the version flag is present, is dereferenced by an
+application that does not know the meaning of that version flag, then
+the application should return an appropriate error for "address
+mechanism not supported".
+
+版の印は IP の版を示すのではなく、生書式の将来の版を示します。
+ですから、実装は既存の IPv4 や IPv6 の生番地形式に版の印をつけてはなりません。
+版の印があることを示す [CODE(URI)[v]] (大文字または小文字) で始まる IP 
+生表現を含んでいる URI があって、その印の意味を知らない応用が参照を解く時は、
+応用は[Q[番地機構未対応]]を表す適当な誤りを返すべきです。
+
+>   A host identified by an IPv6 literal address is represented inside
+the square brackets without a preceding version flag.  The ABNF
+provided here is a translation of the text definition of an IPv6
+literal address provided in [RFC3513].  This syntax does not support
+IPv6 scoped addressing zone identifiers.
+
+IPv6 生番地で識別される [CODE(ABNF)[host]] は版の印なしで四角括弧の内側に表現します。
+ここで示す ABNF は [[RFC 3513]] にある IPv6 生番地の文章による定義を翻訳したものです。
+この構文は IPv6 範囲指定番地付け域識別子に対応していません。
+
+>   A 128-bit IPv6 address is divided into eight 16-bit pieces.  Each
+piece is represented numerically in case-insensitive hexadecimal,
+using one to four hexadecimal digits (leading zeroes are permitted).
+The eight encoded pieces are given most-significant first, separated
+by colon characters.  Optionally, the least-significant two pieces
+may instead be represented in IPv4 address textual format.  A
+sequence of one or more consecutive zero-valued 16-bit pieces within
+the address may be elided, omitting all their digits and leaving
+exactly two consecutive colons in their place to mark the elision.
+
+128ビットの IPv6 番地は8つの16ビットの塊に分けます。
+塊それぞれは1桁から4桁の大文字または小文字の十六進数字で数値的に表現します
+(先導零も認められます)。符号化した塊8つは一番重みの大きいものを最初にし、
+コロン文字で分離します。任意選択で、重みの小さな方の塊2つは IPv4
+文章書式で表現しても構いません。番地の中に値が零の16ビット塊が1つ以上続く時には、
+その数字をすべて省略して、コロンが丁度2つ連続するようにその場所に配置することができます。
+
+> 
+-
+      [DFN[IPv6address]] =                            6( h16 ":" ) ls32
+                  /                       "::" 5( h16 ":" ) ls32
+                  / [               h16 ] "::" 4( h16 ":" ) ls32
+                  / [ *1( h16 ":" ) h16 ] "::" 3( h16 ":" ) ls32
+                  / [ *2( h16 ":" ) h16 ] "::" 2( h16 ":" ) ls32
+                  / [ *3( h16 ":" ) h16 ] "::"    h16 ":"   ls32
+                  / [ *4( h16 ":" ) h16 ] "::"              ls32
+                  / [ *5( h16 ":" ) h16 ] "::"              h16
+                  / [ *6( h16 ":" ) h16 ] "::"
+-
+      [DFN[ls32]]        = ( h16 ":" h16 ) / IPv4address
+                  ; least-significant 32 bits of address
+-
+      [DFN[h16]]         = 1*4HEXDIG
+                  ; 16 bits of address represented in hexadecimal
+
+>   A host identified by an IPv4 literal address is represented in
+dotted-decimal notation (a sequence of four decimal numbers in the
+range 0 to 255, separated by "."), as described in [RFC1123] by
+reference to [RFC0952].  Note that other forms of dotted notation may
+be interpreted on some platforms, as described in Section 7.4, but
+only the dotted-decimal form of four octets is allowed by this grammar.
+
+IPv4 生番地によって識別される [CODE(ABNF)[host]] は、
+[[RFC 952]] と [[RFC 1123]] で説明されている点付き十進数記法 
+(0 から 255 までの範囲の十進数4つを [CODE(URI)[.]] で分離した列) で表現します。
+環境によっては7.4節にあるように他の点付き記法も解釈されてしまうかもしれませんが、
+この文法では4オクテットの点付き十進形だけを認めます。
+
+>
+-      [CODE(ABNF)[[DFN[IPv4address]] = dec-octet "." dec-octet "." dec-octet "." dec-octet]]
+-
+      [DFN[dec-octet]]   = DIGIT                 ; 0-9
+                  / %x31-39 DIGIT         ; 10-99
+                  / "1" 2DIGIT            ; 100-199
+                  / "2" %x30-34 DIGIT     ; 200-249
+                  / "25" %x30-35          ; 250-255
+
+>   A host identified by a registered name is a sequence of characters
+usually intended for lookup within a locally defined host or service
+name registry, though the URI's scheme-specific semantics may require
+that a specific registry (or fixed name table) be used instead.  The
+most common name registry mechanism is the Domain Name System (DNS).
+A registered name intended for lookup in the DNS uses the syntax
+defined in Section 3.5 of [RFC1034] and Section 2.1 of [RFC1123].
+Such a name consists of a sequence of domain labels separated by ".",
+each domain label starting and ending with an alphanumeric character
+and possibly also containing "-" characters.  The rightmost domain
+label of a fully qualified domain name in DNS may be followed by a
+single "." and should be if it is necessary to distinguish between
+the complete domain name and some local domain.
+
+登録名によって識別される [CODE(ABNF)[host]] は通常局所的に定義されたホストやサービス名登録簿から探すことを想定した文字列です。
+ただし、 URI の scheme 規定の意味によっては代わりに特定の登録簿
+(や固定の名前表) を使うことが要求されるかもしれません。
+もっとも一般的な名前登録機構はドメイン名システム (DNS) です。
+DNS での探索を想定している登録名は [[RFC 1034]] の3.5節と [[RFC 1123]] 
+の2.1節で定義されている構文を用います。 DNS 登録名は [CODE(URI)[.]]
+で分離されたドメイン札の列から成り、ドメイン札それぞれは最初と最後が英数字で、
+[CODE(URI)[-]] 文字も含むことができるというものです。 DNS 
+の完全修飾ドメイン名の一番右側のドメイン札の後には [CODE(URI)[.]]
+を1つ付けることができ、完全などメイン名と局所ドメインを区別する必要があるならそうするべきです。
+
+>
+-      [CODE(ABNF)[[DFN[reg-name]]    = *( unreserved / pct-encoded / sub-delims )]]
+
+>   If the URI scheme defines a default for host, then that default
+applies when the host subcomponent is undefined or when the
+registered name is empty (zero length).  For example, the "file" URI
+scheme is defined so that no authority, an empty host, and
+"localhost" all mean the end-user's machine, whereas the "http"
+scheme considers a missing authority or empty host invalid.
+
+URI scheme が [CODE(ABNF)[host]] の既定値を定義していれば、
+[CODE(ABNF)[host]] 部分部品が未定義だったり登録名が空
+(長さ零文字) であったりする時にその既定値が使われます。
+例えば、 [SAMP(URI)[[[file]]]] URI scheme は [CODE(ABNF)[authority]]
+なし、空 [CODE(ABNF)[host]], [CODE(URI)[localhost]]
+がすべて末端利用者の機械を指すように定義されています。一方で
+[CODE(URI)[[[http]]]] scheme は [CODE(ABNF)[authority]]
+が欠けていたり [CODE(ABNF)[host]] が空だったりするのは不当と考えています。
+
+>   This specification does not mandate a particular registered name
+lookup technology and therefore does not restrict the syntax of reg-name 
+beyond what is necessary for interoperability.  Instead, it
+delegates the issue of registered name syntax conformance to the
+operating system of each application performing URI resolution, and
+that operating system decides what it will allow for the purpose of
+host identification.  A URI resolution implementation might use DNS,
+host tables, yellow pages, NetInfo, WINS, or any other system for
+lookup of registered names.  However, a globally scoped naming
+system, such as DNS fully qualified domain names, is necessary for
+URIs intended to have global scope.  URI producers should use names
+that conform to the DNS syntax, even when use of DNS is not
+immediately apparent, and should limit these names to no more than
+255 characters in length.
+
+この仕様書は特定の登録名探索技術を強制していませんから、
+相互運用性のために必要な限度以上には [CODE(ABNF)[reg-name]] の構文を制限しません。
+その代わりに、登録名構文の適合性の問題を URI 解決を行う応用それぞれの運用システムに委譲し、
+その運用システムがホスト識別で何を認めるかを決めます。 URI
+解決実装は登録名の探索のために DNS, ホスト表, 黄頁,
+NetInfo, WINS, その他どんなシステムを使っても構いません。しかし、
+大域的な適用範囲を持つことを想定した URI には DNS
+完全修飾ドメイン名のような大域的な適用範囲を持つ命名システムが必要です。
+URI 生成器は DNS の使用が直接見えていなくても DNS の構文に適合する名前を使い、
+その名前の長さも255文字を超えないように制限するべきです。
+
+>   The reg-name syntax allows percent-encoded octets in order to
+represent non-ASCII registered names in a uniform way that is
+independent of the underlying name resolution technology.  Non-ASCII
+characters must first be encoded according to UTF-8 [STD63], and then
+each octet of the corresponding UTF-8 sequence must be percent-encoded 
+to be represented as URI characters.  URI producing
+applications must not use percent-encoding in host unless it is used
+to represent a UTF-8 character sequence.  When a non-ASCII registered
+name represents an internationalized domain name intended for
+resolution via the DNS, the name must be transformed to the IDNA
+encoding [RFC3490] prior to name lookup.  URI producers should
+provide these registered names in the IDNA encoding, rather than a
+percent-encoding, if they wish to maximize interoperability with
+legacy URI resolvers.
+
+[CODE(ABNF)[reg-name]] 構文は使用する名前解決技術とは独立な統一的な方法で非
+ASCII 登録名を表現するために百分率符号化オクテットを認めています。
+非 ASCII 文字はまずはじめに UTF-8 によって符号化し、
+UTF-8 列に対応する各オクテットを百分率符号化して URI
+文字として表現しなければなりません。 URI を生成する応用は UTF-8
+文字列を表現するため以外に百分率符号化を [CODE(ABNF)[host]]
+で使ってはなりません。非 ASCII 登録名が DNS
+を経て解決されることを想定した国際化ドメイン名の時は、
+名前探索の前に IDNA 符号化に変形しなければなりません。
+URI 生成器は遺物的 URI 解決器との相互運用性を最大化したいと思うのであれば百分率符号化ではなく
+IDNA 符号化を使って非 ASCII 登録名を提供するべきです。
+
+*** 3.2.3.  Port
+>   The port subcomponent of authority is designated by an optional port
+number in decimal following the host and delimited from it by a
+single colon (":") character.
+
+[CODE(ABNF)[authority]] 部品の [CODE(ABNF)[port]] 部分部品は省略可能なポート番号を十進数で示します。
+[CODE(ABNF)[port]] は [CODE(ABNF)[host]] の後に、
+コロン文字1つ ([CODE(URI)[:]]) で区切って記述します。
+
+>
+-      [CODE(ABNF)[[DFN[port]]        = *DIGIT]]
+
+>   A scheme may define a default port.  For example, the "http" scheme
+defines a default port of "80", corresponding to its reserved TCP
+port number.  The type of port designated by the port number (e.g.,
+TCP, UDP, SCTP) is defined by the URI scheme.  URI producers and
+normalizers should omit the port component and its ":" delimiter if
+port is empty or if its value would be the same as that of the
+scheme's default.
+
+Scheme は既定のポートを定義しても構いません。例えば、 [CODE(URI)[http]]
+scheme は HTTP 用予約 TCP ポート番号に対応して既定のポートを
+[CODE(URI)[80]] と定義しています。ポート番号によって示されるポートの種類
+(例えば TCP, UDP, SCTP) は URI scheme により定義されます。
+URI 生成器と URI 正規化器は [CODE(ABNF)[port]] が空であるか、
+scheme の既定のポート番号と同じ値である時には、
+[CODE(ABNF)[port]] 部品を省略するべきです。
+
+** 3.3.  Path
+>   The path component contains data, usually organized in hierarchical
+form, that, along with data in the non-hierarchical query component
+(Section 3.4), serves to identify a resource within the scope of the
+URI's scheme and naming authority (if any).  The path is terminated
+by the first question mark ("?") or number sign ("#") character, or
+by the end of the URI.
+
+[CODE(ABNF)[path]] 部品はデータを含みます。
+データは通常階層によって組織化されており、
+非階層的な [CODE(ABNF)[query]] 部品と共に、
+URI の scheme と (あれば) 命名権者による範囲の中で資源を識別する役目を担っています。
+[CODE(ABNF)[path]] は、最初の疑問符 ([CODE(URI)[?]]) か数字符
+([CODE(URI)[#]]) か URI の末尾で終端とします。
+
+>   If a URI contains an authority component, then the path component
+must either be empty or begin with a slash ("/") character.  If a URI
+does not contain an authority component, then the path cannot begin
+with two slash characters ("//").  In addition, a URI reference
+(Section 4.1) may be a relative-path reference, in which case the
+first path segment cannot contain a colon (":") character.  The ABNF
+requires five separate rules to disambiguate these cases, only one of
+which will match the path substring within a given URI reference.  We
+use the generic term "path component" to describe the URI substring
+matched by the parser to one of these rules.
+
+URI が [CODE(ABNF)[authority]] 部品を含む時は、 [CODE(ABNF)[path]]
+部品は空であるか、または斜線文字 ([CODE(URI)[/]])
+で始まらなければなりません。 URI が [CODE(ABNF)[authority]]
+部品を含まない時は、 [CODE(ABNF)[path]] は斜線文字2つ ([CODE(URI)[//]])
+で始まることができません。また、 URI 参照は [CODE(ABNF)[relative-path]]
+参照であっても構いませんが、その場合最初の [CODE(ABNF)[path]]
+[CODE(ABNF)[segment]] はコロン文字 ([CODE(URI)[:]])
+を含むことができません。 ABNF はこれらの場合を区別するため
+5つの規則が必要ですが、ある URI 参照の [CODE(ABNF)[path]]
+部分はそのうちの1つにだけ一致します。一般語[Q[[CODE(ABNF)[path]] 部品]]は構文解析器が
+5つの規則のどれかと一致させる URI の一部分を指して使います。
+
+>
+-
+      [DFN[path]]          = path-abempty    ; begins with "/" or is empty
+                    / path-absolute   ; begins with "/" but not "//"
+                    / path-noscheme   ; begins with a non-colon segment
+                    / path-rootless   ; begins with a segment
+                    / path-empty      ; zero characters
+>
+-      [CODE(ABNF)[[DFN[path-abempty]]  = *( "/" segment )]]
+-      [CODE(ABNF)[[DFN[path-absolute]] = "/" [ segment-nz *( "/" segment ) ] ]]
+-      [CODE(ABNF)[[DFN[path-noscheme]] = segment-nz-nc *( "/" segment )]]
+-      [CODE(ABNF)[[DFN[path-rootless]] = segment-nz *( "/" segment )]]
+-      [CODE(ABNF)[[DFN[path-empty]]    = 0<pchar>]]
+>
+-      [CODE(ABNF)[[DFN[segment]]       = *pchar]]
+-      [CODE(ABNF)[[DFN[segment-nz]]    = 1*pchar]]
+-
+      [DFN[segment-nz-nc]] = 1*( unreserved / pct-encoded / sub-delims / "@@" )
+                    ; non-zero-length segment without any colon ":"
+>
+-      [CODE(ABNF)[[DFN[pchar]]         = unreserved / pct-encoded / sub-delims / ":" / "@@"]]
+
+>   A path consists of a sequence of path segments separated by a slash
+("/") character.  A path is always defined for a URI, though the
+defined path may be empty (zero length).  Use of the slash character
+to indicate hierarchy is only required when a URI will be used as the
+context for relative references.  For example, the URI
+<mailto:fred@@example.com> has a path of "fred@@example.com", whereas
+the URI <foo://info.example.com?fred> has an empty path.
+
+[CODE(ABNF)[/]] は斜線文字 ([CODE(URI)[/]]) で分離した [CODE(ABNF)[path]]
+[CODE(ABNF)[segment]] の列です。 [CODE(ABNF)[path]] は空
+(長さ零) かもしれませんが、すべての URI で必ず定義されます。
+階層を表すために斜線文字を使わなければならないのは URI
+を相対参照の文脈として使う時だけです。例えば、 URI
+<mailto:fred@@example.com> の [CODE(ABNF)[path]] は
+[SAMP(URI)[fred@@example.com]] で、
+URI <foo://info.example.com?fred> の [CODE(ABNF)[path]] は空です。
+
+>   The path segments "." and "..", also known as dot-segments, are
+defined for relative reference within the path name hierarchy.  They
+are intended for use at the beginning of a relative-path reference
+(Section 4.2) to indicate relative position within the hierarchical
+tree of names.  This is similar to their role within some operating
+systems' file directory structures to indicate the current directory
+and parent directory, respectively.  However, unlike in a file
+system, these dot-segments are only interpreted within the URI path
+hierarchy and are removed as part of the resolution process (Section 5.2).
+
+[CODE(ABNF)[path]] [CODE(ABNF)[segment]] の [CODE(URI)[.]] や [CODE(URI)[..]]
+は点付き部分ともいいますが、 [CODE(ABNF)[path]] 
+名階層の中での相対参照のために定義されています。点付き部分は階層木中の名前の相対位置を示すために
+[CODE(ABNF)[relative-path]] 参照のはじめで使うことを想定しています。
+これはいくつかのオペレーティング・システムのファイル・ディレクトリ構造でそれぞれ現在ディレクトリと親ディレクトリを示すという役割と似ています。
+しかし、ファイル・システムの場合とは異なり、これら点付き部分は URI
+[CODE(ABNF)[path]] 階層の中でのみ解釈され、解決処理の中で除去されます。
+
+>   Aside from dot-segments in hierarchical paths, a path segment is
+considered opaque by the generic syntax.  URI producing applications
+often use the reserved characters allowed in a segment to delimit
+scheme-specific or dereference-handler-specific subcomponents.  For
+example, the semicolon (";") and equals ("=") reserved characters are
+often used to delimit parameters and parameter values applicable to
+that segment.  The comma (",") reserved character is often used for
+similar purposes.  For example, one URI producer might use a segment
+such as "name;v=1.1" to indicate a reference to version 1.1 of
+"name", whereas another might use a segment such as "name,1.1" to
+indicate the same.  Parameter types may be defined by scheme-specific
+semantics, but in most cases the syntax of a parameter is specific to
+the implementation of the URI's dereferencing algorithm.
+
+階層的 [CODE(ABNF)[path]] での点付き部分以外は、 [CODE(ABNF)[path]]
+[CODE(ABNF)[segment]] は一般構文においては不透明と考えます。
+URI 生成応用はしばしば scheme 規定または参照を解く取扱い器規定の部分部品を区切るために
+[CODE(ABNF)[segment]] の中で認められている予約文字を使います。
+例えば、予約文字であるセミコロン ([CODE(URI)[:]]) や等号
+([CODE(URI)[=]]) はしばしば [CODE(ABNF)[segment]] に適用される引数や引数値を区切るために使われます。
+予約文字読点 ([CODE(URI)[,]]) はしばしば似た目的で使われます。
+例えば、ある URI 生成器は [SAMP(URI)[name]] の第1.1版への参照を示すために
+[SAMP(URI)[name;v=1.1]] のような [CODE(ABNF)[segment]] を使うかもしれませんし、
+別の URI 生成器は同じことを示すために [SAMP[name,1.1]] のような
+[CODE(ABNF)[segment]] を使うかもしれません。 Scheme 規定の意味によって引数の型も定義されるかもしれませんが、ほとんどの場合引数の構文は URI の参照を解く算法の実装に依存したものです。
+
+** 3.4.  Query
+>   The query component contains non-hierarchical data that, along with
+data in the path component (Section 3.3), serves to identify a
+resource within the scope of the URI's scheme and naming authority
+(if any).  The query component is indicated by the first question
+mark ("?") character and terminated by a number sign ("#") character
+or by the end of the URI.
+
+[CODE(ABNF)[query]] 部品は非階層的なデータを含み、
+[CODE(ABNF)[path]] 部品のデータと共に URI の scheme
+と (あれば) 命名権者の適用範囲内で資源を識別する働きをします。
+[CODE(ABNF)[query]] 部品は最初の疑問符 ([CODE(URI)[?]])
+で始まり、数字符 ([CODE(URI)[#]]) か URI の末尾によって終わります。
+
+>
+-      [CODE(ABNF)[[DFN[query]]       = *( pchar / "/" / "?" )]]
+
+>   The characters slash ("/") and question mark ("?") may represent data
+within the query component.  Beware that some older, erroneous
+implementations may not handle such data correctly when it is used as
+the base URI for relative references (Section 5.1), apparently
+because they fail to distinguish query data from path data when
+looking for hierarchical separators.  However, as query components
+are often used to carry identifying information in the form of
+"key=value" pairs and one frequently used value is a reference to
+another URI, it is sometimes better for usability to avoid 
+percent-encoding those characters.
+
+斜線文字 ([CODE(URI)[/]]) と疑問符 ([CODE(URI)[?]])
+は [CODE(ABNF)[query]] 部品の中でデータを表現することができます。
+古い誤った実装は、斜線文字や疑問符が含まれたデータを相対参照の基底 URI
+として使うと、どうやら階層の分離子を探す時に [CODE(ABNF)[path]]
+のデータと [CODE(ABNF)[query]] のデータを区別できないらしく、
+正しく扱うことができないかもしれません。しかし、
+[CODE(ABNF)[query]] 部品はしばしば [SAMP(URI)[[VAR[鍵]]=[VAR[値]]]]
+の組の形の識別情報を伝達するのに使われ、よく使われる値の1つが他の URI
+への参照であったりしますから、これらの文字の百分率符号化は避けた方が可用性的に好ましいことが時たまあります。
+
+**3.5.  Fragment
+>   The fragment identifier component of a URI allows indirect
+identification of a secondary resource by reference to a primary
+resource and additional identifying information.  The identified
+secondary resource may be some portion or subset of the primary
+resource, some view on representations of the primary resource, or
+some other resource defined or described by those representations.  A
+fragment identifier component is indicated by the presence of a
+number sign ("#") character and terminated by the end of the URI.
+
+URI の素片識別子部品を使うと、一次資源への参照と追加の識別情報によって二次資源を間接的に識別することができます。
+識別された二次資源は一次資源の一部分・部分集合かもしれませんし、
+一次資源の表現上の形かもしれませんし、その表現によって定義・記述される他の資源かもしれません。
+素片識別子部品は数字符 ([CODE(URI)[#]]) の存在により示され、
+URI の終わりで終端となります。
+
+>
+-      [CODE(ABNF)[[DFN[fragment]]    = *( pchar / "/" / "?" )]]
+
+>   The semantics of a fragment identifier are defined by the set of
+representations that might result from a retrieval action on the
+primary resource.  The fragment's format and resolution is therefore
+dependent on the media type [RFC2046] of a potentially retrieved
+representation, even though such a retrieval is only performed if the
+URI is dereferenced.  If no such representation exists, then the
+semantics of the fragment are considered unknown and are effectively
+unconstrained.  Fragment identifier semantics are independent of the
+URI scheme and thus cannot be redefined by scheme specifications.
+
+素片識別子の意味は一次資源の取出し動作の結果得られるであろう表現の集合により定義されます。
+従って、 [CODE(ABNF)[fragment]] の書式と解決は、
+たとえ URI の参照が解かれる時だけ取出しが行われるのであったとしても、
+取出される可能性のある表現の媒体型に依存します。そのような表現が存在しないのであれば、
+[CODE(ABNF)[fragment]] の意味は未知と考えられ、
+実質無制約となります。素片識別子の意味は URI scheme
+とは独立であり、 scheme の仕様によって再定義することはできません。
+
+>   Individual media types may define their own restrictions on or
+structures within the fragment identifier syntax for specifying
+different types of subsets, views, or external references that are
+identifiable as secondary resources by that media type.  If the
+primary resource has multiple representations, as is often the case
+for resources whose representation is selected based on attributes of
+the retrieval request (a.k.a., content negotiation), then whatever is
+identified by the fragment should be consistent across all of those
+representations.  Each representation should either define the
+fragment so that it corresponds to the same secondary resource,
+regardless of how it is represented, or should leave the fragment
+undefined (i.e., not found).
+
+各媒体型は、素片識別子構文の範囲内において、
+その媒体型で二次資源として識別できる色々な種類の部分集合,
+表示, 外部参照を指定する制限や構造を定義することができます。
+一次資源が複数の表現を持つこともあります。
+しばしばあるのは資源の表現が取出し要求の属性に基づいて選択されるというもの
+(内容折衝) です。そのような場合には [CODE(ABNF)[fragment]]
+が何を識別するのであれ、全表現を通じて一貫しているべきです。
+各表現は (どう表現されるのであれ) 同じ二次資源を指すように 
+[CODE(ABNF)[fragment]] を定義するか、
+またはその [CODE(ABNF)[fragment]] を未定義 (つまり見つかりません) 
+としておくべきです。
+
+>   As with any URI, use of a fragment identifier component does not
+imply that a retrieval action will take place.  A URI with a fragment
+identifier may be used to refer to the secondary resource without any
+implication that the primary resource is accessible or will ever be accessed.
+
+どんな URI についてもそうですが、素片識別子部品を使ったからといって取出し動作が行われると暗示しているわけではありません。
+素片識別子付き URI は一次資源がアクセス可能であるとかアクセスされるかという暗示すらなしで二次資源を参照するために使うことができます。
+
+>   Fragment identifiers have a special role in information retrieval
+systems as the primary form of client-side indirect referencing,
+allowing an author to specifically identify aspects of an existing
+resource that are only indirectly provided by the resource owner.  As
+such, the fragment identifier is not used in the scheme-specific
+processing of a URI; instead, the fragment identifier is separated
+from the rest of the URI prior to a dereference, and thus the
+identifying information within the fragment itself is dereferenced
+solely by the user agent, regardless of the URI scheme.  Although
+this separate handling is often perceived to be a loss of
+information, particularly for accurate redirection of references as
+resources move over time, it also serves to prevent information
+providers from denying reference authors the right to refer to
+information within a resource selectively.  Indirect referencing also
+provides additional flexibility and extensibility to systems that use
+URIs, as new media types are easier to define and deploy than new
+schemes of identification.
+
+素片識別子は情報取出しシステムにおいてクライアント側間接参照の一次形として特別な役割を持っており、著者は資源の所有者によって間接的に提供されているだけの既存の資源の一部分を特に指定することができます。
+ですから、素片識別子は URI の scheme 規定の処理では使いません。代わりに、
+素片識別子は参照を解く前に URI の残りの部分から分離され、
+素片自体の中の識別情報は URI scheme に関わらず利用者エージェントによって単独で参照を解きます。
+この分離処理はしばしば情報の損失であると理解されます
+(特に資源が時を経て移動する時に正確な参照の再指向の妨げとなります) が、
+情報提供者が参照著者の資源内の情報を選択的に参照する権利を拒むのを防ぐことにもなています。
+新しい識別の方法を定義・採用するのよりも新しい媒体型の方が簡単ですから、
+間接参照は URI を使うシステムをより柔軟、より拡張可能にもしています。
+
+>   The characters slash ("/") and question mark ("?") are allowed to
+represent data within the fragment identifier.  Beware that some
+older, erroneous implementations may not handle this data correctly
+when it is used as the base URI for relative references (Section 5.1).
+
+斜線文字 ([CODE(URI)[/]]) と疑問符 ([CODE(URI)[?]])
+は素片識別子でデータを表現するために使うことができます。
+古い誤った実装は相対参照の基底 URI として使う時にこのデータを正しく扱うことができないかもしれないことに注意してください。
+
+*memo
+@

@@ -1,0 +1,168 @@
+head	1.2;
+access;
+symbols
+	suikawiki3-final:1.2
+	before-db-leaffile:1.2
+	after-upgrade-to-suikawiki-3:1.2
+	before-fork-suikawiki3:1.2
+	after-restore-20040122:1.2;
+locks; strict;
+comment	@# @;
+
+
+1.2
+date	2002.11.23.09.25.37;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2002.07.29.12.01.59;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@Updated.
+@
+text
+@-識別子の定義
+--[[Message-ID:領域]]
+--[[Content-ID:領域]]
+--See also [[Received:領域]]
+-識別子の参照 (See also [[記事の返信]])
+--[[References:領域]]
+--[[In-Reply-To:領域]]
+--[[See-Also:領域]]
+--[[Supersedes:領域]]
+--[[Control:領域]] (See also [[Subject:領域]])
+
+-[[Article-I.D.:領域]]
+-[[X-UIDL:領域]]
+-[[XRef:領域]]
+-See also [[URI]], [[URL]]
+
+*Message-ID と Content-ID の角括弧は ID の一部かどうか
+
+仕様書によって、一部であると言っていたり、ないと言ってたりします。
+RFC 2822 はないという見解のようです。
+
+mid:, cid: URL は、角括弧を省いたものを URI の一部として
+利用しています。このように外部の構造の部分として使う場合は、
+角括弧を取り除いて使うのが良さげです。角括弧は冗長です。
+
+(とはいえ、場合によってはそういう時でも、角括弧つきのものを
+うけいれるのが良いでしょう。[[人に優しく原則]]です。)
+
+*壊れた識別子
+
+Message-ID, Content-ID が例にでてくる RFC のなかに、
+間違って角括弧が必要なのに書いてないのが幾つかあります。
+例えば、 RFC 1341 [[[MIME]]] で Message-ID が角括弧なし
+の例が幾つも載ってたりします。
+
+実際のメッセージで角括弧が無い MID/CID がどれだけあるのか
+分かりませんが、実装は出来れば対応するべきでしょう。
+(といっても References: や In-Reply-To: でそれをやられると、
+構文解析が少し面倒になるなあ。)
+
+どこだったかの携帯電話から送られてくる電子メイルは、
+<hogehoge@@foo.example のように、角括弧が片方しかない
+MID が使われてました。しかもかなり長い時期続いてました。
+(現在どうなってるかは分かりません。) ですから、実装は
+こうしたものも受け入れるべきでしょう。
+
+もちろんどちらの場合も、角括弧を適当に補ったものを
+MID/CID とすることになるでしょう。 References/In-Reply-To
+にその MID を入れるときは、補ったものを入れるべきです。
+(または、入れないか。そのどちらかでないと、 RFC 822/2822
+などに違反します。)
+
+*BNF
+
+ Message-ID = "Message-ID:" CFWS msg-id [CFWS] / obs-Message-ID
+ Content-ID = "Content-ID" [FWS] ":" [CFWS] 822.msg-id [CFWS]
+ References = "References:" CFWS msg-id-list [CFWS] / obs-References
+ In-Reply-To = "In-Reply-To:" CFWS msg-id-list [CFWS] / obs-In-Reply-To
+ 
+ 822.msg-id = msg-id / obs-msg-id
+ msg-id = "<" id-left "@@" id-right ">"
+ id-left = dot-atom / no-fold-quote
+ id-right = dot-atom / no-fold-literal
+ msg-id-list = msg-id *( CFWS msg-id ) / obs-msg-id-list
+
+ obs-Message-ID = "Message-ID" [FWS] ":" [CFWS] obs-msg-id-content [CFWS]
+ obs-msg-id-content = mach-host-phrase	;; RFC 724
+                    / mach-id	;; RFC 733
+                    / obs-msg-id	;; RFC 2822 obsolete
+
+ obs-References = "References" [FWS] ":" msg-id-list [CFWS] 
+ obs-References = "In-Reply-To" [FWS] ":" msg-id-list [CFWS] 
+ obs-msg-id-list = [ 724.reference-item-list	;; RFC 724
+                   / 733.ref-item-list	;; RFC 733
+                   / *(obs-phrase / msg-id )	;; RFC [2]822
+                   ]
+
+ mach-host-phrase = "<" [724.CFWS] host-phrase [724.CFWS] ">"
+ host-phrase = 724.phrase [724.CFWS] host-indicator
+ host-indicator = at-indicator [724.CFWS] host-name
+ at-indicator = 724.CFWS "at" 724.CFWS / "@@"
+ host-name = 724.atom / ipv4-address
+ 724.phrase = 724.word *( [724.CFWS] 724.word )
+ 724.word = 724.atom / 724.quoted-string
+ 724.atom = 1*724.atext
+ 724.atext = ALPHA / DIGIT / "!" / "#" / "$" / "%" / "&" / "'"
+           / "*" / "+" / "-" / "." / "/" / "=" / "?" / "[" 
+           / "\" / "]" / "^" / "_" / "`" / "{" / "|" / "}" / "~"
+ 724.quoted-string = <"> ( (%x00-07 / %x09-%7F) *(%x00-7F) / <""> ) <">
+ 	;; <""> は <"> と解される。単一の <"> を除くと書いてない
+ 	;; けど、常識的には駄目なのでしょう。
+ 724.CFWS = *([FWS] 724.comment) (([FWS] 724.comment) / FWS)
+ 724.comment = "(" ( (%x00-27 / %x29-7F) / 724.comment ) ")"
+ 	;; CRLF が入っちゃ駄目。
+
+ mach-id = "<" [CFWS] host-phrase [CFWS] ">"
+ 733.host-phrase = 733.phrase [CFWS] 733.host-indicator
+ 733.host-indicator =  1*( ( CFWS "at" CFWS / "@@" ) [CFWS] node )
+ node = word / 1*DIGIT
+ 733.atom = 1*733.atext
+ 733.atext = ALPHA / DIGIT / "!" / "#" / "$" / "%" / "&" / "'"
+           / "*" / "+" / "-" / "." / "/" / "=" / "?" / "[" 
+           / "]" / "^" / "_" / "`" / "{" / "|" / "}" / "~"
+
+ obs-msg-id = "<" [CFWS] 822.addr-spec [CFWS] ">"
+ 822.addr-spec = 822.local-part [CFWS] "@@" [CFWS] 822.domain
+ 822.local-part = obs-dot-word
+ 822.domain = obs-dot-atom / domain-literal
+
+ 724.reference-item-list = 724.reference-item
+             *( [724.CFWS] "," [724.CFWS] 724.reference-item )
+ 724.reference-item = 724.phrase / mach-host-phrase
+ 733.ref-item-list = ( 733.phrase / mach-id )
+             *( [733.CFWS] "," [733.CFWS] ( 733.phrase / mach-id ) )
+
+
+*SEE ALSO
+
+
+-[[電子メイル]]
+-[[MIME]]
+-[[電子ニュース]]
+--[[son-of-RFC1036]]
+--[[draft-usefor-article]]
+- [3] [CODE(ABNF)["@@"]] を含まない Content-ID を良く見かけます。ほぼ間違いなくそれは [[HTMLメイル]]でした。 [[MUA]] などは [CODE(ABNF)["@@"]] がない [ABBR[CID] [Content-ID]] も受け入れてあげるのが親切ですが、 (大抵はうざいだけの [[HTMLメイル]]に使われているので) あえて対応することもないかもしれません:-)  ([[text/html媒体型]]を上手く利用する人 (が使う [[UA]]) は変な CID を生成しないでしょう、ってことで。)
+@
+
+
+1.1
+log
+@Updated.
+@
+text
+@d125 1
+@
+

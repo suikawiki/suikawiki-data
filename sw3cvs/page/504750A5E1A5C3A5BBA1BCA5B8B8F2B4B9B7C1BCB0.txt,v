@@ -1,0 +1,169 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1
+	before-db-leaffile:1.1
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+
+
+1.1
+date	2002.07.29.12.01.58;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@Updated.
+@
+text
+@メッセージ本文を署名あるいは暗号化する形式です。
+ASCII Armor と呼ばれる形式で本文を包み込みます。
+
+RFC 1991 <urn:ietf:rfc:1991> (PGP 2.x) で定義されています。
+RFC 2440 <urn:ietf:rfc:2440> (OpenPGP) がその改訂版を
+定義しています。
+
+現在ではメッセージへの埋め込み方(謎)としては、 
+[[PGP/MIME]] を使うのが適切でしょう。
+
+*radix-64
+
+PGP のデータは binary であるので、 7bit の SMTP 配送路
+・RFC 822 メッセージでは直接おくれません。
+ですから、 radix-64 という形式で ASCII 文字の列に変換します。
+radix-64 は、 [[MIME]] では [[Base64]] と呼ばれています。
+
+*ASCII Armor
+
+ASCII Armor は、次のものから構成されます。
+
+- An Armor Headerline, appropriate for the type of data
+- Armor Headers
+- A blank line
+- The ASCII-Armored data
+- An Armor Checksum
+- The Armor Tail (which depends on the Armor Headerline).
+
+以下、 BNF は適当にでっちあげたものです。 RFC 1991
+は言葉による定義のみです。
+
+=ascii-armor = headerline header data checksum tail
+
+**頭行 Armor Headerline
+
+=headerline = "-----" data-type "-----" CRLF
+
+data-type は次のものです。
+
+'BEGIN PGP MESSAGE' 署名・暗号化・圧縮ファイル [RFC1991]
+[RFC2440]
+
+'BEGIN PGP PRIVATE MESSAGE' 秘密鍵 [RFC2440]
+
+'BEGIN PGP PUBLIC KEY BLOCK' 公開鍵 [RFC1991] [RFC2440]
+
+'BEGIN PGP MESSAGE, PART X/Y' 多部分メッセージ。Y 個のファイルに分割されてる
+armor の X 個目のファイル。 [RFC1991]
+
+'BEGIN PGP MESSAGE, PART X' 多部分メッセージ。 X 番目。
+MESSAGE-ID Armor 頭 (2440 ママ。 MessageID が正しい?) 
+が必須。 [RFC2440]
+
+'BEGIN PGP SIGNATURE' detached 署名, OpenPGP/MIME 署名,
+クリア署名に使う。 PGP 2.X では、 detached 署名には
+'BEGIN PGP MESSAGE' を使ってた。 [RFC2440]
+
+*頭
+
+=header = *header-field
+=header-field = key ":" value CRLF
+=key = <RFC 822 field-name>
+=value = <RFC 822 field-body>
+
+頭は、利用者又は PGP プログラムが使う情報の領域です。
+データの一部ではありません。重要な情報を入れる場所ではありません。
+
+RFC 822 頭と同様と定義されています。未知の頭領域は
+無視するべきものです。
+
+RFC 2440 は RFC 822 の話はしてません。
+
+=header-field = key ":" SP value CRLF
+
+Charset [[charset]]。既定値 [[UTF-8]]。実装は無視しても'''良い'''。
+[RFC2440]
+
+Comment は利用者定義の注釈 [RFC1991] [RFC2440]
+
+Hash クリア署名に使われているハッシュ関数の読点区切り一覧
+[RFC2440]
+
+MessageID 印字可能文字32文字の列。 PART X Armor 頭を
+使う多部分メッセージの各部分で共通の文字列。
+受信者側が識別できるのに十分なくらい固有なもの。
+checksum とか暗号化ハッシュ関数を使えばいいらしい。
+多部分なとき以外は使う'''べきじゃない''' [RFC2440]
+
+Version は符号化に使った [Open]PGP の版 [RFC1991] [RFC2440]
+
+*Armor checksum
+
+24ビット CRC を radix-64 で ASCII 文字化したものです。
+
+*尻尾 Armor Tail
+
+頭行の BEGIN を END に替えたものです。
+
+*クリア署名 [RFC2440]
+
+=cleartext-signed = cleartext-header armor-header CRLF data cleartext-armor
+=cleartext-header = '-----BEGIN PGP SIGNED MESSAGE-----' CRLF
+=armor-header = <One or more "Hash" Armor Headers> ;; RFC 2440 ママ
+=data = *OCTET  ;; dash-escaped signed data
+=cleartext-armor = <ascii-armor started with 'BEGIN PGP SIGNATURE'>
+
+Armor 頭で Hash が指定されていれば、それは署名に使った
+要約算法です。 PGP 2.x との互換性のために省略しても'''構いません'''。
+既定値は MD5 です。
+
+複数の要約算法を使っている時は、読点区切り一覧にします。
+
+**dash-escaped クリア文
+
+行頭に "-" がある場合に、 "- -" に置き換えたものです。
+
+メッセージ要約はもとのものに対して計算するもので、 dash-escaped
+形式に対して計算するものではありません。
+
+署名時には改行正規形 CRLF を使います。行末の TAB は
+クリア署名の計算時には無視します。
+'-----BEGIN PGP SIGNATURE-----' の前の CRLF はデータに含みません。
+
+**ハッシュ関数
+
+RFC 2440 9.4 節曰く:
+
+,ID         ,Algorithm                              ,Text Name
+,1          ,MD5                                    ,"MD5"
+,2          ,SHA-1                                  ,"SHA1"
+,3          ,RIPE-MD/160                            ,"RIPEMD160"
+,4          ,Reserved for double-width SHA (experimental)
+,5          ,MD2                                    ,"MD2"
+,6          ,Reserved for TIGER/192                 ,"TIGER192"
+,7          ,Reserved for HAVAL (5 pass, 160-bit)   ,"HAVAL-5-160"
+,100 to 110 ,Private/Experimental algorithm.
+
+>   Implementations MUST implement SHA-1. Implementations SHOULD implement MD5.
+
+*参考
+-RFC 2440 和訳 <http://gnupg.desiato.de/gnupg/rfc2440-ja.html>
+@

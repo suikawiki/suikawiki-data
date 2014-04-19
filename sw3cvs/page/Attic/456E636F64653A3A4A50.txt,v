@@ -1,0 +1,199 @@
+head	1.3;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.3
+date	2003.09.03.02.00.12;	author wakaba;	state dead;
+branches;
+next	1.2;
+
+1.2
+date	2003.01.26.04.49.32;	author w;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2002.10.13.09.24.39;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9
+*Encode::JP の問題点
+
+**変換表問題
+
+Encode::JP (が定義する符号化) は [[UnicodeConsortium]]
+の写像表を使っているようですが、この変換表が間違っていること
+は有名です。この変換表を使うと [[JIS]] には''適合しません''し、
+[[Microsoft]] や [[Apple]] の使っている変換表とも
+一致しません。
+
+*Perl 5.8.0 付属の Encode::JP
+**NAME
+
+Encode::JP - Japanese Encodings 日本語符号化
+
+**SYNOPSIS
+
+    use Encode qw/encode decode/;
+    $euc_jp = encode("euc-jp", $utf8);   # loads Encode::JP implicitly
+                   # 自動的に Encode::JP が読み込まれる
+    $utf8   = decode("euc-jp", $euc_jp); # ditto   同上
+
+**ABSTRACT
+
+This module implements Japanese charset encodings.  Encodings
+supported are as follows.
+
+このモジュールは日本の [[charset]] 符号化を実装します。
+対応している符号化は次のとおり。
+
+  Canonical   Alias		Description
+  正規名      別名              説明
+  --------------------------------------------------------------------
+  euc-jp      /\beuc.*jp$/i	EUC (Extended Unix Character)
+              /\bjp.*euc/i      
+	      /\bujis$/i
+
+[INS[
+訳注: [[EUC]] は正しくは Extended Unix Code, 拡張 Un*x 符号。
+ここでは日本語 EUC のこと。
+]INS]
+
+  shiftjis    /\bshift.*jis$/i	Shift JIS (aka MS Kanji)
+	      /\bsjis$/i        シフト JIS (aka MS漢字)
+  7bit-jis    /\bjis$/i		7bit JIS
+  iso-2022-jp			ISO-2022-JP                  [RFC1468]
+				= 7bit JIS with all Halfwidth Kana 
+				  converted to Fullwidth
+                                  7ビット JIS で全ての半角仮名は
+                                  全角に変換
+  iso-2022-jp-1			ISO-2022-JP-1                [RFC2237]
+                                = ISO-2022-JP with JIS X 0212-1990
+				  support.  See below
+                                  ISO-2022-JP に JIS X 0212-1990
+                                  を加えたもの。下記参照
+  MacJapanese	                Shift JIS + Apple vendor mappings
+  cp932                         Code Page 932	
+                                = Shift JIS + MS/IBM vendor mappings
+  jis0201-raw                   JIS0201, raw format 生形式
+  jis0208-raw                   JIS0201, raw format 生形式
+  jis0212-raw                   JIS0201, raw format 生形式
+  --------------------------------------------------------------------
+
+[INS[
+訳注: ここで raw == 生形式とは、単体で [[GL]] に符号化したもの
+のこと。
+]INS]
+
+**DESCRIPTION
+
+To find out how to use this module in detail, see L<Encode>.
+
+このモジュールをどう使うかについて詳しくは、 [[Encode]]
+を参照。
+
+**Note on ISO-2022-JP(-1)? ISO-2022-JP(-1)? についての覚書
+
+ISO-2022-JP-1 (RFC2237) is a superset of ISO-2022-JP (RFC1468) which
+adds support for JIS X 0212-1990.  That means you can use the same
+code to decode to utf8 but not vice versa.
+
+[[ISO-2022-JP-1]] (RFC 2237) は ISO-2022-JP (RFC 1468)
+の superset で、 [[JISX0212]]-1990 を加えたものです。
+これは、 utf8 に復号するのに同じ code を使えるが、
+逆は真ならぬことを意味します。
+
+  $utf8 = decode('iso-2022-jp-1', $stream);
+
+and
+
+  $utf8 = decode('iso-2022-jp',   $stream);
+
+yield the same result but
+
+上記2つは同じ結果になりますが、
+
+  $with_0212 = encode('iso-2022-jp-1', $utf8);
+
+is now different from
+
+  $without_0212 = encode('iso-2022-jp', $utf8 );
+
+この2つは違う結果になります。
+
+In the latter case, characters that map to 0212 are first converted
+to U+3013 (0xA2AE in EUC-JP; a white square also known as 'Tofu' or
+'geta mark') then fed to the decoding engine.  U+FFFD is not used,
+in order to preserve text layout as much as possible.
+
+後者では、 0212 に写像できない文字はまず U+3013
+([[EUC-JP]] では 0xA2AE で、白四角で「豆腐」とか「下駄」
+とか言われる。) に変換してから復号機に渡します。 U+FFFD
+は使われません。可能な限り文章配置を保存するためです。
+
+[INS[
+訳注: よくわかりません。豆腐 (□) は下駄 (〓)
+とは違うと思うんですが・・・。
+]INS]
+
+**BUGS
+
+The ASCII region (0x00-0x7f) is preserved for all encodings, even
+though this conflicts with mappings by the Unicode Consortium.  See
+
+ASCII の範囲 (0x00-0x7F) は全ての符号化で保持されます。
+[[UnicodeConsortium]] の写像表とは対立したとしてもです。
+
+<http://www.debian.or.jp/~kubota/unicode-symbols.html.en>
+
+to find out why it is implemented that way.
+
+どうしてこうしたかは
+<http://www.debian.or.jp/~kubota/unicode-symbols.html>
+をご覧下さい。
+
+**SEE ALSO
+
+[[Encode]]
+
+**この部分の license
+
+[[perlと同じライセンス]]。
+
+*メモ
+- 2002-10-13 (Sun) 18:22:06 ''[[名無しさん]]'' : なんで JA じゃなくて JP なんだ、という話もありますが、内容的にむしろ JP でしょう。
+- [1] 半角・全角変換は現在の [[perl]] 付属の [[Encode]] モジュールでは出来ません。
+- [2] >>1 [CODE(perl)[$s =~ tr/あいうえお/アイウエオ/;]] みたいに書けばいいんだけど、文字の順番を考えないとはまるから、やっぱりモジュールがあった方がいいだろうな。
+@
+
+
+1.2
+log
+@auto-commited
+@
+text
+@@
+
+
+1.1
+log
+@Updated.
+@
+text
+@d147 2
+@
+

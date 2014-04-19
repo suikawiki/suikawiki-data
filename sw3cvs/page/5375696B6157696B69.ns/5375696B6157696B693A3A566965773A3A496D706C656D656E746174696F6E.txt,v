@@ -1,0 +1,153 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.1
+date	2004.05.18.02.05.56;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9
+[1] [DFN[[CODE(perl)[SuikaWiki::View::Implementation]]]]
+<IW:SuikaCVS:"suikawiki/script/lib/SuikaWiki/View/Implementation.pm">
+は、 [[SuikaWiki3]] の [[WikiView]] 実装の中核を担っているモジュールです。
+
+このモジュールは、普通、 [CODE(perl)[[[SuikaWiki::Implementation]]]]
+から自動的に読み込まれます。
+
+* WIkiView 管理器
+
+[4] このモジュールの要となるのが [DFN[WikiView 管理器]]物体の実装です。
+WikiView 管理器は、 wiki 実装各部が WikiView を扱うときの界面となります。
+
+WikiView 管理器の実現値 (以後、便宜上 [VAR(perl)[$view]] と呼びます。)
+は、普通は [CODE(perl)[SuikaWiki::Implementation]]
+が必要に応じて生成しておきます。一つの実装で複数の実現値が必要になることは、まずありません。
+
+[VAR(perl)[$wiki]] を [CODE(perl)[SuikaWiki::Implementation]]
+の実現値とすると、どこかで [CODE(perl)[$wiki->init_view]]
+した後には、 [CODE(perl)[$view = $wiki->{view}]]
+で WikiView 管理器実現値を得られます。
+なお、 WikiView 管理器がまったく要らなくなったときのために
+[CODE(perl)[$wiki->close_view]] というメソッドがあります。
+この辺の詳細は、 [CODE(perl)[SuikaWiki::Implementation]]
+の説明を見てください。
+
+** $view = SuikaWiki::View::Implementation->new
+
+[6] 新しい WikiView 管理器の実現値を生成します。
+前述のように、通常はこのメソッドを直接呼ぶ必要はありません。
+WikiView 管理器実現値が必要になったときは [CODE(perl)[$wiki->{view}]]
+を使ってください。
+
+** $viewdef = $view->select ($view_name, $view_param)
+
+[5] 適当な WikiView 定義を選択し、返します。
+[VAR(perl)[$view_name]] には WikiView の名前を指定してください。
+
+WikiView 定義には、適当な状況についての条件がつけられていることがあります。
+たとえば、 [[HTTP]] の場合に有効だとか local で起動したときに有効だとか、
+あるいは HTTP の[[要求方式]]が [CODE(HTTP)[[[POST]]]]
+のときだけ有効だとかです。
+(また、そうした条件が異なる、同じ名前の WikiView を複数定義することができます。)
+そのような条件を考慮して適当な WikiView 定義を選択するために、
+[VAR(perl)[$view_param]] という引数を指定する必要があります。
+この引数はハッシュ参照です。
+
+[CODE(perl)[select] メソッドは、候補である WikiView 定義の
+[CODE(perl)[$viewdef->{condition}]] と、与えられた
+[CODE(perl)[$view_param->{condition}]] (いずれもハッシュ参照)
+の要素を比較します。
+[WEAK[(ただし、 [CODE(perl)[$view_param->{condition}->{mode}]] は、その必要がないので、この比較では考慮しません。)]]
+
+名前が [VAR(perl)[$view_name]] と一致する WikiView 定義の中から、
+- [CODE(perl)[$viewdef->{condition}->{[VAR[$foo]]}]] が配列参照である場合、
+その要素のいずれか一つでも 
+[CODE(perl)[$view_param->{condition}->{[VAR[$foo]]}]] と一致したら、
+得点を加算する。 (何個一致しようが一点。)
+- [CODE(perl)[$viewdef->{condition}->{[VAR[$foo]]}]] が配列参照でない場合、その値が [CODE(perl)[$view_param->{condition}->{[VAR[$foo]]}]] と一致したら得点を加算する。 (一点。)
+- いずれの場合でも、一致しない場合 ([VAR(perl)[$view_param]] 側の値が与えられていない場合も含む。)
+には、その [VAR(perl)[$viewdef]] は候補からはずす。
+
+という方法で候補を絞り込み、
+得点の高い順に (同得点内では順不同)、
+[CODE(perl)[$viewdef->{check}->($view_param)]]
+を実行し、最初に真になった WikiView 定義を採用します。
+([CODE(perl)[$viewdef->{check}]] が未定義の時は、真を返したこととします。)
+
+以上の方法で WikiView 定義が決定できれば、それを結果として返します。
+決定できないときは、 [VAR(perl)[$view_name]] を
+[CODE[#default]] とし、もう一度 WikiView 定義を探し直します。
+それでも決定できなければ、 [CODE(perl)[[[undef]]]]
+を返します。
+
+** $view->instantiate ($view_name, $view_param)
+
+** $view->register_mode
+
+** $view->register_common_modes
+
+** $view->assemble_template
+
+** $view->exit
+
+** $view->{wiki} (公開)
+
+** $view->{definition}->{ $mode } (私的)
+
+* 大域変数
+
+[2] [DFN[[VAR(perl)[@@SuikaWiki::View::Implementation::CommonViewDefs]]]]
+は、共通 WikiView 定義を保持する配列です。「共通」とは、
+どの WikiView 管理器実現値からも access できるという意味です。
+(一つの process 中で複数の [[WikiEngine]] を動作させるときに、
+実現値ごとに異なる WikiView 集合を扱うことを想定しています。)
+
+この配列に含まれている WikiView 定義は、
+[CODE(perl)[$view->register_common_modes]] で当該実現値において有効にできます。
+
+通常は外部からこの配列に直接 access する必要はありません。
+(この配列に access する必要がある部分は、 [CODE(file)[[[mkplugin2.pl]]]]
+が自動的に生成します。)
+
+[3] [DFN[[VAR(perl)[%SuikaWiki::View::Implementation::TemplateFragment]]]]
+は、[DFN[[[雛形素片]]]]を登録しておくハッシュです。
+
+>>2 とは違って、実現値は大域変数に直接 access
+するので複数 WikiEngine で別の素片集合を扱うことはできません。
+[WEAK[単に、その機能は本当に要るのか疑問だなあと思ったから実装していないだけです。要りますか? 要るならちゃんと >>2 と同じように実装しなおしますよ。]]
+
+通常は外部からこのハッシュに直接 access する必要はありません。
+(やはり、 [CODE(perl)[mkplugin2.pl]] が自動的に生成してくれます。)
+
+* SuikaWiki::View::template
+
+[9] この級は、 WikiView 定義級の基底となることを想定しています。
+普通はこの級を直接扱う必要はありません。
+
+* SuikaWiki::View::Implementation::error
+
+:VIEW_NOT_DEFINED:
+:WARN_VIEW_NOT_DEFINED:
+:ERROR_REPORTED:
+
+** SuikaWiki::View::Implementation::error::formatter
+
+:%condition:
+
+* メモ@

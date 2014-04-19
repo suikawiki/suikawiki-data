@@ -1,0 +1,498 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.1
+date	2008.11.03.02.54.46;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@
+* クラス名
+
+クラス名は大文字・小文字を区別することになっています [hcard-parsing]。
+クラス名の構文は HTML の範疇なので、[[HTML 5]] に従い、
+[[奇癖モード]]では区別しないのがいいと思います。
+
+マイクロフォーマットは通常 [[HTML]] で使うことを想定しているようですが、
+[[SVG]] や [[MathML]] にも [CODE(XMLa)@@en[[[class]]]] [[属性]]があるので、
+[[CSS]] の [CODE(CSS)[[[.]][VAR@@en[class-name]]]] [[選択子]]や
+[[DOM]] の [CODE(DOMm)@@en[[[getElementsByClassName]]]] と同様、
+[[マイクロフォーマット]]の検出でも非 [[HTML]] [[クラス名]]に対応するべきかもしれません。
+
+* マイクロフォーマット素片の検出
+
+通常、複合マイクロフォーマットの根要素には (他の用途と衝突しそうにない)
+クラス名を指定することになっているので、
+それを探すことでマイクロフォーマット素片を検出できます [hcard-parsing]。
+
+根クラス名:
+- [CODE(HTML)@@en[[[adr]]]]: [[adr]] [adr]
+- [CODE(HTML)@@en[[[hentry]]]]: [[hAtom記載]] [hatom]
+- [CODE(HTML)@@en[[[hfeed]]]]: [[hAtom]] [hatom]
+- [CODE(HTML)@@en[[[hreview]]]]: [[hReview]] [hreview]
+- [CODE(HTML)@@en[[[vcard]]]]: [[hCard]] [hcard]
+- [CODE(HTML)@@en[[[vcalendar]]]]: [[hCalendar]] [hcalendar]
+- [CODE(HTML)@@en[[[vevent]]]]: [[hCalendar事象]] [hcalendar]
+
+マイクロフォーマット素片が入れ子になっていることもあります [hcard-parsing]。
+
+[CODE(HTML)@@en[[[vcalendar]]]] がなくて [CODE(HTML)@@en[[[vevent]]]]
+が現れた場合、文書全体が [CODE(HTML)@@en[[[vcalendar]]]]
+な文脈にあるものとみなします [hcalendar]。
+
+これ、 [CODE(HTML)@@en[[[vcalendar]]]] がなくても特性を表す要素を探さなければならないとも解釈できますが、
+[[iCalendar]] で規定済みの [CODE@@en[[[VCALENDAR]]]] 内に指定できる特性はすべて
+[[hCalendar]] では意味のないもののようなので、実質的には問題にならないみたいです。
+
+[[hAtom]] の [CODE(HTML)@@en[[[hfeed]]]] は省略可能で、省略した場合文書全体がそうであるとみなされます
+[hatom]。
+
+省略されると feed category と [CODE(HTML)@@en[[[hentry]]]]
+を探さなければならなくなるのですが、 [CODE(HTML)@@en[[[hentry]]]]
+はそれを根クラス名であると解釈できるので問題なし。
+feed category は実は [[rel-tag]] そのものなので、これもどの道探さなければならず、
+問題なしということなのでしょう。
+
+要素とクラス名の組で定義されている[[マイクロフォーマット]]もあります:
+- [CODE(HTMLe)@@en[[[dl]]]], [CODE(HTML)@@en[[[profile]]]]: [[XMDP]] [xmdp]
+
+* 特性型マイクロフォーマットの解釈
+
+この章が適用可能な[[マイクロフォーマット]]: [[hCard]], [[hCalendar]]
+
+** 特性を表す要素
+
+hCard 特性など、特性に当たる要素を探す場合、特性に対して与えられたクラス名を持った最初の要素を探します [hcard, hcard-parsing]。
+
+1回だけ現れ得る特性は、文書順で最初の出現だけを取り上げ、他は無視するべきです
+[hcard-parsing, hcalendar, hcard]。
+
+[[hCalendar]] はどれが複数おkでどれが駄目なのか明記していません。
+
+前方互換構文解析の規定とどちらが優先されるのでしょうか?
+
+'''前方互換構文解析''' (クラス名): マイクロフォーマット素片の中で、
+未知のクラス名のものは無視しなければなりません [hcard-parsing]。
+
+未知のクラス名を使った要素の内容をどう扱うべきかはよくわかりません。
+マイクロフォーマットとそうでないクラス名が混ざっている状況を考えると内容は処理するべきかもしれませんが、
+新しいクラス名を使った特性の中に部分特性がある状況で、かつ部分特性のクラス名と親特性のクラス名が衝突している可能性を想定すると、内容は無視するべきかもしれません。
+
+マイクロフォーマット素片が入れ子になってる場合、
+内側にある特性を表す要素は、外側には適用しないと解釈しなければなりません。 [hcard-parsing]。
+
+[[hAtom記載]] ([CODE(HTML)@@en[[[hentry]]]]) 内の
+[CODE(HTMLe)@@en[[[blockquote]]]] や [CODE(HTMLe)@@en[[[q]]]]
+内のマイクロフォーマット内容は記載の一部とみなすべきではありません [hatom]。
+
+これは、引用内に特性を表す要素らしきものがあっても、それは特性とは見なさない、
+という意味でしょうか。
+
+特性を表すクラス名:
+- [CODE(HTML)@@en[[[fn]]]]: [[hCard]], 必須, 1つだけ [hcard]
+- [CODE(HTML)@@en[[[n]]]]: [[hCard]], ほぼ必須, 1つだけ [hcard]
+- [CODE(HTMLe)@@en[[[email]]]]: [[hCard]], URL 利用可能 [hcard]
+- [CODE(HTMLe)@@en[[[nickname]]]], [CODE(HTMLe)@@en[[[tel]]]], [CODE(HTMLe)@@en[[[adr]]]], [CODE(HTMLe)@@en[[[label]]]], [CODE(HTMLe)@@en[[[logo]]]], [CODE(HTMLe)@@en[[[sound]]]], [CODE(HTMLe)@@en[[[title]]]], [CODE(HTMLe)@@en[[[role]]]], [CODE(HTMLe)@@en[[[org]]]], [CODE(HTMLe)@@en[[[note]]]], [CODE(HTMLe)@@en[[[key]]]], [CODE(HTMLe)@@en[[[mailer]]]], [CODE(HTMLe)@@en[[[rev]]]]: [[hCard]] [hcard]
+- [CODE(HTMLe)@@en[[[photo]]]]: [[hCard]], [[URL]] 利用可能 [hcard]
+- [CODE(HTMLe)@@en[[[bday]]]], [CODE(HTMLe)@@en[[[tz]]]], [CODE(HTMLe)@@en[[[sort-string]]]], [CODE(HTMLe)@@en[[[class]]]]: [[hCard]], 1つだけ [hcard]
+- [CODE(HTML)@@en[[[dtstart]]]]: [[hCalendar]], [[ISO 8601の日付形式]], 必須 [hcalendar]
+- [CODE(HTML)@@en[[[summary]]]]: [[hCalendar]], 必須 [hcalendar]
+- [CODE(HTMLe)@@en[[[uid]]]] : [[hCalendar]]/[[hCard]], [[URL]] 利用可能 [hcalendar, hcard], 1つだけ [hcard]
+- [CODE(HTMLe)@@en[[[url]]]]: [[hCalendar]]/[[hCard]], [[URL]] 利用可能 ([[hCalendar]] では [CODE(HTML)@@en[[[vevent]]]] 内のみ) [hcalendar, hcard]
+- [CODE(HTMLe)@@en[[[category]]]]: [[hCalendar]]/[[hCard]] [hcalendar, hcard]
+- [CODE(HTMLe)@@en[[[class]]]]: [[hCalendar]]/[[hCard]] [hcalendar-profile, hcard]
+- location: [[hCalendar]], 名前付き: [[hCard]] 利用可能; 番地: [[adr]] 利用可能; 地理: [[geo]] 利用可能 [hcalendar]
+- rdate, rrule, description: [[hCalendar]] [hcalendar]
+- dtstamp, method, last-modified, status: [[hCalendar]] [hcalendar-profile]
+- dtend: [[hCalendar]], [[ISO 8601の日付形式]] [hcalendar]
+- duration: [[hCalendar]], ISO 8601 の期間形式 [hcalendar]
+- [CODE(HTMLe)@@en[[[geo]]]]: [[hCalendar]]/[[hCard]] [hcalendar, hcard], 1つだけ [hcard]
+- attendee, contact, organizer: [[hCalendar]], [[hCard]] 利用可能 [hcalendar]
+- organiser: [[hCalendar]] [hcalendar-cheatsheet]
+- その他 [[RFC 2445]] にあるもの: [[hCalendar]] [hcalendar]
+- post-office-box, extended-address, street-address, locality, region, postal-code, country-name: [[adr]], 1つだけ [adr]
+- [CODE(HTML)@@en[[[latitude]]]], [CODE(HTML)@@en[[[longitude]]]]: [[geo]], 1つだけ
+[geo]
+- entry-title: [[hAtom]], テキスト, あるべき [hatom]
+- entry-content: [[hAtom]], テキスト, あるべき [hatom]
+- entry-summary: [[hAtom]], テキスト [hatom]
+- updated, published: [[hAtom]], 日付 [hatom]
+- author: [[hAtom]], [[hCard]] 使用, 必須 [hatom]
+- version, summary, type, reviewer, dtreviewed, rating, description,
+permalink: [[hReview]] [hreview]
+- info: [[hReview]], 必須 [hreview]
+
+[[hCalendar]] は [[RFC 2445]] を見よといっていてクラス名の完全なリストを用意していません。
+[[RFC 2445]] の [[iCalendar]] は結構大きな仕様で、 [CODE@@en[[[VEVENT]]]]
+以外にも色々定義しているのですが、 [[hCalendar]] では事実上そういうのの存在は無視しているみたいです。
+
+;; [[hCalendar]] 仕様書には [[iCal-Basic]] ([[iCalendar Basic]]) の動向に注目中、
+とありますけど、立ち消え?したみたいです。
+
+明記されていませんが、 [CODE(HTML)@@en[[[entry-title]]]],
+[CODE(HTML)@@en[[[updated]]]], [CODE(HTML)@@en[[[published]]]]
+は1つだけでしょう ([[Atom]] ではそうなっていて、 [[hAtom]]
+でも特に言及がないので)。
+
+[[vCard]] にあって、 [[hCard]] では無視しなければならないと規定されているもの:
+[CODE@@en[[[name]]]], [CODE@@en[[[profile]]]], [CODE@@en[[[source]]]],
+[CODE@@en[[[prodid]]]], [CODE@@en[[[version]]]] [hcard]。
+
+[CODE@@en[[[name]]]] については、文書の題名を代わりに使うべきとされています [hcard]。
+
+[CODE@@en[[[profile]]]] については、 [CODE@@en[[[VCARD]]]] と出力しても構わないとされています [hcard]。
+
+[CODE@@en[[[source]]]] については、文書の URL を代わりに使うべきとされています [hcard]。 
+
+[[hCard]] の古い版で定義されていて、現在非推奨 (使用してはならない) とされているクラス名:
+additional-names, honorific-prefixes, honorific-suffixes, categories,
+dom, intl, postal, parcel, home, work, pref, msg, voice, fax, cell, video, pager, bbs, modem, car, isdn, pcs, internet, x400
+[hcard-profile]
+
+[[hAtom]] で [CODE(HTML)@@en[[[entry-title]]]] がない場合、
+記載内の最初の [CODE(HTML)@@en[[[h[VAR[n]]]]]] を使うか、
+[CODE(HTML)@@en[[[hfeed]]]] がない場合、文書の [CODE(HTMLe)@@en[[[title]]]]
+を使うか、空文字列とします [hatom]。
+
+明記されていませんが、明らかにこの3つは最初から順に優先順に並べられているのでしょう。
+
+[[hAtom]] の [CODE(HTML)@@en[[[entry-content]]]] がない場合、
+空文字列とみなします [hatom]。
+
+[[hAtom]] で記載内に [[rel-bookmark]] がない場合、文書の [[URL]]
+が使われます。更に、 [CODE(HTML)@@en[[[hentry]]]] に [CODE(HTMLa)@@en[[[id]]]]
+が与えられている場合、それを[[素片識別子]]として使います。 [hatom]
+
+[[hAtom]] で記載内に [CODE(HTML)@@en[[[update]]]] がない場合、
+[CODE(HTML)@@en[[[published]]]] が使われます [hatom]。
+
+[[hAtom]] で記載内に [CODE(HTML)@@en[[[author]]]] がない場合、
+親方直近 <http://microformats.org/wiki/algorithm-nearest-in-parent>
+[CODE(HTMLe)@@en[[[address]]]] [[要素]] ([[クラス名]]
+[CODE(HTML)@@en[[[author]]]] で妥当な [[hCard]]、複数の[[要素]]があればすべて)
+が使われます [hatom]。
+
+妥当でなければならない、というのはちょっと厄介。
+
+[[hReview]] では、 [CODE(HTML)@@en[[[version]]]] がない場合、
+0.2 以降の任意の版とみなしてよいことになっています [hreview]。
+
+[[hReview]] では、
+[CODE(HTML)@@en[[[type]]]] が省略された場合、
+[CODE(HTML)@@en[[[info]]]] から決定されることがあります。
+[CODE(HTML)@@en[[[info]]]] の値が [[hCard]] なら、その内容によって
+[CODE(HTML)@@en[[[business]]]] か [CODE(HTML)@@en[[[person]]]],
+[[hCalendar事象]]なら [CODE(HTML)@@en[[[event]]]] です。  [hreview]
+
+[[hCard]] の種類は [CODE(HTML)@@en[[[fn]]]] と [CODE(HTML)@@en[[[org]]]]
+が同じかどうかで決めるのでしょうか。
+
+[[hReview]] で [CODE(HTML)@@en[[[reviewer]]]]
+がない場合、 [[hReview]] の外側から [CODE(HTML)@@en[[[reviewer]]]]
+を探すべきです。それでもなければ、文書の言語の規定に基づき著者を探すべきです
+([[HTML]] [CODE(HTMLe)@@en[[[address]]]] や [[Atom]]/[[RSS]]
+[CODE(XMLe)@@en[[[author]]]])。 [hreview]
+
+外側から探すというのは、親方直近算法を使うのがいいのでしょう
+(そうすれば [[hAtom]] とも互換になります)。
+
+[[hReview]] で [CODE(HTML)@@en[[[dtreviewed]]]] がない場合、
+[[hReview]] の外側から探すべきです。 [[hAtom]] [[記載]] [CODE(HTML)@@en[[[published]]]] ->
+[CODE(HTML)@@en[[[updated]]]] -> [[hAtom]] [[フィード]] [CODE(HTML)@@en[[[published]] ->
+[CODE(HTML)@@en[[[updated]]]] -> 文書作成日時 -> 文書編集日時 -> プロトコル編集日時の順にします。
+[hreview]
+
+でも [[hAtom]] 0.1 の[[フィード]]に編集・更新日時はないような。
+
+** 特性値
+
+'''前方互換構文解析''' (特性値):
+特性の値が認識できない値の時は無視しなければなりません [hcard-parsing]。
+
+特性値は、 (1) class value 子による値、 (2) より意味的な例外、
+(3) 要素の内容の順に、最初に適用可能なものが使われます [hcard-parsing]。
+
+'''class value 子''': 特性を表す要素の子要素にクラス名が [CODE(HTML)@@en[[[value]]]]
+のものが1つ以上ある場合、その節点の値を文書順に連結したものが値となります [hcard-parsing]。
+
+節点の値って何でしょうか? 特性を表す要素の値と同じ処理をして求めるのでしょうか。
+
+'''より意味的な例外''': 
+- [CODE(HTML)@@en[[[email]]]] [[特性]]の場合、[[要素]]が
+[CODE(HTMLe)@@en[[[a]]]] か [CODE(HTMLe)@@en[[[area]]]]
+で [CODE(HTMLa)@@en[[[href]]]] [[属性値]]が [CODE(URI)@@en[[[mailto]]:]] [[URL]]
+なら、 [CODE(URI)@@en[[[mailto]]:]] と [CODE(URI)@@en[[[?]]]] の間の部分を使います
+[hcard-parsing]。
+厳密には単純に間を抜き出すだけではなく、[[百分率符号化]]を復号したりの処理が要るはずです。
+- [CODE(HTML)@@en[[[tel]]]] [[特性]]の場合、[[要素]]が
+[CODE(HTMLe)@@en[[[a]]]] か [CODE(HTMLe)@@en[[[area]]]]
+で [CODE(HTMLa)@@en[[[href]]]] [[属性値]]が [CODE(URI)@@en[[[tel]]:]] [[URL]]
+なら、 [CODE(URI)@@en[[[tel]]:]] と [CODE(URI)@@en[[[?]]]] の間の部分を使います
+[hcard-parsing]。
+- 型が URL か URI の場合、[[相対URL]] を[[絶対URL]] に[[解決]]しなければなりません
+[hcard-parsing]。
+- 型が URL か URI か UID の場合、
+-- 特性を表す要素が [CODE(HTMLe)@@en[[[a]]]] か [CODE(HTMLe)@@en[[[area]]]] [hcard-parsing]
+の場合、 [CODE(HTMLa)@@en[[[href]]]] [[属性]]を使います [hcard, hcard-parsing]。
+-- 特性を表す要素が [CODE(HTMLe)@@en[[[img]]]] であれば、 [CODE(HTMLa)@@en[[[src]]]]
+[[属性]]を使います [hcard, hcard-parsing]。それが [CODE(URI)@@en[[[data]]:]]
+[[URL]] であれば、その[[媒体型]]を [CODE@@en[[[TYPE]]]] [[部分特性]]に使います
+[hcard-parsing]。
+-- 特性を表す要素が [CODE(HTMLe)@@en[[[object]]]] の場合、 [CODE(HTMLa)@@en[[[data]]]]
+[[属性]]を使います [hcard, hcard-parsing]。それが [CODE(URI)@@en[[[data]]:]]
+[[URL]] であれば、その[[媒体型]]を [CODE@@en[[[TYPE]]]] [[部分特性]]に使い、
+そうでない場合で [CODE(HTMLa)@@en[[[type]]]] [[属性]]があれば、それを使います
+[hcard-parsing]。
+- 型が URL か URI か UID で''ない''場合、特性を表す要素が
+[CODE(HTMLe)@@en[[[img]]]] か [CODE(HTMLe)@@en[[[area]]]] [hcard-parsing] の場合、
+[CODE(HTMLa)@@en[[[alt]]]] [[属性]]を使います [hcard, hcard-parsing]。
+- すべての特性に関して、
+-- 特性を表す要素が [CODE(HTMLe)@@en[[[abbr]]]] で
+[CODE(HTMLa)@@en[[[title]]]] [[属性]]があれば、その値を使い、
+なければ内容を使います [hcalendar, hcard, hcard-parsing]。
+--- [[ISO 8601]] datetime 値を取る特性に関しては、必要な精度
+(例えば秒単位) になるように埋めをするべきで、
+[[時間帯]]も[[UTC]] に正規化するべきです
+(浮動日時は [[UTC]] にしてはなりません) [hcard-parsing]。
+-- 特性を表す要素が [CODE(HTMLe)@@en[[[br]]]] や
+[CODE(HTMLe)@@en[[[hr]]]] の場合、空文字列とします [hcard-parsing]。
+
+[CODE(HTMLe)@@en[[[pre]]]] の内容を使うときは、すべての[[空白]]を保持するべきです
+[hcard-parsing]。
+
+[CODE(HTMLe)@@en[[[br]]]] が要素の内側にあるときには、
+復帰 (\n) として扱わなければなりません [hcard-parsing]。
+
+復帰 (\n) というのは U+000D なのか U+000A なのか U+000D U+000A なのか。
+[[XML]] や [[HTML]] に倣うなら U+000A、 [[MIME]] に倣うなら U+000D U+000A、
+あるいは使っている環境と同じものを使っておけばいいでしょうか。
+
+この他、より多くの HTML 要素に関しても、平文に変換する際の整形の規則や
+[[CSS]] の使用が提案されています [hcard-parsing]。
+
+[CODE(HTML)@@en[[[tel]]]] については、値は [[E.123]] に従った番号
+(+ddddd... というもの) を使っても構わず、記号を使った値 (+d-dddd-ddd... というもの)
+は番号のものに変換しなければなりません [hcard]。
+
+[PRE(example code HTML)[
+<a class="url fn" href="http://tantek.com/">Tantek &#199;elik</a>
+]PRE]
+のように、型の違う特性が1つの要素で表されることもあります [hcard]。
+
+'''部分特性・引数''': 部分特性や引数を持つ特性があります。その場合、
+親特性を表す要素の中のクラス名はすべて部分特性・引数として解釈するべきで、
+親特性と同列の特性を表すとは解釈してはならないはずです。
+
+そもそも一般に特性を表す要素の中身はその要素と同列の特性として解釈してはいけないのですかね?
+
+<http://microformats.org/wiki/hcard-examples-rfc2426#3.6.5_SORT-STRING_Type_Definition>
+には、特性を表す要素が別の特性を表す要素の中の部分特性を表す要素と共有されていたり、
+部分特性を表す要素の中に入っていたりしています。
+ということは、たぶん、(部分)特性を表す要素と思しきものは、
+そのクラス名から、それの適用対象となりそうな一番内側の(部分)特性/マイクロフォーマット素片と解釈するのが妥当でしょうか。
+[[adr]] と [[geo]] の扱いに注意が必要でしょう ([CODE(HTML)@@en[[[vcard]]]]
+の直下に当たる [CODE(HTML)@@en[[[adr]]]] と [CODE(HTML)@@en[[[geo]]]]
+は、この処理に当たっては[[マイクロフォーマット]]ではなく、特性を表す要素とみなす)。
+
+子要素にクラス名が [CODE(HTML)@@en[[[value]]]] なものがない場合、
+クラス名が [CODE(HTML)@@en[[[type]]]] の子要素を除いた内容が値とみなされます
+[hcard, hcard-parsing]。
+
+部分特性・引数を持つ特性:
+- [CODE(HTML)@@en[[[n]]]]: [[hCard]]
+([CODE(HTML)@@en[[[family-name]]]], [CODE(HTML)@@en[[[given-name]]]],
+[CODE(HTMLe)@@en[[[additional-name]]]], [CODE(HTMLe)@@en[[[honorific-prefix]]]],
+[CODE(HTMLe)@@en[[[honorific-suffix]]]]) [hcard]
+- [CODE(HTML)@@en[[[email]]: [[hCard]]
+([CODE(HTMLe)@@en[[[type]]]], [CODE(HTMLe)@@en[[[value]]]]) [hcard]
+- [CODE(HTML)@@en[[[tel]]: [[hCard]]
+([CODE(HTMLe)@@en[[[type]]]], [CODE(HTMLe)@@en[[[value]]]]) [hcard]
+- [CODE(HTML)@@en[[[adr]]]]: [[hCard]]
+(post-office-box, extended-address, street-address, locality, region, postal-code, country-name,
+[CODE(HTML)@@en[[[type]]]], [CODE(HTMLe)@@en[[[value]]]]) [hcard]
+- [CODE(HTML)@@en[[[geo]]]]: [[hCard]]/[[hCalendar]]
+([CODE(HTML)@@en[[[latitude]]]], [CODE(HTML)@@en[[[longitude]]]]) [hcalendar, hcard]
+- [CODE(HTML)@@en[[[org]]]]: [[hCard]]
+([CODE(HTML)@@en[[[organization-name]]]],
+[CODE(HTML)@@en[[[organization-unit]]]]) [hcard]
+- [CODE(HTML)@@en[[[info]]]]: [[hReview]]
+([CODE(HTML)@@en[[[fn]]]], [CODE(HTML)@@en[[[url]]]],
+[CODE(HTML)@@en[[[photo]]]]) [hreview]
+- [CODE(HTML)@@en[[[rating]]]]: [[hReview]]
+([CODE(HTML)@@en[[[worst]]]], [CODE(HTML)@@en[[[best]]]],
+[CODE(HTML)@@en[[[value]]]]) [hreview]
+
+[CODE(HTML)@@en[[[info]]]] は部分特性の代わりに、 [[hCalendar]]
+や [[hCard]] が与えられることもあります (両方のことも)。
+
+'''[CODE(HTMLe)@@en[[[del]]]]''':
+[CODE(HTMLe)@@en[[[del]]]] [[要素]]はつぎのいずれか、または両方の扱いをするべきです
+(ただし、提案段階)。
+- [CODE(HTMLe)@@en[[[del]]]] と内容を読み飛ばす [hcard-parsing]。
+- 特性を表す要素が [CODE(HTMLe)@@en[[[del]]]] の場合、
+[[vCard]] に変換する場合は読み飛ばし、そうでない場合は古い情報
+(アドレス帳とか) の削除ができるなら、それに使う [hcard-parsing]。
+
+読み飛ばすというのは、前方互換構文解析規則的な無視を指しているのでしょうか。
+
+
+'''[CODE(HTML)@@en[[[n]]]]'''
+
+[CODE(HTML)@@en[[[fn]]]] と [CODE(HTML)@@en[[[org]]]] の値がまったく同じ場合
+(同じ要素で表される場合を含みます。)、組織等を現しているものと扱うべきです [hcard]。
+
+その場合著者は [CODE(HTML)@@en[[[n]]]] 特性を設定してはならないことになっていて、
+すべての [CODE(HTML)@@en[[[n]]] 
+の部分特性が空文字列に設定されているものとして扱うべきです [hcard]。
+
+そうでない場合で [CODE(HTML)@@en[[[n]]]] が省略されている場合 [hcard]、
+- [CODE(HTML)@@en[[[fn]]]] が[[空白]]で区切られた2語の場合、
+-- 最初の語を [CODE(HTML)@@en[[[n]]]] の [CODE(HTML)@@en[[[given-name]]]],
+2つ目の語を [CODE(HTML)@@en[[[n]]]] の [CODE(HTML)@@en[[[family-name]]]] とします。
+-- ただし、最初の語が [CODE(char)[[[,]]]] で終わる場合、または2つ目の語が1文字か、
+1文字の後に [CODE(char)[[[.]]]] で終わる場合、
+[CODE(HTML)@@en[[[given-name]]]] と [CODE(HTML)@@en[[[family-name]]]]
+を逆にします。
+- [CODE(HTML)@@en[[[fn]]]] が1語の場合、
+-- その内容は [CODE(HTML)@@en[[[nickname]]]] 特性値として解釈しなければなりません。
+-- [CODE(HTML)@@en[[[n]]]] は空文字列として扱うべきです。
+
+1語の場合に [CODE(HTML)@@en[[[fn]]]] の値がどうなるのかは曖昧ですが、
+きっと [CODE(HTML)@@en[[[fn]]]] も [CODE(HTML)@@en[[[nickname]]]]
+も同じ値になるのでしょう (そう解釈しても何も困らないので)。
+
+'''[CODE(HTML)@@en[[[org]]]]''':
+中に [CODE(HTML)@@en[[[organization-name]]]] がないときは、
+内容全体を [CODE(HTML)@@en[[[organization-name]]]] として扱わなければなりません [hcard]。
+
+[CODE(HTML)@@en[[[organization-unit]]]] があって [CODE(HTML)@@en[[[organization-name]]]]
+がないときはこれだけだとおかしくなると思うのですが・・・。
+
+[[hCard]] の [CODE(HTML)@@en[[[type]]]] の値は大文字・小文字を区別しません [hcard]。
+
+[[geo]] と [[adr]] は [[hCard]] の一部分を独立させた[[マイクロフォーマット]]なので、
+独立したマイクロフォーマット素片として現れることもあれば、
+[[hCard]] の特性として現れることもあります。
+
+<http://microformats.org/wiki/hcard-examples-rfc2426#2.4.2_VCARD>
+は [[hCard]] を特性値として使う例を示していて、そこでは特性を表す要素に特性名を表すクラス名と
+[[hCard]] の根クラス名である [CODE(HTML)@@en[[[vcard]]]] の両方が与えられています。
+
+<http://microformats.org/wiki/include-pattern#Hyperlink_example>
+に出ている取り込み結果の例では、特性を表す要素と特性の値としての [[hCard]]
+の根要素が別になっています。
+
+[[hReview]] では前者のようにしても構わないことが明記されています
+(部分特性を使う場合を除く) [hreview]。
+
+[CODE(HTML)@@en[[[entry-content]]]] や [CODE(HTML)@@en[[[entry-summary]]]]
+が複数ある場合、実際の内容はそれぞれのすべての文書順での連結になります [hatom]。
+
+* rel 設計パターン
+
+[[rel-tag]], [[rel-bookmark]], [[rel-self]], [[rel-license]]
+は他のマイクロフォーマットの一部として利用されていることがあります。
+
+'''特性 [CODE(HTML)@@en[[[category]]]]''':
+[[rel-tag]] を使うことができます [hcard]。
+
+[[rel-tag]] を使っている場合、 [[URL]] の [[path]] 部品のうち、最後の segment
+([CODE(URI)[[[/]]]] で終わる場合は、その前の segment) を [[UTF-8]]
+として復号したものがタグ名になります [rel-tag]。
+
+[[rel-tag]] は [CODE(HTMLe)@@en[[[link]]]] [[要素]]では実装するべきではありません
+[rel-tag]。
+
+とはいえ、 [[HTML 5]] では [CODE(HTMLe)@@en[[[link]]]] [[要素]]でも 
+[CODE(HTML)@@en[[[tag]]]] が認められています ([[HTML 5]] は [[rel-tag]]
+よりずっと簡潔な定義で、 [[URL]] からタグの取り出しは定義していません)。
+
+[[path]] がない場合、空の場合、等々はどうするのでしょう。
+
+[[hAtom]] 内の [[rel-tag]] の場合、
+[CODE(HTMLa)@@en[[[href]]]] が [[Atom]] の [CODE(XMLa)@@en[[[term]]]]、
+リンクテキストが [CODE(XMLa)@@en[[[label]]]] とみなします [hatom]。
+
+リンクテキストというのは要素の内容のことでしょう。
+
+rel-* が他の特性を表す要素の中に現れることもあります。
+例:
+<http://microformats.org/wiki/hreview#Multidimensional_Restaurant_Review>
+
+逆に rel-* に特性を表す要素が含まれることもあります。
+
+[[hReview]] では、点数と分類 (採点方法) を関連付けるために、
+[[rel-tag]] の中に [CODE(HTML)@@en[[[rating]]]] を入れて表すことができるとしています
+[hreview]。
+
+* 取り込み
+
+'''取り込みパターン''':
+クラス名 [CODE(HTML)@@en[[[include]]]] は[[取り込みパターン]]を表します。
+[CODE(HTMLe)@@en[[[a]]]] [[要素]]で [CODE(HTMLa)@@en[[[href]]]]
+が[[素片識別子]]のみの場合、[CODE(HTMLe)@@en[[[object]]]]
+[[要素]]で [CODE(HTMLa)@@en[[[data]]]] [[属性]]が[[素片識別子]]のみの場合、
+参照された[[要素]]の内容によってその[[要素]]を置き換えたものと解釈しなければなりません。
+外部参照には未対応です。
+[include-pattern]
+
+外部参照があるときはどう処理したらよいのでしょう。完全に無視していいのか、
+内容は処理するのか、など。
+
+[CODE(HTMLe)@@en[[[object]]]] を使う方は、[[レンダリング]]すると無限ループって怖いね、
+だと思うのですが・・・。
+
+取り込みに使われたクラス名 [CODE(HTML)@@en[[[include]]]] の要素とその内容は、
+他の[[クラス名]]も含めて捨てられます [include-pattern]。
+
+クラス名 [CODE(HTML)@@en[[[include]]]] の要素がそれ自体かその先祖を指す場合には、
+その要素は無視されます [include-pattern]。
+
+子孫や他のクラス名も含めて無視ということでいいのでしょうか。
+
+取り込みパターンは、それを参照している仕様でのみ使うべき、
+とされています [include-pattern]。
+
+取り込みパターンが有効なのは:
+- [[hResume]]
+- [[hReview]]
+
+検討中とされているのは:
+- [[hAtom]]
+- [[hCalendar]]
+- [[hCard]]
+
+* 参考文献
+
+- [adr] ([TIME[2008-09-17 07:24:07 +09:00]] 版) <http://microformats.org/wiki/adr>
+- [geo] ([TIME[2008-09-17 07:24:07 +09:00]] 版) <http://microformats.org/wiki/geo>
+- [hatom] ([TIME[2008-05-29 19:00:11 +09:00]] 版) <http://microformats.org/wiki/hatom>
+- [hcalendar] ([TIME[2008-09-24 05:43:20 +09:00]] 版) <http://microformats.org/wiki/hcalendar>
+- [hcalendar-cheatsheet] ([TIME[2008-03-02 18:00:30 +09:00]] 版) <http://microformats.org/wiki/hcalendar-cheatsheet>
+- [hcalendar-profile] ([TIME[2008-03-02 10:56:01 +09:00]] 版) <http://microformats.org/wiki/hcalendar-profile>
+- [hcard] ([TIME[2008-09-17 07:24:07 +09:00]] 版) <http://microformats.org/wiki/hcard>
+- [hcard-parsing] ([TIME[2008-09-17 07:24:07 +09:00]] 版) <http://microformats.org/wiki/hcard-parsing>
+- [hcard-profile] ([TIME[2008-09-08 03:08:38 +09:00]] 版) <http://microformats.org/wiki/hcard-profile>
+-[hreview] ([TIME[2008-06-27 15:13:40 +09:00]] 版) <http://microformats.org/wiki/hreview>
+- [include-pattern]
+([TIME[2008-09-17 07:24:07 +09:00]] 版) <http://microformats.org/wiki/include-pattern>
+- [rel-tag] ([TIME[2008-10-24 17:32:11 +09:00]] 版) <http://microformats.org/wiki/rel-tag>- [xmdp] [CITE@@en[XMDP: Introduction and Format Description]] ([[Tantek &#199;elik]] 著, [TIME[2008-10-27 23:07:17 +09:00]] 版) <http://www.gmpg.org/xmdp/description>
+
+
+* メモ@

@@ -1,0 +1,1442 @@
+head	1.2;
+access;
+symbols
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.2
+date	2004.04.08.02.00.50;	author wakaba;	state dead;
+branches;
+next	1.1;
+
+1.1
+date	2003.11.08.02.01.56;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9
+'''Transparent Content Negotiation in HTTP [INS[HTTP における透過内容折衝]]'''
+-Network Working Group                                        
+-Request for Comments: 2295                                          
+-Category: Experimental
+- K. Holtman
+- TUE
+- A. Mutz
+- Hewlett-Packard
+- March 1998
+
+*Status of this Memo
+> This memo defines an Experimental Protocol for the Internet
+community.  It does not specify an Internet standard of any kind.
+Discussion and suggestions for improvement are requested.
+Distribution of this memo is unlimited.
+
+*Copyright Notice
+> Copyright (C) The Internet Society (1998).  All Rights Reserved.
+
+*ABSTRACT
+> HTTP allows web site authors to put multiple versions of the same
+information under a single URL.  Transparent content negotiation is
+an extensible negotiation mechanism, layered on top of HTTP, for
+automatically selecting the best version when the URL is accessed.
+This enables the smooth deployment of new web data formats and markup tags.
+
+HTTP は、ウェブ・サイトの著者が同じ情報の複数の版を一つの URL
+の元に置くことを認めています。透過内容折衝は HTTP
+の上の層に位置している、 URL に接続したときに最善の版を自動的に選択するための拡張可能な折衝機構です。
+これによって新しいウェブのデータ書式やマーク付けタグをスムーズに採用できます。
+
+*TABLE OF CONTENTS
+= 1  Introduction................................................4
+== 1.1 Background................................................4
+= 2  Terminology.................................................5
+== 2.1 Terms from HTTP/1.1.......................................5
+== 2.2 New terms.................................................6
+= 3  Notation....................................................8
+= 4  Overview....................................................9
+== 4.1 Content negotiation.......................................9
+== 4.2 HTTP/1.0 style negotiation scheme.........................9
+== 4.3 Transparent content negotiation scheme...................10
+== 4.4 Optimizing the negotiation process.......................12
+== 4.5 Downwards compatibility with non-negotiating user agents.14
+== 4.6 Retrieving a variant by hand.............................15
+== 4.7 Dimensions of negotiation................................15
+== 4.8 Feature negotiation......................................15
+== 4.9 Length of variant lists..................................16
+== 4.10 Relation with other negotiation schemes.................16
+= 5  Variant descriptions.......................................17
+== 5.1 Syntax...................................................17
+== 5.2 URI......................................................17
+== 5.3 Source-quality...........................................18
+== 5.4 Type, charset, language, and length......................19
+== 5.5 Features.................................................19
+== 5.6 Description..............................................19
+== 5.7 Extension-attribute......................................20
+= 6  Feature negotiation........................................20
+== 6.1 Feature tags.............................................20
+=== 6.1.1 Feature tag values.....................................21
+== 6.2 Feature sets.............................................21
+== 6.3 Feature predicates.......................................22
+== 6.4 Features attribute.......................................24
+= 7  Remote variant selection algorithms........................25
+== 7.1 Version numbers..........................................25
+= 8  Content negotiation status codes and headers...............25
+== 8.1 506 Variant Also Negotiates..............................25
+== 8.2 Accept-Features..........................................26
+== 8.3 Alternates...............................................27
+== 8.4 Negotiate................................................28
+== 8.5 TCN......................................................30
+== 8.6 Variant-Vary.............................................30
+= 9  Cache validators...........................................31
+== 9.1 Variant list validators..................................31
+== 9.2 Structured entity tags...................................31
+== 9.3 Assigning entity tags to variants........................32
+= 10 Content negotiation responses..............................32
+== 10.1 List response...........................................33
+== 10.2 Choice response.........................................34
+== 10.3 Adhoc response..........................................37
+== 10.4 Reusing the Alternates header...........................38
+== 10.5 Extracting a normal response from a choice response.....39
+== 10.6 Elaborate Vary headers..................................39
+=== 10.6.1 Construction of an elaborate Vary header..............40
+=== 10.6.2 Caching of an elaborate Vary header...................41
+== 10.7 Adding an Expires header for HTTP/1.0 compatibility.....41
+== 10.8 Negotiation on content encoding.........................41
+= 11 User agent support for transparent negotiation.............42
+== 11.1 Handling of responses...................................42
+== 11.2 Presentation of a transparently negotiated resource.....42
+= 12 Origin server support for transparent negotiation..........43
+== 12.1 Requirements............................................43
+== 12.2 Negotiation on transactions other than GET and HEAD.....45
+= 13 Proxy support for transparent negotiation..................45
+= 14 Security and privacy considerations........................46
+== 14.1 Accept- headers revealing personal information..........46
+== 14.2 Spoofing of responses from variant resources............47
+== 14.3 Security holes revealed by negotiation..................47
+= 15 Internationalization considerations........................47
+= 16 Acknowledgments............................................47
+= 17 References.................................................48
+= 18 Authors' Addresses.........................................48
+= 19 Appendix: Example of a local variant selection algorithm...49
+== 19.1 Computing overall quality values........................49
+== 19.2 Determining the result..................................51
+== 19.3 Ranking dimensions......................................51
+= 20 Appendix: feature negotiation examples.....................52
+== 20.1 Use of feature tags.....................................52
+== 20.2 Use of numeric feature tags.............................53
+== 20.3 Feature tag design......................................53
+= 21 Appendix: origin server implementation considerations......54
+== 21.1 Implementation with a CGI script........................54
+== 21.2 Direct support by HTTP servers..........................55
+== 21.3 Web publishing tools....................................55
+= 22 Appendix: Example of choice response construction..........55
+= 23 Full Copyright Statement...................................58
+
+*1  Introduction
+> HTTP allows web site authors to put multiple versions of the same
+information under a single URI.  Each of these versions is called a
+`variant'.  Transparent content negotiation is an extensible
+negotiation mechanism for automatically and efficiently retrieving
+the best variant when a GET or HEAD request is made.  This enables
+the smooth deployment of new web data formats and markup tags.
+
+HTTP は、ウェブ・サイトの著者が同じ情報の複数の版を一つの URL
+の元に置くことを認めています。それぞれの版は「[[変種]]」と呼びます。
+透過内容折衝は [CODE(HTTP)[[[GET]]]] 要求または
+[CODE(HTTP)[[[HEAD]]]] 要求が行われる時に最善の版を自動的に選択するための拡張可能な折衝機構です。
+これによって新しいウェブのデータ書式やマーク付けタグをスムーズに採用できます。
+
+> This specification defines transparent content negotiation as an
+extension on top of the HTTP/1.1 protocol [1].  However, use of this
+extension does not require use of HTTP/1.1: transparent content
+negotiation can also be done if some or all of the parties are HTTP/1.0 [2] systems.
+
+この仕様書は HTTP/1.1 プロトコルの上の拡張として透過内容折衝を定義します。
+しかし、この拡張の使用は HTTP/1.1 の使用を要求してはいません。
+透過内容折衝は HTTP/1.0 システムの当事者の一部または全部でもまた行えます。
+
+> Transparent content negotiation is called `transparent' because it
+makes all variants which exist inside the origin server visible to
+outside parties.
+
+透過内容折衝は、[[起源サーバー]]の内側に存在するすべての変種が外側の当事者に可視であることから「透過」と呼びます。
+
+> Note: Some members of the IETF are currently undertaking a number
+of activities which are loosely related to this experimental
+protocol.  First, there is an effort to define a protocol-independent registry for feature tags.  The intention is that this
+experimental protocol will be one of the clients of the registry.
+Second, some research is being done on content negotiation systems
+for other transport protocols (like internet mail and internet fax)
+and on generalized negotiation systems for multiple transport
+protocols.  At the time of writing, it is unclear if or when this
+research will lead to results in the form of complete negotiation
+system specifications.  It is also unclear to which extent possible
+future specifications can or will re-use elements of this experimental protocol.
+
+注意 : [[IETF]] の参加者の一部は、現在この実験的プロトコルと緩く関係する数々の活動を遂行中です。
+一に、プロトコル独立の[[特徴札]]の津呂久保を定義しようとする取組みがあります。
+この実験的プロトコルの意図はその登録簿のクライアントの一つとなることです。
+二に、 (インターネット・メイルやインターネット・ファックスのような) 他の転送プロトコルでの内容折衝システムや複数の転送プロトコルで一般化した折衝システムの研究が行われています。
+執筆の時点では、この研究が完全な折衝システム仕様の形に結実することになるか、なるとしたらいつかは不明瞭です。
+将来できるかもしれない仕様がこの実験的プロトコルの要素をどの程度再利用することができるか、あるいは再利用するのかもまた不明瞭です。
+
+**1.1 Background
+> The addition of content negotiation to the web infrastructure has
+been considered important since the early days of the web.  Among the
+expected benefits of a sufficiently powerful system for content
+negotiation are
+
+ウェブ基盤に内容折衝を追加することは、ウェブの初期から重要と考えられてきました。
+内容折衝の十分強力なシステムによる利益として期待されているのは、
+
+>
+- * smooth deployment of new data formats and markup tags will
+allow graceful evolution of the web
+- * eliminating the need to choose between a `state of the art
+multimedia homepage' and one which can be viewed by all web users
+- * enabling good service to a wider range of browsing
+platforms (from low-end PDA's to high-end VR setups)
+- * eliminating error-prone and cache-unfriendly
+User-Agent based negotiation
+- * enabling construction of sites without `click here for the X
+version' links
+- * internationalization, and the ability to offer multi-lingual
+content without a bias towards one language.
+
+- ウェブの優美な発展のための新しいデータ書式やマーク付けタグの滑らかな開発
+- 「最新の多媒体ホーム頁」とすべてのウェブ利用者が見ることの出来るものとの選択の必要をなくすこと
+- 広い範囲の閲覧環境 (下端 PDA から上端 VR 機まで) に対してよいサービスを可能とすること
+- 誤った傾向でキャッシュにやさしくない [CODE(HTTP)[[[User-Agent]]]] を基にした折衝をなくすこと
+- 国際化と一言語に偏向しない多言語内容を提供する能力
+
+です。
+
+*2  Terminology
+> The words "MUST", "MUST NOT", "SHOULD", "SHOULD NOT", and "MAY" in
+this document are to be interpreted as described in RFC 2119 [4].
+
+> This specification uses the term `header' as an abbreviation for for
+`header field in a request or response message'.
+
+この仕様書は用語[CODE[頭]]を[CODE[[[要求メッセージ]]及び[[応答メッセージ]]の[[頭欄]]]]の略として使います。
+
+**2.1 Terms from HTTP/1.1
+> This specification mostly uses the terminology of the HTTP/1.1
+specification [1].  For the convenience of the reader, this section
+reproduces some key terminology definition from [1].
+
+この仕様書は HTTP/1.1 仕様書の用語をほとんど使います。
+読者の便宜の駄目に、この節では幾つかの重要な用語の定義を [[RFC2068]]
+から再掲します。
+
+   request
+     An HTTP request message.
+
+[[要求]]
+
+   response
+     An HTTP response message.
+
+[[応答]]
+
+   resource
+     A network data object or service that can be identified by a URI.
+     Resources may be available in multiple representations (e.g.
+     multiple languages, data formats, size, resolutions) or vary in
+     other ways.
+
+[[資源]]
+
+   content negotiation
+     The mechanism for selecting the appropriate representation when
+     servicing a request.
+
+[[内容折衝]]
+
+   client
+     A program that establishes connections for the purpose of sending
+     requests.
+
+[[クライアント]]
+
+   user agent
+     The client which initiates a request.  These are often browsers,
+     editors, spiders (web-traversing robots), or other end user tools.
+
+[[利用者エージェント]]
+
+   server
+     An application program that accepts connections in order to service
+     requests by sending back responses.  Any given program may be
+     capable of being both a client and a server; our use of these terms
+     refers only to the role being performed by the program for a
+     particular connection, rather than to the program's capabilities in
+     general.  Likewise, any server may act as an origin server, proxy,
+     gateway, or tunnel, switching behavior based on the nature of each
+     request.
+
+[[サーバー]]
+
+   origin server
+     The server on which a given resource resides or is to be created.
+
+[[起源サーバー]]
+
+   proxy
+     An intermediary program which acts as both a server and a client
+     for the purpose of making requests on behalf of other clients.
+     Requests are serviced internally or by passing them on, with
+     possible translation, to other servers.  A proxy must implement
+     both the client and server requirements of this specification.
+
+[[串]]
+
+   age
+     The age of a response is the time since it was sent by, or
+     successfully validated with, the origin server.
+
+[[齢]]
+
+   fresh
+     A response is fresh if its age has not yet exceeded its freshness
+     lifetime.
+
+[[新鮮]]
+
+**2.2 New terms
+
+> transparently negotiable resource [INS[(略)]]
+
+[[透過折衝可能資源]]
+
+> variant list [INS[(略)]]
+
+[[変種一覧]]
+
+> variant description [INS[(略)]]
+
+[[変種記述]]
+
+> variant resource [INS[(略)]]
+
+[[変種資源]]
+
+> neighboring variant [INS[(略)]]
+
+[[隣接変種]]
+
+> remote variant selection algorithm [INS[(略)]]
+
+[[遠隔変種選択算法]]
+
+> list response [INS[(略)]]
+
+[[目録応答]]
+
+> choice response [INS[(略)]]
+
+[[選択応答]]
+
+
+> adhoc response [INS[(略)]]
+
+[[臨時応答]]
+
+> Accept- headers [INS[(略)]]
+
+[[Accept‐頭群]]
+
+> supports transparent content negotiation [INS[(略)]]
+
+[[透過内容折衝]>>1]
+
+> server-side override [INS[(略)]]
+
+[[サーバー側上書き]]
+
+*3  Notation
+> The version of BNF used in this document is taken from [1], and many
+of the nonterminals used are defined in [1].  Note that the
+underlying charset is US-ASCII.
+
+この文書で使う [[BNF]] の版は [[RFC2068]]
+で取っていまして、使用している多くの[[非終端]]も RFC 2068
+で定義されています。基礎をなす [[charset]] は [[US-ASCII]]
+であることに注意してください。
+
+> One new BNF construct is added:
+
+新しい BNF 構造を追加します。
+
+>
+-      1%rule
+
+> stands for one or more instances of "rule", separated by whitespace:
+
+は[[空白]]で区切られた1つ以上の [SAMP(ABNF)[rule]] の実現値を意味します。
+
+>
+-      1%rule =  rule *( 1*LWS rule )
+
+> This specification also introduces
+
+この仕様書は
+
+>
+-      number = 1*DIGIT
+-      short-float = 1*3DIGIT [ "." 0*3DIGIT ]
+
+も導入します。
+
+> This specification uses the same conventions as in [1] (see section
+1.2 of [1]) for defining the significance of each particular requirement.
+
+この仕様書は各特定要件の重要性の定義に RFC 2068 
+と同じ表記法を使います。 (RFC 2068 の 1.2節を参照。)
+
+*4  Overview
+> This section gives an overview of transparent content negotiation.
+It starts with a more general discussion of negotiation as provided by HTTP.
+
+この節では、透過内容折衝の概要を示します。
+まずは HTTP が提供するより一般的な折衝の話から始めましょう。
+
+**4.1 Content negotiation
+> HTTP/1.1 allows web site authors to put multiple versions of the same
+information under a single resource URI.  Each of these versions is
+called a `variant'. For example, a resource http://x.org/paper could
+bind to three different variants of a paper:
+
+HTTP/1.1 は、ウェブ・サイト著者が同じ情報の複数の版を同じ資源 URI
+に置くことを認めています。各版は「変種」と呼びます。
+例えば、資源 [SAMP(URI)[http://x.org/paper]]
+には論文の3つの異なる変種を束縛できます。
+
+>
+- 1. HTML, English
+- 2. HTML, French
+- 3. Postscript, English
+
+> Content negotiation is the process by which the best variant is
+selected if the resource is accessed.  The selection is done by
+matching the properties of the available variants to the capabilities
+of the user agent and the preferences of the user.
+
+内容折衝は、資源が接続された時に最善の変種を選択する過程です。
+選択は利用可能な変種の特性と利用者エージェントの能力及び利用者の好みの一致により行います。
+
+> It has always been possible under HTTP to have multiple
+representations available for one resource, and to return the most
+appropriate representation for each subsequent request.  However,
+HTTP/1.1 is the first version of HTTP which has provisions for doing
+this in a cache-friendly way.  These provisions include the Vary
+response header, entity tags, and the If-None-Match request header.
+
+HTTP では一つの資源に複数の表現を利用可能とし、
+各要求で最適の表現を返すことは常に可能です。
+しかし、 HTTP/1.1 はこれをキャッシュに優しい方法で行えるように準備した最初の版の
+HTTP です。この準備とは [CODE(HTTP)[[[Vary]]]]
+応答頭、[[実体札]]、それに [CODE(HTTP)[[[If-None-Match]]]]
+要求頭を含みます。
+
+**4.2 HTTP/1.0 style negotiation scheme
+> The HTTP/1.0 protocol elements allow for a negotiation scheme as follows:
+
+HTTP/1.0 プロトコル要素は次の折衝方法を認めていました。
+
+>
+[PRE[
+      Server _____ proxy _____ proxy _____ user
+      x.org        cache       cache       agent
+
+        < ----------------------------------
+        |      GET http://x.org/paper
+        |          Accept- headers
+      choose
+        |
+         ---------------------------------- >
+                    Best variant
+]PRE]
+
+> When the resource is accessed, the user agent sends (along with its
+request) various Accept- headers which express the user agent
+capabilities and the user preferences.  Then the origin server uses
+these Accept- headers to choose the best variant, which is returned in the response.
+
+資源に接続するときに、利用者エージェントは (その要求で)
+利用者エージェントの能力と利用者の好みを表現する種々の [[Accept‐頭群]]を送信します。
+その時起源サーバーは応答で返す最善の変種を選ぶのにこの Accept‐頭群を使用します。
+
+> The biggest problem with this scheme is that it does not scale well.
+For all but the most minimal user agents, Accept- headers expressing
+all capabilities and preferences would be very large, and sending
+them in every request would be hugely inefficient, in particular
+because only a small fraction of the resources on the web have multiple variants.
+
+この方法の最大の問題は、よく拡縮しないことです。
+ほとんどの最小利用者エージェントを除くすべての利用者エージェントでは、
+すべての能力と利用者の好みを表現する Accept‐頭群は非常に大きくなり、
+特にウェブで複数の変種を持った資源は少ない割合に限られることから、
+これを要求毎に送信することは極めて非効率となります。
+
+**4.3 Transparent content negotiation scheme
+> The transparent content negotiation scheme eliminates the need to
+send huge Accept- headers, and nevertheless allows for a selection
+process that always yields either the best variant, or an error
+message indicating that user agent is not capable of displaying any
+of the available variants.
+
+透過内容折衝方式は、巨大な Accept‐頭群を送信する必要をなくし、
+それでいて選択過程が常に最善の変種か利用者エージェントが利用可能な変種のどれについても表示する能力がないことを示す誤りメッセージを与えることができます。
+
+> Under the transparent content negotiation scheme, the server sends a
+list with the available variants and their properties to the user
+agent.  An example of a list with three variants is
+
+透過内容折衝方式では、サーバーは利用可能な変種とその特性の目録を利用者エージェントに送ります。
+3つの変種の目録の例を示します。
+
+>
+[PRE[
+      {"paper.1" 0.9 {type text/html} {language en}},
+      {"paper.2" 0.7 {type text/html} {language fr}},
+      {"paper.3" 1.0 {type application/postscript} {language en}}
+]PRE]
+
+> The syntax and semantics of the variant descriptions in this list are
+covered in section 5.  When the list is received, the user agent can
+choose the best variant and retrieve it.  Graphically, the
+communication can be represented as follows:
+
+この目録の[[変種記述]]の構文と意味は5章で扱います。
+目録を受信したら、利用者エージェントは最善の変種を選んでそれを取り出します。
+図形的には、通信は次のように表現できます。
+
+>
+[PRE[
+      Server _____ proxy _____ proxy _____ user
+      x.org        cache       cache       agent
+
+        < ----------------------------------
+        |      GET http://x.org/paper
+        |         [INS[目録を返す]]
+        ----------------------------------- >         [list response]
+                  return of list            |         [INS[目録応答]]
+                                         choose [INS[選択]]
+                                            |
+        < ----------------------------------
+        |  GET http://x.org/paper.1
+        |
+         ---------------------------------- >         [normal response]
+                return of paper.1                     [INS[通常応答]]
+                [INS[[SAMP(URI)[paper.1]] を返す]]
+]PRE]
+
+> The first response returning the list of variants is called a `list
+response'.  The second response is a normal HTTP response: it does
+not contain special content negotiation related information.  Only
+the user agent needs to know that the second request actually
+retrieves a variant.  For the other parties in the communication, the
+second transaction is indistinguishable from a normal HTTP transaction.
+
+変種の目録を返す最初の応答は「[[目録応答]]」といいます。
+2番目の応答は通常の HTTP 応答で、これは特別な内容折衝関連情報を含みません。
+二番目の要求が実際に変種を取り出すことを知る必要があるのは利用者エージェントだけです。
+通信のほかの当事者は、2番目の通信を通常の HTTP 通信と区別できません。
+
+> With this scheme, information about capabilities and preferences is
+only used by the user agent itself.  Therefore, sending such
+information in large Accept- headers is unnecessary.  Accept- headers
+do have a limited use in transparent content negotiation however; the
+sending of small Accept- headers can often speed up the negotiation
+process. This is covered in section 4.4.
+
+この方法では、能力と好みについての情報は利用者エージェント自身によってのみ使われます。
+従って、大きな Accept‐頭群の情報は不必要です。しかしながら、
+Accept‐頭群は透過内容折衝でも限られた用途はあります。
+小さな Accept‐頭群を送ることでしばしば折衝過程を高速化できます。
+これは4.4節で扱っています。
+
+> List responses are covered in section 10.1.  As an example, the list
+response in the above picture could be:
+
+目録応答は10.1節で扱っています。例として、前の絵の目録応答は次のようになります。
+
+>
+[PRE[
+     HTTP/1.1 300 Multiple Choices
+     Date: Tue, 11 Jun 1996 20:02:21 GMT
+     TCN: list
+     Alternates: {"paper.1" 0.9 {type text/html} {language en}},
+                 {"paper.2" 0.7 {type text/html} {language fr}},
+                 {"paper.3" 1.0 {type application/postscript}
+                     {language en}}
+     Vary: negotiate, accept, accept-language
+     ETag: "blah;1234"
+     Cache-control: max-age=86400
+     Content-Type: text/html
+     Content-Length: 227 [INS[本当はこの後空行が必要だけど、 RFC 原文ママ。]]
+     <h2>Multiple Choices:</h2>
+     <ul>
+     <li><a href=paper.1>HTML, English version</a>
+     <li><a href=paper.2>HTML, French version</a>
+     <li><a href=paper.3>Postscript, English version</a>
+     </ul>
+]PRE]
+
+> The Alternates header in the response contains the variant list.  The
+Vary header is included to ensure correct caching by plain HTTP/1.1
+caches (see section 10.6).  The ETag header allows the response to be
+revalidated by caches, the Cache-Control header controls this
+revalidation.  The HTML entity included in the response allows the
+user to select the best variant by hand if desired.
+
+応答の [CODE(HTTP)[[[Alternates]]]] 頭は変種目録を含んでいます。
+[CODE(HTTP)[[[Vary]]]] 頭は普通の HTTP/1.1 キャッシュが正しくキャッシュするようにするために含めています。
+[CODE(HTTP)[[[ETag]]]] 頭はキャッシュが応答を[[再検証]]可能とします。
+[CODE(HTTP)[[[Cache-Control]]]] 頭はこの再検証を制御します。
+応答に含まれている [[HTML]] 実体は利用者が手動で最善の実体を選択することを望むならできるようにするため含めています。
+
+**4.4 Optimizing the negotiation process
+> The basic transparent negotiation scheme involves two HTTP
+transactions: one to retrieve the list, and a second one to retrieve
+the chosen variant.  There are however several ways to `cut corners'
+in the data flow path of the basic scheme.
+
+基本透過折衝方式は、目録を取り出すものと二番目の選んだ変種を取り出すもののの2つの
+HTTP 通信を行います。しかし基本方式のデータの流れる経路を「近道」する方法が幾つかあります。
+
+> First, caching proxies can cache both variant lists and variants.
+Such caching can reduce the communication overhead, as shown in the following example:
+
+一つ目に、キャッシュする串は変種目録も変種も両方ともキャッシュ出来ます。
+このキャッシュで次の例に示すように通信オーバーヘッドを減少させられます。
+
+>
+[PRE[
+      Server _____ proxy _____ proxy __________ user
+      x.org        cache       cache            agent
+
+                                 < --------------
+                                 |  GET ../paper
+                                 |
+                               has the list
+                               in cache
+                                 |
+                                  -------------  >  [list response]
+                                           list  |
+                                                 |
+                                              choose
+                                                 |
+                     < --------------------------
+                     |   GET ../paper.1
+                     |
+                  has the variant
+                  in cache
+                     |
+                      -------------------------- >  [normal response]
+                         return of paper.1
+]PRE]
+
+> Second, the user agent can send small Accept- headers, which may
+contain enough information to allow the server to choose the best
+variant and return it directly.
+
+二つ目に、利用者エージェントはサーバーが最善の変種を選んでそれを直接返すことを可能にする十分な情報を含んでいよう小さな
+Accept‐頭群を送信することが出来ます。
+
+>
+[PRE[
+      Server _____ proxy _____ proxy _____ user
+      x.org        cache       cache       agent
+
+        < ----------------------------------
+        |      GET http://x.org/paper
+        |       small Accept- headers
+        |
+      able to choose on     [INS[利用者エージェントの代わりに選ぶことができる]]
+      behalf of user agent
+        |
+         ---------------------------------- >    [choice response]
+              return of paper.1 and list
+]PRE]
+
+> This choosing based on small Accept- headers is done with a `remote
+variant selection algorithm'.  Such an algorithm takes the variant
+list and the Accept- headers as input.  It then computes whether the
+Accept- headers contain sufficient information to choose on behalf of
+the user agent, and if so, which variant is the best variant.  If the
+best variant is a neighboring variant, it may be returned, together
+with the variant list, in a choice response.
+
+この小さな Accept‐頭群に基づく選択は「[[遠隔変種選択算法]]」
+により行います。この算法は変種目録と Accept‐頭群を入力として取ります。
+そして Accept‐頭群が利用者エージェントの代わりに選ぶのに十分な情報を含んでいるかを計算し、
+含んでいればその変種が最善の変種です。最善の変種が[[隣接変種]]である場合は、
+その変種を変種目録と共に[[選択応答]]で返します。
+
+> A server may only choose on behalf of a user agent supporting
+transparent content negotiation if the user agent explicitly allows
+the use of a particular remote variant selection algorithm in the
+Negotiate request header.  User agents with sophisticated internal
+variant selection algorithms may want to disallow a remote choice, or
+may want to allow it only when retrieving inline images.  If the
+local algorithm of the user agent is superior in only some difficult
+areas of negotiation, it is possible to enable the remote algorithm
+for the easy areas only.  More information about the use of a remote
+variant selection algorithm can be found in [3].
+
+サーバーは、利用者エージェントが [CODE(HTTP)[[[Negotiate]]]]
+要求頭で陽に遠隔変種選択算法の使用を認めている場合にのみ透過内容折衝に対応している利用者エージェントに代わって選んでも構いません。
+洗練された内部変種選択算法を使う利用者エージェントは遠隔選択を認めないか、
+行内画像を取り出すときだけ認めることを望むかもしれません。
+利用者エージェントの局所算法が折衝の限られた難しい部分でのみ優越しているのなら、
+易しい部分でのみ遠隔算法を有効化することができます。
+遠隔変種選択算法の使用についての更なる情報は [[RFC2296]] にあります。
+
+> Choice responses are covered in section 10.2.  For example, the
+choice response in the above picture could be:
+
+選択応答は10.2節で扱っています。例えば、前の絵の選択応答は次のようになります。
+
+>
+[PRE[
+     HTTP/1.1 200 OK
+     Date: Tue, 11 Jun 1996 20:05:31 GMT
+     TCN: choice
+     Content-Type: text/html
+     Last-Modified: Mon, 10 Jun 1996 10:01:14 GMT
+     Content-Length: 5327
+     Cache-control: max-age=604800
+     Content-Location: paper.1
+     Alternates: {"paper.1" 0.9 {type text/html} {language en}},
+                 {"paper.2" 0.7 {type text/html} {language fr}},
+                 {"paper.3" 1.0 {type application/postscript}
+                     {language en}}
+     Etag: "gonkyyyy;1234"
+     Vary: negotiate, accept, accept-language
+     Expires: Thu, 01 Jan 1980 00:00:00 GMT
+
+     <title>A paper about ....
+]PRE]
+
+> Finally, the above two kinds of optimization can be combined; a
+caching proxy which has the list will sometimes be able to choose on
+behalf of the user agent.  This could lead to the following
+communication pattern:
+
+最後に、前述の2種類の最適化は組合せることができます。
+目録を持っているキャッシュ串は時々利用者エージェントの代わりに選ぶことができます。
+これは次の通信パターンのようになります。
+
+>
+[PRE[
+      Server _____ proxy _____ proxy __________ user
+      x.org        cache       cache            agent
+
+                                 < ---------------
+                                 |  GET ../paper
+                                 |  small Accept
+                                 |
+                              able to choose
+                                on behalf
+                                 |
+                     < ----------
+                     |  GET ../paper.1
+                     |
+                      ---------- >   [normal response]
+                        paper.1  |
+                                  ---------------- >  [choice response]
+                                   paper.1 and list
+]PRE]
+
+> Note that this cutting of corners not only saves bandwidth, it also
+eliminates delays due to packet round trip times, and reduces the
+load on the origin server.
+
+この近道は帯域を節約するだけでなく、小包往復時間による遅延や起源サーバーでの読み込みををも省くことができるのに注意してください。
+
+**4.5 Downwards compatibility with non-negotiating user agents
+> To handle requests from user agents which do not support transparent
+content negotiation, this specification allows the origin server to
+revert to a HTTP/1.0 style negotiation scheme.  The specification of
+heuristics for such schemes is beyond the scope of this document.
+
+透過内容折衝に対応していない利用者エージェントからの要求を処理するために、
+この仕様書は起源サーバーが HTTP/1.0 様式折衝方式に戻ることを認めています。
+そうした方式の学習の仕様はこの文書の適用範囲外です。
+
+**4.6 Retrieving a variant by hand
+> It is always possible for a user agent to retrieve the variant list
+which is bound to a negotiable resource.  The user agent can use this
+list to make available a menu of all variants and their
+characteristics to the user.  Such a menu allows the user to randomly
+browse other variants, and makes it possible to manually correct any
+sub-optimal choice made by the automatic negotiation process.
+
+利用者エージェントが折衝可能資源に束縛された変種目録を取り出すことは常に可能です。
+利用者エージェントは利用者にすべての変種とその特色のメニューを利用可能とするためにこれを使うことができます。
+このメニューで利用者は無作為に他の変種を閲覧することが可能になりますし、
+自動的折衝過程により行われたやや最適化された選択を手動で正すことも可能になります。
+
+**4.7 Dimensions of negotiation
+> Transparent content negotiation defines four dimensions of negotiation:
+
+透過内容折衝は4つの折衝の次元を定義します。
+
+>
+-      1. Media type (MIME type)
+-      2. Charset
+-      3. Language
+-      4. Features
+
+> The first three dimensions have traditionally been present in HTTP.
+The fourth dimension is added by this specification.  Additional
+dimensions, beyond the four mentioned above, could be added by future specifications.
+
+最初の3つの次元は以前から HTTP にあるものです。
+4つめの次元はこの仕様で追加します。上述の4つの次元に更に追加の次元が将来の仕様で追加されるかもしれません。
+
+> Negotiation on the content encoding of a response (gzipped,
+compressed, etc.) is left outside of the realm of transparent
+negotiation.   See section 10.8 for more information.
+
+応答の[[内容符号化]] ([[gzip]], [[compress]] など) の折衝は透過折衝の範囲外にしておきます。
+更なる情報は10.8節をご覧下さい。
+
+**4.8 Feature negotiation
+→[[特徴折衝]>>1]
+**4.9 Length of variant lists
+→[[変種一覧]>>2]
+**4.10 Relation with other negotiation schemes
+> The HTTP/1.x protocol suite allows for many different negotiation
+mechanisms.  Transparent content negotiation specializes in scalable,
+interoperable negotiation of content representations at the HTTP
+level.  It is intended that transparent negotiation can co-exist with
+other negotiation schemes, both open and proprietary, which cover
+different application domains or work at different points in the
+author-to-user chain.  Ultimately, it will be up to the resource
+author to decide which negotiation mechanism, or combination of
+negotiation mechanisms, is most appropriate for the task at hand.
+
+HTTP/1.[VAR[x]] プロトコル一式は多くの異なる折衝機構を認めています。
+透過内容折衝は HTTP 水準で内容表現の拡縮可能で相互運用可能な折衝を特殊化します。
+透過内容折衝は他の公開の、または独自の、異なる応用範囲を覆うかまたは著者と利用者の間の連鎖中の地点で働くほかの折衝方式と共存できるつもりです。
+最終的に手元の作業に最適な折衝機構または折衝機構の組合せを決定するのは資源の著者の責任でしょう。
+
+* 5 Variant descriptions
+→[CODE(WikiPage)[[[変種記述]]]]参照。
+* 6  Feature negotiation
+→[CODE(WikiPage)[[[特徴折衝]]]]参照。
+*7  Remote variant selection algorithms
+→[CODE(WikiPage)[[[遠隔変種選択算法]>>2]]]参照。
+*8  Content negotiation status codes and headers
+> This specification adds one new HTTP status code, and introduces six
+new HTTP headers.  It also extends the semantics of an existing HTTP/1.1 header.
+
+この仕様書は新しい HTTP [[状態符号]]を1つ追加し、6つの新しい HTTP
+頭を導入します。また、既存の HTTP/1.1 頭の意味も拡張します。
+
+**8.1 506 Variant Also Negotiates
+→[CODE(WikiPage)[[[506]]]] 参照。
+**8.2 Accept-Features
+→[CODE(WikiPage)[[[Accept-Features]]]] 参照。
+**8.3 Alternates
+→[CODE(WikiPage)[[[Alternates]]]] 参照。
+** 8.4 Negotiate
+→[CODE(WikiPage)[[[Negotiate]]]] 参照。
+**8.5 TCN
+→[CODE(WikiPage)[[[TCN]]]] 参照。
+**8.6 Variant-Vary
+→[CODE(WikiPage)[[[TCN]]]] 参照。
+*9  Cache validators
+> To allow for correct and efficient caching and revalidation of
+negotiated responses, this specification extends the caching model of
+HTTP/1.1 [1] in various ways.
+
+[[折衝可能応答]]の正しく効率的な[[キャッシュ]]と[[再検証]]のために、
+この仕様書は HTTP/1.1 のキャッシュ模型を種々の方法で拡張します。
+
+> This specification does not introduce a `variant-list-max-age'
+directive which explicitly bounds the freshness lifetime of a cached
+variant list, like the `max-age' Cache-Control directive bounds the
+freshness lifetime of a cached response.  However, this specification
+does ensure that a variant list which is sent at a time T by the
+origin server will never be re-used without revalidation by
+semantically transparent caches after the time T+M.  This M is the
+maximum of all freshness lifetimes assigned (using max-age directives
+or Expires headers) by the origin server to
+
+この仕様書はキャッシュされた応答の[[新鮮寿命]]を束縛する
+[CODE(HTTP)[[[max-age]]]] [CODE(HTTP)[[[Cache-Control]]]]
+指令のようにキャッシュされた[[変種目録]]の新鮮寿命を陽に束縛する
+[CODE(HTTP)[variant-list-max-age]] 指令を導入することはしません。
+しかし、この仕様書は時刻 [VAR[T]] に起源サーバーにより送信された変種目録が時刻
+[CODE(math)[[VAR[T]]+[VAR[M]]]] の後に[[意味的透過]]キャッシュによって再検証なしで再利用されることのないようにします。
+この [VAR[M]] は起源サーバーが
+
+>
+- a. the responses from the negotiable resource itself, and
+- b. the responses from its neighboring variant resources
+
+-折衝可能資源自体からの応答及び
+-[[隣接変種資源]]からの応答
+
+に割当てたすべての新鮮寿命の最大値です。
+
+> If no freshness lifetimes are assigned by the origin server, M is the
+maximum of the freshness lifetimes which were heuristically assigned
+by all caches which can re-use the variant list.
+
+起源サーバーが新鮮寿命を割当てていない時は、 [VAR[M]]
+は変種目録を再利用することが出来るすべてのキャッシュによって発見的に割当てられた新鮮寿命の最大値です。
+
+**9.1 Variant list validators
+→[CODE(WikiPage)[[[変種目録検証子]>>1]]]
+**9.2 Structured entity tags
+→[CODE(WikiPage)[[[構造化実体札]>>1]]]
+**9.3 Assigning entity tags to variants
+→[CODE(WikiPage)[[[実体札]]]]
+*10 Content negotiation responses
+→[CODE(WikiPage)[[[内容折衝応答]>>1]]]
+*11 User agent support for transparent negotiation
+> This section specifies the requirements a user agent needs to satisfy
+in order to support transparent negotiation.  If the user agent
+contains an internal cache, this cache MUST conform to the rules for
+proxy caches in section 13.
+
+この章では透過内容折衝に対応するために利用者エージェントが満足する必要のある要件を規定します。
+利用者エージェントが内部キャッシュを含んでいる時には、このキャッシュは13章の串キャッシュの規則にも適合しなければ'''なりません'''。
+
+**11.1 Handling of responses
+> If a list response is received when a resource is accessed, the user
+agent MUST be able to automatically choose, retrieve, and display the
+best variant, or display an error message if none of the variants are acceptable.
+
+[[資源]]に接続した時に[[目録応答]]を受信した場合は、
+[[利用者エージェント]]は最善の変種を自動的に選んで取り出して表示するか、
+または受入れ可能な変種がないときには誤りメッセージを表示するかができなければ'''なりません'''。
+
+> If a choice response is received when a resource is accessed, the
+usual action is to automatically display the enclosed entity.
+However, if a remote variant selection algorithm which was enabled
+could have made a choice different from the choice the local
+algorithm would make, the user agent MAY apply its local algorithm to
+any variant list in the response, and automatically retrieve and
+display another variant if the local algorithm makes an other choice.
+
+資源に接続した時に[[選択応答]]を受信した場合は、
+通常の動作は囲まれた[[実体]]を自動的に表示することです。
+しかし、有効化された[[遠隔変種選択算法]]が行った選択が局所算法が行う選択と異なるであろう場合には、利用者エージェントは応答の変種目録に局部算法を適用して、
+局部算法が他のものを選んだなら他の変種を自動的に取り出して表示しても'''構いません'''。
+
+> When receiving a choice response, a user agent SHOULD check if
+variant resource is a neighboring variant resource of the negotiable
+resource.  If this is not the case, the user agent SHOULD reject the
+choice response as a probable spoofing attempt and display an error
+message, for example by internally replacing the choice response with
+a 502 (bad gateway) response.
+
+選択応答を受信した時は、利用者エージェントは[[変種資源]]が[[折衝可能資源]]の[[隣接変種資源]]かどうかを確認する'''べきです'''。
+もしそうでなかった場合には、その選択応答は騙そうとするものである可能性があるとして利用者エージェントは拒絶し、
+例えば内部的に選択応答を [CODE(HTTP)[[[502]]]] (悪い関門)
+応答で置換した誤りメッセージを表示する'''べきです'''。
+
+**11.2 Presentation of a transparently negotiated resource
+> If the user agent is displaying a variant which is not an embedded or
+inlined object and which is the result of transparent content
+negotiation, the following requirements apply.
+
+利用者エージェントが埋め込まれた物体や行内の物体ではない変種を表示しようとしていて、
+それが透過内容折衝の結果である時には、次の要件を適用します。
+
+> 1. The user agent SHOULD allow the user to review a list of all
+variants bound to the negotiable resource, and to manually
+retrieve another variant if desired.  There are two general ways
+of providing such a list.  First, the information in the
+Alternates header of the negotiable resource could be used to
+make an annotated menu of variants.  Second, the entity included
+in a list response of the negotiable resource could be displayed.
+Note that a list response can be obtained by doing a GET request
+which only has the "trans" directive in the Negotiate header.
+
+利用者エージェントは、利用者が折衝可能資源に束縛されたすべての変種の目録を確認して、
+望むなら他の変種を手動で取り出せるようにする''べきです'''。
+この目録を提供する2つの一般的な方法があります。
+1つ目に、折衝可能資源の [CODE(HTTP)[[[Alternates]]]] 頭の情報を変種の注釈メニューを作るのに使うことが出来ます。
+2つ目に、折衝可能資源の目録応答に含まれている実体を表示することが出来ます。
+目録応答は [CODE(HTTP)[[[trans]]]] 指令だけを含めた [CODE(HTTP)[[[Negotiate]]]]
+頭を持った [CODE(HTTP)[[[GET]]]] 要求を行うことで得られるのに注意してください。
+
+> 2. The user agent SHOULD make available though its user interface
+some indication that the resource being displayed is a negotiated
+resource instead of a plain resource.  It SHOULD also allow the
+user to examine the variant list included in the Alternates
+header.  Such a notification and review mechanism is needed
+because of privacy considerations, see section 14.1.
+
+利用者エージェントは、表示されている資源が単なる応答ではなく折衝可能応答であることを何らかの利用者界面を通じて示せるようにする'''べきです'''。
+利用者が [CODE(HTTP)[[[Alternates]]]] 頭に含まれている変種目録を吟味できるようにもする'''べきです'''。
+そうした通知と確認の仕組みは個人情報保護の観点で必要です。
+
+> 3. If the user agent shows the URI of the displayed information to
+the user, it SHOULD be the negotiable resource URI, not the
+variant URI that is shown.  This encourages third parties, who
+want to refer to the displayed information in their own
+documents, to make a hyperlink to the negotiable resource as a
+whole, rather than to the variant resource which happens to be
+shown.  Such correct linking is vital for the interoperability of
+content across sites.  The user agent SHOULD however also provide
+a means for reviewing the URI of the particular variant which is
+currently being displayed.
+
+利用者エージェントが利用者に表示している情報の [[URI]]
+を示す時は、表示している変種の URI ではなく折衝可能資源の URI
+とする'''べきです'''。これによって表示している情報に言及したいと思っている第3者がその文書で表示している特定の変種資源ではなく折衝可能資源全体にハイパーリンクすることを推奨します。
+そうい正しいリンクはサイトを越えた内容の相互運用性のための理想です。
+しかし利用者エージェントは現在表示している特定の変種の URI
+を確認する手段も提供する'''べきです'''。
+
+> 4. Similarly, if the user agent stores a reference to the
+displayed information for future use, for example in a hotlist,
+it SHOULD store the negotiable resource URI, not the variant URI.
+
+同様に、利用者エージェントが将来使用するために例えば[[ホットリスト]]のようにして表示している情報への参照を蓄積する場合は、
+変種 URI ではなく折衝可能資源 URI を蓄積する'''べきです'''。
+
+> It is encouraged, but not required, that some of the above
+functionality is also made available for inlined or embedded objects,
+and when a variant which was selected manually is being displayed.
+
+これは推奨であって必須ではありませんが、前述の機能の幾つかは行内物体や埋め込み物体についてや手動で選択した変種が表示されている時にも利用可能とするのがよいでしょう。
+
+*12 Origin server support for transparent negotiation
+**12.1 Requirements
+> To implement transparent negotiation on a resource, the origin server
+MUST be able to send a list response when getting a GET request on
+the resource.  It SHOULD also be able to send appropriate list
+responses for HEAD requests.  When getting a request on a
+transparently negotiable resource, the origin server MUST NEVER
+return a response with a 2xx status code or any 3xx status code,
+except 304, which is not a list, choice, or adhoc response.
+
+資源についての透過折衝を実装するために、
+起源サーバーはその要求についての [CODE(HTTP)[[[GET]]]] 要求を受けた時に[[目録応答]]を送信することができなければ'''なりません'''。
+また、起源サーバーは [CODE(HTTP)[[[HEAD]]]] 要求でも適切な目録応答を送信することができる'''べきです'''。
+[[透過折衝可能資源]]への要求を受けた時には、
+起源サーバーは目録応答・[[選択応答]]・[[臨時応答]]ではない
+[CODE(HTTP)[[[2xx]]]] [[状態符号]]または [CODE(HTTP)[[[304]]]]
+を除く [CODE(HTTP)[[[3xx]]]] 状態符号の応答を'''決して'''返しては'''なりません'''。
+
+> If the request includes a Negotiate header with a "vlist" or "trans"
+directive, but without any directive which allows the server to
+select a best variant, a list response MUST ALWAYS be sent, except
+when the server is performing a server-side override for bug
+compatibility.  If the request includes a Negotiate header with a
+"vlist" or "guess-small" directive, an Alternates header with the
+variant list bound to the negotiable resource MUST ALWAYS be sent in
+any list, choice, or adhoc response, except when the server is
+performing a server-side override for bug compatibility.
+
+要求が [CODE(HTTP)[[[vlist]]]] 指令または [CODE(HTTP)[[[trans]]]]
+指令のあって、
+サーバーが最善の変種を選ぶことを認める指令が何もない
+[CODE(HTTP)[[[Negotiate]]]] 頭を含んでいるときには、
+サーバーがバグ互換性のための[[サーバー側上書き]]を行う場合を除いて、
+'''常に'''目録応答を送らなければ'''なりません'''。
+要求が [CODE(HTTP)[vlist]] 指令または [CODE(HTTP)[guess-small]]
+指令のある [CODE(HTTP)[Negotiate]] 頭を含んでいる時には、
+サーバーがバグ互換性のための[[サーバー側上書き]]を行う場合を除いて、
+目録応答, 選択応答, 臨時応答のいずれの場合であっても、
+その折衝可能資源に束縛された変種目録の入った [CODE(HTTP)[[[Alternates]]]]
+頭を'''常に'''送らなければ'''なりません'''。
+
+> If the Negotiate header allows it, the origin server MAY run a remote
+variant selection algorithm.  If the algorithm has sufficient
+information to choose a best variant, and if the best variant is a
+neighboring variant, the origin server MAY return a choice response
+with this variant.
+
+[CODE(HTTP)[Negotiate]] 頭が認めている場合には、
+起源サーバーは[[遠隔変種選択算法]]を動かしても'''構いません'''。
+算法が最善の変種を選ぶのに十分な情報を持っていて、
+最善の変種が[[隣接変種]]であるときには、起源サーバーはこの変種を選択変種として返しても'''構いません'''。
+
+> When getting a request on a transparently negotiable resource from a
+user agent which does not support transparent content negotiation,
+the origin server MAY use a custom algorithm to select between
+sending a list, choice, or adhoc response.
+
+透過折衝可能資源に透過内容折衝に対応していない利用者エージェントからの要求を受けた時は、起源サーバーは目録応答, 選択応答また臨時応答を送るのを選ぶ個別算法を使っても'''構いません'''。
+
+> The following table summarizes the rules above.
+[PRE[
+     |Req on   |Usr agnt|server-  |         Response may be:         |
+     |trans neg|capable |side     +------+------+------+------+------+
+     |resource?|of TCN? |override?|list  |choice|adhoc |normal|error |
+     +---------+--------+---------+------+------+------+------+------+
+     |   Yes   |  Yes   |  No     |always|smt(*)|never |never |always|
+     +---------+--------+---------+------+------+------+------+------+
+     |   Yes   |  Yes   |  Yes    |always|always|always|never |always|
+     +---------+--------+---------+------+------+------+------+------+
+     |   Yes   |  No    |   -     |always|always|always|never |always|
+     +---------+--------+---------+------+------+------+------+------+
+     |   No    |   -    |   -     |never |never |never |always|always|
+     +---------+--------+---------+------+------+------+------+------+
+        (*) sometimes, when allowed by the Negotiate request header
+]PRE]
+
+次の表は前述の規則の要約です。
+,透過折衝資源への要求?,利用者エージェントは透過折衝可能?,サーバー側上書きする?,可能な応答
+,      ,      ,      ,目録,選択,臨時,通常,誤り
+,はい  ,はい  ,いいえ,常に,時☆,不可,不可,常に
+,はい  ,はい  ,はい  ,常に,常に,常に,不可,常に
+,はい  ,いいえ,−    ,常に,常に,常に,不可,常に
+,いいえ,−    ,−    ,不可,不可,不可,常に,常に
+
+☆時々、 [CODE(HTTP)[Negotiate]] 要求頭で認められたとき。
+
+>Negotiability is a binary property: a resource is either
+transparently negotiated, or it is not.  Origin servers SHOULD NOT
+vary the negotiability of a resource, or the variant list bound to
+that resource, based on the request headers which are received.  The
+variant list and the property of being negotiated MAY however change
+through time.  The Cache-Control header can be used to control the
+propagation of such time-dependent changes through caches.
+
+折衝可能性は二値特性です。応答は透過折衝されるかされないかのどちらかです。
+起源サーバーは資源の折衝可能性やその資源に束縛された変種目録を受信した要求頭に基づいて変化させる'''べきではありません'''。
+しかし、変種目録と折衝される特性は時を追って変わっても'''構いません'''。
+その時間依存の変更のキャッシュによる伝達遅延を制御するために
+[CODE(HTTP)[[[Cache-Control]]]] 頭を使うことが出来ます。
+
+> It is the responsibility of the author of the negotiable resource to
+ensure that all resources in the variant list serve the intended
+content, and that the variant resources do not engage in transparent
+content negotiation themselves.
+
+変種目録中のすべての資源が意図した内容を供給するようにし、
+変種資源がそれ自体透過内容折衝しないようにするのは折衝可能資源の著者の責任です。
+
+**12.2 Negotiation on transactions other than GET and HEAD
+→[CODE(WikiPage)[[[POST]>>1]]]
+*13 Proxy support for transparent negotiation
+> Transparent content negotiation is an extension on top of HTTP/1.x.
+It is designed to work through any proxy which only implements the
+HTTP/1.1 specification [1].  If Expires headers are added as
+discussed in section 10.7, negotiation will also work though proxies
+which implement HTTP/1.0 [2].  Thus, every HTTP/1.0 or HTTP/1.1 proxy
+provides support for transparent content negotiation.  However, if it
+is to be claimed that a HTTP/1.x proxy offers transparent content
+negotiation services, at least one of the specific optimizations
+below MUST be implemented.
+
+透過内容折衝は HTTP/1.[VAR[x]] の上の拡張です。
+透過内容折衝は HTTP/1.1 仕様書だけを実装した串を通じても働くように設計されています。
+10.7 節で触れた通り [CODE(HTTP)[[[Expires]]]] 頭を追加すれば、
+折衝は HTTP/1.0 を実装する串を通じても働くでしょう。
+従って、各 HTTP/1.0 串または HTTP/1.1 の串は透過内容折衝に対応しています。
+しかし、 HTTP/1.[VAR[x]] 串透過内容折衝サービスを提供すると主張するのであれば、
+次に挙げる最適化の少なくても1つを実装していなければ'''なりません'''。
+
+> An HTTP/1.x proxy MUST ONLY optimize (change) the HTTP traffic
+flowing through it in ways which are explicitly allowed by the
+specification(s) it conforms to.  A proxy which supports transparent
+content negotiation on top of HTTP/1.x MAY perform the optimizations
+allowed for by HTTP/1.x.  In addition, it MAY perform three
+additional optimizations, defined below, on the HTTP traffic for
+transparently negotiated resources and their neighboring variant resources.
+
+HTTP/1.[VAR[x]] 串は、その適合する仕様書が陽に認めている方法によって'''のみ'''
+HTTP 通信の流れを最適化 (変更) しなければ'''なりません'''。
+HTTP/1.[VAR[x]] の上で透過内容折衝に対応する串は、
+HTTP/1.[VAR[x]] によって認められた最適化を行っても'''構いません'''。
+加えて、透過折衝資源及びその隣接変種資源に関する HTTP
+通信について次に定義する3つの追加の最適化を行っても'''構いません'''。
+
+> First, when getting a request on a transparently negotiable resource
+from a user agent which supports transparent content negotiation, the
+proxy MAY return any cached, fresh list response from that resource,
+even if the selecting request headers, as specified by the Vary
+header, do not match.
+
+一つ目は、透過内容折衝に対応した利用者エージェントから透過折衝可能資源についての要求を受けたときに、串はその資源からのキャッシュしている[[新鮮]]な[[目録応答]]を、
+たとえ [CODE(HTTP)[[[Vary]]]] 頭に指定されている選択要求頭が一致しない場合であっても、これを返して'''構いません'''。
+
+> Second, when allowed by the user agent and origin server, a proxy MAY
+reuse an Alternates header taken from a previous response (section
+10.4) to run a remote variant selection algorithm.  If the algorithm
+has sufficient information to choose a best variant, and if the best
+variant is a neighboring variant, the proxy MAY return a choice
+response with this variant.
+
+二つ目は、利用者エージェントと起源サーバーが認めている場合、
+串は以前の応答から取った [CODE(HTTP)[[[Alternates]]]]
+頭を[[遠隔変種選択算法]]を走らせるのに再利用しても'''構いません'''。
+算法が最善の変種を選ぶのに十分な情報を持っていて、
+最善の変種が[[隣接変種]]である時には、串はこの変種で[[選択応答]]を返しても'''構いません'''。
+
+> Third, if a proxy receives a choice response, it MAY extract and
+cache the normal response embedded therein, as described in section 10.5.
+
+三つ目は、串が選択応答を受信した場合、
+10.5節で説明しているように、そこに埋め込まれた通常の応答を取り出してキャッシュしても'''構いません'''。
+
+*14 Security and privacy considerations
+**14.1 Accept- headers revealing personal information
+> Accept- headers, in particular Accept-Language headers, may reveal
+information which the user would rather keep private unless it will
+directly improve the quality of service.  For example, a user may not
+want to send language preferences to sites which do not offer multi-lingual content.  The transparent content negotiation mechanism
+allows user agents to omit sending of the Accept-Language header by
+default, without adversely affecting the outcome of the negotiation
+process if transparently negotiated multi-lingual content is accessed.
+
+[[Accept‐頭群]], とりわけ [CODE(HTTP)[[[Accept-Language]]]]
+頭は、直接サービスの質を向上させるのでない限り私的にしておきたいと利用者が考えている情報を晒してしまうかもしれません。
+例えば、利用者は多言語内容を提供していないサイトに言語の好みを送りたくないと思うかもしれません。
+透過内容折衝機構は、透過折衝可能多言語内容に接続したとしても折衝過程に悪影響を出すことなく利用者エージェントが既定で [CODE(HTTP)[Accept-Language]]
+頭を送るのを省くことを認めています。
+
+> However, even if Accept- headers are never sent, the automatic
+selection and retrieval of a variant by a user agent will reveal a
+preference for this variant to the server.  A malicious service
+author could provide a page with `fake' negotiability on (ethnicity-correlated) languages, with all variants actually being the same
+English document, as a means of obtaining privacy-sensitive
+information.  Such a plot would however be visible to an alert victim
+if the list of available variants and their properties is reviewed.
+
+しかし、たとえ Accept‐頭群を送らなくても、
+利用者エージェントによる変種の自動的な選択と取り出しはサーバーにこの変種を好むことを晒してしまいます。
+悪意のあるサービス著者は、私的な情報を得る手段として、
+実際にはすべての変種が英語の文書でありながらも (民族性に関わる)
+言語の「偽造」折衝可能性を持った頁を提供できます。
+しかしそのような陰謀は油断のない被害者が利用可能な変種の目録とその特性を確認すればわかってしまいます。
+
+> Some additional privacy considerations connected to Accept- headers
+are discussed in [1].
+
+Accept‐頭群に関係する個人情報に関わる追加の考察は RFC 2068 にあります。
+
+**14.2 Spoofing of responses from variant resources
+> The caching optimization in section 10.5 gives the implementer of a
+negotiable resource control over the responses cached for all
+neighboring variant resources.  This is a security problem if a
+neighboring variant resource belongs to another author.  To provide
+security in this case, the HTTP server will have to filter the
+Content-Location headers in the choice responses generated by the
+negotiable resource implementation.
+
+10.5節のキャッシュ最適化で折衝可能資源の実装者がすべての隣接変種応答についてキャッシュされた応答を統制できます。
+これは隣接変種資源が他の著者に属していると保安上の問題です。
+この場合の安全を提供するため、 HTTP サーバーは折衝可能資源実装あはが生成した選択応答の
+[CODE(HTTP)[[[Content-Location]]]] 頭を濾過しなければならないでしょう。
+
+**14.3 Security holes revealed by negotiation
+> Malicious servers could use transparent content negotiation as a
+means of obtaining information about security holes which may be
+present in user agents.  This is a risk in particular for negotiation
+on the availability of scripting languages and libraries.
+
+悪意のあるサーバーは透過内容折衝を利用者エージェントにあるかもしれない[RUBY[安全上の穴] [セキュリティ・ホール]]についての情報を得る手段として使うかもしれません。
+これはとくにスクリプト言語とライブラリの利用可能性についての折衝で危険です。
+
+*15 Internationalization considerations
+> This protocol defines negotiation facilities which can be used for
+the internationalization of web content.  For the
+internationalization of list response bodies (section 10.1), HTTP/1.0
+style negotiation (section 4.2) can be used.
+
+このプロトコルはウェブ内容の[[国際化]]につかうことができる折衝機能を定義しています。
+目録応答本体の国際化については、 HTTP/1.0 様式の折衝を使うことが出来ます。
+
+*16 Acknowledgments
+> Work on HTTP content negotiation has been done since at least 1993.
+The authors are unable to trace the origin of many of the ideas
+incorporated in this document.  Many members of the HTTP working
+group have contributed to the negotiation model in this
+specification.  The authors wish to thank the individuals who have
+commented on earlier versions of this document, including Brian
+Behlendorf, Daniel DuBois, Martin J. Duerst, Roy T. Fielding, Jim
+Gettys, Yaron Goland, Dirk van Gulik, Ted Hardie, Graham Klyne, Scott
+Lawrence, Larry Masinter, Jeffrey Mogul, Henrik Frystyk Nielsen,
+Frederick G.M. Roeber, Paul Sutton, and Klaus Weide and Mark Wood.
+
+HTTP 内容折衝についての作業は少なくても1993年から行われています。
+著者はこの文書に組み込まれている考えの多くの起源を追跡することができません。
+IETF 作業部会の多くの参加者がこの仕様書の折衝模型に貢献してくださいました。
+著者は、 Brian
+Behlendorf, Daniel DuBois, Martin J. Dürst, Roy T. Fielding, Jim
+Gettys, Yaron Goland, Dirk van Gulik, Ted Hardie, Graham Klyne, Scott
+Lawrence, Larry Masinter, Jeffrey Mogul, Henrik Frystyk Nielsen,
+Frederick G.M. Roeber, Paul Sutton, Klaus Weide, Mark Wood
+を含めたこの文書の初期の版に意見してくださった方々に感謝したいと思います。
+
+*17 References
+
+   [1] Fielding, R., Gettys, J., Mogul, J., Frystyk, H., and
+       T. Berners-Lee, "Hypertext Transfer Protocol -- HTTP/1.1", RFC
+       2068, January 1997.
+
+[INS[
+訳注 : RFC 2068 は [[RFC2616]] によって廃止されました。
+]INS]
+
+   [2] Berners-Lee, T., Fielding, R., and H. Frystyk, "Hypertext
+       Transfer Protocol -- HTTP/1.0", RFC 1945, May 1996.
+
+   [3] Holtman, K., and A. Mutz, "HTTP Remote Variant Selection
+       Algorithm -- RVSA/1.0", RFC 2296, March 1998.
+
+   [4] Bradner, S., "Key words for use in RFCs to Indicate Requirement
+       Levels", BCP 14, RFC 2119, March 1997.
+
+   [5] Yergeau, F., "UTF-8, a transformation format of Unicode and ISO
+       10646", RFC 2044, October 1996.
+
+*18 Authors' Addresses
+
+   Koen Holtman
+   Technische Universiteit Eindhoven
+   Postbus 513
+   Kamer HG 6.57
+   5600 MB Eindhoven (The Netherlands)
+
+   EMail: koen@@win.tue.nl
+
+
+   Andrew H. Mutz
+   Hewlett-Packard Company
+   1501 Page Mill Road 3U-3
+   Palo Alto CA 94304, USA
+
+   Fax +1 415 857 4691
+   EMail: mutz@@hpl.hp.com
+
+*19 Appendix: Example of a local variant selection algorithm
+→[CODE(WikiPage)[[[局所変種選択算法]>>1]]]
+*20 Appendix: feature negotiation examples
+→[CODE(WikiPage)[[[特徴折衝]]]]参照。
+*21 Appendix: origin server implementation considerations
+**21.1 Implementation with a CGI script
+> Transparent content negotiation has been designed to allow a broad
+range of implementation options at the origin server side.  A very
+minimal implementation can be done using the CGI interface.  The CGI
+script below is an example.
+
+透過内容折衝は[[起源サーバー]]側で広い範囲の実装選択肢を認めるように設計されています。
+極めて小さな実装は [[CGI]] 界面を使って行えます。
+次の[[CGIスクリプト]]はその例です。
+
+>
+[PRE[
+#!/bin/sh
+
+cat - <<'blex'
+TCN: list
+Alternates: {"stats.tables.html" 1.0 {type text/html} {features tables}}, {"stats.html" 0.8 {type text/html}}, {"stats.ps" 0.95 {type application/postscript}}
+Vary: *
+Content-Type: text/html
+
+<title>Multiple Choices for Web Statistics</title>
+<h2>Multiple Choices for Web Statistics:</h2>
+<ul>
+<li><a href=stats.tables.html>Version with HTML tables</a>
+<p>
+<li><a href=stats.html>Version without HTML tables</a>
+<p>
+<li><a href=stats.ps>Postscript version</a>
+</ul>
+blex
+]PRE]
+
+> The Alternates header in the above script must be read as a single
+line.  The script always generates a list response with the 200 (OK)
+code, which ensures compatibility with non-negotiating HTTP/1.0 agents.
+
+このスクリプトの [CODE(HTTP)[[[Alternates]]]] 頭は単一行としなければなりません。 [INS[(訳注 : RFC 原文では複数行に折り返されていました。もっとも、[[折畳み]]を使えば複数行にすることは可能です。)]]
+このスクリプトは折衝しない HTTP/1.0 エージェントとの互換性を確保するために常に
+[CODE(HTTP)[[[200]]]] (OK) 符号の[[目録応答]]を生成します。
+
+**21.2 Direct support by HTTP servers
+> Sophisticated HTTP servers could make a transparent negotiation
+module available to content authors.  Such a module could incorporate
+a remote variant selection algorithm and an implementation of the
+algorithm for generating choice responses (section 10.2).  The
+definition of interfaces to such modules is beyond the scope of this specification.
+
+洗練された HTTP サーバーは透過折衝モジュールを内容著者に利用可能とすることができるでしょう。
+そのモジュールは[[遠隔変種選択算法]]と[[選択応答]]を生成するための算法の実装を組み込むことができます。
+このモジュールの界面の定義はこの仕様書の適用範囲外です。
+
+**21.3 Web publishing tools
+> Web publishing tools could automatically generate several variants of
+a document (for example the original TeX version, a HTML version with
+tables, a HTML version without tables, and a Postscript version),
+together with an appropriate variant list in the interface format of
+a HTTP server transparent negotiation module.  This would allow
+documents to be published as transparently negotiable resources.
+
+ウェブ出版工具は文書の幾つかの変種 (例えば元の [[TeX]] 版,
+[[表]]を使った [[HTML]] 版, 表なしの HTML 版, [[Postscript]] 版)
+と HTTP サーバー透過折衝モジュールの界面の書式による適切な[[変種目録]]を一緒に自動的に生成できることでしょう。
+これで文書を透過折衝可能資源として出版できます。
+
+*22 Appendix: Example of choice response construction
+→[CODE(WikiPage)[[[選択応答]>>3]]]
+*23 Full Copyright Statement
+
+   Copyright (C) The Internet Society (1998).  All Rights Reserved.
+
+   This document and translations of it may be copied and furnished to
+   others, and derivative works that comment on or otherwise explain it
+   or assist in its implementation may be prepared, copied, published
+   and distributed, in whole or in part, without restriction of any
+   kind, provided that the above copyright notice and this paragraph are
+   included on all such copies and derivative works.  However, this
+   document itself may not be modified in any way, such as by removing
+   the copyright notice or references to the Internet Society or other
+   Internet organizations, except as needed for the purpose of
+   developing Internet standards in which case the procedures for
+   copyrights defined in the Internet Standards process must be
+   followed, or as required to translate it into languages other than
+   English.
+
+   The limited permissions granted above are perpetual and will not be
+   revoked by the Internet Society or its successors or assigns.
+
+   This document and the information contained herein is provided on an
+   "AS IS" basis and THE INTERNET SOCIETY AND THE INTERNET ENGINEERING
+   TASK FORCE DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING
+   BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE INFORMATION
+   HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED WARRANTIES OF
+   MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+
+*License
+[[RFCのライセンス]]
+* メモ
+@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@@
+

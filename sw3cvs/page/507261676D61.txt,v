@@ -1,0 +1,170 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1
+	before-db-leaffile:1.1
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2003.12.08.02.03.39;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9 page-icon="HTTP"
+[1] [CODE(HTTP)[Pragma]] 頭欄を使って、要求・応答鎖の中継者・最終受信者に
+pragma 指令を与えることができます。
+
+例えば、 [CODE(HTTP)[Pragma: no-cache]] を''要求''で使うと、
+要求鎖の途中で[[キャッシュ]]の複製を使わずに、[[起源サーバー]]の応答を得たいと主張できます。
+
+[2] [CODE(HTTP)[Pragma]] 頭欄は [[HTTP/1.0]] で使われていましたが、
+[[HTTP/1.1]] では互換性のためにのみ使用し、新たな pragma 指令は追加しないことになりました。
+
+[CODE(HTTP)[[[no-cache]]]] は [CODE(HTTP)[[[Cache-Control]]: no-cache]] 
+で代替できます。
+受信者が HTTP/1.0 か HTTP/1.1 か分からない時には [CODE(HTTP)[Pragma]]
+と [CODE(HTTP)[Cache-Control]] の両方を使うのが良いとされています。
+
+[3] [[応答]]の受信者 ([[WWWブラウザ]]など) が [[CGIスクリプト]]の出力のような動的に生成された応答をキャッシュしないように、
+''応答で'' [CODE(HTTP)[Pragma: no-cache]] が使われることがよくあります。
+([[HTML]] 形の [CODE(HTML)[<[CODE(HTMLe)[[[meta]]]] [CODE(HTMLa)[[[http-equiv]]]]="pragma" [CODE(HTMLa)[[[content]]]]="no-cache">]]
+として使われることが特に多いようです。)
+しかし、この使い方は実は RFC では規定されていません。 RFC 2616
+の注記にあるように、正しく解釈される可能性は低いでしょう。
+[WEAK[(現実には要求で使われることよりも応答で、しかも HTML 形で使われることが圧倒的に多いのでしょうけどねぇ。)]]
+
+正しく理解されることを望む時は、 [CODE(HTTP)[Cache-Control: no-cache]] 
+を使わないといけません。
+
+- [4] ''CMU School of Computer Science'' <http://www-2.cs.cmu.edu/webhelp/for-protocol.html> (1996年) は [CODE(HTTP)[[[for]]]] 引数を提案しています。要求では [CODE(HTTP)[Pragma: for=anyone]] または [CODE(HTTP)[Pragma: for=fqdn.example]], 応答ではこれに加えて [CODE(HTTP)[Pragma: for=request]] が使えます。複数可。実体の対象利用者を表すものみたいです。[WEAK[実用になるのか怪しいですし、結局標準化されずじまい。歴史的なものですね。]] 提案者のところのサーバーで実装していたみたいですが、今そのサーバーは普通の [[Apache]] みたいです。
+- [5] [HTTP92] <http://www.w3.org/Protocols/HTTP/HTRQ_Headers.html#pragma> : [CODE(HTTP)[no-cache]] を RFC 1945 と同じ意味で定義しています。それだけ。
+-[6] >>5 は、構文を自然言語で [CODE(ABNF)[[DFN[Pragma]] := #(token *(";" parameter))]] と定義していました。
+[[#comment]]
+* 仕様書から
+** RFC 1945 (HTTP/1.0) 10.12; RFC 2068・2616 (HTTP/1.1) 14.32 Pragma
+> The Pragma general-header field is used to include implementation-specific directives that [DEL[may]] [INS[[INS[{2616}]] might]] apply to any recipient along the
+request/response chain. All pragma directives specify optional
+behavior from the viewpoint of the protocol; however, some systems [DEL[may]] [INS[MAY]] require that behavior be consistent with the directives.
+
+[CODE(HTTP)[Pragma]] [[一般頭欄]]は、要求・応答鎖沿いの任意の受信者に適用するかもしれない実装規定の指令を含めるのに使います。
+すべての語用指令は、プロトコルの見地からの任意選択の動作を指定します。
+しかし、システムによってはその動作が指令と一貫していることを要求しても'''構いません'''。
+
+>
+-Pragma            = "Pragma" ":" 1#pragma-directive
+>
+- pragma-directive  = "no-cache" | extension-pragma
+-[DEL[extension-pragma = token [ "=" word ] ]]
+-[INS[extension-pragma  = token [ "=" ( token | quoted-string ) ] ]]
+
+> When the [DEL["]]no-cache[DEL["]] directive is present in a request message, an
+application [DEL[should]] [INS[SHOULD]] forward the request toward the origin server even
+if it has a cached copy of what is being requested. [DEL[This allows a client to insist upon receiving an authoritative response to its request. It also allows a client to refresh a cached copy which is known to be corrupted or stale.]] [INS[This pragma directive has the same semantics as the no-cache cache-directive (see section 14.9) and is defined here for backward[DEL[s]] compatibility with HTTP/1.0.  Clients SHOULD include both header fields when a no-cache request is sent to a server not known to be HTTP/1.1 compliant.]]
+
+[CODE(HTTP)[no-cache]] 指令が要求メッセージに示されている時は、
+[[応用]]は、たとえ要求されているもののキャッシュした複製を持っていたとしても、
+その要求を[[起源サーバー]]に転送する'''べきです'''。[DEL[これによってクライアントはその要求に対する本家応答を受取ることを主張できます。クライアントが破壊されているまたは[[腐敗]]していると知っているキャッシュされた複製を更新することも可能になります。]] [INS[この語用指令は、 [CODE(HTTP)[no-cache]] [CODE(ABNF)[[[cache-directive]]]] と同じ意味を持ちまして、ここでは HTTP/1.0 との[[後方互換性]]のために定義します。クライアントは、 [CODE(HTTP)[no-cache]] 要求を HTTP/1.1 に従っていると分かっていないサーバーに送るときは両方の頭欄を含める'''べきです'''。]]
+
+> Pragma directives [DEL[must]] [INS[MUST]] be passed through by a proxy or gateway
+application, regardless of their significance to that application,
+since the directives [DEL[may]] [INS[might [INS[{2616}]]]] be applicable to all recipients along the
+request/response chain. It is not possible to specify a pragma for a
+specific recipient; however, any pragma directive not relevant to a
+recipient [DEL[should]] [INS[SHOULD]] be ignored by that recipient.
+
+[CODE(HTTP)[Pragma]] 指令を、串や関門の応用は、その応用での重要度に拘らず、
+次に渡さなければ'''なりません'''。なぜなら、指令は要求・応答鎖沿いのすべての受信者に適用可能かもしれないからです。
+特定の受信者に語用を指定することはできません。しかし、受信者に関係のない語用指令はその受信者では無視する'''べきです'''。
+
+[INS[
+> [DEL[HTTP/1.1 clients SHOULD NOT send the Pragma request-header.]] HTTP/1.1
+caches SHOULD treat "Pragma: no-cache" as if the client had sent
+"Cache-Control: no-cache". No new Pragma directives will be defined
+in HTTP.
+
+;[DEL[HTTP/1.1 クライアントは [CODE(HTTP)[Pragma]] 要求頭を送る'''べきではありません'''。]]
+HTTP/1.1 キャッシュは [CODE(HTTP)[Pragma: no-cache]] をクライアントが
+[CODE(HTTP)[[[Cache-Control]]: no-cache]] を送ったのであるとして扱う'''べきです'''。
+新しい [CODE(HTTP)[Pragma]] 指令は HTTP では定義されません。
+
+[INS[
+> Note: because the meaning of "Pragma: no-cache as a response
+header field is not actually specified, it does not provide a
+reliable replacement for "Cache-Control: no-cache" in a response [INS[(ママ)]]
+
+注意: 応答頭欄としての [CODE(HTTP)[Pragma: no-cache]] の意味は実際には規定されていませんから、
+応答中での [CODE(HTTP)[Cache-Control: no-cache]] の信頼できる置換は提供されません。
+]INS]
+]INS]
+
+[INS[
+注: 注記のない修正部は RFC 1945→2068 の変更点。
+]INS]
+** RFC の部分の License
+[[RFCのライセンス]]
+
+* 実装について
+
+[[#comment]]
+
+** IE に関して
+
+[2] [[WinIE]] 3.02〜4.01 には、[CODE(HTML)[<[CODE(HTMLe)[meta]] [CODE(HTMLa)[http-equiv]]="pragma" [CODE(HTMLa)[content]]="no-cache">]]
+が最初の方にあるとキャッシュにきっちり保存してしまい、
+M$ はこれを不具合と認識していました。
+
+''Q222064 - "Pragma: No-cache" Tag May Not Prevent Page from Being Cached'' <http://web.archive.org/web/20010808174139/support.microsoft.com/support/kb/articles/Q222/0/64.ASP>
+
+対策として、この文書では [CODE(HTMLe)[[[body]]]] 要素の後に2つめの
+[CODE(HTMLe)[[[head]]]] 要素を置き、その中に [CODE(HTMLe)[meta]]
+要素のタグを書けとものすごいことを言っています。例:
+[PRE[
+<HTML>
+<HEAD>
+    <META HTTP-EQUIV="REFRESH" CONTENT="5">
+    <TITLE> Pragma No-cache </TITLE>
+</HEAD>
+<BODY>
+    This is an example of where to place the second header section<br>
+    so that the "Pragama, No-Cache" metatag will work as it is supposed to.<br>
+</BODY>
+<HEAD>
+    <META HTTP-EQUIV="PRAGMA" CONTENT="NO-CACHE">
+</HEAD>
+</HTML>
+]PRE]
+
+M$ は一体何を考えているのでしょう。英語の意味もついに分からなくなりましたか。
+
+[1] [[WinIE4]] (4.01 SP2 まで) には、 [CODE(HTML)[<[CODE(HTMLe)[meta]] [CODE(HTMLa)[http-equiv]]="pragma" [CODE(HTMLa)[content]]="no-cache">]]
+が含まれている文書について、その大きさが64キロオクテット以下なら[[キャッシュ]]から削除、それより大きければ普通に削除しないという挙動を取っていました。
+[[M$]] はこれを不具合と認識し、修正パッチを出しています。
+
+''Q234247 - Web Page with "Pragma: No-Cache" Tag Stored in Cache Not Deleted'' <http://web.archive.org/web/20010816054645/http://support.microsoft.com/support/kb/articles/Q234/2/47.ASP>
+
+[3] ''Q234067 - HOWTO: Prevent Caching in Internet Explorer'' <http://web.archive.org/web/20010810040821/support.microsoft.com/support/kb/articles/Q234/0/67.ASP>
+によれば、 WinIE4 と [[WinIE5]] で [CODE(HTTP)[Pragma: no-cache]] (と HTML 形)
+を処理してくれるのは over [[SSL]] の時だけだそうです。
+
+仕様書に従うなら [CODE(HTTP)[Pragma: no-cache]] が使えるのは要求のときで応答のときは駄目なんだ、ほんとは、なーんて珍しくまともなことを言っています。
+
+[[#comment]]
+
+*メモ
+@

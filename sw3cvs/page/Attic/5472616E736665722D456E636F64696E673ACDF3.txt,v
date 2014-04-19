@@ -1,0 +1,197 @@
+head	1.2;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.2
+date	2003.06.28.10.14.22;	author make;	state dead;
+branches;
+next	1.1;
+
+1.1
+date	2002.12.15.09.25.50;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@auto-commited
+@
+text
+@#?SuikaWiki/0.9
+[21] [[HTTP]] で使用されている[[転送符号化]]を示すのがこの欄です。
+HTTP には転送符号化と[[内容符号化]]という似た二つの概念があります。
+
+前者は転送を安全に行うための手段であって [[chunked符号化]]が現在実質的に唯一使えます。
+Transfer-Encoding: 欄の他に [[TE:欄]]が関係します。
+
+後者はその名の通り内容の符号化ですが、現時点では実質的に[[圧縮]]転送のための手段となっています。
+
+[22] HTTP から派生したプロトコルである [[RTSP]] や [[SIP]]
+では [[chunked符号化]]を禁止するなど差異がありますので注意が必要です。
+
+[23] [[CGI]] で[[転送符号化]]した内容を出力するのって機能するんでしょうか?
+仕様書には特に触れられていませんね。
+
+サーバーが [[Apache]] でクライアントが [[HTTP/1.1]] の場合は、 CGI
+や [[SSI]] などを使うと [[chunked符号化]]をサーバー側が処理するみたいですが・・・。
+
+[[#comment]]
+*転送符号化値
+[20]
+,chunked     ,[[chunked符号化]]              ,[RFC 2068] [RFC 2616] [IANAREG]
+,compress    ,[[compress]]                   ,[RFC 2616]
+,deflate     ,[[deflate]]                    ,[RFC 2616]
+,gzip        ,[[gzip]]                       ,[RFC 2616]
+,identity    ,なし                           ,[RFC 2616]
+,trailer     ,後続頭                         ,([RFC 2616])
+,x-compress  ,compress                       ,
+,x-gzip      ,gzip                           ,
+
+[24] IANA 登録簿は <http://www.iana.org/assignments/http-parameters> にあります。
+ここには [CODE(ABNF)["chunked"]] しか載っていませんが、 >>17
+によると "gzip" など [[Content-Encoding:欄]]で使われる値も使えるらしいです。
+(この記述は RFC 2616 で追加されたもので RFC 2068 にはありません。)
+
+もしかすると単なる転送のための圧縮は内容符号化ではなく転送符号化を使うべし、という意思が働いているのかもしれません...
+(そうすれば、[[ダウンロード]]した *.gz ファイルが勝手に展開されている、という問題は防げるようになるでしょうし。)
+
+[25] 値 "trailers" は転送符号化ではありませんが、 
+[[TE:欄]]では転送符号化に準じて扱われています。
+
+[[#comment]]
+*RFC 2616 の 14.41 Transfer-Encoding
+>The Transfer-Encoding general-header field indicates what (if any)
+type of transformation has been applied to the message body in order
+to safely transfer it between the sender and the recipient. This
+differs from the content-coding in that the transfer-coding is a
+property of the message, not of the entity.
+
+[1] Transfer-Encoding 一般頭欄は、 (もしあるなら)
+どういう種類の変形が送受信者間の安全な転送のために[[メッセージ本体]]に加えられているかを示します。
+この[[転送符号化]]はメッセージの属性であって[[実体]]の属性では無いという点で[[内容符号化]]とは異なります。
+
+-[2] Transfer-Encoding       = "Transfer-Encoding" ":" 1#transfer-coding
+
+>Transfer-codings are defined in section 3.6. An example is:
+
+[3] transfer-encoding は3.6節 (>>7) で定義しています。例:
+
+-[4] Transfer-Encoding: chunked
+
+>If multiple encodings have been applied to an entity, the transfer-codings 
+MUST be listed in the order in which they were applied.  Additional information 
+about the encoding parameters MAY be provided by other entity-header fields not 
+defined by this specification.
+
+[5] 複数の符号化が実体に適用された場合、転送符号化は適用された順に列挙し'''なければなりません'''。
+符号化の[RUBY[特質] [パラメーター]]についての追加情報をこの仕様書が定義していない他の実体頭欄で提供しても'''構いません'''。
+
+>Many older HTTP/1.0 applications do not understand the Transfer-Encoding header.
+
+[6] 多くの古めの HTTP/1.0 応用は Transfer-Encoding 頭を解しません。
+
+*RFC 2616 の 3.6 Transfer Codings
+>Transfer-coding values are used to indicate an encoding transformation that 
+has been, can be, or may need to be applied to an entity-body in order to 
+ensure "safe transport" through the network.  This differs from a content 
+coding in that the transfer-coding is a property of the message, not of the 
+original entity.
+
+[7] transfer-coding (転送符号化) 値は、ネットワーク中での「安全な転送」を確保するため実体本体に適用されている,
+されることが出来る, 又はする必要があるかもしれない符号化変形を示すのに使います。
+この転送符号化はメッセージの属性であって元の実体の属性では無いという点で内容符号化とは異なります。
+
+-[8] transfer-coding         = "chunked" | transfer-extension
+-[9] transfer-extension      = token *( ";" parameter )
+
+>Parameters are in  the form of attribute/value pairs.
+
+[10] パラメーターは属性/値組の形で表します。
+
+-[11] parameter               = attribute "=" value
+-[12] attribute               = token
+-[13] value                   = token | quoted-string
+
+>All transfer-coding values are case-insensitive. HTTP/1.1 uses
+transfer-coding values in the TE header field (section 14.39) and in
+the Transfer-Encoding header field (section 14.41).
+
+[14] 全ての transfer-coding 値は大文字・小文字を区別しません。 HTTP/1.1
+は transfer-coding 値を TE 頭欄及び Transfer-Encoding 頭欄で使います。
+
+>Whenever a transfer-coding is applied to a message-body, the set of
+transfer-codings MUST include "chunked", unless the message is
+terminated by closing the connection. When the "chunked" 
+transfer-coding is used, it MUST be the last transfer-coding applied to the
+message-body. The "chunked" transfer-coding MUST NOT be applied more
+than once to a message-body. These rules allow the recipient to
+determine the transfer-length of the message (section 4.4).
+
+[15] transfer-coding が message-body に適用される場合は必ず、 transfer-coding
+の集合には [CODE(ABNF)["chunked"]] が含まれてい'''なければなりません'''。
+但しメッセージが接続を閉じることにより終端される場合を除きます。 [CODE(ABNF)["chunked"]]
+transfer-coding が使われる場合、これは最後の message-body に適用される
+transfer-coding で'''なければなりません'''。 [CODE(ABNF)["chunked"]]
+transfer-coding は1つの message-body に複数回適用しては'''なりません'''。
+これらの規則により受信者がメッセージの transfer-length
+を決定出来ます。
+
+>Transfer-codings are analogous to the Content-Transfer-Encoding
+values of MIME [7], which were designed to enable safe transport of
+binary data over a 7-bit transport service. However, safe transport
+has a different focus for an 8bit-clean transfer protocol. In HTTP,
+the only unsafe characteristic of message-bodies is the difficulty in
+determining the exact body length (section 7.2.2), or the desire to
+encrypt data over a shared transport.
+
+[16] transfer-coding は [[MIME]] で7ビット転送サービス上のバイナリ・データの安全転送を可能にするために設計された
+Content-Transfer-Encoding 値に似ています。
+しかし、安全な転送は8ビット・クリーンな転送プロトコルでは違った焦点があります。
+[[HTTP]] では、 message-body の唯一の安全でない性質は本体の正確な長さの決定の困難性や共有転送路上のデータの暗号化の望みです。
+
+>The Internet Assigned Numbers Authority (IANA) acts as a registry for
+transfer-coding value tokens. Initially, the registry contains the
+following tokens: "chunked" (section 3.6.1), "identity" (section
+3.6.2), "gzip" (section 3.5), "compress" (section 3.5), and "deflate"
+(section 3.5).
+
+[17] Internet 割当番号事務局 ([[IANA]]) は transfer-coding 値字句の登録簿として機能します。
+初めにこの登録簿は次の字句を含みます。 "chunked", "identity", "gzip",
+"compress", "deflate"
+
+>New transfer-coding value tokens SHOULD be registered in the same way
+as new content-coding value tokens (section 3.5).
+
+[18] 新しい transfer-coding 値字句は新しい content-coding 値字句と同じ方法で登録する'''のが良いです'''。
+
+>A server which receives an entity-body with a transfer-coding it does
+not understand SHOULD return 501 (Unimplemented), and close the
+connection. A server MUST NOT send transfer-codings to an HTTP/1.0 client.
+
+[19] 理解出来ない transfer-coding が施された entity-body を受け取ったサーバーは
+[[501]] (未実装) を返して接続を閉じる'''のが良いです'''。
+サーバーは [[HTTP/1.0]] クライアントに transfer-coding
+を送っては'''なりません'''。
+
+*RFC の部分の License
+
+See [[RFCのライセンス]]
+*メモ
+@
+
+
+1.1
+log
+@Updated.
+@
+text
+@@
+

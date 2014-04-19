@@ -1,0 +1,625 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1
+	before-db-leaffile:1.1
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2003.10.13.02.02.15;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9 page-icon="HTTP"
+'''Specification of HTTP/1.1 OPTIONS messages'''
+-HTTP Working Group                                
+-Internet-Draft                                   
+-Expires: 28 February 1998                  
+-     J. Mogul, DECWRL,
+-    J. Cohen, Netscape,
+- S. Lawrence, Agranat Systems
+-                                                          26 August 1997
+-  draft-ietf-http-options-02.txt
+
+*STATUS OF THIS MEMO
+> This document is an Internet-Draft. Internet-Drafts are
+working documents of the Internet Engineering Task Force
+(IETF), its areas, and its working groups. Note that other
+groups may also distribute working documents as Internet-Drafts.
+> Internet-Drafts are draft documents valid for a maximum of
+six months and may be updated, replaced, or obsoleted by
+other documents at any time. It is inappropriate to use
+Internet-Drafts as reference material or to cite them other than as "work in progress."
+> To learn the current status of any Internet-Draft, please
+check the "1id-abstracts.txt" listing contained in the
+Internet-Drafts Shadow Directories on ftp.is.co.za
+(Africa), nic.nordu.net (Europe), munnari.oz.au (Pacific
+Rim), ds.internic.net (US East Coast), or ftp.isi.edu (US West Coast).
+> Distribution of this document is unlimited.  Please send
+comments to the HTTP working group at
+<http-wg@@cuckoo.hpl.hp.com>.  Discussions of the working group are archived at
+<URL:http://www.ics.uci.edu/pub/ietf/http/>.  General
+discussions about HTTP and the applications which use HTTP
+should take place on the <www-talk@@w3.org> mailing list.
+
+*ABSTRACT
+> RFC2068 defined a new OPTIONS method for HTTP/1.1.  The
+purpose of OPTIONS is to allow a 'client to determine the
+options and/or requirements associated with a resource, or
+the capabilities of a server, without implying a resource
+action or initiating a resource retrieval.'  However,
+RFC2068 did not defined a specific syntax for using OPTIONS
+to make such a determination.  This proposal clarifies the
+original specification of OPTIONS, adds several new HTTP
+message headers to provide syntactic support for OPTIONS,
+and establishes new IANA registries to avoid namespace conflicts.
+
+[[RFC2068]] は HTTP/1.1 向けに新しい [CODE(HTTP)[[[OPTIONS]]]] method
+を定義しました。 [CODE(HTTP)[OPTIONS]] の目的は
+「資源の動作又は資源取り出しの開始なしに、クライアントが資源に関連付けられた選択肢[[及び/又は]]要件若しくはサーバーの能力を決定する」
+ことを可能にすることです。しかし、 RFC 2068 は [CODE(HTTP)[OPTIONS]]
+を使ってそのような決定を行う特定の構文を定義していませんでした。
+この提案は [CODE(HTTP)[OPTIONS]] の元の仕様を明確化し、 [CODE(HTTP)[OPTIONS]]
+を構文的に支援する新しい HTTP メッセージ頭を幾つか追加し、名前空間衝突を防ぐための新しい
+IANA 登録簿を確立します。
+
+* TABLE OF CONTENTS
+=1 Introduction                                                         2
+=2 Outline of proposed solution                                         2
+=3 Proposed solution                                                    3
+==3.1 Changes to section 5.1.2, Request-URI                         3
+==3.2 Changes to section 9.2, OPTIONS                               4
+==3.3 Changes to section 14.31, Max-Forwards                        6
+==3.4 The Compliance header                                         6
+==3.5 The Non-Compliance header                                     9
+==3.6 Changes to sections 14.7 and 14.35, Allow and Public         10
+===3.6.1 Alternative A: proxies MUST NOT modify Allow/Public   11
+===3.6.2 Alternative B: proxies MUST modify Allow/Public       12
+==3.7 Examples                                                     12
+=4 Security Considerations                                             13
+=5 Acknowledgements                                                    13
+=6 References                                                          13
+=7 Authors' addresses                                                  14
+
+*1 Introduction
+> Section 9.2 of RFC2068 [2] defines an OPTIONS method, to allow a
+"client to determine the options and/or requirements associated with
+a resource, or the capabilities of a server, without implying a
+resource action or initiating a resource retrieval."  For example, a
+client may wish to determine if a particular HTTP method is supported
+by a server, or for a specific resource.  Or, a client may wish to
+determine if a server supports the use of a particular HTTP request-header.
+
+RFC 2068 の9.2節は [CODE(HTTP)[OPTIONS]] method
+を定義し、「資源の動作又は資源取り出しの開始なしに、クライアントが資源に関連付けられた選択肢及び/又は要件若しくはサーバーの能力を決定する」
+ことを可能としています。例えば、クライアントは、ある HTTP method をサーバーが、
+あるいはある資源について、対応しているか否かを決定したいと思うかもしれません。
+あるいは、クライアントはサーバーが特定の HTTP 要求頭の使用に対応しているかを決定したいと思うかもしれません。
+
+> The description of OPTIONS in RFC2068 has left some implementors
+confused about what is required, and does not provide a specific
+syntax for determining support for specific options or extensions.
+While some of this might be obviated in the future by the Protocol
+Extension Protocol (PEP) [1], there exists an immediate need to
+define a simple and well-specified OPTIONS mechanism for HTTP/1.1.
+
+RFC 2068 の [CODE(HTTP)[OPTIONS]] の説明は何が必要なのかについて実装者に混乱を残しており、
+特定の選択肢や拡張の対応を決定する特定の構文を提供していません。
+このうちの幾つかは将来プロトコル拡張プロトコル ([[PEP]])
+によって不要になるかもしれませんが、
+単純でよく規定された HTTP/1.1 用の [CODE(HTTP)[OPTIONS]] 機構がすぐに必要とされています。
+
+*2 Outline of proposed solution [INS[提案する解決策の概観]]
+>
+- The intended recipient of an OPTIONS request may be any
+server (including proxies) along the request path.  RFC2068
+supported this by requiring a transformation of the
+request-URI for a set of methods (actually, only for
+OPTIONS); in the current proposal, one can either use the
+Host header to address a specific server or proxy, or the
+Max-Forwards header to address the Nth server on a path.
+- As in RFC2068, the URI '*' refers to the server,
+independent of any specific resource.  Any other URI refers
+to the resource normally identified by that URI.
+
+- [CODE(HTTP)[OPTIONS]] 要求の意図する受信者は要求経路中の (串を含む)
+任意のサーバーです。 RFC 2068 は、 method の集合 (実際には、
+[CODE(HTTP)[OPTIONS]] のみ) に対して request-URI
+の変形を要求していることでこれに対応していました。
+この提案では、特定のサーバー又は串を [CODE(HTTP)[[[Host]]]]
+頭を使って指定するか、若しくは経路中の何番目のサーバーかを
+[CODE(HTTP)[[[Max-Forwards]]]] 頭で指定するかの方法をとれます。
+- RFC 2068 にあるように、 URI [CODE(URI)[*]] は、
+特定の資源から独立して、サーバー自体を指します。他の URI
+は通常その URI により識別される資源を指します。
+
+>
+- The descriptions of the Allow and Public headers, and of
+the OPTIONS method, are made consistent in their
+requirements for proxy editing of OPTIONS responses.  (In
+RFC2068, these sections were contradictory).
+- A (new) Compliance header is proposed, which allows a
+client to specify exactly what options it is asking about,
+and which allows a server to specify exactly what subset of
+those options are supported.
+
+- [CODE(HTTP)[[[Allow]]]] 頭及び [CODE(HTTP)[[[Public]]]]
+頭の説明並びに [CODE(HTTP)[OPTIONS]] method の説明は、
+[CODE(HTTP)[OPTIONS]] 応答の串による編集の要件で一貫したものとします。
+(RFC 2068 では、この節は矛盾していました)。
+- (新しい) [CODE(HTTP)[[[Compliance]]]] 頭を提案します。
+クライアントがどの選択肢について訊ねているのかを指定可能とすると共に、
+サーバーがその選択肢群のどの部分集合に対応しているかを指定可能とします。
+
+> Discussion question: it might make more sense to use two
+different header names, one for requests and one for
+responses, to clarify that in a request, the client
+is asking the server about its supported options, and
+in a response, the server is stating its supported options.
+
+要求用と応答用で別の頭名を使って、
+要求ではクライアントがサーバーに対応している選択肢を訊ねていることを、
+応答ではサーバーが対応している選択肢を言明していることを明確化した方がいいかも。
+
+>
+- The Compliance header allows several namespaces for
+options; the set of namespaces is under IANA control.  One
+namespace is that of IETF-issued RFCs; this allows a more
+specific definition of compliance than is available using
+protocol version numbers.  While various interpretations
+can and do exist about the specific meaning of a protocol
+version number (such as "HTTP/1.1"), the meaning of an RFC
+is both well-defined and (more important) immutable.
+
+- [CODE(HTTP)[Compliance]] 頭では選択肢の名前空間を使えます。
+名前空間の集合は IANA が統制します。名前空間の1つは IETF が発行する RFC
+のものです。これによってプロトコルの版番号によって利用可能なもの以上に特定の追従性の定義ができます。
+([CODE(HTTP)[HTTP/1.1]] のような) プロトコル版番号の意味については種々の解釈が存在し得て、実際存在していますが、
+RFC の意味はよく定義されており、 (より重要なこととして)
+不変であります。
+
+>
+- A (new) Non-Compliance header is proposed, allowing a proxy
+processing an OPTIONS response to indicate its
+non-compliance with one or more options, and without
+requiring the proxy to edit the rest of the response (which
+would result in loss of information).
+
+- (新しい) [CODE(HTTP)[[[Non-Conpliance]]]] 頭を提案します。
+[CODE(HTTP)[OPTIONS]] 応答を処理する串が一つ以上の選択肢に追従していないことを示すことができまして、その際串が応答の残りの部分を編集する (ことによって情報の損失を起こす) 必要がありません。
+
+*3 Proposed solution
+> Here we propose specific changes to RFC2068.
+
+**3.1 Changes to section 5.1.2, Request-URI
+> Remove this:
+>> If a proxy receives a request without any path in the Request-URI
+and the method specified is capable of supporting the asterisk form
+of request, then the last proxy on the request chain MUST forward
+the request with "*" as the final Request-URI. For example, the request
+- OPTIONS http://www.ics.uci.edu:8001 HTTP/1.1
+
+>>would be forwarded by the proxy as
+[PRE[
+OPTIONS * HTTP/1.1
+Host: www.ics.uci.edu:8001
+]PRE]
+after connecting to port 8001 of host "www.ics.uci.edu".
+
+**3.2 Changes to section 9.2, OPTIONS
+> Replace:
+>>Unless the server's response is an error, the response MUST NOT
+include entity information other than what can be considered as
+communication options (e.g., Allow is appropriate, but Content-Type
+is not). Responses to this method are not cachable.
+
+>with:
+>>An OPTIONS request MAY include Compliance headers (see section
+14.ZZZ) that indicate the set of options the sender wants
+information about.
+>>Responses to OPTIONS are not cachable, unless caching is explicitly
+allowed by the server that first sent the OPTIONS reply (see section 13.4).
+
+[CODE(HTTP)[OPTIONS]] 要求は、
+送信者が情報を求める選択肢の集合を示す [CODE(HTTP)[Compliance]] 頭を含んでも'''構いません'''。
+
+[CODE(HTTP)[OPTIONS]] に対する応答は、最初に [CODE(HTTP)[OPTIONS]]
+返信を送ったサーバーがキャッシュすることを陽に認めていない限りキャッシュ可能ではありません。
+
+>Replace:
+>>If the Request-URI is an asterisk ("*"), the OPTIONS request is
+intended to apply to the server as a whole. A 200 response SHOULD
+include any header fields which indicate optional features
+implemented by the server (e.g., Public), including any extensions
+not defined by this specification, in addition to any applicable
+general or response-header fields. As described in section 5.1.2, an
+"OPTIONS *" request can be applied through a proxy by specifying the
+destination server in the Request-URI without any path information.
+>with:
+>>If the Request-URI is an asterisk ("*"), the OPTIONS request is
+intended to apply to the server as a whole.  A 200 response SHOULD
+include a Public header field (see section 14.35).  If the request
+includes a Compliance header field, a 200 response SHOULD include a
+Compliance header field, indicating the subset of the requested
+Compliance options supported by the server as a whole.  The response
+SHOULD include any other applicable general or response-header fields.
+
+[CODE(ABNF)[[[Request-URI]]]] が星印 ([CODE[*]]) であれば、
+[CODE(HTTP)[OPTIONS]] 要求はサーバー全体に適用されることを意図しています。
+[CODE(HTTP)[[[200]]]] 応答は [CODE(HTTP)[Public]] 頭欄を含む'''べきです'''。
+要求が [CODE(HTTP)[Compliance]] 頭欄を含んでいるなら、 [CODE(HTTP)[200]]
+応答は [CODE(HTTP)[Compliance]] 頭欄を含めて、
+要求された [CODE(HTTP)[Compliance]] 選択肢のサーバー全体として対応している部分集合を示す'''べきです'''。
+応答は他の適用可能な一般頭欄又は応答頭ランを含める'''べきです'''。
+
+>>If an OPTIONS request includes a Host header (see section 14.23),
+this is the intended destination of the OPTIONS method.
+Proxy servers MUST forward such a message until it reaches
+the specified host.  If the specified host has more than
+one `virtual server', the OPTIONS request applies to the
+specified virtual server.
+
+[CODE(HTTP)[OPTIONS]] 要求が [CODE(HTTP)[Host]] 頭を含んでいれば、
+これは [CODE(HTTP)[OPTIONS]] method の宛先を示しています。
+串サーバーはその特定のホストに到達するまでメッセージを転送しなければ'''なりません'''。
+特定のホストが複数の「仮想サーバー」であれば、
+[CODE(HTTP)[OPTIONS]] 要求は特定の仮想サーバーにのみ適用されます。
+
+>>Note: An OPTIONS request may also include a Max-Forwards header,
+as described in section 14.31.  This allows the sender to select
+the Nth proxy on a path, without knowing its hostname.
+
+注意 : [CODE(HTTP)[OPTIONS]] 要求は [CODE(HTTP)[Max-Forwards]]
+頭も含むかもしれません。これによって送信者はホスト名を知らずとも経路上の
+[VAR[N]] 番目の串を選択することができます。
+
+>Replace:
+>>If the Request-URI is not an asterisk, the OPTIONS request applies
+only to the options that are available when communicating with that
+resource.  A 200 response SHOULD include any header fields which
+indicate optional features implemented by the server and applicable
+to that resource (e.g., Allow), including any extensions not defined
+by this specification, in addition to any applicable general or
+response-header fields. If the OPTIONS request passes through a
+proxy, the proxy MUST edit the response to exclude those options
+which apply to a proxy's capabilities and which are known to be
+unavailable through that proxy.
+> with:
+>> If the Request-URI is not an asterisk, the OPTIONS request applies
+only to the options that are available when communicating with that
+resource.  A 200 response SHOULD include an Allow header field (see
+section 14.7).  If the request includes a Compliance header field, a
+200 response SHOULD include a Compliance header field, indicating
+the subset of the requested Compliance options supported by the
+server as a whole.  If the subset is empty, the response SHOULD
+include a Compliance header with an empty field-value.  The response
+SHOULD include any other applicable general or response-header fields.
+>> Note: if an OPTION request contains a Compliance header, and the
+response does not, the response may have been generated by
+RFC2068-compliant implementation, which would not support
+Compliance.  In this case, it is not possible to infer that the
+sender fails to support all of the options listed in the
+Compliance header of the request.
+>>If the OPTIONS request passes through a
+proxy, the proxy SHOULD add a Non-Compliance header field (see
+section 14.QQQ) to the response, to list those options that apply to
+a proxy's capabilities and that are known to be unavailable through
+that proxy.
+
+**3.3 Changes to section 14.31, Max-Forwards
+>Replace:
+>>Each proxy or gateway recipient of a TRACE request containing a Max-
+Forwards header field SHOULD check and update its value prior to
+forwarding the request.
+>with:
+>>Each proxy or gateway recipient of a TRACE or OPTIONS request
+containing a Max-Forwards header field SHOULD check and update its
+value prior to forwarding the request.
+
+**3.4 The Compliance header
+>Insert in section 14, as a new subsection titled ``14.ZZZ Compliance''
+>>The Compliance general header field lists a set of options
+that may or may not be supported by a server.  In a request
+message, this header lists the set of options that a client
+wishes to know about.  In a response message, this header
+lists the subset of the requested options that the server
+complies with.
+>>A compliance header MAY appear on any message, but is
+normally used with the OPTIONS request (see section 9.2).
+>>
+- Compliance = "Compliance" ":" ("*" | #(compliance-option))
+- compliance-option = compliance-namespace "=" option-item [ option-params ]
+- compliance-namespace = token
+- option-item = token | quoted-string | rfc-option-item | hdr-option-item
+- option-params = 1*( ";" option-param)
+- option-param = "cond" | "uncond" | token | quoted-string
+
+>> A Compliance header field with the field-value of "*" MAY
+be used in a request, to ask about all options complied
+with by the recipient.  This field-value MUST NOT be used in a response.
+>> When the Compliance header is present in a response, it takes
+priority over an Allow header or a Public header in the same response.
+>> Tokens used for compliance-namespace, option-item, and
+option-param values are case-insensitive.
+>> The compliance-namespace is used to select from one of several
+namespaces for compliance options.  The option-item is used
+to specify one or more options within a namespace.
+>> The Internet Assigned Numbers Authority (IANA) acts as a registry
+for compliance-namespace tokens. Initially, the registry contains
+the following tokens:
+
+        "RFC"   Compliance is with an RFC, specified by an RFC number.
+                For example, "rfc=1945".
+
+                    rfc-option-item = "RFC" "=" RFC-number
+                    RFC-number = 1*DIGIT
+
+                Leading zeroes are permitted and ignored in
+                RFC-number (i.e., comparisons are numeric).
+
+        "HDR"   Compliance is with a named HTTP header.  For example,
+                "HDR=Authorization".  There is no IANA registry for
+                HTTP header names, but to avoid potential namespace
+                confusion, only those HTTP headers listed in an
+                IETF standards-track document should be used in
+                this namespace.
+
+                    hdr-option-item = "HDR" "=" field-name
+
+>> An implementation SHOULD NOT send option-param values other
+than "cond" or "uncond" with an rfc-option-item or a hdr-option-item.
+>> The option-param is used to provide additional parameters.
+Unconditional compliance with a compliance-option is indicated
+using the "uncond" option-param; for example, "rfc=1945;uncond".
+Conditional compliance is indicated using the "cond" option-param;
+for example, "HDR=Authorization;uncond".  Additional option-param
+values might be defined as part of another specification.
+>>For the purposes of this header field, an implementation that
+satisfies all the MUST and all the SHOULD requirements for its
+protocols is defined as "unconditionally compliant"; one that
+satisfies all the MUST requirements but not all the SHOULD
+requirements for its protocols is defined as "conditionally
+compliant."  See also RFC2119 for a discussion of the terms MUST and SHOULD.
+>> Examples:
+- Compliance: rfc=2068;uncond
+- Compliance: rfc=1945;uncond, rfc=2068;cond
+- Compliance: rfc=2068, hdr=SetCookie2
+
+>>Note: when a resource is implemented using a subprogram
+outside the control of the server itself (such as a CGI
+application), and the server cannot ensure that this
+implementation of the resource will comply with a requested
+option, the server's Compliance response-header for the
+resource ought not to assert compliance with the option.
+That is, in case of uncertainty, it is better to imply
+non-compliance when the implementation might comply, than
+to claim compliance when the implementation might not comply.
+
+**3.5 The Non-Compliance header
+>Insert in section 14, as a new subsection titled ``14.QQQ Non-Compliance''
+>>A proxy server SHOULD add this response-header to a response
+containing a Compliance header if the proxy does not implement one
+or more of the options described in the Compliance header.
+>>
+- Non-Compliance =  "Non-Compliance" ":" 1#non-compliance-option
+- proxy-host = host [ ":" port ]
+- non-compliance-option = compliance-option "@@" proxy-host
+
+>> A non-compliance-option listed in a Non-Compliance response-header
+field indicates that the proxy server named by the proxy-host value
+does not support the listed compliance-option.  The set of
+non-compliance options SHOULD be a subset of the compliance-options
+listed in a Compliance header field of the forwarded message.
+
+>> Note: because the proxy-host value is not authenticated,
+this is only for advisory purposes (e.g., for debugging).
+>>If the compliance-option in a non-compliance-option includes one or
+more option-param(s) (see section 14.ZZZ), then the proxy server's
+non-compliance is limited to the scope of the option-param(s).  If
+the compliance-option does not include an option-param, then the
+proxy server is asserting non-compliance with the option in general.
+
+>> For example, a response with:
+- Compliance: rfc=9999;uncond
+- Non-Compliance: rfc=9999;uncond@@proxy.foo.net
+
+>> states that proxy.foo.net is not unconditionally compliant with
+RFC9999, but does not imply that proxy.foo.net is not
+conditionally compliant with RFC9999.  If the proxy is not even
+conditionally compliant with RFC9999, it should instead send
+- Compliance: rfc=9999;uncond
+- Non-Compliance: rfc=9999@@proxy.foo.net
+
+>>when forwarding the response.
+>>A proxy MUST NOT delete a Non-Compliance header that it has
+received from another server.
+
+**3.6 Changes to sections 14.7 and 14.35, Allow and Public
+>The problem we address here is that RFC2068's specifications for the
+Allow and Public headers are inconsistent as to whether a proxy
+"MUST" or "MUST NOT" edit them.  We believe that they should be
+consistent.  Given that, there are arguments for either alternative:
+>
+- Requiring proxies to edit these headers provides the
+ultimate client with a simple way to determine if a method
+is allowed along the entire path to the origin server.
+- However, requiring proxies not to edit these headers allows
+a client to find out about the capabilities of the origin
+server, since (as RFC2068 says about the Allow header) "the
+user agent may have other means of communicating with the origin server."
+
+> The second alternative seems more robust.  Although we do not
+currently have an efficient mechanism for finding out if a method is
+supported along the entire path, presumbly any request using an
+unsupported method would immediately be rejected.  However, we list
+both alternatives in the hope that further discussion will lead to a
+more satisfying solution.
+
+> Note: one possibility, not yet explored in detail, is that the
+compliance-namespace could be extended to include a "METH"
+token, allowing the Compliance header (and hence the
+Non-Compliance header) to completely replace the Allow and
+Public headers.  E.g., the client could send
+- Compliance: METH=*
+
+>to which the origin server might respond
+- Compliance: METH=GET,METH=PUT,METH=HEAD
+
+>If this passes through a proxy that bans (e.g.) PUT, the proxy
+could forward the response as
+[PRE[
+Compliance: METH=GET,METH=PUT,METH=HEAD
+Non-Compliance: METH=PUT@@roproxy.net
+]PRE]
+
+***3.6.1 Alternative A: proxies MUST NOT modify Allow/Public
+> In section 14.35 (Public), replace
+>> This header field applies only to the server directly connected to
+the client (i.e., the nearest neighbor in a chain of connections).
+If the response passes through a proxy, the proxy MUST either remove
+the Public header field or replace it with one applicable to its own capabilities.
+> with:
+>> A proxy MUST NOT modify the Public header field even if it does not
+understand all the methods specified, since the user agent might
+have other means of communicating with the origin server.
+
+> Also, in section 14.7 (Allow), replace
+>> A proxy MUST NOT modify the Allow header field even if it does not
+understand all the methods specified, since the user agent MAY have
+other means of communicating with the origin server.
+>with:
+>> A proxy MUST NOT modify the Allow header field even if it does not
+understand all the methods specified, since the user agent might
+have other means of communicating with the origin server.
+>(removes an incorrect use of the term "MAY").
+
+***3.6.2 Alternative B: proxies MUST modify Allow/Public
+> In section 14.7 (Allow), replace
+>> A proxy MUST NOT modify the Allow header field even if it does not
+understand all the methods specified, since the user agent MAY have
+other means of communicating with the origin server.
+> with:
+>>A proxy MUST remove methods from an Allow header field if it
+does not support the use of those methods for the resource
+identified by the Request-URI.
+
+> and in section 14.35 (Public), replace this paragraph:
+>> This header field applies only to the server directly connected to
+the client (i.e., the nearest neighbor in a chain of connections).
+If the response passes through a proxy, the proxy MUST either remove
+the Public header field or replace it with one applicable to its own capabilities.
+> with:
+>> A proxy MUST remove methods from a Public header field if it
+does not support the use of those methods.
+
+**3.7 Examples
+> To list all extensions supported by proxy "proxy4.example.com"
+
+> Client sends:
+[PRE[
+OPTIONS * HTTP/1.1
+Host: proxy4.example.com
+Compliance: *
+]PRE]
+> proxy4.example.com responds:
+[PRE[
+HTTP/1.1 200 OK
+Date: Tue, 22 Jul 1997 20:21:51 GMT
+Server: SuperProxy/1.0
+Public: OPTIONS, GET, HEAD, PUT, POST, TRACE
+Compliance: rfc=1543, rfc=2068, hdr=set-proxy
+Compliance: hdr=wonder-bar-http-widget-set
+Content-Length: 0
+
+]PRE]
+
+> Probing for a feature which is not supported by "proxy4.example.com"
+> Client sends:
+[PRE[
+OPTIONS * HTTP/1.1
+Host: proxy4.example.com
+Compliance: HDR=TimeTravel
+]PRE]
+> proxy4.example.com responds:
+[PRE[
+HTTP/1.1 200 OK
+Date: Tue, 22 Jul 1997 20:21:52 GMT
+Server: SuperProxy/1.0
+Public: OPTIONS, GET, HEAD, PUT, POST, TRACE
+Compliance:
+Content-Length: 0
+
+]PRE]
+
+*4 Security Considerations
+> Because the proxy-host value in a Non-Compliance header is not
+authenticated, in theory, a malicious proxy along the path could
+insert a Non-Compliance header with the name of some other proxy,
+perhaps one not even involved in the response.  However, because the
+proxy-host value is used only for advisory purposes (e.g., for
+debugging), there does not appear to be a serious security problem
+with this lack of authentication.
+> Besides, any proxy along the request/response path for an HTTP
+interaction is able to perform far more disruptive (and far less
+easily detected) modifications of the messages it forwards; this
+proposal does not change that.
+
+*5 Acknowledgements
+> We would like to thank Roy Fielding, Jim Gettys, Paul Leach, Larry
+Masinter, Henrik Frystyk Nielsen, Ross Patterson, and Jim Whitehead
+for help in constructing this proposal.
+
+*6 References
+- 1.  D. Connolly, R. Khare, H. Frystyk Nielsen.  PEP - an Extension
+Mechanism for HTTP.  Internet Draft draft-ietf-http-pep-04, HTTP
+Working Group, July, 1997. This is a work in progress.
+- 2.  Roy T. Fielding, Jim Gettys, Jeffrey C. Mogul, Henrik Frystyk
+Nielsen, and Tim Berners-Lee.  Hypertext Transfer Protocol --
+HTTP/1.1.  RFC 2068, HTTP Working Group, January, 1997.
+
+*7 Authors' addresses
+[PRE[
+   Jeffrey C. Mogul
+   Western Research Laboratory
+   Digital Equipment Corporation
+   250 University Avenue
+   Palo Alto, California, 94305, USA
+   Email: mogul@@wrl.dec.com
+]PRE]
+[PRE[
+   Josh Cohen
+   Netscape Communications Corporation
+   501 E. Middlefield Rd
+   Mountain View, CA 94043
+   Phone (415) 937-4157
+   EMail: josh@@netscape.com
+]PRE]
+[PRE[
+   Scott Lawrence
+   Agranat Systems, Inc.
+   1345 Main St.
+   Waltham, MA 02154
+   Phone:  +1-617-893-7868
+   Fax:    +1-617-893-5740
+   Email:  lawrence@@agranat.com
+]PRE]
+
+*License
+[[RFCのライセンス]]
+* メモ@

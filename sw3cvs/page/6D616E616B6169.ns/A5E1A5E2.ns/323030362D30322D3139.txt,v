@@ -1,0 +1,99 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.1
+date	2006.02.23.02.22.52;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@
+[1]
+[CODE@@en[dis:ResourceDef]]が現在記述できるものは3種類:
+= 単純な[[資源]]
+= 複数の[[資源]]の同時定義
+= 別名
+
+([[名無しさん]])
+
+[2]
+複数の同時定義は[CODE@@en[rdf:type]]を[CODE@@en[dis:MultipleResource]]にする。
+定義を読む時以外は単純な資源と変わらない。
+([[名無しさん]])
+
+[3]
+別名は、他の資源に別の名前 ([[URI]]) を与える
+([CODE@@en[dis:AliasFor]]特性)。
+他の資源は同じ[[モジュール]]とは限らないし、
+別名の定義を読む時点で既に読まれているとも限らないが、
+データベースを閉じる時点で定義がなされていることを (今の実装では)
+確認している。名前を与えるだけで、それ以外の情報を追加することはできない。
+[CODE@@en[dis:WithFor]]や[CODE@@en[dis:For]]や[CODE@@en[dis:ForCheck]]の情報は残らないし、
+どの[[モジュール]]で定義されたかも記録されない。
+
+;; ただし各[[モジュール]]で定義されている[[資源]]の一覧には、
+その[[モジュール]]で定義された別名も含めている。
+
+([[名無しさん]])
+
+[4]
+'''継承関係''':
+[[資源]]同士には[[継承]]関係がある。[[dis]]としてnativeに扱っているのは[CODE@@en[dis:subsetOf]]で、[[主語]]が[[目的語]]の[[部分集合]]であることを表している。
+
+;; 逆方向の関係[CODE@@en[dis:supersetOf]]も定義してあるが、
+使っていない。いくつかの場面で扱いが面倒になりそうなので、
+多分今後も使わない。ただし次の内部処理用としては使っている。
+
+この関係はよくつかうので、今の実装では特別扱いしている。
+[CODE@@en[dis:subsetOf]]は[CODE(perl)@@en[$subject->{subOf}->{$object_uri} = 1]]で表す。
+逆の関係[CODE@@en[dis:supersetOf]]も同様に[CODE(perl)@@en[{supOf}]]で表す。
+
+([[名無しさん]])
+
+[5]
+継承関係はデータベース中に存在する関係全てを[CODE(perl)@@en[{subOf}]],
+[CODE(perl)@@en[{supOf}]]で記述された状態に常にしておく。
+従って[CODE(DOMm)@@en[[[isSubsetOfURI]]]]は[CODE(perl)@@en[{subOf}]]をみるだけですぐに答えを返す。
+
+新たな[[別名]]が定義された時は定義された[[資源]]の[CODE(perl)@@en[{subOf}]]と[CODE(perl)@@en[{supOf}]]をたどってすべてに追加するし、新しい[[資源]]を読んだ際に[CODE@@en[dis:subsetOf]]が見つかれば同様にすべて追加する。
+
+([[名無しさん]])
+
+[6]
+'''型''':
+すべての[[資源]]は[[型]]を持つ。[[型]]の[[特性名]]は[CODE@@en[rdf:type]]である。これは歴史的経緯によるもので、
+[[dis]]における[[資源]]の[[型]]と[[RDF]]における[CODE@@en[rdf:type]]の[[解釈]]は必ずしも一致しない。
+([[名無しさん]])
+
+[7]
+[[資源]][VAR@@en[R]]が[[型]][VAR@@en[T]]であるなら、
+[VAR@@en[T]]の[CODE(perl)@@en[{subOf}]]に属する[[資源]]すべてが[VAR@@en[R]]の[[型]]である。
+
+例えば[CODE@@en[DISLang:Class]]は[CODE@@en[dis:subsetOf]] 
+[CODE@@en[DISLang:AnyClass]]だから、
+[VAR@@en[R]]が[CODE@@en[DISLang:Class]]だとすると、
+[VAR@@en[R]]は[CODE@@en[DISLang:AnyClass]]でもある。
+
+([[名無しさん]])
+
+
+[8]
+型もよく利用される情報だが、継承と違って現在のところ特別扱いはされていないらしい。型自身の継承関係 >>7 を[CODE(DOMm)@@en[[[isTypeOfURI]]]]は毎回たどっているが、無駄だなあ。
+([[名無しさん]])
+
+@

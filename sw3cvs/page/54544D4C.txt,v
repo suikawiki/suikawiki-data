@@ -1,0 +1,301 @@
+head	1.2;
+access;
+symbols
+	suikawiki3-final:1.2
+	before-db-leaffile:1.1
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+
+
+1.2
+date	2005.05.18.02.06.43;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.07.26.07.42.55;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@
+
+[1]
+[ABBR[TTML] [時間割マーク付け言語]] 再び[AA[(w]]
+
+
+* 導入
+
+[2] [[HTML]] で時間割'''表'''となれば [CODE(HTMLe)[[[table]]]] 要素。
+しかし実際マーク付けしてみると不満が残る。
+
+[PRE(example code)[
+	  月 火  ||  <tr><th></th> <th>月</th><th>火</th></tr>
+	1 数 理  ||  <tr><th>1</th><td>数</td><td>理</td></tr>
+	2 体 英  ||  <tr><th>2</th><td>体</td><td>英</td></tr>
+]PRE]
+
+[3] ブラウザでの見た目なら、既定スタイルが [CODE(HTMLe)[[[table]]]] 
+系要素の [WEAK[([[CSS]] でいう)]] [CODE(CSS)[[[display]]]] 
+属性値を変なのになっていない限り、意図したとおりになるはずだ。
+しかし、
+- この表では本来横のつながりより縦のつながりの方が重要なはずだ。
+-- 1限目の各曜日の科目、という見方は表の性質に照らして一般的でない。
+-- row と column を表示上入れ替えるような CSS の指定は現時点で無い。
+XSLT でも使って頑張るしかない。
+- 同じ内容のこまが複数箇所に入りやすいが、面倒でマークが複雑化。
+-- 科目名だけなら大して問題ではないが、科目名/略称, 担当者, 
+場所など追加情報を詰め込むと悲劇的。
+
+
+* TTML 試験版 0.3
+
+[4]
+- [CODE(XMLe)[tt]]	[[根要素]]
+-- [CODE(XMLe)[meta]]	時間割についての情報。もっといい名前は無いか?
+--- [CODE(XMLe)[title]]	表題。省略時は [CODE(XMLe)[class]] 要素から自動生成
+--- [CODE(XMLe)[class]]	時間割適用対象。要素型名要検討
+--- [CODE(XMLe)[dates]]	作成・施行・廃止などの日付
+--- [CODE(XMLe)[versions]]	前の版・次の版の情報
+-- [CODE(XMLe)[subjects]]	科目定義
+--- [CODE(XMLe)[subject]]	科目
+---- @@[CODE(XMLa)[[QN[h:class] [http://www.w3.org/1999/xhtml]]]]	
+級。文系・理系、A週・B週などの分類。 ([[XHTML]] 名前空間から)
+--- [CODE(XMLe)[subjectGroup]]	選択科目群
+-- [CODE(XMLe)[schedules]]	時間割。要素型名要検討
+--- @@[CODE(XMLa)[grouping]]	時間単位の割り方。 
+[CODE(XML)[days]] は曜日(週周期)。既定値 [CODE(XML)[other]] はその他
+(10日おきとか。記述方法未定義。)
+--- [CODE(XMLe)[schedule]]	時間単位。普通[Q[日]]が相当。
+---- [CODE(XMLe)[class]]	授業。要素型名要検討
+----- @@[CODE(XMLa)[ref]]	科目定義 [CODE(XMLe)[subject]] 要素の 
+[CODE(XMLa)[id]] 属性値。属性名要検討
+----- @@[CODE(XMLa)[span]]	ぶち抜きこま数。既定値
+[CODE(XML)[1]] = 1時限。
+---- [CODE(XMLe)[classGroup]]	選択授業群。 
+[CODE(XMLe)[subjectGroup]] があるから要らない?
+- @@[CODE(XMLa)[id]] (全要素)	唯一識別子
+- @@[CODE(XMLa)[href]] (幾つかの要素)	授業情報とかの [[URI]]
+- @@[CODE(XMLa)[www]] ([CODE(XPatH)[[CODE(XMLe)[meta]]/[CODE(XMLe)[class]]/[VAR[*]]/]])	
+[[WWW]] 情報源 [[URI]]。要検討。
+- @@[CODE(XMLa)[mailto]] (同上)	電子メイル宛先 [CODE(URI)[mailto:]] 
+[[URI]]。要検討。
+- 開始時刻などは別[[名前空間]]。
+
+[5]
+[PRE(XML example code)[
+<tt xmlns="[VAR[http://test.test/markup/ttml/experimental/0.3]]"
+    xmlns:h="http://www.w3.org/1999/xhtml">
+<meta>
+<title>Timetable of RO team</title>
+<class>
+  <school www="http://foo.test/high/" mailto="mailto:teachers@@high.foo.test">Foo High School</school>
+  <grade www="http://foo.test/high/1/]]">1</grade>
+  <className mailto="mailto:classA@@fresh.high.foo.test">A</className>
+  <subClass>I</subClass>
+  <subClass mailto="mailto:classA@@fresh.high.foo.test?subject=%28I%2ERO%29">RO</subClass>
+</class>
+<dates>
+	<created>2003-01-01T01:01:01+0900</created>
+</dates>
+<versions>
+	<prev href="[VAR[x-uri]]://foo/bar"/>
+	<prev href="[VAR[x-uri]]://foo/bar">
+	  <dates>
+	    <withdrawn>2003-01-01T01:01:00+0900</withdrawn>
+	  </dates>
+	</prev>
+</version>
+</meta>
+<subjects>
+<subject id="mathII">
+	<name>Math II</name>
+	<teacher>Mr. Math</teacher>
+	<at>Room 1</at>
+</subject>
+<subject id="mathI">
+	<name>Math I</name>
+	<abbr>I</abbr>
+	<teacher>Mr. Math</teacher>
+	<at>Room 11</at>
+</subject>
+<subjectGroup id="math">
+	<name>Maths</name>
+	<subject ref="mathI"/>
+	<subject ref="mathII"/>
+</subject>
+</subjects>
+<schedules grouping="days">
+<schedule>
+<name>Monday</name>
+<class ref="mathII"/>
+<class ref="mathII" span="2"/>
+<classGroup>
+  <class ref="mathI" h:class="typeA"/>
+  <class ref="mathII" h:class="typeB"/>
+</classGroup>
+<classGroup ref="math"/>
+</schedule>
+</schedules>
+</tt>
+]PRE]
+
+[6] 2005年5月16日: 現時点でこの [Q[TTML]] 
+を修正したり新しい版を作ったりする予定はありませんが、
+>>5 の仮の[[名前空間URI]] ではあれなので一応正式な[[名前空間URI]]
+を割当てておきます:
+
+- [[名前空間URI]] <http://suika.fam.cx/~wakaba/archive/2005/5/ttml03#>
+-- この[[名前空間]]で定義されている[[要素型]]: >>4
+-- この[[名前空間]]で定義されている[[大域属性]]: (なし)
+
+[[#comment]]
+
+
+* メモ
+
+[7]
+[CITE[Index of /~wakaba/archive/2002/ttml]] <http://suika.fam.cx/~wakaba/archive/2002/ttml/>
+
+>>4 より古い版 (>>8) の時間割表の例と、
+その語彙を流用したテスト情報 (語彙 >>9) の例がありました。
+
+- [8] 古い版の TTML の名前空間 URI
+<http://suika.fam.cx/~wakaba/-temp/2002-04-13-ttml>
+- [9] テスト情報の語彙の名前空間 URI
+<http://suika.fam.cx/~wakaba/-temp/markup/test-info>
+
+([[名無しさん]])
+
+[10]
+[CITE[Timetabling Markup Language - Dr. Ender &#214;ZCAN]] <http://cse.yeditepe.edu.tr/~eozcan/research/TTML/>
+
+(目的としては)  同じようなのがあった。
+([[名無しさん]])
+
+@
+
+
+1.1
+log
+@semi-auto committed
+@
+text
+@d1 151
+a151 3
+#?SuikaWiki/0.9
+[PRE[
+TTML 再び(w
+d153 3
+a155 98
+導入
+	HTML で時間割*表*となれば table 要素。
+	しかし実際マーク付けしてみると不満が残る。
+	  月 火  <tr><th></th> <th>月</th><th>火</th></tr>
+	1 数 理  <tr><th>1</th><td>数</td><td>理</td></tr>
+	2 体 英  <tr><th>2</th><td>体</td><td>英</td></tr>
+	ブラウザでの見た目なら、既定スタイルが table 系要素の (CSS でいう)
+	display 属性値を変なのになっていない限り、意図したとおりになるはずだ。
+	しかし、
+	・この表では本来横のつながりより縦のつながりの方が重要なはずだ。
+	  ・1限目の各曜日の科目、という見方は表の性質に照らして一般的でない。
+	  ・row と column を表示上入れ替えるような CSS の指定は現時点で無い。
+	    XSLT でも使って頑張るしかない。
+	・同じ内容のこまが複数箇所に入りやすいが、面倒でマークが複雑化。
+	  ・科目名だけなら大して問題ではないが、科目名/略称, 担当者, 場所など
+	    追加情報を詰め込むと悲劇的。
+
+TTML 試験版 0.3
+	tt	根要素
+	+meta	時間割についての情報。もっといい名前は無いか?
+	|+title	表題。省略時は class 要素から自動生成
+	|+class	時間割適用対象。要素型名要検討
+	|+dates	作成・施行・廃止などの日付
+	|+versions	前の版・次の版の情報
+	+subjects	科目定義
+	|+subject	科目
+	||+h:class	級。文系・理系、A週・B週などの分類。 (XHTML 名前空間から)
+	|+subjectGroup	選択科目群
+	+schedules	時間割。要素型名要検討
+	 +@@grouping	時間単位の割り方。 days は曜日(週周期)。既定値 other はその他
+	 |              (10日おきとか。記述方法未定義。)
+	 +schedule	時間単位。普通「日」が相当。
+	  +class	授業。要素型名要検討
+	  |+@@ref	科目定義 subject 要素の id 属性値。属性名要検討
+	  |+@@span	ぶち抜きこま数。既定値1 = 1時限。
+	  +classGroup	選択授業群。 subjectGroup があるから要らない?
+	@@id (全要素)	唯一識別子
+	@@href (幾つかの要素)	授業情報とかの URI
+	@@www (meta/class/*/)	WWW 情報源 URI。要検討。
+	@@mailto (同上)	電子メイル宛先 mailto: URI。要検討。
+	・開始時刻などは別名前空間。
+
+<tt xmlns="http://test.test/markup/ttml/experimental/0.3"
+    xmlns:h="http://www.w3.org/1999/xhtml">
+<meta>
+<title>Timetable of RO team</title>
+<class>
+  <school www="http://foo.test/high/" mailto="mailto:teachers@@high.foo.test">Foo High School</school>
+  <grade www="http://foo.test/high/1/">1</grade>
+  <className mailto="mailto:classA@@fresh.high.foo@@test">A</className>
+  <subClass>I</subClass>
+  <subClass mailto="mailto:classA@@fresh.high.foo@@test?subject=%28I%2ERO%29">RO</subClass>
+</class>
+<dates>
+	<created>2003-01-01T01:01:01+0900</created>
+</dates>
+<versions>
+	<prev href="x-uri://foo/bar"/>
+	<prev href="x-uri://foo/bar">
+	  <dates>
+	    <withdrawn>2003-01-01T01:01:00+0900</withdrawn>
+	  </dates>
+	</prev>
+</version>
+</meta>
+<subjects>
+<subject id="mathII">
+	<name>Math II</name>
+	<teacher>Mr. Math</teacher>
+	<at>Room 1</at>
+</subject>
+<subject id="mathI">
+	<name>Math I</name>
+	<abbr>I</abbr>
+	<teacher>Mr. Math</teacher>
+	<at>Room 11</at>
+</subject>
+<subjectGroup id="math">
+	<name>Maths</name>
+	<subject ref="mathI"/>
+	<subject ref="mathII"/>
+</subject>
+</subjects>
+<schedules grouping="days">
+<schedule>
+<name>Monday</name>
+<class ref="mathII"/>
+<class ref="mathII" span="2"/>
+<classGroup>
+  <class ref="mathI" h:class="typeA"/>
+  <class ref="mathII" h:class="typeB"/>
+</classGroup>
+<classGroup ref="math"/>
+</schedule>
+</schedules>
+</tt>
+
+]PRE]@
+

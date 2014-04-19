@@ -1,0 +1,226 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.1
+date	2004.08.13.02.06.29;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9
+
+[1]
+さてはて、 <IW:SuikaCVS:"markup/tool/mkdtds.pl"> なのですが、 XHTML 1 m12n SE の真似して (いまさらすぎ)、
+XML Schema Instance (xsi) 名前空間を含めるようにしてみました。
+(同じ引数実体を2回も定義してたりとか意味がわからないところは真似してないです。)
+生成してみた DTD の例はこのあたりに:
+<http://suika.fam.cx/~wakaba/-temp/slide/schema/>
+
+([[名無しさん]] [WEAK[2004-06-20 05:23:37 +00:00]])
+
+[2]
+だけど本当は Common Attributes Module のような形の別モジュールを用意しておいて、
+必要なら DTD Driver で取り込む形にしたほうがよかったかもとか思ってみたり。
+[CODE(XMLa)[[VAR[xsi:]][VAR[*]]]] ってそんなしばしば使うものでもないし。
+([[名無しさん]] [WEAK[2004-06-20 05:29:20 +00:00]])
+
+[3]
+SGML HTML の support を打ち切れとか、のんきな人は気楽でいいねぇ。
+([[名無しさん]] [WEAK[2004-06-20 07:38:17 +00:00]])
+
+[4]
+Perl の utf8 文字列 + 正規表現でよくわからない現象が起こったりする。原因も再現条件も (というか何が起こっているのかも) よくわからない。
+正規表現の部分をうまくごまかして [CODE(perl)[[[substr]]]] にしてなんとか回避したけど、釈然としないものがあるなあ。
+([CODE(perl)[[[Devel::Peek]]]] でみたら、 [CODE(perl)[substr]] の前後で [CODE[MG_PTR]] が変わるみたいだけど、これ何よ?)
+5.8.1-RC2 から 5.8.4 にしたけど変化なしだし。わけわからん。
+([[名無しさん]] [WEAK[2004-06-21 02:47:04 +00:00]])
+
+[5]
+XML ではこんなのも整形式。
+
+外部実体 1:
+[PRE(XML)[
+<!ENTITY % foo SYSTEM "foo">
+<!ELEMENT %foo;>
+]PRE]
+
+外部実体 [CODE(URI)[foo]]:
+[PRE(XML)[
+<?xml encoding="utf-8"?>
+element (%model;)*
+]PRE]
+
+[[文宣言]]は[[置換文]]に含まれないから、
+処理指令が引数に含まれるように見えるけど、何も問題は起こらない。
+
+SGML 的にはこんなのなしだと思いますので、
+改行正規化と同じで前処理と考えるしかないでしょうか。
+([[名無しさん]] [WEAK[2004-06-21 03:51:31 +00:00]])
+
+[6]
+仕様書をよく読んでみると、 >>5 の場合に文宣言を書いてはいけないとはかかれていないけど、書いてもいいとも書かれていない。
+
+,実体の種類	,表記実体値が一致するべき生成規則	,置換文が一致するべき生成規則
+,文書実体	,[CODE(ABNF)[[[document]]]]
+,外部部分集合	,[CODE(ABNF)[[[extSubset]]]]
+,[CODE(ABNF)[[[DeclSep]]]] 引数実体	,	,"[CODE(ABNF)[[[extSubsetDecl]]]], VC 適切な入れ子"
+,マーク宣言引数の引数実体	,	,VC 適切な入れ子
+,群の引数実体	,	,VC 適切な入れ子
+,引数表記の引数実体
+,外部一般解析対象実体	,[CODE(ABNF)[[[extParsedEnt]]]]
+,内部一般解析対象実体	,[CODE(ABNF)[[[EntityValue]]]]	,[CODE(ABNF)[[[content]]]]
+
+([[名無しさん]] [WEAK[2004-06-21 04:24:33 +00:00]])
+
+[7]
+>>5 文宣言があると、 MSXML も W3C Validator もエラーになります。
+なければ妥当。
+([[名無しさん]] [WEAK[2004-06-21 05:25:20 +00:00]])
+
+[8]
+ふと気づきましたが、誰も[Q[妥当制約]]とか[Q[整形式性制約]]とは言っていませんねぇ。
+
+;; 今のままのが字数もぴったりでいい。
+([[名無しさん]] [WEAK[2004-06-21 07:00:33 +00:00]])
+
+[9]
+整形式制約違反は致命的誤り。
+ところが、[Q[整形式]]の定義からの逸脱はなんとも書かれていない。ということは、
+EBNF 構文への違反は別途指定がない限り単なる誤りとして処理してよい?
+([[名無しさん]] [WEAK[2004-06-21 07:21:57 +00:00]])
+
+[10]
+>>4 ''search.cpan.org: perldelta - what is new for perl v5.8.3'' <http://search.cpan.org/~nwclark/perl-5.8.3/pod/perl583delta.pod#Selected_Bug_Fixes>
+にそれっぽい修正が載ってるけど、 Perl 5.8.4 でも状況は変わらなかったんだよなぁ。へんだなぁ。
+([[名無しさん]] [WEAK[2004-06-21 23:13:47 +00:00]])
+
+[11]
+utf8 まわりはほぼ毎版修正されているし、まだ虫がいると思ったほうがよさそう。
+([[名無しさん]] [WEAK[2004-06-21 23:16:33 +00:00]])
+
+[12]
+[[P2P]] でボトルメイルみたいなことをしたら面白そうだと思うんだけどどうですか?
+もうあるかなあ?
+
+小中学生に受けないかなぁ。
+([[名無しさん]] [sage] [WEAK[2004-06-27 09:24:17 +00:00]])
+
+[13]
+水曜日の夕方、[[天てれ]]と[[ナディア]]の間に紀伊山地シンポジウムなるものの宣伝が入っていたけどさ、
+いったいどういう参加者を求めているのさ?
+([[名無しさん]] [WEAK[2004-07-02 06:32:59 +00:00]])
+
+[14]
+[PRE[
+    Hoge hoge hoge hoge hoge. "Hoge
+hoge hoge," Mr. Foo said. "Hoge hoge
+hoge hoge hoge hoge hoge hoge.
+    "Hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge.
+    "Hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge."
+]PRE]
+
+こういう文章、どうマークしたらいいのでしょう? (よい文章かどうかの問題は抜きで。
+現実にこういう文が書かれているのだからどうしようもない。)
+
+案1)
+[PRE(XML)[
+<p>Hoge hoge hoge hoge hoge. <q>Hoge
+hoge hoge,</q> Mr. Foo said. <q id="q2" continue="q3">Hoge hoge
+hoge hoge hoge hoge hoge hoge.</p>
+<p><q id="q3" continue="q4">Hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge.</q></p>
+<p><q id="q4">Hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge.</q></p>
+]PRE]
+
+案2)
+[PRE[
+<p>Hoge hoge hoge hoge hoge. <q>Hoge
+hoge hoge,</q> Mr. Foo said. <q><p>Hoge hoge
+hoge hoge hoge hoge hoge hoge.</p>
+<p>Hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge.</p>
+<p>Hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge.</p></q></p>
+]PRE]
+
+見た目の最初の段落が最後まで続くというのにはちと無理があるか?
+
+案3)
+[PRE[
+<p>Hoge hoge hoge hoge hoge. <q>Hoge
+hoge hoge,</q> Mr. Foo said. <bq><p>Hoge hoge
+hoge hoge hoge hoge hoge hoge.</p>
+<p>Hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge.</p>
+<p>Hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge.</p>
+</bq></p>
+]PRE]
+
+見た目の第1段落の途中で入れ子のブロックが始まるのが気に食わない。
+([[名無しさん]] [WEAK[2004-07-02 11:50:45 +00:00]])
+
+[15]
+s/見た目の/見かけの/g
+([[名無しさん]] [WEAK[2004-07-02 11:51:51 +00:00]])
+
+[16]
+[[XHTML 1.0//HTML 4からの変更点]]の続きというかなんというか、
+<http://suika.fam.cx/www/2004/html/classes> なんてのを (既にどこかにありそうな気がしながらも) 作ってみました。
+([[名無しさん]] [WEAK[2004-07-03 04:25:30 +00:00]])
+
+[17]
+<http://www.jisc.go.jp/> で JIS の PDF がみれるのですが、最近 [[Firefox]] でなぜか動かないので変だなあと思って調べてみたら、 [[TBE]] のせいでした。新窓をタブで開く処理のせいではないかと思うのですけど、
+TBE の設定で JavaScript による新窓を対象外にしてもなおりません。
+TBE を無効にすればちゃんと動いたので、
+TBE が原因だとは思うのですけど。
+ちょっとソースでものぞいてみるかな。と思えど時間がない。
+([[名無しさん]] [WEAK[2004-07-13 09:08:28 +00:00]])
+
+[18]
+XPath 2.0 も XQuery 1.0 も好きになれそうにないなぁ。
+([[名無しさん]] [WEAK[2004-07-14 23:50:49 +00:00]])
+
+[19]
+Gecko で選択文字列の underline や中線の色が非選択時の color と同じなのはマズーじゃない?
+([[名無しさん]] [WEAK[2004-07-24 02:52:55 +00:00]])
+
+
+[20]
+''XHTML Frequently Answered Questions: Does document.write work in XHTML?'' <http://www.w3.org/MarkUp/2004/xhtml-faq#docwrite>
+
+XML の定義上 [CODE(DOM)[document.write]] が使えないのなら、 SGML 応用である HTML
+でも使えるはずがない。
+
+DOM で HTML 用にしか定義されていないからと説明する方が納得できない?
+
+''Document Object Model (HTML) Level 1'' <http://www.w3.org/TR/1998/REC-DOM-Level-1-19981001/level-one-html.html#method-open>
+
+''Document Object Model HTML'' <http://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-72161170>
+
+
+([[名無しさん]] [WEAK[2004-07-24 03:28:50 +00:00]])
+
+@

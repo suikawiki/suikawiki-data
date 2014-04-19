@@ -1,0 +1,83 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1
+	before-db-leaffile:1.1
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+
+
+1.1
+date	2003.06.28.10.15.08;	author make;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-commited
+@
+text
+@#?SuikaWiki/0.9
+[1] [[XML]] での[[空白]]や[[改行]]の取扱いは、
+[[SGML]] での場合 ([[SGML//空白]]参照。)
+に比べると随分すっきりしています。
+''Extensible Markup Language (XML) 1.0 2.10 White Space Handling'' <http://www.w3.org/TR/REC-xml#sec-white-space>,
+<http://www.w3.org/XML/xml-V10-2e-errata#E50>,
+''Extensible Markup Language (XML) 1.0 2.11 End-of-Line Handling'' <http://www.w3.org/TR/REC-xml#sec-line-ends>
+
+[2] [[XML処理系]]は、その処理する[[解析実体]]の解析を始める前に、
+[CODE(XML)[#xD #xA]] → [CODE(XML)[#xA]],
+[CODE(XML)[#xD]] → [CODE(XML)[#xA]]
+という置換によって全ての改行を [CODE(XML)[#xA]]
+に統一しなければなりません。
+
+[3] [WEAK[>>2 の規定はちょっときつすぎる気がします。 XML 処理系が[[応用]]にデータを渡す時には必ず [CODE(XML)[#xA]] になっていなければならない、とかの方が気持ちがいいんじゃないですか? ただまあ、[[数値文字参照]]として出現した [CODE(XML)[#xD]] とかの扱いの問題がありますから、事前に一気に変換しておくのが一番楽でしょう。だから妥当な制約であるとは思います。]]
+
+[4] [[要素]]の[[内容]]について、
+- XML 処理系は[[マーク]]でない全ての文字を応用に渡さなければなりません。
+-- 仕様書には「文書中の全ての」と書いてあるんですが、
+実際に文書中でマークでないのは要素の内容くらいのもんです。
+- [[妥当性を検証]]する XML 処理系は、更に[[要素内容]]の空白を識別できる形で応用に渡さなければなりません。
+-- つまり、 SGML でいうところの分離子 [CODE(SGML)[[[s]]]]
+として解釈される空白の合図をしろということです。
+-- 例: [SAMP(XML)[<!ELEMENT element (e|f)>]] [SAMP(XML)[<element>'' ''<e>foo</e>'' ''<f>  </f>'' ''</element>]] の強調した部分。
+
+[5] [CODE(XML)[[[xml]]:[[space]]]] という特殊属性を
+XML 仕様書が定義しています。
+この属性はどんな要素型にも指定できます。
+[WEAK[(もちろん妥当であるためには[[属性並び宣言]]で定義する必要があります。)]]
+
+この属性の取り得る値は [CODE(XML)[default]]
+又は [CODE(XML)[preserve]] です。
+
+:default:応用は、既定の方法で空白を処理します。
+:preserve:応用は、空白を保持するべきです (should)。
+
+処理の主体が処理系ではなく応用であることに注意して下さい。
+>>4 にある通り、処理系は応用に全ての空白を渡さなければならず、
+この属性により動作を変えることは無いのです。
+
+[6] >>5 取り得る値が背反ではないし網羅的でもないのが興味深いところです。
+応用によっては両方とも同じ意味に扱うかもしれません。
+そもそも [CODE(XML)[preserve]] も should
+なので、応用が好きなように処理するかもしれません。
+[WEAK[この点を含めて XML 1.0 仕様書は応用には制限を課していません。]]
+
+典型的な利用は、 [[CSS]] の [CODE(CSS)[[[white-space]]]]
+属性の指定による自由な取扱いでしょう。
+
+[7] 次のような既定スタイル・シートを[[ブラウザ]]などの応用は持っているといいかもしれません。
+[PRE[
+[xml|space="preserve"] {
+  white-space: pre;
+}
+]PRE]
+@

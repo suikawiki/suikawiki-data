@@ -1,0 +1,651 @@
+head	1.2;
+access;
+symbols
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.2
+date	2004.04.13.02.01.03;	author wakaba;	state dead;
+branches;
+next	1.1;
+
+1.1
+date	2003.09.03.02.00.13;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9
+
+
+
+
+
+
+Network Working Group                                         R. Herriot
+Request for Comments: 3391                                 December 2002
+Category: Informational
+
+
+         The MIME Application/Vnd.pwg-multiplexed Content-Type
+
+Status of this Memo
+
+   This memo provides information for the Internet community.  It does
+   not specify an Internet standard of any kind.  Distribution of this
+   memo is unlimited.
+
+Copyright Notice
+
+   Copyright (C) The Internet Society (2002).  All Rights Reserved.
+
+IESG Note
+
+   The IESG believes use of this media type is only appropriate in
+   situations where the producer is fully aware of the capabilities and
+   limitations of the consumer.  In particular, this mechanism is very
+   dependent on the producer knowing when the consumer will need a
+   particular component of a multipart object.  But consumers
+   potentially work in many different ways and different consumers may
+   need different things at different times.  This mechanism provides no
+   means for a producer to determine the needs of a particular consumer
+   and how they are to be accommodated.
+
+   Alternative mechanisms, such as a protocol based on BEEP which is
+   capable of bidirectional communication between the producer and
+   consumer, should be considered when the capabilities of the consumer
+   are not known by the producer.
+
+Abstract
+
+   The Application/Vnd.pwg-multiplexed content-type, like the
+   Multipart/Related content-type, provides a mechanism for representing
+   objects that consist of multiple components.  An
+   Application/Vnd.pwg-multiplexed entity contains a sequence of chunks.
+   Each chunk contains a MIME message or a part of a MIME message.  Each
+   MIME message represents a component of the compound object, just as a
+   body part of a Multipart/Related entity represents a component.  With
+   a Multipart/Related entity, a body part and its reference in some
+   other body part may be separated by many octets.  With an
+   Application/Vnd.pwg-multiplexed entity, a message and its reference
+   in some other message can be made quite close by chunking the message
+   containing the reference.  For example, if a long message contains
+
+
+
+Herriot                      Informational                      [Page 1]
+
+RFC 3391                Application/Multiplexed            December 2002
+
+
+   references to images and the producer does not know of the need for
+   each image until it generates the reference, then
+   Application/Vnd.pwg-multiplexed allows the consumer to process the
+   reference to the image and the image before it consumes the entire
+   long message.  This ability is important in printing and scanning
+   applications.  This document defines the Application/Vnd.pwg-
+   multiplexed content-type. It also provides examples of its use.
+
+Table of Contents
+
+   1. Introduction....................................................2
+   2. Terminology.....................................................7
+   3. Details.........................................................9
+   3.1  Syntax of Application/Vnd.pwg-multiplexed Contents...........10
+   3.2  Parameters for Application/Vnd.pwg-multiplexed...............12
+   3.2.1  The "type" Parameter.......................................12
+   3.2.2  Syntax.....................................................12
+   4. Handling Application/Vnd.pwg-multiplexed Entities..............12
+   5. Examples.......................................................13
+   5.1  Example With Multipart/Related...............................14
+   5.2  Examples with Application/Vnd.pwg-multiplexed................15
+   5.2.1  Example Where Each Chunk Has a Complete Message............15
+   5.2.2  Example of Chunking the Root Message.......................17
+   5.2.3  Example of Chunking the Several Messages...................18
+   5.2.4  Example of Chunks with Empty Payloads......................20
+   6. Security Considerations........................................22
+   7. Registration Information for Application/Vnd.pwg-multiplexed...22
+   8. Acknowledgments................................................23
+   9. References.....................................................23
+   10. Author's Address..............................................24
+   11. Full Copyright Statement......................................25
+
+1. Introduction
+
+   The simple MIME content-types, such as "text/plain" provide a
+   mechanism for representing a simple object, such as a text document.
+   The Multipart/Related [RFC2387] content-type provides a mechanism for
+   representing a compound object, such as a text document with two gif
+   images.
+
+   A compound object consists of multiple components.  One such
+   component is the root component, which contains references to other
+   components of the compound object.  These components may, in turn,
+   contain references to other components of the compound object.  For
+   example, a compound object could consist of a root html text
+   component and two gif image components -- each referenced by the root
+   component.
+
+
+
+
+Herriot                      Informational                      [Page 2]
+
+RFC 3391                Application/Multiplexed            December 2002
+
+
+   A compound object and a component are both abstractions.  For
+   transmission over the wire or writing to storage, each needs a
+   representation.  A "Multipart/Related entity" is one possible
+   representation of a compound object, and a "body part" is one
+   possible representation of a component.
+
+   However, the Multipart/Related content-type is not a good solution
+   for applications that require each component to be close to its
+   corresponding reference in the root component.  This document defines
+   a new MIME content-type Application/Vnd.pwg-multiplexed that provides
+   a better solution for some applications.  The Application/Vnd.pwg-
+   multiplexed content-type, like the Multipart/Related content-type,
+   provides a common mechanism for representing a compound object.  A
+   Multipart/Related entity consists of a sequence of body parts
+   separated by boundary strings.  Each body part represents a component
+   of the compound object.  An Application/Vnd.pwg-multiplexed entity
+   consists of a sequence of chunks, each of whose length is specified
+   in the chunk header.  Each chunk contains a message or a part of a
+   message.  Each message represents a component of the compound object.
+   Chunks from different messages can be interleaved.  HTTP is the
+   typical transport for an Application/Vnd.pwg-multiplexed entity over
+   the wire.  An Application/Vnd.pwg-multiplexed entity could be stored
+   in a Microsoft HTML (message/rfc822) file whose suffix is .mht.
+
+   The following paragraphs contain three examples of applications.  For
+   each application, there is a discussion of its solution with the
+   Application/Vnd.pwg-multiplexed content-type, the Multipart/Related
+   content-type and BEEP [RFC3080].
+
+   Example 1: a printing application.  A Producer creates a print stream
+   that consists of a very long series of page descriptions, each of
+   which references one or more images.  The root component is the long
+   series of page descriptions.  An image may be referenced from
+   multiple pages descriptions, and there is a mechanism to indicate
+   when there are no additional references to an image (i.e., the image
+   is out of scope).  The Producer does not know what images to include
+   with a page until it generates that page.  The Consumer is presumed
+   to have enough storage to hold all in-scope images and enough of the
+   root component to process at least one page.  The Producer doesn't
+   need any knowledge of the Consumer's storage capabilities in order to
+   create an entity that the Consumer can successfully process.
+   However, the Producer needs to be prudent about the number of images
+   that are in-scope at any time.  Of course, a malicious Producer may
+   try to exceed the storage capabilities of the Consumer, and the
+   Consumer must guard against such entities (see section 6).  Here are
+   ways to represent this compound object.
+
+
+
+
+
+Herriot                      Informational                      [Page 3]
+
+RFC 3391                Application/Multiplexed            December 2002
+
+
+      With the Application/Vnd.pwg-multiplexed content-type, each image
+      is a message and the root component is a message.  The Producer
+      breaks the root component message into chunks with each image
+      message occurring shortly before its first reference.  When the
+      Consumer encounters a reference, it can assume that it has already
+      received the referenced image in an earlier chunk.
+
+      With the Multipart/Related content-type, each image must either
+      precede or follow the root component.
+
+         If images follow the root component, the Consumer must read all
+         remaining pages of the root component before it can print the
+         first page that references such images.  The Consumer must wait
+         to print such a page until it has received the entire root
+         component, and the Consumer may not have the space to hold the
+         remaining pages.
+
+         If images precede the root component, the Producer must
+         determine and send all such images before it sends the root
+         component.  The Consumer must, in the best case, wait some
+         additional time before it receives the first page of the root
+         component.  In the worse case, the Consumer may not have enough
+         storage for all the images.
+
+         The Multipart/Related solution is not a good solution because
+         of the wait time and because, in some cases, the Consumer may
+         not have sufficient storage for all of the images.
+
+      With BEEP, the images and root component can be sent in separate
+      channels.  The Producer can push each image when it encounters the
+      first reference or the Consumer can request it when it encounters
+      the first reference.  The over-the-wire stream of octets is
+      similar to an Application/Vnd.pwg-multiplexed entity.  However,
+      there is a substantial difference in behavior for a printing
+      application.  With the Application/Vnd.pwg-multiplexed content-
+      type, the Producer puts each image message before its first
+      reference so that when the Consumer encounters a reference, the
+      image is guaranteed to be present on the printer.  With BEEP, if
+      the Consumer pulls the image, the Consumer has to wait while the
+      image comes over the network.  If the Producer pushes the image,
+      BEEP may put the image message after its first reference and the
+      Consumer may still have to wait for the image.  A high-speed
+      printer should not have to risk waiting for images; otherwise it
+      cannot run at full speed.
+
+   Example 2: a scanning (fax-like) application.  The Producer is a
+   scanner, which scans pages and sends them along with a vnd.pwg-
+   xhtml-print+xml root component that contains references to each page
+
+
+
+Herriot                      Informational                      [Page 4]
+
+RFC 3391                Application/Multiplexed            December 2002
+
+
+   image.  Each page is referenced exactly once in the root-component.
+   The Consumer is a printer that consumes vnd.pwg-xhtml-print+xml
+   entities and their attachments.  That is, the Consumer is not limited
+   to print jobs that come from scanners.  A Producer and Consumer are
+   each presumed to have enough storage to hold a few page images and
+   most if not all of the root component.  The Producer doesn't need any
+   additional knowledge of the Consumer's storage capabilities in order
+   to create an entity that the Consumer can successfully process.  Of
+   course, a malicious Producer may try to exceed the storage
+   capabilities of the Consumer and the Consumer must guard against such
+   entities (see section 6).  Here are ways to represent this compound
+   object.
+
+      With the Application/Vnd.pwg-multiplexed content-type, each page
+      image is a message and the root component is a message.  The
+      Producer breaks the root component message into chunks with each
+      image message just before or just after its reference.
+
+      With the Multipart/Related content-type, the images cannot precede
+      the root component because the Consumer might not have enough
+      space to store them until the root component arrived.  In this
+      case, the printer could fail to print the job correctly and the
+      Producer might not know.  Therefore the images must follow the
+      root component, and the Producer must scan all pages before it can
+      send the first page.  At the very least, this solution delays the
+      printing of the pages until all have been scanned.  In the worst
+      case, the Producer does not have sufficient memory to buffer the
+      images, and the job fails.
+
+      With BEEP, the issues are the same as in the previous example,
+      except that speed is not as important in this case.  So BEEP is a
+      viable alternative for this example.
+
+   Example 3: a printing application.  A Producer creates a print stream
+   that consists of a series of pages, each of which references zero or
+   more images.  Each image is referenced exactly once.  The Producer
+   does not know what images to include with a page until it generates
+   that page, and the Producer doesn't know the layout details; the
+   Consumer handles layout.  The Producer has enough storage to send the
+   root component and all images.  However, it may not have enough
+   storage to hold the entire root component or all octets of any of the
+   images.  The Consumer is presumed to have enough storage to render
+   the root component and to render each image.  It may not have enough
+   storage to hold the entire root component or all octets of any of the
+   images.  The Producer doesn't determine the Consumer's storage
+   capabilities.  Rather it arranges the components so that the Consumer
+   is mostly likely to succeed.  Of course, a malicious Producer may try
+
+
+
+
+Herriot                      Informational                      [Page 5]
+
+RFC 3391                Application/Multiplexed            December 2002
+
+
+   to exceed the storage capabilities of the Consumer, and the Consumer
+   must guard against such entities (see section 6).  Here are ways to
+   represent this compound object.
+
+      With the Application/Vnd.pwg-multiplexed content-type, each image
+      is a message and the root component is a message.  The Producer
+      breaks the root component message into chunks with each image
+      message just after its reference.  The references appear first so
+      that the Consumer knows the location of each image before it
+      processes the image.  This strategy minimizes storage needs for
+      Producer and Consumer and provides a good strategy in case of
+      failure.  Here are the cases to consider.
+
+      a) When the document consists of vertically aligned blocks where
+         each block contains either lines of text or a single image, the
+         sequence of chunks is the same as the sequence of printable
+         blocks, thus minimizing Consumer buffering needs.
+
+      b) When a block can contain N side-by-side images, the Consumer
+         must buffer N-1 images unless the Producer interleaves the
+         images.  If the Producer doesn't interleave the images, and the
+         Consumer runs out of storage before it has received N-1,
+         images, it can print what it has and print the remaining images
+         below; not what the Producer intended, but better than nothing.
+         If the Producer interleaves images, and the Consumer runs out
+         of storage before it has received the bands of N images, the
+         Consumer would print portions of images interleaved with
+         portions of other images.  So, a Producer should not interleave
+         images.
+
+      c) When a block contains text and image side-by-side (i.e., run-
+         around text), there are additional buffering requirements.
+         When the Consumer processes the text that follows the
+         reference, it will place some of it next to the image (run-
+         around text) and will place the remaining text after the image.
+         The Producer doesn't know where the run-around ends, and thus
+         doesn't know where to end the text chunk and start the image
+         chunk.  If the Producer ends the text too soon, then the
+         Consumer either has to process the entire image (if it has
+         enough storage) in order to get the remaining run-around text,
+         or it ends the run-around text prematurely.  If the Producer
+         ends the text too late, then the Consumer may have to store too
+         much text and possibly put the image later than the Producer
+         requested.  Because text data requires significantly less
+         storage than image data, a good strategy for Producer is to err
+         on the side of sending too much rather than too little text
+         before the image data.
+
+
+
+
+Herriot                      Informational                      [Page 6]
+
+RFC 3391                Application/Multiplexed            December 2002
+
+
+      d) When a block contains text and multiple side-by-side images,
+         the problem becomes a combination of items b) and c) above.
+
+      The Application/Vnd.pwg-multiplexed content-type can be made to
+      work in this example, but a Consumer must have failure strategies
+      and the result may not be quite what the producer intended.  With
+      the Multipart/Related content-type, the images cannot precede the
+      root component because the Consumer might not have enough space to
+      store them until the root component arrived.  Also, the images
+      cannot follow the root component because the Consumer might not
+      have enough storage for the root component before the first image
+      arrives.  So the Multipart/Related content-type is not an
+      acceptable solution for this example.
+
+      With BEEP, the Producer can send the root component on channel 1
+      and the Consumer can request images on even numbered channels when
+      it encounters a reference.  This solution allows more flexibility
+      than the Application/Vnd.pwg-multiplexed content-type.  If there
+      are side-by-side images and/or run-around text, the Consumer can
+      request bands of each image or run-around text over separate
+      channels.
+
+   In all of these examples, the Application/Vnd.pwg-multiplexed
+   content-type provides a much better solution than Multipart/Related.
+   However, it is evenly matched with BEEP.  For applications where
+   speed is important and ordering of the chunks is important in order
+   to avoid printing delays, the Application/Vnd.pwg-multiplexed
+   content-type is best.  For applications, where the Consumer needs
+   more control over the ordering of received octets, BEEP is best.
+
+2. Terminology
+
+   This document uses some of the MIME terms that are defined in
+   [RFC2045].  The following are the terms used in this document:
+
+      Entity: the headers and the content.  In this document, the term
+      "entity" describes all the octets that represent a compound
+      object.
+
+      Message: an entity as in [RFC2045].  In this document, the term
+      "message" describes all octets that represent one component of a
+      compound object.  That is, it has MIME headers and content.
+
+      Body Part: an entity inside a multipart.  That is, a body part is
+      the headers and content (i.e., octets) between the multipart
+      boundary strings not including the CRLF at the beginning and end.
+      This document never uses "entity" to mean "body part".
+
+
+
+
+Herriot                      Informational                      [Page 7]
+
+RFC 3391                Application/Multiplexed            December 2002
+
+
+      Headers: the initial lines of an entity, message or body part.  An
+      empty line (i.e., two adjacent CRLFs) terminates the headers.
+      Sometimes the term "MIME header" is used instead of just "header".
+
+      Content: the part of an entity, message or body part that follows
+      the headers (i.e., follows the two adjacent CRLFs).  The content
+      of a body part ends at the octet preceding the CRLF before the
+      multipart boundary string.  The content of a message ends at the
+      octets specified by the length field in the Chunk Header.
+
+   This document uses the following additional terms.
+
+      Chunk: a chunk of data, consisting of a chunk header, a chunk
+      payload and a CRLF.
+
+      Chunk Header: the first line of a chunk.  The line consists of the
+      "CHK" keyword, the message number, the length and the continuation
+      indicator, each separated by a single space character (ASCII 32).
+      A CRLF terminates the line.  Each message in an
+      Application/Vnd.pwg-multiplexed entity has a message number that
+      normally differs from the message numbers of all other messages in
+      the Application/Vnd.pwg-multiplexed entity.  The message number 0
+      is reserved for final Chunk Header in the Application/Vnd.pwg-
+      multiplexed entity.
+
+      Chunk Payload: the octets between the Chunk Header and the Chunk
+      Header of the next chunk.  The length field in the header's length
+      field specifies the number of octets in the Chunk Payload.  The
+      Chunk Payload is either a complete message or a part of a message.
+      The continuation field in the header specifies whether the chunk
+      is the last chunk of the message.
+
+      CRLF: the sequence of octets corresponding to the two US-ASCII
+      characters CR (decimal value 13) and LF (decimal value 10) which,
+      taken together, in this order, denote a line break.  A CRLF
+      terminates each chunk in order to provide visual separation from
+      the next chunk header.
+
+      Consumer: the software that receives and processes a MIME entity,
+      e.g., software in a printer or software that reads a file.
+
+      Producer: the software that creates and sends a MIME entity, e.g.,
+      software in a scanner or software that writes a file.
+
+
+
+
+
+
+
+
+Herriot                      Informational                      [Page 8]
+
+RFC 3391                Application/Multiplexed            December 2002
+
+
+3. Details
+
+   The Application/Vnd.pwg-multiplexed content-type, like
+   Multipart/Related, is intended to represent a compound object
+   consisting of several inter-related components.  This document does
+   not specify the representation of these relationships, but [RFC2557]
+   contains examples of Multipart/Related entities that use the
+   Content-ID and Content-Location headers to identify body parts and
+   URLs (including the "cid" URL) to reference body parts.  It is
+   expected that Application/Vnd.pwg-multiplexed entities would use the
+   patterns described in [RFC2557].
+
+   For an Application/Vnd.pwg-multiplexed entity, there is one parameter
+   for the Content-Type header.  It is a "type" parameter, and it is
+   like the "type" parameter for the Multipart/Related content-type.
+   The value of the "type" parameter must be the content-type of the
+   root message and it effectively specifies the type of the compound
+   object.
+
+   An Application/Vnd.pwg-multiplexed entity contains a sequence of
+   chunks.  Each chunk consists of a chunk header, a chunk payload and a
+   CRLF.
+
+     - The chunk header consists of a "CHK" keyword followed by the
+       message number, the chunk payload length, whether the chunk is
+       the last chunk of a message and, finally, a CRLF.  The length
+       field removes the need for boundary strings that Multipart uses.
+       (See section 3.1 for the syntax of a chunk header).
+
+     - The chunk payload is a sequence of octets that is either a
+       complete message or a part of a message.
+
+     - The CRLF provides visual separation from the following chunk.
+
+   Each message represents a component of the compound object, and a
+   message is intended to have exactly the same representation, octet
+   for octet, as a body part of a Multipart/Related entity that
+   represents the same component.  When a message is split across
+   multiple chunks, the chunks need not be contiguous.
+
+   The contents of an Application/Vnd.pwg-multiplexed entity have the
+   following properties:
+
+      1) The first chunk contains a complete or partial message that (in
+         either case) represents the root component of the compound
+         object.
+
+
+
+
+
+Herriot                      Informational                      [Page 9]
+
+RFC 3391                Application/Multiplexed            December 2002
+
+
+      2) Additional chunks contain messages or partial messages that
+         represent some component of the compound object.
+
+      3) The final chunk's header contains a message number of 0, a
+         length of 0 and a last-chunk-of-message mark (i.e., the chunk
+         header line is "CHK 0 0 LAST").  The final chunk contains no
+         chunk payload.
+
+      4) A message can be broken into multiple parts and each break can
+         occur anywhere within the message.  Each part of the message is
+         zero or more bytes in length and each part of the message is
+         the contents of its own chunk.  The order of the chunks within
+         the Application/Vnd.pwg-multiplexed entity must be the same as
+         the order of the parts within the message.
+
+      5) A message represents a component of a compound object, and it
+         is intended that it have exactly the same representation, octet
+         for octet, as a body part of a Multipart/Related entity that
+         represents the same component.  In particular, the message may
+         contain a Content-Type header to specify the content-type of
+         the message content.  Also, the message may contain a Content-
+         ID header and/or Content-Location header to identify a message
+         that is referenced from within another message.  If a message
+         contains no Content-Type header, then the message has an
+         implicit content-type of  "text/plain; charset=us-ascii", cf.
+         [RFC2045].
+
+   See section 4 for a discussion displaying an Application/Vnd.pwg-
+   multiplexed entity.
+
+3.1 Syntax of Application/Vnd.pwg-multiplexed Contents
+
+   The ABNF [RFC2234] for the contents of an Application/Vnd.pwg-
+   multiplexed entity is:
+
+   contents = *chunk finalChunk
+   chunk      = header payload CRLF
+   header     = "CHK" SP messageNumber SP length SP isMore CRLF
+   messageNumber   = 1..2147483647
+   length   = 0..2147483647
+   isMore       = "MORE" / "LAST"
+   payload    = *OCTET
+   finalChunk = finalHeader CRLF
+   finalHeader  = "CHK" SP "0" SP "0" SP "LAST" CRLF
+
+
+
+
+
+
+
+Herriot                      Informational                     [Page 10]
+
+RFC 3391                Application/Multiplexed            December 2002
+
+
+   The messageNumber field specifies the message that the chunk is
+   associated with.  See the end of this section for more details.
+
+   The length field specifies the number of octets in the chunk payload
+   (represented in ABNF as "payload").  The first octet of the chunk
+   payload is the one immediately following the LF (i.e., final octet)
+   of the chunk header.  The last octet of the chunk payload is the one
+   immediately preceding the two octets CRLF that end the chunk.
+
+   The isMore field has a value of "LAST" for the last chunk of a
+   message and "MORE" for all other chunks of a message.
+
+   Normally each message in an Application/Vnd.pwg-multiplexed entity
+   has a unique message number, and a message consists of the
+   concatenation of all the octets from the one or more chunks with the
+   same message number.  The isMore field of the chunk header of the
+   last chunk of each message must have a value of "LAST" and the isMore
+   field of the chunk header of all other chunks must have a value of
+   "MORE".
+
+   Two or more messages may have the same message number, though such
+   reuse of message numbers is not recommended.  The chunks with the
+   same message number represent a sequence of one or more messages
+   where the isMore field of the chunk header of the last chunk of each
+   message has a value of "LAST".  All chunks whose isMore field of the
+   chunk header has the value of "MORE" belong to the same message as
+   the next chunk (in sequence) whose isMore field of the chunk header
+   has the value of "LAST".  In other words, if two messages have the
+   same message number, the last chunk of the first message must occur
+   before the first chunk of the second message.
+
+   The behavior of the Consumer is undefined if the final Chunk (i.e.,
+   the Chunk whose chunk header is "CHK 0 0 LAST") occurs before the
+   last chunk of every message occurs.
+
+   Two adjacent chunks usually have different message numbers.  However,
+   they may have the same message number.  If two adjacent chunks have
+   the same message number, the two chunks could be combined into a
+   single chunk, but they need not be combined.
+
+   The number of octets in a chunk payload may be zero, and an
+   Application/Vnd.pwg-multiplexed entity may contain any number of
+   chunks with zero octets of chunk payload.  For example, the last
+   @
+
+
+1.1
+log
+@auto-committed
+@
+text
+@@
+

@@ -1,0 +1,253 @@
+head	1.3;
+access;
+symbols
+	suikawiki3-final:1.3
+	before-db-leaffile:1.3;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.3
+date	2004.03.27.02.00.47;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2004.03.23.02.01.36;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2004.03.18.02.01.19;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9
+
+[1] [[内向き]]や[[第三者]]の[[連結]]を集めた[[文書]]のことを、
+[DFN[[RUBYB[連結データベース] [link database]]]]あるいは[DFN[[RUBYB[連結ベース] [linkbase]]]]といいます。
+(<http://www.w3.org/TR/xlink/#dt-linkbase> 参照。)
+
+[2] [Q[5.1.5 Locating Linkbases (Special Arc Role)]]
+<http://www.w3.org/TR/xlink/#xlg>
+では、連結ベースを関連付ける方法が説明されています。
+
+連結ベースを使うときには、連結の弧 ([CODE(XML)[[[arc]]]]
+型要素) の [CODE(XMLa)[[VAR[xlink:]][[arcrole]]]]
+属性の値に
+[CODE(URI)[http://www.w3.org/1999/xlink/properties/linkbase]]
+を使用します。
+
+その弧の[[終点資源]]が連結ベースです。
+連結ベースは、 [[XML]] 文書でなければ'''なりません'''。
+連結ベースの XML 文書は XLink による連結の定義を含んでいます。
+
+(XLink 処理器は他の方法で連結ベースを処理できても'''構いません'''。)
+
+[3] 連結ベース弧の取扱いは通常とほとんど同じですが、
+[[探索]]の結果終点資源を利用者に表示したりするのではなく、
+連結ベース内の連結の定義を読込んで使えるように準備します。
+XLink 応用は[[利用者の任意選択]]によりこの探索を停止できなければ'''なりません'''。
+
+連結ベースを読み込んだら応用は何が開始資源であるのかの追跡を続ける'''べきです'''。
+開始資源を含む文書が読込まれて連結ベース弧の探索が行われたら、
+応用は連結ベースに接続して、その中の拡張連結を展開する'''べきです'''。
+展開された資源が完全な [[XML]] 文書の一部である場合には、
+展開された部分が完全に含まれる拡張連結だけを利用可能とする'''べきです'''。
+
+(連結ベースを読込む時機は連結ベース弧の
+[CODE(XMLa)[[VAR[xlink:]][[actuate]]]] 属性に拠ります。)
+
+[4] 連結ベースは他の連結ベース弧の開始資源とすることによって連鎖して'''構いません'''。
+応用は鎖を追いかける深さを限定しても'''構いません'''。
+
+応用は連結ベースの処理の結果として取出した拡張連結の一覧を管理する'''べきです'''。
+応用は循環参照している連結ベースで重複して資源や連結を取出す'''べきではありません'''。
+
+[5] 例 (仕様書から):
+[PRE(XML)[
+<basesloaded xlink:type="extended"
+        xmlns:xlink="http://www.w3.org/1999/xlink">
+  <startrsrc xlink:type="locator"
+        xlink:label="spec"
+        xlink:href="spec.xml" />
+  <linkbase xlink:type="locator"
+        xlink:label="linkbase"
+        xlink:href="linkbase.xml" />
+  <load xlink:type="arc"
+        xlink:from="spec" xlink:to="linkbase"
+        xlink:actuate="onLoad"
+        xlink:arcrole="http://www.w3.org/1999/xlink/properties/linkbase" />
+</basesloaded>
+]PRE]
+
+この XML 文書片は、 [SAMP(URI)[spec.xml]]
+が読込まれた時に連結ベースとして [SAMP(URI)[linkbase.xml]]
+を読込んで適用するように指定しています。
+
+[6] 例 (同じく仕様書から):
+[PRE(XML)[
+<basesloaded xlink:type="extended"
+        xmlns:xlink="http://www.w3.org/1999/xlink">
+  <startrsrc xlink:type="locator"
+        xlink:label="spec"
+        xlink:href="spec.xml#string-range(//*,'Click here to reveal annotations.')" />
+  <linkbase xlink:type="locator"
+        xlink:label="linkbase"
+        xlink:href="linkbase.xml" />
+  <load xlink:type="arc"
+        xlink:from="spec" xlink:to="linkbase"
+        xlink:actuate="onRequest"
+        xlink:arcrole="http://www.w3.org/1999/xlink/properties/linkbase" />
+</basesloaded>
+]PRE]
+
+こちらの例では、 [CODE(URI)[spec.xml]] 中の
+[SAMP[Click here to reveal annotations.]] という箇所について要求があったときに、
+[SAMP(URI)[linkbase.xml]] が読込まれます。
+(連結ベース探索の始点 (文書内の箇所) と連結ベースの適用対象は関係ないことに注意。)
+
+([CODE(XML)[[[onRequest]]]] の「要求」
+を行う方法は [Q[Click]] とは限らないので、
+この XML 文書片は汎用的ではありません。
+例外なく特定の場面で特定の XLink 
+応用にのみ処理されることが分かりきっているのならよいでしょうが、
+そうでない場合にはこのような書き方はよくないでしょう。)
+
+
+[7]
+連結ベース目録中の [CODE(XML)[arc]] 型要素では、常に (明示された属性値にかかわらず) [CODE(XMLa)[[VAR[xlink:]][[show]]]] は [CODE(XML)[[[none]]]], [CODE(XMLa)[[VAR[xlink:]][[actuate]]]] は [CODE(XML)[[[onLoad]]]] とみなされます。
+<http://www.w3.org/TR/xlink/#link-behaviors>
+
+([[名無しさん]])
+
+[[#comment]]
+
+
+* メモ@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@d1 102
+a102 95
+#?SuikaWiki/0.9
+[1] [[内向き]]や[[第三者]]の[[連結]]を集めた[[文書]]のことを、
+[DFN[[RUBYB[連結データベース][link database]]]]あるいは[DFN[[RUBYB[連結ベース][linkbase]]]]といいます。
+(<http://www.w3.org/TR/xlink/#dt-linkbase> 参照。)
+
+
+
+[2] [Q[5.1.5 Locating Linkbases (Special Arc Role)]]
+<http://www.w3.org/TR/xlink/#xlg>
+では、連結ベースを関連付ける方法が説明されています。
+
+連結ベースを使うときには、連結の弧 ([CODE(XML)[[[arc]]]]
+型要素) の [CODE(XMLa)[[VAR[xlink:]][[arcrole]]]]
+属性の値に
+[CODE(URI)[http://www.w3.org/1999/xlink/properties/linkbase]]
+を使用します。
+
+その弧の[[終点資源]]が連結ベースです。
+連結ベースは、 [[XML]] 文書でなければ'''なりません'''。
+連結ベースの XML 文書は XLink による連結の定義を含んでいます。
+
+(XLink 処理器は他の方法で連結ベースを処理できても'''構いません'''。)
+
+[3] 連結ベース弧の取扱いは通常とほとんど同じですが、
+[[探索]]の結果終点資源を利用者に表示したりするのではなく、
+連結ベース内の連結の定義を読込んで使えるように準備します。
+XLink 応用は[[利用者の任意選択]]によりこの探索を停止できなければ'''なりません'''。
+
+連結ベースを読み込んだら応用は何が開始資源であるのかの追跡を続ける'''べきです'''。
+開始資源を含む文書が読込まれて連結ベース弧の探索が行われたら、
+応用は連結ベースに接続して、その中の拡張連結を展開する'''べきです'''。
+展開された資源が完全な [[XML]] 文書の一部である場合には、
+展開された部分が完全に含まれる拡張連結だけを利用可能とする'''べきです'''。
+
+(連結ベースを読込む時機は連結ベース弧の
+[CODE(XMLa)[[VAR[xlink:]][[actuate]]]] 属性に拠ります。)
+
+[4] 連結ベースは他の連結ベース弧の開始資源とすることによって連鎖して'''構いません'''。
+応用は鎖を追いかける深さを限定しても'''構いません'''。
+
+応用は連結ベースの処理の結果として取出した拡張連結の一覧を管理する'''べきです'''。
+応用は循環参照している連結ベースで重複して資源や連結を取出す'''べきではありません'''。
+
+[5] 例 (仕様書から):
+[PRE(XML)[
+<basesloaded xlink:type="extended"
+        xmlns:xlink="http://www.w3.org/1999/xlink">
+  <startrsrc xlink:type="locator"
+        xlink:label="spec"
+        xlink:href="spec.xml" />
+  <linkbase xlink:type="locator"
+        xlink:label="linkbase"
+        xlink:href="linkbase.xml" />
+  <load xlink:type="arc"
+        xlink:from="spec" xlink:to="linkbase"
+        xlink:actuate="onLoad"
+        xlink:arcrole="http://www.w3.org/1999/xlink/properties/linkbase" />
+</basesloaded>
+]PRE]
+
+この XML 文書片は、 [SAMP(URI)[spec.xml]]
+が読込まれた時に連結ベースとして [SAMP(URI)[linkbase.xml]]
+を読込んで適用するように指定しています。
+
+[6] 例 (同じく仕様書から):
+[PRE(XML)[
+<basesloaded xlink:type="extended"
+        xmlns:xlink="http://www.w3.org/1999/xlink">
+  <startrsrc xlink:type="locator"
+        xlink:label="spec"
+        xlink:href="spec.xml#string-range(//*,'Click here to reveal annotations.')" />
+  <linkbase xlink:type="locator"
+        xlink:label="linkbase"
+        xlink:href="linkbase.xml" />
+  <load xlink:type="arc"
+        xlink:from="spec" xlink:to="linkbase"
+        xlink:actuate="onRequest"
+        xlink:arcrole="http://www.w3.org/1999/xlink/properties/linkbase" />
+</basesloaded>
+]PRE]
+
+こちらの例では、 [CODE(URI)[spec.xml]] 中の
+[SAMP[Click here to reveal annotations.]] という箇所について要求があったときに、
+[SAMP(URI)[linkbase.xml]] が読込まれます。
+(連結ベース探索の始点 (文書内の箇所) と連結ベースの適用対象は関係ないことに注意。)
+
+([CODE(XML)[[[onRequest]]]] の「要求」
+を行う方法は [Q[Click]] とは限らないので、
+この XML 文書片は汎用的ではありません。
+例外なく特定の場面で特定の XLink 
+応用にのみ処理されることが分かりきっているのならよいでしょうが、
+そうでない場合にはこのような書き方はよくないでしょう。)
+
+[[#comment]]
+
+@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@d6 91
+@
+

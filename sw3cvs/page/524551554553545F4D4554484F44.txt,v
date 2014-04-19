@@ -1,0 +1,123 @@
+head	1.2;
+access;
+symbols
+	suikawiki3-final:1.2
+	before-db-leaffile:1.2
+	after-upgrade-to-suikawiki-3:1.2
+	before-fork-suikawiki3:1.2
+	after-restore-20040122:1.2;
+locks; strict;
+comment	@# @;
+
+
+1.2
+date	2003.08.16.09.18.53;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.01.03.03.19.13;	author w;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9
+[1]  [[CGI]] [[メタ変数]]の1つで、 [[HTTP要求]]に使われた[[方式]]が値となる。
+
+*CGI/1.1 draft-3 6.1.13. REQUEST_METHOD
+>The REQUEST_METHOD metavariable is set to the method with which the request was made, as described in section 5.1.1 of the HTTP/1.0 specification [3] and section 5.1.1 of the HTTP/1.1 specification [8].
+
+[2] [CODE(CGI)[REQUEST_METHOD]] メタ変数は要求が行われた際の方式が設定されます。
+
+-[3]    REQUEST_METHOD   = http-method
+-[4]    http-method      = "GET" | "HEAD" | "POST" | "PUT" | "DELETE" | "OPTIONS" | "TRACE" | extension-method
+-[5]    extension-method = token
+  
+>The method is case sensitive. CGI/1.1 servers MAY choose to process some methods directly rather than passing them to scripts.
+
+[6] 方式は大文字・小文字を区別します。 [[CGI/1.1]]
+サーバーは幾つかの方式をスクリプトに渡さずに直接処理することを選んでも'''構いません'''。
+
+>This variable is specific to requests made with HTTP.
+
+[7] この変数は [[HTTP]] の要求で特有のものです。
+
+>Servers MUST provide this metavariable to scripts. 
+
+[8] サーバーはこのメタ変数をスクリプトに提供しなければ'''なりません'''。
+
+*RFC 3050 (SIP-CGI/1.1) 5.5.1.11 REQUEST_METHOD
+[18]
+>If the message triggering the script was a request, the
+REQUEST_METHOD metavariable is set to the method with which the
+request was made, as described in section 4.2 of the SIP/2.0
+specification [2]; otherwise not defined.
+
+スクリプトの引き金となったメッセージが要求であるなら、
+[CODE(CGI)[REQUEST_METHOD]]
+メタ変数は要求が作られた method
+を [[SIP/2.0]] 仕様書の
+4,2節に説明された通りに設定しなければなりません。
+そうでなければ定義されません。
+
+>
+-        REQUEST_METHOD    =  sip-method
+-        sip-method        =  "INVITE" | "BYE" | "OPTIONS" | "CANCEL"                             | "REGISTER" | "ACK"                             | extension-method
+-        extension-method  =  token
+
+>   Note that ACK is usually not appropriate for the SIP CGI 1.1
+environment; however, see section 5.11.  The implications of REGISTER
+in the CGI context are discussed in section 5.9, and CANCEL is
+discussed in section 5.10.  A SIP CGI 1.1 server MAY choose to
+process some methods directly rather than passing them to scripts.
+
+なお、 [CODE(SIP)[[[ACK]]]]
+は通常 SIP CGI 1.1
+環境には適当ではありません。しかし、
+5.11節をみて下さい。
+CGI の文脈における [CODE(SIP)[[[REGISTER]]
+の暗示については5.9章で、
+[CODE(SIP)[[[CANCEL]]]]
+については5.10章で扱っています。
+SIP CGI 1.1 サーバーは幾つかの method をスクリプトに渡さずに直接処理することを選んでも'''構いません'''。
+
+>Servers MUST provide this metavariable to scripts if the triggering
+message was a request.
+
+サーバーは、引き金となったメッセージが要求であればこのメタ変数を提供し'''なければなりません'''。
+
+*メモ
+- [9] >>6 [[HTTP]] では方式名は大文字・小文字区別しませんよねぇ。
+- [10] 比較する前に正規化しておかないといけないということですか。
+- [11] [[HTTP]] では(一般目的の''サーバー''に)最低限 [[GET]] と [[HEAD]] に対応するように義務付けています。また、 [[Apache]] などでは CGI script は [CODE(HTTP)[GET]] を実装しておけば [CODE(HTTP)[HEAD]] は適当に処理してくれます。
+- [12] >>11 CGI script, 特に [[form要素]]からの入力を扱うものでは更に [[POST]] にも対応するのが普通です。他の方式に対応した CGI script は見たことがありません。
+- [13] [NCSA] では、 HTTP の場合は [CODE(HTTP)[GET]] などが〜という表現になっている一方、 [COAR 03] では上記のように、この変数は HTTP 特有と述べています。それでも >>8 で必ず提供するよう要求していますから、 HTTP 以外では空の値になるのでしょうか?
+- [14] [[Apache]] の実装では、 [CODE(HTTP)[[[OPTIONS]]]] と [CODE(HTTP)[[[TRACE]]]] は自前で処理しますが、それ以外の値はチェックせずに CGI Script に渡します。
+- [15] >>14 だから、未知の method が与えられたときには [CODE(HTTP)[[[405]]]] Metehod Not Available を返すように CGI Script を実装しておかないと、不正な応答を返してしまう恐れがあります。
+- [16] Apache では、 [[SSI]] の場合、未知の method は 403 をちゃんと返してしまうので、環境変数 [CODE(SSI)[REQUEST_METHOD]] や SSI から呼ばれた CGI での同メタ変数が任意の method について得られるかは不明です。
+@
+
+
+1.1
+log
+@update to latest version
+@
+text
+@d25 50
+a74 5
+*メモ
+- [9] >>6 [[HTTP]] では方式名は大文字・小文字区別しませんよねぇ。
+- [10] 比較する前に正規化しておかないといけないということですか。
+- [11] [[HTTP]] では(一般目的の''サーバー''に)最低限 [[GET]] と [[HEAD]] に対応するように義務付けています。また、 [[Apache]] などでは CGI script は [CODE(HTTP)[GET]] を実装しておけば [CODE(HTTP)[HEAD]] は適当に処理してくれます。
+- [12] >>11 CGI script, 特に [[form要素]]からの入力を扱うものでは更に [[POST]] にも対応するのが普通です。他の方式に対応した CGI script は見たことがありません。
+@
+

@@ -1,0 +1,122 @@
+head	1.2;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.2
+date	2005.06.27.02.06.39;	author wakaba;	state dead;
+branches;
+next	1.1;
+
+1.1
+date	2004.06.08.02.10.05;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@=CZD = ESC %x21 [I-R] F ;; C0-DESIGNATE [[ISO/IEC2022]] 1994 14.2.2
+=C1D = ESC %x22 [I-R] F ;; C1-DESIGNATE [[ISO/IEC2022]] 1994 14.2.3
+
+CZD, C1D は、[[制御文字]]集合をそれぞれ [[C0]], [[C1]] に指示するとともに、
+[[CL]], [[CR]] or ESC Fe に呼び出します。
+[[文字集合改訂番号]]を併用可能です。
+
+=GZD4 = ESC %x28 [ ( I-R / DRCS ) ] F  ;; G0-DESIGNATE 94-SET
+=G1D4 = ESC %x29 [ ( I-R / DRCS ) ] F  ;; G1-DESIGNATE 94-SET
+=G2D4 = ESC %x2A [ ( I-R / DRCS ) ] F  ;; G2-DESIGNATE 94-SET
+=G3D4 = ESC %x2B [ ( I-R / DRCS ) ] F  ;; G3-DESIGNATE 94-SET
+=G1D6 = ESC %x2D [ ( I-R / DRCS ) ] F  ;; G1-DESIGNATE 96-SET
+=G2D6 = ESC %x2E [ ( I-R / DRCS ) ] F  ;; G2-DESIGNATE 96-SET
+=G3D6 = ESC %x2F [ ( I-R / DRCS ) ] F  ;; G3-DESIGNATE 96-SET
+=GZDM4 = ESC %x24 %x28 [ ( I-R / DRCS ) ] F / old-GZDM4 ;; G0-DESIGNATE MULTIBYTE 94-SET
+=old-GZDM4 = ESC %x24 %x40-42  ;; See [[ISO/IEC2022] 1994 NOTE 46
+=G1DM4 = ESC %x24 %x29 [ ( I-R / DRCS ) ] F  ;; G1-DESIGNATE MULTIBYTE 94-SET
+=G2DM4 = ESC %x24 %x2A [ ( I-R / DRCS ) ] F  ;; G2-DESIGNATE MULTIBYTE 94-SET
+=G3DM4 = ESC %x24 %x2B [ ( I-R / DRCS ) ] F  ;; G3-DESIGNATE MULTIBYTE 94-SET
+=G1DM6 = ESC %x24 %x2D [ ( I-R / DRCS ) ] F  ;; G1-DESIGNATE MULTIBYTE 96-SET
+=G2DM6 = ESC %x24 %x2E [ ( I-R / DRCS ) ] F  ;; G2-DESIGNATE MULTIBYTE 96-SET
+=G3DM6 = ESC %x24 %x2F [ ( I-R / DRCS ) ] F  ;; G3-DESIGNATE MULTIBYTE 96-SET
+
+GnDm, GnDMm は、[[図形文字]]集合をそれぞれ [[G0]] 〜 [[G3]]
+に指示します。[[シフト状態]]によってはこれが同時に [[GL]] や [[GR]]
+への呼び出しとなることもあります。 SELECT-DRCS 指示子や
+[[文字集合改訂番号]]を併用可能です。
+
+GnDMm では、何バイトの文字集合かが F の値で定まります。
+([[ISO/IEC2022]] 1994 14.3.3)
+
+,03/* ,2以上
+,04/* ,2
+,05/* ,2
+,06/* ,3
+,07/* ,4以上
+
+=F = Fp / Fs
+=Fs = %x40-7D / EMPTY-SET
+=EMPTY-SET = %x7E
+
+F = 07/14 の時、空集合が指示されます。 ([[ISO/IEC2022]] 1994 14)
+F = 03/* の時に指示される文字集合は私用の集合です。
+それ以外 (F = 04/00〜07/13) では、 [[ISO-IR]] に登録された文字集合が
+指示されます。
+
+=I-R = %x21-23
+
+第2 or 第3中間バイトだけでは終端バイトが足りなくなった時に、
+02/01 〜 02/03 を1つ使って、例えば ESC 02/08 02/01 04/00
+で G0 に94図形文字集合を指示出来ます。
+
+GnM6 の ESC <I> 5/7 は [[ISO-IR]] で、 [[CCITT]]
+が以前に使用していたから割り当てないと書いてあります。
+(未登録のまま使ってたってことですか?)
+
+*DRCS: 動的再指定可能文字集合
+
+See [[DRCS]]
+
+*3つの 94[SUP[2]] 文字集合の指示の例外規定
+-ESC 02/04 (04/00 / 04/01 / 04/02)  ;; Ft の文字集合を [[G0]] に指示
+
+古い ISO 2022 では 94[SUP[2]] 文字集合は G0 
+にしか指示出来ませんでした。その時の名残でこれらの3つの文字集合を
+G0 に指示する時は 02/08 を省きます。ここで 02/08 を挟むと
+厳密には ISO/IEC 2022 に適合しません。 ([[JISX0202]]:1998 13.2.3
+備考)
+
+この点で [[X]] の [[CompoundText]] は ISO/IEC 2022
+に適合しません。
+
+*ISO/IEC 2022, 6429 の定義
+
+指示する (to designate) [[文字集合]]を、即座にまたは更に他の
+[[制御機能]]が出現してから、所定の方法で表現出来るように
+指定すること。 ([[JISX0211]]-1994 4.2.31)
+([[JISX0202]]:1998 にもほとんど同じ記述がある。)
+
+[[図形文字集合]]を Gn の各要素として識別すること,
+及び[[制御機能]]集合を Cn の各要素として識別することを、
+ISO/IEC 2022 では「指示」という。集合の指示は、指示機能又は
+他の機能で行ってよい。 ([[JISX0202]]:1998 7.2 表1 備考)
+- [3] G[VAR[n]]M6 の [CODE[ESC]] [VAR[I]] [CODE[5/7]] は、 [[NAPLPS]] で使います。これが公式に登録されずに、その[[終端バイト]]には割り当てないことになったのは、その集合が[[図形文字集合]]ではなかったからでしょう。
+@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@@
+

@@ -1,0 +1,829 @@
+head	1.1;
+access;
+symbols
+	suikawiki3-final:1.1;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.1
+date	2004.07.27.02.04.48;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9 page-icon="メイル"
+'''Communicating Presentation Information in Internet Messages: The Content-Disposition Header [INS[Field]] [INS[Internet メッセージ中での表現情報伝達: Content-Disposition 頭[INS[欄]]]]'''
+-Network Working Group                                          
+-Request for Comments: [DEL[1806]] [INS[2183]]
+-[INS[Updates: 1806]]
+-Category: [DEL[Experimental]] [INS[Standards Track]]
+-R. Troost (New Century Systems)
+-S. Dorner (QUALCOMM Incorporated)
+-[INS[K. Moore, Editor (University of Tennessee)]]
+-[DEL[June 1995]] [INS[August 1997]]
+
+*Status of this Memo [INS[このメモの位置付け]]
+[DEL[
+> This memo defines an Experimental Protocol for the Internet
+community.  This memo does not specify an Internet standard of any
+kind.  Discussion and suggestions for improvement are requested.
+Distribution of this memo is unlimited.
+]DEL]
+[INS[
+>This document specifies an Internet standards track protocol for the
+Internet community, and requests discussion and suggestions for
+improvements.  Please refer to the current edition of the "Internet
+Official Protocol Standards" (STD 1) for the standardization state
+and status of this protocol.  Distribution of this memo is unlimited.
+]INS]
+*Abstract [INS[概要]]
+>This memo provides a mechanism whereby messages conforming to the [DEL[ [RFC 1521] ("MIME") specification]] [INS[MIME specifications [RFC 2045, RFC 2046, RFC 2047, RFC 2048, RFC 2049] ]] can convey presentational information.  It specifies [DEL[a new]] [INS[the]]
+"Content-Disposition" header [INS[field]], [DEL[optional and valid for any [RFC 1521] ]] [INS[which is optional and valid for any MIME]] entity ("message" or "body part").  Two values for this
+header [INS[field]] are described in this memo; one for the ordinary linear
+presentation of the body part, and another to facilitate the use of
+mail to transfer files.  It is expected that more values will be
+defined in the future, and procedures are defined for extending this set of values.
+
+このメモは、 [[MIME]] 
+仕様書に適合するメッセージにおいて表現情報を伝達する仕組みを提供します。
+規定するのは [CODE(MIME)[[[Content-Disposition]]]] (内容配置) 
+頭[INS[欄]]であり、これは省略可能であり, また任意の MIME [[実体]]
+(「[[メッセージ]]」や「[[本体部分]]」)
+に対して妥当です。このメモにおいてはこの頭[INS[欄]]の2つの値を説明します。1つは普通の本体部分の線形表現で、もう1つはファイルの転送にメイルを使うのを促進するものです。値が更に将来定義されることが期待されるので、この値の集合を拡張するための手続きも定義します。
+
+>This document is intended as an extension to [DEL[ [RFC 1521] ]] [INS[MIME]].  As such, the
+reader is assumed to be familiar with [DEL[ [RFC 1521] ]] [INS[the MIME specifications]], and
+[RFC 822].  The information presented herein supplements but does not
+replace that found in those documents.
+
+この文書は MIME を拡張することを意図したものです。ですから、読者は
+MIME 仕様書と RFC 822 に精通しているものと想定しています。この中で示す情報はこれらの文書の中にあるものを補足するのであって、置き換えるものではありません。
+
+[INS[
+>This document is a revision to the Experimental protocol defined in
+RFC 1806.  As compared to RFC 1806, this document contains minor
+editorial updates, adds new parameters needed to support the File
+Transfer Body Part, and references a separate specification for the
+handling of non-ASCII and/or very long parameter values.
+
+この文書は、 RFC 1803 で規定された実験的プロトコルの改訂です。
+RFC 1806 と比較して、この文書は細かい編集上の修訂,
+ファイル転送本体部分の対応に必要な新しいパラメータの追加及び非
+ASCII 及び/又は非常に長いパラメーター値の取り扱いについての他の仕様書を参照を行っています。
+]INS]
+
+*1.  Introduction [INS[はじめに]]
+>[DEL[ [RFC 1521] ]] [INS[MIME]] specifies a standard format for encapsulating multiple pieces of
+data into a single Internet message. That document does not address
+the issue of presentation styles; it provides a framework for the
+interchange of message content, but leaves presentation issues solely
+in the hands of mail user agent (MUA) implementors.
+
+MIME は複数のデータ片を1つの Internet 
+メッセージとしてカプセル化する標準形式を規定しています。
+その文書は表現様式の問題に触れていません。
+メッセージ内容の交換のための枠組みは提供していますが、表現の問題はただメイル[[利用者エージェント]]
+([[MUA]]) の実装者の手に委ねられていました。
+
+>Two common ways of presenting multipart electronic messages are as a
+main document with a list of separate attachments, and as a single
+document with the various parts expanded (displayed) inline. The
+display of an attachment is generally construed to require positive
+action on the part of the recipient, while inline message components
+are displayed automatically when the message is viewed. A mechanism
+is needed to allow the sender to transmit this sort of presentational
+information to the recipient; the Content-Disposition header provides
+this mechanism, allowing each component of a message to be tagged
+with an indication of its desired presentation semantics.
+
+複数部分電子メッセージを表現する2つのよくある方法は、主文書と別途添付物の表として表現する方法と単一文書として各部品を[RUBY[行内] [インライン]]に展開
+(表示) する方法です。
+添付物を表示するためには普通受信者の能動的な操作が必要と考えられますが、他方で行内メッセージ部品はメッセージが表示される時に自動的に表示されます。
+この種の表現情報を受信者に送信者が転送出来るようにする仕組みが必要です。
+Content-Disposition 頭はこの仕組みを提供するもので、メッセージの各部品に望まれる表現上の意味の指示の札をつけることが出来ます。
+
+>Tagging messages in this manner will often be sufficient for basic
+message formatting. However, in many cases a more powerful and
+flexible approach will be necessary. The definition of such
+approaches is beyond the scope of this memo; however, such approaches
+can benefit from additional Content-Disposition values and
+parameters, to be defined at a later date.
+
+この方法での札付けは基本的なメッセージ整形には大抵十分でしょう。
+しかし、多くの場合により強力で柔軟な方法が必要になるでしょう。
+そうした方法の定義はこのメモの適用範囲外です。
+しかし、後日定義されよう追加の [CODE(MIME)[Content-Disposition]]
+値と引数がそうした方法に有益になるかもしれません。
+
+>In addition to allowing the sender to specify the presentational
+disposition of a message component, it is desirable to allow her to
+indicate a default archival disposition; a filename. The optional
+"filename" parameter provides for this.  [INS[Further, the creation-date, modification-date, and read-date parameters allow preservation of those file attributes when the file is transmitted over MIME email.]]
+
+メッセージ部品の表現上の配置を送信者が指定出来るようにすることに加えて、既定の[RUBY[保管庫] [アーカイブ]]上の配置
+(ファイル名) を示すことが可能であるのが望ましいです。
+省略可能な [CODE(MIME)[[[filename]]]] (ファイル名) 
+引数はこの機能を提供します。[INS[更に、 [CODE(MIME)[[[creation-date]]]] (作成日), [CODE(MIME)[[[modification-date]]]] (編集日), [CODE(MIME)[[[read-date]]]] (読取日) の各引数によって、ファイルが MIME 電子メイルにより転送される時に各ファイル属性を保持することが可能です。]]
+
+[INS[
+>NB: The keywords MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD,
+SHOULD NOT, RECOMMENDED, MAY, and OPTIONAL, when they appear in this
+document, are to be interpreted as described in [RFC 2119].
+
+'''注''': 見出し語 '''[RUBYB[なければなりません] [MUST]]''',
+'''[RUBYB[してはなりません] [MUST NOT]]''',
+'''[RUBYB[必要です] [REQUIRED]]''',
+'''[RUBYB[します] [SHALL]]''', '''[RUBYB[しません] [SHALL NOT]]''',
+'''[RUBYB[するのが良いです] [SHOULD]]''',
+'''[RUBYB[しないのが良いです] [SHOULD NOT]]''',
+'''[RUBYB[推奨します] [RECOMMENDED]]''',
+'''[RUBYB[しても構いません] [MAY]]''',
+'''[RUBYB[任意/省略可能です] [OPTIONAL]]''' 
+がこの文書中に出現する時は、 [[RFC2119]]
+で説明されているように解釈します。
+]INS]
+
+*2.  The Content-Disposition Header Field [INS[Content-Disposition 頭欄]]
+>Content-Disposition is an optional header [INS[field. In]] [DEL[; in]] its absence, the
+MUA may use whatever presentation method it deems suitable.
+
+Content-Disposition は省略可能な頭欄です。無い場合、 MUA 
+は適切と思われる任意の表現方法を使って構いません。
+
+>It is desirable to keep the set of possible disposition types small
+and well defined, to avoid needless complexity. Even so, evolving
+usage will likely require the definition of additional disposition
+types or parameters, so the set of disposition values is extensible;
+see below.
+
+[RUBYB[配置] [disposition]]型の集合は、不要に複雑化するのを避けるため、小さくよく定義されている状態であることが望ましいです。ですが、発展した用途のためには追加の配置型やパラメーターの定義が必要になるでしょうから、配置値の集合は拡張可能です。後の節を参照して下さい。
+
+>In the extended BNF notation of [RFC 822], the Content-Disposition
+header field is defined as follows:
+
+RFC 822 の拡張 BNF 記法で、 Content-Disposition
+頭欄を次のように定義します。
+
+     disposition := "Content-Disposition" ":"
+                    disposition-type
+                    *(";" disposition-parm)
+
+     disposition-type := "inline"
+                       / "attachment"
+                       / extension-token
+                       ; values are not case-sensitive
+                       [INS[; 値は大文字と小文字を区別しない。]]
+
+>
+- disposition-parm := filename-parm [INS[/ creation-date-parm / modification-date-parm / read-date-parm / size-parm]] / parameter
+-filename-parm := "filename" "=" value
+
+[INS[
+>
+-creation-date-parm := "creation-date" "=" quoted-date-time
+-modification-date-parm := "modification-date" "=" quoted-date-time
+-read-date-parm := "read-date" "=" quoted-date-time
+-size-parm := "size" "=" 1*DIGIT
+-
+     quoted-date-time := quoted-string
+                      ; contents MUST be an RFC 822 `date-time'
+                      ; numeric timezones (+HHMM or -HHMM) MUST be used
+            [INS[; 中身は RFC 822 「date-time」で''なければならない'']]
+            [INS[; 数字の時間帯 (+HHMM や -HHMM) を使わ''なければならない'']]
+]INS]
+
+[INS[
+>'''NOTE ON PARAMETER VALUE [DEL[LENGHTS]] [INS[LENGTHS]]''' [INS[(注 : RFC Errata (>>4) による修正。)]]: A short (length <= 78 characters)
+parameter value containing only non-`tspecials' characters SHOULD be
+represented as a single `token'.  A short parameter value containing
+only ASCII characters, but including `tspecials' characters, SHOULD
+be represented as `quoted-string'.  Parameter values longer than 78
+characters, or which contain non-ASCII characters, MUST be encoded as
+specified in [RFC 2184].
+
+'''引数値の長さについての注意''': 短い
+(78文字以下の長さの) 引数値で「[CODE(ABNF)[tspecials]]」でない文字だけを含むものは単一の「[CODE(ABNF)[token]]」として表現する'''べきです'''。短い引数値で
+ASCII 文字だけを含むが、「[CODE(ABNF)[tspecials]]」文字を含んでいるものは、「[CODE(ABNF)[[[quoted-string]]]]」として表現する'''べきです'''。
+78 文字より長い引数値又は非 ASCII
+文字を含む引数値は、 RFC 2184
+で規定するように符号化し'''なければなりません'''。
+
+[INS[
+訳注: RFC 2184 は改訂され、 RFC 2231 となりました。
+See [[MIMEのparameter値拡張]]
+]INS]
+]INS]
+
+>`Extension-token', `parameter'[INS[, `tspecials']] and `value' are defined
+according to [DEL[ [RFC 822] and [RFC 1521] ]] [INS[ [RFC 2045] (which references [RFC 822] in the definition of some of these tokens)]].  [INS[`quoted-string' and `DIGIT' are defined in [RFC 822].]]
+
+「[CODE(BNF)[extension-token]]」, 「[CODE(BNF)[parameter]]」,
+「[CODE(BNF)[tspecials]]」, 「[CODE(BNF)[value]]」は
+RFC 2045 の通り定義されます。 (幾つかの字句の定義は RFC 822
+を参照しています。) 「[CODE(BNF)[quoted-string]]」と
+「[CODE(BNF)[DIGIT]]」は RFC 822 で定義されています。
+
+**2.1  The Inline Disposition Type [INS[Inline (行内) 配置型]]
+
+>A bodypart should be marked `inline' if it is intended to be
+displayed automatically upon display of the message.  Inline
+bodyparts should be presented in the order in which they occur,
+subject to the normal semantics of multipart messages.
+
+[[本体部分]]がメッセージの表示で自動的に表示されることを意図しているなら、「inline」 (行内) として印をつけるのが良いです。
+Inline の本体部分はその出現順に提示され、普通の意味の[[複数部分]]メッセージに準じるのが良いです。
+
+**2.2  The Attachment Disposition Type ([INS[Attachment (添付) 配置型]]
+
+>Bodyparts can be designated `attachment' to indicate that they are
+separate from the main body of the mail message, and that their
+display should not be automatic, but contingent upon some further
+action of the user.  The MUA might instead present the user of a
+bitmap terminal with an iconic representation of the attachments, or,
+on character terminals, with a list of attachments from which the
+user could select for viewing or storage.
+
+[[本体部分]]はメイル・メッセージの主要な[[本体]]とは区別されることを示すため、「attachment」 (添付) と印をつけることができます。
+これは自動的に表示されるのは望ましくなく、[[利用者]]の何らかの操作で表示されるのが良いです。
+MUA は画像端末では代わりに添付を表す絵を利用者に提示しても良いですし、あるいは文字端末では利用者が表示や保管を選択できる添付物の表を
+見せるのも良いでしょう。
+
+**2.3  The Filename Parameter [INS[Filename (ファイル名) パラメーター]]
+
+>The sender may want to suggest a filename to be used if the entity is
+detached and stored in a separate file. If the receiving MUA writes
+the entity to a file, the suggested filename should be used as a
+basis for the actual filename, where possible.
+
+送信者は[[実体]]が取り出されて別のファイルとして保管されるときに使われるファイル名の案を示しておきたいかもしれません。
+受信した MUA が実体をファイルに書き出す時、示されたファイル名を可能であれば実際のファイル名の基とするのがよいです。
+
+>It is important that the receiving MUA not blindly use the suggested
+filename.  The suggested filename [DEL[should]] [INS[SHOULD]] be checked (and possibly
+changed) to see that it conforms to local filesystem conventions,
+does not overwrite an existing file, and does not present a security
+problem (see Security Considerations below).
+
+受信した MUA は、示されたファイル名を盲信して使わないことが重要です。
+示されたファイル名について、受信側のファイル系統の慣習に沿っているか、既存のファイルを上書きしてしまわないか、安全上の問題を起こさないかを確認
+(後の''安全性に関して''を参照。) し、
+(必要なら変更) する''べきです''。
+
+>The receiving MUA [DEL[should not]] [INS[SHOULD NOT]] respect any directory path information
+that may seem to be present in the filename parameter.  The filename
+should be treated as a terminal component only.  Portable
+specification of directory paths might possibly be done in the future
+via a separate Content-Disposition parameter, but no provision is
+made for it in this draft.
+
+受信した MUA は [CODE(MIME)[filename]]
+引数中にみられるディレクトリ経路情報を尊重する''べきではありません''。
+ファイル名は最後の部分だけを使うのが良いです。
+ディレクトリ経路の指定は別の [CODE(MIME)[Content-Disposition]]
+引数として将来定義されるかもしれませんが、この原案ではその予定はありません。
+
+>Current [DEL[ [RFC 1521] ]] [INS[ [RFC 2045] ]] grammar restricts parameter values (and hence
+Content-Disposition filenames) to US-ASCII.  We recognize the great
+desirability of allowing arbitrary character sets in filenames, but
+it is beyond the scope of this document to define the necessary
+mechanisms.  We expect that the basic [RFC 1521] [INS[(注 : 修正漏れで、 RFC 2045 であるべきはず。)]] `value'
+specification will someday be amended to allow use of non-US-ASCII
+characters, at which time the same mechanism should be used in the
+Content-Disposition filename parameter.
+
+現在の MIME の文保言うは引数値を [[US-ASCII]] に制限しています
+(から、 [CODE(MIME)[Content-Disposition]] ファイル名も制限されます)。
+ファイル名に任意の文字集合を認めることは非常に望ましいことであると認識していますが、
+それに必要な機構を定義することはこの文書の適用範囲外です。
+基本 MIME [CODE(ABNF)[[[value]]]] 仕様がいつの日か改訂されて非 US-ASCII
+文字を使うことが認められることを期待しまして、
+その時には同じ機構が [CODE(MIME)[Content-Disposition]]
+[CODE(MIME)[filename]] 引数中で使うべきです。
+
+[INS[
+注 : この問題は RFC 2183 と同時に発表された [[RFC2184]]
+(後に改訂されて [[RFC2231]]) によって解決しています。
+]INS]
+
+>Beyond the limitation to US-ASCII, the sending MUA may wish to bear
+in mind the limitations of common filesystems.  Many have severe
+length and character set restrictions.  Short alphanumeric filenames
+are least likely to require modification by the receiving system.
+
+US-ASCII への制限の他に、送信する MUA
+は共通ファイルシステムの制限を考慮しておく方が良いでしょう。
+多くは長さと文字集合に制限があります。
+短い英数字のファイル名なら受信したシステムで修正する必要が最小でしょう。
+
+>The presence of the filename parameter does not force an
+implementation to write the entity to a separate file. It is
+perfectly acceptable for implementations to leave the entity as part
+of the normal mail stream unless the user requests otherwise. As a
+consequence, the parameter may be used on any MIME entity, even
+`inline' ones. These will not normally be written to files, but the
+parameter could be used to provide a filename if the receiving user
+should choose to write the part to a file.
+
+[CODE(MIME)[filename]] 引数が示されていることは実装が実体を分離したファイルとして書き出すことを強制するものではありません。
+実装が、利用者が別途要求しない限り実体を通常のメイル流の一部としておくことは全くもって認められます。
+ですから、この引数はどんな MIME 実体でも、たとえ
+[CODE(MIME)[inline]] のものであっても使うことができます。
+それらは通常はファイルには書き出しませんが、
+受信した利用者がその部分をファイルに書き出すことを選んだときにファイル名を提供するのに使うことができるでしょう。
+
+[INS[
+**2.4 The Creation-Date parameter [INS[Creation-Date (作成日) 引数]]
+
+>The creation-date parameter MAY be used to indicate the date at which
+the file was created.  If this parameter is included, the paramter
+value MUST be a quoted-string which contains a representation of the
+creation date of the file in [RFC 822] `date-time' format.
+
+[CODE[creation-date]] (作成日)
+パラメーターはファイルが作成された日付を示すために使っても''構いません''。
+このパラメーターを使う時は、そのパラメーター値はファイルの作成日を
+[RFC 822] の「date-time」形式で表したものから成る
+[CODE(BNF)[quoted-string]] で''なければなりません''。
+
+>UNIX and POSIX implementors are cautioned that the `st_ctime' file
+attribute of the `stat' structure is not the creation time of the
+file; it is thus not appropriate as a source for the creation-date
+parameter value.
+
+[[UNIX]] 及び [[POSIX]] での実装者は、
+「[[stat]]」[[構造体]]の「[[st_ctime]]」ファイル属性はファイルの作成時間でないことに注意して下さい。
+従ってこれは creation-date
+パラメーター値の元として相応しくありません。
+
+**2.5 The Modification-Date parameter [INS[Modification-Date (編集日) 引数]]
+
+>The modification-date parameter MAY be used to indicate the date at
+which the file was last modified.  If the modification-date parameter
+is included, the paramter value MUST be a quoted-string which
+contains a representation of the last modification date of the file
+in [RFC 822] `date-time' format.
+
+[CODE[modification-date]]
+パラメーターはファイルが最後に編集された日を示すために使っても''構いません''。
+[CODE[modification-date]]
+パラメーターを使う時は、パラメーター値はファイルの作成日を
+[RFC 822] の「date-time」形式で表したものから成る
+[CODE(BNF)[quoted-string]] で''なければなりません''。
+
+**2.6 The Read-Date parameter [INS[Read-Date (読取日) 引数]]
+
+>The read-date parameter MAY be used to indicate the date at which the
+file was last read.  If the read-date parameter is included, the
+parameter value MUST be a quoted-string which contains a
+representation of the last-read date of the file in [RFC 822] `date-
+time' format.
+
+[CODE[read-date]] (読取日)
+パラメーターはファイルが最後に読まれた日を示すために使っても''構いません''。
+[CODE[read-date]] パラメーターを使う時は、パラメーター値はファイルの作成日を
+[RFC 822] の「date-time」形式で表したものから成る
+[CODE(BNF)[quoted-string]] で''なければなりません''。
+
+**2.7 The Size parameter [INS[Size (寸法) 引数]]
+
+>The size parameter indicates an approximate size of the file in
+octets.  It can be used, for example, to pre-allocate space before
+attempting to store the file, or to determine whether enough space
+exists.
+
+[CODE[size]] (大きさ)
+パラメーターはファイルのおおよその大きさを[[オクテット]]単位で示します。
+これは例えばファイルを保管しようとするときにあらかじめ場所を割り当てたり、十分な場所があるかどうかを判断するのに使うことが出来ます。
+
+[INS[
+訳注: これは目安でありますから、解釈する MUA 
+はこの値を盲信してはいけません。
+]INS]
+]INS]
+
+**[DEL[2.4]] [INS[2.8]]  Future Extensions and Unrecognized Disposition Types [INS[拡張と認識出来ない配置型]]
+
+>In the likely event that new parameters or disposition types are
+needed, they should be registered with the [DEL[IANA]] [INS[Internet Assigned Numbers Authority (IANA)]], in the manner specified in [DEL[ [RFC 1521], appendix E]] [INS[Section 9 of this memo]].
+
+新しい引数や配置型が必要になった時には、
+Internet 登録番号事務局 ([[IANA]]) 
+に、[DEL[RFC 1521 の附属書 E]] [INS[このメモの第9章]]の作法に従い登録します。
+
+>Once new disposition types and parameters are defined, there is of
+course the likelihood that implementations will see disposition types
+and parameters they do not understand.  Furthermore, since x-tokens
+are allowed, implementations may also see entirely unregistered
+disposition types and parameters.
+
+新しい配置型及び引数が定義されれば、当然実装は解せない配置型を見ることになります。
+更に、 [CODE(BNF)[x-token]]
+が使えるので、実装は全く登録されていない配置型やパラメーターにも遭遇するかもしれません。
+
+>Unrecognized parameters should be ignored. Unrecognized disposition
+types should be treated as `attachment'. The choice of `attachment'
+for unrecognized types is made because a sender who goes to the
+trouble of producing a Content-Disposition header with a new
+disposition type is more likely aiming for something more elaborate
+than inline presentation.
+
+認識出来ないパラメーターは無視するのがよいです。
+認識出来ない配置型は「[CODE[attachment]]」として扱うのがよいです。
+ここで認識出来ない型に「[CODE[attachment]]」を選ぶのは、新しい配置型の
+Content-Disposition 頭を使うことになる送信者はおそらく何か
+[CODE[inline]] 表現より込み入ったことを狙っているだろうからです。
+
+>Unless noted otherwise in the definition of a parameter, Content-Disposition parameters are valid for all dispositions.  (In contrast
+to [DEL[ [RFC 1521] ]] [INS[MIME]] content-type parameters, which are defined on a per-content-type basis.) Thus, for example, the `filename' parameter still means
+the name of the file to which the part should be written, even if the
+disposition itself is unrecognized.
+
+パラメーターの定義で特に既定していない限り、 Content-Disposition
+パラメーターは全ての配置型について有効です。
+(対照的に [[MIME]]
+[RUBYB[内容型] [content-type]]パラメーターは内容型毎を基本としています。)
+ですから例えば「filename」パラメーターは、配置型自体が認識出来ないものであっても依然としてその部分を書き出す時に使うべきファイルの名前を意味します。
+
+**2.9  Content-Disposition and Multipart [INS[Content-Disposition と多部分]]
+>If a Content-Disposition header is used on a multipart body part, it
+applies to the multipart as a whole, not the individual subparts.
+The disposition types of the subparts do not need to be consulted
+until the multipart itself is presented.  When the multipart is
+displayed, then the dispositions of the subparts should be respected.
+
+[CODE(MIME)[Content-Disposition]] 頭が[[多部分]]本体部分で使われるときは、
+個々の小部分ではなく多部分全体に適用されます。
+小部分の配置型は多部分自体が提示されるまでは調べる必要はありません。
+多部分が表示される時には、小部分の配置が反映されるべきです。
+
+> If the `inline' disposition is used, the multipart should be
+displayed as normal; however, an `attachment' subpart should require
+action from the user to display.
+
+[CODE(MIME)[inline]] 配置が使われるときは、多部分は通常のように表示するべきです。
+しかし、 [CODE(MIME)[attachment]] 小部分は表示するためには利用者の動作が必要となるべきです。
+
+> If the `attachment' disposition is used, presentation of the
+multipart should not proceed without explicit user action.  Once the
+user has chosen to display the multipart, the individual subpart
+dispositions should be consulted to determine how to present the subparts.
+
+[CODE(MIME)[attachment]] 配置が使われる時には、多部分の表現は陽な利用者の動作なしに進めるべきではありません。
+ひとたび利用者が多部分を表示すると選んだ時には、
+個々の小部分配置を調べて小部分をどう表現するかを決定するべきです。
+
+**[DEL[2.6]] [INS[2.10]]  Content-Disposition and the Main Message [INS[Content-Disposition と主メッセージ]]
+
+>It is permissible to use Content-Disposition on the main body of an
+[RFC 822] message.
+
+Content-Disposition を RFC 822
+メッセージの主本体に使うことは認められます、
+
+**3.  Examples [INS[例]]
+
+>Here is a an example of a body part containing a JPEG image that is
+intended to be viewed by the user immediately:
+
+ここに利用者に即座に表示されることを意図した [[JPEG]]
+画像を含んだ本体部分の例を示します。
+
+>
+[PRE[
+Content-Type: image/jpeg
+Content-Disposition: inline
+Content-Description: just a small picture of me
+
+<jpeg data>
+]PRE]
+
+>The following body part contains a JPEG image that should be
+displayed to the user only if the user requests it. If the JPEG is
+written to a file, the file should be named "genome.jpg"[INS[.  The
+recipient's user might also choose to set the last-modified date of
+the stored file to date in the modification-date parameter]]:
+
+次は利用者が要求した時にだけ表示されることが望ましい JPEG
+画像を含む本体部分です。 JPEG がファイルに書き出されるなら、ファイルは
+"genome.jpg" とするべきです。 [INS[受信した利用者は蓄積ファイルの最終編集日を [CODE(MIME)[modification-date]] 引数の日付とすることも選ぶかもしれません。]]
+
+[DEL[
+>
+[PRE[
+Content-Type: image/jpeg
+Content-Disposition: attachment; filename=genome.jpeg
+Content-Description: a complete map of the human genome
+
+<jpeg data>
+]PRE]
+]DEL]
+[INS[
+>
+[PRE[
+Content-Type: image/jpeg
+Content-Disposition: attachment; filename=genome.jpeg;
+  modification-date="Wed, 12 Feb 1997 16:29:51 -0500";
+Content-Description: a complete map of the human genome
+  [INS[人遺伝子の完全な地図]]
+
+<jpeg data>
+]PRE]
+]INS]
+
+>The following is an example of the use of the `attachment'
+disposition with a multipart body part.  The user should see text-part-1 immediately, then take some action to view multipart-2.  After
+taking action to view multipart-2, the user will see text-part-2
+right away, and be required to take action to view jpeg-1.  Subparts
+are indented for clarity; they would not be so indented in a real
+message.
+
+次は「attachment」配置を複数部分本体で使う例です。
+利用者は [VAR[text-part-1]] をすぐに見るのが望ましく、
+[VAR[multipart-2]] を表示すのには何らかの動作を取るべきです。
+[VAR[multipart-2]] を表示する動作をとった後、利用者は
+[VAR[text-part-2]] をすぐに見ることが出来るでしょう。
+そして [VAR[jpeg-1]] を表示するのには動作が必要でしょう。
+亜部は分かりやすいように字下げしていますが、実際のメッセージではこうは字下げしません。
+
+>
+[PRE[
+        Content-Type: multipart/mixed; boundary=outer
+        Content-Description: multipart-1
+
+        --outer
+          Content-Type: text/plain
+          Content-Disposition: inline
+          Content-Description: text-part-1
+
+          Some text goes here [INS[何か文章がここに来る]]
+
+        --outer
+          Content-Type: multipart/mixed; boundary=inner
+          Content-Disposition: attachment
+          Content-Description: multipart-2
+
+          --inner
+            Content-Type: text/plain
+            Content-Disposition: inline
+            Content-Description: text-part-2
+
+            Some more text here. [INS[何か文章が更にここに来る。]]
+
+          --inner
+            Content-Type: image/jpeg
+            Content-Disposition: attachment
+            Content-Description: jpeg-1
+
+            <jpeg data>
+          --inner--
+        --outer--
+]PRE]
+
+*4.  Summary [INS[まとめ]]
+>Content-Disposition takes one of two values, `inline' and
+`attachment'.  [DEL[']][INS[`]]Inline' indicates that the entity should be
+immediately displayed to the user, whereas `attachment' means that
+the user should take additional action to view the entity.
+
+>The `filename' parameter can be used to suggest a filename for
+storing the bodypart, if the user wishes to store it in an external
+file.
+
+*5.  Security Considerations [INS[安全性に関して]]
+>There are security issues involved any time users exchange data.
+While these are not to be minimized, neither does this memo change
+the status quo in that regard, except in one instance.
+
+利用者がデータを交換する時にいつも注意しないといけない安全上の問題があります。
+それらは最小化できるものではありませんから、このメモも、
+一つの実現値を除いて、この件の状態を変えるわけではありません。
+
+>Since this memo provides a way for the sender to suggest a filename,
+a receiving MUA must take care that the sender's suggested filename
+does not represent a hazard. Using UNIX as an example, some hazards
+would be:
+
+このメモは送信者がファイル名を提案する方法を提供していますから、
+受信した MUA は送信者の提案したファイル名が害をもたらさないように注意しなければなりません。
+UNIX を例に取ると、被害の例としては、
+
+>
+-Creating startup files (e.g., ".login").
+-Creating or overwriting system files (e.g., "/etc/passwd").
+-Overwriting any existing file.
+-Placing executable files into any command search path (e.g., "~/bin/more").
+-Sending the file to a pipe (e.g., "| sh").
+
+- 起動時ファイルを作成 (例えば [SAMP(file)[[[.login]]]])。
+- システム・ファイルの作成または上書き (例えば [SAMP(file)[[[/etc/passwd]]]])。
+- 既存ファイルの上書き。
+- 命令探索経路に実行可能ファイルを配置 (例えば [SAMP(file)[~/bin/more]])。
+- ファイルをパイプに送信 (例えば [SAMP[| [[sh]]]])。
+
+>In general, the receiving MUA should [DEL[never]] [INS[not]] name or place the file such
+that it will get interpreted or executed without the user explicitly
+initiating the action.
+
+通常、受信した MTA は利用者が陽に動作を指示しない限り解釈されたり実行されたりしてしまうようにファイルを命名したり配置したりするべきではありません。
+
+>It is very important to note that this is not an exhaustive list; it
+is intended as a small set of examples only.  Implementors must be
+alert to the potential hazards on their target systems.
+
+これは完全な一覧ではないことに注意することがとても重要です。
+小さな集合の例として示したまでに過ぎません。
+実装者はその対象システムで害をもたらす可能性があるときは警告しなければなりません。
+
+*6.  References [INS[参考文献]]
+
+[INS[
+   [RFC 2119]
+        Bradner, S., "Key words for use in RFCs to Indicate Requirement
+        Levels", RFC 2119, March 1997.
+
+   [RFC 2184]
+        Freed, N. and K. Moore, "MIME Parameter value and Encoded Words:
+        Character Sets, Lanaguage, and Continuations", RFC 2184, August
+        1997.
+]INS]
+
+[DEL[
+    [RFC 1521]
+        Borenstein N., and N. Freed, "MIME (Multipurpose Internet
+        Mail Extensions) Part One:  Mechanisms for Specifying and
+        Describing the Format of Internet Message Bodies",
+        RFC 1521, Bellcore, Innosoft, September 1993.
+]DEL]
+[INS[
+   [RFC 2045]
+        Freed, N. and N. Borenstein, "MIME (Multipurpose Internet Mail
+        Extensions) Part One: Format of Internet Message Bodies", RFC
+        2045, December 1996.
+
+   [RFC 2046]
+        Freed, N. and N. Borenstein, "MIME (Multipurpose Internet Mail
+        Extensions) Part Two: Media Types", RFC 2046, December 1996.
+
+   [RFC 2047]
+        Moore, K., "MIME (Multipurpose Internet Mail Extensions) Part
+        Three: Message Header Extensions for non-ASCII Text", RFC 2047,
+        December 1996.
+
+   [RFC 2048]
+        Freed, N., Klensin, J. and J. Postel, "MIME (Multipurpose
+        Internet Mail Extensions) Part Four: Registration Procedures",
+        RFC 2048, December 1996.
+
+   [RFC 2049]
+        Freed, N. and N. Borenstein, "MIME (Multipurpose Internet Mail
+        Extensions) Part Five: Conformance Criteria and Examples", RFC
+        2049, December 1996.
+]INS]
+
+   [RFC 822]
+        Crocker, D., "Standard for the Format of ARPA Internet Text
+        Messages", STD 11, RFC 822, UDEL, August 1982.
+
+*7.  Acknowledgements [INS[謝辞]]
+
+>We gratefully acknowledge the help these people provided during the
+preparation of this draft:
+
+この原案の準備中に助けてくださった次の皆さんに深く感謝します。
+
+-Nathaniel Borenstein
+-Ned Freed
+-Keith Moore
+-Dave Crocker
+-Dan Pritchett
+
+*8.  Authors' Addresses [INS[著者の連絡先]]
+[INS[
+>You should blame the editor of this version of the document for any
+changes since RFC 1806:
+
+RFC 1806 からの変更についてはこの文書のこの版の編集者に責があります。
+
+        Keith Moore
+        Department of Computer Science
+        University of Tennessee, Knoxville
+        107 Ayres Hall
+        Knoxville TN  37996-1301
+        USA
+
+        Phone: +1 (423) 974-5067
+        Fax: +1 (423) 974-8296
+        Email: moore@@cs.utk.edu
+
+>The authors of RFC 1806 are:
+
+RFC 1806 の著者は次の方々です。
+]INS]
+
+        Rens Troost
+        New Century Systems
+        324 East 41st Street #804
+        New York, NY, 10017 USA
+
+        Phone: +1 (212) 557-2050
+        Fax: +1 (212) 557-2049
+        EMail: rens@@century.com
+
+
+        Steve Dorner
+        QUALCOMM Incorporated
+        6455 Lusk Boulevard
+        San Diego, CA 92121
+        USA
+
+        EMail: sdorner@@qualcomm.com
+
+[INS[
+*9. Registration of New Content-Disposition Values and Parameters [INS[新しい Content-Disposition 値および引数の登録]]
+>New Content-Disposition values (besides "inline" and "attachment")
+may be defined only by Internet standards-track documents, or in
+Experimental documents approved by the Internet Engineering Steering
+Group.
+
+新しい [CODE(MIME)[Content-Disposition]] 値
+([CODE(MIME)[inline]] や [CODE(MIME)[attachment]] 
+の他の値) はインターネット[[標準化過程]]文書または [[IESG]]
+が承認した[[実験的]]文書でのみ定義できます。
+
+>New content-disposition parameters may be registered by supplying the
+information in the following template and sending it via electronic
+mail to IANA@@IANA.ORG:
+
+新しい [CODE(MIME)[content-disposition]] 引数は次の雛形に情報を埋めて
+<MAIL:IANA@@IANA.ORG> に電子メイルで送信することで登録できます。
+
+>
+[PRE[
+To: IANA@@IANA.ORG
+Subject: Registration of new Content-Disposition parameter
+  [INS[新しい Content-Disposition パラメーターの登録]]
+
+Content-Disposition parameter name: [INS[パラメーター名:]]
+
+Allowable values for this parameter: [INS[とり得る値:]]
+     (If the parameter can only assume a small number of values,
+     list each of those values.  Otherwise, describe the values
+     that the parameter can assume.)
+     [INS[引数が少数の値のみ取るなら列挙する。]]
+     [INS[そうでないなら引数の取り得る値を説明。]]
+Description: [INS[説明:]]
+     (What is the purpose of this parameter and how is it used?)
+     [INS[引数の目的はなにか、どう使うか。]]
+
+*10. Changes since RFC 1806 [INS[RFC 1806 からの変更点]]
+>The following changes have been made since the earlier version of
+this document, published in RFC 1806 as an Experimental protocol:
+
+実験的プロトコル RFC 1806 として出版されたこの文書の以前の版から、
+次の変更が行われています。
+
+>
+- Updated references to MIME documents.  In some cases this
+involved substituting a reference to one of the current MIME
+RFCs for a reference to RFC 1521; in other cases, a reference to
+RFC 1521 was simply replaced with the word "MIME".
+-Added  a section on registration procedures, since none of the
+procedures in RFC 2048 seemed to be appropriate.
+- Added new parameter types: creation-date, modification-date,
+read-date, and size.
+- Incorporated a reference to draft-freed-pvcsc-* for encoding
+long or non-ASCII parameter values.
+- Added reference to RFC 2119 to define MUST, SHOULD, etc. keywords.
+
+- MIME 文書への参照を更新しました。幾つかの場合には RFC 1521
+への参照を現行 MIME RFC の一つへの参照に置換しています。
+他の場合には RFC 1521 への参照を単に単語 [CODE[MIME]] に置換えています。
+- RFC 2048 には適当に思える登録手続きがないので、
+登録手続きの章を追加しました。
+- 新しい引数型 [CODE(MIME)[creation-date]],
+[CODE(MIME)[modification-date]], [CODE(MIME)[read-date]],
+[CODE(MIME)[size]] を追加しました。
+- 長い引数値や非 ASCII 引数値の符号化について、
+[CODE[draft-freed-pvcsc-[VAR[*]]]] への参照を入れました。
+- [CODE[MUST]], [CODE[SHOULD]] などの見出し語の定義に
+RFC 2119 への参照を追加しました。
+
+*LICENSE
+See [[RFCのライセンス]]
+*メモ
+-[2] 実装状況や拡張については [CODE(WikiPage)[[[Content-Disposition]]]] を参照。
+- [1] [WEAK[2002-11-10 (日) 11:50]] ''[[名無しさん]]'': (RFC 1806 にかいてあったのをそのままとはいえ) 編集者の Keith Moore が自分を謝辞の表に入れてるのはどうよ?
+-[3] RFC 2183 って本来 RFC 1806 を Update じゃなくて Obsolete しないといけないんじゃないですか? 内容的に。
+-[4] <IW:RFCErrata:1806>, <IW:RFCErrata:2183>
+@

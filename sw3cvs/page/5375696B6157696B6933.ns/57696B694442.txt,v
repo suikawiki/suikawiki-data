@@ -1,0 +1,791 @@
+head	1.3;
+access;
+symbols
+	suikawiki3-final:1.3
+	before-db-leaffile:1.3;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.3
+date	2004.04.03.02.00.23;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2004.03.31.02.01.01;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2004.03.18.02.07.17;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9
+
+[1] [DFN[[ABBR[WikiDB] [WikiDatabase]]]]
+は、 SuikaWiki WikiEngine が扱う情報を格納するためのデータベースに対する抽象界面です。
+
+WikiDB 界面を通して接続するデータベースの実体はどんなものであっても構いません。
+そこらの[[関係データベース]]や [[DBM]]
+のデータベースでも構いませんし、適当な[[テキスト・ファイル]]でも構いません。
+一つのファイルでも構いませんし、ファイルシステムに適当に写像しても構いません。
+単純な [[Perl]] のハッシュのような、
+永続的な実体を伴わない資源であっても構いません。
+ローカルのファイルではなく、
+遠隔の資源であっても構いません。
+とにかく、任意のものをデータベースとできます。
+
+
+* 抽象データベース構造
+
+[3] WikiDB は、次の抽象データベース構造を持ちます [WEAK[(関係データベースとかの一般の用語と比べると変ですが、気にしてはいけません)]]。
+
+データベース:
+,	,特性 [VAR[p]]	,特性 [VAR[q]]	,...
+,鍵 [VAR[k]]	,値 [VAR[v[SUB[[VAR[k]][VAR[p]]]]]]	,値 [VAR[v[SUB[[VAR[k]][VAR[q]]]]]]	,
+,鍵 [VAR[l]]	,値 [VAR[v[SUB[[VAR[l]][VAR[p]]]]]]	,値 [VAR[v[SUB[[VAR[l]][VAR[q]]]]]]	,
+,...	,	,	,
+
+鍵は、一次元配列です。
+- [CODE[[VAR[k]] := [CODE(perl)[ [ [VAR[k[SUB[1]]]], [VAR[k[SUB[2]]]], ... ] ]] ]]
+
+ただし、扱える鍵要素数を制限しても構いません。
+
+[32] 鍵の最後の要素を、[DFN[鍵葉]] (not 葉鍵) と呼びます。
+鍵葉以外の鍵の要素の並びを[DFN[鍵名前空間]]と呼びます。
+鍵葉が最上位階層に直属のときは、鍵名前空間は空になります。
+空の名前空間を[DFN[根]]とも称します。
+
+WikiDB の現在定義されている method のほとんどは、
+鍵葉に対する処理を行います。
+
+[33]
+特性は文字列です。ただし、一つのデータベースで扱える特性数を制限しても構いません。
+
+値は任意の Perl のデータです。
+ただし、すべての Perl のデータが保存できるとは限りません。たとえば、多くのデータベースでは参照をデータとして保存することはできないでしょう。
+
+WikiDB 界面の外からはこの構造に見える必要がありますが、実体であるデータベースはどのような構造であっても
+(構造がなくても!) 構いません。
+
+[[#comment]]
+
+
+* WikiDB 界面
+
+[2] WikiDB 界面を実装するモジュールは、次のメソッドを実装しなければなりません。
+
+- [CODE[new]]
+- [CODE[close]]
+- [CODE[open_prop]]
+- [CODE[close_prop]]
+- [CODE[get]]
+- [CODE[set]]
+- [CODE[keys]]
+- [CODE[exist]]
+- [CODE[delete]]
+
+次のメソッドを実装しても構いません。
+
+- [CODE[DESTROY]]
+- [CODE[open]]
+- [CODE[_]] で始まる名前のメソッド
+- [CODE[__]] で始まる名前のメソッド
+- [CODE[___]] で始まる名前のメソッド
+
+[CODE(perl)[SuikaWiki::DB::Util::template]] を継承するといいかもしれません。
+
+
+** $db = Class->new (%option)
+
+[4] 級メソッド [CODE[new]] は、新しいデータベースの実現値を生成します。
+
+[CODE(perl)[%option]] には、0個以上の引数を与えます。
+データベースの種類によって、引数名、引数値の型、必須かどうか、既定値が決まります。
+不適当な引数がある (あるいは必要な引数がない) ときには、例外を発生させて構いません。
+
+[5] このメソッド内では必要な初期化を行います。
+データベースを実際に開いても構いませんし、
+その前に固定を行っても構いません。
+
+
+*** %option
+
+[6] [CODE(perl)[-]] で始まる引数は、標準化されたものとします。モジュール独自の引数は [CODE[-]] から始めません。
+
+,名前	,値	,既定値	,意味
+,[CODE(perl)[-lock]]	,[CODE(perl)[{[VAR[%固定引数]]}]]	,(なし)	,固定選択肢
+
+
+** $result = $db->open (%option)
+
+[35] データベースを開きます。
+
+この method は、 [CODE[close]] との対称性のため予約していますが、現在のところ使われていません。
+
+
+** $result = $db->open_prop (%option)
+
+特性を開きます。データベース内に複数の特性があって、別々に開いたり閉じたりできる場合のみ有効です。
+そうでない場合は、何もせずに、
+適当な結果を返します。
+
+[CODE(perl)[$result]]:
+:[CODE(perl)[1]]:特性を開くのに成功した
+:[CODE(perl)[0]]:特性を開くのに失敗した (適当な例外を発生させて構わない。その場合の [CODE(perl)[$result]] は未定義)
+:[CODE(perl)["0 but true"]]:特性は既に開かれている
+
+
+** $result = $db->close_prop (%option)
+
+[7] 特性を閉じます。指定された特性を閉じるためには他の開かれている特性も閉じなければならないときは、
+[CODE(perl)["0 but true"]] を返します。
+
+
+** $db->close (%option)
+
+[8] データベースを閉じます。
+特性が開かれていれば、すべて閉じます。
+固定されていれば、解除して構いません。
+
+一度閉じたデータベースを再び開ける必要はありませんが、もしかしたら将来
+[CODE(perl)[open]] メソッドが定義されるかもしれません。
+
+
+** $db->DESTROY
+
+[9] 必要な後始末をします。
+データベースが閉じられていないのなら、閉じたほうがいいですが、
+他で確実に閉じられる保証があるのならその限りではありません。
+固定についても同様です。
+
+この method は必要がなければ定義しなくて構いません。
+この method は Perl が自動的に呼び出します。
+利用者が直接呼び出すことは想定していません。
+
+
+** $value = $db->get ($prop, $key, %option)
+
+[10] 値 [VAR[v[SUB[[VAR(perl)[$key]],[VAR(perl)[$prop]]]]]] を取得します。
+
+データベースの制限または不測の事態により値を取得できないときは、例外を発生させます。
+
+単に値が未定義の時は、 [CODE(perl)[[[undef]]]] を返すのがいいですが、その辺はデータベースの性質によります。
+
+
+** $db->set ($prop, $key => $value, %option)
+
+[11] 値 [VAR[v[SUB[[VAR(perl)[$key]],[VAR(perl)[$prop]]]]]] を設定します。
+
+データベースの制限、不当な値、または不測の事態により値を設定できないときには、例外を発生させます。
+
+[CODE(perl)[undef]] が与えられたら値を削除しても構いませんが、その辺はデータベースの性質によります。
+
+返される値は未定義です。
+
+
+** ($key1, $key2, ...) = $db->keys ($prop, %option)
+
+[29] すべての鍵を返します。
+
+[CODE(perl)[[[each]]]] 型の列挙方法も用意することを検討中です。。。
+
+
+*** %option
+
+[31] [CODE(perl)[-]] で始まる引数は、標準化されたものとします。モジュール独自の引数は [CODE[-]] から始めてはいけません。
+
+,名前	,値	,既定値	,意味
+,[CODE(perl)[-ns]]	,[CODE(perl)[{[VAR[$key]]}]]	,(根)	,鍵名前空間
+,[CODE(perl)[-type]]	,[CODE(ABNF)['ns' / 'key']]	,[CODE[key]]	,種類
+
+[CODE[-ns]] が指定されている場合は、その値を鍵名前空間とみなし、そこに属するものの一覧を返します。
+[CODE[-type]] が [CODE[ns]] なら鍵名前空間を、
+[CODE[key]] なら鍵葉を返します。
+
+
+** $result = $db->exist ($prop, $key, %option)
+
+[13] 値 [VAR[v[SUB[[VAR(perl)[$key]],[VAR(perl)[$prop]]]]]] 
+が存在するかを返します。
+
+存在すれば真、しなければ偽とします。
+データベースの性質上値が存在できない場合あるいは不定の場合は、
+[WEAK[一般の偽とは異なる)]] [CODE(perl)[undef]] を返しても構いません。
+
+データベースの制限または不測の事態により存在するか調べられないときには、例外を発生させても構いません。
+
+[WEAK[ハッシュの鍵の存在を検査する [CODE(perl)[[[exists]]]] と綴りが違うことに注意。]]
+
+
+** $db->delete ($prop, $key, %option)
+
+[14] 値 [VAR[v[SUB[[VAR(perl)[$key]],[VAR(perl)[$prop]]]]]] 
+を削除します。
+
+データベースの制限または不測の事態により削除できないときには、例外を発生させても構いません。
+
+[WEAK[Perl 組込みの [CODE(perl)[[[delete]]]] と同じ名前であることに注意。]]
+
+
+** _ で始まる名前のメソッド
+
+[17] [CODE[_]] で始まる名前のメソッドは、
+モジュール定義のメソッドとします。モジュールは必要に応じて適当な名前のメソッドを用意して構いません。また、モジュールの利用者は必要に応じてそのメソッドを呼んで構いません。
+
+[18] [CODE[__]] で始まる名前のメソッドは、
+モジュール定義の内部用メソッドとします。モジュールは必要に応じて適当な名前のメソッドを用意して構いません。モジュールの利用者はこのメソッドを利用するべきではありません。
+
+[19] [CODE[___]] で始まる名前のメソッドは、標準化された内部用メソッドとします。モジュールは必要に応じてそのメソッドを定義する必要があります。
+モジュールの利用者は基本的にこのメソッドを利用してはいけませんし、
+その必要もないはずです。
+
+[20] 4文字以上の [CODE[_]] で始まる名前のメソッドは、将来の標準化のために予約します。モジュールはそのようなメソッドを定義するべきではありません。
+
+
+*** $db->___init (%option)
+
+[30] WikiDB の新しい実現値が作られるとき ([CODE[->new]])
+に呼び出します。この method を実装するときは、
+実現値の option などの初期設定を行うことが望ましいです。
+(データベースを開いたり閉じたりするのは望ましくありません。)
+
+引数は、 [CODE[->new]] が呼び出されたときの引数が与えれれます。
+この method が返す値の処理は未定義です。
+
+
+*** $db->___report_error
+
+[21] [CODE(perl)[[[Message::Util::Error]]]] が呼び出すメソッドです。
+普通は [CODE(perl)[SuikaWiki::DB::Util::template]] から継承すれば十分です。
+[CODE(perl)[SuikaWiki::DB::Util::template]] の [CODE(perl)[___report_error]]
+は、事象 [CODE[error]] を発生させます。
+(つまり、 [CODE(perl)[@@{$db->{event}->{error}}]] の各要素
+(code ref) が呼ばれます。)
+
+なお、事象関係の仕様は SuikaWiki 3 全体的にまだ確定していないので、将来変更されるかも知れません。
+
+
+* $db->{event}->{error}
+
+メソッド [CODE[___report_error]] を参照。
+
+
+* 関連モジュール
+
+- [15] <IW:SuikaCVS:"suikawiki/script/lib/SuikaWiki/DB/"> 以下の各モジュール
+- [16] WikiDB plugin <IW:SuikaCVS:"suikawiki/script/lib/SuikaWiki/Plugin/WikiDB.wp2">
+[[#comment]]
+
+
+** SuikaWiki::DB::Util
+
+[22] [CODE(perl)[SuikaWiki::DB::Util]]
+<IW:SuikaCVS:"suikawiki/script/lib/SuikaWiki/DB/Util.pm">
+は、 WikiDB 各モジュールが共通に使うであろう関数を用意しています。
+このモジュールを使うモジュールは、冒頭で
+[CODE(perl)[require SuikaWiki::DB::Util;]] してください。
+
+このモジュールで実装されている [CODE(perl)[SuikaWiki::DB::Util::template]] 名前空間は、 WikiDB モジュールの基底級とできます。
+そうしたい場合は [CODE(perl)[push our @@ISA, 'SuikaWiki::DB::Util::template']]
+とでもしてください。
+
+このモジュールは、自動的に [CODE(perl)[SuikaWiki::DB::Util::Error]]
+を読み込みます。
+
+
+** SuikaWiki::DB::Util::Error
+
+[23] [CODE(perl)[SuikaWiki::DB::Util::Error]] は、
+WikiDB の共通の誤り定義です。この級は
+[CODE(perl)[[[Message::Util::Error]]]] を継承しています。
+
+WikiDB モジュール独自の誤りを定義したいときは、
+この級を継承した誤り定義級を定義してください。
+
+[24] WikiDB モジュール内で誤りを発生させたり、
+情報・虫取用メッセージを出すときには、
+[PRE[
+  report SuikaWiki::DB::Util::Error
+    -type => [VAR[error-name]],
+    -object => [VAR[$module]], method => [VAR[method-name]],
+    key => $key, prop => $prop, # あれば。
+    [VAR[param-name1]] => [VAR[param-value1]],
+    [VAR[...]];
+]PRE]
+
+として下さい。 [VAR[error-name]] は
+[CODE(perl)[SuikaWiki::DB::Util::Error]] の誤り名です。
+可能な引数は、誤り名によります。
+(モジュール独自の誤り定義を使うときは、
+[CODE(perl)[SuikaWiki::DB::Util::Error]] を誤り定義級名に換えてください。)
+
+(引数の最初の [CODE(char)[-]] の有無に注意。
+[CODE(char)[-]] から始まるのは、 [CODE(perl)[Message::Util::Error]]
+で定義された引数です。)
+
+[25] [CODE(perl)[SuikaWiki::DB::Util::Error::___error_def]]
+では、 [CODE(perl)[Message::Util::Error]] の形式で誤りが定義されています。
+
+たとえば、
+[PRE[
+    STOP_DB_PROP_CANT_OPEN => {
+      level => 'stop',
+      description => q(%t (name => method);: Sub-database "%t (name => prop);" cannot be opened%t (prefix => {: }, name => file);%t (prefix => {: }, name => msg);),
+    },
+]PRE]
+
+の部分は、 [CODE[STOP_DB_PROP_CANT_OPEN]] という名前の誤りを定義しています。
+[CODE[level]] 引数は、報告水準を指定します。
+現在定義されているのは次の通りです。
+:'fatal':致死誤り。深刻な誤りであって、 WikiDB をこのまま操作し続けられることを一切保証できません。この種の誤りに遭遇したら、普通は適当なメッセージを出してプログラム自体死ぬべきです。
+:'stop':停止誤り。その特定の操作が失敗しました。
+たとえば、読み取り専用のところに書き込もうとしたときは通常この種類になります。その操作自体は失敗しましたが、 WikiDB 全体としては処理を継続できます。
+:'warn':警告。処理中に望ましからぬ状況に遭遇しました。
+この状況をもって処理を中止できるかは、その状況に依存します。
+普通は、適当に利用者に報告しつつ処理を継続するべきです。
+:'log':記録しておくと有用かもしれない事象が発生しました。
+:'detaillog':細かい記録を取っておきたいときに記録しておくと有用かもしれない事象が発生しました。
+普通は、利用者が特に求めない限り、この種の報告は無視するべきです。
+:'debug':虫取用のメッセージ。
+普通は、利用者が特に求めない限り、この種の報告は無視するべきです。
+
+誤り名の最初に水準が示されていることがありますが、
+モジュールで使うときに分かりやすいようにそうしているだけであって、
+名前自体は意味を持ちません。
+
+[26] [CODE[description]] は、誤り状況を報告するメッセージを自然言語
+[CODE(lang)[[[i-default]]]] の、 [CODE(perl)[[[Message::Util::Formatter]]]]
+形式で記述します。
+[WEAK[このメッセージは簡易的な出力で利用することを想定したもので、多言語化は想定していません。各応用で別途誤り名と各言語化メッセージの対応を保持しておく必要があります。]]
+
+ここでは、 [CODE(perl)[Message::Util::Error]] の書式付け規則に加えて、
+[CODE[%key]] が使えます。
+[CODE[%key;]] は、与えられた鍵名に置き換えられます。
+([CODE(perl)[Message::Util::Error]] が提供する書式付け規則
+[CODE[%t]] を使うと、配列への参照に対応していないので、
+[SAMP[ARRAY(0x[VAR[なんたら]])]] に置き換えられてしまいます。)
+
+
+** SuikaWiki::DB::Util::Lock
+
+[27] このモジュールは、 [CODE(perl)[[[Yuki::YukiWikiDB2]]]]
+で実装されている固定を移植したものです。
+(実装符号自体は完全に書き換えてしまいましたし、
+界面や作られる固定ファイルにも互換性はありませんが、
+算法は基本的に同じものです。)
+
+[CODE[[[flock]]]] など他の固定方法の実装および共通化した界面は検討中です。
+
+
+* WikiDB モジュール
+
+[28] 現在 SuikaWiki 3 に標準で附属している WikiDB
+モジュールは、次の通りです。
+
+- [CODE(perl)[[[SuikaWiki::DB::Logical]]]]: 複数の WikiDB を、
+一つのデータベースとして扱うことができます。
+- [CODE(perl)[[[SuikaWiki::DB::Hash]]]]: Perl のハッシュを一つのデータベースとして扱うことができます。
+このモジュールを媒介として、ハッシュに [[tie]] されたデータベースを
+WikiDB として使うこともできます。
+- [CODE(perl)[[[SuikaWiki::DB::FileSystem::SuikaWikiMetaInfo09]]]]: 
+SuikaWiki 2 でメタ情報保存のために使われていた
+[CODE[SuikaWikiMetaInfo/0.9]] 形式のファイル群を WikiDB として使うことができます。
+このモジュールは廃止される予定ですが、まだ代替モジュールがありません:)
+- [CODE(perl)[[[SuikaWiki::DB::FileSystem::YukiWikiDBNS]]]]:
+SuikaWiki 2 で使われていた [[YukiWikiDBNS]]
+[WEAK[([[YukiWikiDB2]] に階層を導入したもの。)]]
+を WikiDB として扱うための関門です。このモジュールを使うためには
+[CODE(perl)[[[Yuki::YukiWikiDBNS]]]]
+<IW:SuikaCVS:"suikawiki/script/lib/Yuki/YukiWikiDBNS.pm">
+が必要です。
+このモジュールは廃止される予定ですが、まだ代替モジュールがありません:)
+- [CODE(perl)[[[SuikaWiki::DB::FileSystem::SuikaWikiCache09]]]]:
+SuikaWiki 2 で使われていた SuikaWikiCache/0.9
+形式のキャッシュを扱うためのモジュールです。
+SuikaWikiCache/0.9 では、値と共に日付と時刻を記録できます。
+データベースから値を取り出すときに、有効期限を与えて、
+有効期限を過ぎていない時にのみ値を得ることができます。
+[WEAK[別途指定した保持期限を過ぎたデータは削除されます。]]
+[[#comment]]
+
+
+* メモ
+
+[12] 文中の「未定義」は、仕様として定義していないことを表し、 [CODE(perl)[undef]] は Perl の値としての未定義を表します。
+
+[34]
+要検討: 大きな文字列を扱うような場合には set や get で値ではなく値の参照が使えたほうが良いですが、区別のため別 method を用意したほうがいいでしょうか?
+([[名無しさん]] [WEAK[2004-04-02 02:26:01 +00:00]])
+
+[36]
+要検討: 根鍵 (空配列) の扱いをどうするか。もちろん >>3 にあるように、根鍵は不正な鍵として扱っても構いませんが、そうしない場合、例えば [CODE[keys]] の結果に含めるのか。
+([[名無しさん]] [WEAK[2004-04-02 03:36:20 +00:00]])
+
+@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@d1 402
+a402 333
+#?SuikaWiki/0.9
+
+[1] [DFN[[ABBR[WikiDB] [WikiDatabase]]]]
+は、 SuikaWiki WikiEngine が扱う情報を格納するためのデータベースに対する抽象界面です。
+
+WikiDB 界面を通して接続するデータベースの実体はどんなものであっても構いません。
+そこらの[[関係データベース]]や [[DBM]]
+のデータベースでも構いませんし、適当な[[テキスト・ファイル]]でも構いません。
+一つのファイルでも構いませんし、ファイルシステムに適当に写像しても構いません。
+単純な [[Perl]] のハッシュのような、
+永続的な実体を伴わない資源であっても構いません。
+ローカルのファイルではなく、
+遠隔の資源であっても構いません。
+とにかく、任意のものをデータベースとできます。
+
+* 抽象データベース構造
+
+[3] WikiDB は、次の抽象データベース構造を持ちます [WEAK[(関係データベースとかの一般の用語と比べると変ですが、気にしてはいけません)]]。
+
+データベース:
+,     ,特性 [VAR[p]]       ,特性 [VAR[q]],...
+,鍵 [VAR[k]] ,値 [VAR[v[SUB[[VAR[k]][VAR[p]]]]]],値 [VAR[v[SUB[[VAR[k]][VAR[q]]]]]],
+,鍵 [VAR[l]] ,値 [VAR[v[SUB[[VAR[l]][VAR[p]]]]]],値 [VAR[v[SUB[[VAR[l]][VAR[q]]]]]],
+,...  ,             ,             ,
+
+鍵は、一次元配列です。
+- [CODE[[VAR[k]] := [CODE(perl)[ [ [VAR[k[SUB[1]]]], [VAR[k[SUB[2]]]], ... ] ]] ]]
+
+ただし、扱える鍵要素数を制限しても構いません。
+
+特性は文字列です。ただし、一つのデータベースで扱える特性数を制限しても構いません。
+
+値は任意の Perl のデータです。
+ただし、すべての Perl のデータが保存できるとは限りません。たとえば、多くのデータベースでは参照をデータとして保存することはできないでしょう。
+
+WikiDB 界面の外からはこの構造に見える必要がありますが、実体であるデータベースはどのような構造であっても
+(構造がなくても!) 構いません。
+
+[[#comment]]
+
+* WikiDB 界面
+
+[2] WikiDB 界面を実装するモジュールは、次のメソッドを実装しなければなりません。
+
+- [CODE[new]]
+- [CODE[open]]
+- [CODE[close]]
+- [CODE[open_prop]]
+- [CODE[close_prop]]
+- [CODE[get]]
+- [CODE[set]]
+- [CODE[keys]]
+- [CODE[exist]]
+- [CODE[delete]]
+
+次のメソッドを実装しても構いません。
+
+- [CODE[DESTROY]]
+- [CODE[_]] で始まる名前のメソッド
+- [CODE[__]] で始まる名前のメソッド
+- [CODE[___]] で始まる名前のメソッド
+
+[CODE(perl)[SuikaWiki::DB::Util::template]] を継承するといいかもしれません。
+
+** $db = Class->new (%option)
+
+[4] 級メソッド [CODE[new]] は、新しいデータベースの実現値を生成します。
+
+[CODE(perl)[%option]] には、0個以上の引数を与えます。
+データベースの種類によって、引数名、引数値の型、必須かどうか、既定値が決まります。
+不適当な引数がある (あるいは必要な引数がない) ときには、例外を発生させて構いません。
+
+[5] このメソッド内では必要な初期化を行います。
+データベースを実際に開いても構いませんし、
+その前に固定を行っても構いません。
+
+*** %option
+
+[6] [CODE(perl)[-]] で始まる引数は、標準化されたものとします。モジュール独自の引数は [CODE[-]] から始めません。
+
+,名前,値,既定値,意味
+,[CODE(perl)[-lock]],[CODE(perl)[{[VAR[%固定引数]]}]],(なし),固定選択肢
+
+** $result = $db->open_prop (%option)
+
+特性を開きます。データベース内に複数の特性があって、別々に開いたり閉じたりできる場合のみ有効です。
+そうでない場合は、何もせずに、
+適当な結果を返します。
+
+[CODE(perl)[$result]]:
+: [CODE(perl)[1]] : 特性を開くのに成功した
+: [CODE(perl)[0]] : 特性を開くのに失敗した (適当な例外を発生させて構わない。その場合の [CODE(perl)[$result]] は未定義)
+: [CODE(perl)["0 but true"]]:特性は既に開かれている
+
+** $result = $db->close_prop (%option)
+
+[7] 特性を閉じます。指定された特性を閉じるためには他の開かれている特性も閉じなければならないときは、
+[CODE(perl)["0 but true"]] を返します。
+
+** $db->close (%option)
+
+[8] データベースを閉じます。
+特性が開かれていれば、すべて閉じます。
+固定されていれば、解除して構いません。
+
+一度閉じたデータベースを再び開ける必要はありませんが、もしかしたら将来
+[CODE(perl)[open]] メソッドが定義されるかも知れません。
+
+** $db->DESTROY
+
+[9] 必要な後始末をします。
+データベースが閉じられていないのなら、閉じたほうがいいですが、
+他で確実に閉じられる保証があるのならその限りではありません。
+固定についても同様です。
+
+** $value = $db->get ($prop, $key, %option)
+
+[10] 値 [VAR[v[SUB[[VAR(perl)[$key]],[VAR(perl)[$prop]]]]]] を取得します。
+
+データベースの制限または不測の事態により値を取得できないときは、例外を発生させます。
+
+単に値が未定義の時は、 [CODE(perl)[[[undef]]]] を返すのがいいですが、その辺はデータベースの性質によります。
+
+** $db->set ($prop, $key => $value, %option)
+
+[11] 値 [VAR[v[SUB[[VAR(perl)[$key]],[VAR(perl)[$prop]]]]]] を設定します。
+
+データベースの制限、不当な値、または不測の事態により値を設定できないときには、例外を発生させます。
+
+[CODE(perl)[undef]] が与えられたら値を削除しても構いませんが、その辺はデータベースの性質によります。
+
+返される値は未定義です。
+
+** ($key1, $key2, ...) = $db->keys ($prop, %option)
+
+[29] すべての鍵を返します。
+
+[CODE(perl)[[[each]]]] 型の列挙方法も用意することを検討中です。。。
+
+** $result = $db->exist ($prop, $key, %option)
+
+[13] 値 [VAR[v[SUB[[VAR(perl)[$key]],[VAR(perl)[$prop]]]]]] 
+が存在するかを返します。
+
+存在すれば真、しなければ偽とします。
+データベースの性質上値が存在できない場合あるいは不定の場合は、
+[WEAK[一般の偽とは異なる)]] [CODE(perl)[undef]] を返しても構いません。
+
+データベースの制限または不測の事態により存在するか調べられないときには、例外を発生させても構いません。
+
+[WEAK[ハッシュの鍵の存在を検査する [CODE(perl)[[[exists]]]] と綴りが違うことに注意。]]
+
+** $db->delete ($prop, $key, %option)
+
+[14] 値 [VAR[v[SUB[[VAR(perl)[$key]],[VAR(perl)[$prop]]]]]] 
+を削除します。
+
+データベースの制限または不測の事態により削除できないときには、例外を発生させても構いません。
+
+[WEAK[Perl 組込みの [CODE(perl)[[[delete]]]] と同じ名前であることに注意。]]
+
+** _ で始まる名前のメソッド
+
+[17] [CODE[_]] で始まる名前のメソッドは、
+モジュール定義のメソッドとします。モジュールは必要に応じて適当な名前のメソッドを用意して構いません。また、モジュールの利用者は必要に応じてそのメソッドを呼んで構いません。
+
+[18] [CODE[__]] で始まる名前のメソッドは、
+モジュール定義の内部用メソッドとします。モジュールは必要に応じて適当な名前のメソッドを用意して構いません。モジュールの利用者はこのメソッドを利用するべきではありません。
+
+[19] [CODE[___]] で始まる名前のメソッドは、標準化された内部用メソッドとします。モジュールは必要に応じてそのメソッドを定義する必要があります。
+モジュールの利用者は基本的にこのメソッドを利用してはいけませんし、
+その必要もないはずです。
+
+[20] 4文字以上の [CODE[_]] で始まる名前のメソッドは、将来の標準化のために予約します。モジュールはそのようなメソッドを定義するべきではありません。
+
+*** $db->___init (%option)
+
+[30] WikiDB の新しい実現値が作られるとき ([CODE[->new]])
+に呼び出します。この method を実装するときは、
+実現値の option などの初期設定を行うことが望ましいです。
+(データベースを開いたり閉じたりするのは望ましくありません。)
+
+引数は、 [CODE[->new]] が呼び出されたときの引数が与えれれます。
+この method が返す値の処理は未定義です。
+
+*** $db->___report_error
+
+[21] [CODE(perl)[[[Message::Util::Error]]]] が呼び出すメソッドです。
+普通は [CODE(perl)[SuikaWiki::DB::Util::template]] から継承すれば十分です。
+[CODE(perl)[SuikaWiki::DB::Util::template]] の [CODE(perl)[___report_error]]
+は、事象 [CODE[error]] を発生させます。
+(つまり、 [CODE(perl)[@@{$db->{event}->{error}}]] の各要素
+(code ref) が呼ばれます。)
+
+なお、事象関係の仕様は SuikaWiki 3 全体的にまだ確定していないので、将来変更されるかも知れません。
+
+* $db->{event}->{error}
+
+メソッド [CODE[___report_error]] を参照。
+
+* 関連モジュール
+-[15] <IW:SuikaCVS:"suikawiki/script/lib/SuikaWiki/DB/"> 以下の各モジュール
+-[16] WikiDB plugin <IW:SuikaCVS:"suikawiki/script/lib/SuikaWiki/Plugin/WikiDB.wp2">
+[[#comment]]
+
+** SuikaWiki::DB::Util
+
+[22] [CODE(perl)[SuikaWiki::DB::Util]]
+<IW:SuikaCVS:"suikawiki/script/lib/SuikaWiki/DB/Util.pm">
+は、 WikiDB 各モジュールが共通に使うであろう関数を用意しています。
+このモジュールを使うモジュールは、冒頭で
+[CODE(perl)[require SuikaWiki::DB::Util;]] してください。
+
+このモジュールで実装されている [CODE(perl)[SuikaWiki::DB::Util::template]] 名前空間は、 WikiDB モジュールの基底級とできます。
+そうしたい場合は [CODE(perl)[push our @@ISA, 'SuikaWiki::DB::Util::template']]
+とでもしてください。
+
+このモジュールは、自動的に [CODE(perl)[SuikaWiki::DB::Util::Error]]
+を読み込みます。
+
+** SuikaWiki::DB::Util::Error
+
+[23] [CODE(perl)[SuikaWiki::DB::Util::Error]] は、
+WikiDB の共通の誤り定義です。この級は
+[CODE(perl)[[[Message::Util::Error]]]] を継承しています。
+
+WikiDB モジュール独自の誤りを定義したいときは、
+この級を継承した誤り定義級を定義してください。
+
+[24] WikiDB モジュール内で誤りを発生させたり、
+情報・虫取用メッセージを出すときには、
+[PRE[
+  report SuikaWiki::DB::Util::Error
+    -type => [VAR[error-name]],
+    -object => [VAR[$module]], method => [VAR[method-name]],
+    key => $key, prop => $prop, # あれば。
+    [VAR[param-name1]] => [VAR[param-value1]],
+    [VAR[...]];
+]PRE]
+として下さい。 [VAR[error-name]] は
+[CODE(perl)[SuikaWiki::DB::Util::Error]] の誤り名です。
+可能な引数は、誤り名によります。
+(モジュール独自の誤り定義を使うときは、
+[CODE(perl)[SuikaWiki::DB::Util::Error]] を誤り定義級名に換えてください。)
+
+(引数の最初の [CODE(char)[-]] の有無に注意。
+[CODE(char)[-]] から始まるのは、 [CODE(perl)[Message::Util::Error]]
+で定義された引数です。)
+
+[25] [CODE(perl)[SuikaWiki::DB::Util::Error::___error_def]]
+では、 [CODE(perl)[Message::Util::Error]] の形式で誤りが定義されています。
+
+たとえば、
+[PRE[
+    STOP_DB_PROP_CANT_OPEN => {
+      level => 'stop',
+      description => q(%t (name => method);: Sub-database "%t (name => prop);" cannot be opened%t (prefix => {: }, name => file);%t (prefix => {: }, name => msg);),
+    },
+]PRE]
+の部分は、 [CODE[STOP_DB_PROP_CANT_OPEN]] という名前の誤りを定義しています。
+[CODE[level]] 引数は、報告水準を指定します。
+現在定義されているのは次の通りです。
+: 'fatal' : 致死誤り。深刻な誤りであって、 WikiDB をこのまま操作し続けられることを一切保証できません。この種の誤りに遭遇したら、普通は適当なメッセージを出してプログラム自体死ぬべきです。
+: 'stop' : 停止誤り。その特定の操作が失敗しました。
+たとえば、読み取り専用のところに書き込もうとしたときは通常この種類になります。その操作自体は失敗しましたが、 WikiDB 全体としては処理を継続できます。
+: 'warn' : 警告。処理中に望ましからぬ状況に遭遇しました。
+この状況をもって処理を中止できるかは、その状況に依存します。
+普通は、適当に利用者に報告しつつ処理を継続するべきです。
+: 'log' : 記録しておくと有用かもしれない事象が発生しました。
+: 'detaillog' : 細かい記録を取っておきたいときに記録しておくと有用かもしれない事象が発生しました。
+普通は、利用者が特に求めない限り、この種の報告は無視するべきです。
+: 'debug' : 虫取用のメッセージ。
+普通は、利用者が特に求めない限り、この種の報告は無視するべきです。
+
+誤り名の最初に水準が示されていることがありますが、
+モジュールで使うときに分かりやすいようにそうしているだけであって、
+名前自体は意味を持ちません。
+
+[26] [CODE[description]] は、誤り状況を報告するメッセージを自然言語
+[CODE(lang)[[[i-default]]]] の、 [CODE(perl)[[[Message::Util::Formatter]]]]
+形式で記述します。
+[WEAK[このメッセージは簡易的な出力で利用することを想定したもので、多言語化は想定していません。各応用で別途誤り名と各言語化メッセージの対応を保持しておく必要があります。]]
+
+ここでは、 [CODE(perl)[Message::Util::Error]] の書式付け規則に加えて、
+[CODE[%key]] が使えます。
+[CODE[%key;]] は、与えられた鍵名に置き換えられます。
+([CODE(perl)[Message::Util::Error]] が提供する書式付け規則
+[CODE[%t]] を使うと、配列への参照に対応していないので、
+[SAMP[ARRAY(0x[VAR[なんたら]])]] に置き換えられてしまいます。)
+
+** SuikaWiki::DB::Util::Lock
+
+[27] このモジュールは、 [CODE(perl)[[[Yuki::YukiWikiDB2]]]]
+で実装されている固定を移植したものです。
+(実装符号自体は完全に書き換えてしまいましたし、
+界面や作られる固定ファイルにも互換性はありませんが、
+算法は基本的に同じものです。)
+
+[CODE[[[flock]]]] など他の固定方法の実装および共通化した界面は検討中です。
+
+* WikiDB モジュール
+
+[28] 現在 SuikaWiki 3 に標準で附属している WikiDB
+モジュールは、次の通りです。
+
+- [CODE(perl)[[[SuikaWiki::DB::Logical]]]]: 複数の WikiDB を、
+一つのデータベースとして扱うことができます。
+- [CODE(perl)[[[SuikaWiki::DB::Hash]]]]: Perl のハッシュを一つのデータベースとして扱うことができます。
+このモジュールを媒介として、ハッシュに [[tie]] されたデータベースを
+WikiDB として使うこともできます。
+- [CODE(perl)[[[SuikaWiki::DB::FileSystem::SuikaWikiMetaInfo09]]]]: 
+SuikaWiki 2 でメタ情報保存のために使われていた
+[CODE[SuikaWikiMetaInfo/0.9]] 形式のファイル群を WikiDB として使うことができます。
+このモジュールは廃止される予定ですが、まだ代替モジュールがありません:)
+- [CODE(perl)[[[SuikaWiki::DB::FileSystem::YukiWikiDBNS]]]]:
+SuikaWiki 2 で使われていた [[YukiWikiDBNS]]
+[WEAK[([[YukiWikiDB2]] に階層を導入したもの。)]]
+を WikiDB として扱うための関門です。このモジュールを使うためには
+[CODE(perl)[[[Yuki::YukiWikiDBNS]]]]
+<IW:SuikaCVS:"suikawiki/script/lib/Yuki/YukiWikiDBNS.pm">
+が必要です。
+このモジュールは廃止される予定ですが、まだ代替モジュールがありません:)
+- [CODE(perl)[[[SuikaWiki::DB::FileSystem::SuikaWikiCache09]]]]:
+SuikaWiki 2 で使われていた SuikaWikiCache/0.9
+形式のキャッシュを扱うためのモジュールです。
+SuikaWikiCache/0.9 では、値と共に日付と時刻を記録できます。
+データベースから値を取り出すときに、有効期限を与えて、
+有効期限を過ぎていない時にのみ値を得ることができます。
+[WEAK[別途指定した保持期限を過ぎたデータは削除されます。]]
+[[#comment]]
+* メモ
+
+[12] 文中の「未定義」は、仕様として定義していないことを表し、 [CODE(perl)[undef]] は Perl の値としての未定義を表します。
+@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@d176 10
+@
+

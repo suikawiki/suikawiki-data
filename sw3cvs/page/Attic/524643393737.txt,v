@@ -1,0 +1,1702 @@
+head	1.2;
+access;
+symbols
+	before-db-leaffile:1.1
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+
+
+1.2
+date	2004.05.03.02.03.21;	author wakaba;	state dead;
+branches;
+next	1.1;
+
+1.1
+date	2002.12.10.13.25.53;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9
+'''Network News Transfer Protocol [INS[ネットワーク・ニュース転送プロトコル]]'''
+
+'''A Proposed Standard for the Stream-Based Transmission of News [INS[基流ニュース転送の提案標準]]'''
+-Network Working Group                      
+-Request for Comments: 977                   
+-Brian Kantor (U.C. San Diego)
+-Phil Lapsley (U.C. Berkeley)
+-February 1986
+*Status of This Memo
+>NNTP specifies a protocol for the distribution, inquiry, retrieval,
+and posting of news articles using a reliable stream-based
+transmission of news among the ARPA-Internet community.  NNTP is
+designed so that news articles are stored in a central database
+allowing a subscriber to select only those items he wishes to read.
+Indexing, cross-referencing, and expiration of aged messages are also
+provided. This RFC suggests a proposed protocol for the ARPA-Internet
+community, and requests discussion and suggestions for improvements.
+Distribution of this memo is unlimited.
+
+NNTP は ARPA Internet 社会においてニュースの信頼性ある基流転送を使ってニュース記事を配布,
+問い合わせ, 取得及び投稿するためのプロトコルを規定します。
+NNTP は、ニュース記事が中央データ・ベースに蓄積され、読者が読みたいと思うものだけを選択することが可能なように設計されています。
+索引付け, 交差参照, 古いメッセージの満期も提供します。
+この RFC は ARPA Internet 社会に提案プロトコルを提案し、改善のための議論と提案を求めるものです。
+このメモの配布は制限しません。
+
+*1.  Introduction
+>For many years, the ARPA-Internet community has supported the
+distribution of bulletins, information, and data in a timely fashion
+to thousands of participants.  We collectively refer to such items of
+information as "news".  Such news provides for the rapid
+dissemination of items of interest such as software bug fixes, new
+product reviews, technical tips, and programming pointers, as well as
+rapid-fire discussions of matters of concern to the working computer
+professional. News is very popular among its readers.
+
+長年に亘り、 ARPA Internet 社会はおしらせ, 情報, 及びデータを時宜を得た方法で幾千の参加者に配布することに対応してきました。
+私達はこれらをまとめて「ニュース」と呼びます。
+この様なニュースは、ソフトウェア不具合修正, 新製品評価, 技術的助言,
+プログラムする時の参照, 或いは計算機業界に働くことに関する事項の熱血議論のような関心事項を素早く広めています。
+ニュースは読者の間では非常に人気があります。
+
+>There are popularly two methods of distributing such news: the
+Internet method of direct mailing, and the USENET news system.
+
+こうしたニュースを配布する人気の高い方法には2つあります。
+直接メイルする Internet の方法と、 USENET ニュース系統です。
+
+**1.1.  Internet Mailing Lists [INS[Internet メイリング・リスト]]
+>The Internet community distributes news by the use of mailing lists.
+These are lists of subscriber's mailbox addresses and remailing
+sublists of all intended recipients.  These mailing lists operate by
+remailing a copy of the information to be distributed to each
+subscriber on the mailing list.  Such remailing is inefficient when a
+mailing list grows beyond a dozen or so people, since sending a
+separate copy to each of the subscribers occupies large quantities of
+network bandwidth, CPU resources, and significant amounts of disk
+storage at the destination host.  There is also a significant problem
+in maintenance of the list itself: as subscribers move from one job
+to another; as new subscribers join and old ones leave; and as hosts
+come in and out of service.
+
+Internet 社会ではニュースをメイリング・リストを使って配布します。
+読者のメイル箱のアドレスの一覧があって、全ての受信者に再送信します。
+メイリング・リストは配布される情報の複製をメイリング・リストの各読者に再送信することで成り立っています。
+この再送信は
+
+**1.2.  The USENET News System
+>Clearly, a worthwhile reduction of the amount of these resources used
+can be achieved if articles are stored in a central database on the
+receiving host instead of in each subscriber's mailbox. The USENET
+news system provides a method of doing just this.  There is a central
+repository of the news articles in one place (customarily a spool
+directory of some sort), and a set of programs that allow a
+subscriber to select those items he wishes to read.  Indexing,
+cross-referencing, and expiration of aged messages are also provided.
+
+**1.3.  Central Storage of News
+>For clusters of hosts connected together by fast local area networks
+(such as Ethernet), it makes even more sense to consolidate news
+distribution onto one (or a very few) hosts, and to allow access to
+these news articles using a server and client model.  Subscribers may
+then request only the articles they wish to see, without having to
+wastefully duplicate the storage of a copy of each item on each host.
+
+++1.4.  A Central News Server
+>A way to achieve these economies is to have a central computer system
+that can provide news service to the other systems on the local area
+network.  Such a server would manage the collection of news articles
+and index files, with each person who desires to read news bulletins
+doing so over the LAN.  For a large cluster of computer systems, the
+savings in total disk space is clearly worthwhile.  Also, this allows
+workstations with limited disk storage space to participate in the
+news without incoming items consuming oppressive amounts of the
+workstation's disk storage.
+
+>We have heard rumors of somewhat successful attempts to provide
+centralized news service using IBIS and other shared or distributed
+file systems.  While it is possible that such a distributed file
+system implementation might work well with a group of similar
+computers running nearly identical operating systems, such a scheme
+is not general enough to offer service to a wide range of client
+systems, especially when many diverse operating systems may be in use
+among a group of clients.  There are few (if any) shared or networked
+file systems that can offer the generality of service that stream
+connections using Internet TCP provide, particularly when a wide
+range of host hardware and operating systems are considered.
+
+>NNTP specifies a protocol for the distribution, inquiry, retrieval,
+and posting of news articles using a reliable stream (such as TCP)
+server-client model. NNTP is designed so that news articles need only
+be stored on one (presumably central) host, and subscribers on other
+hosts attached to the LAN may read news articles using stream
+connections to the news host.
+
+>NNTP is modelled upon the news article specifications in RFC 850,
+which describes the USENET news system.  However, NNTP makes few
+demands upon the structure, content, or storage of news articles, and
+thus we believe it easily can be adapted to other non-USENET news
+systems.
+
+>Typically, the NNTP server runs as a background process on one host,
+and would accept connections from other hosts on the LAN.  This works
+well when there are a number of small computer systems (such as
+workstations, with only one or at most a few users each), and a large
+central server.
+
+**1.5.  Intermediate News Servers
+>For clusters of machines with many users (as might be the case in a
+university or large industrial environment), an intermediate server
+might be used.  This intermediate or "slave" server runs on each
+computer system, and is responsible for mediating news reading
+requests and performing local caching of recently-retrieved news
+articles.
+
+>Typically, a client attempting to obtain news service would first
+attempt to connect to the news service port on the local machine.  If
+this attempt were unsuccessful, indicating a failed server, an
+installation might choose to either deny news access, or to permit
+connection to the central "master" news server.
+
+>For workstations or other small systems, direct connection to the
+master server would probably be the normal manner of operation.
+
+>This specification does not cover the operation of slave NNTP
+servers.  We merely suggest that slave servers are a logical addition
+to NNTP server usage which would enhance operation on large local
+area networks.
+
+**1.6.  News Distribution
+>NNTP has commands which provide a straightforward method of
+exchanging articles between cooperating hosts. Hosts which are well
+connected on a local area or other fast network and who wish to
+actually obtain copies of news articles for local storage might well
+find NNTP to be a more efficient way to distribute news than more
+traditional transfer methods (such as UUCP).
+
+>In the traditional method of distributing news articles, news is
+propagated from host to host by flooding - that is, each host will
+send all its new news articles on to each host that it feeds.  These
+hosts will then in turn send these new articles on to other hosts
+that they feed.  Clearly, sending articles that a host already has
+obtained a copy of from another feed (many hosts that receive news
+are redundantly fed) again is a waste of time and communications
+resources, but for transport mechanisms that are single-transaction
+based rather than interactive (such as UUCP in the UNIX-world <1>),
+distribution time is diminished by sending all articles and having
+the receiving host simply discard the duplicates.  This is an
+especially true when communications sessions are limited to once a day.
+
+>Using NNTP, hosts exchanging news articles have an interactive
+mechanism for deciding which articles are to be transmitted.  A host
+desiring new news, or which has new news to send, will typically
+contact one or more of its neighbors using NNTP.  First it will
+inquire if any new news groups have been created on the serving host
+by means of the NEWGROUPS command.  If so, and those are appropriate
+or desired (as established by local site-dependent rules), those new
+newsgroups can be created.
+
+>The client host will then inquire as to which new articles have
+arrived in all or some of the newsgroups that it desires to receive,
+using the NEWNEWS command.  It will receive a list of new articles
+from the server, and can request transmission of those articles that
+it desires and does not already have.
+
+>Finally, the client can advise the server of those new articles which
+the client has recently received.  The server will indicate those
+articles that it has already obtained copies of, and which articles
+should be sent to add to its collection.
+
+>In this manner, only those articles which are not duplicates and
+which are desired are transferred.
+
+*2.  The NNTP Specification [INS[NNTP 仕様]]
+**2.1.  Overview [INS[概要]]
+>The news server specified by this document uses a stream connection
+(such as TCP) and SMTP-like commands and responses.  It is designed
+to accept connections from hosts, and to provide a simple interface
+to the news database.
+
+この文書で規定するニュース・サーバーは流れ接続 ([[TCP]]
+のような。) 並びに [[SMTP]] 的命令及び応答を使います。
+これはホストからの接続を受け付け、ニュース・データベースへの簡潔な界面を提供するように設計されています。
+
+>This server is only an interface between programs and the news
+databases. It does not perform any user interaction or 
+presentation-level functions. These "user-friendly" functions are
+better left to
+the client programs, which have a better understanding of the
+environment in which they are operating.
+
+このサーバーはプログラム及びニュース・データベースの界面であるだけです。
+いかなる利用者系面や表現層機能を果たすものでもありません。
+こうした「利用者に優しい」機能は、その操作する環境をより理解したクライアント・プログラムに依存するものです。
+
+>When used via Internet TCP, the contact port assigned for this
+service is 119.
+
+Internet TCP で使う時は、このサービスに割り当てられる接続ポートは
+119 です。
+
+**2.2.  Character Codes [CODE[文字符号]]
+>Commands and replies are composed of characters from the ASCII
+character set.  When the transport service provides an 8-bit byte
+(octet) transmission channel, each 7-bit character is transmitted
+right justified in an octet with the high order bit cleared to zero.
+
+命令及び返信は [[ASCII]] 文字集合の文字で構成されます。
+転送サービスが8ビット・バイト (オクテット)
+転送路を提供する時は、各7ビット文字は最上位ビットを零にして右寄せで転送します。
+
+**2.3.  Commands [INS[命令]]
+>Commands consist of a command word, which in some cases may be
+followed by a parameter.  Commands with parameters must separate the
+parameters from each other and from the command by one or more space
+or tab characters.  Command lines must be complete with all required
+parameters, and may not contain more than one command.
+
+命令は命令語及び場合によってはそれに続くパラメーターからなります。
+パラメーターのある命令はパラメーターとそれぞれ1つ以上の間隔又はタブ文字で分離しなければなりません。
+命令行は全ての必須パラメーターをもって完了させなければならず、1つ以上の命令を含んではなりません。
+
+>Commands and command parameters are not case sensitive. That is, a
+command or parameter word may be upper case, lower case, or any
+mixture of upper and lower case.
+
+命令及び命令パラメーターは大文字・小文字を区別しません。
+すなわち、命令又はパラメーターは大文字でも小文字でも、大文字・小文字の任意の混合でも構いません。
+
+>Each command line must be terminated by a CR-LF (Carriage Return -
+Line Feed) pair.
+
+各命令行は CR-LF (復帰‐改行) 組で終端しなければなりません。
+
+>Command lines shall not exceed 512 characters in length, counting all
+characters including spaces, separators, punctuation, and the
+trailing CR-LF (thus there are 510 characters maximum allowed for the
+command and its parameters).  There is no provision for continuation
+command lines.
+
+命令行は、間隔・区切子・記号・最後の CR-LF
+を含む全ての文字を数えて、長さ 512 文字を超えてはいけません
+(従って命令及びパラメーターは最大 510 文字使えます)。
+継続命令行の準備はありません。
+
+**2.4.  Responses [INS[応答]]
+>Responses are of two kinds, textual and status.
+
+応答には文章と状態の2種類があります。
+
+***2.4.1.  Text Responses [INS[文章応答]]
+>Text is sent only after a numeric status response line has been sent
+that indicates that text will follow.  Text is sent as a series of
+successive lines of textual matter, each terminated with CR-LF pair.
+A single line containing only a period (.) is sent to indicate the
+end of the text (i.e., the server will send a CR-LF pair at the end
+of the last line of text, a period, and another CR-LF pair).
+
+文章は、これが続くことを示す数値状態応答行の後でのみ送られます。
+文章はそれぞれが CR-LF 組で終端されている文の行の連続したものです。
+文章の終わりを示すためには句点 (.) のみが含まれる行が送られます
+(つまり、サーバーは文章の最終行の CR-LF 組, 句点,
+もう一つ CR-LF 組を送ります)。
+
+>If the text contained a period as the first character of the text
+line in the original, that first period is doubled.  Therefore, the
+client must examine the first character of each line received, and
+for those beginning with a period, determine either that this is the
+end of the text or whether to collapse the doubled period to a single
+one.
+
+文章が元々行の最初の文字に句点を含んでいる場合、この最初の句点を二重にします。
+従って、クライアントは受信した各行の最初の文字を検査して、初めが句点の場合、これが文章の終わりか,
+二重にした句点を落として一つのにするかを決定します。
+
+>The intention is that text messages will usually be displayed on the
+user's terminal whereas command/status responses will be interpreted
+by the client program before any possible display is done.
+
+文章メッセージは通常利用者の端末に表示され、他方命令・状態応答はいかなる表示が行われるより前にクライアント・プログラムにより解釈されることを意図しています。
+
+***2.4.2.  Status Responses [INS[状態応答]]
+>These are status reports from the server and indicate the response to
+the last command received from the client.
+
+サーバーからの状態報告がありまして、これはクライアントから受信した最後の命令への応答を示すものです。
+
+>Status response lines begin with a 3 digit numeric code which is
+sufficient to distinguish all responses.  Some of these may herald
+the subsequent transmission of text.
+
+状態応答行は3桁数値符号で始まり、これは全ての応答を十分区別できます。
+このうちの幾つかは文章の転送が続くことを告知するものです。
+
+>The first digit of the response broadly indicates the success,
+failure, or progress of the previous command.
+
+応答の最初の桁は前の命令の成功, 失敗, 進捗をおおよそ示します。
+
+-1xx - Informative message
+-2xx - Command ok
+-3xx - Command ok so far, send the rest of it.
+-4xx - Command was correct, but couldn't be performed for some reason.
+-5xx - Command unimplemented, or incorrect, or a serious program error occurred.
+
+-1[VAR[xx]] ――参考メッセージ
+-2[VAR[xx]] ――命令了解
+-3[VAR[xx]] ――ここまで命令了解、残りを送りたまえ。
+-4[VAR[xx]] ――命令は正しいが、何らかの理由で実行できず。
+-5[VAR[xx]] ――命令は実装されていないか不正か又は深刻なプログラム・エラーが発生。
+
+>The next digit in the code indicates the function response category.
+
+符号の次の桁は機能応答分類を示します。
+
+-x0x - Connection, setup, and miscellaneous messages
+-x1x - Newsgroup selection
+-x2x - Article selection
+-x3x - Distribution functions
+-x4x - Posting
+-x8x - Nonstandard (private implementation) extensions
+-x9x - Debugging output
+
+-[VAR[x]]0[VAR[x]] ――接続, 設定, その他のメッセージ
+-[VAR[x]]1[VAR[x]] ――ニュース組選択
+-[VAR[x]]2[VAR[x]] ――記事選択
+-[VAR[x]]3[VAR[x]] ――配布機能
+-[VAR[x]]4[VAR[x]] ――投稿
+-[VAR[x]]8[VAR[x]] ――非標準 (私的実装) 拡張
+-[VAR[x]]9[VAR[x]] ――虫捕り出力
+
+>The exact response codes that should be expected from each command
+are detailed in the description of that command.  In addition, below
+is listed a general set of response codes that may be received at any
+time.
+
+正確な応答符号は各命令の説明中に詳しく載っているはずです。
+加えて、次に挙げるのは常時受信し得る一般応答符号集合です。
+
+>Certain status responses contain parameters such as numbers and
+names. The number and type of such parameters is fixed for each
+response code to simplify interpretation of the response.
+
+番号や名前のようなパラメーターを含む状態応答もあります。
+そのようなパラメーターの数値及び型は応答の解釈の簡素化のため、応答符号により固定です。
+
+>Parameters are separated from the numeric response code and from each
+other by a single space. All numeric parameters are decimal, and may
+have leading zeros. All string parameters begin after the separating
+space, and end before the following separating space or the CR-LF
+pair at the end of the line. (String parameters may not, therefore,
+contain spaces.) All text, if any, in the response which is not a
+parameter of the response must follow and be separated from the last
+parameter by a space.  Also, note that the text following a response
+number may vary in different implementations of the server. The
+3-digit numeric code should be used to determine what response was
+sent.
+
+パラメーターは数値応答符号及びそれぞれと単一の間隔により区切ります。
+全ての数値パラメーターは十進で、頭に零がついているかもしれません。
+全ての文字列パラメーターは区切りの間隔の後に始まり、区切りの間隔又は行末の
+CR-LF 組の前で終わります。 (従って、文字列パラメーターは間隔を含みません。)
+応答中に応答のパラメーターではない文が含まれる時はすべて、最後のパラメーターの後に間隔で区切って続けなければなりません。
+また、応答番号の後の文はサーバーの実装により異なってもよいことに注意して下さい。
+どんな応答が送信されたのかを決定するのに3桁数値符号を用いるのが良いです。
+
+>Response codes not specified in this standard may be used for any
+installation-specific additional commands also not specified. These
+should be chosen to fit the pattern of x8x specified above.  (Note
+that debugging is provided for explicitly in the x9x response codes.)
+The use of unspecified response codes for standard commands is
+prohibited.
+
+この規格で規定していない応答符号はやはり規定されていない実装が規定する追加の命令に使っても構いません。
+そうした符号は上記の [VAR[x]]8[VAR[x]] の形に合うように選ぶのが良いです。
+(虫捕りは [VAR[x]]9[VAR[x]] 
+応答符号で明白に提供されていることに注意して下さい。)
+標準命令に規定されていない応答符号を使用することは禁止します。
+
+>We have provided a response pattern x9x for debugging.  Since much
+debugging output may be classed as "informative messages", we would
+expect, therefore, that responses 190 through 199 would be used for
+various debugging outputs.  There is no requirement in this
+specification for debugging output, but if such is provided over the
+connected stream, it must use these response codes.  If appropriate
+to a specific implementation, other x9x codes may be used for
+debugging.  (An example might be to use e.g., 290 to acknowledge a
+remote debugging request.)
+
+[VAR[x]]9[VAR[x]] の形の応答を虫捕り用に提供します。
+多くの虫捕り出力は「参考メッセージ」に分類されましょうから、種々の虫捕り出力には
+190 〜 199 が使われると思います。この仕様書では虫捕り出力についての要件はありませんが、これが接続流上で提供されるなら、これらの応答符号を使わなければなりません。
+特定の実装で適切ならば、他の [VAR[x]]9[VAR[x]] 符号を虫捕りに使っても構いません。
+(例えば 290 を遠隔虫捕り要求の肯定応答に使っても構わないでしょう。)
+
+***2.4.3.  General Responses [INS[一般応答]]
+>The following is a list of general response codes that may be sent by
+the NNTP server.  These are not specific to any one command, but may
+be returned as the result of a connection, a failure, or some unusual
+condition.
+
+次に示すのは NNTP サーバーにより送られ得る一般応答符号の一覧です。
+これらはいずれか一つの命令に特有のものではなく、接続, 失敗,
+又は何らかの普通でない状態の結果を返すかもしれません。
+
+>In general, 1xx codes may be ignored or displayed as desired;  code
+200 or 201 is sent upon initial connection to the NNTP server
+depending upon posting permission; code 400 will be sent when the
+NNTP server discontinues service (by operator request, for example);
+and 5xx codes indicate that the command could not be performed for
+some unusual reason.
+
+一般に、 1[VAR[xx]] 符号は望む通りに無視するなり表示するなりして構いません。
+符号 200 又は 201 は NNTP サーバーへの初期接続で投稿許可の有無により送信されます。
+符号 400 は NNTP サーバーが (例えば操作手の要求で)
+サービスを中止している時に送られます。
+5[VAR[x]] 符号は命令が何らかの普通でない理由で行えなかったことを示します。
+
+      100 help text
+      190
+        through
+      199 debug output
+
+-100 補助文
+-190 〜 199 虫捕り出力
+
+      200 server ready - posting allowed
+      201 server ready - no posting allowed
+
+-200 サーバー準備完了 ― 投稿許可
+-201 サーバー準備完了 ― 投稿不許可
+
+      400 service discontinued
+
+-400 サービス中止
+
+      500 command not recognized
+      501 command syntax error
+      502 access restriction or permission denied
+      503 program fault - command not performed
+
+-500 命令認識できず
+-501 命令構文エラー
+-502 接続制限又は許可否認
+-503 プログラム失敗――命令実行されず
+
+*3.  Command and Response Details [INS[命令及び応答詳細]]
+>On the following pages are descriptions of each command recognized by
+the NNTP server and the responses which will be returned by those
+commands.
+
+続く紙面は NNTP サーバーの認識する各命令及び命令の返す応答の説明です。
+
+>Each command is shown in upper case for clarity, although case is
+ignored in the interpretation of commands by the NNTP server.  Any
+parameters are shown in lower case.  A parameter shown in [square
+brackets] is optional.  For example, [GMT] indicates that the
+triglyph GMT may present or omitted.
+
+各命令は分かりやすいように大文字で示しますが、 NNTP
+サーバーの命令の解釈では大文字・小文字の区別は無視されます。
+パラメーターは小文字で示します。 [大括弧] 
+で示すパラメーターは省略可能です。例えば、 [GMT]
+は GMT 3文字があってもなくても良いことを示します。
+
+>Every command described in this section must be implemented by all
+NNTP servers.
+
+この節で説明する全ての命令は全ての NNTP
+サーバーで実装しなければなりません。
+
+>There is no prohibition against additional commands being added;
+however, it is recommended that any such unspecified command begin
+with the letter "X" to avoid conflict with later revisions of this
+specification.
+
+追加の命令を追加する予定はありません。しかし、規定されていない命令は文字
+"X" で始めてこの仕様書の将来の改訂との衝突を避けることを推奨します。
+
+>Implementors are reminded that such additional commands may not
+redefine specified status response codes.  Using additional
+unspecified responses for standard commands is also prohibited.
+
+実装者は、こうした追加の命令は状態応答符号を再定義してはいけないことを覚えておいて下さい。
+標準命令に追加の規定されていない応答を使うことも禁止します。
+
+**3.1.  The ARTICLE, BODY, HEAD, and STAT commands
+>There are two forms to the ARTICLE command (and the related BODY,
+HEAD, and STAT commands), each using a different method of specifying
+which article is to be retrieved.  When the ARTICLE command is
+followed by a message-id in angle brackets ("<" and ">"), the first
+form of the command is used; when a numeric parameter or no parameter
+is supplied, the second form is invoked.
+
+ARTICLE (記事) 命令 (及び関連する BODY, HEAD, STAT 各命令)
+には二形式あって、それぞれ違った方法を使ってどの記事を取り出すかを指定します。
+ARTICLE 命令に角括弧 ("<" 及び ">") に入った message-id
+(メッセージ識別子) が続く時は、最初の形式の命令が使われています。
+数値パラメーターが続くかパラメーターがない時は、二番目の形式が呼び出されています。
+
+>The text of the article is returned as a textual response, as
+described earlier in this document.
+
+記事の文章が文章応答としてこの文書の初めの方で説明したようにして返されます。
+
+>The HEAD and BODY commands are identical to the ARTICLE command
+except that they respectively return only the header lines or text
+body of the article.
+
+HEAD, BODY 両命令は ARTICLE 命令と同じですが、それぞれ記事の頭行又は文章本体だけを返します。
+
+>The STAT command is similar to the ARTICLE command except that no
+text is returned.  When selecting by message number within a group,
+the STAT command serves to set the current article pointer without
+sending text. The returned acknowledgement response will contain the
+message-id, which may be of some value.  Using the STAT command to
+select by message-id is valid but of questionable value, since a
+selection by message-id does NOT alter the "current article pointer".
+
+STAT 命令は ARTICLE 命令に似ていますが、文章は返されません。
+組中のメッセージ番号で選択した時、 STAT
+命令は現在記事指示子を文章を送ることなく設定します。
+返される肯定応答は message-id を含みます。何かの役に立つかも知れません。
+nessage-id により STAT 命令を使って選択するのは妥当ですが意味があるのか疑問です。
+なぜなら message-id による選択は「現在記事指示子」を変更し'''ない'''からです。
+
+***3.1.1.  ARTICLE (selection by message-id) [INS[(message-id により選択)]]
+
+   ARTICLE <message-id>
+
+>Display the header, a blank line, then the body (text) of the
+specified article.  Message-id is the message id of an article as
+shown in that article's header.  It is anticipated that the client
+will obtain the message-id from a list provided by the NEWNEWS
+command, from references contained within another article, or from
+the message-id provided in the response to some other commands.
+
+指定された記事の頭, 空白行, 本体 (文章) を表示します。
+Message-id はその記事の頭に示された記事のメッセージ識別子です。
+クライアントは message-id を NEWNEWS
+命令で提供される一覧から, 他の記事に含まれるの参照から,
+又は他の何らかの命令の応答中で提供される message-id
+から message-id を得たと予想されます。
+
+>Please note that the internally-maintained "current article pointer"
+is NOT ALTERED by this command. This is both to facilitate the
+presentation of articles that may be referenced within an article
+being read, and because of the semantic difficulties of determining
+the proper sequence and membership of an article which may have been
+posted to more than one newsgroup.
+
+内部的に保持している「現在記事指示子」はこの命令では'''変更されない'''ことに注意して下さい。
+これは読んでいる記事が参照している記事の表現を容易にすることと、複数のニュース組に投稿された記事の適当な順番と所属を決定することの意味的困難性によります。
+
+***3.1.2.  ARTICLE (selection by number) [INS[(番号により選択)]]
+
+   ARTICLE [nnn]
+
+>Displays the header, a blank line, then the body (text) of the
+current or specified article.  The optional parameter nnn is the
+numeric id of an article in the current newsgroup and must be chosen
+from the range of articles provided when the newsgroup was selected.
+If it is omitted, the current article is assumed.
+
+現在の又は指定した記事の頭, 空白行, 本体 (文章)
+を表示します。省略可能なパラメーター [VAR[nnn]]
+はげん剤のニュース組の記事の数値識別子で、ニュース組を選択した時提供された記事の範囲から選ばなければなりません。
+省略した場合、現在の記事と仮定します。
+
+>The internally-maintained "current article pointer" is set by this
+command if a valid article number is specified.
+
+内部的に保持している「現在記事指示子」はこの命令で妥当な記事番号が指定されていれば設定されます。
+
+>[the following applies to both forms of the article command.] A
+response indicating the current article number, a message-id string,
+and that text is to follow will be returned.
+
+(以降は article 命令の両形式に適用されます。)
+現在記事番号, message-id 文字列及び文章が続くことを示す応答が返されます。
+
+>The message-id string returned is an identification string contained
+within angle brackets ("<" and ">"), which is derived from the header
+of the article itself.  The Message-ID header line (required by
+RFC850) from the article must be used to supply this information. If
+the message-id header line is missing from the article, a single
+digit "0" (zero) should be supplied within the angle brackets.
+
+返される message-id 文字列は角括弧 ("<" 及び ">")
+に囲まれた識別文字列で記事自体の頭から得たものです。
+記事の Message-ID 頭行 (RFC 850 では必須)
+をこの情報を供給するために使わなければなりません。
+もし記事に message-id 頭行が抜けていれば、角括弧内に1桁数値 "0"
+(零) を入れて供給するのが良いです。
+
+>Since the message-id field is unique with each article, it may be
+used by a news reading program to skip duplicate displays of articles
+that have been posted more than once, or to more than one newsgroup.
+
+message-id 欄は各記事で唯一なものですから、複数回投稿されたり複数のニュース組に投稿された記事をニュース読みプログラムが重複表示を飛ばすのに使っても構いません。
+
+***3.1.3.  Responses [INS[応答]]
+
+   220 n <a> article retrieved - head and body follow
+           (n = article number, <a> = message-id)
+   221 n <a> article retrieved - head follows
+   222 n <a> article retrieved - body follows
+   223 n <a> article retrieved - request text separately
+   412 no newsgroup has been selected
+   420 no current article has been selected
+   423 no such article number in this group
+   430 no such article found
+
+-220 [VAR[n]] <[VAR[a]]> 記事取り出し―頭と本体が続きます
+([VAR[n]] = 記事番号, <[VAR[a]]> = message-id)
+-221 [VAR[n]] <[VAR[a]]> 記事取り出し―頭が続きます
+-222 [VAR[n]] <[VAR[a]]> 記事取り出し―本体が続きます
+-223 [VAR[n]] <[VAR[a]]> 記事取り出し―別々に要求文章
+-412 ニュース組が選択されていません
+-420 現在記事が選択されていません
+-423 この組に指定された記事番号はありません
+-430 指定された記事が見つかりません
+
+**3.2.  The GROUP command [INS[GROUP 命令]]
+***3.2.1.  GROUP
+
+   GROUP ggg
+
+>The required parameter ggg is the name of the newsgroup to be
+selected (e.g. "net.news").  A list of valid newsgroups may be
+obtained from the LIST command.
+
+必須のパラメーター [VAR[ggg]] は選択するニュース組の名前
+(例えば [SAMP["net.news"]]) です。妥当なニュース組の一覧は
+LIST 命令で得られるかもしれません。
+
+>The successful selection response will return the article numbers of
+the first and last articles in the group, and an estimate of the
+number of articles on file in the group.  It is not necessary that
+the estimate be correct, although that is helpful; it must only be
+equal to or larger than the actual number of articles on file.  (Some
+implementations will actually count the number of articles on file.
+Others will just subtract first article number from last to get an
+estimate.)
+
+成功した選択の応答は組中の最初と最後の記事の番号及びファイルの組内の記事の数の見積もりを返します。
+この見積もりは正確である必要はありませんが、補助となるものです。
+ファイルの記事の実数と等しいか多くなくてはなりません。
+(ファイル中の記事の数を実際に数える実装もあります。
+単に最後の記事番号から最初のを引いて見積もりとするものもあります。)
+
+[INS[
+訳注: 文字通り最後の番号から最初の番号を引いたら 1 少なくなるので注意。
+]INS]
+
+>When a valid group is selected by means of this command, the
+internally maintained "current article pointer" is set to the first
+article in the group.  If an invalid group is specified, the
+previously selected group and article remain selected.  If an empty
+newsgroup is selected, the "current article pointer" is in an
+indeterminate state and should not be used.
+
+この命令を使って妥当な組を選択した時、内部的に保持される「現在記事指示子」
+は組の最初の記事に設定されます。
+不正な組が指定された場合、以前に選択されていた組及び記事が引き続き選択されます。
+空の組が選択された場合、「現在記事指示子」は不定状態となり、使用しないのがよいです。
+
+>Note that the name of the newsgroup is not case-dependent.  It must
+otherwise match a newsgroup obtained from the LIST command or an
+error will result.
+
+ニュース組の名前では大文字・小文字を区別しないことに注意して下さい。
+そうでない場合 LIST 命令で得たニュース組と一致しなければならず、あるいはエラーとなるでしょう。
+
+***3.2.2.  Responses [INS[応答]]
+
+   211 n f l s group selected
+           (n = estimated number of articles in group,
+           f = first article number in the group,
+           l = last article number in the group,
+           s = name of the group.)
+   411 no such news group
+
+-211 [VAR[n] [VAR[f]] [VAR[l]] [VAR[s]] 組選択さる
+([VAR[n] = 組内の記事の数の見積もり, [VAR[f]] = 組内の最初の記事番号,
+[VAR[l]] = 組内の最後の記事番号, [VAR[s]] = 組の名前。)
+-411 そんな組ないです。。。
+
+**3.3.  The HELP command [INS[HELP 命令]]
+***3.3.1.  HELP
+
+   HELP
+
+>Provides a short summary of commands that are understood by this
+implementation of the server. The help text will be presented as a
+textual response, terminated by a single period on a line by itself.
+
+当該サーバー実装が理解する命令の概要を示します。
+補助文章は文章応答として表現され、句点1つだけの行で終わります。
+
+***3.3.2.  Responses [INS[応答]]
+
+[INS[
+訳注: 原文では上記節題で整形ミスにより不要な字下げがある。
+]INS]
+
+-100 help text follows
+-100 補助文章続きます
+
+**3.4.  The IHAVE command [INS[IHAVE 命令]]
+***3.4.1.  IHAVE
+
+   IHAVE <messageid>
+
+>The IHAVE command informs the server that the client has an article
+whose id is <messageid>.  If the server desires a copy of that
+article, it will return a response instructing the client to send the
+entire article.  If the server does not want the article (if, for
+example, the server already has a copy of it), a response indicating
+that the article is not wanted will be returned.
+
+IHAVE 命令では、クライアントが識別子 <messageid>
+の記事を持っていることをサーバーに知らせます。
+この記事の複製をサーバーが望むなら、クライアントに記事全体を送るようにとの指示応答を返します。
+サーバーが記事を望まない (例えば既にサーバーはこの複製を持っている)
+なら、記事を望まないことを示す応答を返します。
+
+>If transmission of the article is requested, the client should send
+the entire article, including header and body, in the manner
+specified for text transmission from the server. A response code
+indicating success or failure of the transferral of the article will
+be returned.
+
+記事の転送が要求された場合、クライアントは記事の頭と本体を含めた全体を、サーバーからの文章転送に規定した方法で送るべきです。
+記事の転送の成功又は失敗を示す応答符号が返されます。
+
+>This function differs from the POST command in that it is intended
+for use in transferring already-posted articles between hosts.
+Normally it will not be used when the client is a personal
+newsreading program.  In particular, this function will invoke the
+server's news posting program with the appropriate settings (flags,
+options, etc) to indicate that the forthcoming article is being
+forwarded from another host.
+
+この機能は、既に投稿された記事をホスト間で転送するのに使うことを意図しているという点で
+POST 命令と異なります。
+通常これはクライアントが個人用ニュース読みプログラムの時は使いません。
+特に、この機能はサーバーのニュース投稿プログラムを、届いた記事が他のホストから転送されてきたことを示すため、適切な設定
+(旗, 選択肢など) で呼び出します。
+
+>The server may, however, elect not to post or forward the article if
+after further examination of the article it deems it inappropriate to
+do so.  The 436 or 437 error codes may be returned as appropriate to
+the situation.
+
+しかし、サーバーは更なる検査の後記事を投稿又は転送するのが不適切と考えられる時に、記事を投稿又は転送しないことを選んでも構いません。
+この状況では 436 又は 437 のえらー符号を返すのが適切でしょう。
+
+>Reasons for such subsequent rejection of an article may include such
+problems as inappropriate newsgroups or distributions, disk space
+limitations, article lengths, garbled headers, and the like.  These
+are typically restrictions enforced by the server host's news
+software and not necessarily the NNTP server itself.
+
+こうした後からの記事の拒絶の理由にはニュース組又は配布の不適切,
+ディスク空間制限, 記事の長さ, 曖昧な頭などの問題を含み得ます。
+これらはサーバー・ホストのニュース・ソフトウェアにより課される典型的な制限であって、必ずしも
+NNTP サーバー自体のものではありません。
+
+***3.4.2.  Responses [INS[応答]]
+-235 article transferred ok
+-335 send article to be transferred.  End with <CR-LF>.<CR-LF>
+-435 article not wanted - do not send it
+-436 transfer failed - try again later
+-437 article rejected - do not try again
+
+-235 記事転送了解
+-335 転送する記事を送られよ。 <CR-LF>.<CR-LF> で終えられたい。
+-435 記事不要也 ― 送るな
+-436 転送失敗 ― 出直して来い
+-437 記事拒絶 ― もう来るな
+
+>An implementation note:
+
+実装の注意:
+
+>Because some host news posting software may not be able to decide
+immediately that an article is inappropriate for posting or
+forwarding, it is acceptable to acknowledge the successful transfer
+of the article and to later silently discard it.  Thus it is
+permitted to return the 235 acknowledgement code and later discard
+the received article.  This is not a fully satisfactory solution to
+the problem.  Perhaps some implementations will wish to send mail to
+the author of the article in certain of these cases.
+
+記事を投稿又は転送するのが不適切かどうかホスト・ニュース・ソフトウェアが即座に判断出来ないかもしれませんから、記事の転送の成功の応答をして後から黙って捨てることは認められます。
+このように 235 肯定応答符号を返して後で受信した記事を捨てることは認められます。
+これは問題に十分満足出来る状況ではありません。
+おそらくこのような場合に記事の著者にメイルを送信しようとする実装もあるでしょう。
+
+**3.5.  The LAST command [INS[LAST 命令]]
+***3.5.1.  LAST
+
+   LAST
+
+>The internally maintained "current article pointer" is set to the
+previous article in the current newsgroup.  If already positioned at
+the first article of the newsgroup, an error message is returned and
+the current article remains selected.
+
+内部で保持されている「現在記事指示子」を現在ニュース組中の前の記事に設定します。既にニュース組の最初の記事に位置している時は、エラー・メッセージを返して現在記事が選択されたままとなります。
+
+>The internally-maintained "current article pointer" is set by this command.
+
+内部で保持されている「現在記事指示子」はこの命令で設定します。
+
+>A response indicating the current article number, and a message-id
+string will be returned.  No text is sent in response to this command.
+
+現在記事番号及び message-id 文字列を示す応答を返します。
+この命令の応答では文章は送りません。
+
+***3.5.2.  Responses [INS[応答]]
+
+   223 n a article retrieved - request text separately
+           (n = article number, a = unique article id)
+   412 no newsgroup selected
+   420 no current article has been selected
+   422 no previous article in this group
+
+-223 [VAR[n]] [VAR[a]] 記事取り出し ― 文章を別途要求せよ
+([VAR[n]] = 記事番号, [VAR[a]] = 唯一記事識別子)
+-412 ニュース組が選択されていません
+-420 現在記事は選択されていません
+-422 この組に前の記事はありません
+
+**3.6.  The LIST command [INS[LIST 命令]]
+***3.6.1.  LIST
+
+   LIST
+
+>Returns a list of valid newsgroups and associated information.  Each
+newsgroup is sent as a line of text in the following format:
+
+妥当なニュース組及び関連情報の一覧を返します。
+各ニュース組は文章中の一行として次の形式で送ります。
+
+      group last first p
+
+>where <group> is the name of the newsgroup, <last> is the number of
+the last known article currently in that newsgroup, <first> is the
+number of the first article currently in the newsgroup, and <p> is
+either 'y' or 'n' indicating whether posting to this newsgroup is
+allowed ('y') or prohibited ('n').
+
+ここで [VAR[<group>]] はニュース組の名前で、 [VAR[<last>]]
+はそのニュース組に現在ある最後の記事の番号で、 [VAR[<first>]]
+はニュース組中に現在ある最初の記事の番号で、 [VAR[<p>]]
+は [CODE['y']] 又は [VAR['n']] でこのニュース組への投稿か認められている
+([CODE['y']]) か禁止されている ([CODE['n']]) かを示します。
+
+>The <first> and <last> fields will always be numeric.  They may have
+leading zeros.  If the <last> field evaluates to less than the
+<first> field, there are no articles currently on file in the newsgroup.
+
+[CODE[<first>]] ・ [CODE[<last>]] 両欄は常に数値です。
+先導する零があっても構いません。 [CODE[<last>]] 欄が [CODE[<first>]]
+欄より小さい場合は、ファイルに現在ニュース組中の記事はありません。
+
+>Note that posting may still be prohibited to a client even though the
+LIST command indicates that posting is permitted to a particular
+newsgroup. See the POST command for an explanation of client
+prohibitions.  The posting flag exists for each newsgroup because
+some newsgroups are moderated or are digests, and therefore cannot be
+posted to; that is, articles posted to them must be mailed to a
+moderator who will post them for the submitter.  This is independent
+of the posting permission granted to a client by the NNTP server.
+
+なお、 LIST 命令で特定のニュース組への投稿が認められていることが示されていたとしても、クライアントが投稿することは禁止されているかもしれません。
+クライアント禁止の説明については POST 命令を見て下さい。
+司会が置かれていたり要約版になっていて投稿出来ないニュース組
+(つまり、ここに投稿する記事はこれを送信器に投稿する司会者にメイルしないといけません。)
+があるので、投稿旗は各ニュース組に対して存在しています。
+これは NNTP サーバーによりクライアントに保証される投稿許可とは独立のものです。
+
+[INS[
+訳注: submitter を送信器と訳したんですが、送信者ですか?
+(でも人だとすると moderator の他にも人はいるのか?)
+[[#comment]]
+]INS]
+
+>Please note that an empty list (i.e., the text body returned by this
+command consists only of the terminating period) is a possible valid
+response, and indicates that there are currently no valid newsgroups.
+
+空の一覧 (つまり、この命令で返される文章本体が終端の句点だけで構成されるもの)
+は妥当な応答としてあり得るもので、これは妥当なニュース組が存在しないことを示すことに注意して下さい。
+
+***3.6.2.  Responses [INS[応答]]
+
+-215 list of newsgroups follows
+-215 ニュース組の一覧が続きます
+
+**3.7.  The NEWGROUPS command [INS[NEWGROUPS 命令]]
+***3.7.1.  NEWGROUPS
+
+   NEWGROUPS date time [GMT] [<distributions>]
+
+>A list of newsgroups created since <date and time> will be listed in
+the same format as the LIST command.
+
+[VAR{<date 及び time>]] 以降に作られたニュース組を LIST
+命令と同じ形式で列挙します。
+
+>The date is sent as 6 digits in the format YYMMDD, where YY is the
+last two digits of the year, MM is the two digits of the month (with
+leading zero, if appropriate), and DD is the day of the month (with
+leading zero, if appropriate).  The closest century is assumed as
+part of the year (i.e., 86 specifies 1986, 30 specifies 2030, 99 is
+1999, 00 is 2000).
+
+日付は YYMMDD の形式の6桁で送ります。ここで YY
+が年号の下2桁で、 MM は月の2桁数値 (必要なら先導する零を置いて。)
+で、 DD は月の中の日 (必要なら先導する例を置いて。)
+です。年の部分では一番近い世紀であると仮定します
+(つまり、 86 は 1986 を意味し、 30 は 2030 を意味し、 99 は 1999 で、
+00 は 2000)。
+
+>Time must also be specified.  It must be as 6 digits HHMMSS with HH
+being hours on the 24-hour clock, MM minutes 00-59, and SS seconds
+00-59.  The time is assumed to be in the server's timezone unless the
+token "GMT" appears, in which case both time and date are evaluated
+at the 0 meridian.
+
+時刻も指定しなければなりません。これは HHMMSS の6桁数値でなければなりません。
+HH は24時間時計の時刻で、 MM は 00-59 の分で、 SS は 00-59 の秒です。
+時刻は字句 "GMT" が無い場合はサーバーの時刻帯と仮定します。
+いずれの場合も時刻と日付は 0 子午線で評価します。
+
+>The optional parameter "distributions" is a list of distribution
+groups, enclosed in angle brackets.  If specified, the distribution
+portion of a new newsgroup (e.g, 'net' in 'net.wombat') will be
+examined for a match with the distribution categories listed, and
+only those new newsgroups which match will be listed.  If more than
+one distribution group is to be listed, they must be separated by
+commas within the angle brackets.
+
+省略可能なパラメーター「[VAR[distributions]]」は角括弧で囲んだ配布の一覧です。
+指定された場合、新しいニュース組の配布の部分 (例えば「net.wombat」の「net」)
+を列挙された配布分類と一致するか検査し、一致した新しいニュース組のみを列挙します。
+複数の配布組を列挙する時は、角括弧内で読点で区切らなければなりません。
+
+>Please note that an empty list (i.e., the text body returned by this
+command consists only of the terminating period) is a possible valid
+response, and indicates that there are currently no new newsgroups.
+
+空の一覧 (つまり、この命令で返される文章本体が終端の句点だけで構成されるもの)
+は妥当な応答としてあり得るもので、これは現在新しいニュース組が存在しないことを示すことに注意して下さい。
+
+***3.7.2.  Responses [INS[応答]]
+
+-231 list of new newsgroups follows
+-231 新しいニュース組の一覧が続きます
+
+**3.8.  The NEWNEWS command [INS[NEWNEWS 命令]]
+***3.8.1.  NEWNEWS
+
+   NEWNEWS newsgroups date time [GMT] [<distribution>]
+
+>A list of message-ids of articles posted or received to the specified
+newsgroup since "date" will be listed. The format of the listing will
+be one message-id per line, as though text were being sent.  A single
+line consisting solely of one period followed by CR-LF will terminate
+the list.
+
+「[VAR[date]]」以降に指定したニュース組に投稿された又は受信した記事の
+message-id を列挙します。列挙の形式は一行ごとに一 message-id です。
+一つの句点だけで CR-LF が続く行で一覧は終わります。
+
+>Date and time are in the same format as the NEWGROUPS command.
+
+日付及び時刻は NEWGROUPS 命令と同じ形式です。
+
+>A newsgroup name containing a "*" (an asterisk) may be specified to
+broaden the article search to some or all newsgroups.  The asterisk
+will be extended to match any part of a newsgroup name (e.g.,
+net.micro* will match net.micro.wombat, net.micro.apple, etc). Thus
+if only an asterisk is given as the newsgroup name, all newsgroups
+will be searched for new news.
+
+「*」 (星印) を含むニュース組名を使って複数又は全てのニュース組に記事検索を拡大することを指定しても構いません。
+星印はニュース組名のどの部分とも一致するように展開されます
+(例えば、 [SAMP[net.micro*]] は [SAMP[net.micro.wombat]],
+[SAMP[net.micro.apple]] などと一致します)。
+従って星印だけがニュース組名として与えられた場合、全てのニュース組が新ニュースの検索の対象となります。
+
+>(Please note that the asterisk "*" expansion is a general
+replacement; in particular, the specification of e.g., net.*.unix
+should be correctly expanded to embrace names such as net.wombat.unix
+and net.whocares.unix.)
+
+(星印「*」展開は一般的置換であることに注意して下さい。
+特に、例えば [SAMP[net.*.unix]] の指定は正しく展開されて [SAMP[net.woman.unix]]
+や [SAMP[net.whocares.unix]] のような名前を含むはずです。)
+
+>Conversely, if no asterisk appears in a given newsgroup name, only
+the specified newsgroup will be searched for new articles. Newsgroup
+names must be chosen from those returned in the listing of available
+groups.  Multiple newsgroup names (including a "*") may be specified
+in this command, separated by a comma.  No comma shall appear after
+the last newsgroup in the list.  [Implementors are cautioned to keep
+the 512 character command length limit in mind.]
+
+逆に、星印が与えられたニュース組名に含まれなければ、指定されたニュース組のみが新しい記事の検索されます。
+ニュース組名は利用可能な組の一覧で返されたものの中から選ばなければなりません。
+この命令で複数のニュース組名 (「*」を含む。) 
+を読点で区切って指定しても構いません。
+一覧の最後のニュース組名の後に読点があってはいけません。
+[実装者は512文字の命令長制限を覚えておくように警告します。]
+
+>The exclamation point ("!") may be used to negate a match. This can
+be used to selectively omit certain newsgroups from an otherwise
+larger list.  For example, a newsgroups specification of
+"net.*,mod.*,!mod.map.*" would specify that all net.<anything> and
+all mod.<anything> EXCEPT mod.map.<anything> newsgroup names would be
+matched.  If used, the exclamation point must appear as the first
+character of the given newsgroup name or pattern.
+
+感嘆符 (「!」) は一致を反転させるのに使っても構いません。
+これは大きな一覧から特定ニュース組を選択的に除外するのに使うことが出来ます。
+例えば、ニュース組指定「net.*,mod.*,!mod.map.*」は net.[VAR[<なにか>]]
+及び mod.[VAR[<なにか>]] から mood.map.[VAR[<なにか>]] を'''除いた'''ニュース組名が一致します。
+感嘆符を使う場合、指定するニュース組名又はパターンの最初の文字でなければなりません。
+
+>The optional parameter "distributions" is a list of distribution
+groups, enclosed in angle brackets.  If specified, the distribution
+portion of an article's newsgroup (e.g, 'net' in 'net.wombat') will
+be examined for a match with the distribution categories listed, and
+only those articles which have at least one newsgroup belonging to
+the list of distributions will be listed.  If more than one
+distribution group is to be supplied, they must be separated by
+commas within the angle brackets.
+
+省略可能なパラメーター「[VAR[distributions]]」は角括弧で囲んだ配布の一覧です。
+指定された場合、新しいニュース組の配布の部分 (例えば「net.wombat」の「net」)
+を列挙された配布分類と一致するか検査し、最低一つの一致したニュース組に所属する記事のみを列挙します。
+複数の配布組を列挙する時は、角括弧内で読点で区切らなければなりません。
+
+>The use of the IHAVE, NEWNEWS, and NEWGROUPS commands to distribute
+news is discussed in an earlier part of this document.
+
+ニュース配布での IHAVE, NEWNEWS, 及び NEWGROUPS 
+命令の使用はこの文書のはじめの部分で述べました。
+
+>Please note that an empty list (i.e., the text body returned by this
+command consists only of the terminating period) is a possible valid
+response, and indicates that there is currently no new news.
+
+空の一覧 (つまり、この命令で返される文章本体が終端の句点だけで構成されるもの)
+は妥当な応答としてあり得るもので、これは現在新しいニュースが存在しないことを示すことに注意して下さい。
+
+***3.8.2.  Responses [INS[応答]]
+
+-230 list of new articles by message-id follows
+-230 message-id による新しい記事の一覧が続きます。
+
+**3.9.  The NEXT command [INS[NEXT 命令]]
+***3.9.1.  NEXT
+
+   NEXT
+
+>The internally maintained "current article pointer" is advanced to
+the next article in the current newsgroup.  If no more articles
+remain in the current group, an error message is returned and the
+current article remains selected.
+
+内部で保持されている「現在記事指示子」を現在ニュース組中の次の記事に進めます。
+現在の組にもう記事が残っていなければ、エラー・メッセージを返して現在記事が選択されたままとなります。
+
+>The internally-maintained "current article pointer" is set by this command.
+
+内部で保持されている「現在記事指示子」はこの命令で設定します。
+
+>A response indicating the current article number, and the message-id
+string will be returned.  No text is sent in response to this command.
+
+現在記事番号及び message-id 文字列を示す応答を返します。
+この命令の応答では文章は送りません。
+
+***3.9.2.  Responses [INS[応答]]
+
+   223 n a article retrieved - request text separately
+           (n = article number, a = unique article id)
+   412 no newsgroup selected
+   420 no current article has been selected
+   421 no next article in this group
+
+-223 [VAR[n]] [VAR[a]] 記事取り出し ― 文章を別途要求せよ
+([VAR[n]] = 記事番号, [VAR[a]] = 唯一記事識別子)
+-412 ニュース組が選択されていません
+-420 現在記事は選択されていません
+-422 この組に前の記事はありません
+
+**3.10.  The POST command [INS[POST 命令]]
+***3.10.1.  POST
+
+   POST
+
+>If posting is allowed, response code 340 is returned to indicate that
+the article to be posted should be sent. Response code 440 indicates
+that posting is prohibited for some installation-dependent reason.
+
+投稿が認められている場合、応答符号 340 を返して投稿する記事を送るよう示します。
+応答符号 440 は何らかの設定依存の理由により投稿が禁止されていることを示します。
+
+>If posting is permitted, the article should be presented in the
+format specified by RFC850, and should include all required header
+lines. After the article's header and body have been completely sent
+by the client to the server, a further response code will be returned
+to indicate success or failure of the posting attempt.
+
+投稿が認められている場合、記事は RFC 850 
+で規定されている形式で表現されるべきであり、全ての必須の頭行が含まれているべきです。
+記事の頭及び本体がクライアントからサーバーに完全に送信された後、投稿過程が成功したか失敗したかを示す応答符号が更に返されます。
+
+>The text forming the header and body of the message to be posted
+should be sent by the client using the conventions for text received
+from the news server:  A single period (".") on a line indicates the
+end of the text, with lines starting with a period in the original
+text having that period doubled during transmission.
+
+投稿されるメッセージを形成する頭と本体の文章は、ニュース・サーバーから文章を受け取る記法を使ってクライアントから送るのが良いです。
+つまり句点1つ (「.」) 
+の行が文章の終わりを示し、原文で句点で始まる行は転送中句点を二重にします。
+
+>No attempt shall be made by the server to filter characters, fold or
+limit lines, or otherwise process incoming text.  It is our intent
+that the server just pass the incoming message to be posted to the
+server installation's news posting software, which is separate from
+this specification.  See RFC850 for more details.
+
+サーバーは文字を濾したり行を折り畳んだり制限したり,
+その他送られてくる文章を処理しようとしてはなりません。
+サーバーは単に投稿するためサーバーに送られてきたメッセージをサーバーに設定されているニュース投稿ソフトウェア
+(この仕様とは別途のもの。) に渡すことを意図しています。
+詳しくは RFC 850 をご覧下さい。
+
+>Since most installations will want the client news program to allow
+the user to prepare his message using some sort of text editor, and
+transmit it to the server for posting only after it is composed, the
+client program should take note of the herald message that greeted it
+when the connection was first established. This message indicates
+whether postings from that client are permitted or not, and can be
+used to caution the user that his access is read-only if that is the
+case. This will prevent the user from wasting a good deal of time
+composing a message only to find posting of the message was denied.
+The method and determination of which clients and hosts may post is
+installation dependent and is not covered by this specification.
+
+多くの実装ではクライアント・ニュース・プログラムが利用者に何らかの文章編集器を使ってメッセージを準備してこれを構成した後にのみサーバーに投稿するために転送することが出来るのを望むので、クライアント・プログラムは最初の接続が確立した時に迎え入れる伝令メッセージに注意するのが良いです。
+このメッセージはクライアントからの投稿が認められているかどうかを示すので、読み取り専用接続の場合にそのことを利用者に警告するのに使うことが出来ます。
+これで利用者がその投稿を拒否されてしまうだけのメッセージを構成するのに時間を裂くのを防ぐことが出来ます。
+クライアント及びホストが投稿して構わないかの方法及び決定は実装依存であってこの仕様書では扱いません。
+
+***3.10.2.  Responses [INS[応答]]
+
+-240 article posted ok
+-340 send article to be posted. End with <CR-LF>.<CR-LF>
+-440 posting not allowed
+-441 posting failed
+
+-240 記事投稿了解
+-340 投稿する記事を送信されたし。 <CR-LF>.<CR-LF> で終わられたい。
+-440 投稿不許可
+-441 投稿失敗
+
+>(for reference, one of the following codes will be sent upon initial
+connection; the client program should determine whether posting is
+generally permitted from these:) 200 server ready - posting allowed
+201 server ready - no posting allowed
+
+(参考として、最初の接続で次の符号のいずれかが返されます。
+クライアント・プログラムはこれらから一般に投稿が認められているかを決定するのが良いです:)
+200 サーバー準備完了 ― 投稿許可
+201 サーバー準備完了 ― 投稿不許可
+
+**3.11.  The QUIT command [INS[QUIT 命令]]
+***3.11.1.  QUIT
+
+   QUIT
+
+>The server process acknowledges the QUIT command and then closes the
+connection to the client.  This is the preferred method for a client
+to indicate that it has finished all its transactions with the NNTP server.
+
+サーバー処理は QUIT 命令に工程追うとしてクライアントとの接続を閉じます。
+これはクライアントが NNTP サーバーとの全ての処理が終了したことを示す好ましい方法です。
+
+>If a client simply disconnects (or the connection times out, or some
+other fault occurs), the server should gracefully cease its attempts
+to service the client.
+
+クライアントが単に切断したら
+(又は接続が時間切れになったか、又は何か他の失敗が発生したら)、サーバーは素直にクライアントへのサービスを中断するのが良いです。
+
+***3.11.2.  Responses [INS[応答]]
+
+-205 closing connection - goodbye!
+-205 接続閉鎖 ― ごきげんよう!
+
+**3.12.  The SLAVE command [INS[SLAVE 命令]]
+***3.12.1.  SLAVE
+
+   SLAVE
+
+>Indicates to the server that this client connection is to a slave
+server, rather than a user.
+
+サーバーにこのクライアント接続は利用者ではなく奴隷であることを示します。
+
+>This command is intended for use in separating connections to single
+users from those to subsidiary ("slave") servers.  It may be used to
+indicate that priority should therefore be given to requests from
+this client, as it is presumably serving more than one person.  It
+might also be used to determine which connections to close when
+system load levels are exceeded, perhaps giving preference to slave
+servers.  The actual use this command is put to is entirely
+implementation dependent, and may vary from one host to another.  In
+NNTP servers which do not give priority to slave servers, this
+command must nonetheless be recognized and acknowledged.
+
+この命令は単一利用者への接続を補助 (「奴隷」) 
+サーバーの接続から分離するのに使うことを意図しています。
+これはおそらく複数人に供給されるでしょうからこのクライアントからの要求を優先するのが良いことをも示すのに使われるかも知れません。
+また処理系読み込み水準を超過した時どの接続を切断するか,
+おそらく奴隷サーバーを優先させますが、これを決定するのに使われるかもしれません。
+この命令の実際の用途は完全に実装依存であり、ホストそれぞれ様々かもしれません。
+奴隷サーバーに優先権を与えない NNTP サーバーは、それでも認識し肯定応答しなければなりません。
+
+***3.12.2.  Responses [INS[応答]]
+
+-202 slave status noted
+-202 奴隷状態記録せり
+
+*4.  Sample Conversations [INS[対話例]]
+>These are samples of the conversations that might be expected with
+the news server in hypothetical sessions.  The notation C: indicates
+commands sent to the news server from the client program; S: indicate
+responses received from the server by the client.
+
+仮のセッションにおけるニュース・サーバーとの対話の例を示します。
+記号 [CODE[C:]] はニュース・サーバーにクライアント・プログラムから送られる命令を示します。
+[CODE[S:]] はサーバーからのクライアントが受信する応答を示します。
+
+**4.1.  Example 1 - relative access with NEXT [INS[例1 ― NEXT で取り出す接続]]
+
+   S:      (listens at TCP port 119) [INS[(TCP ポート 119 を listen 中)]]
+
+   C:      (requests connection on TCP port 119) [INS[(TCP ポート 119 に接続要求)]]
+   S:      200 wombatvax news server ready - posting ok
+               [INS[wombatvax ニュース・サーバー準備完了 ― 投稿可能]]
+
+   (client asks for a current newsgroup list) [INS[クライアントは現在のニュース組一覧を頼む]]
+   C:      LIST
+   S:      215 list of newsgroups follows [INS[ニュース組一覧続きます]]
+   S:      net.wombats 00543 00501 y
+   S:      net.unix-wizards 10125 10011 y
+           (more information here) [INS[(中略)]]
+   S:      net.idiots 00100 00001 n
+   S:      .
+
+   (client selects a newsgroup) [INS[(クライアント、ニュース組を選択)]]
+   C:      GROUP net.unix-wizards
+   S:      211 104 10011 10125 net.unix-wizards group selected [INS[組選択]]
+           (there are 104 articles on file, from 10011 to 10125)
+           [INS[(ファイル中に 104 記事あって、 10011 〜 10125)]]
+
+   (client selects an article to read) [INS[(クライアントは読む記事を選択)]]
+   C:      STAT 10110
+   S:      223 10110 <23445@@sdcsvax.ARPA> article retrieved - statistics
+           only (article 10110 selected, its message-id is
+           <23445@@sdcsvax.ARPA>)
+           [INS[記事取り出し ― 統計のみ (記事 10110 を選択, その message-id
+           は <23445@@sdcsvax.ARPA>)]]
+
+   (client examines the header) [INS[(クライアントは頭を検査)]]
+   C:      HEAD
+   S:      221 10110 <23445@@sdcsvax.ARPA> article retrieved - head
+           follows (text of the header appears here)
+           [INS[記事取り出し ― 頭 / (頭の文章がここに来る)]]
+   S:      .
+
+   (client wants to see the text body of the article)
+   [INS[(クライアントは記事の文書本体を見ることを希望)]]
+   C:      BODY
+   S:      222 10110 <23445@@sdcsvax.ARPA> article retrieved - body
+           follows (body text here) [INS[記事取り出し ― 本体 / (本体文章ここに)]]
+   S:      .
+
+   (client selects next article in group)
+   [INS[(クライアント、組中の次の記事を選択)]]
+   C:      NEXT
+   S:      223 10113 <21495@@nudebch.uucp> article retrieved - statistics
+           only (article 10113 was next in group)
+           [INS[(記事取り出し ― 統計のみ (記事 10113 が組中の次))]]
+
+   (client finishes session) [INS[(クライアント、セッションを終える)]]
+   C:      QUIT
+   S:      205 goodbye. [INS[ばいばい。]]
+
+**4.2.  Example 2 - absolute article access with ARTICLE [INS[例2 ― ARTICLE で完全記事接続]]
+
+   S:      (listens at TCP port 119) [INS[(TCP ポート 119 を listen 中)]]
+
+   C:      (requests connection on TCP port 119) [INS[(TCP ポート 119 に接続要求)]]
+   S:      201 UCB-VAX netnews server ready -- no posting allowed
+               [INS[UCB-VAX ネットニュース・サーバー準備完了 ― 投稿不許可]]
+
+   C:      GROUP msgs
+   S:      211 103 402 504 msgs Your new group is msgs [INS[今度の組は msgs]]
+           (there are 103 articles, from 402 to 504)
+           [INS[(103 記事あって、 402 〜 504)]]
+
+   C:      ARTICLE 401
+   S:      423 No such article in this newsgroup [INS[この組にそんな記事ないです。。。]]
+
+   C:      ARTICLE 402
+   S:      220 402 <4105@@ucbvax.ARPA> Article retrieved, text follows
+                                      [INS[記事取り出し, 文章続きます]]
+   S:      (article header and body follow) [INS[(記事頭及び本体が続く)]]
+   S:      .
+
+   C:      HEAD 403
+   S:      221 403 <3108@@mcvax.UUCP> Article retrieved, header follows
+                                      [INS[記事取り出し, 頭続きます]]
+   S:      (article header follows) [INS[(記事頭が続く)]]
+   S:      .
+
+   C:      QUIT
+   S:      205 UCB-VAX news server closing connection.  Goodbye.
+               [INS[UCB-VAX ニュース・サーバー接続閉鎖。ばいばーい。]]
+
+**4.3.  Example 3 - NEWGROUPS command [INS[例3 ― NEWGROUPS 命令]]
+
+   S:      (listens at TCP port 119) [INS[(TCP ポート 119 を listen 中)]]
+
+   C:      (requests connection on TCP port 119) [INS[(TCP ポート 119 に接続要求)]]
+   S:      200 Imaginary Institute News Server ready (posting ok)
+               [INS[架空研究所ニュース・サーバー準備完了 (投稿可能)]]
+
+   (client asks for new newsgroups since April 3, 1985)
+   [INS[(クライアントは 1985年4月3日からの新しいニュース組を尋ねる)]]
+   C:      NEWGROUPS 850403 020000
+
+   S:      231 New newsgroups since 03/04/85 02:00:00 follow
+               [INS[1985-94-93 02:00:00 からの新しいニュース組続きます]]
+   S:      net.music.gdead
+   S:      net.games.sources
+   S:      .
+
+   C:      GROUP net.music.gdead
+   S:      211 0 1 1 net.music.gdead Newsgroup selected [INS[ニュース組選択]]
+           (there are no articles in that newsgroup, and
+           the first and last article numbers should be ignored)
+           [INS[(このニュース組に記事は無く、最初と最後の記事番号は無視すべき)]]
+
+   C:      QUIT
+   S:      205 Imaginary Institute news server ceasing service.  Bye!
+               [INS[架空研究所ニュース・サーバー, サービス中断。んじゃ。]]
+
+**4.4.  Example 4 - posting a news article [INS[例4 ― ニュース記事投稿]]
+
+   S:      (listens at TCP port 119) [INS[(TCP ポート 119 を listen 中)]]
+
+   C:      (requests connection on TCP port 119) [INS[(TCP ポート 119 に接続要求)]]
+   S:      200 BANZAIVAX news server ready, posting allowed.
+               [INS[BANZAIVAX ニュース・サーバー準備完了, 投稿許可]]
+
+   C:      POST
+   S:      340 Continue posting; Period on a line by itself to end
+               [INS[投稿続けよ; 句点だけの行で終わります]]
+   C:      (transmits news article in RFC850 format)
+           [INS[(RFC 850 形式でニュース・記事を転送)]]
+   C:      .
+   S:      240 Article posted successfully. [INS[記事投稿成功。]]
+
+   C:      QUIT
+   S:      205 BANZAIVAX closing connection.  Goodbye.
+               [INS[BANZAIVAX 接続閉鎖。またねー。]]
+
+**4.5.  Example 5 - interruption due to operator request [INS[例5 ― 技師要求により解釈]]
+
+   S:      (listens at TCP port 119) [INS[(TCP ポート 119 を listen 中)]]
+
+   C:      (requests connection on TCP port 119) [INS[(TCP ポート 119 に接続要求)]]
+   S:      201 genericvax news server ready, no posting allowed.
+               [INS[genericvax ニュース・サーバー準備完了, 投稿不許可]]
+
+           (assume normal conversation for some time, and
+           that a newsgroup has been selected)
+           [INS[(普通の対話があってニュース組が選択されていると仮定。)]]
+
+   C:      NEXT
+   S:      223 1013 <5734@@mcvax.UUCP> Article retrieved; text separate.
+                                      [INS[記事取り出し; 文章は別に。]]
+
+   C:      HEAD
+   C:      221 1013 <5734@@mcvax.UUCP> Article retrieved; head follows.
+                                      [INS[記事取り出し; 頭続きます。]]
+
+   S:      (sends head of article, but halfway through is
+           interrupted by an operator request.  The following
+           then occurs, without client intervention.)
+           [INS[(文書の頭を送るが、途中で技師要求により解釈される。]]
+           [INS[次のがクライアントの介入なしに起こる。)]]
+
+   S:      (ends current line with a CR-LF pair) [INS[(CR-LF 組で現在行を終える)]]
+   S:      .
+   S:      400 Connection closed by operator.  Goodbye.
+               [INS[接続は技師により閉鎖されました。ばいばい。]]
+   S:      (closes connection) [INS[(接続閉鎖)]]
+
+**4.6.  Example 6 - Using the news server to distribute news between systems. [INS[例6 ― 処理系間でのニュースの配布にニュース・サーバーを使用]]
+
+   S:      (listens at TCP port 119) [INS[(TCP ポート 119 を listen 中)]]
+
+   C:      (requests connection on TCP port 119) [INS[(TCP ポート 119 に接続要求)]]
+   S:      201 Foobar NNTP server ready (no posting)
+               [INS[なんたら NNTP サーバー準備完了 (投稿不能)]]
+
+   (client asks for new newsgroups since 2 am, May 15, 1985)
+   [INS[(クライアントは 1985年5月15日午前2時以降の新ニュース組を尋ねる)]]
+   C:      NEWGROUPS 850515 020000
+   S:      235 New newsgroups since 850515 follow
+               [INS[850515 以降の新ニュース組を続けます]]
+   S:      net.fluff
+   S:      net.lint
+   S:      .
+
+   (client asks for new news articles since 2 am, May 15, 1985)
+   [INS[(クライアントは1985年5月15日2時以降の新しい記事を尋ねる)]]
+   C:      NEWNEWS * 850515 020000
+   S:      230 New news since 850515 020000 follows
+               [INS[850515 020000 からの新しいニュースを続けます]]
+   S:      <1772@@foo.UUCP>
+   S:      <87623@@baz.UUCP>
+   S:      <17872@@GOLD.CSNET>
+   S:      .
+
+   (client asks for article <1772@@foo.UUCP>)
+   [INS[クライアントは記事 <1772@@foo.UUCP> を尋ねる]]
+   C:      ARTICLE <1772@@foo.UUCP>
+   S:      220 <1772@@foo.UUCP> All of article follows [INS[記事全体を続けます]]
+   S:      (sends entire message) [INS[メッセージ全体を送る]]
+   S:      .
+
+   (client asks for article <87623@@baz.UUCP>[INS[)]]
+   [INS[クライアントは記事 <87623@@baz.UUCP> を尋ねる]]
+   C:      ARTICLE <87623@@baz.UUCP>
+   S:      220 <87623@@baz.UUCP> All of article follows [INS[記事全体を続けます]]
+   S:      (sends entire message) [INS[メッセージ全体を送る]]
+   S:      .
+
+   (client asks for article <17872@@GOLD.CSNET>
+   [INS[クライアントは記事 <17872@@GOLD.CSNET> を尋ねる]]
+   C:      ARTICLE <17872@@GOLD.CSNET>
+   S:      220 <17872@@GOLD.CSNET> All of article follows [INS[記事全体を続けます]]
+   S:      (sends entire message) [INS[メッセージ全体を送る]]
+   S:      .
+
+   (client offers an article it has received recently)
+   [INS[(クライアントは最近受信した記事を提供する)]]
+   C:      IHAVE <4105@@ucbvax.ARPA>
+   S:      435 Already seen that one, where you been? [INS[それもう見たよーん。]]
+
+   (client offers another article)
+   [INS[(クライアントは他の記事を提供する)]]
+   C:      IHAVE <4106@@ucbvax.ARPA>
+   S:      335 News to me!  <CRLF.CRLF> to end. [INS[それ初耳! <CRLF.CRLF> で終わって。]]
+   C:      (sends article) [INS[記事を送信]]
+   C:      .
+   S:      235 Article transferred successfully.  Thanks.
+               [INS[記事転送成功。ありがとさん。]]
+
+   (or) [INS[(または)]]
+
+   S:      436 Transfer failed. [INS[転送失敗]]
+
+   (client is all through with the session)
+   [INS[(クライアントはセッションを全て完了)]]
+   C:      QUIT
+   S:      205 Foobar NNTP server bids you farewell.
+               [INS[なんたら NNTP サーバーよりごきげんよう。]]
+
+**4.7.  Summary of commands and responses. [INS[命令と応答のまとめ]]
+>The following are the commands recognized and responses returned by
+the NNTP server.
+
+次に示すのは NNTP サーバーが認識する命令と返す応答です。
+
+***4.7.1.  Commands [INS[命令]]
+
+   ARTICLE
+   BODY
+   GROUP
+   HEAD
+   HELP
+   IHAVE
+   LAST
+   LIST
+   NEWGROUPS
+   NEWNEWS
+   NEXT
+   POST
+   QUIT
+   SLAVE
+   STAT
+
+***4.7.2.  Responses [INS[応答]]
+
+   100 help text follows
+   199 debug output
+
+   200 server ready - posting allowed
+   201 server ready - no posting allowed
+   202 slave status noted
+   205 closing connection - goodbye!
+   211 n f l s group selected
+   215 list of newsgroups follows
+   220 n <a> article retrieved - head and body follow 221 n <a> article
+   retrieved - head follows
+   222 n <a> article retrieved - body follows
+   223 n <a> article retrieved - request text separately 230 list of new
+   articles by message-id follows
+   231 list of new newsgroups follows
+   235 article transferred ok
+   240 article posted ok
+
+   335 send article to be transferred.  End with <CR-LF>.<CR-LF>
+   340 send article to be posted. End with <CR-LF>.<CR-LF>
+
+   400 service discontinued
+   411 no such news group
+   412 no newsgroup has been selected
+   420 no current article has been selected
+   421 no next article in this group
+   422 no previous article in this group
+   423 no such article number in this group
+   430 no such article found
+   435 article not wanted - do not send it
+   436 transfer failed - try again later
+   437 article rejected - do not try again.
+   440 posting not allowed
+   441 posting failed
+
+   500 command not recognized
+   501 command syntax error
+   502 access restriction or permission denied
+   503 program fault - command not performed
+
+**4.8.  A Brief Word about the USENET News System [INS[USENET ニュース系統の概略]]
+
+   In the UNIX world, which traditionally has been linked by 1200 baud
+   dial-up telephone lines, the USENET News system has evolved to handle
+   central storage, indexing, retrieval, and distribution of news.  With
+   the exception of its underlying transport mechanism (UUCP), USENET
+   News is an efficient means of providing news and bulletin service to
+   subscribers on UNIX and other hosts worldwide.  The USENET News
+   system is discussed in detail in RFC 850.  It runs on most versions
+   of UNIX and on many other operating systems, and is customarily
+   distributed without charge.
+
+   USENET uses a spooling area on the UNIX host to store news articles,
+   one per file. Each article consists of a series of heading text,
+   which contain the sender's identification and organizational
+   affiliation, timestamps, electronic mail reply paths, subject,
+   newsgroup (subject category), and the like.  A complete news article
+   is reproduced in its entirety below.  Please consult RFC 850 for more
+   details.
+
+      Relay-Version: version B 2.10.3 4.3bsd-beta 6/6/85; site
+      sdcsvax.UUCP
+      Posting-Version: version B 2.10.1 6/24/83 SMI; site unitek.uucp
+      Path:sdcsvax!sdcrdcf!hplabs!qantel!ihnp4!alberta!ubc-vision!unitek
+      !honman
+      From: honman@@unitek.uucp (Man Wong)
+      Newsgroups: net.unix-wizards
+      Subject: foreground -> background ?
+      Message-ID: <167@@unitek.uucp>
+      Date: 25 Sep 85 23:51:52 GMT
+      Date-Received: 29 Sep 85 09:54:48 GMT
+      Reply-To: honman@@unitek.UUCP (Hon-Man Wong)
+      Distribution: net.all
+      Organization: Unitek Technologies Corporation
+      Lines: 12
+
+      I have a process (C program) which generates a child and waits for
+      it to return.  What I would like to do is to be able to run the
+      child process interactively for a while before kicking itself into
+      the background so I can return to the parent process (while the
+      child process is RUNNING in the background).  Can it be done?  And
+      if it can, how?
+
+      Please reply by E-mail.  Thanks in advance.
+
+      Hon-Man Wong
+
+*5.  References [INS[参考文献]]
+
+   [1]  Crocker, D., "Standard for the Format of ARPA Internet Text
+        Messages", RFC-822, Department of Electrical Engineering,
+        University of Delaware, August, 1982.
+
+   [2]  Horton, M., "Standard for Interchange of USENET Messages",
+        RFC-850, USENET Project, June, 1983.
+
+   [3]  Postel, J., "Transmission Control Protocol- DARPA Internet
+        Program Protocol Specification", RFC-793, USC/Information
+        Sciences Institute, September, 1981.
+
+   [4]  Postel, J., "Simple Mail Transfer Protocol", RFC-821,
+        USC/Information Sciences Institute, August, 1982.
+
+*6.  Acknowledgements [INS[謝辞]]
+>The authors wish to express their heartfelt thanks to those many
+people who contributed to this specification, and especially to Erik
+Fair and Chuq von Rospach, without whose inspiration this whole thing
+would not have been necessary.
+
+*7.  Notes [INS[注記]]
+
+><1> UNIX is a trademark of Bell Laboratories.
+
+UNIX はベル研究所の商標です。
+
+*License
+
+See [[RFCのライセンス]]。
+
+*メモ
+@
+
+
+1.1
+log
+@Updated.
+@
+text
+@@
+

@@ -1,0 +1,177 @@
+head	1.4;
+access;
+symbols
+	suikawiki3-final:1.4
+	before-db-leaffile:1.3
+	after-upgrade-to-suikawiki-3:1.3
+	before-fork-suikawiki3:1.3
+	after-restore-20040122:1.3;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.4
+date	2004.05.18.02.05.07;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2003.12.03.02.03.40;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2003.09.13.02.01.46;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.08.16.09.18.53;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.4
+log
+@auto-committed
+@
+text
+@#?SuikaWiki/0.9
+[1] [[CGI]] の[[メタ変数]] [DFN[[CODE(CGI)[REQUEST_URI]]]]
+には、[[クライアント]]から送られてきた[[要求]]の
+[CODE(ABNF)[[[Request-URI]]]] (最初の行の真ん中に書かれる
+[[URI参照]]の一部または全部 
+(どの部分かはプロトコルの仕様によります。))
+の値が入ります。
+
+このメタ変数は、 [[SIP]] の CGI では標準化されています
+([[RFC 3050]]) が、 [[HTTP]] の CGI では標準ではありません。
+[CODE(CGI)[[[SCRIPT_NAME]]]] や [CODE(CGI)[[[QUERY_STRING]]]]
+などから再構成できる (できた) からです。しかし、
+実際の HTTP CGI スクリプトの処理では本当にクライアントから送られてきた
+[CODE(ABNF)[Request-URI]] がそのまま手に入ると便利なことが多々あります (>>6)。
+そのためかどうかは存じませんが、 [[Apache]] などは
+[CODE(CGI)[REQUEST_URI]] も提供してくれます。
+
+[6] [CODE(CGI)[REQUEST_URI]] がないと、
+- [CODE(ABNF)[[[Script-URI]]]] は得られても
+[CODE(ABNF)[Request-URI]] は得られない
+- [CODE(ABNF)[Script-URI]] ≒ [CODE(ABNF)[Request-URI]]
+な場合に限定するとしても、 [[URI符号化]]も含めて正確な元の文字列は得られない
+- 複数のメタ変数を組合せるのは面倒い
+
+ので不便なことがあります。
+
+[5]
+メタ変数 [CODE(CGI)[REQUEST_URI]]
+は HTTP CGI では非標準ながらも一定の地位を得ており、
+デファクト標準と見なしてよいのではないでしょうか。
+しかし、標準でない以上実装していない鯖を責めることは当然できません。
+[[CGIスクリプト]]は [CODE(CGI)[REQUEST_URI]]
+があればこれを利用し、なければ他のメタ変数を組合せるのがよいでしょう。
+
+[[#comment]]
+
+* 仕様書から
+
+**RFC 3050 (SIP-CGI/1.1) 5.5.1.13 REQUEST_URI
+>This metavariable is specific to requests made with SIP.
+
+このメタ変数は、 SIP
+で作られた要求に特有です。
+
+        REQUEST_URI  =  absoluteURI  ; defined in RFC 2396 [9]
+
+>If the message triggering the script was a request, this variable
+indicates the URI specified with the request method.  This
+metavariable is only defined if REQUEST_METHOD is defined; in that
+case, servers MUST provide it to scripts.
+
+スクリプトの引き金となったメッセージが要求である時には、
+この変数は要求 method
+と一緒に指定された [[URI]]
+を示します。このメタ変数は
+[CODE(CGI)[[[REQUEST_METHOD]]]]
+が定義されている時のみ定義されます。
+その場合サーバーはこの変数をスクリプトに提供しなければ '''なりません'''。
+
+>This metavariable fills the roles of HTTP CGI's
+SCRIPT_NAME, PATH_INFO, and 
+QUERY_STRING.
+
+この変数は、 HTTP CGI
+での [CODE(CGI)[[[SCRIPT_NAME]]]],
+[CODE(CGI)[[[PATH_INFO]]]],
+[CODE(CGI)[[[QUERY_STRING]]]]
+の役割を担っています。
+
+**RFCの部分の License
+[[RFCのライセンス]]
+
+* 値の例
+
+- HTTP CGI
+--[2] [SAMP(CGI)[/path/to/cgi/path/info?query]]
+--[7] [SAMP(CGI)[http://foo.example/path]]
+- SIP CGI
+--[8] [SAMP(CGI)[sip:foo@@bar.example]]
+
+[[#comment]]
+
+*メモ
+
+[3] HTTP CGI スクリプトの作者は、この CGI メタ変数が現時点では非標準のものであることに注意するべきです。この変数が色々な環境で将来にわたって利用可能かどうかは未知数ですから、得られなかった場合は [CODE(CGI)[[[PATH_INFO]]]] とか [CODE(CGI)[[[QUERY_STRING]]]] とかで代替する策を練っとかないといけません。[WEAK[もっとも、 SIP CGI で標準化された以上、 HTTP CGI でもこのメタ変数を使わないのも惜しいってものです(謎)。]]
+
+[4] [[w3m]] の [[local CGI]] 機能を使って呼出された CGI スクリプトでも [CODE(CGI)[REQUEST_URI]] が得られます。 Apache と似たように、 [CODE(URI)[file:///cgi-bin/foo.cgi]] なら [CODE(URI)[/cgi-bin/foo.cgi]] が得られるみたいです。
+
+@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@d2 38
+a39 2
+[1] 
+*RFC 3050 (SIP-CGI/1.1) 5.5.1.13 REQUEST_URI
+d70 1
+a70 1
+*RFCの部分の License
+d72 11
+d84 5
+a88 3
+- [2] [[Apache]] でもこの変数は提供されます。その場合、 [[HTTP]] は Request-URI が [[path]] から始まるのを許していますから、大抵 [SAMP(URI)[/path/to/cgi/path/info?query]] のような値が入ります。
+- [3] HTTP CGI スクリプトの作者は、この CGI メタ変数が現時点では非標準のものであることに注意するべきです。この変数が色々な環境で将来にわたって利用可能かどうかは未知数ですから、得られなかった場合は [CODE(CGI)[[[PATH_INFO]]]] とか [CODE(CGI)[[[QUERY_STRING]]]] とかで代替する策を練っとかないといけません。[WEAK[もっとも、 SIP CGI で標準化された以上、 HTTP CGI でもこのメタ変数を使わないのも惜しいってものです(謎)。]]
+- [4] [[w3m]] の [[LocalCGI]] 機能を使って呼出された CGI スクリプトでも [CODE(CGI)[REQUEST_URI]] が得られます。 Apache と似たように、 [CODE(URI)[file:///cgi-bin/foo.cgi]] なら [CODE(URI)[/cgi-bin/foo.cgi]] が得られるみたいです。
+@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@d39 1
+@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@d22 1
+a22 1
+その場合サーバーはこの変数をスクリプトにていきょうしなければ '''なりません'''。
+d37 2
+a38 1
+- [2] [[Apache]] でもこの変数は提供されます。その場合、 [[HTTP]] は Request-URI が [[path]] から始まるのを許していますから、大抵 [SAMP(URI)[/path/to/cgi/path/info?query]] のような値が入ります。
+@
+

@@ -1,0 +1,221 @@
+head	1.2;
+access;
+symbols
+	suikawiki3-final:1.2
+	before-db-leaffile:1.1;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.2
+date	2004.12.08.02.11.29;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2004.03.18.02.07.17;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@[1] SuikaWiki 3 における[[スタイルシート]]の取り扱いについて。
+
+
+* WikiPlugin module
+
+[2] スタイルシート関連の機能は、
+StyleSheet plugin
+<IW:SuikaCVS:"suikawiki/script/misc/plugins/view/stylesheet.wp2">
+が提供します。
+
+
+* スタイルシート参照群
+
+[3] StyleSheet plugin の提供する整形規則を使うと、スタイルシート参照群を埋め込むように [[WikiView]] 定義に記述できます。
+
+たとえば、 [SAMP[%styles-wiki-html;]]
+と書くと、 [[HTML]] の [CODE(HTMLe)[[[link]]]] 要素(群)としてスタイルシートの参照が出力されます。
+
+[4] HTML WikiPlugin module
+が提供する整形規則 [CODE[html-document]] の引数
+[CODE[stylesheets]] は、スタイルシートの参照を値として与えることになっていますから、
+[SAMP[%html-document (stylesheets => {%styles-wiki-html;}p,...);]]
+と書くと、適当な場所に [CODE(HTMLe)[link]] 要素群を配置できます。
+
+実際には、 [CODE[stylesheets]] 引数の値は利用可能な plugin により適切に与えられるので、陽に指定する必要はありません。
+
+[5] スタイルシート参照群を与える規則は、現在2つ用意されています。
+
+:[CODE[styles-wiki-html]]:[[HTML4]] の [CODE(HTMLe)[link]] 要素型を使います。
+:[CODE[styles-wiki-xml]]:[CODE(XML)[[[xml-stylesheet]]]] [[処理指令]]を使います。
+
+どちらも、引数は
+:[CODE[page]]:スタイル集合の定義されている WikiPage の [[WikiName]]。
+既定値は、 [CODE(file)[suikawiki-config.ph]] による。
+
+
+* スタイル集合
+
+[6] ひとまとまりとして使うことを想定したスタイルシートの集合を、
+[DFN[[RUBYB[スタイル集合] [Style set]]]]と呼びます。
+
+
+* スタイルシート
+
+[7] SuikaWiki 3 において、[DFN[[RUBYB[スタイルシート] [Stylesheet]]]]とは、
+[[スタイル言語]]によって記述された[RUBYB[表現形式] [presentation form]] (への変換) の定義を行う一つの[[実体]]とします。
+
+とはいうものの、現時点で想定しているのは [[CSS]] (および派生規格) スタイルシートと [[XSL-FO]]・[[XSLT]] スタイルシートだけで、
+しかも実装済みなのは CSS だけです。
+
+
+* スタイル集合定義
+
+[8] スタイル集合は、
+[[SuikaWikiConfig/2.0]] を使って次の例のように記述します。
+
+[PRE[
+#?SuikaWikiConfig/2.0
+StyleSet:
+  @@Name: [VAR[スタイル集合名]]
+  @@DisplayName:
+    [SAMP[%res (name => {StyleSet:Name:[VAR[スタイル集合名]]});]]
+  @@Apply[list]:
+    [VAR[apply1]]
+    [VAR[apply2]]
+    [VAR[...]]
+  @@StyleSheet:
+    @@@@WikiPage: [VAR[WikiName]]
+    # or
+    @@@@External:
+      @@@@@@Scheme: URI
+      @@@@@@@@:
+        http://foo.example/style
+    @@@@Type: [VAR[[[媒体型]] (無引数)]]
+    @@@@Media: [VAR[HTML 4 [[媒体記述子]]]]
+  @@StyleSheet:
+    # 別のスタイルシート
+  # ...
+StyleSet:
+  # 別のスタイル集合
+#...
+]PRE]
+
+[CODE[StyleSet]] 一つが一つのスタイル集合となります。
+順序はそのまま構成スタイルシートが適用される順序になります [WEAK[(その順序がどういう意味を持つか (持たないか) は、スタイル言語依存です)]]。
+
+[CODE[StyleSet/Name]] は、スタイル集合の名前を指定します。
+名前は、他のスタイル集合とは別のものにしてください。同じ場合の動作は未定義とします。
+
+[10] [CODE[StyleSet/DisplayName]] は、スタイル集合の名前を得るための[[雛形]]を指定します。
+この雛形は [CODE(perl)[[[Message::Util::Formatter]]]]
+形式で、文脈 [CODE[view-resource]] で評価されます。
+
+雛形を評価して得られた名前は、[[代替スタイル]]群の場合には、
+スタイル名 (HTML 4 では [CODE(HTMLa)[[[title]]]] 属性) として使われます。
+[CODE[StyleSet/DisplayName]] が省略された時には
+[CODE[StyleSet/Name]] をそのまま使います。
+評価して得られる名前が、他のスタイル集合のものとは別のものになるように注意してください。
+同じ場合の挙動は出力方式依存ですが、 HTML 4
+形式の場合は同じ名前のものが一つのスタイル集合に併合されてしまいます。
+
+[12] [CODE[StyleSet/Apply]] は、そのスタイル集合の適用範囲を指定します。
+: [CODE[persistent]] : [DFN[[[持続スタイル]]]]
+[WEAK[(スタイル切り替えとは独立に、ずっと有効)]],
+: [CODE[preferred]] : [DFN[[[優先スタイル]]]]
+[WEAK[(選択肢のうち、初期状態で選択されているもの)]],
+: [CODE[alternate]]  : [DFN[[[代替スタイル]]]]
+[WEAK[(優先スタイルと排他の選択肢群)]]
+を表します。
+: [CODE[Netscape4]] : Netscape (Classic Mozilla) 4 系
+(持続スタイル)
+: [CODE[WinIE3.0]] : [[WinIE]] 3 系 (持続スタイル)
+: [CODE[WinIE4.0]] : WinIE 4 系 (持続スタイル)
+: [CODE[WinIE5.0]] : WinIE 5.0 系 (持続スタイル)
+: [CODE[WinIE5.5]] : WinIE 5.5 系 (持続スタイル)
+: [CODE[WinIE6.0]] : WinIE 6 系 (持続スタイル)
+
+この特性は複数指定できますが、
+[CODE[persistent]], [CODE[preferred]],
+[CODE[alternate]] は排他です。
+
+[13] [CODE[StyleSet/StyleSheet]] は、そのスタイル集合に属するスタイルシートを一つ記述します。
+この属性は一つの [CODE[StyleSet]]
+中に複数あって構いません。
+順序は、そのままスタイルシート適用順序になります [WEAK[(その適用順序がどういう意味を持つか (持たないか) はスタイル言語依存です)]]。
+
+[CODE[StyleSheet/WikiPage]] には、
+スタイルシートの実体の WikiPage 
+の WikiName を指定します。
+[CODE[StyleSheet/WikiPage]] または [CODE[StyleSheet/External]] のいずれかが指定されていなければなりません。
+いずれもないか、いずれもある場合の挙動は未定義とします。
+
+[CODE[StyleSheet/External]]
+には、スタイルシートの実体への参照を記述します。
+[CODE[StyleSheet/External/Scheme]] の値は参照方法、
+[CODE[StyleSheet/External]] そのものの値はその参照方法による参照子です。
+参照方法の既定値は [CODE[URI]]
+です。
+詳しくは、 [[SuikaWiki/0.9]] の外部参照の説明を参照してください。
+
+[CODE[StyleSheet/Type]] には、
+スタイルシートの[[媒体型]]を記述します。
+媒体型は引数なしの、 SuikaWiki 形式のインターネット媒体型でなければなりません。引数の記述が必要な場合の方法は検討中です。
+この媒体型は、 (必要なら変換をした上で) [CODE(HTMLa)[[[type]]]] 属性のような形でスタイルシート参照に使われるかも知れません。
+なお、当該 WikiPage のデータがこの媒体型に変換できるものでないと、当然意味をなしません。
+現在対応しているのは [CODE[[[text/css]]]] だけです。
+
+[CODE[StyleSheet/Media]] は、
+そのスタイルシートを適用すべき媒体を、
+HTML 4 の[[媒体記述子]]形式で指定します。
+スタイルシート参照では [CODE(HTMLa)[[[media]]]] 属性のような形で使われるかもしれません。
+既定値は [CODE[[[all]]]] です。
+
+'''2004年12月5日版の新機能''':
+[CODE[StyleSheet/Apply]] は、そのスタイル・シートの適用範囲を指定します。
+- [CODE[StyleSet/Apply]] と同じ方法・値で指定します。
+- [CODE[StyleSheet/Apply]] で指定された値の集合は、
+[CODE[StyleSet/Apply]] 
+で指定された値の集合の部分集合でななければなりません。
+[WEAK[そうでない場合の挙動は未定義とします。]]
+- [CODE[StyleSheet/Apply]] を省略した場合は、
+[CODE[StyleSet/Apply]] と同じとみなします。
+- [CODE[StyleSet/Apply]] とは異なり、
+持続・優先・代替の区別のために使うことはできません。
+[CODE[StyleSheet/Apply]] は [[WinIE]] のような旧式の
+UA への対応の便宜のために特別に用意されています。
+
+* メモ
+
+[9]
+文でくだくだと説明するよりも、百聞は一見にしかず、 [CODE(WikiPage)[[[Wiki//Style//List//text/html]]]] を見てください。
+([[名無しさん]])
+
+[11]
+特性 [CODE[StyleSet/DisplayName]] を新設したので、説明を追加しました。
+([CODE(WikiPage)[[[SuikaWiki3//メモ//2004-02-03]]>>7]] 参照。)
+([[名無しさん]] [WEAK[2004-02-04 08:51:38 +00:00]])
+@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@a0 2
+#?SuikaWiki/0.9
+
+d154 13
+@
+

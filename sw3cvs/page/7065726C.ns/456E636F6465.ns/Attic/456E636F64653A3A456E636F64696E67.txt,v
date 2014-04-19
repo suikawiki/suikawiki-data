@@ -1,0 +1,339 @@
+head	1.2;
+access;
+symbols
+	before-db-leaffile:1.1
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+
+
+1.2
+date	2006.06.18.02.28.23;	author wakaba;	state dead;
+branches;
+next	1.1;
+
+1.1
+date	2003.06.06.12.26.54;	author make;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@SuikaWiki/0.9
+*Perl 5.8 付属の Encode::Encoding
+**NAME
+
+Encode::Encoding - Encode Implementation Base Class
+Encode 実装基底クラス
+
+**SYNOPSIS
+
+  package Encode::MyEncoding;
+  use base qw(Encode::Encoding);
+
+  __PACKAGE__->Define(qw(myCanonical myAlias));
+
+**DESCRIPTION
+
+As mentioned in L<Encode>, encodings are (in the current
+implementation at least) defined as objects. The mapping of encoding
+name to object is via the C<%Encode::Encoding> hash.  Though you can
+directly manipulate this hash, it is strongly encouraged to use this
+base class module and add encode() and decode() methods.
+
+[[Encode]] で触れたように、符号化は (少なくても現在の実装では)
+object として定義されます。符号化名と object の写像は
+%Encode::Encoding [[連想配列]]を介します。この連想配列を
+直接扱うことも出来ますが、この基底クラス・モジュールを
+使って encode() method と decode() method を追加するのを
+強く推奨します。
+
+***Methods you should implement 実装するのがよい method
+
+You are strongly encouraged to implement methods below, at least
+either encode() or decode().
+
+次に挙げる method を、最低でも encode() 又は decode()
+は実装することを強く推奨します。
+
+- ->encode($string [,$check])
+
+MUST return the octet sequence representing I<$string>. 
+
+$string を表現するオクテットの連続を返さ'''なければなりません'''。
+
+-If I<$check> is true, it SHOULD modify I<$string> in place to remove
+the converted part (i.e.  the whole string unless there is an error).
+If perlio_ok() is true, SHOULD becomes MUST.
+$check が真なら、 $string をその場で修正して変換済み部分
+(すなわちエラーにならなかった文字列全体) 
+を削除'''するのが良いです'''。
+perlio_ok() が真なら、'''するのが良いです'''
+は'''しなければなりません'''となります。
+-If an error occurs, it SHOULD return the octet sequence for the
+fragment of string that has been converted and modify $string in-place
+to remove the converted part leaving it starting with the problem
+fragment.  If perlio_ok() is true, SHOULD becomes MUST.
+エラーが起こったら、変換済み文字列断片のオクテットの連続を
+返し、 $string をその場で修正して変換済み部分を削除し、
+問題の断片から始まるように'''するのが良いです'''。
+perlio_ok() が真なら、'''するのが良いです'''
+は'''しなければなりません'''となります。
+-If I<$check> is is false then C<encode> MUST  make a "best effort" to
+convert the string - for example, by using a replacement character.
+$check が偽なら encode は文字列を変換するのに
+「最大の努力」をし'''なければなりません'''。
+例えば、置換文字を使います。
+
+- ->decode($octets [,$check])
+
+MUST return the string that I<$octets> represents. 
+
+$octets が表現する文字列を返さ'''なければなりません'''。
+
+-If I<$check> is true, it SHOULD modify I<$octets> in place to remove
+the converted part (i.e.  the whole sequence unless there is an
+error).  If perlio_ok() is true, SHOULD becomes MUST.
+$check が真なら、 $string をその場で修正して変換済み部分
+(すなわちエラーにならなかった文字列全体) 
+を削除'''するのが良いです'''。
+perlio_ok() が真なら、'''するのが良いです'''
+は'''しなければなりません'''となります。
+-If an error occurs, it SHOULD return the fragment of string that has
+been converted and modify $octets in-place to remove the converted
+part leaving it starting with the problem fragment.  If perlio_ok() is
+true, SHOULD becomes MUST.
+エラーが起こったら、変換済み文字列断片のオクテットの連続を
+返し、 $string をその場で修正して変換済み部分を削除し、
+問題の断片から始まるように'''するのが良いです'''。
+perlio_ok() が真なら、'''するのが良いです'''
+は'''しなければなりません'''となります。
+-If I<$check> is false then C<decode> should make a "best effort" to
+convert the string - for example by using Unicode's "\x{FFFD}" as a
+replacement character.
+$check が偽なら encode は文字列を変換するのに
+「最大の努力」をし'''なければなりません'''。
+例えば、置換文字として [[Unicode]] の "\x{FFFD}" を使います。
+
+***Other methods defined in Encode::Encodings Encode::Encoding で定義する他の method
+
+You do not have to override methods shown below unless you have to.
+
+下に示す method は上書きする必要がない限り
+気にしなくて良いです。
+
+- ->name
+
+Predefined As:
+
+  sub name  { return shift->{'Name'} }
+
+MUST return the string representing the canonical name of the encoding.
+
+符号化の正規名を現す文字列を返さ'''なければなりません'''。
+
+- ->new_sequence
+
+Predefined As:
+
+  sub new_sequence { return $_[0] }
+
+This is a placeholder for encodings with state. It should return an
+object which implements this interface.  All current implementations
+return the original object.
+
+これは状態を持つ符号化のための placaholder です。
+この界面を実装する object を返すのが良いです。
+全ての現在の実装は元の object を返します。
+
+- ->perlio_ok()
+
+Predefined As:
+
+  sub perlio_ok { 
+      eval{ require PerlIO::encoding };
+      return $@@ ? 0 : 1;
+  }
+
+If your encoding does not support PerlIO for some reasons, just;
+
+符号化が [[PerlIO]] に訳あって対応しないなら、こうします。
+
+ sub perlio_ok { 0 }
+
+- ->needs_lines()
+
+Predefined As:
+
+  sub needs_lines { 0 };
+
+If your encoding can work with PerlIO but needs line buffering, you
+MUST define this method so it returns true.  7bit ISO-2022 encodings
+are one example that needs this.  When this method is missing, false
+is assumed.
+
+符号化が PerlIO で使えるけど行バッファする必要があるなら、
+このメソッドを定義して真を返さ'''なければなりません'''。
+7ビットの ISO-2022 符号化が是を必要とするものの一つの例です。
+これがなければ偽と仮定します。
+
+***Example: Encode::ROT13
+
+  package Encode::ROT13;
+  use strict;
+  use base qw(Encode::Encoding);
+
+  __PACKAGE__->Define('rot13');
+
+  sub encode($$;$){
+      my ($obj, $str, $chk) = @@_;
+      $str =~ tr/A-Za-z/N-ZA-Mn-za-m/;
+      $_[1] = '' if $chk; # this is what in-place edit means
+                          # その場で編集てのはこういうこと
+      return $str;
+  }
+
+  # Jr pna or ynml yvxr guvf;
+  *decode = \&encode;
+
+  1;
+
+**Why the heck Encode API is different? なんで Encode API と違ってるんだよ?
+
+It should be noted that the I<$check> behaviour is different from the
+outer public API. The logic is that the "unchecked" case is useful
+when the encoding is part of a stream which may be reporting errors
+(e.g. STDERR).  In such cases, it is desirable to get everything
+through somehow without causing additional errors which obscure the
+original one. Also, the encoding is best placed to know what the
+correct replacement character is, so if that is the desired behaviour
+then letting low level code do it is the most efficient.
+
+$check の動作が他の公開 API と違ってます。「check されていない」
+場合は符号化がエラーを報告し得る連続体 (例 [[STDERR]]) 
+の一部であるときに便利であるという論理です。このような場合、
+元のエラーを隠してしまうエラーを重ねて出すことなく
+なんかするのが望ましいです。また、符号化は何が適切な置換文字かを
+知る最適なものですから、それが適切な振舞いである時には
+低層 dode にそれをやらせるのが最も能率的です。
+
+By contrast, if I<$check> is true, the scheme above allows the
+encoding to do as much as it can and tell the layer above how much
+that was. What is lacking at present is a mechanism to report what
+went wrong. The most likely interface will be an additional method
+call to the object, or perhaps (to avoid forcing per-stream objects
+on otherwise stateless encodings) an additional parameter.
+
+対照的に、 $check が真なら、上の方式は符号化が
+出来る限りのことをして上の層にそれがどれだけかを伝える
+ことが出来ます。現在欠けているのは何が悪いのかを報告する
+仕組みです。最も宜しい界面は object への追加の method call
+か、おそらく (連続体毎の object をそれがなければ状態のない
+符号化であるものに強制するのを避けるため) 追加のパラメーター
+でしょう。
+
+It is also highly desirable that encoding classes inherit from
+C<Encode::Encoding> as a base class. This allows that class to define
+additional behaviour for all encoding objects.
+
+符号化クラスが Encode::Encoding を基底クラスとして継承する
+のも非常に望ましいでしょう。これによってこのクラスが
+全ての符号化 object の追加の振舞いを定義できます。
+
+  package Encode::MyEncoding;
+  use base qw(Encode::Encoding);
+
+  __PACKAGE__->Define(qw(myCanonical myAlias));
+
+to create an object with C<< bless {Name => ...}, $class >>, and call
+define_encoding.  They inherit their C<name> method from
+C<Encode::Encoding>.
+
+は bless {Name => ...}, $class で object を作り、
+define_encoding を呼びます。 name method を Encode::Encoding
+から継承します。
+
+***Compiled Encodings コンパイル済み符号化
+
+For the sake of speed and efficiency, most of the encodings are now
+supported via a I<compiled form>: XS modules generated from UCM
+files.   Encode provides the enc2xs tool to achieve that.  Please see
+L<enc2xs> for more details.
+
+速度と効率の関係上、殆どの符号化は''コンパイル済み形式''
+で対応しています。これは [[UCM]] ファイルから生成した [[XS]]
+モジュールです。 [[Encode]] はこのために [[enc2xs]] 工具を
+提供しています。詳しくは [[enc2xs]] を参照して下さい。
+
+**SEE ALSO
+
+L<perlmod>, [[enc2xs]]
+
+**future 将来
+
+=over 4
+
+=item Scheme 1
+
+The fixup routine gets passed the remaining fragment of string being
+processed.  It modifies it in place to remove bytes/characters it can
+understand and returns a string used to represent them.  For example:
+
+ sub fixup {
+   my $ch = substr($_[0],0,1,'');
+   return sprintf("\x{%02X}",ord($ch);
+ }
+
+This scheme is close to how the underlying C code for Encode works,
+but gives the fixup routine very little context.
+
+=item Scheme 2
+
+The fixup routine gets passed the original string, an index into
+it of the problem area, and the output string so far.  It appends
+what it wants to the output string and returns a new index into the
+original string.  For example:
+
+ sub fixup {
+   # my ($s,$i,$d) = @@_;
+   my $ch = substr($_[0],$_[1],1);
+   $_[2] .= sprintf("\x{%02X}",ord($ch);
+   return $_[1]+1;
+ }
+
+This scheme gives maximal control to the fixup routine but is more
+complicated to code, and may require that the internals of Encode be tweaked to
+keep the original string intact.
+
+=item Other Schemes
+
+Hybrids of the above.
+
+Multiple return values rather than in-place modifications.
+
+Index into the string could be C<pos($str)> allowing C<s/\G...//>.
+**この部分の license
+
+[[perlと同じライセンス]]。
+
+*注釈
+@
+
+
+1.1
+log
+@auto-commited
+@
+text
+@@
+

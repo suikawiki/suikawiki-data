@@ -1,0 +1,64 @@
+head	1.2;
+access;
+symbols
+	suikawiki3-final:1.2
+	before-db-leaffile:1.2
+	after-upgrade-to-suikawiki-3:1.2
+	before-fork-suikawiki3:1.2
+	after-restore-20040122:1.2;
+locks; strict;
+comment	@# @;
+
+
+1.2
+date	2003.07.29.07.17.13;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.06.06.12.26.36;	author make;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@auto-commited
+@
+text
+@#?SuikaWiki/0.9
+
+- [1] [[SGML]] や [[XML]] では [[DTD]] の[[マーク宣言]]などの表記に[[パラメーター実体]]参照が使えます。
+- [2] XML の仕様書では、他の部分では[[実体参照]]が使える部分が [[EBNF]] 構文ではっきり示してあるのに、 DTD 中のパラメーター実体参照が書ける場所については自然言語での説明しかありません。
+- [3] まず、 [[DOCTYPE]] 宣言中の[[内部部分集合]]のマーク宣言内にパラメーター実体参照は一切書けません ([CODE(XML)[EntityValue]] 内も書けないみたいです)。 (マーク宣言外、つまり地の部分には書けます。)
+- [4] で、マーク宣言「内」とはどこからどこまでか、
+なのですが、幾つかの XML parser の実装を調べてみました。
+([[Mozilla]] は[[外部解析実体]]を読まないので問題外、 [[WinIE]] ([[MSXML]]) とか [[W3C]] の [[Validator]] で試してみる。もっとも W3C のは本来 [[SGML]] parser だから、あてになるのかは不明。)
+--MSXML も W3C Validator も、次のは意図したように解釈してくれました。
+---[SAMP(XML)[<!ENTITY % e1 "type"><!ENTITY % e2 "ANY"><!ELEMENT%e1;%e2;>]]
+---[SAMP(XML)[<!ENTITY % e "type ANY"><!ELEMENT %e1;>]]
+--次のようなものはだめでした。
+---[SAMP(XML)[<!ENTITY % e "ELEMENT type ANY>"><!%e1;]]
+---[SAMP(XML)[<!ENTITY % e "ELEMENT type ANY"><!%e1;>]]
+--ということで、単純に [CODE(XML)[<![VAR[declaration]]]] の後で [CODE(XML)[>]] の前までかパラメーター実体参照による置換の対象のようです。 ([[整形式]]制約から当たり前といえば当たり前です。ただし、宣言名の直後に [CODE(XML)[S]] なしに [CODE(XML)[%]] が来てもよいこと、パラメーター実体参照とそのまわりがくっついていても展開の際に [CODE[U+0020]] が補われることに注意したいところです。)
+- [5] こんなのもありだ。 [SAMP(XML)[<!ENTITY % include " INCLUDE[<!ENTITY % q '"'><!ENTITY name %q;name=foo%q;>  "><![%include;]]>]]。ところが、ちょっと修正をして [SAMP(XML)[<![%include;]>]] とか [SAMP(XML)[<!%include;]]>]] となるようではうまくいかない。
+- [6] >>5 ここで思い出されるのが、 [CODE[U+0020]] を補う規則。確かに >>5 の悪い例だと、 [SAMP(XML)[<! [ INCLUDE[]] とか [SAMP(XML)[] ]>]] とかになるからおかしい。
+- [7] >>4 整形式制約というか、[[XML//妥当性制約]>>4]だよな。 (パラメーター実体の外に出ている [CODE(XML)[<]] が整形式制約, 中に入っている (置換文の) [CODE(XML)[>]] が妥当性制約に引っ掛かる。)
+- [8] →[[引数実体参照]]
+- [9] >>2 たしかに完全に BNF で表現するのは困難ではあるのですが...
+- [10] >>9 全ての組み合わせは実質不可能だけど、せめて SGML 仕様書程度の記述はするべき、というか、 [CODE(SGML)[[[ts]]]], [CODE(SGML)[[[ps]]]], [CODE(SGML)[[[ds]]]] 程度の区別はするべきだったと。
+@
+
+
+1.1
+log
+@auto-commited
+@
+text
+@d19 3
+@
+

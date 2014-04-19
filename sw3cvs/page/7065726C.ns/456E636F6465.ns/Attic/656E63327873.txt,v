@@ -1,0 +1,606 @@
+head	1.3;
+access;
+symbols
+	before-db-leaffile:1.1
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+
+
+1.3
+date	2006.06.18.02.28.24;	author wakaba;	state dead;
+branches;
+next	1.2;
+
+1.2
+date	2005.04.13.02.08.24;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.06.06.12.26.54;	author make;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@SuikaWiki/0.9
+*enc2xs の説明とその訳
+
+**NAME
+
+enc2xs -- Perl Encode Module Generator
+
+Perl Encode モジュール生成器
+
+**SYNOPSIS
+
+  enc2xs -[options]
+  enc2xs -M ModName mapfiles...
+  enc2xs -C
+
+**DESCRIPTION
+
+F<enc2xs> builds a Perl extension for use by Encode from either
+Unicode Character Mapping files (.ucm) or Tcl Encoding Files (.enc).
+Besides being used internally during the build process of the Encode
+module, you can use F<enc2xs> to add your own encoding to perl.
+No knowledge of XS is necessary.
+
+enc2xs は、Unicode 文字写像ファイル (.ucm) か Tcl
+符号化ファイル (.enc) のどちらかから、 Encode で使う
+Perl 拡張を組み立てます。 Encode モジュールの組み立て過程の中で
+内部的に使われる他に、新しい符号化を perl に追加するのに
+enc2xs を使うことも出来ます。 [[XS]] についての知識は必要ありません。
+
+**Quick Guide
+
+If you want to know as little about Perl as possible but need to
+add a new encoding, just read this chapter and forget the rest.
+
+新しい符号化を追加する必要があるけれど Perl について学ぶのは
+最小限にしておきたいなら、この章だけを読んで後は忘れてください。
+
+***0.
+
+Have a .ucm file ready.  You can get it from somewhere or you can write
+your own from scratch or you can grab one from the Encode distribution
+and customize it.  For the UCM format, see the next Chapter.  In the
+example below, I'll call my theoretical encoding myascii, defined
+in I<my.ucm>.  C<$> is a shell prompt.
+
+.ucm ファイルを用意します。どこかから取ってきてもいいし
+一から書いてもいいし、 Encode 配布物の中から持ってきてもいいです。
+UCM 形式については、次の章を見てください。下の例では、
+ある適当な符号化のことを myascii と呼んで、 my.ucm
+で定義します。 $ は[[シェル]]・プロンプトとします。
+
+  $ ls -F
+  my.ucm
+
+***1.
+
+Issue a command as follows;
+
+次の命令をしてください。
+
+  $ enc2xs -M My my.ucm
+  generating Makefile.PL
+  generating My.pm
+  generating README
+  generating Changes
+
+Now take a look at your current directory.  It should look like this.
+
+現在ディレクトリをみてください。こんな感じのはずです。
+
+  $ ls -F
+  Makefile.PL   My.pm         my.ucm        t/
+
+The following files were created.
+
+次のファイルが作られました。
+
+,Makefile.PL ,MakeMaker script  ,[[MakeMaker]] script
+,My.pm       ,Encode submodule  ,Encode 小モジュール
+,t/My.t      ,test file         ,検査ファイル
+
+****1.1.
+
+If you want *.ucm installed together with the modules, do as follows;
+
+また、 *.ucm をモジュールと一緒に導入したいなら、次のようにしてください。
+
+  $ mkdir Encode
+  $ mv *.ucm Encode
+  $ enc2xs -M My Encode/*ucm
+
+***2.
+
+Edit the files generated.  You don't have to if you have no time AND no
+intention to give it to someone else.  But it is a good idea to edit
+the pod and to add more tests.
+
+生成されたファイルを編集します。時間がなくて''しかも''
+誰かに渡すつもりがないのならしなくてもかまいません。でも [[pod]]
+を編集してテストを追加するのはいいことですよ。
+
+***3.
+
+Now issue a command all Perl Mongers love:
+
+それから、 Perl Monger がみなこよなく愛する次の命令を実行します。
+
+  $ perl Makefile.PL
+  Writing Makefile for Encode::My
+
+***4.
+
+Now all you have to do is make.
+
+それで、次は make ですね。
+
+  $ make
+  cp My.pm blib/lib/Encode/My.pm
+  /usr/local/bin/perl /usr/local/bin/enc2xs -Q -O \
+    -o encode_t.c -f encode_t.fnm
+  Reading myascii (myascii)
+  Writing compiled form
+  128 bytes in string tables
+  384 bytes (25%) saved spotting duplicates
+  1 bytes (99.2%) saved using substrings
+  ....
+  chmod 644 blib/arch/auto/Encode/My/My.bs
+  $
+
+The time it takes varies depending on how fast your machine is and
+how large your encoding is.  Unless you are working on something big
+like euc-tw, it won't take too long.
+
+かかる時間は機械の速さと符号化の大きさによります。
+euc-tw のような大きいものを処理しているのでなければ、
+そんなに長くかかりません。
+
+***5.
+
+You can "make install" already but you should test first.
+
+もう "make install" できますが、まずテストしたほうがいいでしょう。
+
+  $ make test
+  PERL_DL_NONLAZY=1 /usr/local/bin/perl -Iblib/arch -Iblib/lib \
+    -e 'use Test::Harness  qw(&runtests $verbose); \
+    $verbose=0; runtests @@ARGV;' t/*.t
+  t/My....ok
+  All tests successful.
+  Files=1, Tests=2,  0 wallclock secs
+   ( 0.09 cusr + 0.01 csys = 0.09 CPU)
+
+***6.
+
+If you are content with the test result, just "make install"
+
+結果に問題がなければ "make install" してください。
+
+***7.
+
+If you want to add your encoding to Encode's demand-loading list
+(so you don't have to "use Encode::YourEncoding"), run
+
+Encode の要求時読込表に符号化を追加したい
+("use Encode::YourEncoding" なんて書かないでいいように) ときには、
+
+  enc2xs -C
+
+to update Encode::ConfigLocal, a module that controls local settings.
+After that, "use Encode;" is enough to load your encodings on demand.
+
+として local 設定を司るモジュール, Encode::ConfigLocal を更新します。
+こうすれば、 "use Encode" だけで必要に応じて新しい符号化を
+読み込めます。
+
+**The Unicode Character Map
+
+Encode uses the Unicode Character Map (UCM) format for source character
+mappings.  This format is used by IBM's ICU package and was adopted
+by Nick Ing-Simmons for use with the Encode module.  Since UCM is
+more flexible than Tcl's Encoding Map and far more user-friendly,
+this is the recommended formet for Encode now.
+
+Encode は Unicode 文字写像 (UCM) 形式を文字写像の元ファイルとして使います。
+この形式は [[IBM]] の [[ICU]] パッケージで使われていたもので、
+Nick Ing-Simmons が Encode モジュールで使うのに採用しました。
+UCM は Tcl の符号化写像より柔軟で使いやすいので、現在の
+Encode の推奨形式になっています。
+
+A UCM file looks like this.
+
+UCM ファイルはこんな感じです。
+
+  #
+  # Comments 注釈
+  #
+  <code_set_name> "US-ascii" # Required 必須
+  <code_set_alias> "ascii"   # Optional 省略可能
+  <mb_cur_min> 1             # Required; usually 1  必須 (普通は 1)
+  <mb_cur_max> 1             # Max. # of bytes/char 最大 (バイト毎字の)
+  <subchar> \x3F             # Substitution char 置換文字
+  #
+  CHARMAP
+  <U0000> \x00 |0 # <control>
+  <U0001> \x01 |0 # <control>
+  <U0002> \x02 |0 # <control>
+  ....
+  <U007C> \x7C |0 # VERTICAL LINE
+  <U007D> \x7D |0 # RIGHT CURLY BRACKET
+  <U007E> \x7E |0 # TILDE
+  <U007F> \x7F |0 # <control>
+  END CHARMAP
+
+***
+
+Anything that follows C<#> is treated as a comment.
+
+「#」の後はすべて注釈扱いになります。
+
+***
+
+The header section continues until a line containing the word
+CHARMAP. This section has a form of I<E<lt>keywordE<gt> value>, one
+pair per line.  Strings used as values must be quoted. Barewords are
+treated as numbers.  I<\xXX> represents a byte.
+
+語 CHARMAP の行まではヘッダ節です。この節は 「<keyword> 値」
+形式をとっていて、1行ごとに1組にします。値に使う文字列は
+引用符で囲まないといけません。裸語は数値と見なします。
+「\xXX」はバイトを表現します。
+
+Most of the keywords are self-explanatory. I<subchar> means
+substitution character, not subcharacter.  When you decode a Unicode
+sequence to this encoding but no matching character is found, the byte
+sequence defined here will be used.  For most cases, the value here is
+\x3F; in ASCII, this is a question mark.
+
+Keyword のほとんどは名前のとおりです。 subchar
+は代替文字で、 subcharacter ではありません。 Unicode 列から
+この符号化に復号する時で一致する文字がない時は、
+ここで定義したバイト列を使います。ほとんどの場合、この値は \x3F
+で、 [[ASCII]] の疑問符になります。
+
+[INS[
+訳注: 定義する符号化→[[Unicode]] で写像文字がない時の指定は
+出来ないみたい。中途半端だなあ。
+]INS]
+
+***
+
+CHARMAP starts the character map section.  Each line has a form as
+follows:
+
+CHARMAP で文字写像節は始まります。各行は次の形式をとります。
+
+  <UXXXX> \xXX.. |0 # comment 注釈
+    ^     ^      ^
+    |     |      +- Fallback flag
+    |     +-------- Encoded byte sequence 符号化バイト列
+    +-------------- Unicode Character ID in hex 16進数での Unicode 文字 ID
+
+The format is roughly the same as a header section except for the
+fallback flag: | followed by 0..3.   The meaning of the possible
+values is as follows:
+
+形式は fallback フラグを除いて概ねヘッダ節とおんなじです。
+fallback フラグは | の後に 0..3 が来ます。意味は次のとおり。
+
+****|0 
+
+Round trip safe.  A character decoded to Unicode encodes back to the
+same byte sequence.  Most characters have this flag.
+
+往復変換安全。 Unicode に復号した文字は安全に同じバイト列に
+符号化されて戻って来ます。ほとんどの文字はこのフラグをもちます。
+
+****|1
+
+Fallback for unicode -> encoding.  When seen, enc2xs adds this
+character for the encode map only.
+
+Unicode →符号化の fallback。この時、 enc2xs はこの文字を
+符号化写像にだけ加えます。
+
+****|2 
+
+Skip sub-char mapping should there be no code point.
+
+符号位置がないので sub-char 写像を飛ばします。
+
+****|3 
+
+Fallback for encoding -> unicode.  When seen, enc2xs adds this
+character for the decode map only.
+
+符号化→ Unicode fallback。この時、 enc2xs はこの文字を
+復号写像にのみ追加します。
+
+***
+
+And finally, END OF CHARMAP ends the section.
+
+最後に、 END OF CHARMAP で節は終わります。
+
+When you are manually creating a UCM file, you should copy ascii.ucm
+or an existing encoding which is close to yours, rather than write
+your own from scratch.
+
+手書きで UCM ファイルを作る時、完全に一から書くより
+ascii.ucm か新しい符号化に近い既存のものを複製するのがいいでしょう。
+
+When you do so, make sure you leave at least B<U0000> to B<U0020> as
+is, unless your environment is EBCDIC.
+
+そうする時、 U0000 から U0020 を、 [[EBCDIC]] 環境でない時には
+最低限そのままにしておきます。
+
+B<CAVEAT>: not all features in UCM are implemented.  For example,
+icu:state is not used.  Because of that, you need to write a perl
+module if you want to support algorithmical encodings, notably
+the ISO-2022 series.  Such modules include L<Encode::JP::2022_JP>,
+L<Encode::KR::2022_KR>, and L<Encode::TW::HZ>.
+
+注意: UCM の全機能が実装されてはいません。例えば、 icu:state
+は使われません。そのため、算法的符号化、とりわけ
+ISO-2022 系列に対応したい時には perl module を書く必要があります。
+そういうモジュールには Encode::JP::2022_JP  とか...が含まれます。
+
+***Coping with duplicate mappings 重複写像への対処
+
+When you create a map, you SHOULD make your mappings round-trip safe.
+That is, C<encode('your-encoding', decode('your-encoding', $data)) eq
+$data> stands for all characters that are marked as C<|0>.  Here is
+how to make sure:
+
+写像表を作る時に、写像が往復変換安全になるようにする''べき''です。
+つまり、 encode('新符号化', decode('sinfugouka', $data)
+eq $data が "|0" になってる全ての文字について成り立つようにします。
+こうするには、
+
+****
+
+Sort your map in Unicode order.
+
+写像を Unicode 順に並べる。
+
+****
+
+When you have a duplicate entry, mark either one with '|1' or '|3'.
+  
+重複項目があるときは、どれか一つを '|1' か '|3' にする。
+
+****
+
+And make sure the '|1' or '|3' entry FOLLOWS the '|0' entry.
+
+'|1' か '|3' の項が '0' の項の''後''にくるようにする。
+
+Here is an example from big5-eten.
+
+これは big5-eten の例です。
+
+  <U2550> \xF9\xF9 |0
+  <U2550> \xA2\xA4 |3
+
+Internally Encoding -> Unicode and Unicode -> Encoding Map looks like
+this;
+
+内部的には符号化→ Unicode と Unicode →符号化の写像表はそれぞれ
+こんな感じになっています。
+
+,E to U               ,U to E
+,\xF9\xF9 => U2550    ,U2550 => \xF9\xF9
+,\xA2\xA4 => U2550
+ 
+So it is round-trip safe for \xF9\xF9.  But if the line above is upside
+down, here is what happens.
+
+ですから \xF9\xF9 について往復変換安全です。
+しかし上の行が逆なら、こうなります。
+
+,E to U               ,U to E
+,\xA2\xA4 => U2550    ,U2550 => \xF9\xF9
+
+(\xF9\xF9 => U2550 is now overwritten! 上書きされた!)
+
+The Encode package comes with F<ucmlint>, a crude but sufficient
+utility to check the integrity of a UCM file.  Check under the
+Encode/bin directory for this.
+
+Encode package には ucmlint が入っていて、
+雑ですが UCM ファイルの完全性を確認するには十分でしょう。
+Encode/bin ディレクトリにあるので見て下さい。
+
+**Bookmarks 栞
+-ICU Home Page  <http://oss.software.ibm.com/icu/>
+-ICU Character Mapping Tables <http://oss.software.ibm.com/icu/charset/>
+-ICU:Conversion Data <http://oss.software.ibm.com/icu/userguide/conversion-data.html>
+
+**SEE ALSO
+-[[Encode]]
+-<perlmod>
+-<perlpod>
+
+**
+
+# -Q to disable the duplicate codepoint test
+# -S make mapping errors fatal
+# -q to remove comments written to output files
+# -O to enable the (brute force) substring optimiser
+# -o <output> to specify the output file name (else it's the first arg)
+# -f <inlist> to give a file with a list of input files (else use the args)
+# -n <name> to name the encoding (else use the basename of the input file.
+
+,-Q,重複符号位置検査を省く
+,-S,写像エラーを致命的エラーにする
+,-q,出力ファイルに注釈を出さない
+,-O,(力技で) substring 最適化をする
+,-o <output>,出力ファイル名を指定 (なければ最初の引数)
+,-f <inlist>,入力ファイルの表 (なければ引数から)
+,-n <name>,符号化の名前 (なければ入力ファイルの基底名)
+
+With %seen holding array refs:
+
+      865.66 real        28.80 user         8.79 sys
+      7904  maximum resident set size
+      1356  average shared memory size
+     18566  average unshared data size
+       229  average unshared stack size
+     46080  page reclaims
+     33373  page faults
+
+With %seen holding simple scalars:
+
+      342.16 real        27.11 user         3.54 sys
+      8388  maximum resident set size
+      1394  average shared memory size
+     14969  average unshared data size
+       236  average unshared stack size
+     28159  page reclaims
+      9839  page faults
+
+Yes, 5 minutes is faster than 15. Above is for CP936 in CN. Only difference is
+how %seen is storing things its seen. So it is pathalogically bad on a 16M
+RAM machine, but it's going to help even on modern machines.
+Swapping is bad, m'kay :-)
+
+**License
+
+この文章の取り扱いは、もとの enc2xs と同じとします。
+[[perlと同じライセンス]]です。
+
+*その他
+- 2002-09-27 (Fri) 21:47:34 ''[[名無しさん]]'' : UCM の一体どこが user-friendly なの? 特に fallback の数字は意味不明
+@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@@
+
+
+1.1
+log
+@auto-commited
+@
+text
+@d25 1
+a25 1
+符号化ファイル (.enc) のどっちかから、 Encode で使う
+d35 2
+a36 2
+新しい符号化を追加する必要があるけど Perl について学ぶのは
+最小限にしときたいなら、この章だけを読んで後は忘れてちょ。
+d46 4
+a49 4
+.ucm ファイルを用意します。どっかからとってきてもいいし
+一から書いてもいいし、 Encode 配布物の中からパチってきてもいいです。
+UCM 形式については、次の章をみてちょ。下の例では、
+ある勝手な符号化のことを myascii と呼んで、 my.ucm
+d59 1
+a59 1
+次の命令してちょ。
+d69 1
+a69 1
+現在ディレクトリをみてちょ。こなげなはず。
+d86 1
+a86 1
+で、 *.ucm をモジュールと一緒に導入したいなら、次のようにしてちょ。
+d98 3
+a100 3
+生成されたファイルを編集します。時間がなくて''しっかも''
+誰かに渡すつもりなんだったら別にいいけど。でも [[pod]]
+を編集して検査を追加するんはいい考えだぞ。
+d106 1
+a106 1
+で、 Perl Monger がみなこよなく愛する次の命令をする。
+d115 1
+a115 1
+で、次は make なのねん。
+d134 2
+a135 2
+掛かる時間は機械の速さと符号化の大きさによります。
+euc-tw みたいにでっかなのをやってるんでなけりゃあ、
+d142 1
+a142 1
+"make install" できますけど、最初に検査しときましょ。
+d157 1
+a157 1
+結果に満足なら "make install" しましょ。
+d165 1
+a165 1
+("use Encode::YourEncoding" なーんてしたくない) ときには、
+d172 2
+a173 2
+して local 設定を司るモジュール, Encode::ConfigLocal を更新します。
+こーすれば、 "use Encode" だけで必要に応じて新しい符号化を
+d184 2
+a185 2
+Encode は Unicode 文字写像 (UCM) 形式を文字写像の原典に使います。
+この形式は [[IBM]] の [[ICU]] 箱で使われてたもので、
+d187 2
+a188 2
+UCM は Tcl の符号化写像より柔軟で人に優しいんで、現在の
+Encode の推奨形式になってます。
+d192 1
+a192 1
+UCM ファイルはこんな感じ。
+d218 1
+a218 1
+「#」の後はぜーんぶ注釈。
+d227 1
+a227 1
+語 CHARMAP の行までは頭節。この節は 「<keyword> 値」
+d238 2
+a239 2
+Keyword のほとんどは名前みりゃーわかるでしょう。 subchar
+は代替文字で、 subcharacter じゃありません。 Unicode 列から
+d266 2
+a267 2
+形式は fallback 旗を除いて概ね頭節とおんなじです。
+fallback 旗は | の後に 0..3 が来ます。意味は次のとおり。
+d275 1
+a275 1
+符号化して戻って来ます。ほとんどの文字はこの旗をもちます。
+d289 1
+a289 1
+符号位置がないんで sub-char 写像を飛ばします。
+d310 1
+a310 1
+ascii.ucm か新しい符号化に近い既存のやつを複製するのがいいでしょう。
+d316 1
+a316 1
+最低限そのままにしときます。
+d336 1
+a336 1
+写像表を作る時に、写像が往復変換安全になるように''します''。
+d370 1
+a370 1
+こなげになってます。
+d391 3
+a393 3
+Encode package には ucmlint が入ってまして、
+雑だけど UCM ファイルの完全性を確認するには十分でしょう。
+Encode/bin ディレクトリにあるんで見て下さい。
+@
+

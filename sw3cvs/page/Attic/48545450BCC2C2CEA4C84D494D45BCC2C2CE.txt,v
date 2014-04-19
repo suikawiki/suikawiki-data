@@ -1,0 +1,678 @@
+head	1.5;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.5
+date	2003.06.06.12.26.20;	author make;	state dead;
+branches;
+next	1.4;
+
+1.4
+date	2003.03.27.07.24.52;	author make;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2002.12.10.09.27.02;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2002.11.17.01.25.20;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2002.07.29.12.01.57;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.5
+log
+@auto-commited
+@
+text
+@#?SuikaWiki/0.9 page-icon="HTTP"
+[1] [[MIME]] と [[HTTP]] 
+では、[[実体]]の定義・扱いはほとんど同じながら、細かい点で幾つもの違いがあります。
+その違いはどれも重要なものですから、よく理解しておかないと、
+(いずれかに慣れていると) 
+うっかりひどい間違いを犯してしまうかもしれません。
+
+[2] また、 HTTP から派生した[[プロトコル]]である [[RTSP]]
+や [[SIP]] は、ほとんど HTTP 
+と同じながらも微妙な点でこれと異なったりしていますから、注意が必要です。
+
+[[#comment]]
+*RFC 2616 から
+
+**19.4 Differences Between HTTP Entities and RFC 2045 Entities
+
+>HTTP/1.1 uses many of the constructs defined for Internet Mail (RFC
+822 [9]) and the Multipurpose Internet Mail Extensions (MIME [7]) to
+allow entities to be transmitted in an open variety of
+representations and with extensible mechanisms. However, RFC 2045
+discusses mail, and HTTP has a few features that are different from
+those described in RFC 2045. These differences were carefully chosen
+to optimize performance over binary connections, to allow greater
+freedom in the use of new media types, to make date comparisons
+easier, and to acknowledge the practice of some early HTTP servers
+and clients.
+
+[2] 『[HTTP/1.1]] は Internet メイル ([[RFC822]]) と多目的 
+Internet メイル拡張 ([[MIME]]) 
+に定義された構造の多くを、色々な種類の表現を使って拡張可能な仕組みの元で実体を転送するために使います。しかし、 [[RFC2045]]
+はメイルを扱っていて、 HTTP には RFC 2045
+で説明されているものとは違う機能が幾つかあります。
+この違いは[[バイナリ]]接続での効率を最適化するため、新しい[[媒体型]]の使用を更に自由にするため、日付比較をより簡単にするため、幾つかの早期の
+HTTP サーバー及びクライアントの慣習を肯定するために、注意深く選びました。
+
+>This appendix describes specific areas where HTTP differs from RFC
+2045. Proxies and gateways to strict MIME environments SHOULD be
+aware of these differences and provide the appropriate conversions
+where necessary. Proxies and gateways from MIME environments to HTTP
+also need to be aware of the differences because some conversions
+might be required.
+
+[3] この附属書では、 RFC 2045 とは違う HTTP 
+の規定領域を説明します。厳密な MIME 
+環境への[[串]]と[[関門]]は、この差異に注意し、必要であれば適切な変換を施す'''のが良いです'''。
+MIME 環境から HTTP 
+への串と関門も、何らかの変換が必要かもしれないので差異に注意する必要があります。
+
+***19.4.1 MIME-Version
+
+>HTTP is not a MIME-compliant protocol. However, HTTP/1.1 messages MAY
+include a single MIME-Version general-header field to indicate what
+version of the MIME protocol was used to construct the message. Use
+of the MIME-Version header field indicates that the message is in
+full compliance with the MIME protocol (as defined in RFC 2045[7]).
+Proxies/gateways are responsible for ensuring full compliance (where
+possible) when exporting HTTP messages to strict MIME environments.
+
+[4] HTTP は MIME に従ったプロトコルではありません。しかし、 
+HTTP/1.1 メッセージは一つの MIME-Version 
+一般頭欄を、メッセージの構築に使った MIME 
+[[プロトコル]]の版を示すために含めても構いません。
+MIME-Version 頭欄の使用は、メッセージが (RFC 2045 で定義された) 
+MIME プロトコルに完全に適合することを示します。
+串や関門は厳密な MIME 環境に HTTP メッセージを輸出する時に 
+(可能である所で) 完全に適合させる責任があります。
+
+-[5] MIME-Version   = "MIME-Version" ":" 1*DIGIT "." 1*DIGIT
+
+>MIME version "1.0" is the default for use in HTTP/1.1. However,
+HTTP/1.1 message parsing and semantics are defined by this document
+and not the MIME specification.
+
+MIME の版 "1.0" が HTTP/1.1 で使う時の既定値です。しかし、
+HTTP/1.1 メッセージの解析と意味は MIME 
+仕様ではなくこの文書で定義されます。
+
+[INS[
+[6] 訳注: See also [[MIME-Version:欄]]
+]INS]
+
+***19.4.2 Conversion to Canonical Form [INS[正規形への変換]]
+
+>RFC 2045 [7] requires that an Internet mail entity be converted to
+canonical form prior to being transferred, as described in section 4
+of RFC 2049 [48]. Section 3.7.1 of this document describes the forms
+allowed for subtypes of the "text" media type when transmitted over
+HTTP. RFC 2046 requires that content with a type of "text" represent
+line breaks as CRLF and forbids the use of CR or LF outside of line
+break sequences. HTTP allows CRLF, bare CR, and bare LF to indicate a
+line break within text content when a message is transmitted over
+HTTP.
+
+[7] RFC 2045 では、 Internet メイルの実体は転送される前に
+RFC 2049 の第4章で説明された通り正規形に変換する必要があります。
+この文書の3.7.1節は "text" 媒体型の亜型を HTTP 
+上で転送する時に認められる形式について説明しています。 RFC 2046 
+は "text" の型の内容は [[CRLF]] 
+で[[改行]]を表現することを要求し、改行シーケンス以外で [[CR]] 
+や [[LF]] を使うことを禁止しています。 HTTP は、 HTTP 
+上でメッセージを転送する際に文中で CRLF, 単独の CR, 単独の LF 
+を改行を示すのに使うことを認めています。
+
+>Where it is possible, a proxy or gateway from HTTP to a strict MIME
+environment SHOULD translate all line breaks within the text media
+types described in section 3.7.1 of this document to the RFC 2049
+canonical form of CRLF. Note, however, that this might be complicated
+by the presence of a Content-Encoding and by the fact that HTTP
+allows the use of some character sets which do not use octets 13 and
+10 to represent CR and LF, as is the case for some multi-byte
+character sets.
+
+[8] 可能であれば、 HTTP から厳密な MIME 
+環境への串や関門はこの文書の3.7.1節で説明した文媒体型中の全ての改行を
+RFC 2049 正規形の CRLF に変換する'''のが良いです'''。しかし、 
+Content-Encoding の出現や, HTTP 
+が幾つかの多バイト[[文字集合]]の場合のように[[オクテット]] 
+[CODE[13]] と [CODE[10]] を CR や LF 
+を表現するのに使わない文字集合の使用を認めているという事実が、これを複雑にしていようことに注意して下さい。
+
+>Implementors should note that conversion will break any cryptographic
+checksums applied to the original content unless the original content
+is already in canonical form. Therefore, the canonical form is
+recommended for any content that uses such checksums in HTTP.
+
+[9] 実装者は、元の内容が既に正規形で無かった時に、元の内容に適応される暗号検査和が壊れようことに注意するのが良いです。
+このため、 HTTP で検査和を使う内容では正規形が推奨されます。
+
+[INS[
+[10] 訳注: See also [[text/*媒体型]], [[Content-Encoding:欄]],
+[[Content-MD5:欄]]
+]INS]
+
+***19.4.3 Conversion of Date Formats [INS[日付形式の変換]]
+
+>HTTP/1.1 uses a restricted set of date formats (section 3.3.1) to
+simplify the process of date comparison. Proxies and gateways from
+other protocols SHOULD ensure that any Date header field present in a
+message conforms to one of the HTTP/1.1 formats and rewrite the date 
+if necessary.
+
+[11] HTTP/1.1
+は[[日付形式]]の制限された集合を日付比較処理の簡素化のために使っています。
+他のプロトコルからの串や関門はメッセージ中の Date
+頭欄を HTTP/1.1 
+形式のどれかに適合することを確認し、必要があれば日付を書き換える'''のが良い'''。
+
+[INS[
+[12] 訳注: See also [[Date:欄]], [[HTTPの日付形式]]
+]INS]
+
+***19.4.4 Introduction of Content-Encoding [INS[Content-Encoding の導入]]
+
+>RFC 2045 does not include any concept equivalent to HTTP/1.1's
+Content-Encoding header field. Since this acts as a modifier on the
+media type, proxies and gateways from HTTP to MIME-compliant
+protocols MUST either change the value of the Content-Type header
+field or decode the entity-body before forwarding the message. (Some
+experimental applications of Content-Type for Internet mail have used
+a media-type parameter of ";conversions=<content-coding>" to perform
+a function equivalent to Content-Encoding. However, this parameter is
+not part of RFC 2045.)
+
+[13] RFC 2045 は HTTP/1.1 の Content-Encoding
+頭欄に相当する概念を持っていません。
+この行為は媒体型を編集するものなので、 HTTP から MIME
+に従ったプロトコルへの串と関門は Content-Type
+頭欄の値を変えるか、[[実体本体]]をメッセージ転送の前に復号するかし'''なければなりません'''。
+(Internet メイルの実験的 Content-Type 応用には媒体型パラメーター
+";conversions=<content-coding>" を Content-Encoding
+に相当する機能に使っているものもあります。
+しかし、このパラメーターは RFC 2045 の一部ではありません。)
+
+[INS[
+[14] 訳注: [[application/octet-stream媒体型]]の [CODE[conversions]]
+パラメーターのことかな? See also [[Content-Encoding:欄]]
+]INS]
+
+***19.4.5 No Content-Transfer-Encoding [INS[CTE がない]]
+
+>HTTP does not use the Content-Transfer-Encoding (CTE) field of RFC
+2045. Proxies and gateways from MIME-compliant protocols to HTTP MUST
+remove any non-identity CTE ("quoted-printable" or "base64") encoding
+prior to delivering the response message to an HTTP client.
+
+[15] HTTP は RFC 2045 の Content-Transfer-Encoding ([[CTE]])
+欄を使いません。 MIME に従ったプロトコルから
+HTTP への串や関門は「同等」でない CTE ("quoted-printable" と
+"base64") 符号化を HTTP 
+クライアントへの応答メッセージで渡す前に解かなければ'''なりません'''。
+
+>Proxies and gateways from HTTP to MIME-compliant protocols are
+responsible for ensuring that the message is in the correct format
+and encoding for safe transport on that protocol, where "safe
+transport" is defined by the limitations of the protocol being used.
+Such a proxy or gateway SHOULD label the data with an appropriate
+Content-Transfer-Encoding if doing so will improve the likelihood of
+safe transport over the destination protocol.
+
+[16] HTTP から MIME 
+に従うプロトコルへの串と関門は、メッセージが適切な形式であってそのプロトコルでの安全な転送のために符号化することに責任を持ちます。
+ここで「安全な転送」とは、使用するプロトコルの制限により決まります。
+そうした串や関門は、向こうのプロトコルでの安全な転送のためになりそうであれば、適切な
+Content-Transfer-Encoding でデータを札付けする'''のが良いです'''。
+
+***19.4.6 Introduction of Transfer-Encoding [INS[Transfer-Encoding の導入]]
+
+>HTTP/1.1 introduces the Transfer-Encoding header field (section
+14.41). Proxies/gateways MUST remove any transfer-coding prior to
+forwarding a message via a MIME-compliant protocol.
+
+[17] HTTP/1.1 は Transfer-Encoding 頭欄を導入しました。
+串・関門は MIME に従うプロトコルにメッセージを転送する前に
+[CODE[transfer-coding]] を解か'''なければなりません'''。
+
+>A process for decoding the "chunked" transfer-coding (section 3.6)
+can be represented in pseudo-code as:
+
+[18] "chunked" transfer-coding の復号過程は擬似 code
+で次のように表せます。
+
+       length := 0
+       read chunk-size, chunk-extension (if any) and CRLF
+       while (chunk-size > 0) {
+          read chunk-data and CRLF
+          append chunk-data to entity-body
+          length := length + chunk-size
+          read chunk-size and CRLF
+       }
+       read entity-header
+       while (entity-header not empty) {
+          append entity-header to existing header fields
+          read entity-header
+       }
+       Content-Length := length
+       Remove "chunked" from Transfer-Encoding
+
+       長さ := 0
+       chunk-size と chunk-extension (あれば) と CRLF を読む
+       (chunk-size > 0) の間 {
+          chunk-data と CRLF を読む
+          chunk-data を entity-body に付加する
+          長さ := 長さ + chunk-size
+          chunk-size と CRLF を読む
+       }
+       entity-header を読む
+       (entity-header が空でない) の間 {
+          entity-header を既存の頭欄に付加
+          entity-header を読む
+       }
+       Content-Length := 長さ
+       "chunked" を Transfer-Encoding から削除
+
+***19.4.7 MHTML and Line Length Limitations [CODE[MHTML と行長制限]]
+
+>HTTP implementations which share code with MHTML [45] implementations
+need to be aware of MIME line length limitations. Since HTTP does not
+have this limitation, HTTP does not fold long lines. MHTML messages
+being transported by HTTP follow all conventions of MHTML, including
+line length limitations and folding, canonicalization, etc., since
+HTTP transports all message-bodies as payload (see section 3.7.2) and
+does not interpret the content or any MIME header lines that might be
+contained therein.
+
+[19]
+
+**19.5 Additional Features [INS[追加機能]]
+
+>RFC 1945 and RFC 2068 document protocol elements used by some
+existing HTTP implementations, but not consistently and correctly
+across most HTTP/1.1 applications. Implementors are advised to be
+aware of these features, but cannot rely upon their presence in, or
+interoperability with, other HTTP/1.1 applications. Some of these
+describe proposed experimental features, and some describe features
+that experimental deployment found lacking that are now addressed in
+the base HTTP/1.1 specification.
+
+[20]
+
+>A number of other headers, such as Content-Disposition and Title,
+from SMTP and MIME are also often implemented (see RFC 2076 [37]).
+
+[21]
+
+***19.5.1 Content-Disposition
+
+>The Content-Disposition response-header field has been proposed as a
+means for the origin server to suggest a default filename if the user
+requests that the content is saved to a file. This usage is derived
+from the definition of Content-Disposition in RFC 1806 [35].
+
+[22]
+
+-[23] content-disposition = "Content-Disposition" ":" disposition-type *( ";" disposition-parm )
+-[24] disposition-type = "attachment" | disp-extension-token
+-[25] disposition-parm = filename-parm | disp-extension-parm
+-[26] filename-parm = "filename" "=" quoted-string
+-[27] disp-extension-token = token
+-[28] disp-extension-parm = token "=" ( token | quoted-string )
+
+>An example is [INS[例:]]
+
+-[29] Content-Disposition: attachment; filename="fname.ext"
+
+>The receiving user agent SHOULD NOT respect any directory path
+information present in the filename-parm parameter, which is the only
+parameter believed to apply to HTTP implementations at this time. The
+filename SHOULD be treated as a terminal component only.
+
+[30]
+
+>If this header is used in a response with the application/octet-
+stream content-type, the implied suggestion is that the user agent
+should not display the response, but directly enter a `save response
+as...' dialog.
+
+[31]
+
+>See section 15.5 for Content-Disposition security issues.
+
+[INS[
+[32] 訳注: See also [[Content-Disposition:欄]]
+]INS]
+
+**RFC の部分の License
+
+See [[RFCのライセンス]]
+
+*See also
+-[33] [[RFC1341]] <urn:ietf:rfc:1341>
+-[34] [[RFC1521]] <urn:ietf:rfc:1521>
+-[35] [[RFC2045]] <urn:ietf:rfc:2045>
+-[36] [[RFC2046]] <urn:ietf:rfc:2046>
+-[37] [[HTTP/1.0]] [[RFC1945]] <urn:ietf:rfc:1945>
+-[38] [[HTTP/1.1]] [[RFC2068]] <urn:ietf:rfc:2068>
+-[39] [[HTTP/1.1]] [[RFC2616]] <urn:ietf:rfc:2616>
+*メモ
+@
+
+
+1.4
+log
+@pre-namespace
+@
+text
+@@
+
+
+1.3
+log
+@Updated.
+@
+text
+@d1 1
+a1 1
+#?SuikaWiki/0.9
+@
+
+
+1.2
+log
+@Updated.
+@
+text
+@d8 5
+@
+
+
+1.1
+log
+@Updated.
+@
+text
+@d1 61
+d63 1
+a63 1
+RFC 2616 から・・・
+d65 1
+a65 41
+*19.4 Differences Between HTTP Entities and RFC 2045 Entities
+
+   HTTP/1.1 uses many of the constructs defined for Internet Mail (RFC
+   822 [9]) and the Multipurpose Internet Mail Extensions (MIME [7]) to
+   allow entities to be transmitted in an open variety of
+   representations and with extensible mechanisms. However, RFC 2045
+   discusses mail, and HTTP has a few features that are different from
+   those described in RFC 2045. These differences were carefully chosen
+   to optimize performance over binary connections, to allow greater
+   freedom in the use of new media types, to make date comparisons
+   easier, and to acknowledge the practice of some early HTTP servers
+   and clients.
+
+   This appendix describes specific areas where HTTP differs from RFC
+   2045. Proxies and gateways to strict MIME environments SHOULD be
+   aware of these differences and provide the appropriate conversions
+   where necessary. Proxies and gateways from MIME environments to HTTP
+   also need to be aware of the differences because some conversions
+   might be required.
+
+**19.4.1 MIME-Version
+
+   HTTP is not a MIME-compliant protocol. However, HTTP/1.1 messages MAY
+   include a single MIME-Version general-header field to indicate what
+   version of the MIME protocol was used to construct the message. Use
+   of the MIME-Version header field indicates that the message is in
+   full compliance with the MIME protocol (as defined in RFC 2045[7]).
+   Proxies/gateways are responsible for ensuring full compliance (where
+   possible) when exporting HTTP messages to strict MIME environments.
+
+HTTP は MIME に従ったプロトコルではありません。しかし、 HTTP/1.1
+メッセージは一つの MIME-Version 一般頭領域をメッセージの構築に
+使った MIME プロトコルの版を示すために含めても構いません。
+MIME-Version 頭領域の使用は、メッセージが (RFC 2045 で定義された) 
+MIME プロトコルに完全に適合することを示します。串や関門は
+厳密な MIME 環境に HTTP メッセージを輸出する時に (可能である所で)
+完全に適合することに責任があります。
+
+       MIME-Version   = "MIME-Version" ":" 1*DIGIT "." 1*DIGIT
+
+MIME version "1.0" is the default for use in HTTP/1.1. However,
+d70 2
+a71 4
+HTTP/1.1 メッセージの解析と意味は MIME 仕様ではなくこの文書で
+定義されます。
+
+訳注: See also [[MIME-Version:領域]]
+d73 15
+a87 1
+**19.4.2 Conversion to Canonical Form
+d89 1
+a89 11
+   RFC 2045 [7] requires that an Internet mail entity be converted to
+   canonical form prior to being transferred, as described in section 4
+   of RFC 2049 [48]. Section 3.7.1 of this document describes the forms
+   allowed for subtypes of the "text" media type when transmitted over
+   HTTP. RFC 2046 requires that content with a type of "text" represent
+   line breaks as CRLF and forbids the use of CR or LF outside of line
+   break sequences. HTTP allows CRLF, bare CR, and bare LF to indicate a
+   line break within text content when a message is transmitted over
+   HTTP.
+
+RFC 2045 では、 Internet メイル実体は転送される前に
+d91 6
+a96 5
+この文書の3.7.1節は "text" 媒体型の亜型を HTTP 上で転送する時
+に認められる形式について説明しています。 RFC 2046 は "text"
+の型の内容は CRLF で改行を表現することを要求し、改行列以外で 
+CR や LF を使うことを禁止しています。 HTTP は、 HTTP 上でメッセージを
+転送する際に文中で CRLF, 単独の CR, 単独の LF 
+d99 16
+a114 15
+   Where it is possible, a proxy or gateway from HTTP to a strict MIME
+   environment SHOULD translate all line breaks within the text media
+   types described in section 3.7.1 of this document to the RFC 2049
+   canonical form of CRLF. Note, however, that this might be complicated
+   by the presence of a Content-Encoding and by the fact that HTTP
+   allows the use of some character sets which do not use octets 13 and
+   10 to represent CR and LF, as is the case for some multi-byte
+   character sets.
+
+可能であれば、 HTTP から厳密な MIME 環境への串や関門は
+この文書の3.7.1節で説明した文媒体型中の全ての改行を RFC 2049 正規形の
+CRLF に変換する'''べき'''です。しかし、 Content-Encoding の出現や
+HTTP が幾つかの多バイト文字集合の場合のようにオクテット 13 と 10 を 
+CR や LF を表現するのに使わない文字集合の使用を認めているという事実が、
+これを複雑にしていようことに注意して下さい。
+d116 1
+a116 1
+Implementors should note that conversion will break any cryptographic
+d121 2
+a122 3
+実装者は、元の内容が既に正規形で無かった時に、元の内容に適応される暗号検査和
+が壊れようことに注意するべきです。従って、 HTTP で検査和を使う内容では
+正規形が推奨されます。
+d124 4
+a127 2
+訳注: See also [[text/*媒体型]], [[Content-Encoding:領域]],
+[[Content-MD5:領域]]
+d129 1
+a129 1
+**19.4.3 Conversion of Date Formats
+d131 1
+a131 1
+HTTP/1.1 uses a restricted set of date formats (section 3.3.1) to
+d137 73
+a209 55
+HTTP/1.1 は日付形式の制限された集合を日付比較処理の簡素化のために
+使っています。他のプロトコルからの串や関門はメッセージ中の Date
+頭領域を HTTP/1.1 形式のどれかに適合することを確認し、
+必要があれば日付を書き換える'''べき'''です。
+
+訳注: See also [[Date:領域]]
+
+**19.4.4 Introduction of Content-Encoding
+
+   RFC 2045 does not include any concept equivalent to HTTP/1.1's
+   Content-Encoding header field. Since this acts as a modifier on the
+   media type, proxies and gateways from HTTP to MIME-compliant
+   protocols MUST either change the value of the Content-Type header
+   field or decode the entity-body before forwarding the message. (Some
+   experimental applications of Content-Type for Internet mail have used
+   a media-type parameter of ";conversions=<content-coding>" to perform
+   a function equivalent to Content-Encoding. However, this parameter is
+   not part of RFC 2045.)
+
+RFC 2045 は HTTP/1.1 の Content-Encoding 頭領域に相当する概念を
+持っていません。この行為は媒体型を編集するものなので、
+HTTP から MIME に従ったプロトコルへの串と関門は Content-Type
+頭領域の値を変えるか、実態本文をメッセージ転送の前に復号するか
+し'''なければなりません'''。 (Internet メイルの実験的 Content-Type 応用
+は媒体型パラメーター ";conversions=<content-coding>" を Content-Encoding
+に相当する機能に使っています。しかし、このパラメーターは RFC 2045
+の一部ではありません。)
+
+訳注: [[application/octet-stream媒体型]]の conversions パラメーター
+のことかな? See also [[Content-Encoding:領域]]
+
+**19.4.5 No Content-Transfer-Encoding
+
+   HTTP does not use the Content-Transfer-Encoding (CTE) field of RFC
+   2045. Proxies and gateways from MIME-compliant protocols to HTTP MUST
+   remove any non-identity CTE ("quoted-printable" or "base64") encoding
+   prior to delivering the response message to an HTTP client.
+
+HTTP は RFC 2045 の CTE 領域を使いません。 MIME に従ったプロトコルから
+HTTP への串や関門は「同等」でない CTE (qp と b64) 符号化を
+HTTP クライアントへの反応メッセージで渡す前に解かなければ'''なりません'''。
+
+   Proxies and gateways from HTTP to MIME-compliant protocols are
+   responsible for ensuring that the message is in the correct format
+   and encoding for safe transport on that protocol, where "safe
+   transport" is defined by the limitations of the protocol being used.
+   Such a proxy or gateway SHOULD label the data with an appropriate
+   Content-Transfer-Encoding if doing so will improve the likelihood of
+   safe transport over the destination protocol.
+
+**19.4.6 Introduction of Transfer-Encoding
+
+   HTTP/1.1 introduces the Transfer-Encoding header field (section
+   14.41). Proxies/gateways MUST remove any transfer-coding prior to
+   forwarding a message via a MIME-compliant protocol.
+d211 1
+a211 1
+A process for decoding the "chunked" transfer-coding (section 3.6)
+d214 3
+d233 17
+a249 1
+**19.4.7 MHTML and Line Length Limitations
+d251 21
+a271 19
+   HTTP implementations which share code with MHTML [45] implementations
+   need to be aware of MIME line length limitations. Since HTTP does not
+   have this limitation, HTTP does not fold long lines. MHTML messages
+   being transported by HTTP follow all conventions of MHTML, including
+   line length limitations and folding, canonicalization, etc., since
+   HTTP transports all message-bodies as payload (see section 3.7.2) and
+   does not interpret the content or any MIME header lines that might be
+   contained therein.
+
+*19.5 Additional Features
+
+   RFC 1945 and RFC 2068 document protocol elements used by some
+   existing HTTP implementations, but not consistently and correctly
+   across most HTTP/1.1 applications. Implementors are advised to be
+   aware of these features, but cannot rely upon their presence in, or
+   interoperability with, other HTTP/1.1 applications. Some of these
+   describe proposed experimental features, and some describe features
+   that experimental deployment found lacking that are now addressed in
+   the base HTTP/1.1 specification.
+d273 3
+a275 1
+A number of other headers, such as Content-Disposition and Title,
+d278 3
+a280 1
+**19.5.1 Content-Disposition
+d282 4
+a285 4
+   The Content-Disposition response-header field has been proposed as a
+   means for the origin server to suggest a default filename if the user
+   requests that the content is saved to a file. This usage is derived
+   from the definition of Content-Disposition in RFC 1806 [35].
+d287 1
+a287 7
+        content-disposition = "Content-Disposition" ":"
+                              disposition-type *( ";" disposition-parm )
+        disposition-type = "attachment" | disp-extension-token
+        disposition-parm = filename-parm | disp-extension-parm
+        filename-parm = "filename" "=" quoted-string
+        disp-extension-token = token
+        disp-extension-parm = token "=" ( token | quoted-string )
+d289 6
+d296 1
+a296 1
+An example is
+d298 1
+a298 1
+        Content-Disposition: attachment; filename="fname.ext"
+d300 4
+a303 4
+   The receiving user agent SHOULD NOT respect any directory path
+   information present in the filename-parm parameter, which is the only
+   parameter believed to apply to HTTP implementations at this time. The
+   filename SHOULD be treated as a terminal component only.
+d305 1
+a305 4
+   If this header is used in a response with the application/octet-
+   stream content-type, the implied suggestion is that the user agent
+   should not display the response, but directly enter a `save response
+   as...' dialog.
+d307 4
+a310 1
+   See section 15.5 for Content-Disposition security issues.
+d312 1
+a312 1
+訳注: See also [[Content-Disposition:領域]]
+d314 5
+a318 13
+*See also
+-[[MIME]]
+--[[媒体型]]
+--RFC 1341 <urn:ietf:rfc:1341>
+--RFC 1521 <urn:ietf:rfc:1521>
+--RFC 2045 <urn:ietf:rfc:2045>
+--RFC 2046 <urn:ietf:rfc:2046>
+--[[MIME用語の定義]]
+-[[HTTP]]
+--[[HTTP/1.0]] RFC 1945 <urn:ietf:rfc:1945>
+--[[HTTP/1.1]] RFC 2068 <urn:ietf:rfc:2068>
+--[[HTTP/1.1]] RFC 2616 <urn:ietf:rfc:2616>
+-[[RFC822と仲間達の頭領域名]]
+d320 1
+a320 1
+*License
+d324 9
+@
+

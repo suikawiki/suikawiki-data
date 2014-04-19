@@ -1,0 +1,351 @@
+head	1.2;
+access;
+symbols
+	suikawiki3-final:1.2
+	before-db-leaffile:1.1
+	after-upgrade-to-suikawiki-3:1.1
+	before-fork-suikawiki3:1.1
+	after-restore-20040122:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.2
+date	2007.04.13.03.09.10;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.11.03.02.02.41;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@
+[[#comment]]
+
+
+* 仕様書から
+
+
+** RFC 2295 (HTTP 透過内容折衝) 6.1 Feature tags
+
+[1]
+
+> A feature tag (ftag) identifies something which can be negotiated on,
+for example a property (feature) of a representation, a capability
+(feature) of a user agent, or the preference of a user for a
+particular type of representation.  The use of feature tags need not
+be limited to transparent content negotiation, and not every feature
+tag needs to be usable in the HTTP transparent content negotiation framework.
+
+[DFN[特徴札 (ftag)]]は、[[表現]]の[[特性]] ([[特徴]])
+や[[利用者エージェント]]の能力 (特徴) や表現の特定の型についての利用者の好みなどの、
+折衝に使用可能な何らかのものを識別します。
+特徴札の使用は[[透過内容折衝]]に限定する必要はなく、
+各特徴札は HTTP 透過内容折衝の枠組みで使用可能である必要はありません。
+
+>
+- [CODE(ABNF)[ftag = token | quoted-string]]
+
+> Note: A protocol-independent system for feature tag registration
+is currently being developed in the IETF.  This specification does
+not define any feature tags.  In experimental situations, the use
+of tags which start with "x." is encouraged.
+
+注意 : プロトコル独立の特徴札登録システムは現在 IETF
+で開発中です。この仕様書は特徴札を何も定義しません。
+実験的な状況では、 [CODE(feature)[[[x.]]]] で始まる札を使用することを推奨します。
+
+> Feature tags are used in feature sets (section 6.2) and in feature
+predicates (section 6.3).  Feature predicates are in turn used in
+features attributes (section 6.4), which are used in variant
+descriptions (section 5).  Variant descriptions can be transmitted in
+Alternates headers (section 8.3).
+
+特徴札は[[特徴集合]]や[[特徴述語]]で使用します。
+特徴述語は [CODE(conneg)[feature]] 属性で使用し、
+[CODE(conneg)[feature]] 属性は[[変種記述]]で使用します。
+変種記述は [CODE(HTTP)[[[Alternates「]]]]
+頭で転送することができます。
+
+> The US-ASCII charset is used for feature tags.  Feature tag
+comparison is case-insensitive.  A token tag XYZ is equal to a
+quoted-string tag "XYZ". Examples are
+
+特徴札には [[US-ASCII]] [[charset]] を使います。
+特徴札の比較は大文字・小文字を区別しません。
+[[字句]]札 [CODE(feature)[XYZ]] は [CODE(ABNF)[[[quoted-string]]]]
+札 [CODE(feature)["XYZ"]] と同等です。例えば、
+
+> tables, fonts, blebber, wolx, screenwidth, colordepth
+
+> An example of the use of feature tags in a variant description is:
+
+特徴札を変種記述で使った例 :
+
+>
+- [SAMP(conneg)[ {"index.html" 1.0 {type text/html} {features tables frames}} ]]
+
+> This specification follows general computing practice in that it
+places no restrictions on what may be called a feature.  At the
+protocol level, this specification does not distinguish between
+different uses of feature tags: a tag will be processed in the same
+way, no matter whether it identifies a property, capability, or
+preference.  For some tags, it may be fluid whether the tag
+represents a property, preference, or capability.  For example, in
+content negotiation on web pages, a "textonly" tag would identify a
+capability of a text-only user agent, but the user of a graphical
+user agent may use this tag to specify that text-only content is
+preferred over graphical content.
+
+
+*** 6.1.1 Feature tag values
+
+> The definition of a feature tag may state that a feature tag can have
+zero, one, or more values associated with it.  These values
+specialize the meaning of the tag.  For example, a feature tag
+`paper' could be associated with the values `A4' and `A5'.
+
+特徴札の定義は、その特徴札が零個か一個かそれ以上の関連付けられた値を持つことができると言明できます。
+この値は札の意味を特別化します。例えば、特徴札 [CODE(feature)[[[paper]]]]
+は値 [CODE(feature)[[[A4]]]] や [CODE(feature)[[[A5]]]]
+と関連付けることができることでしょう。
+
+>
+- [CODE(ABNF)[tag-value  = token | quoted-string]]
+
+> The US-ASCII charset is used for feature tag values.  Equality
+comparison for tag values MUST be done with a case-sensitive, octet-by-octet comparison, where any ""%" HEX HEX" encodings MUST be
+processed as in [1].  A token value XYZ is equal to a quoted-string value "XYZ".
+
+特徴札値には US-ASCII charset を使います。
+札値の同等性比較は大文字・小文字を区別した、オクテット毎の比較により行わなければ'''なりません'''。
+このとき、 [CODE(ABNF)["%" [[HEX]] HEX]] 符号化は [[RFC2068]]
+に従って処理しなければ'''なりません'''。
+字句値 [CODE(feature)[XYZ]] は [CODE(ABNF)[[[quoted-string]]]]
+値 [CODE(feature)["XYZ"]] と同等です。
+
+
+** RFC 2295 (HTTP 透過内容折衝) 20.3 Feature tag design
+
+[2]
+
+> When designing a new feature tag, it is important to take into
+account that existing user agents, which do not recognize the new tag
+will treat the feature as absent.  In general, a new feature tag
+needs to be designed in such a way that absence of the tag is the
+default case which reflects current practice.  If this design
+principle is ignored, the resulting feature tag will generally be unusable.
+
+新しい特徴札を設計する時、既存の新しい札を認識しない利用者エージェントがその機能の欠けているものとして扱われるように考慮することが重要です。
+通常、新しい特徴札は特徴札が欠けているとき現在の慣習を反映している既定の場合となるように設計する必要があります。
+この設計原理を無視すると、結果出来る特徴札は通常使用不能なものとなってしまいます。
+
+> As an example, one could try to support negotiation between
+monochrome and color content by introducing a `color' feature tag,
+the presence of which would indicate the capability to display color
+graphics.  However, if this new tag is used in a variant list, for example
+
+例として、 [CODE(feature)[[[color]]]] 特徴札を導入して白黒内容とカラー内容の間での折衝に対応しようとするとします。
+この札が示されているとカラー画像表示能力があると示すことにします。
+しかし、この新しい札を[[変種目録]]で使うと、例えば、
+
+>
+- [SAMP(conneg)[{"rainbow.gif"      1.0 {features color} }]]
+- [SAMP(conneg)[{"rainbow.mono.gif" 0.6 {features !color}}]]
+
+> then existing user agents, which would not recognize the color tag,
+would all display the monochrome rainbow.  The color tag is therefore
+unusable in situations where optimal results for existing user agents
+are desired.  To provide for negotiation in this area, one must
+introduce a `monochrome' feature tag; its presence indicates that the
+user agent can only render (or the user prefers to view) monochrome graphics.
+
+のようになりますが、既存の利用者エージェントで [CODE(feature)[color]]
+札を理解しないものは、すべて白黒の虹を表示することとなるでしょう。
+従って、既存の利用者エージェントで最適な結果を望む状況では [CODE(feature)[color]]
+札は使用不能です。この領域での折衝を提供するためには、
+[CODE(feature)[[[monochrome]]]] 特徴札をどうにゅうしなければなりません。
+この札は利用者エージェントが白黒図形だけしかレンダリングすることができない
+(又は利用者が白黒図形を表示することを好んでいる)
+ことを示します。
+
+
+** RFC の部分の License
+
+[[RFCのライセンス]]
+
+
+* メモ
+
+[3]
+[CITE@@en[draft-mutz-http-attributes-01]] ([TIME[2007-02-23 04:30:20 +09:00]] 版) <http://tools.ietf.org/html/draft-mutz-http-attributes-01>
+([[名無しさん]])
+
+@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@d1 162
+a162 144
+#?SuikaWiki/0.9
+[[#comment]]
+
+* 仕様書から
+**RFC 2295 (HTTP 透過内容折衝) 6.1 Feature tags
+[1]
+> A feature tag (ftag) identifies something which can be negotiated on,
+for example a property (feature) of a representation, a capability
+(feature) of a user agent, or the preference of a user for a
+particular type of representation.  The use of feature tags need not
+be limited to transparent content negotiation, and not every feature
+tag needs to be usable in the HTTP transparent content negotiation framework.
+
+[DFN[特徴札 (ftag)]]は、[[表現]]の[[特性]] ([[特徴]])
+や[[利用者エージェント]]の能力 (特徴) や表現の特定の型についての利用者の好みなどの、
+折衝に使用可能な何らかのものを識別します。
+特徴札の使用は[[透過内容折衝]]に限定する必要はなく、
+各特徴札は HTTP 透過内容折衝の枠組みで使用可能である必要はありません。
+
+>
+- [CODE(ABNF)[ftag = token | quoted-string]]
+
+> Note: A protocol-independent system for feature tag registration
+is currently being developed in the IETF.  This specification does
+not define any feature tags.  In experimental situations, the use
+of tags which start with "x." is encouraged.
+
+注意 : プロトコル独立の特徴札登録システムは現在 IETF
+で開発中です。この仕様書は特徴札を何も定義しません。
+実験的な状況では、 [CODE(feature)[[[x.]]]] で始まる札を使用することを推奨します。
+
+> Feature tags are used in feature sets (section 6.2) and in feature
+predicates (section 6.3).  Feature predicates are in turn used in
+features attributes (section 6.4), which are used in variant
+descriptions (section 5).  Variant descriptions can be transmitted in
+Alternates headers (section 8.3).
+
+特徴札は[[特徴集合]]や[[特徴述語]]で使用します。
+特徴述語は [CODE(conneg)[feature]] 属性で使用し、
+[CODE(conneg)[feature]] 属性は[[変種記述]]で使用します。
+変種記述は [CODE(HTTP)[[[Alternates「]]]]
+頭で転送することができます。
+
+> The US-ASCII charset is used for feature tags.  Feature tag
+comparison is case-insensitive.  A token tag XYZ is equal to a
+quoted-string tag "XYZ". Examples are
+
+特徴札には [[US-ASCII]] [[charset]] を使います。
+特徴札の比較は大文字・小文字を区別しません。
+[[字句]]札 [CODE(feature)[XYZ]] は [CODE(ABNF)[[[quoted-string]]]]
+札 [CODE(feature)["XYZ"]] と同等です。例えば、
+
+> tables, fonts, blebber, wolx, screenwidth, colordepth
+
+> An example of the use of feature tags in a variant description is:
+
+特徴札を変種記述で使った例 :
+
+>
+-[SAMP(conneg)[ {"index.html" 1.0 {type text/html} {features tables frames}} ]]
+
+> This specification follows general computing practice in that it
+places no restrictions on what may be called a feature.  At the
+protocol level, this specification does not distinguish between
+different uses of feature tags: a tag will be processed in the same
+way, no matter whether it identifies a property, capability, or
+preference.  For some tags, it may be fluid whether the tag
+represents a property, preference, or capability.  For example, in
+content negotiation on web pages, a "textonly" tag would identify a
+capability of a text-only user agent, but the user of a graphical
+user agent may use this tag to specify that text-only content is
+preferred over graphical content.
+
+
+
+***6.1.1 Feature tag values
+> The definition of a feature tag may state that a feature tag can have
+zero, one, or more values associated with it.  These values
+specialize the meaning of the tag.  For example, a feature tag
+`paper' could be associated with the values `A4' and `A5'.
+
+特徴札の定義は、その特徴札が零個か一個かそれ以上の関連付けられた値を持つことができると言明できます。
+この値は札の意味を特別化します。例えば、特徴札 [CODE(feature)[[[paper]]]]
+は値 [CODE(feature)[[[A4]]]] や [CODE(feature)[[[A5]]]]
+と関連付けることができることでしょう。
+
+>
+- [CODE(ABNF)[tag-value  = token | quoted-string]]
+
+> The US-ASCII charset is used for feature tag values.  Equality
+comparison for tag values MUST be done with a case-sensitive, octet-by-octet comparison, where any ""%" HEX HEX" encodings MUST be
+processed as in [1].  A token value XYZ is equal to a quoted-string value "XYZ".
+
+特徴札値には US-ASCII charset を使います。
+札値の同等性比較は大文字・小文字を区別した、オクテット毎の比較により行わなければ'''なりません'''。
+このとき、 [CODE(ABNF)["%" [[HEX]] HEX]] 符号化は [[RFC2068]]
+に従って処理しなければ'''なりません'''。
+字句値 [CODE(feature)[XYZ]] は [CODE(ABNF)[[[quoted-string]]]]
+値 [CODE(feature)["XYZ"]] と同等です。
+
+**RFC 2295 (HTTP 透過内容折衝) 20.3 Feature tag design
+[2]
+> When designing a new feature tag, it is important to take into
+account that existing user agents, which do not recognize the new tag
+will treat the feature as absent.  In general, a new feature tag
+needs to be designed in such a way that absence of the tag is the
+default case which reflects current practice.  If this design
+principle is ignored, the resulting feature tag will generally be unusable.
+
+新しい特徴札を設計する時、既存の新しい札を認識しない利用者エージェントがその機能の欠けているものとして扱われるように考慮することが重要です。
+通常、新しい特徴札は特徴札が欠けているとき現在の慣習を反映している既定の場合となるように設計する必要があります。
+この設計原理を無視すると、結果出来る特徴札は通常使用不能なものとなってしまいます。
+
+> As an example, one could try to support negotiation between
+monochrome and color content by introducing a `color' feature tag,
+the presence of which would indicate the capability to display color
+graphics.  However, if this new tag is used in a variant list, for example
+
+例として、 [CODE(feature)[[[color]]]] 特徴札を導入して白黒内容とカラー内容の間での折衝に対応しようとするとします。
+この札が示されているとカラー画像表示能力があると示すことにします。
+しかし、この新しい札を[[変種目録]]で使うと、例えば、
+
+>
+- [SAMP(conneg)[{"rainbow.gif"      1.0 {features color} }]]
+- [SAMP(conneg)[{"rainbow.mono.gif" 0.6 {features !color}}]]
+
+> then existing user agents, which would not recognize the color tag,
+would all display the monochrome rainbow.  The color tag is therefore
+unusable in situations where optimal results for existing user agents
+are desired.  To provide for negotiation in this area, one must
+introduce a `monochrome' feature tag; its presence indicates that the
+user agent can only render (or the user prefers to view) monochrome graphics.
+
+のようになりますが、既存の利用者エージェントで [CODE(feature)[color]]
+札を理解しないものは、すべて白黒の虹を表示することとなるでしょう。
+従って、既存の利用者エージェントで最適な結果を望む状況では [CODE(feature)[color]]
+札は使用不能です。この領域での折衝を提供するためには、
+[CODE(feature)[[[monochrome]]]] 特徴札をどうにゅうしなければなりません。
+この札は利用者エージェントが白黒図形だけしかレンダリングすることができない
+(又は利用者が白黒図形を表示することを好んでいる)
+ことを示します。
+** RFC の部分の License
+[[RFCのライセンス]]
+* メモ
+@
+

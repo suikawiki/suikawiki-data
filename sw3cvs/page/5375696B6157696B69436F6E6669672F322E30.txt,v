@@ -1,0 +1,326 @@
+head	1.5;
+access;
+symbols
+	suikawiki3-final:1.5
+	before-db-leaffile:1.2
+	after-upgrade-to-suikawiki-3:1.2
+	before-fork-suikawiki3:1.2
+	after-restore-20040122:1.2;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.5
+date	2005.02.18.02.07.22;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2004.09.23.02.03.58;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2004.07.08.02.04.40;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2003.09.24.07.19.38;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.08.16.09.18.53;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.5
+log
+@auto-committed
+@
+text
+@[25] [DFN[SuikaWikiConfig/2.0]] は、 [[SuikaWiki3]]
+の種々の設定ファイルや [[WikiPlugin]] 
+原始ファイルの記述のために設計された汎用の記述形式です。
+SuikaWiki のほかにも、いくつかの簡易工具で使用されています。
+
+SuikaWikiConfig/2.0 では、入れ子になった構造 (木構造)
+を手軽に扱うことができます。また、簡単な[RUBY[並び][リスト]]を扱うこともできます。
+
+* SuikaWikiConfig/2.0 構文
+
+-[1] [CODE(ABNF)[[DFN[document]] := header body]]
+-[2] [CODE(ABNF)[[DFN[header]] := ['#?SuikaWikiConfig/2.0' CRLF] ]]
+-- [誤り] 外部プロトコル (HTTP, MIME 等) で[[媒体型]]情報が得られないときに
+[CODE(ABNF)[header]] が空であるのは誤り。
+-[3] [CODE(ABNF)[[DFN[body]] := *(entry / comment / s)]]
+-[4] [CODE(ABNF)[[DFN[entry]] := entry-name ":" *WSP (entry-line − *echar ":" *echar CRLF / CRLF entry-body) / list-entry]]
+-- [CODE(ABNF)[entry-name]] は [CODE(ABNF)[":"]] を含み得ることに注意。
+[CODE(ABNF)[entry-name]] は、行の中で最後の [CODE(ABNF)[":"]] の直前までである。
+-[5] [CODE(ABNF)[[DFN[anon-entry]] := "@@:" *WSP (entry-line / CRLF simple-entry-body)]]
+-- [誤り] [CODE(ABNF)[anon-entry]] で [CODE(ABNF)[complex-entry-body]]
+を使うことは'''できない'''。
+-[6] [CODE(ABNF)[[DFN[entry-name]] := first-echar *echar − first-echar '[list]']]
+-- [CODE(ABNF)[entry-name]] の最後を [CODE(ABNF)["[" *echar "]"]]
+とする'''べきではない'''。そのような名前は将来の版の SuikaWikiConfig
+では禁止されるかもしれない。
+-[7] [CODE(ABNF)[[DFN[entry-body]] := simple-entry-body / complex-entry-body]]
+-[8] [CODE(ABNF)[[DFN[simple-entry-body]] := *(1*WSP entry-line)]]
+-[9] [CODE(ABNF)[[DFN[complex-entry-body]] := *(1*WSP 1*"@@" entry / comment / s) 1*WSP 1*"@@" anon-entry *(1*WSP 1*"@@" entry / comment / s)]]
+-- [整形式制約] [CODE(ABNF)["@@"]] の数は、親 [CODE(ABNF)[entry]]
+(その [CODE(ABNF)[complex-entry-body]] を内容の一部として含む直近の 
+[CODE(ABNF)[entry]]) の [CODE(ABNF)[entry-name]] 直前の [CODE(ABNF)["@@"]]
+の個数より丁度一つ多くなければならない。
+-- ここに現れる [CODE(ABNF)[comment]] は、必ずしも情報項目に対応しない。
+-[10] [DEL[ [CODE(ABNF)[[DFN[entry-line]] := [first-echar *echar] CRLF]] ]]
+-[29] [INS[ [CODE(ABNF)[[DFN[entry-line]] := [first-echar *echar / "\"] CRLF]] ]]
+-- 空の ([CODE(ABNF)[CRLF]] だけの) [CODE(ABNF)[entry-line]] は、
+情報項目に反映されない (無視される)。
+-- [CODE(ABNF)["\" CRLF]] だけの行は、空行 (行末の改行文字だけの行) とする。
+-[11] [CODE(ABNF)[[DFN[first-echar]] := (echar − ("@@" / WSP / "#" / "\")) / quoted-pair]]
+-- [CODE(ABNF)[quoted-pair]] を使うのは、そうしなければ表現できない4種類の文字群に限ることを'''推奨する'''。
+-[12] [CODE(ABNF)[[DFN[quoted-pair]] := "\" echar]]
+-[13] [CODE(ABNF)[[DFN[echar]] := CHAR − (CR / LF)]]
+-[14] [CODE(ABNF)[[DFN[s]] := CRLF ;; 空行]]
+-- [CODE(ABNF)[s]] は、情報項目に対応しない (捨てられる)。
+-[15] [CODE(ABNF)[[DFN[comment]] := "#" *echar CRLF]]
+-[16] [CODE(ABNF)[[DFN[list-entry]] := entry-name "[list]:" *WSP (entry-line − *echar ":" *echar CRLF / CRLF simple-entry-body)]]
+-- 一つの [CODE(ABNF)[entry-line]] が一つの並びの項目とみなされる。
+並びの項目を複数行とする ([CODE(ABNF)[CRLF]] を含める) ことはできない。
+-- [誤り] [CODE(ABNF)[list-entry]] で [CODE(ABNF)[complex-entry-body]]
+を使っては'''ならない'''。
+-[17] [CODE(ABNF)[[DFN[WSP]] := [[SP]] / [[TAB]]]]
+
+** 改行の取扱い
+
+[18] 改行 ([CODE(ABNF)[CRLF]]) は、環境に応じて [CODE(ABNF)[CR]],
+[CODE(ABNF)[LF]], [CODE(ABNF)[CRLF]] のいずれを使っても'''よい'''。
+また、これらが混在しても'''よい'''。正規形は [CODE(ABNF)[CRLF]] とし、
+解析器は構文解析の前に正規形に変換されているかのように扱わなければ'''ならない'''。
+ネットワーク転送時には正規形にする'''べきである'''。
+
+** 符号化文字集合
+
+[19] SuikaWikiConfig/2.0 文書は、
+構文に必要な文字を含んでいるどのような[[符号化文字集合]]を使って表現しても'''よい'''。
+解析器は MIME charset [CODE(charset)[[[US-ASCII]]]] に対応しなければ'''ならない'''。
+
+SuikaWikiConfig/2.0 文書の符号化文字集合には、 [CODE(charset)[US-ASCII]]
+の符号化文字をすべて含むものを使用することを'''推奨する'''。
+解析器や応用プログラムの使用する符号化方式は、実装定義とする。
+
+* SuikaWikiConfig/2.0 情報集合
+
+[20] [DFN[SuikaWikiConfig/2.0 情報集合]]は、 SuikaWikiConfig/2.0
+で表現できる情報の抽象模型である。
+解析器は、情報集合の情報項目に対応する情報を応用プログラムに提供できなければ'''ならない'''
+(が、具体的な提供方法は実装定義とし、情報集合の抽象模型に直接対応する必要はない)。
+
+- 文書情報項目
+-- [CODE(infoprop)[子供]]: 子供情報項目の順序並び (文書順)。
+子供情報項目は要素情報項目または注釈情報項目で、それぞれ任意個、任意順。
+- 要素情報項目
+-- [CODE(infoprop)[局所名]]: [CODE(ABNF)[entry-name]]。
+[CODE(ABNF)[quoted-pair]] の [CODE(ABNF)["\"]] は値の一部ではない。
+-- [CODE(infoprop)[子供]]: 子供情報項目の順序並び (文書順)。
+子供情報項目は要素情報項目で、任意個。
+[CODE(ABNF)[complex-entry-body]] 中の [CODE(ABNF)[entry]] に対応する。
+-- [CODE(infoprop)[値]]: 一つの文字列または文字列の並び
+([CODE(infoprop)[並び]]特性に拠る)。
+[CODE(ABNF)[entry-line]] (の連結) に対応する。
+([CODE(ABNF)[complex-entry-body]] では、
+[CODE(ABNF)[anon-entry]] 内の [CODE(ABNF)[entry-line]] (の連結) とする。)
+ただし、 [CODE(ABNF)[quoted-pair]] の [CODE(ABNF)["\"]] と一番最後の
+[CODE(ABNF)[CRLF]] は値の一部ではない。
+-- [CODE(infoprop)[並び]]: [CODE(ABNF)[list-entry]] なら真、
+普通の [CODE(ABNF)[entry]] なら偽。
+-- [CODE(infoprop)[親]]: 親情報項目。すなわち、
+この要素情報項目を[CODE(infoprop)[子供]]に持つ文書情報項目または要素情報項目。
+- 注釈情報項目
+-- [CODE(infoprop)[値]]: [CODE(ABNF)[comment]] のうち、
+[CODE(ABNF)[#]] と [CODE(ABNF)[CRLF]] を除いた部分。
+
+[30] SuikaWikiConfig/2.0 では、注釈情報項目の[CODE(infoprop)[親]]は常に文書情報項目とする。
+将来の版の SuikaWikiConfig では、要素情報項目も[CODE(infoprop)[親]]と認めるかもしれない。
+
+* 直列化
+
+[21] SuikaWikiConfig/2.0 情報集合を SuikaWikiConfig/2.0
+文書に直列化するときに、次の場合にはそのままでは直列化できない。
+
+- 要素情報項目の[CODE(infoprop)[子供]]特性が空でなく、
+[CODE(infoprop)[並び]]特性が真であるとき
+- 要素情報項目の[CODE(infoprop)[並び]]特性が真で、
+[CODE(infoprop)[値]]特性の値の文字列のいずれかが改行を含むとき
+- 注釈情報項目の[CODE(infoprop)[値]]特性が改行を含むとき
+- 出力する符号化文字集合で表現できない文字が要素情報項目の[CODE(infoprop)[局所名]]特性もしくは要素情報項目または注釈情報項目の[CODE(infoprop)[値]]特性が含むとき
+-[33] 注釈情報項目の[CODE(infoprop)[値]]特性の値が
+[CODE(char)[?]] から始まるとき
+
+これらの場合は誤りとする。直列化器は誤りから回復しても'''よい'''。
+
+* 識別子
+
+[22] SuikaWikiConfig/2.0 文書のインターネット[[媒体型]]は 
+[CODE(MIME)[[[application/x.suikawiki.config]]]] とする。
+
+引数:
+,名前                     ,値の型             ,既定値  ,意味
+,[CODE(MIME)[[[charset]]]],[CODE(ABNF)[[[charset]]]],(ほぼ必須),MIME charset
+,[CODE(MIME)[[[version]]]],[CODE(ABNF)["2.0"]],(必須)  ,SuikaWikiConfig の版
+
+引数 [CODE(MIME)[charset]] は、外部プロトコルの一部を構成する場合
+(たとえば [[XML]] [[実体]]に直接埋め込まれている場合)
+には使用しては'''ならない'''。外部プロトコルが別途指定手段を有するときや、
+SuikaWikiConfig/2.0 文書そのものは転送されない場合 
+(たとえば [[HTTP]] の [CODE(HTTP)[[[Accept]]:]] 欄の場合) には省略しても'''よい'''。
+それ以外の場合 (たとえば [[MIME]] や HTTP の [CODE(HTTP)[[[Content-Type]]:]]
+欄の場合) には指定しなければ'''ならない'''。
+
+SuikaWikiConfig/2.0 の処理器が [CODE(MIME)[version]] が [CODE(MIME)[2.0]]
+でない実体を渡されたときの動作は実装定義とする。
+
+[31] 参考: HTTP の [CODE(HTTP)[Accept:]] 欄を使用する場合で、
+[CODE(MIME)[charset]] を指定したい時は、通常 [CODE(MIME)[charset]]
+引数ではなく [CODE(HTTP)[[[Accept-Charset]]:]] 欄を使用する。
+
+[23] SuikaWikiConfig/2.0 を構文として使用する応用形式は、
+独自の媒体型を定義しても'''よい'''。その場合は媒体亜型の最後を
+[CODE(MIME)[+swcfg]] としなければ'''ならない'''。
+また、引数 [CODE(MIME)[charset]] および [CODE(MIME)[version]]
+を >>22 と同じと定義するか、またはより制限されたものとしなければ'''ならない'''。
+処理器は、未知の媒体型であっても [CODE(MIME)[+swcfg]]
+で終わるものは [CODE(MIME)[application/x.suikawiki.config]]
+とみなす'''べきである'''。
+
+* 歴史
+
+[27] SuikaWikiConfig/2.0 は、 SuikaWiki3 を期に
+[[SuikaWikiConfig/0.9]], [[SuikaWikiConfig/1.0]], [[SuikaWikiConst/0.9]],
+[[SuikaWikiConfig/1.1]] を統一・拡張して設計されました。
+
+[28] SuikaWikiConst/0.9 などは [[SuikaWiki2]] で使用されていた書式です。
+
+[32] 2004年9月21日: >>29-32 を追加。 >>23 の typo を修正。
+>>10 は削除。
+
+[34] 2005年2月17日: >>33 を追加。
+
+* 例
+
+[24]
+[PRE[
+#?SuikaWikiConfig/2.0
+Foo:
+  aiueo
+Bar: aiueo
+# comment
+# comment
+FooBar:
+  @@@@:something
+  @@Foo:\ foo 
+  @@Bar:
+  bar
+  foo
+  @@foo:
+    @@@@foo:@@@@foo@@@@
+    @@@@bar:@@@@bar@@@@
+    @@@@\@@foo:@@@@foo@@@@
+    @@@@@@: FOO BAR
+  @@\@@foo:Hello!
+  @@bar:
+   \@@foo:bar
+foo[list]:
+  http://foo.example/
+  http://bar.example/
+  http://baz.example/
+]PRE]
+
+* メモ
+@
+
+
+1.4
+log
+@auto-committed
+@
+text
+@d116 2
+d165 2
+@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@d34 5
+a38 1
+-[10] [CODE(ABNF)[[DFN[entry-line]] := [first-echar *echar] CRLF]]
+d102 3
+d140 4
+d150 1
+a150 1
+で終わるものは [CODE(MIME)[application/x.suikawiki.confg]]
+d160 3
+@
+
+
+1.2
+log
+@semi-auto committed
+@
+text
+@d1 4
+a4 2
+#?SuikaWiki/0.9
+[1] 種々の[[設定]]や[[資源]]を格納するデータ形式。
+d6 2
+a7 18
+前版の [[SuikaWikiConfig/0.9]]
+のみならず、SuikaWiki 
+[[WikiPlugin]] source 
+形式も置きかえる予定です。
+
+版は 0.9 と 1.0 が混用されたので、
+1 系は飛ばして 2.0 にします。
+
+[2]
+- document = header body
+- header = '#?SuikaWikiConfig/2.0' CRLF
+- body = *(entry / comment)
+- entry = one-line-entry / multiple-lines-entry
+- one-line-entry = entry-name ":" one-line-entry-body CRLF
+- multiple-lines-entry = entry-name ":" *WSP CRLF *(one-line-entry-body CRLF)
+- entry-name = (echar - "@@" / "\" echar) *echar
+- one-line-entry-body = *WSP ["\"] *echar
+-echar = CHAR - (CR / LF)
+d9 144
+a166 1
+    @@@@@@: FOO BAR
+d170 1
+d174 4
+d179 2
+a180 3
+- [3] >>2 の BNF は中途半端。入れ子に対応してません。
+- [4] [[SuikaWikiConst/1.1]] も統合して、 [CODE[foo[list]: bar[CODE(char)[\n]]baz[CODE(char)[\n]]...]] みたいな配列機能も含めることにしました。
+- [5] [WEAK[2003-09-21 04:55:24 +00:00]] ''[[わかばたんだよもん]]'': とりあえず実装が出来ました : <IW:SuikaCVS:"suikawiki/script/lib/SuikaWiki/Markup/">
+@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@d46 2
+@
+

@@ -1,0 +1,229 @@
+head	1.6;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.6
+date	2003.06.06.12.26.17;	author make;	state dead;
+branches;
+next	1.5;
+
+1.5
+date	2003.03.27.07.24.51;	author make;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2003.01.26.04.49.32;	author w;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2002.12.31.06.23.13;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2002.12.04.09.26.06;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2002.11.09.09.25.46;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.6
+log
+@auto-commited
+@
+text
+@#?SuikaWiki/0.9 default-name="attachment"
+*仕様
+-[1] RFC 1806 (experiemtal; obsoleted) <urn:ietf:rfc:1806>
+-[2] [[RFC2183]] (Proposed Standard) <urn:ietf:rfc:2183>
+-[3] [[MIMEのparameter値拡張]]
+
+[4] >>1 ではじめ''実験的''に定義されましたが、 >>2 で [[IETF]]
+[[標準化過程]]の[[提案標準]]として再定義されました。
+
+>>3 で RFC 2184, RFC 2231 により
+parameter の定義などが修訂されました。
+
+[5] 細かい仕様については [[RFC2183]] を参照。
+
+*Disposition 型
+,alert      ,利用者に警告する custom ring 調,SIP [RFC 3261]
+,ancillary  ,(補助的)          ,(draft-newman-mime-cdisp-metadata <urn:ietf:rfc:draft-newman-mime-cdisp-metadata-02>)
+,attachment ,(添付)            ,"RFC 1806, [[RFC2183]]"
+,file       ,(ファイル)        ,[[RFC2388]]
+,form-data  ,(入力欄データ)    ,"RFC 1867, [[RFC2388]]"
+,icon       ,絵として利用者に表示,SIP [RFC 3261]
+,inline     ,(行内)            ,"RFC 1806, [[RFC2183]]"
+,render     ,利用者に表示するべき,SIP [RFC 3261]
+,session    ,通信セッションの説明 (RFC 2327 SDP 本文など),SIP [RFC 3261]
+,signal     ,(信号)            ,[[RFC3204]]
+,signed-receipt-protocol,被署名受信者向け被要求署名形式,[[[RFC3335]]]
+,signed-receipt-micalg  ,被署名受信者向け被要求署名算法,[RFC 3335]
+
+[6] 以上は全て IANA に登録 (>>7) された型です。
+
+*パラメーター
+,alternates         ,代替媒体型        ,W3C NOTE-[[device-upload]]
+,creation-date      ,作成日            ,[[RFC2183]]
+,device             ,作成機器          ,W3C NOTE-[[device-upload]]
+,filename           ,[[ファイル名]] (>>9),"RFC 1806, [[RFC2183]]"
+,handling           ,処理が必要かどうか,[[RFC3204]] >>17
+,modification-date  ,編集日            ,[[RFC2183]]
+,name               ,[[フォーム]]の名前,"RFC 1867, [[RFC2388]] >>14"
+,read-date          ,読取日            ,[[RFC2183]]
+,size               ,大きさ            ,[[RFC2183]]
+,voice              ,音声内容の型あるいは仕様,[[RFC2421]] >>16
+
+[8] 以上は全て IANA に登録 (>>7) されたパラメーターです。
+
+**filename パラメーター
+
+[9] その名のとおり、ファイルの名前を示すパラメーターです。
+詳しくは [[RFC2183]] を参照して下さい。
+
+[10] filename パラメーターを巡っては2つの問題があります。
+1つは値の安全性について。 RFC 2183 にも記述がありますが、例えば
+''/etc/passwd'' というファイル名で、 [[UA]]
+がその名前でファイルを保存してしまって、しかもたまたま
+[[permission]] 的にもそれが成功してしまうと、 [[Un*x]]
+系の処理系では困ったことになります。
+ですから、この値は参考程度とするべきものであって、自動処理でこの名前をそのまま使う時は、細心の注意を払う必要があります。
+
+[11] もう一つは、非 [[ASCII]] 文字を使った名前への対応です。
+(特に最近では [[Windows]] だけでなく [[Un*x]]
+系でも漢字のファイル名を使ったりする人が増えてきました。)
+
+規格としては既に RFC 2231 の方法 (>>3)
+が決まっていますが、この標準化が遅れたため、好き勝手な方法で実装した
+[[MUA]] が幾つもあって、その MUA との互換性のため
+(あるいは実装者の無知のため) そうした方法での実装が後をたちません。
+
+[12] ''encoded-wordを使う方法''。
+parameter の value ([[quoted-string]]) の中に [[encoded-word]]
+を使います。 ''filename="=?iso-2022-jp?b?...hogehoge...?="''
+のようにします。この方法は'''間違い'''です。
+
+[[M$OE]] をはじめとする数多くの UA がこの方法で実装していますので、
+UA はこの方式も解読出来ると良いかもしれませんが、この方法で送っては'''いけません'''。
+
+[13] ''生8ビット符号を使う方法''。生の日本語 [[EUC]]
+や[[シフトJIS]]をそのまま使って ''filename="ファイル名"''
+とする方法です。現在でもたまに使われますが、この方法は[[相互通信性]]に欠けるので、使っては'''いけません'''。
+
+- [20] しかし実際には、特に [[HTTP]] で使用される場合において、 >>13 のようなことがありますね。大抵は、[[本体]]の [[charset]] と同じなんでしょうが... (その場合でも [[Content-Type:]] 欄に [[charsetパラメーター]]が無かったりするので、油断は出来ません。結局は自動判別ですか...)
+[[#comment]]
+**name パラメーター
+
+[14] [[HTML]] の [[form要素]]から送信された時に control の
+[[name属性]]の値が指定されるパラメーターです。 [CODE[form-data]] 
+配置型と共に使います。
+
+[15] [[HTML4]] によると、 name 属性値に [[US-ASCII]]
+以外が使われる場合、 [[RFC2045]] の方法で符号化しないといけないそうです。
+RFC 2045 探しても方法なんてのってないとおもうんですが・・・。
+どうするんでしょうか。
+(<IW:HTML4:"interact/forms.html#h-17.13.4">)
+[[#comment]]
+**Voice パラメーター
+
+[16] IANAREG (>>7) に値の一覧があります。
+,Voice-Message               ,,[[[RFC2421]]]
+,Voice-Message-Notification  ,,[RFC 2421]
+,Originator-Spoken-Name      ,,[RFC 2421]
+,Recipient-Spoken-Name       ,,[RFC 2421]
+,Spoken-Subject              ,,[RFC 2421]
+[[#comment]]
+**Handling パラメーター
+
+[17] IANAREG (>>7) に値の一覧があります。
+,required ,本体を理解しなければならない  ,[[[RFC3204]]]
+,optional ,本体は黙って捨てても良い      ,[RFC 3204]
+[[#comment]]
+*SEE ALSO
+-[7] IANA 登録簿 <http://www.iana.org/assignments/mail-cont-disp>
+*メモ
+- [18] ''Use of the Content-Disposition header with HTTP'' <http://ftp.ics.uci.edu/pub/ietf/http/draft-faerber-http-content-disp-00.txt>
+- [19] [CODE[Content-Disposition:]] 欄は、 HTTP でも (特に [[CGI]] script の類で) よく使われるにも拘らず、 HTTP Core 仕様書は簡単に触れるにとどまっています。 >>18 は RFC 2184 及び現実の使用状況・ HTTP の仕様をそれなりに折り合わせたもので、実装の指針としては (期限切れ I-D ながらも) 十分な品質だと思われます。
+- [21] >>19 ただし、 >>20 のような問題には触れていませんから、もちろんこの I-D に従って実装すれば良いというものでもありません。
+- [22] 現実の実装では [[Content-Type:]] 欄の値, この [CODE[Content-Disposition:]] 欄の値、それに [[URI]] のファイル名やその他の条件で、 [[WWW]] ブラウザ等はブラウザ内で表示したり保存ダイアログを出したり, どの部分をファイル名に採用するかを決めたり、云々でばらばらで混乱していますね。 (特に [[M$IE]] の場合は、版によっても挙動が変わったり、同じ版でも Windows Registry の設定で不可解に変化したりするそうです。)
+- [23] サーバーが UA に保存させるのに、 dispositon 型 [CODE[file]] を指定して、 [SAMP[Content-Disposition: file; filename=foo]] のように指定することがあるようです。 ([[CGI]] script とかで。)
+- [24] ''Bug 2781 - freemail.ne.jp(GraceMail)でメール本文が表示されない(Content-disposition: attachment)'' <http://bugzilla.mozilla.gr.jp/show_bug.cgi?id=2781> CD: におかしな値を設定していたために、 [[Mozilla]] の動作が規格により従う形に変更された際に意図せぬ動作をするようになった例。
+- [25] 値 [CODE(MIME)[file]] を使った例が [[HTML4]] に出ています。 ''Forms in HTML documents'' <http://www.w3.org/TR/html4/interact/forms.html#didx-multipartform-data>
+- [26] >>25 しかし、 Errata では、 RFC 2388 からして間違っているのだと言っています。 ''HTML 4 Errata'' <http://www.w3.org/MarkUp/html4-updates/errata#entry-10>
+@
+
+
+1.5
+log
+@pre-namespace
+@
+text
+@@
+
+
+1.4
+log
+@auto-commited
+@
+text
+@d79 1
+d111 8
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@d32 1
+d34 1
+@
+
+
+1.2
+log
+@Updated.
+@
+text
+@d26 2
+d34 1
+a34 1
+,handling           ,処理が必要かどうか,[[RFC3204]]
+d39 1
+a39 1
+,voice              ,音声内容の型あるいは仕様,[[RFC2421]]
+d89 15
+@
+
+
+1.1
+log
+@Updated.
+@
+text
+@d1 1
+a1 1
+#?SuikaWiki/0.9
+d34 1
+a34 1
+,name               ,[[フォーム]]の名前,"RFC 1867, [[RFC2388]]"
+d39 1
+a39 1
+[8] 以上は全て IANA に登録 (>>7) された型です。
+d75 12
+@
+

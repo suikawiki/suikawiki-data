@@ -1,0 +1,183 @@
+head	1.4;
+access;
+symbols
+	suikawiki3-final:1.4
+	before-db-leaffile:1.2
+	after-upgrade-to-suikawiki-3:1.2
+	before-fork-suikawiki3:1.2
+	after-restore-20040122:1.2;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.4
+date	2006.11.08.02.18.21;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2005.11.13.02.12.36;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2003.11.23.02.02.32;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2003.08.16.09.18.59;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.4
+log
+@auto-committed
+@
+text
+@[1] [[内容符号化]]・[[転送符号化]]・内容転送符号化の種類を表す値について。
+
+:内容符号化:[[実体]]のデータ形式を構成する一部分としての符号化。 [[HTTP]] で使います。 明示のために [CODE(HTTP)[[[Content-Encoding:]]]] 欄, 折衝のために [CODE(HTTP)[[[Accept-Encoding:]]]] 欄を使います。
+:転送符号化:サーバーとクライアントの通信の都合上の符号化。実体のデータ形式とは完全に独立です。 HTTP で使います。明示のために [CODE(HTTP)[[[Transfer-Encoding:]]]] 欄, 折衝のために [CODE(HTTP)[[[TE:]]]] 欄を使います。
+:内容転送符号化:実体を転送する都合上の符号化。実体のデータ形式にも深く関わりますが、基本的には独立です。 [[MIME]] で使います。明示のために [CODE(MIME)[[[Content-Transfer-Encoding:]]]] 欄を使います。
+
+[3] 値はどの欄でも、大文字・小文字を区別しません。
+但し引数をとる場合はその引数の値についてはこの限りではありませんから、
+欄全体としては厳密には区別する必要があります。
+
+[4] 値は [CODE[[[x-]]]]
+接頭辞による[[私用]]の慣習が有効です。
+但し [[HTTP/1.0]] ([[RFC1945]])
+では変則的ですが [CODE[x-]] 
+名が標準化されています。
+
+[5] 内容符号化・転送符号化の名前:
+,値           ,内容・対応媒体型                    ,典拠
+,"[CODE(HTTP)[[[7bit]]]] {内容}	",MIME 7‐bit	,非標準
+,"[CODE(HTTP)[[[8bit]]]] {内容}	",MIME 8‐bit	,非標準
+,"[CODE(HTTP)[[[base64]]]] {内容}	",[[Base64]]	,非標準
+,"[CODE(HTTP)[[[binary]]]] {内容}	",MIME Binary	,非標準
+,[[bzip]] {内容},bzip >>8                            ,非標準
+,[[x-bzip]] {内容},bzip >>8 [[application/x-bzip]]     ,
+,[[bzip2]] {内容},bzip >>8                            ,非標準
+,[[x-bzip2]] {内容},bzip >>8,
+,[[chunked]] {転送},[[chunked]],[HTTP/1.1]
+,"[[compress]] {内容,転送}",[[Un|x]] ファイル圧縮 >>6 >>7       ,[HTTP/1.1]
+,"[[x-compress]] {内容}",= [CODE(HTTP)[compress]] >>6 >>7   ,[HTTP/1.0]
+,"[[deflate]] {内容,転送}",[[zlib]] [[application/x-deflate]]  ,[HTTP/1.1]
+,[[x-deflate]] {内容},= [CODE(HTTP)[deflate]]             ,非推奨
+,"[[gzip]] {内容,転送}",GNU Zip >>6 [[application/x-gzip]]  ,[HTTP/1.1]
+,[[x-gzip]] {内容},= [CODE(HTTP)[gzip]] >>6            ,[HTTP/1.0]
+,"[CODE(HTTP)[[[x-hqx]]]] {内容}"	,[[BinHex]]	,
+,"[[identity]] {内容,転送}",無変換                              ,[HTTP/1.1]
+,[CODE(HTTP)@@en[[[pack200-gzip]]]],"[[内容符号化]]","[[JSR]] 仕様, [[IANA]] 登録済","[[JSR 200]], [IANAREG]"
+,"[CODE(HTTP)[[[quoted-printable]]]] {内容}	",[[Quoted-Printable]]	,非標準
+,"[CODE(HTTP)[[[text/html]]]] {内容}	",不明	,非標準
+,"[CODE(HTTP)[[[text/plain]]]] {内容}	",不明	,非標準
+,[[trailer]] {転送},Trailer 頭欄,[HTTP/1.1]
+,[[x-zip]] {内容},= [CODE(HTTP)[compress]] >>7 >>1    ,非推奨
+
+登録簿 [IANAREG] は 
+<http://www.iana.org/assignments/http-parameters> です。
+(last updated 2006-11-01)
+
+[24] IANAREG には転送符号化は [CODE(ABNF)["chunked"]] しか載っていませんが、 [[Transfer-Encoding]>>17]
+によると "gzip" など [CODE(HTTP)[Content-Encoding]]
+欄で使われる値も使えるらしいです。
+(この記述は RFC 2616 で追加されたもので RFC 2068 にはありません。)
+
+もしかすると単なる転送のための圧縮は内容符号化ではなく転送符号化を使うべし、という意思が働いているのかもしれません...
+(そうすれば、[[ダウンロード]]した [CODE(file)[[VAR[*]].gz]] ファイルが勝手に展開されている、という問題は防げるようになるでしょうし。)
+
+[25] 値 "trailers" は転送符号化ではありませんが、 
+[CODE(HTTP)[TE:]] 欄では転送符号化に準じて扱われています。
+
+[6] [CODE(HTTP)[x-compress]], [CODE(HTTP)[x-gzip]] は、
+[[HTTP/1.1]] が分かる相手には使うべきではありません。
+逆に [CODE(HTTP)[compress]], [CODE(HTTP)[gzip]] は、 
+[[HTTP/1.0]] しか分からない相手に使うべきではありません。
+
+[7] [CODE(HTTP)[compress]] は、特許問題のある 
+[[LZW圧縮法]]を使う (というかほぼそのものな) ので、
+使用するべきではありません。
+
+[8] [CODE(HTTP)[bzip]] / [CODE(HTTP)[bzip2]] /
+[CODE(HTTP)[x-bzip]] は HTTP RFC では規定されていませんが、
+使用されていることがあるみたいです。
+(3つとも同義みたいです。)
+
+[1] [CODE(HTTP)[[[Accept-Encoding:]]]] 欄に 
+[CODE(HTTP)[[[7bit]], [CODE(HTTP)[[[8bit]]]], 
+[CODE(HTTP)[[[binary]]]] とか書く [[UA]] があるらしい。
+なんか勘違いしているような気がする。
+
+[2] 古い HTTP/1.0 server/UA は [CODE(HTTP)[x-zip]] 
+という値を  [CODE(HTTP)[compress]] の意味で使っていました。
+
+だけど[CODE[古い]]って一体どれだけ太古の昔の話だろう?
+
+[26] 多分変てこなロボットだと思うんですが、
+なぜか [CODE(HTTP)[Accept-Encoding]] に
+[CODE(HTTP)[text/html]] とか [CODE(HTTP)[text/plain]]
+とか送ってくる奴がいます。数でいうと結構出現頻度が高い。
+(同じ奴ばっかだと思うけど。)
+- [27] 今時は HTTP/1.0 の実装でも [CODE(HTTP)[x-gzip]] は知ってるけど [CODE(HTTP)[gzip]] は知らないなんてのは無いみたいです。 [CODE(HTTP)[Accept-Encoding]] も [CODE(HTTP)[gzip]] で送ってくるのがほとんど。 ([CODE(HTTP)[x-gzip]] ''も''送ってくる奴も結構いますが。)
+@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@a0 1
+
+d36 1
+d45 1
+@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@d1 1
+a1 1
+#?SuikaWiki/0.9
+d86 1
+a86 1
+- [27] 今時は HTTP/1.0 の実装でも [CODE(HTTP)[x-gzip]] は知ってるけど [CODE(HTTP)[gzip]] は知らないなんてのは無いみたいです。 [CODE(HTTP)[Accept-Encoding]] も [CODE(HTTP)[gzip]] で送ってくるのがほとんど。 ([CODE(HTTP)[x-gzip]] ''も''送ってくる奴も結構いますが。)
+@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@d20 4
+d29 3
+a31 3
+,[[compress]] {内容,転送},[[Un|x]] ファイル圧縮 >>6 >>7       ,[HTTP/1.1]
+,[[x-compress]] {内容},= [CODE(HTTP)[compress]] >>6 >>7   ,[HTTP/1.0]
+,[[deflate]] {内容,転送},[[zlib]] [[application/x-deflate]]  ,[HTTP/1.1]
+d33 1
+a33 1
+,[[gzip]] {内容,転送},GNU Zip >>6 [[application/x-gzip]]  ,[HTTP/1.1]
+d35 5
+a39 1
+,[[identity]] {内容,転送},無変換                              ,[HTTP/1.1]
+d46 2
+a47 2
+[24] IANAREG には転送符号化は [CODE(ABNF)["chunked"]] しか載っていませんが、 [[Transfer-Encoding:]>>17]
+によると "gzip" など [CODE(HTTP)[Content-Encoding:]]
+d80 7
+@
+

@@ -1,0 +1,1246 @@
+head	1.3;
+access;
+symbols
+	suikawiki3-final:1.3;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.3
+date	2007.04.03.02.47.23;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2005.03.13.02.06.32;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2005.02.13.02.08.40;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.3
+log
+@auto-committed
+@
+text
+@
+
+* 5.  Reference Resolution
+
+> This section defines the process of resolving a URI reference within
+a context that allows relative references so that the result is a
+string matching the <URI> syntax rule of Section 3.
+
+この章は相対参照が認められている文脈の URI 参照を解決して
+3章の [CODE(URI)[ABNF]] 構文規則に一致する文字列を得る処理を定義します。
+
+
+** 5.1.  Establishing a Base URI
+
+> The term "relative" implies that a "base URI" exists against which
+the relative reference is applied.  Aside from fragment-only
+references (Section 4.4), relative references are only usable when a
+base URI is known.  A base URI must be established by the parser
+prior to parsing URI references that might be relative.  A base URI
+must conform to the <absolute-URI> syntax rule (Section 4.3).  If the
+base URI is obtained from a URI reference, then that reference must
+be converted to absolute form and stripped of any fragment component
+prior to its use as a base URI.
+
+[Q[相対]]という語は、相対参照が適用される[Q[基底 URI]]
+が存在することを暗に示しています。相対参照は、素片だけの参照は別として、
+基底 URI が分かっている時だけ利用できます。基底 URI
+は構文解析器が相対かもしれない URI 参照を構文解析する前に確立されていなければなりません。
+基底 URI は [CODE(ABNF)[absolute-URI]] 構文規則に適合しなければなりません。
+基底 URI が URI 参照から得られたものであるなら、その参照は完全形に変換し、
+素片部品があれば落としてから基底 URI として使わなければなりません。
+
+> The base URI of a reference can be established in one of four ways,
+discussed below in order of precedence.  The order of precedence can
+be thought of in terms of layers, where the innermost defined base
+URI has the highest precedence.  This can be visualized graphically as follows:
+
+参照の基底 URI は次に優先順で取り上げる4つの方法のいずれかにより確立できます。
+優先順は層のようなものとして考えることができ、
+一番内側で定義された基底 URI が一番高い優先度を持ちます。
+これは次のように図形的に視覚化できます。
+
+>
+[PRE[
+         .----------------------------------------------------------.
+         |  .----------------------------------------------------.  |
+         |  |  .----------------------------------------------.  |  |
+         |  |  |  .----------------------------------------.  |  |  |
+         |  |  |  |  .----------------------------------.  |  |  |  |
+         |  |  |  |  |       <relative-reference>       |  |  |  |  |
+         |  |  |  |  `----------------------------------'  |  |  |  |
+         |  |  |  | (5.1.1) Base URI embedded in content   |  |  |  |
+         |  |  |  `----------------------------------------'  |  |  |
+         |  |  | (5.1.2) Base URI of the encapsulating entity |  |  |
+         |  |  |         (message, representation, or none)   |  |  |
+         |  |  `----------------------------------------------'  |  |
+         |  | (5.1.3) URI used to retrieve the entity            |  |
+         |  `----------------------------------------------------'  |
+         | (5.1.4) Default Base URI (application-dependent)         |
+         `----------------------------------------------------------'
+]PRE]
+
+
+*** 5.1.1.  Base URI Embedded in Content
+
+> Within certain media types, a base URI for relative references can be
+embedded within the content itself so that it can be readily obtained
+by a parser.  This can be useful for descriptive documents, such as
+tables of contents, which may be transmitted to others through
+protocols other than their usual retrieval context (e.g., email or USENET news).
+
+媒体型によっては相対参照の基底 URI を内容自体に埋め込むことができ、
+構文解析器がすぐに得ることができるようになっています。
+これは記述的な文書、例えば通常の取出しの文脈以外のプロトコル
+(例えば電子メイルや USENET ニュース) で転送されるかもしれないような、
+目次のような文書に有用でしょう。
+
+> It is beyond the scope of this specification to specify how, for each
+media type, a base URI can be embedded.  The appropriate syntax, when
+available, is described by the data format specification associated
+with each media type.
+
+各媒体型でどう基底 URI を埋め込むかを規定するのはこの仕様書の適用範囲外です。
+適切な構文は、定義されていれば各媒体型に関するデータ書式仕様書で説明されています。
+
+
+*** 5.1.2.  Base URI from the Encapsulating Entity
+
+> If no base URI is embedded, the base URI is defined by the
+representation's retrieval context.  For a document that is enclosed
+within another entity, such as a message or archive, the retrieval
+context is that entity.  Thus, the default base URI of a
+representation is the base URI of the entity in which the
+representation is encapsulated.
+
+基底 URI が埋め込まれていなければ、基底 URI は表現の取出しの文脈によって定義されます。
+他の実体、例えばメッセージや保管庫に囲まれた文書では、
+その実体が取出し文脈です。従って、表現がカプセル化されている実体の基底 URI
+が表現の既定の基底 URI となります。
+
+> A mechanism for embedding a base URI within MIME container types
+(e.g., the message and multipart types) is defined by MHTML
+[RFC2557].  Protocols that do not use the MIME message header syntax,
+but that do allow some form of tagged metadata to be included within
+messages, may define their own syntax for defining a base URI as part
+of a message.
+
+MIME 包含子型 ([CODE(MIME)[message]] 型と [CODE(MIME)[multipart]] 型)
+に基底 URI を埋込む仕組みは MHTML で定義されています。 MIME
+メッセージ頭部構文を使わないプロトコルでメッセージ中に何らかの形の札付きメタデータを記述できるものは、
+メッセージの一部として基底 URI を定義するための構文を定義して構いません。
+
+
+*** 5.1.3.  Base URI from the Retrieval URI
+
+> If no base URI is embedded and the representation is not encapsulated
+within some other entity, then, if a URI was used to retrieve the
+representation, that URI shall be considered the base URI.  Note that
+if the retrieval was the result of a redirected request, the last URI
+used (i.e., the URI that resulted in the actual retrieval of the
+representation) is the base URI.
+
+基底 URI が埋込まれておらず、表現が他の実体にカプセル化されているのでもなく、
+表現の取出しに URI が使われたのであれば、その URI を基底 URI
+と考えます。なお、取出しが再指向された要求の結果であるなら、
+最後に使われた URI (つまり表現の実際の取出しに至った URI)
+が基底 URI です。
+
+
+*** 5.1.4.  Default Base URI
+
+> If none of the conditions described above apply, then the base URI is
+defined by the context of the application.  As this definition is
+necessarily application-dependent, failing to define a base URI by
+using one of the other methods may result in the same content being
+interpreted differently by different types of applications.
+
+前述の条件のどれもが当てはまらなければ、基底 URI
+は応用の文脈によって定義されます。この定義は必然的に応用依存ですから、
+他の方法のどれかによって基底 URI 
+を定義することに失敗した場合は同じ内容が応用の種類によって違って解釈されてしまうことになるかもしれません。
+
+> A sender of a representation containing relative references is
+responsible for ensuring that a base URI for those references can be
+established.  Aside from fragment-only references, relative
+references can only be used reliably in situations where the base URI
+is well defined.
+
+相対参照を含む表現の送信者はその参照の基底 URI が確立できることを保証する責任があります。
+素片だけの参照は別として、相対参照は基底 URI
+がよく定義された状況でのみ信用して使用することができます。
+
+
+** 5.2.  Relative Resolution
+
+> This section describes an algorithm for converting a URI reference
+that might be relative to a given base URI into the parsed components
+of the reference's target.  The components can then be recomposed, as
+described in Section 5.3, to form the target URI.  This algorithm
+provides definitive results that can be used to test the output of
+other implementations.  Applications may implement relative reference
+resolution by using some other algorithm, provided that the results
+match what would be given by this one.
+
+この節では与えられた基底 URI に相対かもしれない URI 参照を構文解析して参照の対象の部品に分ける方法を説明します。
+分かれた部品は5.3節で説明するように再合成して対象 URI
+を作ることができます。この方法は他の実装の出力を試験するために使うことができる、
+定義的な結果を提供します。応用は結果がこの方法で得られるものと一致する限りにおいて他の方法を使って相対参照を解決するように実装しても構いません。
+
+
+*** 5.2.1.  Pre-parse the Base URI
+
+> The base URI (Base) is established according to the procedure of
+Section 5.1 and parsed into the five main components described in
+Section 3.  Note that only the scheme component is required to be
+present in a base URI; the other components may be empty or
+undefined.  A component is undefined if its associated delimiter does
+not appear in the URI reference; the path component is never
+undefined, though it may be empty.
+
+基底 URI ([CODE[[VAR[基底]]]]) は5.1節の手続きに従って確立し、
+構文解析して3章で説明している5つの主要な部品に分けます。
+基底 URI では [CODE(ABNF)[scheme]] 部品だけが必須であることに注意してください。
+他の部品は空または未定義かもしれません。部品は、対応する区切子が URI
+参照に現れなければ、未定義です。 [CODE(ABNF)[path]]
+部品は空でも良いので、決して未定義となることはありません。
+
+> Normalization of the base URI, as described in Sections 6.2.2 and
+6.2.3, is optional.  A URI reference must be transformed to its
+target URI before it can be normalized.
+
+6.2.2節と6.2.3節で説明している基底 URI の正規化は必須ではありません。
+URI 参照は正規化する前に対象 URI に変形しなければなりません。
+
+
+*** 5.2.2.  Transform References
+
+> For each URI reference (R), the following pseudocode describes an
+algorithm for transforming R into its target URI (T):
+
+ある URI 参照 ([CODE[[VAR[R]]]]) に対して、
+次の擬似符号は [CODE[[VAR[R]]]] をその対象 URI
+([CODE[[VAR[T]]]]) に変形する算法を説明しています。
+
+>
+[PRE[
+      -- The URI reference is parsed into the five URI components
+      --
+      (R.scheme, R.authority, R.path, R.query, R.fragment) = parse(R);
+      -- A non-strict parser may ignore a scheme in the reference
+      -- if it is identical to the base URI's scheme.
+      --
+      if ((not strict) and (R.scheme == Base.scheme)) then
+         undefine(R.scheme);
+      endif;
+      if defined(R.scheme) then
+         T.scheme    = R.scheme;
+         T.authority = R.authority;
+         T.path      = remove_dot_segments(R.path);
+         T.query     = R.query;
+      else
+         if defined(R.authority) then
+            T.authority = R.authority;
+            T.path      = remove_dot_segments(R.path);
+            T.query     = R.query;
+         else
+            if (R.path == "") then
+               T.path = Base.path;
+               if defined(R.query) then
+                  T.query = R.query;
+               else
+                  T.query = Base.query;
+               endif;
+            else
+               if (R.path starts-with "/") then
+                  T.path = remove_dot_segments(R.path);
+               else
+                  T.path = merge(Base.path, R.path);
+                  T.path = remove_dot_segments(T.path);
+               endif;
+               T.query = R.query;
+            endif;
+            T.authority = Base.authority;
+         endif;
+         T.scheme = Base.scheme;
+      endif;
+      T.fragment = R.fragment;
+]PRE]
+
+= [CODE[[CODE(comment)[URI 参照を構文解析して5つの URI 部品に分割]]]]
+= [CODE[([VAR[R]].[CODE(ABNF)[scheme]], [VAR[R]].[CODE(ABNF)[authority]], [VAR[R]].[CODE(ABNF)[path]], [VAR[R]].[CODE(ABNF)[query]], [VAR[R]].[CODE(ABNF)[fragment]]) = 構文解析([VAR[R]])。]]
+= [CODE[[CODE(comment)[非厳密構文解析器は参照の [CODE(ABNF)[scheme]] が基底 URI の [CODE(ABNF)[scheme]] と同じなら無視しても構いません]]]]
+= [CODE[もし ((厳密でない) かつ ([VAR[R]].[CODE(ABNF)[scheme]] == [VAR[基底]].[CODE(ABNF)[scheme]])) なら]]
+== [CODE[未定義化([VAR[R]].[CODE(ABNF)[scheme]])。]]
+= [CODE[もし 定義済([VAR[R]].[CODE(ABNF)[scheme]]) なら]]
+== [CODE[[VAR[T]].[CODE(ABNF)[scheme]] ← [VAR[R]].[CODE(ABNF)[scheme]]。]]
+== [CODE[[VAR[T]].[CODE(ABNF)[authority]] ← [VAR[R]].[CODE(ABNF)[authority]]。]]
+== [CODE[[VAR[T]].[CODE(ABNF)[path]] ← 点部分削除([VAR[R]].[CODE(ABNF)[path]])。]]
+== [CODE[[VAR[T]].[CODE(ABNF)[query]] ← [VAR[R]].[CODE(ABNF)[query]]。]]
+= [CODE[さもなくば]]
+== [CODE[もし 定義済([VAR[R]].[CODE(ABNF)[authority]]) なら]]
+=== [CODE[[VAR[T]].[CODE(ABNF)[authority]] ← [VAR[R]].[CODE(ABNF)[authority]]。]]
+=== [CODE[[VAR[T]].[CODE(ABNF)[path]] ← 点部分削除([VAR[R]].[CODE(ABNF)[path]])。]]
+=== [CODE[[VAR[T]].[CODE(ABNF)[query]] ← [VAR[R]].[CODE(ABNF)[query]]。]]
+== [CODE[さもなくば]]
+=== [CODE[もし ([VAR[R]].[CODE(ABNF)[path]] == “”) なら]]
+==== [CODE[[VAR[T]].[CODE(ABNF)[path]] ← [VAR[基底]].[CODE(ABNF)[path]]。]]
+==== [CODE[もし 定義済([VAR[R]].[CODE(ABNF)[query]]) なら]]
+===== [CODE[[VAR[T]].[CODE(ABNF)[query]] ← [VAR[R]].[CODE(ABNF)[query]]。]]
+==== [CODE[さもなくば]]
+===== [CODE[[VAR[T]].[CODE(ABNF)[query]] ← [VAR[基底]].[CODE(ABNF)[query]]。]]
+=== [CODE[さもなくば]]
+==== [CODE[もし ([VAR[R]].[CODE(ABNF)[path]] が “/” で始まる) なら]]
+===== [CODE[[VAR[T]].[CODE(ABNF)[path]] ← 点部分削除([VAR[R]].[CODE(ABNF)[path]])。]]
+==== [CODE[さもなくば]]
+===== [CODE[[VAR[T]].[CODE(ABNF)[path]] ← 併合([VAR[基底]].[CODE(ABNF)[path]], [VAR[R]].[CODE(ABNF)[path]])。]]
+===== [CODE[[VAR[T]].[CODE(ABNF)[path]] ← 点部分削除([VAR[T]].[CODE(ABNF)[path]])。]]
+==== [CODE[[VAR[T]].[CODE(ABNF)[query]] ← [VAR[R]].[CODE(ABNF)[query]]。]]
+=== [CODE[[VAR[T]].[CODE(ABNF)[authority]] ← [VAR[基底]].[CODE(ABNF)[authority]]。]]
+== [CODE[[VAR[T]].[CODE(ABNF)[scheme]] ← [VAR[基底]].[CODE(ABNF)[scheme]]。]]
+= [CODE[[VAR[T]].[CODE(ABNF)[fragment]] ← [VAR[R]].[CODE(ABNF)[fragment]]。]]
+
+
+*** 5.2.3.  Merge Paths
+
+> The pseudocode above refers to a "merge" routine for merging a
+relative-path reference with the path of the base URI.  This is
+accomplished as follows:
+
+前期擬似符号で基底 URI の [CODE(ABNF)[path]] と相対経路参照を併合する
+[Q[併合]]手順を使っていました。これは次のように実現します。
+
+>
+- o  If the base URI has a defined authority component and an empty
+path, then return a string consisting of "/" concatenated with the
+reference's path; otherwise,
+- o  return a string consisting of the reference's path component
+appended to all but the last segment of the base URI's path (i.e.,
+excluding any characters after the right-most "/" in the base URI
+path, or excluding the entire base URI path if it does not contain
+any "/" characters).
+
+- 基底 URI が [CODE(ABNF)[authority]] 部品を定義しており、
+[CODE(ABNF)[path]] が空であれば、 [CODE(URI)[/]] に参照の [CODE(ABNF)[path]]
+を連結した文字列を返します。
+- 前項を満たさない時は、基底 URI の [CODE(ABNF)[path]] の最後の
+[CODE(ABNF)[segment]] 以外のすべて
+(つまり、基底 URI の [CODE(ABNF)[path]] の一番右の [CODE(URI)[/]]
+の後の文字を除いたものまたは [CODE(URI)[/]] が含まれなければ基底 URI の
+[CODE(ABNF)[path]] 全体を除いたもの) に参照の [CODE(ABNF)[path]]
+部品をつなげた文字列を返します。
+
+
+*** 5.2.4.  Remove Dot Segments
+
+> The pseudocode also refers to a "remove_dot_segments" routine for
+interpreting and removing the special "." and ".." complete path
+segments from a referenced path.  This is done after the path is
+extracted from a reference, whether or not the path was relative, in
+order to remove any invalid or extraneous dot-segments prior to
+forming the target URI.  Although there are many ways to accomplish
+this removal process, we describe a simple method using two string buffers.
+
+擬似符号は参照された [CODE(ABNF)[path]] の特別な [CODE(URI)[.]] または
+[CODE(URI)[..]] だけの [CODE(ABNF)[path]] [CODE(ABNF)[segment]]
+を解釈・削除する[Q[点部分削除]]手順も参照しています。
+これは不当な点部分や余分な点部分を対象 URI を作る前に除去するために 
+[CODE(ABNF)[path]] を参照から取り出した後にその 
+[CODE(ABNF)[path]] が相対であろうとなかろうと行います。
+
+>
+= 1.  The input buffer is initialized with the now-appended path
+components and the output buffer is initialized to the empty string.
+= 2.  While the input buffer is not empty, loop as follows:
+== A.  If the input buffer begins with a prefix of "../" or "./",
+then remove that prefix from the input buffer; otherwise,
+== B.  if the input buffer begins with a prefix of "/./" or "/.",
+where "." is a complete path segment, then replace that
+prefix with "/" in the input buffer; otherwise,
+== C.  if the input buffer begins with a prefix of "/../" or "/..",
+where ".." is a complete path segment, then replace that
+prefix with "/" in the input buffer and remove the last
+segment and its preceding "/" (if any) from the output
+buffer; otherwise,
+== D.  if the input buffer consists only of "." or "..", then remove
+that from the input buffer; otherwise,
+== E.  move the first path segment in the input buffer to the end of
+the output buffer, including the initial "/" character (if
+any) and any subsequent characters up to, but not including,
+the next "/" character or the end of the input buffer.
+= 3.  Finally, the output buffer is returned as the result of
+remove_dot_segments.
+
+= 入力バッファを今つなげた [CODE(ABNF)[path]] 部品で初期化し、
+出力バッファを空文字列で初期化します。
+= 入力バッファが空ではない間、次を繰り返します。
+== 入力バッファの最初が [CODE(URI)[../]] または [CODE(URI)[./]]
+であるなら、これらを入力バッファから取り除きます。
+== 前項の条件を満たさず、入力バッファの最初が [CODE(URI)[/./]] または
+[CODE(URI)[/.]] で [CODE(URI)[.]] が [CODE(ABNF)[path]] [CODE(ABNF)[segment]]
+全体であるなら、これらを入力バッファで [CODE(URI)[/]] に置き換えます。
+== 前項までの条件を満たさず、入力バッファの最初が [CODE(URI)[/../]] または
+[CODE(URI)[/..]] で [CODE(URI)[..]] が [CODE(ABNF)[path]] [CODE(ABNF)[segment]]
+全体であるなら、これらを入力バッファで [CODE(URI)[/]] に置き換え、
+出力バッファの最後の [CODE(ABNF)[segment]] とその前の [CODE(URI)[/]]
+を (あれば) 削除します。
+== 前項までの条件を満たさず、入力バッファが [CODE(URI)[.]] または
+[CODE(URI)[..]] だけであるなら、入力バッファからこれらを削除します。
+== 前項までの条件を満たさないなら、入力バッファの最初の [CODE(ABNF)[path]]
+[CODE(ABNF)[segment]] を出力バッファの最後に移動します。
+移動するのは (あれば) 最初の [CODE(URI)[/]] 文字とその次の
+[CODE(URI)[/]] 文字または入力バッファの最後までのすべての文字で、
+2番目の [CODE(URI)[/]] 文字は含みません。
+= 最後に、出力バッファを点部分削除の結果として返します。
+
+> Note that dot-segments are intended for use in URI references to
+express an identifier relative to the hierarchy of names in the base
+URI.  The remove_dot_segments algorithm respects that hierarchy by
+removing extra dot-segments rather than treat them as an error or
+leaving them to be misinterpreted by dereference implementations.
+
+点部分は URI 参照で基底 URI の名前の階層に相対な識別子を表現するために
+使うのを想定していることに注意してください。点部分削除の算法は余分な点部分を削除した階層を選び、
+それを誤りとしたり残しておいて参照を解く実装が誤解するようにしたりはしていません。
+
+> The following illustrates how the above steps are applied for two
+examples of merged paths, showing the state of the two buffers after each step.
+
+次に [CODE(ABNF)[path]] を併合する例2つにより先の手順がどう適用されるかを各段階におけるバッファの内容と共に示します。
+
+>
+,STEP	,OUTPUT BUFFER	,INPUT BUFFER
+,
+,1 :	,	,/a/b/c/./../../g
+,2E:	,/a	,/b/c/./../../g
+,2E:	,/a/b	,/c/./../../g
+,2E:	,/a/b/c	,/./../../g
+,2B:	,/a/b/c	,/../../g
+,2C:	,/a/b	,/../g
+,2C:	,/a	,/g
+,2E:	,/a/g
+>
+,STEP	,OUTPUT BUFFER	,INPUT BUFFER
+,
+,1 :	,	,mid/content=5/../6
+,2E:	,mid	,/content=5/../6
+,2E:	,mid/content=5	,/../6
+,2C:	,mid	,/6
+,2E:	,mid/6
+
+> Some applications may find it more efficient to implement the
+remove_dot_segments algorithm by using two segment stacks rather than strings.
+
+応用によっては点部分削除の算法を文字列ではなく2つの [CODE(ABNF)[segment]]
+スタックを使って実装した方が効率が良いかもしれません。
+
+> Note: Beware that some older, erroneous implementations will fail
+to separate a reference's query component from its path component
+prior to merging the base and reference paths, resulting in an
+interoperability failure if the query component contains the
+strings "/../" or "/./".
+
+注意: 古い誤った実装は参照の [CODE(ABNF)[query]] 部品を
+基底 [CODE(ABNF)[path]] および参照の [CODE(ABNF)[path]] を併合する前に
+[CODE(ABNF)[path]] 部品から分離していないので、 [CODE(ABNF)[query]] 部品が
+[CODE(URI)[/../]] や [CODE(URI)[/./]] のような文字列を含んでいると相互運用できなくなることがあります。
+
+
+** 5.3.  Component Recomposition
+
+> Parsed URI components can be recomposed to obtain the corresponding
+URI reference string.  Using pseudocode, this would be:
+
+構文解析した URI 部品は再合成して対応する URI 参照文字列を得ることができます。
+擬似符号を使うと次のようになります。
+
+>
+[PRE[
+      result = ""
+      if defined(scheme) then
+         append scheme to result;
+         append ":" to result;
+      endif;
+      if defined(authority) then
+         append "//" to result;
+         append authority to result;
+      endif;
+      append path to result;
+      if defined(query) then
+         append "?" to result;
+         append query to result;
+      endif;
+      if defined(fragment) then
+         append "#" to result;
+         append fragment to result;
+      endif;
+      return result;
+]PRE]
+
+> Note that we are careful to preserve the distinction between a
+component that is undefined, meaning that its separator was not
+present in the reference, and a component that is empty, meaning that
+the separator was present and was immediately followed by the next
+component separator or the end of the reference.
+
+部品が未定義であって参照に分離子が現れない場合と部品が空であって分離子が現れてその後にすぐ次の部品の分離子が続くかすぐに参照の終わりになる場合の区別を注意して保存していることに注意してください。
+
+
+** 5.4.  Reference Resolution Examples
+
+> Within a representation with a well defined base URI of
+
+ある表現において基底 URI が
+
+> [SAMP(URI)[http://a/b/c/d;p?q]]
+
+> a relative reference is transformed to its target URI as follows.
+
+とよく定義されている時、相対参照は次のように対象 URI
+に変形します。
+
+
+*** 5.4.1.  Normal Examples
+
+>
+,g:h	,"=  \"g:h\""
+,g	,"=  \"http://a/b/c/g\""
+,./g	,"=  \"http://a/b/c/g\""
+,g/	,"=  \"http://a/b/c/g/\""
+,/g	,"=  \"http://a/g\""
+,//g	,"=  \"http://g\""
+,?y	,"=  \"http://a/b/c/d;p?y\""
+,g?y	,"=  \"http://a/b/c/g?y\""
+,#s	,"=  \"http://a/b/c/d;p?q#s\""
+,g#s	,"=  \"http://a/b/c/g#s\""
+,g?y#s	,"=  \"http://a/b/c/g?y#s\""
+,;x	,"=  \"http://a/b/c/;x\""
+,g;x	,"=  \"http://a/b/c/g;x\""
+,g;x?y#s	,"=  \"http://a/b/c/g;x?y#s\""
+,	,"=  \"http://a/b/c/d;p?q\""
+,.	,"=  \"http://a/b/c/\""
+,./	,"=  \"http://a/b/c/\""
+,..	,"=  \"http://a/b/\""
+,../	,"=  \"http://a/b/\""
+,../g	,"=  \"http://a/b/g\""
+,../..	,"=  \"http://a/\""
+,../../	,"=  \"http://a/\""
+,../../g	,"=  \"http://a/g\""
+
+
+*** 5.4.2.  Abnormal Examples
+
+> Although the following abnormal examples are unlikely to occur in
+normal practice, all URI parsers should be capable of resolving them
+consistently.  Each example uses the same base as that above.
+
+次の異常な例は実際には起こりそうもありませんが、
+すべての URI 構文解析器は一貫した形で解決できるべきです。
+各例は先と同じ基底を使います。
+
+> Parsers must be careful in handling cases where there are more ".."
+segments in a relative-path reference than there are hierarchical
+levels in the base URI's path.  Note that the ".." syntax cannot be
+used to change the authority component of a URI.
+
+構文解析器は相対経路参照が基底 URI の [CODE(ABNF)[path]]
+の階層の水準よりも多くの [CODE(URI)[..]] [CODE(ABNF)[segment]]
+を持っている場合の取扱いに注意しなければなりません。
+なお、 [CODE(ABNF)[..]] 構文は URI の [CODE(ABNF)[authority]]
+部品を変えるために使うことはできません。
+
+>
+,../../../g	,=	,http://a/g
+,../../../../g	,=	,http://a/g
+
+> Similarly, parsers must remove the dot-segments "." and ".." when
+they are complete components of a path, but not when they are only
+part of a segment.
+
+同様に、構文解析器は点部分 [CODE(URI)[.]] および [CODE(URI)[..]]
+が [CODE(ABNF)[path]] の完全な部品である時には削除しなければなりませんが、 
+[CODE(ABNF)[segment]] の一部である時には削除してはなりません。
+
+>
+,/./g	,=	,http://a/g
+,/../g	,=	,http://a/g
+,g.	,=	,http://a/b/c/g.
+,.g	,=	,http://a/b/c/.g
+,g..	,=	,http://a/b/c/g..
+,..g	,=	,http://a/b/c/..g
+
+> Less likely are cases where the relative reference uses unnecessary
+or nonsensical forms of the "." and ".." complete path segments.
+
+相対参照が不必要・非本質的な形で [CODE(URI)[.]] や [CODE(URI)[..]]
+を完全な [CODE(ABNF)[path]] [CODE(ABNF)[segment]] としている場合。
+
+>
+,./../g	,=	,http://a/b/g
+,./g/.	,=	,http://a/b/c/g/
+,g/./h	,=	,http://a/b/c/g/h
+,g/../h	,=	,http://a/b/c/h
+,g;x=1/./y	,=	,http://a/b/c/g;x=1/y
+,g;x=1/../y	,=	,http://a/b/c/y
+
+> Some applications fail to separate the reference's query and/or
+fragment components from the path component before merging it with
+the base path and removing dot-segments.  This error is rarely
+noticed, as typical usage of a fragment never includes the hierarchy
+("/") character and the query component is not normally used within
+relative references.
+
+参照の [CODE(ABNF)[query]] 部品や [CODE(ABNF)[fragment]]
+部品を [CODE(ABNF)[path]] 部品と基底 [CODE(ABNF)[path]] を併合して点部分を削除する前に分離しておかない応用もあります。
+[CODE(ABNF)[fragment]] は普通階層文字 ([CODE(URI)[/]])
+を含みませんし、 [CODE(ABNF)[query]] 部品は相対参照では普通使いませんから、
+この誤りは滅多に気づかれません。
+
+>
+,g?y/./x	,=	,http://a/b/c/g?y/./x
+,g?y/../x	,=	,http://a/b/c/g?y/../x
+,g#s/./x	,=	,http://a/b/c/g#s/./x
+,g#s/../x	,=	,http://a/b/c/g#s/../x
+
+> Some parsers allow the scheme name to be present in a relative
+reference if it is the same as the base URI scheme.  This is
+considered to be a loophole in prior specifications of partial URI
+[RFC1630].  Its use should be avoided but is allowed for backward compatibility.
+
+構文解析器によっては相対参照に基底 URI scheme と同じ [CODE(ABNF)[scheme]] 
+名が現れるのを認めています。これは部分 URI についての以前の仕様の抜け穴と考えられています。
+これを使うのは避けるべきですが、後方互換性のために認めています。
+
+>
+,http:g	,=	,http:g	,; for strict parsers
+,	,/	,http://a/b/c/g	,; for backward compatibility
+
+
+* memo
+
+[1]
+http://692157972243b7c3dbad8c21b5367b8b-t.kv0f9d3.info <a href="http://692157972243b7c3dbad8c21b5367b8b-h.kv0f9d3.info">692157972243b7c3dbad8c21b5367b8b</a> [url]http://692157972243b7c3dbad8c21b5367b8b-b1.kv0f9d3.info[/url] [url=http://692157972243b7c3dbad8c21b5367b8b-b2.kv0f9d3.info]692157972243b7c3dbad8c21b5367b8b[/url] [u]http://692157972243b7c3dbad8c21b5367b8b-b3.kv0f9d3.info[/u] 8a224ddc4a1d479411a975adac50b14f
+([[Shane]] [jase@@e-mailanywhere.com] [WEAK[2007-04-02 02:02:27 +00:00]])
+
+@
+
+
+1.2
+log
+@auto-committed
+@
+text
+@d1 604
+a604 574
+*5.  Reference Resolution
+>   This section defines the process of resolving a URI reference within
+a context that allows relative references so that the result is a
+string matching the <URI> syntax rule of Section 3.
+
+この章は相対参照が認められている文脈の URI 参照を解決して
+3章の [CODE(URI)[ABNF]] 構文規則に一致する文字列を得る処理を定義します。
+
+** 5.1.  Establishing a Base URI
+>   The term "relative" implies that a "base URI" exists against which
+the relative reference is applied.  Aside from fragment-only
+references (Section 4.4), relative references are only usable when a
+base URI is known.  A base URI must be established by the parser
+prior to parsing URI references that might be relative.  A base URI
+must conform to the <absolute-URI> syntax rule (Section 4.3).  If the
+base URI is obtained from a URI reference, then that reference must
+be converted to absolute form and stripped of any fragment component
+prior to its use as a base URI.
+
+[Q[相対]]という語は、相対参照が適用される[Q[基底 URI]]
+が存在することを暗に示しています。相対参照は、素片だけの参照は別として、
+基底 URI が分かっている時だけ利用できます。基底 URI
+は構文解析器が相対かもしれない URI 参照を構文解析する前に確立されていなければなりません。
+基底 URI は [CODE(ABNF)[absolute-URI]] 構文規則に適合しなければなりません。
+基底 URI が URI 参照から得られたものであるなら、その参照は完全形に変換し、
+素片部品があれば落としてから基底 URI として使わなければなりません。
+
+>   The base URI of a reference can be established in one of four ways,
+discussed below in order of precedence.  The order of precedence can
+be thought of in terms of layers, where the innermost defined base
+URI has the highest precedence.  This can be visualized graphically as follows:
+
+参照の基底 URI は次に優先順で取り上げる4つの方法のいずれかにより確立できます。
+優先順は層のようなものとして考えることができ、
+一番内側で定義された基底 URI が一番高い優先度を持ちます。
+これは次のように図形的に視覚化できます。
+
+>
+         .----------------------------------------------------------.
+         |  .----------------------------------------------------.  |
+         |  |  .----------------------------------------------.  |  |
+         |  |  |  .----------------------------------------.  |  |  |
+         |  |  |  |  .----------------------------------.  |  |  |  |
+         |  |  |  |  |       <relative-reference>       |  |  |  |  |
+         |  |  |  |  `----------------------------------'  |  |  |  |
+         |  |  |  | (5.1.1) Base URI embedded in content   |  |  |  |
+         |  |  |  `----------------------------------------'  |  |  |
+         |  |  | (5.1.2) Base URI of the encapsulating entity |  |  |
+         |  |  |         (message, representation, or none)   |  |  |
+         |  |  `----------------------------------------------'  |  |
+         |  | (5.1.3) URI used to retrieve the entity            |  |
+         |  `----------------------------------------------------'  |
+         | (5.1.4) Default Base URI (application-dependent)         |
+         `----------------------------------------------------------'
+
+***5.1.1.  Base URI Embedded in Content
+>   Within certain media types, a base URI for relative references can be
+embedded within the content itself so that it can be readily obtained
+by a parser.  This can be useful for descriptive documents, such as
+tables of contents, which may be transmitted to others through
+protocols other than their usual retrieval context (e.g., email or USENET news).
+
+媒体型によっては相対参照の基底 URI を内容自体に埋め込むことができ、
+構文解析器がすぐに得ることができるようになっています。
+これは記述的な文書、例えば通常の取出しの文脈以外のプロトコル
+(例えば電子メイルや USENET ニュース) で転送されるかもしれないような、
+目次のような文書に有用でしょう。
+
+>   It is beyond the scope of this specification to specify how, for each
+media type, a base URI can be embedded.  The appropriate syntax, when
+available, is described by the data format specification associated
+with each media type.
+
+各媒体型でどう基底 URI を埋め込むかを規定するのはこの仕様書の適用範囲外です。
+適切な構文は、定義されていれば各媒体型に関するデータ書式仕様書で説明されています。
+
+***5.1.2.  Base URI from the Encapsulating Entity
+>   If no base URI is embedded, the base URI is defined by the
+representation's retrieval context.  For a document that is enclosed
+within another entity, such as a message or archive, the retrieval
+context is that entity.  Thus, the default base URI of a
+representation is the base URI of the entity in which the
+representation is encapsulated.
+
+基底 URI が埋め込まれていなければ、基底 URI は表現の取出しの文脈によって定義されます。
+他の実体、例えばメッセージや保管庫に囲まれた文書では、
+その実体が取出し文脈です。従って、表現がカプセル化されている実体の基底 URI
+が表現の既定の基底 URI となります。
+
+>   A mechanism for embedding a base URI within MIME container types
+(e.g., the message and multipart types) is defined by MHTML
+[RFC2557].  Protocols that do not use the MIME message header syntax,
+but that do allow some form of tagged metadata to be included within
+messages, may define their own syntax for defining a base URI as part
+of a message.
+
+MIME 包含子型 ([CODE(MIME)[message]] 型と [CODE(MIME)[multipart]] 型)
+に基底 URI を埋込む仕組みは MHTML で定義されています。 MIME
+メッセージ頭部構文を使わないプロトコルでメッセージ中に何らかの形の札付きメタデータを記述できるものは、
+メッセージの一部として基底 URI を定義するための構文を定義して構いません。
+
+*** 5.1.3.  Base URI from the Retrieval URI
+>   If no base URI is embedded and the representation is not encapsulated
+within some other entity, then, if a URI was used to retrieve the
+representation, that URI shall be considered the base URI.  Note that
+if the retrieval was the result of a redirected request, the last URI
+used (i.e., the URI that resulted in the actual retrieval of the
+representation) is the base URI.
+
+基底 URI が埋込まれておらず、表現が他の実体にカプセル化されているのでもなく、
+表現の取出しに URI が使われたのであれば、その URI を基底 URI
+と考えます。なお、取出しが再指向された要求の結果であるなら、
+最後に使われた URI (つまり表現の実際の取出しに至った URI)
+が基底 URI です。
+
+***5.1.4.  Default Base URI
+>   If none of the conditions described above apply, then the base URI is
+defined by the context of the application.  As this definition is
+necessarily application-dependent, failing to define a base URI by
+using one of the other methods may result in the same content being
+interpreted differently by different types of applications.
+
+前述の条件のどれもが当てはまらなければ、基底 URI
+は応用の文脈によって定義されます。この定義は必然的に応用依存ですから、
+他の方法のどれかによって基底 URI 
+を定義することに失敗した場合は同じ内容が応用の種類によって違って解釈されてしまうことになるかもしれません。
+
+>   A sender of a representation containing relative references is
+responsible for ensuring that a base URI for those references can be
+established.  Aside from fragment-only references, relative
+references can only be used reliably in situations where the base URI
+is well defined.
+
+相対参照を含む表現の送信者はその参照の基底 URI が確立できることを保証する責任があります。
+素片だけの参照は別として、相対参照は基底 URI
+がよく定義された状況でのみ信用して使用することができます。
+
+**5.2.  Relative Resolution
+>   This section describes an algorithm for converting a URI reference
+that might be relative to a given base URI into the parsed components
+of the reference's target.  The components can then be recomposed, as
+described in Section 5.3, to form the target URI.  This algorithm
+provides definitive results that can be used to test the output of
+other implementations.  Applications may implement relative reference
+resolution by using some other algorithm, provided that the results
+match what would be given by this one.
+
+この節では与えられた基底 URI に相対かもしれない URI 参照を構文解析して参照の対象の部品に分ける方法を説明します。
+分かれた部品は5.3節で説明するように再合成して対象 URI
+を作ることができます。この方法は他の実装の出力を試験するために使うことができる、
+定義的な結果を提供します。応用は結果がこの方法で得られるものと一致する限りにおいて他の方法を使って相対参照を解決するように実装しても構いません。
+
+***5.2.1.  Pre-parse the Base URI
+>   The base URI (Base) is established according to the procedure of
+Section 5.1 and parsed into the five main components described in
+Section 3.  Note that only the scheme component is required to be
+present in a base URI; the other components may be empty or
+undefined.  A component is undefined if its associated delimiter does
+not appear in the URI reference; the path component is never
+undefined, though it may be empty.
+
+基底 URI ([CODE[[VAR[基底]]]]) は5.1節の手続きに従って確立し、
+構文解析して3章で説明している5つの主要な部品に分けます。
+基底 URI では [CODE(ABNF)[scheme]] 部品だけが必須であることに注意してください。
+他の部品は空または未定義かもしれません。部品は、対応する区切子が URI
+参照に現れなければ、未定義です。 [CODE(ABNF)[path]]
+部品は空でも良いので、決して未定義となることはありません。
+
+>   Normalization of the base URI, as described in Sections 6.2.2 and
+6.2.3, is optional.  A URI reference must be transformed to its
+target URI before it can be normalized.
+
+6.2.2節と6.2.3節で説明している基底 URI の正規化は必須ではありません。
+URI 参照は正規化する前に対象 URI に変形しなければなりません。
+
+***5.2.2.  Transform References
+>   For each URI reference (R), the following pseudocode describes an
+algorithm for transforming R into its target URI (T):
+
+ある URI 参照 ([CODE[[VAR[R]]]]) に対して、
+次の擬似符号は [CODE[[VAR[R]]]] をその対象 URI
+([CODE[[VAR[T]]]]) に変形する算法を説明しています。
+
+>
+[PRE[
+      -- The URI reference is parsed into the five URI components
+      --
+      (R.scheme, R.authority, R.path, R.query, R.fragment) = parse(R);
+
+      -- A non-strict parser may ignore a scheme in the reference
+      -- if it is identical to the base URI's scheme.
+      --
+      if ((not strict) and (R.scheme == Base.scheme)) then
+         undefine(R.scheme);
+      endif;
+
+      if defined(R.scheme) then
+         T.scheme    = R.scheme;
+         T.authority = R.authority;
+         T.path      = remove_dot_segments(R.path);
+         T.query     = R.query;
+      else
+         if defined(R.authority) then
+            T.authority = R.authority;
+            T.path      = remove_dot_segments(R.path);
+            T.query     = R.query;
+         else
+            if (R.path == "") then
+               T.path = Base.path;
+               if defined(R.query) then
+                  T.query = R.query;
+               else
+                  T.query = Base.query;
+               endif;
+            else
+               if (R.path starts-with "/") then
+                  T.path = remove_dot_segments(R.path);
+               else
+                  T.path = merge(Base.path, R.path);
+                  T.path = remove_dot_segments(T.path);
+               endif;
+               T.query = R.query;
+            endif;
+            T.authority = Base.authority;
+         endif;
+         T.scheme = Base.scheme;
+      endif;
+
+      T.fragment = R.fragment;
+]PRE]
+
+= [CODE[[CODE(comment)[URI 参照を構文解析して5つの URI 部品に分割]]]]
+= [CODE[([VAR[R]].[CODE(ABNF)[scheme]], [VAR[R]].[CODE(ABNF)[authority]], [VAR[R]].[CODE(ABNF)[path]], [VAR[R]].[CODE(ABNF)[query]], [VAR[R]].[CODE(ABNF)[fragment]]) = 構文解析([VAR[R]])。]]
+= [CODE[[CODE(comment)[非厳密構文解析器は参照の [CODE(ABNF)[scheme]] が基底 URI の [CODE(ABNF)[scheme]] と同じなら無視しても構いません]]]]
+= [CODE[もし ((厳密でない) かつ ([VAR[R]].[CODE(ABNF)[scheme]] == [VAR[基底]].[CODE(ABNF)[scheme]])) なら]]
+== [CODE[未定義化([VAR[R]].[CODE(ABNF)[scheme]])。]]
+= [CODE[もし 定義済([VAR[R]].[CODE(ABNF)[scheme]]) なら]]
+== [CODE[[VAR[T]].[CODE(ABNF)[scheme]] ← [VAR[R]].[CODE(ABNF)[scheme]]。]]
+== [CODE[[VAR[T]].[CODE(ABNF)[authority]] ← [VAR[R]].[CODE(ABNF)[authority]]。]]
+== [CODE[[VAR[T]].[CODE(ABNF)[path]] ← 点部分削除([VAR[R]].[CODE(ABNF)[path]])。]]
+== [CODE[[VAR[T]].[CODE(ABNF)[query]] ← [VAR[R]].[CODE(ABNF)[query]]。]]
+= [CODE[さもなくば]]
+== [CODE[もし 定義済([VAR[R]].[CODE(ABNF)[authority]]) なら]]
+=== [CODE[[VAR[T]].[CODE(ABNF)[authority]] ← [VAR[R]].[CODE(ABNF)[authority]]。]]
+=== [CODE[[VAR[T]].[CODE(ABNF)[path]] ← 点部分削除([VAR[R]].[CODE(ABNF)[path]])。]]
+=== [CODE[[VAR[T]].[CODE(ABNF)[query]] ← [VAR[R]].[CODE(ABNF)[query]]。]]
+== [CODE[さもなくば]]
+=== [CODE[もし ([VAR[R]].[CODE(ABNF)[path]] == “”) なら]]
+==== [CODE[[VAR[T]].[CODE(ABNF)[path]] ← [VAR[基底]].[CODE(ABNF)[path]]。]]
+==== [CODE[もし 定義済([VAR[R]].[CODE(ABNF)[query]]) なら]]
+===== [CODE[[VAR[T]].[CODE(ABNF)[query]] ← [VAR[R]].[CODE(ABNF)[query]]。]]
+==== [CODE[さもなくば]]
+===== [CODE[[VAR[T]].[CODE(ABNF)[query]] ← [VAR[基底]].[CODE(ABNF)[query]]。]]
+=== [CODE[さもなくば]]
+==== [CODE[もし ([VAR[R]].[CODE(ABNF)[path]] が “/” で始まる) なら]]
+===== [CODE[[VAR[T]].[CODE(ABNF)[path]] ← 点部分削除([VAR[R]].[CODE(ABNF)[path]])。]]
+====[CODE[さもなくば]]
+=====[CODE[[VAR[T]].[CODE(ABNF)[path]] ← 併合([VAR[基底]].[CODE(ABNF)[path]], [VAR[R]].[CODE(ABNF)[path]])。]]
+=====[CODE[[VAR[T]].[CODE(ABNF)[path]] ← 点部分削除([VAR[T]].[CODE(ABNF)[path]])。]]
+====[CODE[[VAR[T]].[CODE(ABNF)[query]] ← [VAR[R]].[CODE(ABNF)[query]]。]]
+===[CODE[[VAR[T]].[CODE(ABNF)[authority]] ← [VAR[基底]].[CODE(ABNF)[authority]]。]]
+==[CODE[[VAR[T]].[CODE(ABNF)[scheme]] ← [VAR[基底]].[CODE(ABNF)[scheme]]。]]
+= [CODE[[VAR[T]].[CODE(ABNF)[fragment]] ← [VAR[R]].[CODE(ABNF)[fragment]]。]]
+
+***5.2.3.  Merge Paths
+>   The pseudocode above refers to a "merge" routine for merging a
+relative-path reference with the path of the base URI.  This is
+accomplished as follows:
+
+前期擬似符号で基底 URI の [CODE(ABNF)[path]] と相対経路参照を併合する
+[Q[併合]]手順を使っていました。これは次のように実現します。
+
+>
+-   o  If the base URI has a defined authority component and an empty
+path, then return a string consisting of "/" concatenated with the
+reference's path; otherwise,
+-   o  return a string consisting of the reference's path component
+appended to all but the last segment of the base URI's path (i.e.,
+excluding any characters after the right-most "/" in the base URI
+path, or excluding the entire base URI path if it does not contain
+any "/" characters).
+
+- 基底 URI が [CODE(ABNF)[authority]] 部品を定義しており、
+[CODE(ABNF)[path]] が空であれば、 [CODE(URI)[/]] に参照の [CODE(ABNF)[path]]
+を連結した文字列を返します。
+- 前項を満たさない時は、基底 URI の [CODE(ABNF)[path]] の最後の
+[CODE(ABNF)[segment]] 以外のすべて
+(つまり、基底 URI の [CODE(ABNF)[path]] の一番右の [CODE(URI)[/]]
+の後の文字を除いたものまたは [CODE(URI)[/]] が含まれなければ基底 URI の
+[CODE(ABNF)[path]] 全体を除いたもの) に参照の [CODE(ABNF)[path]]
+部品をつなげた文字列を返します。
+
+***5.2.4.  Remove Dot Segments
+>   The pseudocode also refers to a "remove_dot_segments" routine for
+interpreting and removing the special "." and ".." complete path
+segments from a referenced path.  This is done after the path is
+extracted from a reference, whether or not the path was relative, in
+order to remove any invalid or extraneous dot-segments prior to
+forming the target URI.  Although there are many ways to accomplish
+this removal process, we describe a simple method using two string buffers.
+
+擬似符号は参照された [CODE(ABNF)[path]] の特別な [CODE(URI)[.]] または
+[CODE(URI)[..]] だけの [CODE(ABNF)[path]] [CODE(ABNF)[segment]]
+を解釈・削除する[Q[点部分削除]]手順も参照しています。
+これは不当な点部分や余分な点部分を対象 URI を作る前に除去するために 
+[CODE(ABNF)[path]] を参照から取り出した後にその 
+[CODE(ABNF)[path]] が相対であろうとなかろうと行います。
+
+>
+=   1.  The input buffer is initialized with the now-appended path
+components and the output buffer is initialized to the empty string.
+=   2.  While the input buffer is not empty, loop as follows:
+==       A.  If the input buffer begins with a prefix of "../" or "./",
+then remove that prefix from the input buffer; otherwise,
+==       B.  if the input buffer begins with a prefix of "/./" or "/.",
+where "." is a complete path segment, then replace that
+prefix with "/" in the input buffer; otherwise,
+==       C.  if the input buffer begins with a prefix of "/../" or "/..",
+where ".." is a complete path segment, then replace that
+prefix with "/" in the input buffer and remove the last
+segment and its preceding "/" (if any) from the output
+buffer; otherwise,
+==       D.  if the input buffer consists only of "." or "..", then remove
+that from the input buffer; otherwise,
+==       E.  move the first path segment in the input buffer to the end of
+the output buffer, including the initial "/" character (if
+any) and any subsequent characters up to, but not including,
+the next "/" character or the end of the input buffer.
+=   3.  Finally, the output buffer is returned as the result of
+remove_dot_segments.
+
+=入力バッファを今つなげた [CODE(ABNF)[path]] 部品で初期化し、
+出力バッファを空文字列で初期化します。
+=入力バッファが空ではない間、次を繰り返します。
+==入力バッファの最初が [CODE(URI)[../]] または [CODE(URI)[./]]
+であるなら、これらを入力バッファから取り除きます。
+==前項の条件を満たさず、入力バッファの最初が [CODE(URI)[/./]] または
+[CODE(URI)[/.]] で [CODE(URI)[.]] が [CODE(ABNF)[path]] [CODE(ABNF)[segment]]
+全体であるなら、これらを入力バッファで [CODE(URI)[/]] に置き換えます。
+==前項までの条件を満たさず、入力バッファの最初が [CODE(URI)[/../]] または
+[CODE(URI)[/..]] で [CODE(URI)[..]] が [CODE(ABNF)[path]] [CODE(ABNF)[segment]]
+全体であるなら、これらを入力バッファで [CODE(URI)[/]] に置き換え、
+出力バッファの最後の [CODE(ABNF)[segment]] とその前の [CODE(URI)[/]]
+を (あれば) 削除します。
+== 前項までの条件を満たさず、入力バッファが [CODE(URI)[.]] または
+[CODE(URI)[..]] だけであるなら、入力バッファからこれらを削除します。
+==前項までの条件を満たさないなら、入力バッファの最初の [CODE(ABNF)[path]]
+[CODE(ABNF)[segment]] を出力バッファの最後に移動します。
+移動するのは (あれば) 最初の [CODE(URI)[/]] 文字とその次の
+[CODE(URI)[/]] 文字または入力バッファの最後までのすべての文字で、
+2番目の [CODE(URI)[/]] 文字は含みません。
+=最後に、出力バッファを点部分削除の結果として返します。
+
+>   Note that dot-segments are intended for use in URI references to
+express an identifier relative to the hierarchy of names in the base
+URI.  The remove_dot_segments algorithm respects that hierarchy by
+removing extra dot-segments rather than treat them as an error or
+leaving them to be misinterpreted by dereference implementations.
+
+点部分は URI 参照で基底 URI の名前の階層に相対な識別子を表現するために
+使うのを想定していることに注意してください。点部分削除の算法は余分な点部分を削除した階層を選び、
+それを誤りとしたり残しておいて参照を解く実装が誤解するようにしたりはしていません。
+
+>   The following illustrates how the above steps are applied for two
+examples of merged paths, showing the state of the two buffers after each step.
+
+次に [CODE(ABNF)[path]] を併合する例2つにより先の手順がどう適用されるかを各段階におけるバッファの内容と共に示します。
+
+>
+,      STEP   ,OUTPUT BUFFER         ,INPUT BUFFER
+,
+,       1 :   ,                      ,/a/b/c/./../../g
+,       2E:   ,/a                    ,/b/c/./../../g
+,       2E:   ,/a/b                  ,/c/./../../g
+,       2E:   ,/a/b/c                ,/./../../g
+,       2B:   ,/a/b/c                ,/../../g
+,       2C:   ,/a/b                  ,/../g
+,       2C:   ,/a                    ,/g
+,       2E:   ,/a/g
+>
+,      STEP   ,OUTPUT BUFFER         ,INPUT BUFFER
+,
+,       1 :   ,                      ,mid/content=5/../6
+,       2E:   ,mid                   ,/content=5/../6
+,       2E:   ,mid/content=5         ,/../6
+,       2C:   ,mid                   ,/6
+,       2E:   ,mid/6
+
+>   Some applications may find it more efficient to implement the
+remove_dot_segments algorithm by using two segment stacks rather than strings.
+
+応用によっては点部分削除の算法を文字列ではなく2つの [CODE(ABNF)[segment]]
+スタックを使って実装した方が効率が良いかもしれません。
+
+>      Note: Beware that some older, erroneous implementations will fail
+to separate a reference's query component from its path component
+prior to merging the base and reference paths, resulting in an
+interoperability failure if the query component contains the
+strings "/../" or "/./".
+
+注意: 古い誤った実装は参照の [CODE(ABNF)[query]] 部品を
+基底 [CODE(ABNF)[path]] および参照の [CODE(ABNF)[path]] を併合する前に
+[CODE(ABNF)[path]] 部品から分離していないので、 [CODE(ABNF)[query]] 部品が
+[CODE(URI)[/../]] や [CODE(URI)[/./]] のような文字列を含んでいると相互運用できなくなることがあります。
+
+**5.3.  Component Recomposition
+>   Parsed URI components can be recomposed to obtain the corresponding
+URI reference string.  Using pseudocode, this would be:
+
+構文解析した URI 部品は再合成して対応する URI 参照文字列を得ることができます。
+擬似符号を使うと次のようになります。
+
+>
+[PRE[
+      result = ""
+
+      if defined(scheme) then
+         append scheme to result;
+         append ":" to result;
+      endif;
+
+      if defined(authority) then
+         append "//" to result;
+         append authority to result;
+      endif;
+
+      append path to result;
+
+      if defined(query) then
+         append "?" to result;
+         append query to result;
+      endif;
+
+      if defined(fragment) then
+         append "#" to result;
+         append fragment to result;
+      endif;
+
+      return result;
+]PRE]
+
+>   Note that we are careful to preserve the distinction between a
+component that is undefined, meaning that its separator was not
+present in the reference, and a component that is empty, meaning that
+the separator was present and was immediately followed by the next
+component separator or the end of the reference.
+
+部品が未定義であって参照に分離子が現れない場合と部品が空であって分離子が現れてその後にすぐ次の部品の分離子が続くかすぐに参照の終わりになる場合の区別を注意して保存していることに注意してください。
+
+**5.4.  Reference Resolution Examples
+>   Within a representation with a well defined base URI of
+
+ある表現において基底 URI が
+
+>      [SAMP(URI)[http://a/b/c/d;p?q]]
+
+>   a relative reference is transformed to its target URI as follows.
+
+とよく定義されている時、相対参照は次のように対象 URI
+に変形します。
+
+***5.4.1.  Normal Examples
+>
+,      "g:h"           ,=  "g:h"
+,      "g"             ,=  "http://a/b/c/g"
+,      "./g"           ,=  "http://a/b/c/g"
+,      "g/"            ,=  "http://a/b/c/g/"
+,      "/g"            ,=  "http://a/g"
+,      "//g"           ,=  "http://g"
+,      "?y"            ,=  "http://a/b/c/d;p?y"
+,      "g?y"           ,=  "http://a/b/c/g?y"
+,      "#s"            ,=  "http://a/b/c/d;p?q#s"
+,      "g#s"           ,=  "http://a/b/c/g#s"
+,      "g?y#s"         ,=  "http://a/b/c/g?y#s"
+,      ";x"            ,=  "http://a/b/c/;x"
+,      "g;x"           ,=  "http://a/b/c/g;x"
+,      "g;x?y#s"       ,=  "http://a/b/c/g;x?y#s"
+,      ""              ,=  "http://a/b/c/d;p?q"
+,      "."             ,=  "http://a/b/c/"
+,      "./"            ,=  "http://a/b/c/"
+,      ".."            ,=  "http://a/b/"
+,      "../"           ,=  "http://a/b/"
+,      "../g"          ,=  "http://a/b/g"
+,      "../.."         ,=  "http://a/"
+,      "../../"        ,=  "http://a/"
+,      "../../g"       ,=  "http://a/g"
+
+***5.4.2.  Abnormal Examples
+>   Although the following abnormal examples are unlikely to occur in
+normal practice, all URI parsers should be capable of resolving them
+consistently.  Each example uses the same base as that above.
+
+次の異常な例は実際には起こりそうもありませんが、
+すべての URI 構文解析器は一貫した形で解決できるべきです。
+各例は先と同じ基底を使います。
+
+>   Parsers must be careful in handling cases where there are more ".."
+segments in a relative-path reference than there are hierarchical
+levels in the base URI's path.  Note that the ".." syntax cannot be
+used to change the authority component of a URI.
+
+構文解析器は相対経路参照が基底 URI の [CODE(ABNF)[path]]
+の階層の水準よりも多くの [CODE(URI)[..]] [CODE(ABNF)[segment]]
+を持っている場合の取扱いに注意しなければなりません。
+なお、 [CODE(ABNF)[..]] 構文は URI の [CODE(ABNF)[authority]]
+部品を変えるために使うことはできません。
+
+>
+,      "../../../g"    ,=  ,"http://a/g"
+,      "../../../../g" ,=  ,"http://a/g"
+
+>   Similarly, parsers must remove the dot-segments "." and ".." when
+they are complete components of a path, but not when they are only
+part of a segment.
+
+同様に、構文解析器は点部分 [CODE(URI)[.]] および [CODE(URI)[..]]
+が [CODE(ABNF)[path]] の完全な部品である時には削除しなければなりませんが、 
+[CODE(ABNF)[segment]] の一部である時には削除してはなりません。
+
+>
+,      "/./g"          ,=  ,"http://a/g"
+,      "/../g"         ,=  ,"http://a/g"
+,      "g."            ,=  ,"http://a/b/c/g."
+,      ".g"            ,=  ,"http://a/b/c/.g"
+,      "g.."           ,=  ,"http://a/b/c/g.."
+,      "..g"           ,=  ,"http://a/b/c/..g"
+
+>   Less likely are cases where the relative reference uses unnecessary
+or nonsensical forms of the "." and ".." complete path segments.
+
+相対参照が不必要・非本質的な形で [CODE(URI)[.]] や [CODE(URI)[..]]
+を完全な [CODE(ABNF)[path]] [CODE(ABNF)[segment]] としている場合。
+
+>
+,      "./../g"        ,=  ,"http://a/b/g"
+,      "./g/."         ,=  ,"http://a/b/c/g/"
+,      "g/./h"         ,=  ,"http://a/b/c/g/h"
+,      "g/../h"        ,=  ,"http://a/b/c/h"
+,      "g;x=1/./y"     ,=  ,"http://a/b/c/g;x=1/y"
+,      "g;x=1/../y"    ,=  ,"http://a/b/c/y"
+
+>   Some applications fail to separate the reference's query and/or
+fragment components from the path component before merging it with
+the base path and removing dot-segments.  This error is rarely
+noticed, as typical usage of a fragment never includes the hierarchy
+("/") character and the query component is not normally used within
+relative references.
+
+参照の [CODE(ABNF)[query]] 部品や [CODE(ABNF)[fragment]]
+部品を [CODE(ABNF)[path]] 部品と基底 [CODE(ABNF)[path]] を併合して点部分を削除する前に分離しておかない応用もあります。
+[CODE(ABNF)[fragment]] は普通階層文字 ([CODE(URI)[/]])
+を含みませんし、 [CODE(ABNF)[query]] 部品は相対参照では普通使いませんから、
+この誤りは滅多に気づかれません。
+
+>
+,      "g?y/./x"       ,=  ,"http://a/b/c/g?y/./x"
+,      "g?y/../x"      ,=  ,"http://a/b/c/g?y/../x"
+,      "g#s/./x"       ,=  ,"http://a/b/c/g#s/./x"
+,      "g#s/../x"      ,=  ,"http://a/b/c/g#s/../x"
+
+>   Some parsers allow the scheme name to be present in a relative
+reference if it is the same as the base URI scheme.  This is
+considered to be a loophole in prior specifications of partial URI
+[RFC1630].  Its use should be avoided but is allowed for backward compatibility.
+
+構文解析器によっては相対参照に基底 URI scheme と同じ [CODE(ABNF)[scheme]] 
+名が現れるのを認めています。これは部分 URI についての以前の仕様の抜け穴と考えられています。
+これを使うのは避けるべきですが、後方互換性のために認めています。
+
+>
+,      "http:g"        ,=  ,"http:g"         ,; for strict parsers
+,                      ,/  ,"http://a/b/c/g" ,; for backward compatibility
+
+*memo@
+
+
+1.1
+log
+@auto-committed
+@
+text
+@d318 1
+a318 1
+=       C.  if the input buffer begins with a prefix of "/../" or "/..",
+d323 1
+a323 1
+=       D.  if the input buffer consists only of "." or "..", then remove
+d325 1
+a325 1
+=       E.  move the first path segment in the input buffer to the end of
+d337 1
+a337 1
+==前項の条件を満たさず、入力バッファが [CODE(URI)[/./]] または
+d340 1
+a340 1
+==前項までの条件を満たさず、入力バッファが [CODE(URI)[/../]] または
+@
+
