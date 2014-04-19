@@ -1,0 +1,575 @@
+head	1.1;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2008.11.14.03.17.59;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/48545450.ns/A5E1A5C3A5BBA1BCA5B8.txt>
+@
+text
+@#?SuikaWiki/0.9
+[[#comment]]
+
+* メッセージ全体
+
+[[#comment]]
+
+** 仕様書から
+*** RFC 1945 (HTTP/1.0) 4.; RFC 2068・2616 (HTTP/1.1) 4 HTTP Message
+****4.1 Message Types
+> HTTP messages consist of requests from client to server and responses
+from server to client.
+
+[DFN[HTTP メッセージ]]は、[[クライアント]]から[[サーバー]]への[[要求]]と[[サーバー]]から[[クライアント]]への[[応答]]から成ります。
+
+>
+[DEL[
+-
+[PRE[
+       HTTP-message   = Simple-Request           ; HTTP/0.9 messages
+                      | Simple-Response
+                      | Full-Request             ; HTTP/1.0 messages
+                      | Full-Response
+]PRE]
+]DEL]
+[INS[
+- HTTP-message   = Request | Response     ; HTTP/1.1 messages
+]INS]
+
+> [DEL[Full-Request]] [INS[Request (section 5)]] and [DEL[Full-Response]] [INS[Response (section 6) messages]] use the generic message format of RFC 822 [DEL[ [7] ]] [INS[ [9] ]]
+for transferring entities [INS[(the payload of the message)]]. [DEL[Both messages may include optional header fields (also known as "headers") and an entity body. The entity body is separated from the headers by a null line (i.e., a line with nothing preceding the CRLF).]] [INS[Both types of message consist of a start-line, [DEL[one]] [INS[zero]] or more header fields (also known as "headers"), an empty line (i.e., a line with nothing preceding the CRLF) indicating the end of the header fields, and [DEL[an optional]] [INS[possibly a]] message-body.]]
+
+(完全)要求メッセージと(完全)応答メッセージは、[[実体]] [INS[(メッセージの積荷)]] 
+を転送するために [[RFC822]] の一般メッセージ書式を使います。
+メッセージのどちらの型も、 [CODE(ABNF)[start-line]] (開始行)、[DEL[一つ]][INS[零個]]以上の[[頭欄]]
+([CODE[[[頭]]]]とも)、頭欄並びの終わりを示す空行 (つまり [[CRLF]] の前に何も無い行)、
+それにもしかすると [CODE(ABNF)[[[message-body]]]] (メッセージ本体)
+から成ります。
+
+>
+[DEL[
+-
+[PRE[
+       Full-Request   = Request-Line             ; Section 5.1
+                        *( General-Header        ; Section 4.3
+                         | Request-Header        ; Section 5.2
+                         | Entity-Header )       ; Section 7.1
+                        CRLF
+                        [ Entity-Body ]          ; Section 7.2
+]PRE]
+-
+[PRE[
+       Full-Response  = Status-Line              ; Section 6.1
+                        *( General-Header        ; Section 4.3
+                         | Response-Header       ; Section 6.2
+                         | Entity-Header )       ; Section 7.1
+                        CRLF
+                        [ Entity-Body ]          ; Section 7.2
+]PRE]
+]DEL]
+>
+[INS[
+-
+[PRE[
+           generic-message = start-line
+                             [DEL[*message-header]]
+                             [INS[*(message-header CRLF)]]
+                             CRLF
+                             [ message-body ]
+]PRE]
+-           start-line      = Request-Line | Status-Line
+]INS]
+
+[DEL[
+> Simple-Request and Simple-Response do not allow the use of any header
+information and are limited to a single request method (GET).
+
+[CODE(ABNF)[Simple-Request]] (単純要求) と [CODE(ABNF)[Simple-Response]]
+は頭情報の使用を認めず、要求方式も1つ ([CODE(HTTP)[[[GET]]]])
+に限定します。
+
+>
+-       Simple-Request  = "GET" SP Request-URI CRLF
+>
+-       Simple-Response = [ Entity-Body ]
+
+> Use of the Simple-Request format is discouraged because it prevents
+the server from identifying the media type of the returned entity.
+
+[CODE(HTTP)[Simple-Request]] 書式は、サーバーから返される実体の[[媒体型]]を識別することができませんから、
+その使用は非推奨とします。
+]DEL]
+
+[INS[
+> In the interest of robustness, servers SHOULD ignore any empty
+line(s) received where a Request-Line is expected. In other words, if
+the server is reading the protocol stream at the beginning of a
+message and receives a CRLF first, it should ignore the CRLF.
+
+頑強性の観点から、サーバーは [CODE(ABNF)[[[Request-Line]]]]
+が期待されるところで受取った空行(並び)を無視する'''べきです'''。
+言い換えると、サーバーがメッセージのはじめでプロトコル流を読んでいて最初に
+CRLF を受取ったら、この CRLF は無視するべきです。
+
+> [DEL[Note: certain]] [INS[Certain]] buggy HTTP/1.0 client implementations generate [DEL[an]]
+extra CRLF's after a POST request. To restate what is explicitly
+forbidden by the BNF, an HTTP/1.1 client [DEL[must not]] [INS[MUST NOT]] preface or follow
+a request with an extra CRLF.
+
+ある蝕まれた HTTP/1.0 クライアント実装は [CODE(HTTP)[[[POST]]]]
+要求の後に余分な CRLF を生成します。 BNF で陽に禁止されていることを繰り返しますが、
+HTTP/1.1 クライアントは要求の前や後に余分な CRLF を入れては'''いけません'''。
+]INS]
+
+[INS[
+注: 追加・削除は 1945→2068 のもの。追加中の追加・削除は
+2068→2616 のもの。
+]INS]
+
+**** 4.2 Message Headers
+→[CODE(WikiPage)[[[HTTP//頭欄]]]]
+****RFC 2068・2616 4.3 Message Body
+→[CODE(WikiPage)[[[message-body]]]]
+****RFC 2068・2616 4.4 Message Length
+→[CODE(WikiPage)[[[Content-Length]]]]
+****RFC 1945 4.3; RFC 2068・2616 4.5 General Header Fields
+→[CODE(WikiPage)[[[一般頭欄]]]]
+* 基本構成要素
+
+[[#comment]]
+
+** 仕様書から
+***RFC 1945 (HTTP/1.0); RFC 2068・2616 (HTTP/1.1) 2.2 Basic Rules
+> The following rules are used throughout this specification to
+describe basic parsing constructs. The US-ASCII coded character set
+is defined by [DEL[[INS[{1945}]] [17] ]] [INS[[INS[{2068,2616}]] ANSI X3.4-1986 [21] ]].
+
+次の規則はこの仕様書を通じて基本解析構造体を記述するために使用します。
+US-ASCII 符号化文字集合は ANSI X 3.4‐1986 で定義されています。
+
+>
+-OCTET          = <any 8-bit sequence of data>
+-CHAR           = <any US-ASCII character (octets 0 - 127)>
+-UPALPHA        = <any US-ASCII uppercase letter "A".."Z">
+-LOALPHA        = <any US-ASCII lowercase letter "a".."z">
+-ALPHA          = UPALPHA | LOALPHA
+-DIGIT          = <any US-ASCII digit "0".."9">
+-CTL            = <any US-ASCII control character (octets 0 - 31) and DEL (127)>
+-CR             = <US-ASCII CR, carriage return (13)>
+-LF             = <US-ASCII LF, linefeed (10)>
+-SP             = <US-ASCII SP, space (32)>
+-HT             = <US-ASCII HT, horizontal-tab (9)>
+-<">            = <US-ASCII double-quote mark (34)>
+
+> [DEL[HTTP/1.0]] [INS[HTTP/1.1]] defines the [DEL[[INS[{1945}]] octet]]
+sequence CR LF as the end-of-line marker for all protocol elements except 
+the [DEL[[INS[{1945}]] Entity-Body]] [INS[entity-body]] (see [DEL[[INS[{1945}]] Appendix B]] [INS[appendix 19.3]] for tolerant applications). The end-of-line marker within an [DEL[[INS[{1945}]] Entity-Body]] [INS[entity-body]]
+is defined by its associated media type, as described in [DEL[[INS[{1945}]] Section 3.6]] [INS[section 3.7]].
+
+HTTP は実体本体を除くすべてのプロトコル要素で列
+CR LF を行末の[RUBY[印] [しるし]]と定義します。
+実体本体中の行末の印はその関連付けられた[[媒体型]]により定義されます。
+
+>
+-CRLF           = CR LF
+
+> [DEL[HTTP/1.0]] [INS[HTTP/1.1]] [DEL[[INS[{1945,2068}]] headers]] [INS[[INS[{2616}]] header field values]] [DEL[[INS[{1945}]] may]] [INS[can]] be folded onto multiple lines if [DEL[[INS[{1945}]] each]] [INS[the]]
+continuation line begins with a space or horizontal tab. All 
+linear [DEL[[INS[{1945}]] whitespace]] [INS[white space]], including folding, has the same semantics as SP. [INS[[INS[{2616}]] A recipient MAY replace any linear white space with a single SP before interpreting the field value or forwarding the message downstream.]]
+
+HTTP 頭[INS[欄値]]は、続く行が間隔又は水平タブで始まるのであれば複数行に折畳むことができます。
+すべての線形空白は、折畳みも含み、 [CODE(ABNF)[SP]]
+と同じ意味を持ちます。[INS[受信者は、欄値を解釈したり[[下流]]にメッセージを転送する前に任意の線形空白を単一の [CODE(ABNF)[SP]] に置換しても'''構いません'''。]]
+
+>
+-LWS            = [CRLF] 1*( SP | HT )
+
+[DEL[
+>[INS[{1945}]] However, folding of header lines is not expected by some
+applications, and should not be generated by HTTP/1.0 applications.
+
+しかし、頭行の折畳みを予期していない応用もありますので、
+HTTP/1.0 応用は生成するべきではありません。
+]DEL]
+
+> The TEXT rule is only used for descriptive field contents and values
+that are not intended to be interpreted by the message parser. Words
+of *TEXT [DEL[[INS[{1945,2068}]] may]] [INS[[INS[{2616}]] MAY]] contain [DEL[[INS[{1945}]] octets]] [INS[characters]] from character sets other than [DEL[[INS[{1945}]] US-ASCII]] [INS[[INS[{2068,2616}]] [DEL[ISO 8859-1]] [INS[ISO-8859-1]] [22] only when encoded according to the rules of RFC [DEL[1522]] [INS[2047]] [14] ]].
+
+[CODE(ABNF)[TEXT]] 規則は記述的欄内容とメッセージ解析器に解釈されることを意図しない値にのみ使います。
+[CODE(ABNF)[*TEXT]] の語は [DEL[US-ASCII]] [INS[RFC 2047 の規則に従って符号化するときのみ ISO-8859-1]]
+以外の文字集合の[DEL[オクテット]][INS[文字]]を含んでも'''構いません'''。
+
+>
+-TEXT           = <any OCTET except CTLs, but including LWS>
+
+[DEL[
+>[INS[{1945}]] Recipients of header field TEXT containing octets outside the US-ASCII
+character set may assume that they represent ISO-8859-1 characters.
+
+US-ASCII 文字集合の外のオクテットを含んだ頭欄 [CODE(ABNF)[TEXT]] の受信者は、
+それが ISO-8859-1 文字を表現するものと仮定しても構いません。
+]DEL]
+
+[INS[
+>[INS[{2616}]] A CRLF is allowed in the definition of TEXT only as part of a header
+field continuation. It is expected that the folding LWS will be
+replaced with a single SP before interpretation of the TEXT value.
+
+[CODE(ABNF)[CRLF]] は、 [CODE(ABNF)[TEXT]] の定義の中では、
+頭欄継続の一部としてのみ認められています。
+折畳み [CODE(ABNF)[LWS]] は [CODE(ABNF)[TEXT]] 値の解釈の前に単一の
+[CODE(ABNF)[SP]] に置換されることを意図定しています。
+]INS]
+
+> Hexadecimal numeric characters are used in several protocol elements.
+
+十六進数文字は幾つかのプロトコル要素で使います。
+
+>
+-HEX            = "A" | "B" | "C" | "D" | "E" | "F" | "a" | "b" | "c" | "d" | "e" | "f" | DIGIT
+
+> Many [DEL[HTTP/1.0]] [INS[HTTP/1.1]] header field values consist of words separated by LWS
+or special characters. These special characters [DEL[[INS[{1945}]] must]] [INS[MUST]] be in a quoted
+string to be used within a parameter value [INS[[INS[{2616}]] (as defined in section 3.6)]].
+
+多くの HTTP 頭欄値は、 [CODE(ABNF)[LWS]] または特殊文字で分離される語で構成されます。
+特殊文字は引数値中で使うためには引用文字列中にいれなければ'''なりません'''。
+
+[DEL[
+>[INS[{1945}]] 
+-       word           = token | quoted-string
+]DEL]
+
+[DEL[
+>[INS[{1945,2068}]] 
+-token          = 1*<any CHAR except CTLs or tspecials>
+-tspecials      = "(" | ")" | "<" | ">" | "@@" | "," | ";" | ":" | "\" | <"> | "/" | "[" | "]" | "?" | "=" | "{" | "}" | SP | HT
+]DEL]
+[INS[
+>[INS[{2616}]] 
+-token          = 1*<any CHAR except CTLs or separators>
+-separators     = "(" | ")" | "<" | ">" | "@@" | "," | ";" | ":" | "\" | <"> | "/" | "[" | "]" | "?" | "=" | "{" | "}" | SP | HT
+]INS]
+
+> Comments [DEL[[INS[{1945}]] may]] [INS[can]] be included in some HTTP header fields by surrounding
+the comment text with parentheses. Comments are only allowed in
+fields containing "comment" as part of their field value definition.
+In all other fields, parentheses are considered part of the field value.
+
+注釈は、注釈文を括弧で囲むことで幾つかの HTTP 頭欄中に含めることができます。
+注釈は、欄値定義の一部に [CODE(ABNF)[comment]] を含んでいる欄でのみ認められます。
+他のすべての欄では、括弧は欄値の一部とみなされます。
+
+>
+-[DEL[[INS[{1945,2068}]] comment        = "(" *( ctext | comment ) ")"]]
+-[INS[[INS[{2616}]] comment        = "(" *( ctext | quoted-pair | comment ) ")"]]
+-ctext          = <any TEXT excluding "(" and ")">
+
+> A string of text is parsed as a single word if it is quoted using
+double-quote marks.
+
+二重引用符を使って引用されている文字列は単一の語として解析します。
+
+>
+-[DEL[[INS[{1945,2068}]] quoted-string  = ( <"> *(qdtext) <"> )]]
+-[INS[[INS[{2616}]] quoted-string  = ( <"> *(qdtext | quoted-pair ) <"> )]]
+-[DEL[[INS[{1945}]] qdtext         = <any CHAR except <"> and CTLs, but including LWS>]]
+-[INS[[INS[{2068,2616}]] qdtext         = <any TEXT except <">>]]
+
+[DEL[
+>[INS[{1945}]] Single-character quoting using the backslash ("\") character is not
+permitted in HTTP/1.0.
+
+HTTP/1.0 では逆斜線 ([CODE(char)[\]]) 文字を使った単一文字引用は認められていません。
+]DEL]
+[INS[
+>[INS[{2068,2616}]] The backslash character ("\") [DEL[may]] [INS[MAY]] be used as a single-character quoting
+mechanism only within quoted-string and comment constructs.
+
+逆斜線文字 ([CODE(HTTP)[\]]) は、 [CODE(ABNF)[quoted-string]] 構造体および
+[CODE(ABNF)[comment]] 構造体の中でのみ、
+単一文字引用機構として使って'''構いません'''。
+
+>
+- quoted-pair    = "\" CHAR
+]INS]
+
+*** RFC 2326 (RTSP/1.0) 15 Syntax
+> The RTSP syntax is described in an augmented Backus-Naur form (BNF)
+as used in RFC 2068 [2].
+
+****15.1 Base Syntax
+>
+   OCTET              =      <any 8-bit sequence of data>
+   CHAR               =      <any US-ASCII character (octets 0 - 127)>
+   UPALPHA            =      <any US-ASCII uppercase letter "A".."Z">
+   LOALPHA            =      <any US-ASCII lowercase letter "a".."z">
+   ALPHA              =      UPALPHA | LOALPHA
+>
+   DIGIT              =      <any US-ASCII digit "0".."9">
+   CTL                =      <any US-ASCII control character
+                              (octets 0 - 31) and DEL (127)>
+   CR                 =      <US-ASCII CR, carriage return (13)>
+   LF                 =      <US-ASCII LF, linefeed (10)>
+>
+   SP                 =      <US-ASCII SP, space (32)>
+   HT                 =      <US-ASCII HT, horizontal-tab (9)>
+   <">                =      <US-ASCII double-quote mark (34)>
+   CRLF               =      CR LF
+   LWS                =      [CRLF] 1*( SP | HT )
+   TEXT               =      <any OCTET except CTLs>
+   tspecials          =      "(" | ")" | "<" | ">" | "@@"
+                      |       "," | ";" | ":" | "\" | <">
+                      |       "/" | "[" | "]" | "?" | "="
+                      |       "{" | "}" | SP | HT
+>
+   token              =      1*<any CHAR except CTLs or tspecials>
+   quoted-string      =      ( <"> *(qdtext) <"> )
+   qdtext             =      <any TEXT except <">>
+   quoted-pair        =      "\" CHAR
+>
+   message-header     =      field-name ":" [ field-value ] CRLF
+   field-name         =      token
+   field-value        =      *( field-content | LWS )
+   field-content      =      <the OCTETs making up the field-value and
+                              consisting of either *TEXT or
+                              combinations of token, tspecials, and
+                              quoted-string>
+>
+   safe               =  "\$" | "-" | "_" | "." | "+"
+   extra              =  "!" | "*" | "$'$" | "(" | ")" | ","
+>
+   hex                =  DIGIT | "A" | "B" | "C" | "D" | "E" | "F" |
+                        "a" | "b" | "c" | "d" | "e" | "f"
+   escape             =  "\%" hex hex
+   reserved           =  ";" | "/" | "?" | ":" | "@@" | "&" | "="
+>
+   unreserved         =  alpha | digit | safe | extra
+   xchar              =  unreserved | reserved | escape
+
+[INS[
+訳注 : 編集上の誤りっぽいところがありますが、原文通りにしておきます。
+]INS]
+*** RFC 2543 C.1; RFC 3261 25.1 (SIP/2.0) Basic Rules
+> The following rules are used throughout this specification to
+describe basic parsing constructs.  The US-ASCII coded character set
+is defined by ANSI X3.4-1986.
+
+次の規則はこの仕様書を通じて基本解析構造体を記述するために使用します。
+US-ASCII 符号化文字集合は ANSI X 3.4‐1986 で定義されています。
+
+>
+[DEL[
+-        OCTET     =  <any 8-bit sequence of data>
+-        CHAR      =  <any US-ASCII character (octets 0 - 127)>
+-        upalpha   =  "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" |
+"J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" |
+"S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z"
+-        lowalpha  =  "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" |
+"j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" |
+"s" | "t" | "u" | "v" | "w" | "x" | "y" | "z"
+-        alpha     =  lowalpha | upalpha
+-        digit     =  "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" |
+"8" | "9"
+-        alphanum  =  alpha | digit
+-        CTL       =  <any US-ASCII control character
+-                     (octets 0 -- 31) and DEL (127)>
+-        CR        =  %d13 ; US-ASCII CR, carriage return character
+-        LF        =  %d10 ; US-ASCII LF, line feed character
+-        SP        =  %d32 ; US-ASCII SP, space character
+-        HT        =  %d09 ; US-ASCII HT, horizontal tab character
+-        CRLF      =  CR LF ; typically the end of a line
+]DEL]
+[INS[
+-      alphanum  =  ALPHA / DIGIT
+]INS]
+
+[INS[
+> The following are defined in RFC 2396 [12] for the SIP URI:
+Several rules are incorporated from RFC 2396 [5] but are updated to
+make them compliant with RFC 2234 [10].  These include:
+
+次は [[RFC2396]] で定義されており、 SIP URI
+で使います。幾つかの規則は RFC 2396 と違っていますが、 [[RFC2234]]
+に適合するために更新したものです。
+]INS]
+
+>
+[DEL[
+- unreserved  =  alphanum | mark
+-mark        =  "-" | "_" | "." | "!" | "~" | "*" | "'" | "(" | ")"
+-        escaped     =  "%" hex hex
+]DEL]
+[INS[
+- reserved    =  ";" / "/" / "?" / ":" / "@@" / "&" / "=" / "+" / "$" / "," 
+- unreserved  =  alphanum / mark 
+- mark        =  "-" / "_" / "." / "!" / "~" / "*" / "'" / "(" / ")"
+- escaped     =  "%" HEXDIG HEXDIG
+]INS]
+
+> SIP header field values can be folded onto multiple lines if the
+continuation line begins with a space or horizontal tab.  All linear
+white space, including folding, has the same semantics as SP.  A
+recipient MAY replace any linear white space with a single SP before
+interpreting the field value or forwarding the message downstream. [INS[This is intended to behave exactly as HTTP/1.1 as described in RFC 2616 [8].  The SWS construct is used when linear white space is optional, generally between tokens and separators.]]
+
+SIP 頭欄値は、続く行が間隔又は水平タブで始まるのであれば複数行に折畳むことができます。
+すべての線形空白は、折畳みも含み、 [CODE(ABNF)[SP]]
+と同じ意味を持ちます。受信者は、欄値を解釈したり[[下流]]にメッセージを転送する前に任意の線形空白を単一の [CODE(ABNF)[SP]] に置換しても'''構いません'''。[INS[これは RFC 2616 で説明されている HTTP/1.1 の場合と全く同じようになることを意図しています。 [CODE(ABNF)[SWS]] 構造体は線形空白が省略可能である時、通常は字句と分離子の間で使います。]]
+
+>
+-[DEL[ LWS  =  [CRLF] 1*( SP | HT ) ; linear whitespace]]
+-[INS[ LWS  =  [*WSP CRLF] 1*WSP ; linear whitespace]]
+-[INS[ SWS  =  [LWS] ; sep whitespace]]
+
+[INS[
+> To separate the header name from the rest of value, a colon is used,
+which, by the above rule, allows whitespace before, but no line
+break, and whitespace after, including a linebreak.  The HCOLON
+defines this construct.
+
+頭名を残りの値と分離するためにコロンを使いますが、
+これは上の規則により前に空白を求めるものの改行は認めず、
+後には空白を改行も含めて認めます。 [CODE(ABNF)[HCOLON]]
+はこの構造体を定義します。
+
+>
+-      HCOLON  =  *( SP / HTAB ) ":" SWS
+]INS]
+
+> The TEXT-UTF8 rule is only used for descriptive field contents and
+values that are not intended to be interpreted by the message parser.
+Words of *TEXT-UTF8 contain characters from the UTF-8 [DEL[character set (RFC 2279 [21])]] [INS[charset (RFC 2279 [7])]]. [INS[The TEXT-UTF8-TRIM rule is used for descriptive field contents that are n t quoted strings, where leading and trailing LWS is not meaningful. ]]
+In this regard, SIP differs from HTTP, which uses the ISO 8859-1 character set.
+
+[CODE(ABNF)[TEXT-UTF8]] 規則は記述的欄内容とメッセージ解析器に解釈されることを意図しない値にのみ使います。
+[CODE(ABNF)[*TEXT-UTF8]] の語は UTF-8 charset の文字だけを含めます。[INS[[CODE(ABNF)[TEXT-UTF8-TRIM]] 規則は引用文字列ではなく、最初と最後の [CODE(ABNF)[LWS]] が意味を持たない記述的欄内容に使用します。]]
+この点では、 SIP は ISO 8859‐1 を使用する HTTP と異なります。
+
+>
+[DEL[
+-        TEXT-UTF8  =  <any UTF-8 character encoding, except CTLs, but including LWS>
+]DEL]
+[INS[
+-      TEXT-UTF8-TRIM  =  1*TEXT-UTF8char *(*LWS TEXT-UTF8char)
+-      TEXT-UTF8char   =  %x21-7E / UTF8-NONASCII
+-      UTF8-NONASCII   =  %xC0-DF 1UTF8-CONT /  %xE0-EF 2UTF8-CONT /  %xF0-F7 3UTF8-CONT /  %xF8-Fb 4UTF8-CONT /  %xFC-FD 5UTF8-CONT
+-      UTF8-CONT       =  %x80-BF
+]DEL]
+
+> A CRLF is allowed in the definition of TEXT-UTF8[INS[-TRIM]]
+only as part of a header field continuation. It is expected that the folding LWS
+will be replaced with a single SP before interpretation of the 
+TEXT-UTF8[INS[-TRIM]] value.
+
+[CODE(ABNF)[CRLF]] は、 [CODE(ABNF)[TEXT-TRIM]] の定義の中では、
+頭欄継続の一部としてのみ認められています。
+折畳み [CODE(ABNF)[LWS]] は [CODE(ABNF)[TEXT-TRIM]] 値の解釈の前に単一の
+[CODE(ABNF)[SP]] に置換されることを意図定しています。
+
+> Hexadecimal numeric characters are used in several protocol elements. [INS[Some elements (authentication) force hex alphas to be lower case.]]
+
+十六進数文字は幾つかのプロトコル要素で使います。[INS[幾つかの要素 (認証) は十六進字母が小文字であることを強制します。]]
+
+>
+- [DEL[hex  =  "A" | "B" | "C" | "D" | "E" | "F" | "a" | "b" | "c" | "d" | "e" | "f" | digit]]
+- [INS[LHEX  =  DIGIT / %x61-66 ;lowercase a-f]]
+
+> Many SIP header field values consist of words separated by LWS or
+special characters. [INS[Unless otherwise stated, tokens are case-insensitive.]]
+These special characters MUST be in a quoted string to be used within a parameter value. [INS[The word construct is used in Call-ID to allow most separators to be used.]]
+
+多くの SIP 頭欄値は、 [CODE(ABNF)[LWS]] または特殊文字で分離される語で構成されます。[INS[別途言及されていない限り、字句は大文字・小文字を区別します。]]
+特殊文字は引数値中で使うためには引用文字列中にいれなければ'''なりません'''。 [INS[[CODE(ABNF)[word]] 構造体は [CODE(SIP)[[[Call-ID]]]] でほとんどの分離子を使用できるようにするために使います。]]
+
+>
+-[DEL[        token       =  1*< any CHAR  except CTL's  or separators>]]
+-[INS[ token       =  1*(alphanum / "-" / "." / "!" / "%" / "*" / "_" / "+" / "`" / "'" / "~" )]]
+- [DEL[separators  =  "(" | ")" | "<" | ">" | "@@" | "," | ";" | ":" | "\" | <"> | "/" | "[" | "]" | "?" | "=" | "{" | "}" | SP | HT]]
+- [INS[separators  =  "(" / ")" / "<" / ">" / "@@" / "," / ";" / ":" / "\" / DQUOTE / "/" / "[" / "]" / "?" / "=" / "{" / "}" / SP / HTAB]]
+- [INS[word        =  1*(alphanum / "-" / "." / "!" / "%" / "*" / "_" / "+" / "`" / "'" / "~" / "(" / ")" / "<" / ">" / ":" / "\" / DQUOTE / "/" / "[" / "]" / "?" / "{" / "}" )]]
+
+[INS[
+> When tokens are used or separators are used between elements,
+whitespace is often allowed before or after these characters:
+
+字句が使われる場合や分離子が要素間で使われる場合には、
+空白がしばしばその文字の前後に認められます。
+
+>
+-      STAR    =  SWS "*" SWS ; asterisk
+-      SLASH   =  SWS "/" SWS ; slash
+-      EQUAL   =  SWS "=" SWS ; equal
+-      LPAREN  =  SWS "(" SWS ; left parenthesis
+-      RPAREN  =  SWS ")" SWS ; right parenthesis
+-      RAQUOT  =  ">" SWS ; right angle quote
+-      LAQUOT  =  SWS "<"; left angle quote
+-      COMMA   =  SWS "," SWS ; comma
+-      SEMI    =  SWS ";" SWS ; semicolon
+-      COLON   =  SWS ":" SWS ; colon
+-      LDQUOT  =  SWS DQUOTE; open double quotation mark
+-      RDQUOT  =  DQUOTE SWS ; close double quotation mark
+]INS]
+
+> Comments can be included in some SIP header fields by surrounding the
+comment text with parentheses.  Comments are only allowed in fields
+containing "comment" as part of their field value definition.  In all
+other fields, parentheses are considered part of the field value.
+
+注釈は、注釈文を括弧で囲むことで幾つかの SIP 頭欄中に含めることができます。
+注釈は、欄値定義の一部に [CODE(ABNF)[comment]] を含んでいる欄でのみ認められます。
+他のすべての欄では、括弧は欄値の一部とみなされます。
+
+>
+-[DEL[ comment  =  "(" *(ctext | quoted-pair | comment) ")"]]
+-[INS[ comment  =  LPAREN *(ctext / quoted-pair / comment) RPAREN]]
+-[DEL[ ctext    =  < any TEXT-UTF8  excluding "("  and ")">]]
+-[INS[ ctext    =  %x21-27 / %x2A-5B / %x5D-7E / UTF8-NONASCII / LWS]]
+
+
+> [INS[ctext includes all chars except left and right parens and backslash.]]
+A string of text is parsed as a single word if it is quoted using
+double-quote marks.  [INS[In quoted strings, quotation marks (") and backslashes (\) need to be escaped.]]
+
+;[INS[[CODE(ABNF)[ctext]] は左右の括弧と逆斜線を除くすべての文字を含みます。]]
+二重引用符を使って引用されている文字列は単一の語として解析します。[INS[引用文字列中では、引用符 ([CODE(SIP)["]]) と逆斜線 ([CODE(SIP)[\]]) は escape する必要があります。]]
+
+>
+-[DEL[ quoted-string  =  ( <"> *(qdtext | quoted-pair ) <"> )]]
+-[INS[ quoted-string  =  SWS DQUOTE *(qdtext / quoted-pair ) DQUOTE]]
+-[DEL[ qdtext         =  <any TEXT-UTF8 except <">>]]
+-[INS[ qdtext         =  LWS / %x21 / %x23-5B / %x5D-7E / UTF8-NONASCII]]
+
+> The backslash character ("\") MAY be used as a single-character
+quoting mechanism only within quoted-string and comment constructs. [INS[Unlike HTTP/1.1, the characters CR and LF cannot be escaped by this mechanism to avoid conflict with line folding and header separation.]]
+
+逆斜線文字 ([CODE(HTTP)[\]]) は、 [CODE(ABNF)[quoted-string]] 構造体および
+[CODE(ABNF)[comment]] 構造体の中でのみ、
+単一文字引用機構として使って'''構いません'''。[INS[HTTP/1.1 とは異なり、文字 [CODE(ABNF)[CR]] 及び [CODE(ABNF)[LF]] は行折畳みや頭分離との衝突を避けるためにこの機構を使って escape することはできません。]]
+
+>
+-[DEL[ quoted-pair  =  " \ " CHAR]]
+-[INS[ quoted-pair  =  "\" (%x00-09 / %x0B-0C / %x0E-7F)]]
+
+* RFC の部分の License
+[[RFCのライセンス]]
+
+* メモ
+@

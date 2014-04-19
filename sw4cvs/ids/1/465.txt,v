@@ -1,0 +1,892 @@
+head	1.4;
+access;
+symbols
+	suika-20100509:1.2
+	before-graph-20090923:1.2;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.4
+date	2013.10.18.14.56.28;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2011.07.20.02.14.41;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2008.11.15.05.31.19;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2008.11.12.04.16.30;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.4
+log
+@updated by (anon)
+@
+text
+@
+
+* BNF
+
+[PRE[
+   encoded-word = "=?" charset ["*" language] "?" encoding "?" encoded-text "?="
+     ; RFC 2231 では「"?" encoding」欠落。 <http://www.rfc-editor.org/errata.html>
+   charset   = <registered character set name>       ; RFC 2047 では token
+   language  = <registered language tag [RFC-1766]>  ; RFC 2047 では token
+   encoding  = token   ; see section 4
+   token     = 1*<Any CHAR except SPACE, CTLs, and especials>
+   especials = "(" / ")" / "<" / ">" / "@@" / "," / ";" / ":" / "
+               <"> / "/" / "[" / "]" / "?" / "." / "="
+   encoded-text = 1*<Any printable ASCII character other than "?"
+                     or SPACE>
+                  ; (but see "Use of encoded-words in message
+                  ; headers", section 5)
+]PRE]
+
+
+* 変換例
+
+
+** =?us-ascii?q?ABC?=
+
+「ABC」
+
+
+** "=?us-ascii?q?ABC?="
+
+「"=?us-ascii?q?ABC?="」 
+
+構造化領域では、 quoted-string 内で
+encoded-word は使えない。非構造化領域では、隣接文字と
+WSP で離す必要がある。
+
+
+** " =?us-ascii?q?ABC?= "
+
+構造化領域で word の代わりに phrase の一部として出現する
+時は「" =?us-ascii?q?ABC?= "」。 comment や非構造化領域では
+「" ABC "」 。
+
+
+** (=?us-ascii?q?ABC?=)
+
+構造化領域 (で comment として認められる) 場合 「(ABC)」。
+非構造化領域の場合「(=?us-ascii?q?ABC?=)」。
+
+comment の場合は周りの括弧と encoded-word がくっついても良い。
+
+
+** ( =?us-ascii?q?ABC?= )
+
+「( ABC )」。
+
+非構造化領域では周りの文字と離す必要があるので、こうする。
+comment では、 RFC 2047 に記述はないが、 WSP がそのまま残ると思われる。
+(記述が無いということは、例外ではないということでしょう。)
+
+
+** (=?ISO-8859-1?Q?a?=b)
+
+「(=?ISO-8859-1?Q?a?=b)」。
+
+非構造化領域では周りの文字と離さないと encoded-word にならない。
+comment では「b」と離さないといけない。
+
+
+** (=?ISO-8859-1?Q?a?= b)
+
+comment の場合 「(a b)」。非構造化領域では
+「(=?ISO-8859-1?Q?a?= b)」。
+
+
+** =?ISO-8859-1?Q?a?= =?ISO-8859-1?Q?b?=
+
+「ab」。
+
+encoded-word 間の (F)WSP は無視される。
+
+
+** =?ISO-8859-1?Q?a_b?= あるいは 
+
+= ?ISO-8859-1?Q?a?= =?ISO-8859-2?Q?_b?=
+
+「a b」。
+
+encoded-word 間に当たる場所に WSP を入れるには、
+どっちかの encoded-word に含めるか、一つにまとめる。
+
+
+** =?us-ascii?q?ABC?=, =?us-ascii?q?DEF?=
+
+「=?us-ascii?q?ABC?=, DEF」
+
+構造化領域で phrase 内の word 
+の代わりであっても、 encoded-word との区切りに WSP が必要。
+
+
+** =?us-ascii?q?ABC?=DEF
+
+「=?us-ascii?q?ABC?=DEF」
+
+同じく。
+
+
+** =?us-ascii?q?ABC?= DEF
+
+「ABC DEF」。
+
+これは正しく復号できる。
+
+
+** =?us-ascii?q?ABC?==?us-ascii?q?DEF?=
+
+「=?us-ascii?q?ABC?==?us-ascii?q?DEF?=」。
+
+RFC 2047 の解読処理手順に従うとまず長い一つの encoded-word と
+考えるが、 encoded-word 文法に合致しないので、普通の文字列とする。
+
+
+** =?us-ascii?q?ABC DEF?=
+
+「=?us-ascii?q?ABC DEF?=」。
+
+encoded-word 文法に合致しない。
+
+
+* encoded-word の出現場所とそれにまつわる問題
+
+- [5] '''[CODE(ABNF)[encoded-word]] の使用の有無'''
+[[電子メイル]], [[電子ニュース]]において、
+[CODE(ABNF)[encoded-word]] が使われているか識別する方法はない。
+[[MIME-Version:欄]]の有無で識別出来るとする考え方もあるが、仕様によればこれは関係ない。
+(RFC 2047 参照) RFC 1342 の公布の月の前後で区別するとか? :-p
+- [4] '''[CODE(ABNF)[quoted-string]] 内'''
+[CODE(ABNF)[quoted-string]] 中に [CODE(ABNF)[encoded-word]]
+もどきを入れる実装がある。それを解読する実装もある。どっちも違法。
+但しそれを正当化する仕様も一部ある。 (See [[Content-Disposition:欄]],
+[[quoted-string]>>75]。)
+[[#comment]]
+
+
+** 空白間隔の取り扱いの問題
+
+[2] [[空白間隔]]の扱いについて色々問題が。
+「ABCあいう」という文字列があるとき、これを符号化するには「ABC」も含めないと、間に間隔が入ったり入らなかったり。
+
+[3] [CODE(ABNF)[encoded-word]] の周りの間隔についての話は RFC 1342 に無くて、その時以来の実装や手抜き実装は間隔を
+(無視していけないのに) 無視したり (無視しないといけないのに) 無視しなかったりする。
+しかも単語中だろうがお構いなしにする (RFC 2047 的には妥当だが。)
+から、 Subject 中になぜか間隔があって、しかも返信するごとにそれが増えていったりする。
+[[#comment]]
+
+
+*** 特に、折畳みの問題
+
+- [1] [[Opera]] 6.05 の [[MUA]] を使っていて、一覧を見てて最近は 
+[[Subject:欄]]書かないとかちょんぎれてるとかの人が多いんだなーと思ってたら、メッセージ表示欄にはちゃんと
+Subject が出てました。つまり、 encoded-word
+なんかを使ったせいで長くなってしまって折り返しているのを、 plain text
+的に最初の行だけ取り出して一覧に表示したから、変に短い Subject だったり 
+「Re:」だけだったりに見えたんです。昔はこういう MUA
+や[[ニュース・リーダー]]が多かった
+(しかも表示だけじゃなくてそのまま並べ替えて壊すやつとかもいた)
+んですけど、今でもあるとは驚き!
+[[#comment]]
+
+
+** comment と encoded-word
+
+[7] comment 内の encoded-word の解読は厄介。 quoted-pair の unquote
+と encoded-word の解読のどちらを先にするか。 pair を先にすると
+encoded-word もどきが出てくる可能性がある。 word を先にすると
+pair もどきが出てくる可能性がある。だから両方一度にまとめるしかない。
+
+[8] comment 内の encoded-word は linear-white-space で他の
+ccontent と離すことになっている。でも RFC 822 では
+comment 内に lws は出現しないはずだ。 (0x09 や 0x20 は
+ctext に含まれる。)
+
+[9] >>8 上記の解釈は(たぶん)誤り。 ctext は linear-white-space (SP や HTAB そのもの
+ではなく) を包含している。 RFC 2822 では ctext から lws を追い出して、
+ccontent に FWS を入れてもいいと明示。 See [[comment(注釈)]]
+
+[10] comment 内の encoded-word は「(」「)」とくっつけることが出来る。
+では、 nest した comment の外側とはくっつけることが出来るのか。
+(例>>11)
+- [11] (foo (hoge)=?us-ascii?q?aiueo?= bar)
+
+RFC 2047 には明記はない。 BNF は linear-white-space については当てにならない。
+考え方としては、 encoded-word 
+のすぐ外側の括弧にはつけることが出来るとするのが自然と思われる。
+つまり >>1 は不正であって [CODE(ABNF)[encoded-word]] ではない。
+- [22] 電子メイルでは [[RFC822]]/[[RFC2822]]/[[MIME]] 構造化頭欄の注釈以外に、 [[DSN]] や [[MDN]] の構造化欄の注釈でも使えます。
+- [30] >>11 が言いたいことはよくわかんないけど、 RFC 2047 の解読算法解説を参考に考えると、 >>11 は不正な可能性があるな。
+- [31] >>30 まあとにかく、 )=? はしないほうがいいってこった。
+
+[47] でも [CODE(ABNF)@@en[[[encoded-word]]]] の本来の意図は[[非ASCII文字]]を含む
+「[CODE(ABNF)@@en[[[word]]]] にしたいもの」を
+[[RFC 822]] の [CODE(ABNF)@@en[[[atom]]]] になるように[[符号化]]することでしょうから、
+まず [[RFC 822]] に従い[[字句解析]]を行い、その結果が
+[CODE(ABNF)@@en[[[encoded-word]]]] の構文に合致すれば[[復号]]するというのが本来の意図に沿った動作でしょう。
+
+それに従えば、 >>11 の例も[[復号]]されてしかるべきだと思います。
+
+[[#comment]]
+
+
+** encoded-word が使える電子メイルの欄
+
+[12] RFC 2047 には次のような記述がある。
+
+- 「encoded-word」は「addr-spec」のどこにも出現しては'''いけません'''。 
+- 「encoded-word」は「quoted-string」中に出現しては'''いけません'''。 
+- 「encoded-word」は Received (受信) 頭領域中で使用しては'''いけません'''。 
+- 「encoded-word」は MIME Content-Type (内容型), Content-Disposition 領域の parameter 中や「comment」や「phrase」内を除くどの構造化領域本体でも使用しては'''いけません'''。 
+
+この直前には、非構造化領域 (*text), comment, phrase 中の word の置き換え
+として'''のみ''' encoded-word が使える、と書いてある。
+その補足が上記の表なんだけど。疑問点:
+
+- Received: 領域の comment で encoded-word を使っていいのかどーか。
+
+わざわざ注記してあるってことは、例外で使ってはいけないのかもしれないし、
+あるいは単なるミスなのか。
+- [26] [[RFC2557]] ([[MHTML]]) は、電子メイルで使われる [[Content-Location:欄]]について、不正な URI が使われる場合 (例えば [[SP]] を含む場合も。) には [CODE(ABNF)[encoded-word]] を使わなければ'''ならず'''、解読しなければ'''なりません'''。 (4.4.1, 8.2)
+- [32] >>12 [[RFC2821]] なんかでは [[comment]] 内の書式も決めてる関係かもしれないとも思うが、よくわからんのう。
+- [33] [WEAK[2003-01-05 08:59]] ''[[US-ASCII]]'': [[RFC822]] 拡張構造化欄に該当するものの中身である "(" ... ")" は、必ずしも [[comment]] とは限りません。例えば [[Content-Features:]] 欄は全部注釈・・・であるはずがないでしょ? (ちょっと前の [[ietf-822]] の話題。)
+[[#comment]]
+
+
+** HTTP において encoded-word が使える場所
+
+[13] [[RFC2616]] ([[HTTP/1.1]]) によると、
+- [14] [CODE(ABNF)[TEXT]] ;; RFC 2616 2.2
+- [16] [CODE(ABNF)[warn-text = quoted-string]] ;; RFC 2616 14.46 [[Warning:欄]]
+
+
+*** TEXT
+
+[15]
+
+> The TEXT rule is only used for descriptive field contents and values
+that are not intended to be interpreted by the message parser. Words
+of *TEXT MAY contain characters from character sets other than ISO-8859-1 [22]
+only when encoded according to the rules of RFC 2047 [14].
+> [INS[TEXT 規則は記述的な欄内容及び値であってメッセージ解析器により解釈されることを意図していないものににも使うことが出来ます。 *TEXT の言葉は、 RFC 2047 の規則に従って符号化される場合に限って ISO-8859-1 以外の文字集合の文字を含めても'''構いません'''。 (RFC 2616 2.2)]]
+- TEXT           = <any OCTET except CTLs, but including LWS>
+
+>>14 RFC 2616 の「メッセージ解析器により解釈されることを意図していないもの」
+をどう解釈するのが良いのか分かりませんが、とりあえず [CODE(ABNF)[TEXT]]
+が使われているのは、
+- [[comment]] ([CODE(ABNF)[ctext = <any TEXT excluding "(" and ")">]])
+- [[quoted-string]] ([CODE(ABNF)[qdtext         = <any TEXT except <">>]]
+- 応答の状態行 ([CODE(ABNF)[Reason-Phrase  = *<TEXT, excluding CR, LF>]])
+- 非構造化欄
+
+です。このうち [CODE(ABNF)[quoted-string]] で使えるのはどんなもんかと思いますな。
+- [18] >>17 で別途明記されている [CODE(ABNF)[warn-text]] として使われる以外の場合, 特に parameter の [[value]] として使われる場合については明記がありませんねえ。
+- [20] [[RFC2068]] (HTTP/1.1) でも同様に規定されています。 [[RFC1945]] ([[HTTP/1.0]]) では [CODE(ABNF)[encoded-word]] には触れていません。 (その代わり [CODE(ABNF)[TEXT]] にはどんな8ビットの[[文字コード]]も使えました。)
+- [21] ちなみに、 [[RTSP]] や [[SIP]] は [CODE(ABNF)[encoded-word]] には触れていません。 [[UTF-8]] を使っていますし、使えないのでしょう。
+[[#comment]]
+
+
+*** warn-text
+
+[17] >>16 [[Warning:欄]]で使われる [CODE(ABNF)[warn-text = quoted-string]]
+は「If a character set other than ISO-8859-1 is used, it '''MUST''' be encoded
+in the warn-text using the method described in RFC 2047 [14].」と、
+>>15 同様に規定されています。
+- [19] RFC 2068 (HTTP/1.1) でも同様に規定されています。 RFC 1945 (HTTP/1.0) には Warning: 欄はありません。
+[[#comment]]
+
+
+* 言語指定
+
+[35] [[RFC2231]] は [CODE[encoded-word]] に言語指定可能に拡張したわけですが。
+
+[36] [[ietf-822]] や [[ietf-usefor]] で [[MIMEr]] は、生 [[UTF-8]] header
+なんて認められん、 [CODE[encoded-word]] 
+の言語指定の分情報損失じゃないか、と言ってます。
+
+それに対して [[CharlesLindsey]] は、どうしても使いたいんなら [[Unicode]]
+言語タグでも使ってろホ゛ケェと言ってます。 MIME'r 
+よ、お前ら単に7ビットと言いたいだけちゃうんかとか、言語タグとか本気で言ってるのかこの
+[[Unicoder]] めとか、そういう話は置いといて、実際に言語指定に対応した [[UA]]
+とか、言語指定が付いたメッセージなんてどれだけ存在するのか。
+
+[[mail-people]] は特に何も言ってこないし、 Charles
+はあったとしても日本か中国くらいじゃない? と言っている。
+しかし日本でも中国でも、言語指定のあるメッセージなんて見たことが無いよね。
+1468bis は [[ISO-2022-JP]] な [CODE[encoded-word]] で言語指定は使うなとまで言っているのでして。
+
+そもそも日本のほとんどの実装は、 [CODE[encoded-word]]
+対応といっても [[ISO-2022-JP]] の [CODE[B]] 符号化に''しか''対応してないのが普通だったりもしますからな。
+(ひどいのになると、 [CODE[ISO-2022-JP]] や [CODE[B]]
+の大文字・小文字の区別をしないのとかもある。)
+
+[37] ということからして、この世界に実質的に [CODE[encoded-word]]
+の言語指定なんて使ったメッセージは存在しないのでは、と強く疑われます。
+
+[38] >>37 [[manakai]] みたいに言語情報をちゃんと扱える [[UA]]
+は他にもあるはずだけど、それを有意義に使えているかどうか。
+(manakai は捨ててる同然だし、生成の時には使えないし。)
+
+[39] >>38 生成側としては、言語情報をそもそも持っていなければつけようが無い。
+で、言語情報は実質的に利用者に指定させるしか得る方法がない。
+([[IM]] と連携して云々とか考えられるけど、現状では無理だな。)
+
+文脈を検討せずに、設定から自動で得て文字列全体に適用する
+([[conneg]] 設定の流用とか。) のだと、 [SAMP[日本語れんしゅうちゅう。]]
+に [CODE(LANG)[en]] とかつけかねないし、きめ細かい実装がないとかえって有害。
+
+[40] 構文解析とか、そういう苦労して言語情報つけた割に得られ得る利点が
+[[CJK]] glyph selection くらい (それもたいして役に立たない。)
+だと、やっぱり実装する気になんてならないよなあ。
+
+[[#comment]]
+
+
+* その他実装について
+
+符号化は面倒。特に ISO-2022-JP だったりすると、
+
+- encoded-word は全体で75文字以内にする必要がある。
+- ので、長い文字列を切る必要がある。
+- その時、最後は ASCII に戻しておく必要がある。
+- おっと、切る時には文字の途中で切ってはいけない。
+
+とかやややっかいだったり。
+- [23] RFC 822/MIME と [[X.400]] などとの対応を規定する [[MIXER]] などの RFCs では、 [[RFC1495]], [[RFC2156]], [[RFC2157]] が [CODE(ABNF)[encoded-word]] に触れています。概要は、 MIME への変換では ASCII 以外があれば [CODE(ABNF)[encoded-word]] を使い、 MIME からの変換では相手で表現可能なら decode し、そうでなければ [CODE(ABNF)[encoded-word]] のままにするというものです。
+- [24] >>23 RFC 2157 は、 2.3.1 で、 MIME への変換の際に、 [[Content-Disposition:欄]]の [CODE(ABNF)[filename]] parameter 値 (になるもの) のようなものが ASCII 以外の文字を含んでいたら、引用符で囲む (つまり [[encoded-word]] にする) か、全部の非 ASCII 文字を疑問符に換えるかしると言っています。
+- [25] [[mailto-URL]] や [[IMAP]] はそれぞれの [CODE(ABNF)[encoded-word]] の扱いについて触れています。
+- [27] [RUBY[空白間隔] [ホワイト・スペース]]の扱いとか、まじめにやろうとするとかなり面倒ですね。
+- [28] 特定の [[charset]] 専用の en/decoder なら簡単に書けるけど、汎用的なのを作ろうとするとかなりひどい。
+- [29] >>27-28 頭の体操にはなるが素人にはお勧めできない。
+- [34] >>23-24 これは [[MIME]] の規定に反する虞があるんですが、単なるエラー処理で情報損失を防ぐ措置だと考えればまあ許容範囲なのかな。 ([[RFC2231]] の方法が RFC 化される前だし。)
+
+[41]
+[CODE(ABNF)[encoded-word]] で符号化された中身は基本的に何でもありなので、実装は勝手な仮定をしてしまわないように注意する必要があります。
+
+たとえば、 [CODE(ABNF)[encoded-word]]
+で符号化した中身に[[改行]]が含まれていることも十分あり得ます。それを想定していない [[MUA]] だと、たとえば [CODE(822)[[[Subject]]]] の表示の際に画面が乱れる虞があります。
+[WEAK[(厳密には RFC 822 では [CODE(ABNF)[[[quoted-pair]]]] を使って改行を生で表現できますが、まともに使えるかは不明です。ですから多くの MUA は unfold した欄本体に改行が含まれることを想定していないと思われます。)]]
+
+([[名無しさん]])
+
+[[#comment]]
+
+
+* 仕様書
+
+- [[RFC1342]]
+- [[RFC1522]]
+- [[RFC2047]]
+- [[RFC2184]]
+- [[RFC2231]]
+- RFC errata <http://www.rfc-editor.org/errata.html>
+[[#comment]]
+
+
+* めも
+
+[42]
+[[Thunderbird]] 1.5 には、 [[Atom]] で題名に [CODE(ABNF)@@en[[[encoded-word]]]] のような文字列を使うと、
+勝手に[[復号]]してしまうという不具合があります。
+([[Thunderbird]] 1.5 は [[Atom]] を [[822]]
+に変換して処理していますが、その際に [CODE(822)@@en[[[Subject]]:]]
+に入れる文字列に [CODE(ABNF)@@en[[[encoded-word]]]]
+のような文字列が含まれていることを想定していないようです。)
+([[名無しさん]] [WEAK[2006-07-22 04:14:28 +00:00]])
+
+[43]
+[CODE(ABNF)@@en[[[encoded-word]]]] が [CODE(ABNF)@@en[[[quoted-string]]]]
+内で認められないのはなぜか?
+
+= 元々 [CODE(ABNF)@@en[[[quoted-string]]]]
+は (引用符と [CODE(char)@@en[[[\]]]] と [CODE(ABNF)@@en[[[LWS]]]] 以外)
+[[文字]]は (文字通り) [[文字]]通りの意味を持つというものだから、
+[CODE(ABNF)@@en[[[encoded-word]]]] として解釈させようというのはおかしい。
+= [CODE(ABNF)@@en[[[encoded-word]]]] は人間向けで、
+機械向けではない。機械向けの場所でも認めるとすると正規化など問題が難しくなる。
+
+で、 [CODE(MIME)@@en[[[filename]]]] の場合、
+そもそももともとこれはヒントなので、その値を参考にファイル名を決める手段として、
+[CODE(ABNF)@@en[[[encoded-word]]]] のようなものを復号するのもありじゃないの? と [[Keith Moore]] はいってます。
+
+;; [[Keith Moore]] の [CITE@@en[Re: rfc2231 implementations?]]
+<mid:20060811072422.f7ba81fd.moore@@cs.utk.edu>
+<http://permalink.gmane.org/gmane.ietf.rfc822/11802>
+
+([[名無しさん]] [WEAK[2006-08-13 07:27:23 +00:00]])
+
+[44]
+[[NAS]] ([[RFC 4707]]) は、 [[Usefor]] が [[RFC]]
+化されるまで、と断りながらも [[son-of-RFC 1036]] 
+と同じ、 [CODE(ABNF)@@en[[[encoded-word]]]]
+が使える (実際にはまったく使われていない) [[ニュースグループ名]]の構文を採用しています。
+
+([[名無しさん]])
+
+[45]
+[CITE[JavaScript で MIME ヘッダをデコード - bkブログ]] ([CODE[2007-10-07 23:20:17 +09:00]] 版) <http://0xcc.net/blog/archives/000185.html>
+([[名無しさん]])
+
+[46]
+[CITE[JavaScript で MIME ヘッダをデコード - bkブログ]] ([TIME[2007-10-07 23:20:17 +09:00]] 版) <http://0xcc.net/blog/archives/000185.html>
+
+[823] [[fml]] は [CODE(822)@@en[[[Subject:]]]] の [[encoded-word]] をいったん[[復号]]して
+[[ISO-2022-JP]] で[[符号化]]しなおします。このとき [[ISO-2022-JP]] として表せない[[文字]]があると、
+[[復号]]したまま放置するので、結果として[[文字化け]]することがあります。
+
+[824] [CITE@@en[RFC 6857 - Post-Delivery Message Downgrading for Internationalized Email Messages]]
+( ([TIME[2013-07-24 10:18:10 +09:00]] 版))
+<http://tools.ietf.org/html/rfc6857#section-6>@
+
+
+1.3
+log
+@updated by (anon)
+@
+text
+@d413 5
+a417 1
+[[復号]]したまま放置するので、結果として[[文字化け]]することがあります。@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@a409 1
+([[名無しさん]])
+d411 3
+@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/656E636F6465642D776F7264.txt>
+@
+text
+@d1 411
+a411 403
+#?SuikaWiki/0.9 default-name="US-ASCII"
+
+
+* BNF
+
+[PRE[
+   encoded-word = "=?" charset ["*" language] "?" encoding "?" encoded-text "?="
+     ; RFC 2231 では「"?" encoding」欠落。 <http://www.rfc-editor.org/errata.html>
+   charset   = <registered character set name>       ; RFC 2047 では token
+   language  = <registered language tag [RFC-1766]>  ; RFC 2047 では token
+   encoding  = token   ; see section 4
+   token     = 1*<Any CHAR except SPACE, CTLs, and especials>
+   especials = "(" / ")" / "<" / ">" / "@@" / "," / ";" / ":" / "
+               <"> / "/" / "[" / "]" / "?" / "." / "="
+   encoded-text = 1*<Any printable ASCII character other than "?"
+                     or SPACE>
+                  ; (but see "Use of encoded-words in message
+                  ; headers", section 5)
+]PRE]
+
+
+* 変換例
+
+
+** =?us-ascii?q?ABC?=
+
+「ABC」
+
+
+** "=?us-ascii?q?ABC?="
+
+「"=?us-ascii?q?ABC?="」 
+
+構造化領域では、 quoted-string 内で
+encoded-word は使えない。非構造化領域では、隣接文字と
+WSP で離す必要がある。
+
+
+** " =?us-ascii?q?ABC?= "
+
+構造化領域で word の代わりに phrase の一部として出現する
+時は「" =?us-ascii?q?ABC?= "」。 comment や非構造化領域では
+「" ABC "」 。
+
+
+** (=?us-ascii?q?ABC?=)
+
+構造化領域 (で comment として認められる) 場合 「(ABC)」。
+非構造化領域の場合「(=?us-ascii?q?ABC?=)」。
+
+comment の場合は周りの括弧と encoded-word がくっついても良い。
+
+
+** ( =?us-ascii?q?ABC?= )
+
+「( ABC )」。
+
+非構造化領域では周りの文字と離す必要があるので、こうする。
+comment では、 RFC 2047 に記述はないが、 WSP がそのまま残ると思われる。
+(記述が無いということは、例外ではないということでしょう。)
+
+
+** (=?ISO-8859-1?Q?a?=b)
+
+「(=?ISO-8859-1?Q?a?=b)」。
+
+非構造化領域では周りの文字と離さないと encoded-word にならない。
+comment では「b」と離さないといけない。
+
+
+** (=?ISO-8859-1?Q?a?= b)
+
+comment の場合 「(a b)」。非構造化領域では
+「(=?ISO-8859-1?Q?a?= b)」。
+
+
+** =?ISO-8859-1?Q?a?= =?ISO-8859-1?Q?b?=
+
+「ab」。
+
+encoded-word 間の (F)WSP は無視される。
+
+
+** =?ISO-8859-1?Q?a_b?= あるいは 
+
+= ?ISO-8859-1?Q?a?= =?ISO-8859-2?Q?_b?=
+
+「a b」。
+
+encoded-word 間に当たる場所に WSP を入れるには、
+どっちかの encoded-word に含めるか、一つにまとめる。
+
+
+** =?us-ascii?q?ABC?=, =?us-ascii?q?DEF?=
+
+「=?us-ascii?q?ABC?=, DEF」
+
+構造化領域で phrase 内の word 
+の代わりであっても、 encoded-word との区切りに WSP が必要。
+
+
+** =?us-ascii?q?ABC?=DEF
+
+「=?us-ascii?q?ABC?=DEF」
+
+同じく。
+
+
+** =?us-ascii?q?ABC?= DEF
+
+「ABC DEF」。
+
+これは正しく復号できる。
+
+
+** =?us-ascii?q?ABC?==?us-ascii?q?DEF?=
+
+「=?us-ascii?q?ABC?==?us-ascii?q?DEF?=」。
+
+RFC 2047 の解読処理手順に従うとまず長い一つの encoded-word と
+考えるが、 encoded-word 文法に合致しないので、普通の文字列とする。
+
+
+** =?us-ascii?q?ABC DEF?=
+
+「=?us-ascii?q?ABC DEF?=」。
+
+encoded-word 文法に合致しない。
+
+
+* encoded-word の出現場所とそれにまつわる問題
+
+- [5] '''[CODE(ABNF)[encoded-word]] の使用の有無'''
+[[電子メイル]], [[電子ニュース]]において、
+[CODE(ABNF)[encoded-word]] が使われているか識別する方法はない。
+[[MIME-Version:欄]]の有無で識別出来るとする考え方もあるが、仕様によればこれは関係ない。
+(RFC 2047 参照) RFC 1342 の公布の月の前後で区別するとか? :-p
+- [4] '''[CODE(ABNF)[quoted-string]] 内'''
+[CODE(ABNF)[quoted-string]] 中に [CODE(ABNF)[encoded-word]]
+もどきを入れる実装がある。それを解読する実装もある。どっちも違法。
+但しそれを正当化する仕様も一部ある。 (See [[Content-Disposition:欄]],
+[[quoted-string]>>75]。)
+[[#comment]]
+
+
+** 空白間隔の取り扱いの問題
+
+[2] [[空白間隔]]の扱いについて色々問題が。
+「ABCあいう」という文字列があるとき、これを符号化するには「ABC」も含めないと、間に間隔が入ったり入らなかったり。
+
+[3] [CODE(ABNF)[encoded-word]] の周りの間隔についての話は RFC 1342 に無くて、その時以来の実装や手抜き実装は間隔を
+(無視していけないのに) 無視したり (無視しないといけないのに) 無視しなかったりする。
+しかも単語中だろうがお構いなしにする (RFC 2047 的には妥当だが。)
+から、 Subject 中になぜか間隔があって、しかも返信するごとにそれが増えていったりする。
+[[#comment]]
+
+
+*** 特に、折畳みの問題
+
+- [1] [[Opera]] 6.05 の [[MUA]] を使っていて、一覧を見てて最近は 
+[[Subject:欄]]書かないとかちょんぎれてるとかの人が多いんだなーと思ってたら、メッセージ表示欄にはちゃんと
+Subject が出てました。つまり、 encoded-word
+なんかを使ったせいで長くなってしまって折り返しているのを、 plain text
+的に最初の行だけ取り出して一覧に表示したから、変に短い Subject だったり 
+「Re:」だけだったりに見えたんです。昔はこういう MUA
+や[[ニュース・リーダー]]が多かった
+(しかも表示だけじゃなくてそのまま並べ替えて壊すやつとかもいた)
+んですけど、今でもあるとは驚き!
+[[#comment]]
+
+
+** comment と encoded-word
+
+[7] comment 内の encoded-word の解読は厄介。 quoted-pair の unquote
+と encoded-word の解読のどちらを先にするか。 pair を先にすると
+encoded-word もどきが出てくる可能性がある。 word を先にすると
+pair もどきが出てくる可能性がある。だから両方一度にまとめるしかない。
+
+[8] comment 内の encoded-word は linear-white-space で他の
+ccontent と離すことになっている。でも RFC 822 では
+comment 内に lws は出現しないはずだ。 (0x09 や 0x20 は
+ctext に含まれる。)
+
+[9] >>8 上記の解釈は(たぶん)誤り。 ctext は linear-white-space (SP や HTAB そのもの
+ではなく) を包含している。 RFC 2822 では ctext から lws を追い出して、
+ccontent に FWS を入れてもいいと明示。 See [[comment(注釈)]]
+
+[10] comment 内の encoded-word は「(」「)」とくっつけることが出来る。
+では、 nest した comment の外側とはくっつけることが出来るのか。
+(例>>11)
+- [11] (foo (hoge)=?us-ascii?q?aiueo?= bar)
+
+RFC 2047 には明記はない。 BNF は linear-white-space については当てにならない。
+考え方としては、 encoded-word 
+のすぐ外側の括弧にはつけることが出来るとするのが自然と思われる。
+つまり >>1 は不正であって [CODE(ABNF)[encoded-word]] ではない。
+- [22] 電子メイルでは [[RFC822]]/[[RFC2822]]/[[MIME]] 構造化頭欄の注釈以外に、 [[DSN]] や [[MDN]] の構造化欄の注釈でも使えます。
+- [30] >>11 が言いたいことはよくわかんないけど、 RFC 2047 の解読算法解説を参考に考えると、 >>11 は不正な可能性があるな。
+- [31] >>30 まあとにかく、 )=? はしないほうがいいってこった。
+[[#comment]]
+
+
+** encoded-word が使える電子メイルの欄
+
+[12] RFC 2047 には次のような記述がある。
+
+- 「encoded-word」は「addr-spec」のどこにも出現しては'''いけません'''。 
+- 「encoded-word」は「quoted-string」中に出現しては'''いけません'''。 
+- 「encoded-word」は Received (受信) 頭領域中で使用しては'''いけません'''。 
+- 「encoded-word」は MIME Content-Type (内容型), Content-Disposition 領域の parameter 中や「comment」や「phrase」内を除くどの構造化領域本体でも使用しては'''いけません'''。 
+
+この直前には、非構造化領域 (*text), comment, phrase 中の word の置き換え
+として'''のみ''' encoded-word が使える、と書いてある。
+その補足が上記の表なんだけど。疑問点:
+
+- Received: 領域の comment で encoded-word を使っていいのかどーか。
+
+わざわざ注記してあるってことは、例外で使ってはいけないのかもしれないし、
+あるいは単なるミスなのか。
+- [26] [[RFC2557]] ([[MHTML]]) は、電子メイルで使われる [[Content-Location:欄]]について、不正な URI が使われる場合 (例えば [[SP]] を含む場合も。) には [CODE(ABNF)[encoded-word]] を使わなければ'''ならず'''、解読しなければ'''なりません'''。 (4.4.1, 8.2)
+- [32] >>12 [[RFC2821]] なんかでは [[comment]] 内の書式も決めてる関係かもしれないとも思うが、よくわからんのう。
+- [33] [WEAK[2003-01-05 08:59]] ''[[US-ASCII]]'': [[RFC822]] 拡張構造化欄に該当するものの中身である "(" ... ")" は、必ずしも [[comment]] とは限りません。例えば [[Content-Features:]] 欄は全部注釈・・・であるはずがないでしょ? (ちょっと前の [[ietf-822]] の話題。)
+[[#comment]]
+
+
+** HTTP において encoded-word が使える場所
+
+[13] [[RFC2616]] ([[HTTP/1.1]]) によると、
+- [14] [CODE(ABNF)[TEXT]] ;; RFC 2616 2.2
+- [16] [CODE(ABNF)[warn-text = quoted-string]] ;; RFC 2616 14.46 [[Warning:欄]]
+
+
+*** TEXT
+
+[15]
+
+> The TEXT rule is only used for descriptive field contents and values
+that are not intended to be interpreted by the message parser. Words
+of *TEXT MAY contain characters from character sets other than ISO-8859-1 [22]
+only when encoded according to the rules of RFC 2047 [14].
+> [INS[TEXT 規則は記述的な欄内容及び値であってメッセージ解析器により解釈されることを意図していないものににも使うことが出来ます。 *TEXT の言葉は、 RFC 2047 の規則に従って符号化される場合に限って ISO-8859-1 以外の文字集合の文字を含めても'''構いません'''。 (RFC 2616 2.2)]]
+- TEXT           = <any OCTET except CTLs, but including LWS>
+
+>>14 RFC 2616 の「メッセージ解析器により解釈されることを意図していないもの」
+をどう解釈するのが良いのか分かりませんが、とりあえず [CODE(ABNF)[TEXT]]
+が使われているのは、
+- [[comment]] ([CODE(ABNF)[ctext = <any TEXT excluding "(" and ")">]])
+- [[quoted-string]] ([CODE(ABNF)[qdtext         = <any TEXT except <">>]]
+- 応答の状態行 ([CODE(ABNF)[Reason-Phrase  = *<TEXT, excluding CR, LF>]])
+- 非構造化欄
+
+です。このうち [CODE(ABNF)[quoted-string]] で使えるのはどんなもんかと思いますな。
+- [18] >>17 で別途明記されている [CODE(ABNF)[warn-text]] として使われる以外の場合, 特に parameter の [[value]] として使われる場合については明記がありませんねえ。
+- [20] [[RFC2068]] (HTTP/1.1) でも同様に規定されています。 [[RFC1945]] ([[HTTP/1.0]]) では [CODE(ABNF)[encoded-word]] には触れていません。 (その代わり [CODE(ABNF)[TEXT]] にはどんな8ビットの[[文字コード]]も使えました。)
+- [21] ちなみに、 [[RTSP]] や [[SIP]] は [CODE(ABNF)[encoded-word]] には触れていません。 [[UTF-8]] を使っていますし、使えないのでしょう。
+[[#comment]]
+
+
+*** warn-text
+
+[17] >>16 [[Warning:欄]]で使われる [CODE(ABNF)[warn-text = quoted-string]]
+は「If a character set other than ISO-8859-1 is used, it '''MUST''' be encoded
+in the warn-text using the method described in RFC 2047 [14].」と、
+>>15 同様に規定されています。
+- [19] RFC 2068 (HTTP/1.1) でも同様に規定されています。 RFC 1945 (HTTP/1.0) には Warning: 欄はありません。
+[[#comment]]
+
+
+* 言語指定
+
+[35] [[RFC2231]] は [CODE[encoded-word]] に言語指定可能に拡張したわけですが。
+
+[36] [[ietf-822]] や [[ietf-usefor]] で [[MIMEr]] は、生 [[UTF-8]] header
+なんて認められん、 [CODE[encoded-word]] 
+の言語指定の分情報損失じゃないか、と言ってます。
+
+それに対して [[CharlesLindsey]] は、どうしても使いたいんなら [[Unicode]]
+言語タグでも使ってろホ゛ケェと言ってます。 MIME'r 
+よ、お前ら単に7ビットと言いたいだけちゃうんかとか、言語タグとか本気で言ってるのかこの
+[[Unicoder]] めとか、そういう話は置いといて、実際に言語指定に対応した [[UA]]
+とか、言語指定が付いたメッセージなんてどれだけ存在するのか。
+
+[[mail-people]] は特に何も言ってこないし、 Charles
+はあったとしても日本か中国くらいじゃない? と言っている。
+しかし日本でも中国でも、言語指定のあるメッセージなんて見たことが無いよね。
+1468bis は [[ISO-2022-JP]] な [CODE[encoded-word]] で言語指定は使うなとまで言っているのでして。
+
+そもそも日本のほとんどの実装は、 [CODE[encoded-word]]
+対応といっても [[ISO-2022-JP]] の [CODE[B]] 符号化に''しか''対応してないのが普通だったりもしますからな。
+(ひどいのになると、 [CODE[ISO-2022-JP]] や [CODE[B]]
+の大文字・小文字の区別をしないのとかもある。)
+
+[37] ということからして、この世界に実質的に [CODE[encoded-word]]
+の言語指定なんて使ったメッセージは存在しないのでは、と強く疑われます。
+
+[38] >>37 [[manakai]] みたいに言語情報をちゃんと扱える [[UA]]
+は他にもあるはずだけど、それを有意義に使えているかどうか。
+(manakai は捨ててる同然だし、生成の時には使えないし。)
+
+[39] >>38 生成側としては、言語情報をそもそも持っていなければつけようが無い。
+で、言語情報は実質的に利用者に指定させるしか得る方法がない。
+([[IM]] と連携して云々とか考えられるけど、現状では無理だな。)
+
+文脈を検討せずに、設定から自動で得て文字列全体に適用する
+([[conneg]] 設定の流用とか。) のだと、 [SAMP[日本語れんしゅうちゅう。]]
+に [CODE(LANG)[en]] とかつけかねないし、きめ細かい実装がないとかえって有害。
+
+[40] 構文解析とか、そういう苦労して言語情報つけた割に得られ得る利点が
+[[CJK]] glyph selection くらい (それもたいして役に立たない。)
+だと、やっぱり実装する気になんてならないよなあ。
+
+[[#comment]]
+
+
+* その他実装について
+
+符号化は面倒。特に ISO-2022-JP だったりすると、
+
+- encoded-word は全体で75文字以内にする必要がある。
+- ので、長い文字列を切る必要がある。
+- その時、最後は ASCII に戻しておく必要がある。
+- おっと、切る時には文字の途中で切ってはいけない。
+
+とかやややっかいだったり。
+- [23] RFC 822/MIME と [[X.400]] などとの対応を規定する [[MIXER]] などの RFCs では、 [[RFC1495]], [[RFC2156]], [[RFC2157]] が [CODE(ABNF)[encoded-word]] に触れています。概要は、 MIME への変換では ASCII 以外があれば [CODE(ABNF)[encoded-word]] を使い、 MIME からの変換では相手で表現可能なら decode し、そうでなければ [CODE(ABNF)[encoded-word]] のままにするというものです。
+- [24] >>23 RFC 2157 は、 2.3.1 で、 MIME への変換の際に、 [[Content-Disposition:欄]]の [CODE(ABNF)[filename]] parameter 値 (になるもの) のようなものが ASCII 以外の文字を含んでいたら、引用符で囲む (つまり [[encoded-word]] にする) か、全部の非 ASCII 文字を疑問符に換えるかしると言っています。
+- [25] [[mailto-URL]] や [[IMAP]] はそれぞれの [CODE(ABNF)[encoded-word]] の扱いについて触れています。
+- [27] [RUBY[空白間隔] [ホワイト・スペース]]の扱いとか、まじめにやろうとするとかなり面倒ですね。
+- [28] 特定の [[charset]] 専用の en/decoder なら簡単に書けるけど、汎用的なのを作ろうとするとかなりひどい。
+- [29] >>27-28 頭の体操にはなるが素人にはお勧めできない。
+- [34] >>23-24 これは [[MIME]] の規定に反する虞があるんですが、単なるエラー処理で情報損失を防ぐ措置だと考えればまあ許容範囲なのかな。 ([[RFC2231]] の方法が RFC 化される前だし。)
+
+[41]
+[CODE(ABNF)[encoded-word]] で符号化された中身は基本的に何でもありなので、実装は勝手な仮定をしてしまわないように注意する必要があります。
+
+たとえば、 [CODE(ABNF)[encoded-word]]
+で符号化した中身に[[改行]]が含まれていることも十分あり得ます。それを想定していない [[MUA]] だと、たとえば [CODE(822)[[[Subject]]]] の表示の際に画面が乱れる虞があります。
+[WEAK[(厳密には RFC 822 では [CODE(ABNF)[[[quoted-pair]]]] を使って改行を生で表現できますが、まともに使えるかは不明です。ですから多くの MUA は unfold した欄本体に改行が含まれることを想定していないと思われます。)]]
+
+([[名無しさん]])
+
+[[#comment]]
+
+
+* 仕様書
+
+- [[RFC1342]]
+- [[RFC1522]]
+- [[RFC2047]]
+- [[RFC2184]]
+- [[RFC2231]]
+- RFC errata <http://www.rfc-editor.org/errata.html>
+[[#comment]]
+
+
+* めも
+
+[42]
+[[Thunderbird]] 1.5 には、 [[Atom]] で題名に [CODE(ABNF)@@en[[[encoded-word]]]] のような文字列を使うと、
+勝手に[[復号]]してしまうという不具合があります。
+([[Thunderbird]] 1.5 は [[Atom]] を [[822]]
+に変換して処理していますが、その際に [CODE(822)@@en[[[Subject]]:]]
+に入れる文字列に [CODE(ABNF)@@en[[[encoded-word]]]]
+のような文字列が含まれていることを想定していないようです。)
+([[名無しさん]] [WEAK[2006-07-22 04:14:28 +00:00]])
+
+[43]
+[CODE(ABNF)@@en[[[encoded-word]]]] が [CODE(ABNF)@@en[[[quoted-string]]]]
+内で認められないのはなぜか?
+
+= 元々 [CODE(ABNF)@@en[[[quoted-string]]]]
+は (引用符と [CODE(char)@@en[[[\]]]] と [CODE(ABNF)@@en[[[LWS]]]] 以外)
+[[文字]]は (文字通り) [[文字]]通りの意味を持つというものだから、
+[CODE(ABNF)@@en[[[encoded-word]]]] として解釈させようというのはおかしい。
+= [CODE(ABNF)@@en[[[encoded-word]]]] は人間向けで、
+機械向けではない。機械向けの場所でも認めるとすると正規化など問題が難しくなる。
+
+で、 [CODE(MIME)@@en[[[filename]]]] の場合、
+そもそももともとこれはヒントなので、その値を参考にファイル名を決める手段として、
+[CODE(ABNF)@@en[[[encoded-word]]]] のようなものを復号するのもありじゃないの? と [[Keith Moore]] はいってます。
+
+;; [[Keith Moore]] の [CITE@@en[Re: rfc2231 implementations?]]
+<mid:20060811072422.f7ba81fd.moore@@cs.utk.edu>
+<http://permalink.gmane.org/gmane.ietf.rfc822/11802>
+
+([[名無しさん]] [WEAK[2006-08-13 07:27:23 +00:00]])
+
+[44]
+[[NAS]] ([[RFC 4707]]) は、 [[Usefor]] が [[RFC]]
+化されるまで、と断りながらも [[son-of-RFC 1036]] 
+と同じ、 [CODE(ABNF)@@en[[[encoded-word]]]]
+が使える (実際にはまったく使われていない) [[ニュースグループ名]]の構文を採用しています。
+
+([[名無しさん]])
+
+[45]
+[CITE[JavaScript で MIME ヘッダをデコード - bkブログ]] ([CODE[2007-10-07 23:20:17 +09:00]] 版) <http://0xcc.net/blog/archives/000185.html>
+([[名無しさん]])
+
+[46]
+[CITE[JavaScript で MIME ヘッダをデコード - bkブログ]] ([TIME[2007-10-07 23:20:17 +09:00]] 版) <http://0xcc.net/blog/archives/000185.html>
+([[名無しさん]])
+
+@
+

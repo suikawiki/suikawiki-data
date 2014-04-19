@@ -1,0 +1,237 @@
+head	1.5;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.5
+date	2012.02.16.14.50.09;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2012.02.16.14.33.33;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2012.02.12.14.25.40;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2012.02.12.07.42.17;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2008.11.12.14.08.29;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.5
+log
+@updated by (anon)
+@
+text
+@[6] [[CGI]] の[[メタ変数]] [DFN[[CODE(CGI)@@en[[[SCRIPT_NAME]]]]]] は、
+[[path]] の前半の [[CGIスクリプト]]を識別する部分を表します。
+
+* 仕様書
+
+[REFS[
+- [5] '''[CITE@@en[RFC 3875 - The Common Gateway Interface (CGI) Version 1.1]] ([TIME[2011-11-20 06:09:05 +09:00]] 版) <http://tools.ietf.org/html/rfc3875#section-4.1.13>'''
+- [18] [CITE@@en[PEP 333 -- Python Web Server Gateway Interface v1.0]] ([TIME[2012-02-16 21:06:34 +09:00]] 版) <http://www.python.org/dev/peps/pep-0333/#environ-variables>
+- [19] [CITE@@en[File: SPEC '''[''''Rack Documentation'''']''']] ([TIME[2010-01-11 00:57:50 +09:00]] 版) <http://rack.rubyforge.org/doc/SPEC.html>
+- [20] [CITE[jack - jsgi spec]] ([TIME[2009-09-04 16:47:22 +09:00]] 版) <http://jackjs.org/jsgi-spec.html#the_environment>
+- [21] [CITE[PSGI - search.cpan.org]] ([TIME[2012-02-16 22:39:56 +09:00]] 版) <http://search.cpan.org/dist/PSGI/PSGI.pod#The_Environment>
+]REFS]
+
+* 値
+
+[7] 値の構文は次のように定義されています [SRC[>>5]]。
+[PRE(ABNF code)[
+      SCRIPT_NAME = "" | ( "/" path )
+]PRE]
+
+;; [8] ここでいう [CODE(ABNF)@@en[[[path]]]] は [CODE(CGI)@@en[[[PATH_INFO]]]] の定義と同じです。
+つまり、実質的に、 [CODE(URI)[[[/]]]] ではじまる任意の[[文字列]]と言えます。
+
+[9] [CODE(CGI)@@en[[[SCRIPT_NAME]]]] は[[CGIスクリプト]]を識別する [[URL]]
+の [[path]] ([[パーセント符号化]]されていないもの) を設定しなければ[['''なりません''']]。 [SRC[>>5]]
+これの後に [CODE(CGI)@@en[[[PATH_INFO]]]] を連結し (て[[パーセント符号化]]し) たものが、
+[[CGIスクリプト]]によって処理される対象となっている[[資源]]を表す
+[[Script-URI]] を構成します。 [CODE(CGI)@@en[[[PATH_INFO]]]] が存在しない場合、[[path]]
+全体が [CODE(CGI)@@en[[[SCRIPT_NAME]]]] となります。
+
+;; [10] どこからどこまでが [CODE(CGI)@@en[[[SCRIPT_NAME]]]] かは[[実装定義]]の方法により実装と設定次第で決まります。
+しかし [CODE(CGI)@@en[[[SCRIPT_NAME]]]] と [CODE(CGI)@@en[[[PATH_INFO]]]] で重複する部分はありません [SRC[>>5]]。
+
+** NULL
+
+[11] [[CGI]] では [[URL]] とは違って先頭の [CODE(URI)[[[/]]]] が [[path]] の一部では無いとされています。
+[[path]] が[[NULL]]なら [CODE(URI)[[[/]]]] は省略して良いこととなっています。 [SRC[>>5]]
+
+[12] >>11 の規定の意図するところはよくわかりませんが、 [[path]] 全体が [CODE(CGI)@@en[[[PATH_INFO]]]]
+として[[CGIスクリプト]]に与えられる場合、 [CODE(CGI)@@en[[[SCRIPT_NAME]]]] に [CODE(CGI)@@en[[[/]]]]
+のような値を設定すると [CODE(CGI)@@en[[[/]]]] がだぶってしまい、 >>10 の重複しないという性質に反してしまいます。
+[CODE(CGI)@@en[[[SCRIPT_NAME]]]] を[[NULL]]にすればこの不整合は回避できます。
+
+;; [13] 実装は必ずしもそうなっていないと思いますが・・・。
+
+[14] [[NULL]] の場合であっても、[[メタ変数]]は設定しなければ[['''なりません''']] [SRC[>>5]]。
+
+;; [15] >>14 は[[メタ変数]]一般の規定を上書きして [CODE(CGI)@@en[[[SCRIPT_NAME]]]]
+に限っては未設定と[[空文字列]]を区別するという意図なのでしょうか。仕様書からはよくわかりません。
+
+[17] [[WSGI]] とその派生仕様は、「[[根]]」を表すために[[空文字列]]にしても良いと明記しています
+[SRC[>>18, >>19, >>20, >>21]]。
+
+[22] [[PSGI]] は、
+- [CODE(CGI)@@en[[[SCRIPT_NAME]]]] が[[空文字列]]なら [CODE(CGI)@@en[[[PATH_INFO]]]] は [CODE(URI)[[[/]]]]
+であるべきである
+- [CODE(CGI)@@en[[[SCRIPT_NAME]]]] は [CODE(URI)[[[/]]]] になるべきではなく、[[空文字列]]になるべきである
+
+... と規定しています [SRC[>>21]]。
+
+
+* 安全性
+
+[16] [CODE(CGI)@@en[[[PATH_INFO]]]] の項を参照してください。
+
+* 歴史
+
+[1] [NCSA] いわく:
+
+> A virtual path to the script being executed, used for self-referencing URLs. 
+
+実行されるスクリプトへの仮想経路で、
+自己参照 URL に使われます。
+
+[2] [COAR 03] いわく:
+
+> The SCRIPT_NAME metavariable is set to a URL path that could identify the CGI script (rather than the script's output). The syntax and semantics are identical to a decoded HTTP URL 'path' token (see RFC 2396 [4]). 
+
+[CODE(CGI)[SCRIPT_NAME]] [[メタ変数]]は、
+[[CGIスクリプト]] (スクリプトの出力ではなく。)
+を識別することができる
+URL 経路が設定されます。
+構文及び意味は HTTP URL
+の [CODE(URI)[[[path]]]]
+字句を[[復号]]したものと[[同一]]です。
+
+>
+- SCRIPT_NAME = "" | ( "/" [ path ] )
+> The SCRIPT_NAME string is some leading part of the <path> component of the Script-URI derived in some implementation defined manner. No PATH_INFO or QUERY_STRING segments (see sections 6.1.6 and 6.1.8) are included in the SCRIPT_NAME value. 
+> Servers MUST provide this metavariable to scripts. 
+
+[CODE(CGI)[SCRIPT_NAME]]
+文字列は、実装定義の方法で
+[[Script-URI]] の [CODE[<path>]]
+部品の最初のほうから取り出したものです。
+[CODE(CGI)[[[PATH_INFO]]]]
+も [CODE(CGI)[[[QUERY_STRING]]]]
+も、 [CODE(CGI)[SCRIPT_NAME]]
+値には含めません。
+
+サーバーはこのメタ変数をスクリプトに提供しなければなりません
+([[MUST]])。
+
+* メモ
+
+[3] >>2 にあるように、この値は URI のものを復号した値であることに注意が必要です。ですから、必要に応じて再符号化しないと、 URI は作れません。
+@
+
+
+1.4
+log
+@updated by (anon)
+@
+text
+@d54 8
+@
+
+
+1.3
+log
+@updated by (anon)
+@
+text
+@d7 5
+a11 1
+- [5] [CITE@@en[RFC 3875 - The Common Gateway Interface (CGI) Version 1.1]] ([TIME[2011-11-20 06:09:05 +09:00]] 版) <http://tools.ietf.org/html/rfc3875#section-4.1.13>
+d34 2
+d51 3
+@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@d45 4
+@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/5343524950545F4E414D45.txt>
+@
+text
+@d1 85
+a85 43
+#?SuikaWiki/0.9
+
+[1] [NCSA] いわく:
+
+> A virtual path to the script being executed, used for self-referencing URLs. 
+
+実行されるスクリプトへの仮想経路で、
+自己参照 URL に使われます。
+
+[2] [COAR 03] いわく:
+
+> The SCRIPT_NAME metavariable is set to a URL path that could identify the CGI script (rather than the script's output). The syntax and semantics are identical to a decoded HTTP URL 'path' token (see RFC 2396 [4]). 
+
+[CODE(CGI)[SCRIPT_NAME]] [[メタ変数]]は、
+[[CGIスクリプト]] (スクリプトの出力ではなく。)
+を識別することができる
+URL 経路が設定されます。
+構文及び意味は HTTP URL
+の [CODE(URI)[[[path]]]]
+字句を[[復号]]したものと[[同一]]です。
+
+>
+- SCRIPT_NAME = "" | ( "/" [ path ] )
+> The SCRIPT_NAME string is some leading part of the <path> component of the Script-URI derived in some implementation defined manner. No PATH_INFO or QUERY_STRING segments (see sections 6.1.6 and 6.1.8) are included in the SCRIPT_NAME value. 
+> Servers MUST provide this metavariable to scripts. 
+
+[CODE(CGI)[SCRIPT_NAME]]
+文字列は、実装定義の方法で
+[[Script-URI]] の [CODE[<path>]]
+部品の最初のほうから取り出したものです。
+[CODE(CGI)[[[PATH_INFO]]]]
+も [CODE(CGI)[[[QUERY_STRING]]]]
+も、 [CODE(CGI)[SCRIPT_NAME]]
+値には含めません。
+
+サーバーはこのメタ変数をスクリプトに提供しなければなりません
+([[MUST]])。
+
+- [3] >>2 にあるように、この値は URI のものを復号した値であることに注意が必要です。ですから、必要に応じて再符号化しないと、 URI は作れません。
+
+[4]
+
+([[Mr.Anonymous]] [WEAK[2004-03-13 13:49:16 +00:00]])
+@
+

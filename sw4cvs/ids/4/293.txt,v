@@ -1,0 +1,213 @@
+head	1.3;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.3
+date	2014.04.16.08.47.13;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2014.03.05.09.15.52;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2008.11.13.12.42.52;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.3
+log
+@updated by (anon)
+@
+text
+@#?SuikaWiki/0.9
+[[#comment]]
+
+* 仕様書から
+** RFC 2068 (HTTP/1.1) 19.6.2.1 Alternates
+> The Alternates response-header field has been proposed as a means for
+the origin server to inform the client about other available
+representations of the requested resource, along with their
+distinguishing attributes, and thus providing a more reliable means
+for a user agent to perform subsequent selection of another
+representation which better fits the desires of its user (described
+as agent-driven negotiation in section 12).
+
+[CODE(HTTP)[Alternates]] 応答頭欄は、
+[[要求]]された[[資源]]に他の利用可能な[[表現]]があることを、
+その分別属性と共に[[起源サーバー]]が[[クライアント]]に知らせる手段として提案されています。
+これによって、利用者エージェントが利用者の希望により合致する他の表現の選択を行うにあたってのより信頼できる手段を提供することとなります
+(12章で[[エージェント駆動折衝]]として説明されています)。
+
+> The Alternates header field is orthogonal to the Vary header field in
+that both may coexist in a message without affecting the
+interpretation of the response or the available representations. It
+is expected that Alternates will provide a significant improvement
+over the server-driven negotiation provided by the Vary field for
+those resources that vary over common dimensions like type and language.
+
+[CODE(HTTP)[Alternates]] 頭欄は [CODE(HTTP)[[[Vary]] 頭欄と直行するので、
+応答の解釈や利用可能な表現に影響なくメッセージに共存できます。
+[CODE(HTTP)[Alternates]] によって、型や言語のように共通な次元で変化する資源の
+[CODE(HTTP)[Vary]] 欄による[[サーバー駆動折衝]]が極めて向上することが期待されます。
+
+> The Alternates header field will be defined in a future specification.
+
+[CODE(HTTP)[[[Alternates]]]] 頭欄は将来の仕様書で定義されます。
+
+**RFC 2295 (HTTP 透過内容折衝) 8.3 Alternates
+> The Alternates response header is used to convey the list of variants
+bound to a negotiable resource.  This list can also include
+directives for any content negotiation process.  If a response from a
+transparently negotiable resource includes an Alternates header, this
+header MUST contain the complete variant list bound to the negotiable
+resource.  Responses from resources which do not support transparent
+content negotiation MAY also use Alternates headers.
+
+[CODE(HTTP)[Alternates]] 応答頭は、[[折衝可能資源]]に束縛された[[変種]]の目録を伝達するのに使います。
+この目録は任意の内容折衝手続きの[[指令]]を含めることもできます。
+[[透過折衝可能資源]]からの応答が [CODE(HTTP)[Alternates]] 頭を含んでいる場合は、
+この頭は折衝可能資源に束縛された完全な[[変種目録]]を含まなければ'''なりません'''。
+透過内容折衝に対応していない資源からの応答も [CODE(HTTP)[Alternates]]
+頭を使って'''構いません'''。
+
+>
+[PRE[
+       Alternates = "Alternates" ":" variant-list
+
+       variant-list = 1#( [[variant-description]]
+                        | fallback-variant
+                        | list-directive )
+
+       fallback-variant = "{" <"> [[URI]] <"> "}"
+
+       list-directive = ( "proxy-rvsa" "=" <"> 0#rvsa-version <"> )
+                        | extension-list-directive
+
+       extension-list-directive =
+                        token [ "=" ( [[token]] | [[quoted-string]] ) ]
+]PRE]
+
+> An example is
+[PRE[
+     Alternates: {"paper.1" 0.9 {type text/html} {language en}},
+                 {"paper.2" 0.7 {type text/html} {language fr}},
+                 {"paper.3" 1.0 {type application/postscript}
+                     {language en}},
+                 proxy-rvsa="1.0, 2.5"
+]PRE]
+
+> Any relative URI specified in a variant-description or fallback-variant field is relative to the request-URI.  Only one fallback-variant field may be present.  If the variant selection algorithm of
+the user agent finds that all described variants are unacceptable,
+then it SHOULD choose the fallback variant, if present, as the best
+variant.  If the user agent computes the overall quality values of
+the described variants, and finds that several variants share the
+highest value, then the first variant with this value in the list
+SHOULD be chosen as the best variant.
+
+[CODE(ABNF)[variant-description]] 欄や [CODE(ABNF)[fallback-variant]]
+欄に指定されている[[相対URI]] は [CODE(ABNF)[[[Request-URI]]]]
+について相対です。 [CODE(ABNF)[fallback-variant]]
+欄は1つだけ指定できます。[[利用者エージェント]]の[[変種選択算法]]がすべての記述された変種が受け入れ不能であるとわかったときには、
+fallback 変種があればこれを最善の変種として選ぶ'''べきです'''。
+利用者エージェントが記述された変種の[[全体品質値]]を計算し、
+複数の変種が同位最高値を取るとわかったときには、
+そのうちの目録中で最初の変種を最善の変種として選ぶ'''べきです'''。
+
+> The proxy-rvsa directive restricts the use of remote variant
+selection algorithms by proxies. If present, a proxy MUST ONLY use
+algorithms which have one of the version numbers listed, or have the
+same major version number and a higher minor version number as one of
+the versions listed.  Any restrictions set by proxy-rvsa come on top
+of the restrictions set by the user agent in the Negotiate request
+header.  The directive proxy-rvsa="" will disable variant selection
+by proxies entirely.  Clients SHOULD ignore all extension-list-directives they do not understand.
+
+[CODE(HTTP)[[[proxy-rvsa]]]] 指令は、[[串]]による[[遠隔変種選択算法]]の使用を制限します。
+この指令があるときは、串は列挙された版番号か、大版番号が同じで小版番号が列挙されたものよりも大きい版の算法'''だけ'''を使わなければ'''なりません'''。
+[CODE(HTTP)[proxy-avsa]] 指令によって設定された制限は、
+[CODE(HTTP)[[[Negotiate]]]] 要求頭で利用者エージェントによって設定された制限の上にきます。
+指令 [CODE(HTTP)[proxy-avsa=""]] は、串による変種選択を完全に無効化します。
+クライアントは、その理解しないすべての [CODE(ABNF)[extension-list-directive]]
+を無視する'''べきです'''。
+
+>  A variant list may contain multiple differing descriptions of the
+same variant.  This can be convenient if the variant uses conditional
+rendering constructs, or if the variant resource returns multiple
+representations using a multipart media type.
+
+変種目録は同じ変種についての複数の異なる記述を含んでいても構いません。
+これはその変種が条件付レンダリング構造を使っているか、
+その変種資源が[[複数部分]][[媒体型]]を使って複数の[[表現]]を返す時に便利でしょう。
+**RFC 2295 (HTTP 透過内容折衝) 10.4 Reusing the Alternates header
+[6]
+> If a proxy cache has available a negotiated response which is
+cacheable, fresh, and has ETag and Alternates headers, then it MAY
+extract the Alternates header and associated variant list validator
+from the response, and reuse them (without unnecessary delay) to
+negotiate on behalf of the user agent (section 13) or to construct a
+choice response (section 10.2).  The age of the extracted Alternates
+header is the age of the response from which it is extracted,
+calculated according to the rules in the HTTP/1.1 specification [1].
+
+[[串キャッシュ]]が[[キャッシュ可能]]で[[新鮮]]で [CODE(HTTP)[[[ETag]]]]
+頭と [CODE(HTTP)[[[Alternates]]]] 頭を持った折衝応答を利用可能なときは、
+[[応答]]から [CODE(HTTP)[Alternates]] 頭と関連付けられた[[変種目録検証子]]を取り出して
+(不要な遅延なく) [[利用者エージェント]]の代わりに折衝したり[[選択応答]]を構築したりするのに再利用しても'''構いません'''。
+取り出した [CODE(HTTP)[Alternates]] 頭の[[齢]]は HTTP/1.1
+仕様書の規則に従って算出した、それを取り出した応答の齢です。
+
+** RFC の部分の License
+[[RFCのライセンス]]
+* メモ
+- [1] ''The Alternates Header Field'' <http://www.watersprings.org/pub/id/draft-ietf-http-alternates-01.txt>
+
+[2] RFC 2068 よ、そこまで期待させておいて [WEAK[(ほんとはしてないけど☆)]] 最後にそういう落ちかよって突っ込みたくなるような(w
+
+[3] [CODE(HTTP)[Alternates]] 欄は今はなき
+[CODE(HTTP)[[[URI:]]]] 欄の代替の一翼を担うと期待されていました。
+(RFC 2068 19.6.2.5 参照。)
+
+[4] [[RFC2616]] は、 [CODE(HTTP)[Alternates]] 他は RFC 2068 で定義されてたけどあんまり使われてないから省くよんと言ってます (が、 2068 は定義してないんだってば)。
+っていうか RFC 2295 は無視ですか。
+(RFC 2616 19.6.3 参照。)
+- [5] この欄も、なんちゅーか、時代の流れに翻弄され続けたというか何と言うか、結局使われてない。。。
+
+[7] [[Virata-EmWeb]] というサーバーが送出するようです。
+
+[8] [CITE@@en[RFC 7168 - The Hyper Text Coffee Pot Control Protocol for Tea Efflux Appliances (HTCPCP-TEA)]]
+( ([TIME[2014-04-02 07:55:01 +09:00]] 版))
+<http://tools.ietf.org/html/rfc7168#section-2.1.1>@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@d154 5
+a158 1
+[7] [[Virata-EmWeb]] というサーバーが送出するようです。@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/416C7465726E61746573.txt>
+@
+text
+@d153 2
+@
+

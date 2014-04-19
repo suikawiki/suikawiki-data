@@ -1,0 +1,397 @@
+head	1.7;
+access;
+symbols
+	suika-20100509:1.2
+	before-graph-20090923:1.2;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.7
+date	2013.09.30.03.23.25;	author wakaba;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2012.02.19.12.33.01;	author wakaba;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2011.12.12.15.36.42;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2011.12.12.14.54.19;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2010.07.04.12.07.55;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2008.11.12.12.40.07;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2008.11.12.04.20.15;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.7
+log
+@updated by (anon)
+@
+text
+@
+* 持続接続についての色々
+
+→[[持続接続]]
+
+
+* 値としてよく使われるもの 
+
+,[CODE(HTTP)[[[close]]]]	,接続を閉じる	,[HTTP/1.1]
+,[CODE(HTTP)[[[Keep-Alive]]]]	,HTTP/1.0 持続接続	,[RFC 2068]
+,[CODE(HTTP)[[[Meter]]]]	,	,[RFC 2227]
+,[CODE(HTTP)[[[TE]]]]	,[[転送符号化]]	,[HTTP/1.1]
+
+[4] [CODE(HTTP)@@en[[[Upgrade:]]]] は、使用する場合必ず [CODE(HTTP)@@en[[[Connection:]]]]
+に指定しなければならないと規定されています。
+
+* 仕様書から
+
+
+** RFC 2068・2616 (HTTP/1.1) 14.10 Connection
+
+> The Connection general-header field allows the sender to specify
+options that are desired for that particular connection and MUST NOT
+be communicated by proxies over further connections.
+
+[CODE(HTTP)[Connection]] 一般頭欄によって、
+送信者がその特定の接続における望まれる選択子を指定することが出来ます。
+この頭欄は、串により更なる接続において通信しては'''なりません'''。
+
+> The Connection header has the following grammar:
+
+[CODE(HTTP)[Connection]] 頭は次の文法を持ちます :
+
+>
+- Connection = "Connection" ":" 1#(connection-token)
+- connection-token  = token
+
+> HTTP/1.1 proxies MUST parse the Connection header field before a
+message is forwarded and, for each connection-token in this field,
+remove any header field(s) from the message with the same name as the
+connection-token. Connection options are signaled by the presence of
+a connection-token in the Connection header field, not by any
+corresponding additional header field(s), since the additional header
+field may not be sent if there are no parameters associated with that
+connection option.
+
+HTTP/1.1 串は、メッセージが転送される前に [CODE(HTTP)[Connection]] 頭欄を解析しなければ'''ならず'''、
+この欄中の各 [CODE(ABNF)[connection-token]] について、
+[CODE(ABNF)[connection-token]] と同じ名前の全ての頭欄をメッセージから削除します。
+接続選択子は、 [CODE(HTTP)[Connection]] 頭欄中の
+[CODE(ABNF)[connection-token]] の出現により通知されます。
+それに対応する追加の頭欄によってではありません。
+その接続選択子に関連付けられた引数がないときに追加の頭欄は送信されないかもしれないからです。
+
+[INS[
+
+> Message headers listed in the Connection header MUST NOT include
+end-to-end headers, such as Cache-Control.
+
+[CODE(HTTP)[Connection]] 頭に列挙されたメッセージ頭並びは、
+[CODE(HTTP)[[[Cache-Control]]]] などの末端対末端頭を含んでは'''なりません'''。
+]INS]
+
+> HTTP/1.1 defines the "close" connection option for the sender to
+signal that the connection will be closed after completion of the
+response. For example,
+
+HTTP.1,1 は、その応答の完了後に接続を閉じることを送信者が通知する
+[CODE(HTTP)[close]] 接続選択子を定義します。例えば、
+要求頭欄並び中であれ応答頭欄並び中であれ、
+
+>
+- Connection: close
+
+> in either the request or the response header fields indicates that
+the connection [DEL[should not]] [INS[SHOULD NOT]] be considered `persistent' (section 8.1)
+after the current request/response is complete.
+
+は現在の要求・応答が完了した後に接続が「[[永続]]」
+とみなされる'''べきではない'''ことを示します。
+
+> HTTP/1.1 applications that do not support persistent connections MUST
+include the "close" connection option in every message.
+
+永続接続に対応していない HTTP/1.1 応用は各メッセージ中に [CODE(HTTP)[close]]
+接続選択子を含めなければ'''なりません'''。
+
+[INS[
+
+> A system receiving an HTTP/1.0 (or lower-version) message that
+includes a Connection header MUST, for each connection-token in this
+field, remove and ignore any header field(s) from the message with
+the same name as the connection-token. This protects against mistaken
+forwarding of such header fields by pre-HTTP/1.1 proxies. See section 19.6.2.
+
+[CODE(HTTP)[Connection]] 頭を含んだ
+HTTP/1.0 (又はそれ以下の版) のメッセージを受信したシステムは、
+この欄中の各 [CODE(ABNF)[connection-token]] について、メッセージ中の
+[CODE(ABNF)[connection-token]] と同じ名前の全ての頭欄を削除・無視しなければ'''なりません'''。
+これによってそれらの頭欄が HTTP/1.1 以前の串によって誤って転送されることを防ぎます。
+]INS]
+
+
+** RFC の部分の License
+
+[[RFCのライセンス]]
+
+
+* 関連する頭欄
+
+[1] [[串]]に関係して使われる同種の頭欄には、
+- [CODE(HTTP)[[[Cneonction]]]]
+- [CODE(HTTP)[[[Proxy-Connection]]]]
+- [CODE(HTTP)[[[Xonnection]]]]
+- [CODE(HTTP)[[[Xroxy-Connection]]]]
+
+が見つかっています。
+
+[2]
+[CODE(HTTP)[[[HTTP-Connection]]]], [CODE(HTTP)[[[Nncoection]]]] も同類っぽ。
+([[名無しさん]])
+
+
+[3]
+[CODE(HTTP)[[[Proxy-----------]]]] もそうかも。
+
+
+
+[5] [CITE@@en[RFC 2660 - The Secure HyperText Transfer Protocol]]
+( ([TIME[2013-07-20 22:21:48 +09:00]] 版))
+<http://tools.ietf.org/html/rfc2660#section-2.6.3.3>@
+
+
+1.6
+log
+@updated by (anon)
+@
+text
+@d127 5
+@
+
+
+1.5
+log
+@updated by (anon)
+@
+text
+@a0 4
+#?SuikaWiki/0.9 page-icon="HTTP"
+
+[[#comment]]
+
+d14 2
+a15 2
+[[#comment]]
+
+@
+
+
+1.4
+log
+@updated by (anon)
+@
+text
+@a129 1
+([[名無しさん]])
+a130 9
+
+[[#comment]]
+
+
+* メモ
+
+[4] [CITE@@en-GB-hixie[Web Applications 1.0]]
+( ([TIME[2005-09-01 20:41:51 +09:00]] 版))
+<http://www.whatwg.org/specs/web-apps/2005-09-01/#network>@
+
+
+1.3
+log
+@updated by (anon)
+@
+text
+@d136 5
+a140 1
+* メモ@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@d1 136
+a136 1
+reLQen  <a href="http://niwihxjscrcn.com/">niwihxjscrcn</a>, [url=http://tbzdtuodxjeh.com/]tbzdtuodxjeh[/url], [link=http://mcvtwszlyhae.com/]mcvtwszlyhae[/link], http://cxltwjffcuzs.com/@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/436F6E6E656374696F6E.txt>
+@
+text
+@d1 1
+a1 136
+#?SuikaWiki/0.9 page-icon="HTTP"
+
+[[#comment]]
+
+
+* 持続接続についての色々
+
+→[[持続接続]]
+
+
+* 値としてよく使われるもの 
+
+,[CODE(HTTP)[[[close]]]]	,接続を閉じる	,[HTTP/1.1]
+,[CODE(HTTP)[[[Keep-Alive]]]]	,HTTP/1.0 持続接続	,[RFC 2068]
+,[CODE(HTTP)[[[Meter]]]]	,	,[RFC 2227]
+,[CODE(HTTP)[[[TE]]]]	,[[転送符号化]]	,[HTTP/1.1]
+
+[[#comment]]
+
+
+* 仕様書から
+
+
+** RFC 2068・2616 (HTTP/1.1) 14.10 Connection
+
+> The Connection general-header field allows the sender to specify
+options that are desired for that particular connection and MUST NOT
+be communicated by proxies over further connections.
+
+[CODE(HTTP)[Connection]] 一般頭欄によって、
+送信者がその特定の接続における望まれる選択子を指定することが出来ます。
+この頭欄は、串により更なる接続において通信しては'''なりません'''。
+
+> The Connection header has the following grammar:
+
+[CODE(HTTP)[Connection]] 頭は次の文法を持ちます :
+
+>
+- Connection = "Connection" ":" 1#(connection-token)
+- connection-token  = token
+
+> HTTP/1.1 proxies MUST parse the Connection header field before a
+message is forwarded and, for each connection-token in this field,
+remove any header field(s) from the message with the same name as the
+connection-token. Connection options are signaled by the presence of
+a connection-token in the Connection header field, not by any
+corresponding additional header field(s), since the additional header
+field may not be sent if there are no parameters associated with that
+connection option.
+
+HTTP/1.1 串は、メッセージが転送される前に [CODE(HTTP)[Connection]] 頭欄を解析しなければ'''ならず'''、
+この欄中の各 [CODE(ABNF)[connection-token]] について、
+[CODE(ABNF)[connection-token]] と同じ名前の全ての頭欄をメッセージから削除します。
+接続選択子は、 [CODE(HTTP)[Connection]] 頭欄中の
+[CODE(ABNF)[connection-token]] の出現により通知されます。
+それに対応する追加の頭欄によってではありません。
+その接続選択子に関連付けられた引数がないときに追加の頭欄は送信されないかもしれないからです。
+
+[INS[
+
+> Message headers listed in the Connection header MUST NOT include
+end-to-end headers, such as Cache-Control.
+
+[CODE(HTTP)[Connection]] 頭に列挙されたメッセージ頭並びは、
+[CODE(HTTP)[[[Cache-Control]]]] などの末端対末端頭を含んでは'''なりません'''。
+]INS]
+
+> HTTP/1.1 defines the "close" connection option for the sender to
+signal that the connection will be closed after completion of the
+response. For example,
+
+HTTP.1,1 は、その応答の完了後に接続を閉じることを送信者が通知する
+[CODE(HTTP)[close]] 接続選択子を定義します。例えば、
+要求頭欄並び中であれ応答頭欄並び中であれ、
+
+>
+- Connection: close
+
+> in either the request or the response header fields indicates that
+the connection [DEL[should not]] [INS[SHOULD NOT]] be considered `persistent' (section 8.1)
+after the current request/response is complete.
+
+は現在の要求・応答が完了した後に接続が「[[永続]]」
+とみなされる'''べきではない'''ことを示します。
+
+> HTTP/1.1 applications that do not support persistent connections MUST
+include the "close" connection option in every message.
+
+永続接続に対応していない HTTP/1.1 応用は各メッセージ中に [CODE(HTTP)[close]]
+接続選択子を含めなければ'''なりません'''。
+
+[INS[
+
+> A system receiving an HTTP/1.0 (or lower-version) message that
+includes a Connection header MUST, for each connection-token in this
+field, remove and ignore any header field(s) from the message with
+the same name as the connection-token. This protects against mistaken
+forwarding of such header fields by pre-HTTP/1.1 proxies. See section 19.6.2.
+
+[CODE(HTTP)[Connection]] 頭を含んだ
+HTTP/1.0 (又はそれ以下の版) のメッセージを受信したシステムは、
+この欄中の各 [CODE(ABNF)[connection-token]] について、メッセージ中の
+[CODE(ABNF)[connection-token]] と同じ名前の全ての頭欄を削除・無視しなければ'''なりません'''。
+これによってそれらの頭欄が HTTP/1.1 以前の串によって誤って転送されることを防ぎます。
+]INS]
+
+
+** RFC の部分の License
+
+[[RFCのライセンス]]
+
+
+* 関連する頭欄
+
+[1] [[串]]に関係して使われる同種の頭欄には、
+- [CODE(HTTP)[[[Cneonction]]]]
+- [CODE(HTTP)[[[Proxy-Connection]]]]
+- [CODE(HTTP)[[[Xonnection]]]]
+- [CODE(HTTP)[[[Xroxy-Connection]]]]
+
+が見つかっています。
+
+[2]
+[CODE(HTTP)[[[HTTP-Connection]]]], [CODE(HTTP)[[[Nncoection]]]] も同類っぽ。
+([[名無しさん]])
+
+
+[3]
+[CODE(HTTP)[[[Proxy-----------]]]] もそうかも。
+([[名無しさん]])
+
+
+[[#comment]]
+
+
+* メモ@
+

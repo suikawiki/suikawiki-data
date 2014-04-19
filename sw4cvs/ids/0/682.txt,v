@@ -1,0 +1,474 @@
+head	1.1;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2008.11.11.00.48.11;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/5246432032383138.txt>
+@
+text
+@'''HTTP Over TLS'''
+-Network Working Group                                       
+-Request for Comments: 2818                                  
+-Category: Informational                                      
+-E. Rescorla
+- RTFM, Inc.
+-  May 2000
+
+*Status of this Memo
+> This memo provides information for the Internet community.  It does
+not specify an Internet standard of any kind.  Distribution of this
+memo is unlimited.
+
+*Copyright Notice
+>   Copyright (C) The Internet Society (2000).  All Rights Reserved.
+
+*Abstract
+>   This memo describes how to use TLS to secure HTTP connections over
+the Internet. Current practice is to layer HTTP over SSL (the
+predecessor to TLS), distinguishing secured traffic from insecure
+traffic by the use of a different server port. This document
+documents that practice using TLS. A companion document describes a
+method for using HTTP/TLS over the same port as normal HTTP [RFC2817].
+
+このメモは、 TLS を使ってインターネット上の HTTP
+接続を安全にする方法を説明します。現在の慣習は HTTP
+を SSL (TLS の先駆け) 上の層とし、
+違った鯖のポートを使って安全な通信と安全でない通信を分けるというものです。
+RFC 2817 は通常の HTTP と同じポート上で HTTP/TLS を使う方法を説明しています。
+
+* Table of Contents
+>
+   1. Introduction  . . . . . . . . . . . . . . . . . . . . . . 2
+   1.1. Requirements Terminology  . . . . . . . . . . . . . . . 2
+   2. HTTP Over TLS . . . . . . . . . . . . . . . . . . . . . . 2
+   2.1. Connection Initiation . . . . . . . . . . . . . . . . . 2
+   2.2. Connection Closure  . . . . . . . . . . . . . . . . . . 2
+   2.2.1. Client Behavior . . . . . . . . . . . . . . . . . . . 3
+   2.2.2. Server Behavior . . . . . . . . . . . . . . . . . . . 3
+   2.3. Port Number . . . . . . . . . . . . . . . . . . . . . . 4
+   2.4. URI Format  . . . . . . . . . . . . . . . . . . . . . . 4
+   3. Endpoint Identification . . . . . . . . . . . . . . . . . 4
+   3.1. Server Identity . . . . . . . . . . . . . . . . . . . . 4
+   3.2. Client Identity . . . . . . . . . . . . . . . . . . . . 5
+   References . . . . . . . . . . . . . . . . . . . . . . . . . 6
+   Security Considerations  . . . . . . . . . . . . . . . . . . 6
+   Author's Address . . . . . . . . . . . . . . . . . . . . . . 6
+   Full Copyright Statement . . . . . . . . . . . . . . . . . . 7
+
+*1.  Introduction
+>   HTTP [RFC2616] was originally used in the clear on the Internet.
+However, increased use of HTTP for sensitive applications has
+required security measures. SSL, and its successor TLS [RFC2246] were
+designed to provide channel-oriented security. This document
+describes how to use HTTP over TLS.
+
+HTTP は元々インターネット上で平文で使われていました。
+しかし、繊細な応用に HTTP を使うことが増えて参りましたので、
+安全の仕組みが必要になっています。 SSL とその後継である TLS
+はチャンネル指向の安全を提供するよう設計されました。
+この文書は HTTP を TLS 上で使う方法を説明します。
+
+**1.1.  Requirements Terminology
+>   Keywords "MUST", "MUST NOT", "REQUIRED", "SHOULD", "SHOULD NOT" and
+"MAY" that appear in this document are to be interpreted as described
+in [RFC2119].
+
+*2.  HTTP Over TLS
+>   Conceptually, HTTP/TLS is very simple. Simply use HTTP over TLS
+precisely as you would use HTTP over TCP.
+
+概念的には、 HTTP/TLS は非常に簡単です。 HTTP を [[TCP]]
+の上で使うのと同じように、単純に HTTP を TLS の上で使います。
+
+**2.1.  Connection Initiation
+>   The agent acting as the HTTP client should also act as the TLS
+client.  It should initiate a connection to the server on the
+appropriate port and then send the TLS ClientHello to begin the TLS
+handshake. When the TLS handshake has finished. The client may then
+initiate the first HTTP request.  All HTTP data MUST be sent as TLS
+"application data".  Normal HTTP behavior, including retained
+connections should be followed.
+
+HTTP クライアントとして動作するエージェントは、
+TLS クライアントとしても動作するべきです。
+このエージェントは適切なポートで鯖への接続を初期化してから、
+TLS 握手をはじめるため、 TLS ClientHello 
+を送信するべきです。 TLS 握手が終われば、
+クライアントは最初の HTTP 要求を初期化してかまいません。
+以後、その接続も含めて、通常の HTTP の動作を続けるべきです。
+
+**2.2.  Connection Closure
+>   TLS provides a facility for secure connection closure. When a valid
+closure alert is received, an implementation can be assured that no
+further data will be received on that connection.  TLS
+implementations MUST initiate an exchange of closure alerts before
+closing a connection. A TLS implementation MAY, after sending a
+closure alert, close the connection without waiting for the peer to
+send its closure alert, generating an "incomplete close".  Note that
+an implementation which does this MAY choose to reuse the session.
+This SHOULD only be done when the application knows (typically
+through detecting HTTP message boundaries) that it has received all
+the message data that it cares about.
+
+TLS は安全接続終結の機能を提供しています。実装は、妥当な終結通知を受取ったら、
+その接続でこれ以上っデータを受取らないと確定できます。
+TLS 実装者は接続を閉じる前に終結通知の交換を初期化しなければ'''なりません'''。
+TLS 実装は、終結通知を送信した後、同輩がその終結通知を送信するのを待たずして接続を閉じて
+[Q[不完全に閉じる]]こととしても'''かまいません'''。
+これを行う実装者は、セッションを再利用することを選んでも'''かまわない'''ことに注意してください。
+これは応用が注意を払っているメッセージ・データをすべて受信したと
+(普通 HTTP メッセージ境界の判定によって)
+知っている時にのみおこなう'''べきです'''。
+
+>   As specified in [RFC2246], any implementation which receives a
+connection close without first receiving a valid closure alert (a
+"premature close") MUST NOT reuse that session.  Note that a
+premature close does not call into question the security of the data
+already received, but simply indicates that subsequent data might
+have been truncated. Because TLS is oblivious to HTTP
+request/response boundaries, it is necessary to examine the HTTP data
+itself (specifically the Content-Length header) to determine whether
+the truncation occurred inside a message or between messages.
+
+[[RFC 2246]] で規定されているとおり、
+妥当な終結通知なしの接続終結 ([Q[早すぎる終結]])
+を受取った実装は、そのセッションを再利用しては'''なりません'''。
+早すぎる終結はすでに受信したデータの安全性についての疑問は呈さず、
+単純に以降のデータは切り捨てられているかもしれないということを示しています。
+TLS は HTTP の要求・応答の境界を知りませんから、
+メッセージ内かメッセージ間で切り捨てが起こったかどうかを決定するためには
+HTTP データ自体 (特に [CODE(HTTP)[[[Content-Length]]]] 頭)
+を検査する必要があります。
+
+***2.2.1.  Client Behavior
+>Because HTTP uses connection closure to signal end of server data,
+client implementations MUST treat any premature closes as errors and
+the data received as potentially truncated.  While in some cases the
+HTTP protocol allows the client to find out whether truncation took
+place so that, if it received the complete reply, it may tolerate
+such errors following the principle to "[be] strict when sending and
+tolerant when receiving" [RFC1958], often truncation does not show in
+the HTTP protocol data; two cases in particular deserve special note:
+
+HTTP は鯖のデータの終了を通知するために接続を閉じますから、
+クライアント実装は早すぎる終結を誤りとし、
+受信したデータは切り捨てられているかもしれないものとして扱わなければ'''なりません'''。
+HTTP プロトコルは場合によってはクライアントが切捨てが行われたかどうかを判断することを認めていますが、
+完全な返答を受信したなら、[Q[[[人に優しく自分に厳しく]]]]
+(送信の時は厳密に、受信の時は寛大に) の原則に従って、
+そのような誤りも多めに見てもかまいません。しばしば、
+切捨ては HTTP プロトコル・データ中には見られません。
+2つの場合が特に注目する価値があります。
+
+>     A HTTP response without a Content-Length header. Since data length
+in this situation is signalled by connection close a premature
+close generated by the server cannot be distinguished from a
+spurious close generated by an attacker.
+
+HTTP 応答に [CODE(HTTP)[Content-Length]]]] 頭がない場合。
+この状況ではデータ長は接続の終結で通知されますから、
+鯖が早すぎる終結を行うと攻撃者による偽の終結と区別できません。
+
+>     A HTTP response with a valid Content-Length header closed before
+all data has been read. Because TLS does not provide document
+oriented protection, it is impossible to determine whether the
+server has miscomputed the Content-Length or an attacker has
+truncated the connection.
+
+HTTP 応答に妥当な [CODE(HTTP)[Content-Length]] 頭があり、
+すべてのデータを読む前に閉じられた場合。
+TLS は文書指向の保護を提供しませんから、
+鯖が [CODE(HTTP)[Content-Length]] を誤計算したのか、
+攻撃者が接続を切り捨てたのかは決定できません。
+
+>   There is one exception to the above rule. When encountering a
+premature close, a client SHOULD treat as completed all requests for
+which it has received as much data as specified in the Content-Length header.
+
+前述の規則には1つの例外があります。クライアントが早すぎる終結に遭遇したときには、
+[CODE(HTTP)[Content-Length]] 頭に指定されただけのデータを受信しているすべての要求は完全なものとして扱う'''べきです'''。
+
+>  A client detecting an incomplete close SHOULD recover gracefully.  It
+MAY resume a TLS session closed in this fashion.
+
+不完全な終結と判定したクライアントは、優美に回復する'''べきです'''。
+クライアントはこの方法で閉じられた TLS
+セッションを再開しても'''かまいません'''。
+
+>   Clients MUST send a closure alert before closing the connection.
+Clients which are unprepared to receive any more data MAY choose not
+to wait for the server's closure alert and simply close the
+connection, thus generating an incomplete close on the server side.
+
+クライアントは接続を閉じる前に終結通知を送信しなければ'''なりません'''。
+もうこれ以上のデータを受信する準備がないというクライアントは、
+鯖の終結通知を待たずに単に接続を閉じることを選んでも'''かまいません'''。
+これは鯖側では不完全な終結となります。
+
+***2.2.2.  Server Behavior
+>   RFC 2616 permits an HTTP client to close the connection at any time,
+and requires servers to recover gracefully.  In particular, servers
+SHOULD be prepared to receive an incomplete close from the client,
+since the client can often determine when the end of server data is.
+Servers SHOULD be willing to resume TLS sessions closed in this fashion.
+
+[[RFC 2616]] は HTTP クライアントが接続を閉じるのをいつでも認めていまして、
+鯖は優美に回復することを要求しています。特に、
+鯖はクライアントからの不完全な終結を受信する準備をする'''べきです'''。
+なぜなら、クライアントはしばしばいつ鯖のデータが終わるのかを決定できるからです。
+鯖はこの方法で閉じられた TLS セッションを再開する意思がある'''べきです'''。
+
+>   Implementation note: In HTTP implementations which do not use
+persistent connections, the server ordinarily expects to be able to
+signal end of data by closing the connection. When Content-Length is
+used, however, the client may have already sent the closure alert and
+dropped the connection.
+
+実装者に注意: 持続接続を使わない HTTP 実装では、
+鯖は普通接続を閉じることによってデータの終了を通知することができると期待されます。
+しかし、 [CODE(HTTP)[Content-Length]] が使われる場合、
+クライアントは既に終結通知を送信していて接続を落とすかもしれません。
+
+>   Servers MUST attempt to initiate an exchange of closure alerts with
+the client before closing the connection. Servers MAY close the
+connection after sending the closure alert, thus generating an
+incomplete close on the client side.
+
+鯖は、接続を閉じる前にクライアントとの終結通知の交換を初期化しようと試みなければ'''なりません'''。
+鯖は終結通知を送信した後に接続を閉じて'''かまいません'''。
+これはクライアント側では不完全な終結となります。
+
+** 2.3.  Port Number
+>  The first data that an HTTP server expects to receive from the client
+is the Request-Line production. The first data that a TLS server (and
+hence an HTTP/TLS server) expects to receive is the ClientHello.
+Consequently, common practice has been to run HTTP/TLS over a
+separate port in order to distinguish which protocol is being used.
+When HTTP/TLS is being run over a TCP/IP connection, the default port
+is 443. This does not preclude HTTP/TLS from being run over another
+transport. TLS only presumes a reliable connection-oriented data stream.
+
+HTTP 鯖が最初にクライアントから受信することを期待するデータは、
+[CODE(ABNF)[[[Request-Line]]]] 生成規則です。
+TLS 鯖 (そして後に HTTP/TLS 鯖) が最初に受信することを期待するデータは
+[CODE[[[ClientHello]]]] です。ですから、
+共通の慣習はどちらのプロトコルが使われているのかを区別するために HTTP/TLS 
+を別のポートで走らせるということになっています。
+HTTP/TLS が TCP/IP 接続の上で動いている時は、
+既定のポートは [CODE[[[443]]]] です。これは HTTP/TLS
+を他の輸送路で動かすことを禁ずるものではありません。 TLS
+は信頼できる接続指向のデータ列だけを仮定しています。
+
+** 2.4.  URI Format
+>   HTTP/TLS is differentiated from HTTP URIs by using the 'https'
+protocol identifier in place of the 'http' protocol identifier. An
+example URI specifying HTTP/TLS is:
+
+HTTP/TLS は [CODE(URI)[[[http]]]] プロトコル識別子のところに
+[CODE(URI)[[[https]]]] プロトコル識別子を使って
+HTTP URI と区別します。 HTTP/TLS を指定する URI の例:
+
+>     https://www.example.com/~smith/home.html
+
+* 3.  Endpoint Identification
+**3.1.  Server Identity
+>   In general, HTTP/TLS requests are generated by dereferencing a URI.
+As a consequence, the hostname for the server is known to the client.
+If the hostname is available, the client MUST check it against the
+server's identity as presented in the server's Certificate message,
+in order to prevent man-in-the-middle attacks.
+
+通常、 HTTP/TLS の要求は URI の参照を解くことにより生成されます。
+従って、クライアントには鯖のホスト名は分かっています。
+クライアントは、ホスト名が利用可能であれば、[[途中の人攻撃]]を防ぐため、
+それと鯖の [CODE[Certificate]] メッセージに示された識別情報を確認しなければ'''なりません'''。
+
+>   If the client has external information as to the expected identity of
+the server, the hostname check MAY be omitted. (For instance, a
+client may be connecting to a machine whose address and hostname are
+dynamic but the client knows the certificate that the server will
+present.) In such cases, it is important to narrow the scope of
+acceptable certificates as much as possible in order to prevent man
+in the middle attacks.  In special cases, it may be appropriate for
+the client to simply ignore the server's identity, but it must be
+understood that this leaves the connection open to active attack.
+
+クライアントが期待される鯖の識別についての外部情報を持っていれば、
+ホスト名の確認は省略して'''構いません'''。
+(たとえば、クライアントは番地とホスト名が動的であってもクライアントがその鯖が示す証明書を知っている機械なら、
+接続して構いません。) その場合、可能な限り途中の人攻撃を防ぐため、
+受け入れる証明の範囲を狭めることが重要です。特別な場合、
+クライアントは鯖の識別を単に無視するのが適当かもしれませんが、
+接続を開き放しで攻撃を活性化することを理解しなければなりません。
+
+>   If a subjectAltName extension of type dNSName is present, that MUST
+be used as the identity. Otherwise, the (most specific) Common Name
+field in the Subject field of the certificate MUST be used. Although
+the use of the Common Name is existing practice, it is deprecated and
+Certification Authorities are encouraged to use the dNSName instead.
+
+型 [CODE[dNSName]] の [CODE[subjectAltName]] 拡張が提示されている場合、
+これは識別として使わなければ'''なりません'''。そうでなければ、
+証明書の [CODE[Subject]] 欄の (もっとも特定的な) 共通名
+([CODE[Common Name]]) 欄を使わなければ'''なりません'''。
+共通名を使用するのは既存の慣習ですが、これは非推奨で、
+認証機関は [CODE[dNSName]] を代わりに使うことを推奨しています。
+
+>   Matching is performed using the matching rules specified by
+[RFC2459].  If more than one identity of a given type is present in
+the certificate (e.g., more than one dNSName name, a match in any one
+of the set is considered acceptable.) Names may contain the wildcard
+character * which is considered to match any single domain name
+component or component fragment. E.g., *.a.com matches foo.a.com but
+not bar.foo.a.com. f*.com matches foo.com but not bar.com.
+
+一致は、[[RFC 2459]] で規定された一致規則を使って行います。
+証明書にある型の識別が複数存在する場合 (たとえば [CODE[dNSName]]
+名が複数ある場合)、その中のどれに対する一致も受入れ可能と考えます。
+名前は、 wildcard 文字 [CODE[*]] を含んでも構いません。
+[CODE[*]] は任意の一つのドメイン名部品または部品素片を表します。
+たとえば、 [SAMP[*.a.com]] は [SAMP[foo.a.com]] に一致しますが、
+[SAMP[bar.foo.a.com]] には一致しません。 [SAMP[f*.com]]
+は [SAMP[foo.com]] に一致しますが、 [SAMP[bar.com]] には一致しません。
+
+>   In some cases, the URI is specified as an IP address rather than a
+hostname. In this case, the iPAddress subjectAltName must be present
+in the certificate and must exactly match the IP in the URI.
+
+場合によっては、 URI がホスト名ではなく IP 番地で指定されています。
+この場合には、証明書中に [CODE[IPAddress]] [CODE[subjectAltName]]
+が存在し、 URI 中の IP 番地と正確に一致しなければなりません。
+
+>   If the hostname does not match the identity in the certificate, user
+oriented clients MUST either notify the user (clients MAY give the
+user the opportunity to continue with the connection in any case) or
+terminate the connection with a bad certificate error. Automated
+clients MUST log the error to an appropriate audit log (if available)
+and SHOULD terminate the connection (with a bad certificate error).
+Automated clients MAY provide a configuration setting that disables
+this check, but MUST provide a setting which enables it.
+
+ホスト名が証明書中の識別と一致しない場合は、
+利用者指向のクライアントは利用者に通知するか、
+または問題のある証明書による誤りとして接続を終端し'''なければなりません'''。
+(前者の場合、クライアントは利用者にいずれにせよ接続を続行する機会を与えても'''構いません'''。)
+自動化クライアントは、 (あれば) 適当な監査記録に誤りを記録しなければ'''なりません'''し、
+接続を (問題のある証明書による誤りとして) 終端する'''べきです'''。
+自動化クライアントはこの確認を無効化する設定を提供しても'''構いません'''が、
+確認を有効化する設定は提供しなければ'''なりません'''。
+
+>   Note that in many cases the URI itself comes from an untrusted
+source. The above-described check provides no protection against
+attacks where this source is compromised. For example, if the URI was
+obtained by clicking on an HTML page which was itself obtained
+without using HTTP/TLS, a man in the middle could have replaced the
+URI.  In order to prevent this form of attack, users should carefully
+examine the certificate presented by the server to determine if it
+meets their expectations.
+
+URI は多くの場合信頼できない出所からのものであることに注意してください。
+前述の確認はこの出所が信頼できない場合の攻撃に対する保護を行っていません。
+たとえば、 URI を HTTP/TLS を使っていない HTML 頁で[[かちっ]]して得た場合、
+途中の人は URI を置換えているかもしれません。
+この形の攻撃を防ぐため、利用者は鯖が示した証明書を注意深く検査して期待通りのものかを判断するべきです。
+
+**3.2.  Client Identity
+
+>   Typically, the server has no external knowledge of what the client's
+identity ought to be and so checks (other than that the client has a
+certificate chain rooted in an appropriate CA) are not possible. If a
+server has such knowledge (typically from some source external to
+HTTP or TLS) it SHOULD check the identity as described above.
+
+通常、鯖はクライアントの識別をどうするべきかの外部知識を持ち合わせていませんから、
+(クライアントが適当な [[CA]] を[[根]]とする証明書[[鎖]]を持っているか以外に)
+検査することは不可能です。鯖がその種の知識を (通常 HTTP や
+TLS 以外の外部の出所から) 持ち合わせているときは、前述のように識別を検査する'''べきです'''。
+
+* References
+
+   [RFC2459] Housley, R., Ford, W., Polk, W. and D. Solo, "Internet
+             Public Key Infrastructure: Part I: X.509 Certificate and
+             CRL Profile", RFC 2459, January 1999.
+
+   [RFC2616] Fielding, R., Gettys, J., Mogul, J., Frystyk, H., Masinter,
+             L., Leach, P. and T. Berners-Lee, "Hypertext Transfer
+             Protocol, HTTP/1.1", RFC 2616, June 1999.
+
+   [RFC2119] Bradner, S., "Key Words for use in RFCs to indicate
+             Requirement Levels", BCP 14, RFC 2119, March 1997.
+
+   [RFC2246] Dierks, T. and C. Allen, "The TLS Protocol", RFC 2246,
+             January 1999.
+
+   [RFC2817] Khare, R. and S. Lawrence, "Upgrading to TLS Within
+             HTTP/1.1", RFC 2817, May 2000.
+
+*Security Considerations
+
+>  This entire document is about security.
+
+この文書は全体が安全性についてです。
+
+* Author's Address
+
+   Eric Rescorla
+   RTFM, Inc.
+   30 Newell Road, #16
+   East Palo Alto, CA 94303
+
+   Phone: (650) 328-8631
+   EMail: ekr@@rtfm.com
+
+*Full Copyright Statement
+
+   Copyright (C) The Internet Society (2000).  All Rights Reserved.
+
+   This document and translations of it may be copied and furnished to
+   others, and derivative works that comment on or otherwise explain it
+   or assist in its implementation may be prepared, copied, published
+   and distributed, in whole or in part, without restriction of any
+   kind, provided that the above copyright notice and this paragraph are
+   included on all such copies and derivative works.  However, this
+   document itself may not be modified in any way, such as by removing
+   the copyright notice or references to the Internet Society or other
+   Internet organizations, except as needed for the purpose of
+   developing Internet standards in which case the procedures for
+   copyrights defined in the Internet Standards process must be
+   followed, or as required to translate it into languages other than
+   English.
+
+   The limited permissions granted above are perpetual and will not be
+   revoked by the Internet Society or its successors or assigns.
+
+   This document and the information contained herein is provided on an
+   "AS IS" basis and THE INTERNET SOCIETY AND THE INTERNET ENGINEERING
+   TASK FORCE DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING
+   BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE INFORMATION
+   HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED WARRANTIES OF
+   MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+
+* Acknowledgement
+
+   Funding for the RFC Editor function is currently provided by the
+   Internet Society.
+
+* メモ
+@

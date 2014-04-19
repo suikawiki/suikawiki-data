@@ -1,0 +1,259 @@
+head	1.1;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2008.11.11.00.45.23;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/4353532F524446.txt>
+@
+text
+@
+
+[1] 処理系の都合で [[CSS]] が [[RDF]]
+として扱えたらなあと思うことがあります。
+
+[[GSS]] なんて近いんですが、完全写像じゃありませんから、
+CSS そのものを扱うのには不都合です。
+欲しいのは完全にあたらしくて綺麗な[[スタイル言語]]じゃなくて、
+とりあえず手元の CSS を処理するための方法だってことです。
+
+[2] ってことでちょっと考えてみます。
+
+In CSS:
+[PRE[
+ns|element1 > ns|element2 {
+  display : block;
+  font-family : "font 1", "font 2", serif;
+  color : red;
+  background-color : #2351A4;
+  border : thin dotted rgb (12, 53, 53);
+}
+]PRE]
+
+In RDF/[[N3]]:
+[PRE[
+
+[a             css-selector:element;
+ xmlnames:name ns:element2;
+ css-selector:child-of
+               [a           css-selector:element;
+                css:name    ns:element1;
+               ]
+]
+    css:display       css:block;
+    css:font-family   [a css:font; css-font:name "font 1"],
+                      [a css:font; css-font:name "font 2"],
+                      css-font:serif;
+    css:color         [a css:color; css-color:name "red"];
+    css:background-color [a css:color; css-color:hex "2351A4"];
+    css:border        [a                 css:border;
+                       css-border:width  css:thin;
+                       css-border:style  css:dotted;
+                       css-border:color  [a               css:color;
+                                          css-color:red   "12";
+                                          css-color:green "53";
+                                          css-color:blue  "53";
+    .                                         ];
+]PRE]
+
+とか。特に[[選択子]]辺りは手書きは無理かもだけど、
+そもそも処理用だしいいかなって感じ。
+
+
+* 属性・特性
+
+[3] [[属性]]・[[特性]]には[CODE(URI)[[VAR[名前空間]]:[VAR[名前]]]]という資源名を与えます。
+例えば、 [CODE(CSS)[[[font-size]]]] 属性の資源名は
+[CODE(URI)[[VAR[名前空間]]:font-size]] になります。
+
+これが[[述語]]になります。
+[[RDF]] 的には特性なので、小文字のままにします。
+
+[4] 値は[[目的語]]とします。
+具体的表現は属性・特性の種類により異なりますが、
+基本的には[[表記]]ではなく資源にします。
+資源の型 (class) は可能なら適当な代表属性名の先頭を大文字にしたものとします。
+
+例えば、色を表す class は、
+[CODE(URI)[[VAR[名前空間]]:Color]] とします。
+
+[[#comment]]
+
+
+* 見出し語
+
+[5] 見出し語は表記ではなく資源にします。
+名前空間は一応属性名とは別にしますが、
+種類別に分けるのがいいか全部同じ空間でいいか
+(例えば <color>/red と <font-family>/serif
+を同じ名前空間にするのかどうか) は検討の余地があります。
+
+表記にしないのは、表す対象が見出し語の文字列ではなく何らかの概念
+(red なら「赤」という色) であるからにして、
+見出し語はそのラベルに過ぎないからです。
+
+参考 : 見出し語の RDF/N3 定義の例
+(CSS の記述の変換結果例じゃないよん):
+[PRE[
+  css-kwd:red
+    a             css:Color;
+    css:rgb-red   "255";
+    css:rgb-green "0";
+    css:rgb-blue  "0";
+  .
+  
+  css-kwd:serif
+    a             css:Font;
+                  ## あるシステムでの束縛の例
+    css:font-name "Times New Roman";
+  .
+  
+  css-kwd:pointer
+    a             css:Cursor;
+    something:same-as <file://path/to/pointer.cur>;
+  .
+  
+  css-kwd:bolder
+    a             css:Weight;
+    ## 定義しようがないかも
+  .
+  
+  css-kwd:inherit
+    a             css:Property;
+    something:css-level something:css2;
+  .
+]PRE]
+
+[[#comment]]
+
+
+* 数値
+
+[6]
+[PRE[
+  ## font-size: 12em;
+  css:font-size  [
+                  a            css:Length;
+                  css-unit:em  "12";
+                 ];
+  
+  ## border-width: 0;
+  css:border-width css-kwd:zero;
+    と
+  css:border-width [
+                    a          css:Length;
+                    css-unit:_ "0";
+                   ];
+    とどっちがいいか。
+  
+  ## font-weight: 700;
+  css:font-weight [
+                   a           css:Weight;
+                   css-unit:_  "700";
+                  ];
+]PRE]
+
+[[#comment]]
+
+
+* URI
+
+[7]
+[PRE[
+  ## background-image: url(path/to/image);
+  css:background-image <path/to/image>;
+]PRE]
+
+[[#comment]]
+
+
+* 文字列
+
+[8]
+[PRE[
+  ## content: "ABC";
+  css:content "ABC";
+  
+  ## content: "Something" url(path/to/resource);
+  css:content [
+               a      rdf:Seq;
+               rdf:_1 "Something";
+               rdf:_2 <path/to/resource>;
+              ];
+]PRE]
+
+[[#comment]]
+
+
+* 複合
+
+[9]
+[PRE[
+  ## quotes: "{" "}";
+  css:quotes [
+              a       rdf:Seq;
+              rdf:_1  "{";
+              rdf:_2  "}";
+             ];
+  
+  ## margin: 1px 2px;
+  css:margin [
+              a          css:Margin;
+              css:top    [a css:Length; css-unit:px "1"];
+              css:bottom [a css:Length; css-unit:px "1"];
+              css:right  [a css:Length; css-unit:px "2"];
+              css:left   [a css:Length; css-unit:px "2"];
+  ## cf. css:Margin rdf:isSubClassOf css:Rule
+  
+  ## border: thin dashed blue;
+  css:border [
+              a             css:Border;
+              css-bdr:width css-kwd:thin;
+              css-bdr:style css-kwd:dashed;
+              css-bdr:color css-kwd:blue;
+             ];
+  ## border-left: 1cm solid #c0c0c0;
+  css-bdr:left [
+                a             css:Border;
+                css-bdr:width [a css:Length; css-unit:cm "1"];
+                css-bdr:style css-kwd:solid;
+                css-bdr:color [a css:Color; css:hex "C0C0C0"];
+               ];
+  ## border-color: rgb ( 1, 2, 3);
+  css-bdr:color [
+                 a              css:Color;
+                 css-rgb:red    "1";
+                 css-rgb:blue   "2";
+                 css-rgb:green  "3";
+                ];
+  # cf.
+    @@prefix css-bdr <[VAR[css:]]border->.
+    @@prefix css-rgb <[VAR[css:]]rgb->.
+]PRE]
+
+[[#comment]]
+
+
+* memo
+
+[10]
+Nearby: [[CSS/XML]], [[SAX]], [[CSS DOM]] (CSS OM)
+([[名無しさん]] [sage])
+
+@

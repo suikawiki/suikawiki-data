@@ -1,0 +1,283 @@
+head	1.2;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.2
+date	2013.09.21.07.58.30;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2008.11.11.06.57.15;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@
+* 仕様書から
+
+
+** RFC 2068・2616 (HTTP/1.1) 3.6 Transfer Codings
+
+> Transfer[INS[-]]coding values are used to indicate an encoding
+transformation that has been, can be, or may need to be applied to an
+entity-body in order to ensure "safe transport" through the network.
+This differs from a content coding in that the transfer[INS[-]]coding is a
+property of the message, not of the original entity.
+
+[CODE(ABNF)[transfer-coding]] 値は、ネットワークを通した「安全な輸送」
+を確保するために [CODE(ABNF)[entity-body]] に適用している、
+適用することができる、あるいは適用する必要がある符号化変形を示すのに使います。
+転送符号化はメッセージの特性であってもとの実体の特性ではないという点において、
+転送符号化は[[内容符号化]]と異なります。
+
+>
+- transfer-coding         = "chunked" | transfer-extension
+- transfer-extension      = [INS[token *( ";" parameter )]]
+
+[INS[
+
+> Parameters are in  the form of attribute/value pairs.
+
+引数は属性・値の組の形です。
+
+>
+- parameter               = attribute "=" value
+- attribute               = token
+- value                   = token | quoted-string
+]INS]
+
+> All transfer-coding values are case-insensitive. HTTP/1.1 uses
+transfer[INS[-]]coding values [INS[in the TE header field (section 14.39) and]]
+in the Transfer-Encoding header field (section [DEL[14.40]] [INS[14.41]]).
+
+すべての [CODE(ABNF)[transfer-coding]] 値は大文字・小文字を区別しません。
+HTTP/1.1 は [INS[[CODE(HTTP)[[[TE]]]] 頭欄と]] [CODE(HTTP)[[[Transfer-Encoding]]]]
+頭欄で [CODE(ABNF)[transfer-coding]] 値を使います。
+
+[INS[
+
+> Whenever a transfer-coding is applied to a message-body, the set of
+transfer-codings MUST include "chunked", unless the message is
+terminated by closing the connection. When the "chunked" transfer-coding is used, it MUST be the last transfer-coding applied to the
+message-body. The "chunked" transfer-coding MUST NOT be applied more
+than once to a message-body. These rules allow the recipient to
+determine the transfer-length of the message (section 4.4).
+
+[CODE(ABNF)[[[message-body]]]] が [CODE(ABNF)[transfer-coding]]
+に適用する時は常に、 [CODE(ABNF)[transfer-coding]]
+の集合はメッセージを[[接続]]を閉じることによって終端する場合を除き、
+[CODE(HTTP)[[[chunked]]]] を含まなければ'''なりません'''。
+[CODE(HTTP)[chunked]] を使うときは、 [CODE(ABNF)[message-body]]
+に適用する最後の [CODE(ABNF)[transfer-coding]]
+でなければ'''なりません'''。
+[CODE(HJTTP)[chunked]] [CODE(ABNF)[transfer-coding]] は、一つの
+[CODE(ABNF)[message-body]] に複数回適用しては'''なりません'''。
+これらの規則は受信者がメッセージの [CODE(ABNF)[[[transfer-length]]]]
+を決定することを可能とします。
+]INS]
+
+> Transfer[INS[-]]codings are analogous to the Content-Transfer-Encoding
+values of MIME [INS[ [7] ]], which were designed to enable safe transport of
+binary data over a 7-bit transport service. However, safe transport
+has a different focus for an 8bit-clean transfer protocol. In HTTP,
+the only unsafe characteristic of message-bodies is the difficulty in
+determining the exact body length (section 7.2.2), or the desire to
+encrypt data over a shared transport.
+
+[CODE(ABNF)[transfer-coding]] は 7ビット輸送サービス上でバイナリ・データを安全に輸送することを可能とするために設計された
+[[MIME]] の [CODE(MIME)[[[Content-Transfer-Encoding]]]] に相当するものです。
+しかし、安全な輸送は8ビット安全転送プロトコルでは違った焦点があります。
+HTTP では、 [CODE(ABNF)[message-body]] の唯一の非安全な性質は正確な本体の長さを決定することの困難性や共有輸送路上でデータを暗号化したいという希望です。
+
+[INS[
+
+> The Internet Assigned Numbers Authority (IANA) acts as a registry for
+transfer-coding value tokens. Initially, the registry contains the
+following tokens: "chunked" (section 3.6.1), [DEL[[INS[{2616; Errata で削除}]] "identity" (section 3.6.2),]] "gzip" (section 3.5), "compress" (section 3.5), and "deflate" (section 3.5).
+
+IANA が [CODE(ABNF)[transfer-coding]] 値字句の登録簿として機能します。
+最初に、登録簿は次の字句を含みます :
+[CODE(HTTP)[chunked]], [DEL[[CODE(HTTP)[[[identity]],]]]]
+[CODE(HTTP)[[[gzip]]]], [CODE(HTTP)[[[compress]]]],
+[CODE(HTTP)[[[deflate]]]]。
+
+> New transfer-coding value tokens SHOULD be registered in the same way
+as new content-coding value tokens (section 3.5).
+
+新しい [CODE(ABNF)[transfer-coding]] 値字句は新しい
+[CODE(ABNF)[content-coding]] 値字句と同じ方法で登録する'''べきです'''。
+
+> A server which receives an entity-body with a transfer-coding it does
+not understand SHOULD return 501 (Unimplemented), and close the
+connection. A server MUST NOT send transfer-codings to an HTTP/1.0 client.
+
+理解しない [CODE(ABNF)[transfer-coding]] の [CODE(ABNF)[entity-body]]
+を受信したサーバーは、 [CODE(HTTP)[[[501]] (mijissou)]]
+を返し、接続を閉じる'''べきです'''。サーバーは HTTP/1.0
+クライアントに [CODE(ABNF)[transfer-coding]] を送っては'''なりません'''。
+]INS]
+
+
+*** 3.6.1 Chunked Transfer Coding
+
+→[CODE(WikiPage)[[[chunked]]]]
+
+
+** RFC の部分の License
+
+[[RFCのライセンス]]
+
+
+* メモ@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/C5BEC1F7C9E4B9E6B2BD.ns/48545450.txt>
+@
+text
+@d1 116
+a116 125
+#?SuikaWiki/0.9 page-icon="HTTP"
+
+[1]
+nice site!
+([[norwegion cruise]] [asdasd@@asdasd.com] [WEAK[2007-06-18 16:57:46 +00:00]])
+
+
+[[#comment]]
+
+
+* 仕様書から
+
+
+** RFC 2068・2616 (HTTP/1.1) 3.6 Transfer Codings
+
+> Transfer[INS[-]]coding values are used to indicate an encoding
+transformation that has been, can be, or may need to be applied to an
+entity-body in order to ensure "safe transport" through the network.
+This differs from a content coding in that the transfer[INS[-]]coding is a
+property of the message, not of the original entity.
+
+[CODE(ABNF)[transfer-coding]] 値は、ネットワークを通した「安全な輸送」
+を確保するために [CODE(ABNF)[entity-body]] に適用している、
+適用することができる、あるいは適用する必要がある符号化変形を示すのに使います。
+転送符号化はメッセージの特性であってもとの実体の特性ではないという点において、
+転送符号化は[[内容符号化]]と異なります。
+
+>
+- transfer-coding         = "chunked" | transfer-extension
+- transfer-extension      = [INS[token *( ";" parameter )]]
+
+[INS[
+
+> Parameters are in  the form of attribute/value pairs.
+
+引数は属性・値の組の形です。
+
+>
+- parameter               = attribute "=" value
+- attribute               = token
+- value                   = token | quoted-string
+]INS]
+
+> All transfer-coding values are case-insensitive. HTTP/1.1 uses
+transfer[INS[-]]coding values [INS[in the TE header field (section 14.39) and]]
+in the Transfer-Encoding header field (section [DEL[14.40]] [INS[14.41]]).
+
+すべての [CODE(ABNF)[transfer-coding]] 値は大文字・小文字を区別しません。
+HTTP/1.1 は [INS[[CODE(HTTP)[[[TE]]]] 頭欄と]] [CODE(HTTP)[[[Transfer-Encoding]]]]
+頭欄で [CODE(ABNF)[transfer-coding]] 値を使います。
+
+[INS[
+
+> Whenever a transfer-coding is applied to a message-body, the set of
+transfer-codings MUST include "chunked", unless the message is
+terminated by closing the connection. When the "chunked" transfer-coding is used, it MUST be the last transfer-coding applied to the
+message-body. The "chunked" transfer-coding MUST NOT be applied more
+than once to a message-body. These rules allow the recipient to
+determine the transfer-length of the message (section 4.4).
+
+[CODE(ABNF)[[[message-body]]]] が [CODE(ABNF)[transfer-coding]]
+に適用する時は常に、 [CODE(ABNF)[transfer-coding]]
+の集合はメッセージを[[接続]]を閉じることによって終端する場合を除き、
+[CODE(HTTP)[[[chunked]]]] を含まなければ'''なりません'''。
+[CODE(HTTP)[chunked]] を使うときは、 [CODE(ABNF)[message-body]]
+に適用する最後の [CODE(ABNF)[transfer-coding]]
+でなければ'''なりません'''。
+[CODE(HJTTP)[chunked]] [CODE(ABNF)[transfer-coding]] は、一つの
+[CODE(ABNF)[message-body]] に複数回適用しては'''なりません'''。
+これらの規則は受信者がメッセージの [CODE(ABNF)[[[transfer-length]]]]
+を決定することを可能とします。
+]INS]
+
+> Transfer[INS[-]]codings are analogous to the Content-Transfer-Encoding
+values of MIME [INS[ [7] ]], which were designed to enable safe transport of
+binary data over a 7-bit transport service. However, safe transport
+has a different focus for an 8bit-clean transfer protocol. In HTTP,
+the only unsafe characteristic of message-bodies is the difficulty in
+determining the exact body length (section 7.2.2), or the desire to
+encrypt data over a shared transport.
+
+[CODE(ABNF)[transfer-coding]] は 7ビット輸送サービス上でバイナリ・データを安全に輸送することを可能とするために設計された
+[[MIME]] の [CODE(MIME)[[[Content-Transfer-Encoding]]]] に相当するものです。
+しかし、安全な輸送は8ビット安全転送プロトコルでは違った焦点があります。
+HTTP では、 [CODE(ABNF)[message-body]] の唯一の非安全な性質は正確な本体の長さを決定することの困難性や共有輸送路上でデータを暗号化したいという希望です。
+
+[INS[
+
+> The Internet Assigned Numbers Authority (IANA) acts as a registry for
+transfer-coding value tokens. Initially, the registry contains the
+following tokens: "chunked" (section 3.6.1), [DEL[[INS[{2616; Errata で削除}]] "identity" (section 3.6.2),]] "gzip" (section 3.5), "compress" (section 3.5), and "deflate" (section 3.5).
+
+IANA が [CODE(ABNF)[transfer-coding]] 値字句の登録簿として機能します。
+最初に、登録簿は次の字句を含みます :
+[CODE(HTTP)[chunked]], [DEL[[CODE(HTTP)[[[identity]],]]]]
+[CODE(HTTP)[[[gzip]]]], [CODE(HTTP)[[[compress]]]],
+[CODE(HTTP)[[[deflate]]]]。
+
+> New transfer-coding value tokens SHOULD be registered in the same way
+as new content-coding value tokens (section 3.5).
+
+新しい [CODE(ABNF)[transfer-coding]] 値字句は新しい
+[CODE(ABNF)[content-coding]] 値字句と同じ方法で登録する'''べきです'''。
+
+> A server which receives an entity-body with a transfer-coding it does
+not understand SHOULD return 501 (Unimplemented), and close the
+connection. A server MUST NOT send transfer-codings to an HTTP/1.0 client.
+
+理解しない [CODE(ABNF)[transfer-coding]] の [CODE(ABNF)[entity-body]]
+を受信したサーバーは、 [CODE(HTTP)[[[501]] (mijissou)]]
+を返し、接続を閉じる'''べきです'''。サーバーは HTTP/1.0
+クライアントに [CODE(ABNF)[transfer-coding]] を送っては'''なりません'''。
+]INS]
+
+
+*** 3.6.1 Chunked Transfer Coding
+
+→[CODE(WikiPage)[[[chunked]]]]
+
+
+** RFC の部分の License
+
+[[RFCのライセンス]]
+
+
+@
+

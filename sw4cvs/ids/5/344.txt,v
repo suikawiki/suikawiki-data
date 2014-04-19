@@ -1,0 +1,287 @@
+head	1.3;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.3
+date	2012.01.28.01.13.20;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2012.01.28.01.11.06;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2008.11.14.06.10.26;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.3
+log
+@updated by (anon)
+@
+text
+@- [1] [CODE(HTTP)[100]] (継続) 応答は、[[クライアント]]が[[要求]]を途中まで送ってきたところで、[[サーバー]]が (その時点では) 問題はないから続きを送りたまえという意思表示をするものです。
+- [2] この状態符号は、というかこの仕組みは [[HTTP/1.0]] 以前にはなく、 [[HTTP/1.1]] で導入されたものです。 [[RFC2068]] によればすべての HTTP/1.1 クライアントはとりあえず対応しないといけないことになっていましたが、[WEAK[実装状況を反映して]] [[RFC2616]] ではトーンダウンして、対応しているクライアントは [CODE(HTTP)[[[Expect]]: [[100-continue]]]] と合図することになっています。
+
+* 歴史
+
+** HTTP/1.1
+
+[FIG[
+[FIGCAPTION[
+[418] RFC 2068・2616 (HTTP/1.1) 10.1.1 100 Continue
+]FIGCAPTION]
+
+> The client [DEL[may]] [INS[SHOULD]] continue with its request. This interim response is
+used to inform the client that the initial part of the request has
+been received and has not yet been rejected by the server. The client
+SHOULD continue by sending the remainder of the request or, if the
+request has already been completed, ignore this response. The server
+MUST send a final response after the request has been completed. [INS[See section 8.2.3 for detailed discussion of the use and handling of this status code.]]
+
+クライアントは、その要求を続行する'''べきです'''。
+この暫定応答は、要求の初期部分が受信され、まだサーバーが却下していないことをクライアントに通知するのに使います。
+クライアントは、要求の残りの部分を送信することで続行するか、
+又は要求が既に完了していればこの応答を無視するかする'''べきです'''。
+サーバーは、要求が完了する前に最終応答を送信しては'''なりません'''。
+この状態符号の使用と取扱いについての話題は 8.2.3 節を参照して下さい。
+
+* RFC の部分の License
+
+[[RFCのライセンス]]
+]FIG]
+
+[3] これは RFC 2616 の規定ですが、相当する RFC 2068 の規定 (大分違う。) は[CODE(WikiPage)[[[持続接続]]]]をご覧下さい。
+
+[FIG[
+[FIGCAPTION[
+[419] RFC 2616 (HTTP/1.1) 8.2.3 Use of the 100 (Continue) Status
+]FIGCAPTION]
+
+> The purpose of the 100 (Continue) status (see section 10.1.1) is to
+allow a client that is sending a request message with a request body
+to determine if the origin server is willing to accept the request
+(based on the request headers) before the client sends the request
+body. In some cases, it might either be inappropriate or highly
+inefficient for the client to send the body if the server will reject
+the message without looking at the body.
+
+[CODE(HTTP)[100]] (継続) 状態の目的は、
+要求本体つきの要求メッセージを送信するクライアントが要求本体を送信する前に、
+起源サーバーは (要求頭に基づき) 要求を受け入れる意思があるのかを決定することを可能にすることにあります。
+場合によっては、サーバーが本体を読まずにメッセージを却下するならクライアントが本体を送信するのは不適切か非常に非効率であるかもしれません。
+
+> Requirements for HTTP/1.1 clients:
+- If a client will wait for a 100 (Continue) response before
+sending the request body, it MUST send an Expect request-header
+field (section 14.20) with the "100-continue" expectation.
+- A client MUST NOT send an Expect request-header field (section
+14.20) with the "100-continue" expectation if it does not intend
+to send a request body.
+
+HTTP/1.1 クライアントの要件:
+- クライアントが要求本体を送る前に [CODE(HTTP)[100]] (継続)
+応答を待つのであれば、 [CODE(HTTP)[[[Expect]]]] 要求頭欄に
+[CODE(HTTP)[[[100-continue]]]] 期待を入れて送らなければ'''なりません'''。
+- クライアントが要求本体を送る意図がないのであれば、
+[CODE(HTTP)[Expect]] 要求頭欄に [CODE(HTTP)[100-continue]]
+期待を入れて送っては'''なりません'''。
+
+> Because of the presence of older implementations, the protocol allows
+ambiguous situations in which a client may send "Expect: 100-continue" without receiving either a 417 (Expectation Failed) status
+or a 100 (Continue) status. Therefore, when a client sends this
+header field to an origin server (possibly via a proxy) from which it
+has never seen a 100 (Continue) status, the client SHOULD NOT wait
+for an indefinite period before sending the request body.
+
+古い実装が存在するために、このプロトコルではクライアントが
+[CODE(HTTP)[Expect: 100-continue]] を送信しても
+[CODE(HTTP)[[[417]]]] (期待失敗) 状態又は [CODE(HTTP)[100]] (継続)
+状態のいずれも受信しない曖昧な状態が存在します。
+従って、クライアントがこの頭欄を (串経由であれ) 起源サーバーに送信して一向に
+[CODE(HTTP)[100]] (継続) 状態がみられない場合は、
+クライアントは要求本体を送る前に無限の時間を待つ'''べきではありません'''。
+
+> Requirements for HTTP/1.1 origin servers:
+- Upon receiving a request which includes an Expect request-header
+field with the "100-continue" expectation, an origin server MUST
+either respond with 100 (Continue) status and continue to read
+from the input stream, or respond with a final status code. The
+origin server MUST NOT wait for the request body before sending
+the 100 (Continue) response. If it responds with a final status
+code, it MAY close the transport connection or it MAY continue
+to read and discard the rest of the request.  It MUST NOT
+perform the requested method if it returns a final status code.
+
+HTTP/1.1 起源サーバーの要件:
+- [CODE(HTTP)[Expect]] 要求頭欄に [CODE(HTTP)[100-continue]] 期待がついたものを含んだ要求を受け取ったときには、
+起源サーバーは [CODE(HTTP)[100]] (継続) 状態で応答して入力流れから読み込みを続行するか、
+又は最終状態符号で応答するかしなければ'''なりません'''。
+起源サーバーは、 [CODE(HTTP)[100]] (継続) 応答を送信する前に要求本体を待っては'''いけません'''。
+最終状態符号で応答した時は、その転送接続を閉じても'''構いません'''し、
+要求の残りを読み込んで捨てても'''構いません'''。
+最終状態符号を返すのであれば、要求された method を施しては'''なりません'''。
+
+>
+- An origin server SHOULD NOT send a 100 (Continue) response if
+the request message does not include an Expect request-header
+field with the "100-continue" expectation, and MUST NOT send a
+100 (Continue) response if such a request comes from an HTTP/1.0
+(or earlier) client. There is an exception to this rule: for
+compatibility with RFC 2068, a server MAY send a 100 (Continue)
+status in response to an HTTP/1.1 PUT or POST request that does
+not include an Expect request-header field with the "100-continue" expectation. This exception, the purpose of which is
+to minimize any client processing delays associated with an
+undeclared wait for 100 (Continue) status, applies only to
+HTTP/1.1 requests, and not to requests with any other HTTP-version value.
+
+起源サーバーは、要求メッセージが [CODE(HTTP)[Expect]] 要求頭欄で
+[CODE(HTTP)[100-continue]] 期待を持ったものを含んでいないときには
+[CODE(HTTP)[100]] (継続) 応答をする'''べきではなく'''、
+左様な要求が HTTP/1.0 (以前) のクライアントから来たものであれば
+[CODE(HTTP)[100]] (継続) 応答を送っては'''なりません'''。
+この規則には例外があります : RFC 2068 との互換性のため、
+サーバーは [CODE(HTTP)[Expect]] 要求頭欄で [CODE(HTTP)[100-continue]]
+期待を持ったものが含まれていなくても HTTP/1.1 の [CODE(HTTP)[[[PUT]]]]
+要求又は [CODE(HTTP)[[[POST]]]] 要求に対する応答であれば、サーバーは
+[CODE(HTTP)[100]] (継続) 状態の応答を送っても'''構いません'''。
+宣言していない [CODE(HTTP)[100]] (継続) 状態への待機に関するクライアントの処理の遅延を最小化するためのこの例外は
+HTTP/1.1 要求にのみ適用され、他の [CODE(ABNF)[HTTP-version]]
+値の要求には適用しません。
+
+>
+- An origin server MAY omit a 100 (Continue) response if it has
+already received some or all of the request body for the
+corresponding request.
+- An origin server that sends a 100 (Continue) response MUST
+ultimately send a final status code, once the request body is
+received and processed, unless it terminates the transport
+connection prematurely.
+
+- 起源サーバーは、対応する要求についての要求本体の一部又は全部を既に受信しているのであれば、
+[CODE(HTTP)[100]] (継続) 応答を省いても'''構いません'''。
+- [CODE(HTTP)[100]] (継続) 応答を送信した起源サーバーは、
+一度要求を受信して処理したら、転送接続が既に終端していない限り、
+最終状態符号を最後に送らなければ'''なりません'''。
+
+>
+- If an origin server receives a request that does not include an
+Expect request-header field with the "100-continue" expectation,
+the request includes a request body, and the server responds
+with a final status code before reading the entire request body
+from the transport connection, then the server SHOULD NOT close
+the transport connection until it has read the entire request,
+or until the client closes the connection. Otherwise, the client
+might not reliably receive the response message. However, this
+requirement is not be construed as preventing a server from
+defending itself against denial-of-service attacks, or from
+badly broken client implementations.
+
+起源サーバーが [CODE(HTTP)[100-continue]] 期待を持った
+[CODE(HTTP)[Expect]] 要求頭欄を含まない要求を受信し、
+そしてサーバーが転送接続から要求本体全体を読み込む前に最終状態符号で応答した場合は、
+サーバーは要求全体を読み込むか、又はクライアントが転送接続を閉じない限り、
+接続を閉じる'''べきではありません'''。そうしなければ、
+クライアントは確実に応答メッセージを受信できないかもしれません。
+しかし、この要件はサーバー自身をサービス拒否攻撃や壊れたクライアント実装から護るためとは解釈出来ません。
+
+> Requirements for HTTP/1.1 proxies:
+- If a proxy receives a request that includes an Expect request-header field with the "100-continue" expectation, and the proxy
+either knows that the next-hop server complies with HTTP/1.1 or
+higher, or does not know the HTTP version of the next-hop
+server, it MUST forward the request, including the Expect header field.
+- If the proxy knows that the version of the next-hop server is
+HTTP/1.0 or lower, it MUST NOT forward the request, and it MUST
+respond with a 417 (Expectation Failed) status.
+- Proxies SHOULD maintain a cache recording the HTTP version
+numbers received from recently-referenced next-hop servers.
+- A proxy MUST NOT forward a 100 (Continue) response if the
+request message was received from an HTTP/1.0 (or earlier)
+client and did not include an Expect request-header field with
+the "100-continue" expectation. This requirement overrides the
+general rule for forwarding of 1xx responses (see section 10.1).
+
+HTTP/1.1 串の要件:
+- 串が [CODE(HTTP)[Expect]] 要求頭欄で [CODE(HTTP)[100-continue]] 期待を持ったものを含んだ要求を受け取ったときで、
+串が次の hop のサーバーは HTTP/1.1 以上に従っていると知っているか又は次の hop
+のサーバーの HTTP の版を知らない時には、その要求を、 [CODE(HTTP)[Expect]]
+頭欄を含めて転送しなければ'''なりません'''。
+- 串が次の hop のサーバーの版が HTTP/1.0 以下であると知っている時には、
+その要求を転送しては'''ならず'''、 [CODE(HTTP)[417]] (期待失敗) 状態で応答しなければ'''なりません'''。
+- 串は、以前に参照した次の hop のサーバーから受取った HTTP の版を記録したキャッシュを維持する'''べきです'''。
+串は、要求メッセージが HTTP/1.0 (以前) のクライアントから受信したものであって、
+[CODE(HTTP)[Expect]] 要求頭欄で [CODE(HTTP)[100-continue]] 期待を持ったものを含んでいなければ、
+[CODE(HTTP)[100]] (継続) 応答を転送しては'''なりません'''。
+この要件は [CODE(HTTP)[1[VAR[xx]]]] 要求の転送についての一般規則を上書きします。
+
+
+* RFC の部分の License
+
+[[RFCのライセンス]]
+]FIG]
+
+@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@a2 1
+- [3] なお、[CODE[仕様書から]]の節に引用しているのは RFC 2616 の規定ですが、相当する RFC 2068 の規定 (大分違う。) は[CODE(WikiPage)[[[持続接続]]]]をご覧下さい。
+d4 1
+a4 3
+[4]
+Most low price! <a href= http://www.zimbra.com/forums/members/order-adipex-online.html >order adipex online</a> <a href= http://www.zimbra.com/forums/members/adipex-no-prescription.html >adipex no prescription</a> <a href= http://www.zimbra.com/forums/members/cheap-adipex.html >cheap adipex</a> <a href= http://www.boards.ie/vbulletin/member.php?u=156674 >cheap viagra</a> <a href= http://www.boards.ie/vbulletin/member.php?u=156675 >buy phentermine</a>
+([[Molodec]] [None] [WEAK[2008-05-13 11:46:05 +00:00]])
+d6 1
+d8 4
+a11 12
+[5]
+community magnificent damage the tree, to actually my dad
+([[dayhomebagwo]] [sxgldqm@@yahoo.com] [WEAK[2008-06-06 05:47:00 +00:00]])
+
+
+[[#comment]]
+
+
+* 仕様書から
+
+
+** RFC 2068・2616 (HTTP/1.1) 10.1.1 100 Continue
+d27 4
+d32 6
+a37 1
+** RFC 2616 (HTTP/1.1) 8.2.3 Use of the 100 (Continue) Status
+d196 1
+a196 1
+** RFC の部分の License
+d199 1
+a200 2
+
+* メモ@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/313030.txt>
+@
+text
+@d1 202
+a202 1
+JZRIZY  <a href="http://warkricrlrnv.com/">warkricrlrnv</a>, [url=http://wwqaegjqailx.com/]wwqaegjqailx[/url], [link=http://irjjpflnfkux.com/]irjjpflnfkux[/link], http://hhvpszssswyx.com/@
+

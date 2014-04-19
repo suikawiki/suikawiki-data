@@ -1,0 +1,79 @@
+head	1.1;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2008.11.20.00.41.32;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/C8C7A4F2C4B4A4D9A4EB.ns/496E7465726E65744578706C6F726572.txt>
+@
+text
+@#?SuikaWiki/0.9
+*レジストリ HKLM\SOFTWARE\Microsoft\Internet Explorer\"Version"
+
+[1] 版を表す文字列値です。 [[WinIE]] 
+で''ヘルプ''→''バージョン情報''を表示させた時に出てくる版情報がこれです。
+
+[2] >>1 ちなみに、この値を書き換えるとその[[ダイアログ]]の表示値も変化します。
+
+例: ''5.50.4134.0100''
+- [3] 2002-11-03 (日) 13:28 ''[[名無しさん]]'': 同じ場所の "Build" という値はビルド番号の文字列値で、上の例だと "54134.0100" になってました。どういう違いがあるのかは (想像は出来るものの) よくわかりません。
+- [8] 2002-11-04 (月) 15:19 ''[[わかば]]'' [[Message::Field::UA]] で実装しますた。 $ua->replace_system_version ('ie') で "MSIE/6.0.2800.1106" ([[WinIE]]6 SP2 の場合) が追加されます。取得方法は >>1, >>4 を順に使います (>>1 が失敗/offしたら >>4)。
+- [11] WinIE 3.02 ではこの値はない。同じ階層に Build=516, IVer=102, QFEVer=009 があるが、 IE のヘルプ→バージョン情報の値はどれとも一致しない。
+[[#comment]]
+
+*API 関数 DLLGetVersion
+
+[4] [[WinIE]] の版と同じらしい [[shlwapi.dll]] の
+DLLGetVersion を使って次のようにして取得出来ます。
+
+shlwapi.dll は WinIE 付属ですから、 IE のない Win95
+などでは使えません。
+
+また、 >>1 の方法で取得できる情報の内の最初の3つの数値しかとれません。しかし >>2 のように改竄できないので、確実といえば確実です。
+
+[PRE[
+require Win32::API;
+my $M2W = new Win32::API (shlwapi => "DllGetVersion", P => 'N');
+my $ver = pack lllll =>
+	4*5,	## size of this structure
+	0,	## major version
+	0,	## minor version
+	0,	## build number
+	0;	## platform (1 == Win9x, 2 == WinNT)
+$M2W->Call ($ver);
+my (undef, $major, $minor, $build, undef) = unpack lllll => $ver;
+printf "%d.%02d.%04d\n", $major, $minor, $build;
+]PRE]
+
+[5] 将来に渡って [[IE]] の版と同じ値を返すのかどうかとかはわかりません。
+[[M$]] 製品ですから...
+
+*comctl32.dll の版から推定する
+
+-4.00 [[Windows95]] / [[WindowsNT]] 4.0
+-4.70 [[InternetExplorer]] 3.x
+-4.71 Internet Explorer 4.0
+-4.72 Internet Explorer 4.01 / [[Windows98]]
+-5.00 Internet Explorer 5.0 / [[Windows2000]]
+-5.81.4134.100 [[WindowsMe]] + [[IE]] 5.5
+- [6] 2002-11-03 (日) 21:49 ''[[名無しさん]]'': >>1,>>4 の値は、 IE4 以前では一般に知られている IE の版と一致しません。版が 4.x から始まっているからです。
+- [7] 2002-11-03 (日) 21:50 ''6'': たとえば IE3 では 4.70.1150 という値になりました。
+- [9] 2002-11-04 (月) 15:20 ''[[名無しさん]]'' 5.81 == Internet Explorer 6.0 SP2 (version down してるんだろうか...)
+- [10] 2002-11-04 (月) 15:21 ''9'' IE6 では更新されなかった可能性もあるかな...
+@

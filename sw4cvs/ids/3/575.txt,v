@@ -1,0 +1,116 @@
+head	1.1;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2008.11.13.05.07.46;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/6D616E616B6169.ns/427567.ns/31.ns/3135.txt>
+@
+text
+@
+- Subject: Error を使うように修正
+- Priority: high
+- Status: open
+- Category: Util::Error
+- Creation-Date: 2003-11-11T12:50:53+00:00
+
+[1] [CODE(perl)[Error]] モジュールを使って try〓catch で書けるように改良しましょう。
+
+今の使いかた :
+[PRE[
+  require Message::Util::Error;
+  my $err = new Message::Util::Error ({
+    OPEN_DB => {
+      level => 'fatal',
+      description => q(%s: Can't open database (%s)),
+    },
+    CLOSE_DB => {
+      level => 'warn',
+      description => q(%s: Can't close database (%s)),
+    },
+    UNKNOWN => {
+      level => 'fatal',
+      description => 'Unknown error happend',
+    },
+    -error_handler => sub {
+      my ($self, $err_def, $err_msg, $err_argv) = @@_;
+      if ($err_def->{level} eq 'fatal') {
+        die $err_msg;
+      } else {
+        warn $err_msg;
+      }
+    },
+  );
+  open DB, $db_name or $err->raise (type => 'OPEN_DB', t => [$db_name, $!]);
+]PRE]
+
+新しい使いかた :
+[PRE[
+package Exception1;
+use Message::Util::Error;
+our @@ISA = 'Message::Util::Error';
+our %Error = (
+    OPEN_DB => {
+      level => 'fatal',
+      description => q(%s: Can't open database (%s)),
+    },
+    CLOSE_DB => {
+      level => 'warn',
+      description => q(%s: Can't close database (%s)),
+    },
+    UNKNOWN => {
+      level => 'fatal',
+      description => 'Unknown error happend',
+    },
+);
+package SomeDatabase;
+sub open_database {
+  open DB, $db_name
+    or
+  throw Exception1
+    type => 'OPEN_DB',
+    t => [$db_name, $!];
+}
+package main;
+try {
+  $db->open_database;
+} catch Exception1 with {
+      my ($err) = @@_;
+      if ($err->level eq 'fatal') {
+        die $err->message;
+      } else {
+        warn $err->message;
+      }
+};
+]PRE]
+
+[2]
+This is gonsalez music site - <a href="http://www.gonsalez.info/77772.html">best music site in da world</a>.
+([[David]] [kalimurzino@@rambler.ru])
+
+[3]
+Yc39Qr  <a href="http://mobdsmgfitgf.com/">mobdsmgfitgf</a>, [url=http://faojygadofxr.com/]faojygadofxr[/url], [link=http://hsytolcykpir.com/]hsytolcykpir[/link], http://jnjmffzpuowj.com/
+([[bxmsvdb]] [otwusp@@sdkdml.com] [WEAK[2008-11-09 18:15:01 +00:00]])
+
+
+[4]
+Yc39Qr  <a href="http://mobdsmgfitgf.com/">mobdsmgfitgf</a>, [url=http://faojygadofxr.com/]faojygadofxr[/url], [link=http://hsytolcykpir.com/]hsytolcykpir[/link], http://jnjmffzpuowj.com/
+([[bxmsvdb]] [otwusp@@sdkdml.com] [WEAK[2008-11-09 18:15:09 +00:00]])
+
+@

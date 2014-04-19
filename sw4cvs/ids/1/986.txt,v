@@ -1,0 +1,297 @@
+head	1.7;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.7
+date	2012.02.12.14.23.18;	author wakaba;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2012.02.12.14.10.15;	author wakaba;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2012.02.12.14.09.52;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2012.02.12.06.00.35;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2012.02.12.05.58.30;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2012.02.12.05.47.23;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2008.11.12.15.10.03;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.7
+log
+@updated by (anon)
+@
+text
+@[6] [[CGI]] の[[メタ変数]] [DFN[[CODE(CGI)@@en[[[PATH_TRANSLATED]]]]]] は、
+[CODE(CGI)@@en[[[PATH_INFO]]]] を単独の [[URL]] とみなしたときに[[鯖]]の[[文書リポジトリー]]において相当する位置を表します。
+
+* 仕様書
+
+[REFS[
+- [17] [CITE@@en[RFC 3875 - The Common Gateway Interface (CGI) Version 1.1]]
+-- [4] '''<http://tools.ietf.org/html/rfc3875#section-4.1.6>'''
+-- [18] <http://tools.ietf.org/html/rfc3875#section-7>
+]REFS]
+
+* 構文
+
+[7] 値の構文は次のように定義されています [SRC[>>4]]。
+[PRE(ABNF code)[
+      PATH_TRANSLATED = *<any character>
+]PRE]
+
+** 文字
+
+[8] 認められている[[文字]]の[[集合]]は[[システム定義]]です。 [SRC[>>4]]
+
+;; [9] これは[[ファイル・システム]]および[[オペレーティング・システム]]で認められている[[ファイル名]]の[[文字]]を意図しているように思われます。
+
+[16] [[Unix]] では [CODE(charname)@@en[[[NUL]]]] を除く任意の[[8ビット・バイト]]です。
+[SRC[>>18]]
+
+[19] [[EBCDIC]] を使う [[POSIX]] 環境では [CODE(charname)@@en[[[NUL]]]] を除く [[IBM1047]]
+です。 [SRC[>>18]]
+
+* 処理モデル
+
+[10] [[要求]]の [[URL]] を元に新たな [[URL]]
+[PRE(code)[
+      <scheme> "://" <server-name> ":" <server-port> <extra-path>
+]PRE]
+... を組み立てます。ここで
+- [CODE(URI)@@en[scheme]] は[[クライアント]]との[[プロトコル]]
+- [CODE(URI)@@en[server-name]] は [CODE(CGI)@@en[[[SERVER_NAME]]]]
+- [CODE(URI)@@en[server-port]] は [CODE(CGI)@@en[[[SERVER_PORT]]]]
+- [CODE(URI)@@en[[[extra-path]]]] は [CODE(CGI)@@en[[[PATH_INFO]]]] を、 [CODE(URI)[[[;]]]]、
+[CODE(URI)@@en[[[?]]]]、[CODE(URI)@@en[[[=]]]] を[[予約]]して[[パーセント符号化]]したもの
+
+... とします。この時、[[鯖]]によって定義されている[[文書リポジトリー]] ([[ファイル・システム]])
+との対応関係に従って当該システム上の [[path]] に変換した値を [CODE(CGI)@@en[[[PATH_TRANSLATED]]]]
+とします。 [SRC[>>4]]
+
+[11] 実際にどのような変換が行われるかは[[実装定義]]です。実際に変換結果が[[文書リポジトリー]]上に存在するかは問いません。
+ただし[[文書リポジトリー]]が[[大文字]]と[[小文字]]を区別しない場合を除き、両者の違いを保存しなければ[['''なりません''']]。 [SRC[>>4]]
+
+[12] [[鯖]]は、[CODE(CGI)@@en[[[PATH_INFO]]]] 部分が元の [[URL]] に含まれているなら、
+[CODE(CGI)@@en[[[PATH_TRANSLATED]]]] [[メタ変数]]も設定する[['''べきです''']]。 [SRC[>>4]]
+
+[13] [CODE(CGI)@@en[[[PATH_INFO]]]] が [[NULL]] なら、 [CODE(CGI)@@en[[[PATH_TRANSLATED]]]]
+も [[NULL]] ([[空文字列]]または未設定) でなければ[['''なりません''']]。 [SRC[>>4]]
+
+* 安全性
+
+[20] [CODE(CGI)@@en[[[PATH_INFO]]]] の項を参照してください。
+
+* 歴史
+
+[FIG(quotation)[
+[FIGCAPTION[
+[5] 6.1.7. PATH_TRANSLATED (CGI/1.1 draft 03)
+]FIGCAPTION]
+
+>
+   PATH_TRANSLATED is derived by taking any path-info component
+   of the request URI (see section 6.1.6), decoding it (see
+   section 3.1), parsing it as a URI in its own right, and
+   performing any virtual-to-physical translation appropriate to
+   map it onto the server's document repository structure. If the
+   request URI includes no path-info component, the
+   PATH_TRANSLATED metavariable SHOULD NOT be defined.
+
+PATH_TRANSLATED は要求 URI (第6.1.6節参照)の path-info (経路情報)
+から取って、復号し (第3.1節参照)、 URI として解析し、
+サーバーの文書庫構造に適切に対応させる仮想‐物理変換を施したもの
+です。要求 URI が path-info 部品を含んでいなければ、
+PATH_TRANSLATED メタ変数は定義する'''べきではありません'''。
+
+    PATH_TRANSLATED = *CHAR
+
+For a request such as the following:
+   
+    http://somehost.com/cgi-bin/somescript/this%2eis%2epath%2einfo
+
+the PATH_INFO component would be decoded, and the result
+parsed as though it were a request for the following:
+
+上記のような要求で、 PATH_INFO 部品は復号され、
+結果は次のような要求であるとして解析されます。
+
+    http://somehost.com/this.is.the.path.info
+
+This would then be translated to a location in the server's
+document repository, perhaps a filesystem path something like
+this:
+
+これはサーバーの文書庫の位置に変換されます。
+このような感じのファイル系統経路になるでしょう。
+
+    /usr/local/www/htdocs/this.is.the.path.info
+
+The result of the translation is the value of PATH_TRANSLATED.
+
+変換の結果が PATH_TRANSLATED 値です。
+
+   The value of PATH_TRANSLATED may or may not map to a valid
+   repository location. Servers MUST preserve the case of the
+   path-info segment if and only if the underlying repository
+   supports case-sensitive names. If the repository is only
+   case-aware, case-preserving, or case-blind with regard to
+   document names, servers are not required to preserve the case
+   of the original segment through the translation.
+
+PATH_TRANSLATED 値は妥当な文書庫の位置に対応していても
+していなくても構いません。サーバーは、文書庫が名前で大文字・小文字を
+区別する場合においては、またその場合に限って、 path-info
+部分の大文字・小文字を保存し'''なければなりません'''。
+文書庫が、文書名について大文字・小文字を区別するだけ、保存するだけ、
+あるいは区別しない時は、サーバーは変換を通じて元の部分の
+大文字・小文字を保存する必要はありません。
+
+The translation algorithm the server uses to derive
+PATH_TRANSLATED is implementation defined; CGI scripts which
+use this variable may suffer limited portability.
+
+サーバーが PATH_TRANSLATED を得るのに使う変換算法は
+実装定義です。この値を使う CGI スクリプトは移植性に制限を受ける
+かもしれません。
+
+Servers SHOULD provide this metavariable to scripts if and
+only if the request URI includes a path-info component.
+
+サーバーは、要求 URI が path-info 部品を含んでいる場合、
+しかもその場合に限って、このメタ変数をスクリプトに提供する'''べき'''です。
+
+* License
+-[[RFCのライセンス]]
+]FIG]
+
+* 実装
+
+- [1] Apache/1.3.27 で、この値を取得したら [SAMP[[VAR[DOCUMENT_ROOT]]/foo]] という値が、 [CODE[[[Alias]]]] した階層の下にあるときに得られることがあります。不具合のような気もしますが、この値を生成する算法は実装依存ってことですから、そういう仕様っていうならそういうもんなんでしょう(謎)。
+- [2] >>1 なに言ってるんか分かりませんけど、 [CODE[Alias /bar/ /path/to/bar/]] してあって、 [CODE(URI)[/bar/path/to/cgi/foo]] を要求したときに、 [CODE(CGI)[PATH_INFO]] は [SAMP[/foo]] になりまして、 [CODE(CGI)[PATH_TRANSLATED]] は [SAMP[/path/to/bar/path/to/cgi/foo]] になることが期待されます。ところが、 >>1 では [SAMP[/document/root/foo]] が得られたというのです。
+- [3] >>1-2 は [[SSI]] や SSI から呼んだ CGI から見た時も同様です。
+
+* メモ
+
+[14] 元々は[[ファイル・システム]]上のファイルを[[CGIスクリプト]]で何らかの形でフィルタリングしたものを返すことを想定していたのでしょう。
+現在では [CODE(CGI)@@en[[[PATH_INFO]]]] をそのように使うことはほとんど無く、従って
+[CODE(CGI)@@en[[[PATH_TRANSLATED]]]] が使われることもほとんどないようです。
+
+[15] [[Apache]] で [CODE[[[SetHandler]]]] を使って [[CGIスクリプト]]を割り当てると、
+元々の [[URL]] が指していた[[ファイル]]が [CODE(CGI)@@en[[[PATH_TRANSLATED]]]]
+の値となると記憶しています [SRC[要出典]]。@
+
+
+1.6
+log
+@updated by (anon)
+@
+text
+@d57 4
+@
+
+
+1.5
+log
+@updated by (anon)
+@
+text
+@d29 1
+a29 1
+[SRC[>>18]]
+@
+
+
+1.4
+log
+@updated by (anon)
+@
+text
+@d7 3
+a9 1
+- [4] [CITE@@en[RFC 3875 - The Common Gateway Interface (CGI) Version 1.1]] ([TIME[2011-11-20 06:09:05 +09:00]] 版) <http://tools.ietf.org/html/rfc3875#section-4.1.6>
+d19 2
+d25 6
+@
+
+
+1.3
+log
+@updated by (anon)
+@
+text
+@d140 5
+a144 1
+[CODE(CGI)@@en[[[PATH_TRANSLATED]]]] が使われることもほとんどないようです。@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@d1 3
+d10 37
+d135 6
+@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/504154485F5452414E534C41544544.txt>
+@
+text
+@d1 1
+a1 1
+*6.1.7. PATH_TRANSLATED (CGI/1.1 draft 03)
+d3 12
+d86 1
+a86 10
+*SEE ALSO
+-[[CGI]]
+--[[CGI/1.1]]
+--[[CGI/1.2]]
+-[[HTTP]]
+--[[HTTP/1.0]]
+--[[HTTP/1.1]]
+-[[RFC822と仲間達の頭領域名]]
+-[[URI]]
+--[[URL]]
+d88 7
+a94 3
+- [1] Apache/1.3.27 で、この値を取得したら [SAMP[[VAR[DOCUMENT_ROOT]]/foo]] という値が、 [CODE[[[Alias]]]] した階層の下にあるときに得られることがあります。不具合のような気もしますが、この値を生成する算法は実装依存ってことですから、そういう仕様っていうならそういうもんなんでしょう(謎)。
+- [2] >>1 なに言ってるんか分かりませんけど、 [CODE[Alias /bar/ /path/to/bar/]] してあって、 [CODE(URI)[/bar/path/to/cgi/foo]] を要求したときに、 [CODE(CGI)[PATH_INFO]] は [SAMP[/foo]] になりまして、 [CODE(CGI)[PATH_TRANSLATED]] は [SAMP[/path/to/bar/path/to/cgi/foo]] になることが期待されます。ところが、 >>1 では [SAMP[/document/root/foo]] が得られたというのです。
+- [3] >>1-2 は [[SSI]] や SSI から呼んだ CGI から見た時も同様です。
+@
+

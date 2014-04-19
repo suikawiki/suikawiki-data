@@ -1,0 +1,149 @@
+head	1.1;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2008.11.11.02.14.13;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/4C6173742D4D6F646966696564.txt>
+@
+text
+@
+
+* Last-Modified: 欄 (HTTP 応答, RTSP 応答)
+
+[[#comment]]
+
+
+** 使用する文脈
+
+[2] [CODE(HTTP)[Last-Modified:]] 欄は HTTP では[[実体頭欄]]に分類されています。
+ですから、[[要求]]でも[[応答]]でも、その[[メッセージ]]が
+([CODE(HTTP)[[[HEAD]]]] のように一部省略されている場合も含めて)
+[[実体]]を含んでいるのなら使えるように思えます。
+
+しかし、 [[RFC 1945]] で [Q[sender]<urn:ietf:rfc:1945>]
+とされていたところが、わざわざ [[RFC 2068]] 以後は
+[Q[origin server]<urn:ietf:rfc:2068>] に直されていて、
+要求で使えるような気配がまったくありません。
+
+[3] [CODE(HTTP)[[[PUT]]]] や [CODE(HTTP)[[[POST]]]]
+で実体を鯖に送る時には使えないのでしょうか。
+([CODE(HTTP)[[[Content-Disposition]]]] でも使えというのでしょうか?)
+
+[[#comment]]
+
+
+** 仕様書から
+
+
+*** RFC 1945 (HTTP/1.0) 10.10; RFC 2068・2616 (HTTP/1.1) 14.29 Last-Modified
+
+> The Last-Modified entity-header field indicates the date and time at
+which the [DEL[sender]] [INS[origin server]] believes the [DEL[resource]] [INS[variant]] was last modified. [DEL[The exact semantics of this field are defined in terms of how the recipient should interpret it:  if the recipient has a copy of this resource which is older than the date given by the Last-Modified field, that copy should be considered stale.]]
+
+[CODE(HTTP)[Last-Modified]] [[実体頭欄]]は、
+その[DEL[[[資源]]]][INS[[[変種]]]]が最後に修正された日時と[DEL[[[送信者]]]][INS[[[起点鯖]]]]が信ずるところのものを示します。[DEL[この欄の正確な意味は、受信者がこれをどう解釈するべきかによって定義します。受信者がこの資源の複製を持っていて、それが [CODE(HTTP)[Last-Modified]] 欄に与えられた日付よりも古ければ、その複製は[[腐敗]]していると考えるべきです。]]
+
+>
+- Last-Modified  = "Last-Modified" ":" HTTP-date
+
+> An example of its use is
+
+使用例:
+
+>
+- [SAMP(HTTP)[Last-Modified: Tue, 15 Nov 1994 12:45:26 GMT]]
+
+> The exact meaning of this header field depends on the implementation
+of the [DEL[sender]] [INS[origin server]] and the nature of the original resource. For
+files, it may be just the file system last-modified time. For entities
+with dynamically included parts, it may be the most recent of the set of
+last-modify times for its component parts. For database gateways, it
+may be the last-update time[INS[ ]]stamp of the record. For virtual objects,
+it may be the last time the internal state changed.
+
+この頭欄の正確な意味は、[DEL[送信者]][INS[起点鯖]]の実装と、
+元の資源の性質に依存します。
+元が[[ファイル]]であれば、[[ファイル・システム]]の最終修正時刻になるかもしれません。
+動的に取り込まれる部分を含む実体では、その構成部分の最終修正時刻のうちで一番新しいものであるかもしれません。
+[[データベース]]関門では、[[記録]]の最終更新時刻印かもしれません。
+仮想物体では、内部状態が最後に変更された時刻かもしれません。
+
+> An origin server [DEL[must not]] [INS[MUST NOT]] send a Last-Modified date which is later
+than the server's time of message origination. In such cases, where
+the resource's last modification would indicate some time in the
+future, the server [DEL[must]] [INS[MUST]] replace that date with the message
+origination date. [INS[An origin server [DEL[should]] [INS[SHOULD]] obtain the Last-Modified value of the entity as close as possible to the time that it generates the Date value of its response. This allows a recipient to make an accurate assessment of the entity's modification time, especially if the entity changes near the time that the response is generated.]]
+
+起点鯖は、メッセージを生成する時点の時刻より後の日付を [CODE(HTTP)[Last-Modified]]
+として送っては'''なりません'''。そうなる場合、
+つまり資源の最終修正が将来になってしまうような場合は、
+メッセージの生成の日付を [CODE(HTTP)[Last-Modified]] 
+時刻としなければ'''なりません'''。[INS[起点鯖は、応答の [CODE(HTTP)[[[Date]]]] 値を生成する時刻とできる限り近い時刻に実体の [CODE(HTTP)[Last-Modified]] 値を得る'''べきです'''。そうすることで、たとえその実体が応答を生成した時刻の前後に変更されていたとしても、受信者が実体の修正時刻を正確に査定できます。]]
+
+[INS[
+
+訳注: [CODE(HTTP)[Last-Modified]] 値決定は [CODE(HTTP)[Date]]
+決定時刻に近づけるよりも、対象となる実体そのものを生成 (取得)
+する時刻に近づけるべきではないでしょうか。 (もちろん、
+実体生成はできる限り [CODE(HTTP)[Date]] 決定に近づけるべきですが、
+現実には必ずしもそうできる場合ばかりではないでしょう。)
+]INS]
+
+[INS[
+
+> HTTP/1.1 servers SHOULD send Last-Modified whenever feasible.
+
+HTTP/1.1 鯖は、 [CODE(HTTP)[Last-Modified]]
+を可能であればいつでも送る'''べきです'''。
+]INS]
+
+[INS[
+
+訳注: 注記なき修正部は RFC 1945→2068 の差分。
+]INS]
+
+
+*** RFC 2326 (RTSP/1.0) 12.24 Last-Modified
+
+> The Last-Modified entity-header field indicates the date and time at
+which the origin server believes the presentation description or
+media stream was last modified. See [H14.29]. For the methods
+DESCRIBE or ANNOUNCE, the header field indicates the last
+modification date and time of the description, for SETUP that of the
+media stream.
+
+[1] [CODE(RTSP)[Last-Modified]] [[実体頭欄]]は、
+[[表現記述]]または[[媒体流]]が最後に修正されたと[[起点鯖]]の信ずる日時を示します。
+[CODE(RTSP)[[[DESCRIBE]]]] [[メソッド]]や [CODE(RTSP)[[[ANNOUNCE]]]]
+メソッドでは、記述の最終修正日時を表します。
+[CODE(RTSP)[[[SETUP]]]] メソッドでは、媒体流の再修正日時を表します。
+
+
+** メモ
+
+[4]
+[CITE[HTML5 IRC logs: freenode / #whatwg / 20070626]] ([TIME[2007-06-26 22:14:23 +09:00]] 版) <http://krijnhoetmer.nl/irc-logs/whatwg/20070626#l-151>
+([[名無しさん]] [WEAK[2007-06-26 13:17:00 +00:00]])
+
+
+[[#comment]]
+
+
+* メモ@

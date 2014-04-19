@@ -1,0 +1,102 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2010.09.17.11.08.32;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@created by (anon)
+@
+text
+@[1] [[HTTP]] の [CODE(HTTP)@@en[[[Cache-Control:]]]] [[頭欄]]の
+[DFN[[CODE(HTTP)@@en[state-if-error]] [[指令]]]]は、
+[[誤り]]が発生した場合に[[腐敗]]していても[[キャッシュ]]から結果を返して良いことを表します。
+
+* 仕様書
+
+- [2] [[RFC 5861]] [CITE@@en[HTTP Cache-Control Extensions for Stale Content]]
+([[IETF提案標準]]) <http://tools.ietf.org/html/rfc5861>
+-- [3] [CSECTION@@en[4. The stale-if-error Cache-Control Extension]]
+
+* 構文
+
+[4] [SRC[>>3]]
+[PRE(ABNF code)[
+     stale-if-error = "stale-if-error" "=" delta-seconds
+]PRE]
+
+* 処理モデル
+
+[5] [CODE(HTTP)@@en[[[stale-if-error]]]] [[指令]]が含まれている場合、
+[[キャッシュ]]は、[[誤り]]に遭遇したときには他の[[新鮮度]]の条件を満たさずとも[[キャッシュ]]されている[[腐敗]]した[[応答]]を使って[['''構いません''']]。
+[SRC[>>3]]
+
+[9] ここで、「[RUBYB[[[誤り]]]@@en[error]]」には [CODE(HTTP)[[[500]]]],
+[CODE(HTTP)[[[502]]]], [CODE(HTTP)[[[503]]]], [CODE(HTTP)[[[504]]]]
+が返され得る任意の状況を指します。 [SRC[>>3]] これには[[起源鯖]]の[[時間切れ]]なども含まれます。
+
+[8] 指定された秒数よりも更に[[腐敗]]している場合には、他の条件に合致しない限り、
+その[[腐敗]]した[[応答]]を使う[['''べきではありません''']]。 [SRC[>>3]]
+
+** 要求で使われた場合
+
+[6] [[要求]]の [CODE(HTTP)@@en[[[Cache-Control]]]] [[頭欄]]で使われた場合、
+その[[要求]]に対する[[応答]]に限り指定が適用されます。 [SRC[>>3]]
+
+** 応答で使われた場合
+
+[7] [[応答]]の [CODE(HTTP)@@en[[[Cache-Control]]]] [[頭欄]]で使われた場合、
+その[[応答]]の[[キャッシュ]]が適用される任意の[[要求]]に対する[[応答]]に指定が適用されます。
+[SRC[>>3]]
+
+* 関連
+
+[10] [CODE(HTTP)@@en[[[stale-if-error]]]] が指定されていれも[[腐敗]]している[[応答]]はやはり[[腐敗]]しており、
+[CODE(HTTP)@@en[[[Age]]]] が非零であったり [CODE(HTTP)@@en[[[Warning]]]]
+が付いていたりする[['''べきです''']]。 [SRC[>>3]]
+
+* 例
+
+[11] [SRC[>>3]]
+
+[PRE(HTTP example code)[
+HTTP/1.1 200 OK
+Cache-Control: max-age=600, stale-if-error=1200
+Content-Type: text/plain
+
+success
+]PRE]
+... という応答であれば、10分間は[[新鮮]]であり、
+その後更に20分間は[[誤り]]が発生した場合には返しても良いことを表しています。
+
+15分後に[[再検証]]しようとして
+[PRE(HTTP example code)[
+HTTP/1.1 500 Internal Server Error
+Content-Type: text/plain
+
+failure
+]PRE]
+... が[[起源鯖]]から返された場合には、かわりに
+[PRE(HTTP example code)[
+HTTP/1.1 200 OK
+Cache-Control: max-age=600, stale-if-error=1200
+Age: 900
+Content-Type: text/plain
+
+success
+]PRE]
+... を返すことになります。
+@

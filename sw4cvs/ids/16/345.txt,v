@@ -1,0 +1,218 @@
+head	1.8;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.8
+date	2012.02.12.14.54.14;	author wakaba;	state Exp;
+branches;
+next	1.7;
+
+1.7
+date	2012.02.12.13.58.44;	author wakaba;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2012.02.12.13.50.22;	author wakaba;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2012.02.12.10.36.25;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2012.02.12.01.23.59;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2012.02.11.14.00.47;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2012.02.11.13.59.08;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2010.07.11.03.50.43;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.8
+log
+@updated by (anon)
+@
+text
+@[1] [[CGI]] を介して[[鯖]]とやり取りする[[スクリプト]]を
+[DFN[CGIスクリプト]]と言います。ここでいう「[[スクリプト]]」は単独で実行される[[プログラム]]あるいは
+“[[スクリプト]]”でなくても、[[ライブラリー]]の類であったり、静的に組み込まれた[[関数]]のようなものですらあっても構いません。
+
+[4] 俗に、[[CGIスクリプト]]を指して単に「[[CGI]]」と呼ぶこともあります。
+
+[5] [[CGI]] の仕様書内では単に[DFN[[RUBYB[スクリプト]@@en[script]]]]と呼ばれています。
+
+* 仕様書
+
+[REFS[
+- [6] [CITE@@en[RFC 3875 - The Common Gateway Interface (CGI) Version 1.1]] 
+-- [2] '''<http://tools.ietf.org/html/rfc3875#section-1.4>'''
+-- [7] <http://tools.ietf.org/html/rfc3875#section-3.4>
+-- [13] <http://tools.ietf.org/html/rfc3875#section-7>
+]REFS]
+
+* 定義
+
+[FIG[
+[3] 
+>
+:[DFN[[RUBYB[スクリプト]@@en[script]]]]:
+本[[界面]]に従って[[鯖]]から呼び出される[[ソフトウェア]]。
+単独の[[プログラム]]である必要はなく、動的に読み込まれる (共有) ライブラリーでも構いませんし、
+もっと言えば[[鯖]]の[[手続き]]であっても構いません。「[[スクリプト]]」
+という用語はよく[[実行時]]に解釈される[[文]]の集合体と理解されたりしますが、
+それは要件ではなく、本仕様の文脈にあってはより広い定義を持っています。
+
+[FIGCAPTION(source)[
+[SRC[>>2]]
+]FIGCAPTION]
+]FIG]
+
+* 処理モデル
+
+** 実行
+
+[8] 別途規定がない限り、[[CGIスクリプト]]を含んだ[[ファイル]]は[[実行可能プログラム]]として呼び出されます
+[SRC[>>7]]。
+
+[9] [[CGIスクリプト]]は[[鯖]]から[[メタ変数]]および要求メッセージ・データを受け取ります。
+[[鯖]]はこの要求メッセージ・データを直ちに[[CGIスクリプト]]から利用可能とする必要はなく、
+その準備ができていない段階であっても ([[クライアント]]から到着していない段階であっても)
+[[CGIスクリプト]]を起動して構いません。 [SRC[>>7]]
+
+[10] [[CGIスクリプト]]は[[鯖]]に対して[[標準出力]]などの方法で結果を引き渡します。
+
+** 実行の中断
+
+[11] [[鯖]]は[[誤り]]が発生したらいつでも警告無く[[CGIスクリプト]]の実行を[RUBYB[中断]@@en[interrupt]]、
+[RUBYB[終了]@@en[terminate]]できます。例えば[[鯖]]と[[クライアント]]の通信路で失敗があったときに実行を中断して構いません。
+従って[[CGIスクリプト]]は非正常な終了を処理できるように準備する[['''べきです''']]。 [SRC[>>7]]
+
+[12] [[鯖]]は[[タイムアウト]]により[[スクリプト]]を中断させても構いません。
+
+** 現在作業ディレクトリー
+
+[14] [[AmigaDOS]] では[[スクリプト]]の[[現在作業ディレクトリー]]はその[[スクリプト]]がある[[ディレクトリー]]に設定されます。
+[[Unix]] と [[POSIX]] 環境ではその[[スクリプト]]がある[[ディレクトリー]]に設定される[['''べきです''']]。
+[SRC[>>13]]
+
+;; [15] [[AmigaDOS]] ではなぜか要件ではなく事実として [[RFC]] で説明されています。
+
+[19] [[IIS]] は [[CGIスクリプト]]の実行時に[[現在作業ディレクトリー]]を変更しておらず、
+不具合であると認識されていましたが、その後修正されたかどうかは未確認です。
+
+** 文字集合
+
+[16] [[AmigaDOS]] では[[メタ変数]]や[[頭欄]]で [[US-ASCII]] を使います。
+[[NL]] は [[LF]] です。[[鯖]]は [[CRLF]] も [[NL]] として受け付ける[['''べきです''']]。
+[SRC[>>13]]
+
+[17] [[Unix]] では[[メタ変数]]、[[頭欄]]、 [[CHAR]] に [CODE(charname)@@en[[[NUL]]]]
+を除く [[US-ASCII]] を使います。 [[TEXT]] には [[ISO-8859-1]] を使います。
+[CODE(CGI)@@en[[[PATH_TRANSLATED]]]] には [CODE(charname)@@en[[[NUL]]]] 以外の任意の[[8ビット・バイト]]を使います。
+[[NL]] は [[LF]] です。[[鯖]]は [[CRLF]] も [[NL]] として受け付ける[['''べきです''']]。
+[SRC[>>13]]
+
+[18] [[EBCDIC]] を使う [[POSIX]] では[[メタ変数]]、[[頭欄]]、 [[CHAR]]、[[TEXT]]、
+[CODE(CGI)@@en[[[PATH_TRANSLATED]]]] に [CODE(charname)@@en[[[NUL]]]]
+を除く [[IBM1047]] を使います。
+[[NL]] は [[LF]] です。[[鯖]]は [[CRLF]] も [[NL]] として受け付ける[['''べきです''']]。
+[SRC[>>13]]
+@
+
+
+1.7
+log
+@updated by (anon)
+@
+text
+@d65 3
+@
+
+
+1.6
+log
+@updated by (anon)
+@
+text
+@d63 19
+a81 1
+;; [15] [[AmigaDOS]] ではなぜか要件ではなく事実として [[RFC]] で説明されています。@
+
+
+1.5
+log
+@updated by (anon)
+@
+text
+@d15 1
+d55 9
+a63 1
+[12] [[鯖]]は[[タイムアウト]]により[[スクリプト]]を中断させても構いません。@
+
+
+1.4
+log
+@updated by (anon)
+@
+text
+@d53 2
+@
+
+
+1.3
+log
+@updated by (anon)
+@
+text
+@d12 3
+a14 1
+- [2] [CITE@@en[RFC 3875 - The Common Gateway Interface (CGI) Version 1.1]] ([TIME[2011-11-20 06:09:05 +09:00]] 版) <http://tools.ietf.org/html/rfc3875#section-1.4>
+d33 20
+@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@d2 2
+a3 1
+[DFN[CGIスクリプト]]と言います。
+d5 3
+a7 1
+;; 俗に、[[CGIスクリプト]]を指して単に「[[CGI]]」と呼ぶこともあります。
+@
+
+
+1.1
+log
+@created by (anon)
+@
+text
+@d5 23
+@
+

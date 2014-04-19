@@ -1,0 +1,194 @@
+head	1.1;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2008.11.13.09.51.05;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/C1B4CAB8B8A1BAF7CDD1C3E6B4D6B7C1BCB0.txt>
+@
+text
+@[1] 全文検索円陣の検索対象に色々な形式 (特に XML 系)
+を使えるようにするのは面倒ですので、ある程度共通化できないかと思って中間形式を考えてみました。
+
+;; 暇がないのでアイデアだけ。
+
+[2] 語彙:
+,要素型	,意味	,標準属性	,最小内容模型
+,[CODE(XMLe)[[VAR[s:]]doc]]	,根要素	,"[VAR[s:]]Common, [CODE(XMLa)[must-understand]] = qname-but-not-ncname-list (拡張語彙)"	,[CODE(XML)[([VAR[s:]]Sentences | [VAR[s:]]Sentence | [VAR[s:]]Phrase | [VAR[s:]]Atom | [CODE(XMLe)[[VAR[s:]]meta]])*]]
+,[CODE(XMLe)[[VAR[xhtml2:]][[div]]]]	,まとまり (自然言語)	,[VAR[s:]]Common	,[CODE(XML)[([VAR[s:]]Sentences | [VAR[s:]]Sentence | [VAR[s:]]Phrase | [VAR[s:]]Atom | [VAR[s:]]Particle | [CODE(XML)[PCDATA]]]])*
+,[CODE(XMLe)[[VAR[ss:]][[s]]]]	,文 (自然言語)	,[VAR[s:]]Common	,[CODE(XML)[([VAR[s:]]Sentences | [VAR[s:]]Sentence | [VAR[s:]]Phrase | [VAR[s:]]Atom | [VAR[s:]]Particle | [CODE(XML)[PCDATA]]]])*
+,[CODE(XMLe)[[VAR[s:]][[phrase]]]]	,語句 (自然言語)	,[VAR[s:]]Common	,[CODE(XML)[([VAR[s:]]Sentence | [VAR[s:]]Phrase | [VAR[s:]]Atom | [VAR[s:]]Particle | [CODE(XML)[PCDATA]]]])*
+,[CODE(XMLe)[[VAR[xhtml2:]][[code]]]]	,語句 (非自然言語)	,[VAR[s:]]Common	,[CODE(XML)[([VAR[s:]]Sentences | [VAR[s:]]Sentence | [VAR[s:]]Atom | [VAR[s:]]Particle | [CODE(XML)[PCDATA]])*]]
+,[CODE(XMLe)[[VAR[s:]]related]]	,関連情報つき語句 (自然言語)	,[VAR[s:]]Common	,"[CODE(XML)[([CODE(XMLe)[[VAR[s:]]primary]], [VAR[s:]]AnyElement*)]] (孫は [CODE(XML)[([VAR[s:]]Sentences | [VAR[s:]]Sentence | [VAR[s:]]Phrase | [VAR[s:]]Atom | [VAR[s:]]Particle | [CODE(XML)[PCDATA]])*]])"
+,[CODE(XMLe)[[VAR[s:]][[atom]]]]	,語・形態素	,[VAR[s:]]Common	,[CODE(XML)[([VAR[s:]]Sentences | [VAR[s:]]Sentence | [VAR[s:]]Atom | [VAR[s:]]Particle | [CODE(XML)[PCDATA]]]])*
+,[CODE(XMLe)[[VAR[aavocab:]][[aa]]]]	,AA	,[VAR[s:]]Common	,[CODE(XML)[([VAR[s:]]Sentences | [VAR[s:]]Sentence | [VAR[s:]]Atom | [VAR[s:]]Particle | [CODE(XML)[PCDATA]]]])*
+,[CODE(XMLe)[[VAR[s:]]particle]]	,語以下	,[VAR[s:]]Common	,([VAR[s:]]Particle | [CODE(XML)[PCDATA]])*
+,[CODE(XMLe)[[VAR[s:]]punctuation]]	,句読点等	,[VAR[s:]]Common	,([CODE(XML)[PCDATA]])*
+,[CODE(XMLe)[[VAR[s:]]meta]]	,メタ情報	,"[VAR[s:]]Common, [CODE(XMLa)[about]] = [CODE(XML)[(\"\"* | 絶対 URI 参照)]], [CODE(XMLa)[for]] = [CODE(XML)[IDREF]]"	,[[RDF/XML]] として''も''解釈できる
+,[CODE(XMLe)[[VAR[s:]]object]],物体,[VAR[s:]]Common,(空)
+,[CODE(XMLe)[[VAR[s:]]char]],非 [[UCS]] 文字,[VAR[s:]]Common,(空)
+
+どれだけ細かい要素型まで使用するかは、検索円陣の索引付けのどの phase
+で使用するかや、原始文書からどれだけの情報が得られるかによる。
+(たとえば、 XHTML 1 文書から [CODE(XMLe)[[VAR[s:]]atom]] 
+の情報は得られない。)
+
+内容集合:
+- [CODE[[DFN[[VAR[s:]]Sentences]] := [CODE(XMLe)[[VAR[xhtml2:]]div]]]]
+- [CODE[[DFN[[VAR[s:]]Sentence]] := [CODE(XMLe)[[VAR[ss:]]s]]]]
+- [CODE[[DFN[[VAR[s:]]Phrase]] := [CODE(XMLe)[[VAR[s:]]phrase]] | [CODE(XMLe)[[VAR[xhtml2:]]code]] | [CODE(XMLe)[[VAR[s:]]related]]]]
+- [CODE[[DFN[[VAR[s:]]Atom]] := [CODE(XMLe)[[VAR[s:]]atom]] | [CODE(XMLe)[[VAR[aavocab:]]aa]] | [CODE(XMLe)[[VAR[s:]]object]]]]
+- [CODE[[DFN[[VAR[s:]]Particle]] := [CODE(XMLe)[[VAR[s:]]particle]] | [CODE(XMLe)[[VAR[s:]]char]]]]
+
+属性集合:
+- [CODE[[DFN[[VAR[s:]]Lang]] := [CODE(XMLa)[xml:lang]], [CODE(XMLa)[[VAR[xhtml2:]]dir]], [VAR[script:]]Script, [CODE(XMLa)[[VAR[s:]]type]] = qname-but-not-ncname (数式、計算機言語等)]]
+- [CODE[[DFN[[VAR[s:]]Common]] := [VAR[s:]]Lang, [VAR[s:]]Space, [CODE(XMLa)[[VAR[s:]]importance]] = [CODE(XML)[("high" (= 1024) | "normal" (= 0) | "low" (= -1024) | qname-but-not-ncname | float)]], [CODE(XMLa)[[VAR[s:]]semantics]] = qname-but-not-ncname-list (元の意味を必要に応じて保存), [CODE(XMLa)[xml:base]] = 絶対 URI 参照, [CODE(XMLa)[xml:id]] = [CODE(XML)[ID]]]]
+- [CODE[[DFN[[VAR[s:]]Space]] := [CODE(XMLa)[xml:space]] = "default", [CODE(XMLa)[[VAR[s:]]space]] = "preserve"* | "collapse" | "ignore" | qname-but-not-ncname]]
+
+?:
+- 語と形態素は同じ要素型でよいか?
+- [CODE(XMLe)[[VAR[s:]]particle]] はもっとよい名前はないか? 必要か?
+- [CODE(XMLa)[[VAR[xhtml2:]]dir]] は必要か?
+- [CODE(XMLe)[[VAR[xhtml2:]]sub]] や [CODE(XMLe)[[VAR[xhtml2:]]sup]] は必要か?
+(optional な語彙として?)
+
+名前空間:
+- [CODE[[DFN[xhtml2]] := [CODE(URI)[http://www.w3.org/2002/06/xhtml2]]]]
+- [CODE[[DFN[s]] := [CODE(URI)[http://suika.fam.cx/~wakaba/archive/2004/10/search#]]]]
+- [CODE[[DFN[si]] := [CODE(URI)[http://suika.fam.cx/~wakaba/archive/2004/10/search-instance#]]]]
+- [CODE[[DFN[ss]] := [[SSML]]]]
+- [CODE[[DFN[aavocab]] := AA (2ch [[Strictスレ]])]]
+- [CODE[[DFN[script]] := [CODE(URI)[http://suika.fam.cx/~wakaba/archive/2004/script#]]]]
+- [CODE[[DFN[rdf]] := [[RDF]]]]
+
+[3] 例:
+[PRE(XML)[
+<s:doc [INS[xmlns..]]
+  xmlns:ex="http://example.org/2004/10/23/search-example-ns#"
+  xml:lang="ja" script:script="Japn"
+  xml:base="http://example.org/2004/10/23/search-example-doc"
+  must-understand="xhtml2:rt">
+  <s:meta>
+    <dc:title xml:lang="ja">検索対象の文書の例</dc:title>
+    <dc:creator xml:lang="ja">山田太郎</dc:creator>
+    <dc:date>2004-10-23T09:46:00Z</dc:date>
+  </s:meta>
+  <s:phrase s:importance="ex:keyword">全文検索円陣</s:phrase>
+  <s:atom xml:lang="en" s:importance="ex:keyword">XML</s:atom>
+  <xhtml2:div s:semantics="xhtml2:h" s:importance="high"
+      s:space="ex:xhtml1-display">
+    全文検索用中間形式
+  </xhtml2:div>
+  
+  <xhtml2:div
+    xml:base="http://example.org/2004/10/23/search-example-doc#section1">
+    全文検索<s:related>
+      <s:primary s:semantics="xhtml2:rb">円陣</s:primary>
+      <xhtml2:rt script:script="Kana">エンジン</xhtml2:rt>
+    </s:related>の検索対象に色々な形式 (特に 
+    <s:related s:semantics="xhtml2:abbr">
+      <s:primary xml:lang="en">XML</s:primary> 
+      <ex:full xml:lang="en">Extensible Markup Language</ex:full>
+      <xlink:href s:type="xsd:anyURI">http://www.w3.org/TR/REC-xml</xlink:href>
+    </s:related>系)
+    を使えるようにするのは面倒ですので、
+    ある程度共通化できないかと思って中間形式を考えてみました。
+  </xhtml2:div>
+  <xhtml2:div s:importance="low" s:space="ignore">
+    <ss:s>
+      <s:atom ex:品詞="名詞">暇</s:atom>
+      <s:atom>が</s:atom>
+      <s:phrase>ないので</s:phrase>
+      <s:atom>アイデア</s:atom>
+      <s:atom>だけ</s:atom>
+      <s:punctuation>。</s:punctuation></ss:s>
+  </xhtml2:div>
+  <xhtml2:div
+    xml:base="http://example.org/2004/10/23/search-example-doc#element(1/3)">
+    <xhtml2:code s:type="ex:sgml-doctype-subset" s:space="preserve">
+      &lt;!-- <xhtml2:div>根要素。</xhtml2:div> --&gt;
+      &lt;!ELEMENT s:doc (%sentences; | %sentence; | meta)*&gt;
+    </xhtml2:code>
+  </xhtml2:div>
+</doc>
+]PRE]
+
+[4] この中間書式への変換は、 [[XSLT]] 
+でもなんでも好きなものを使っていただくということで。
+
+通常は原始文書は普通の文書でよいですが、
+完全に機械的に変換できないときは補正情報を原始文書に埋め込んでおくとよいでしょう。
+(サイト内の共通の navigation など。) というわけでそのための語彙:
+
+属性集合:
+- [CODE[[DFN[[VAR[si:]]Common]] := [VAR[script:]]Script, [CODE(XMLa)[[VAR[si:]]role]] = qname-but-not-ncname ([CODE(XMLe)[[VAR[s:]]atom]] など), [CODE(XMLa)[[VAR[s:]]importance]], [VAR[s:]]Space]]
+- [CODE[[DFN[[VAR[script:]]Script]] := [CODE(XMLa)[[VAR[script:]]script]] = [[用字系札]]]]
+
+CSS の特性を使うのもまたよし。
+
+例:
+[PRE(CSS)[
+@@media [VAR[なにか、索引付け、みたいな媒体名]] {
+  ex|footer {
+    display: none;
+  }
+}
+]PRE]
+
+[5]
+リンクをたどっていく型の検索円陣用に: 
+- [CODE[[DFN[slink]] := <http://suika.fam.cx/~wakaba/archive/2004/10/25/link#>]]
+- [CODE[@@[CODE(XMLa)[[VAR[slink:]]hrefs]] = 絶対 URI 参照-list]]
+-- URI scheme の種類や素片識別子の意味は処理系依存
+
+[6]
+>>5 だと @@accept とかがあっても捨ててしまうのが勿体ないかも。
+
+[PRE(XML)[
+<s:doc must-understand="slink:href"
+  xmlns[VAR[...]]
+  xmlns:http="urn:x-suika-fam-cx:msgpm:header:http:">
+  <slink:href xlink:href="http://example.org/">
+    <dc:title>例の頁</dc:title>
+    <http:accept>text/html; q=1</http:accept>
+    <http:accept-charset>utf-8</http:accept-charset>
+    <http:accept-language>ja</http:accept-language>
+  </slink:href>
+</s:doc>
+]PRE]
+([CODE(XMLa)[must-understand]] は、
+意味を正しく理解させるとともに、
+要素の内容が通常の検索対象の文章と見なされないために必要。)
+
+[7] [CODE(XMLe)[[VAR[s:]]object]] 要素は、
+文章の途中に図などがあって変換できない時に代わりに挿入しておきます。
+例えば、 [SAMP[抵抗の図記号は[VAR[★]]です。]] ([VAR[★]]は実際には抵抗記号。)
+を [SAMP[<[VAR[s:]]s>抵抗の図記号は<[VAR[s:]]object/>です。</[VAR[s:]]s>]]
+に変換できます。
+
+[8] [CODE(XMLe)[[VAR[s:]]char]] 要素は、非 UCS 文字
+(UCS でまったく表現できない文字や、[[包摂規準]]・
+[[文字合成]]の関係などで直接の対応が存在しない文字、
+文字的に使われる UCS に含まれない記号など) が元文書に含まれる時に、
+その代わりに使います。 >>7 の例は
+[SAMP[<[VAR[s:]]s>抵抗の図記号は<[VAR[s:]]char [VAR[my:]]uri="http://example.com/R"/>です。</[VAR[s:]]s>]]
+と表すこともできるでしょう。
+(回路図記号が含まれる文書に特化した検索円陣なら、
+この情報を有効に使えるでしょう。)
+@

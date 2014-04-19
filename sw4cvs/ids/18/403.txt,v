@@ -1,0 +1,224 @@
+head	1.9;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.9
+date	2013.10.13.12.46.38;	author wakaba;	state Exp;
+branches;
+next	1.8;
+
+1.8
+date	2013.05.30.23.17.51;	author wakaba;	state Exp;
+branches;
+next	1.7;
+
+1.7
+date	2013.05.30.23.12.33;	author wakaba;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2013.05.29.23.02.41;	author wakaba;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2013.05.20.23.01.15;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2013.05.20.15.02.13;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2013.05.20.14.47.42;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2013.05.20.14.38.48;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2012.02.29.23.05.49;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.9
+log
+@updated by (anon)
+@
+text
+@[4] [DFN[[CODE(DOMe)@@en[[[visibilitychange]]]]]] [[イベント]]は[[文書]]の可視性が変化した時に[[発火]]されます。
+
+* 仕様書
+
+[REFS[
+- [2] [CITE@@en[Page Visibility]] ([TIME[2013-05-20 14:37:13 +09:00]] 版) <https://dvcs.w3.org/hg/webperf/raw-file/tip/specs/PageVisibility/Overview.html#pv-visibility-change-event>
+]REFS]
+
+* 可視状態への変化
+
+[5] 可視状態に変化するときには、 [DFN[[[now visible algorithm]]]] を実行しなければ[['''なりません''']]。
+これはすなわち、 [CODE(JS)@@en[[[document.hidden]]]] を [CODE[[[false]]]] にし、
+[CODE(DOMa)@@en[[[visibilityState]]]] を [CODE(DOM)@@en[[[visible]]]] にした上で、 [CODE(DOMi)@@en[[[Document]]]] において
+[[bubble]] する [CODE(DOMe)@@en[[[visibilitychange]]]] [[単純イベントを発火]]することとなります。
+[[session history entry]] への[[探索]]にあっては [CODE(DOMe)@@en[[[pageshow]]]]
+[[イベント]]の[[発火]]の直前に、それ以外の場合にあっては[[タスクをキューに入れる]]ことによって行います。 [SRC[>>2]]
+
+;; [6] [[タスク源]]はなぜか規定されていません。
+
+;; [10] >>7 は[[文書をunload]]する途中で [[HTML Standard]] 側にフックがありますが (>>1 で追加)、なぜ >>5
+で同様のフックを用意していないのか謎です。
+
+[15] [DFN[[RUBYB[セッション履歴文書可視性変更ステップ群]@@en[session history document visibility change steps]]]]が
+[REFS[
+- [16] [CITE@@en[Web Applications 1.0 r8160     Provide hook for pagevis. Correctly return false for event.persisted in pagehide. Define one of the variables in an algorithm.]] ([TIME[2013-09-01 06:43:00 +09:00]] 版) <http://html5.org/tools/web-apps-tracker?from=8159&to=8160>
+]REFS]
+... で追加されていますが、現時点で [[Page Visibility]] はまだそれを使っていません。 [TIME[2013-10-13T12:46:35.200Z]]
+
+* 不可視状態への変化
+
+[7] 不可視状態に変化するときには、 [DFN[[[now hidden algorithm]]]] を実行しなければ[['''なりません''']]。
+これはすなわち、 [CODE(JS)@@en[[[document.hidden]]]] を [CODE[[[true]]]] にし、
+[CODE(DOMa)@@en[[[visibilityState]]]] を変更した上で、 [CODE(DOMi)@@en[[[Document]]]] において
+[[bubble]] する [CODE(DOMe)@@en[[[visibilitychange]]]] [[単純イベントを発火]]することとなります。
+[[文書をunload]]する途中であれば[DFN[[RUBYB[unload文書可視性変更手順]@@en[unloading document visibility change steps]]]]
+([CODE(DOMe)@@en[[[pagehide]]]] [[イベント]]の[[発火]]の直後) において、
+それ以外の場合にあっては[[タスクをキューに入れる]]ことによって行います。
+[CODE(DOMe)@@en[[[visibilityState]]]] の新しい値は前者なら [CODE(DOM)@@en[[[unloaded]]]]、
+後者なら [CODE(DOM)@@en[[[hidden]]]] ですが、 [CODE(DOM)@@en[[[unloaded]]]] に対応しない場合には
+両方 [CODE(DOM)@@en[[[hidden]]]] でも構いません。 [SRC[>>2]]
+
+;; [8] なぜわざわざ [CODE(DOM)@@en[[[unloaded]]]] でなくても良いことになっているのでしょう。
+実装の都合上区別できない[[Webブラウザー]]があるんでしょうかね。
+
+;; [9] [[タスク源]]はなぜか規定されていません。
+
+;; [13] [CODE(DOMe)@@en[[[unload]]]] [[イベント]]の時は [CODE(JS)@@en[[[document.hidden]]]] が[[真]]に、
+[CODE(DOMa)@@en[[[visibilityState]]]] が [CODE(DOM)@@en[[[unloaded]]]]/[CODE(DOM)@@en[[[hidden]]]]
+になっているということになります。
+
+;; [14] 元々 [CODE(DOMa)@@en[[[visibilityState]]]] が [CODE(DOM)@@en[[[hidden]]]] で[[unload文書可視性変更手順]]の結果
+[CODE(DOM)@@en[[[hidden]]]] が設定されるケースだと値は実際には変わっていませんが、仕様上
+[CODE(DOMe)@@en[[[visibilitychange]]]] は[[発火]]されることになっています。
+
+* 歴史
+
+[3] [CODE(DOMe)@@en[[[visibilitychange]]]] [[イベント]]は [[Page Visibility]] によって追加されました。
+
+[REFS[
+-[1] [CITE@@en[Web Applications 1.0 r7010 Provide a hook for the Page Visibility spec.]]
+( ([TIME[2012-03-01 07:39:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=7009&to=7010>
+]REFS]
+
+[11] [[vendor prefix]] のついた [DFN[[CODE(DOMe)@@en[[[webkitvisibilitychange]]]]]]、
+[DFN[[CODE(DOMe)@@en[[[mozvisibilitychange]]]]]]、[DFN[[CODE(DOMe)@@en[[[msvisibilitychange]]]]]]
+も実装されていました。
+
+[12] [CITE@@en[Re: ''''''[''''''Page Visibility'''''']'''''' Navigate away behavior (was RE: TPAC 2011 Web  Performance WG 2011-11-01)]]
+( ([[Sreeram Ramachandran]] 著, [TIME[2012-05-16 00:30:10 +09:00]] 版))
+<http://lists.w3.org/Archives/Public/public-web-perf/2012May/0079.html>@
+
+
+1.8
+log
+@updated by (anon)
+@
+text
+@d23 6
+@
+
+
+1.7
+log
+@updated by (anon)
+@
+text
+@d45 4
+@
+
+
+1.6
+log
+@updated by (anon)
+@
+text
+@d41 4
+d57 4
+a60 4
+も実装されていました。
+
+[12] [CITE@@en[Re: ''''''[''''''Page Visibility'''''']'''''' Navigate away behavior (was RE: TPAC 2011 Web  Performance WG 2011-11-01)]]
+( ([[Sreeram Ramachandran]] 著, [TIME[2012-05-16 00:30:10 +09:00]] 版))
+@
+
+
+1.5
+log
+@updated by (anon)
+@
+text
+@d53 5
+a57 1
+も実装されていました。@
+
+
+1.4
+log
+@updated by (anon)
+@
+text
+@d49 5
+a53 1
+]REFS]@
+
+
+1.3
+log
+@updated by (anon)
+@
+text
+@d9 32
+d49 1
+a49 1
+]REFS]
+@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@d1 1
+a1 2
+[4] [DFN[[CODE(DOMe)@@en[[[visibilitychange]]]]]] [[イベント]]は[[文書]]の可視性 ([CODE(DOMa)@@en[[[visibilityState]]]])
+が変化した時に[[発火]]されます。
+@
+
+
+1.1
+log
+@created by (anon)
+@
+text
+@d1 18
+a18 3
+[1] [CITE@@en[Web Applications 1.0 r7010 Provide a hook for the Page Visibility spec.]]
+( ([TIME[2012-03-01 07:39:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=7009&to=7010>@
+

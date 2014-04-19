@@ -1,0 +1,854 @@
+head	1.3;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.3
+date	2014.01.08.07.30.10;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2010.10.20.13.40.28;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2008.11.12.10.35.37;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.3
+log
+@updated by (anon)
+@
+text
+@
+[1] [DFN[[CODE[Referer:]] 欄]]は、 [[HTTP]] 
+などで使われる[[頭欄]]で、[[リンク]]先の[[資源]]を取り寄せる時に、
+その参照元を示すために使います。
+
+ここでは、各種プロトコルの [CODE[Referer:]] 欄について取り上げます。
+他のプロトコルの Referer (又は相当) 機能についてや、 Referer
+に関わる諸問題 (Referer 漏れなど) については [CODE(WikiPage)[[[Referer]]]]
+を参照して下さい。
+
+[4] >>1 とはいうものの、 [CODE[Referer:]] 欄と Referer 
+一般に完全に切り離すのは不可能なので、まだ境界が曖昧な状態です。
+適当にいじってください。
+
+* Referer: 欄の中身
+
+[54]  [CODE(HTTP)[Referer]] URI として報告例のある scheme は、
+:[CODE(URI)[[[http]]]]:[[HTTP]]
+:[CODE(URI)[[[https]]]]:HTTP over [[SSL]]/[[TLS]]
+:[CODE(URI)[[[news]]]]:[[Usenet]] ([SAMP(URI)[news://foo.example/]])
+:[CODE(URI)[[[about]]]]:[SAMP(URI)[[[about:blank]]]] (一時の Classic Mozilla の不具合らしい。)
+:[CODE(URI)[[[file]]]]:Local file
+:[CODE(URI)[[[webster]]]]:[SAMP(URI)[Webster://Internal/StatusPage]]
+:[CODE(URI)[[[xxxx]]]]:串による書き換え
+
+こんなものかな。 [CODE(URI)[[[gopher]]]] とか [CODE(URI)[[[ftp]]]] とかもあってもよさそうだけど、確認されていますか?
+
+
+** 相対 URI
+
+[48]  >>28 によればこの欄の値は相対 URI でも良いみたいですが、
+そういうのは見たことがないですね。
+絶対 URI にした方がいい気がします。
+
+SuikaWiki の Referer plugin も相対 URI には実は対応していなかった気が。
+
+[55]  一部の版の [[IE]] や一部の[[検索円陣]]索引付け器が相対 URI
+で [CODE(HTTP)[Referer:]] を送ってくるそうです。
+
+それから、一部の腐った索引付け器は
+[SAMP(URI)[www.example.com/]] のような相対 URI もどきを送りつけるそうです。
+
+
+** 素片識別子
+
+[47]  ''Bug 179400 - URI fragment present in HTTP Referer'' <http://bugzilla.mozilla.org/show_bug.cgi?id=179400>
+
+Mozilla では、最近 (2002年末) まで Referer URI に[[素片識別子]]もつけて送ってしまうという不具合がありました。 (HTTP RFC ははっきり禁止しています >>28。)
+
+多分他にも素片識別子を送る UA は少なくないと想像されます。
+
+
+** ロボットの身元申告
+
+[49]  特に昔の[[ロボット]]なんかは、
+その身元を表す文書がある [[URI]]
+を [CODE(HTTP)[Referer:]] 欄で送ってくることがありました。
+
+身元を表明するという意味ではよい心がけですが、
+本来の使い方からそれており好ましいことではありません。
+幸い最近はそういうのは減っているようです。
+
+[50]  [[なつみかん]]なんかは設定項目がわざわざあって、
+アンテナの結果表示 URI を指定するようにと指導されていました。
+リンクを広義に解釈すれば必ずしも間違いとも言い切れませんが、
+なんだかなあという気はしました。
+
+これも >>49 の仲間といえます。
+
+[51] なお、身元申告には本来 [CODE(HTTP)[[[From]]:]] 欄を使うのがよいとされています。
+実際、最近のロボットは [CODE(HTTP)[From:]] 欄に連絡先メイル・アドレスを入れてきます。
+但し、 [CODE(HTTP)[From:]] 欄の中身はあくまでメイル・アドレスでして、
+参照して欲しい URI 参照を入れることは残念ながらできません。
+
+ですから、身元申告文書の URI 参照を入れる標準の頭欄で最も適切なのは
+[CODE(HTTP)[[[User-Agent]]:]] 欄です。 (しかし、単なる文字列の一部でしかないので機械処理ができない諸刃の剣。素人は [CODE(HTTP)[User-Agent:]] 欄に入れるときには[[注釈]]にしないといけないことにも注意されたし。)
+
+
+* 各仕様書の規定
+
+
+** RFC 1945 (HTTP/1.0) 10.13; RFC 2068 (HTTP/1.1) 14.37; RFC 2616 (HTTP/1.1) 14.36 Referer
+
+The Referer[INS[ [sic] ]] request-header field allows the client to specify,
+for the server's benefit, the address (URI) of the resource from which
+the Request-URI was obtained[DEL[.]] [INS[(the "referrer", although the header field is misspelled.)]] [DEL[This]] [INS[The Referer request-header]] allows a server to generate lists of back-links
+to resources for interest, logging, optimized caching, etc.
+It also allows obsolete or mistyped links to be traced for maintenance.
+The Referer field [DEL[must not]] [INS[MUST NOT]] be sent if the Request-URI was obtained from a source
+that does not have its own URI, such as input from the user keyboard.
+
+[25] [CODE(HTTP)[Referer]] [おっと!] 
+[[要求頭欄によりクライアントはサーバーの益がために]]
+Request-URI を得た資源のアドレス ([[URI]]) (「referrer」。
+頭欄は綴りが間違っていますが。) を指定することが出来ます。 Referer
+要求頭によりサーバーは興味, 記録, キャッシュ最適化その他の目的で資源への逆リンクの一覧を生成出来ます。
+維持管理で廃止された又は綴りの間違ったリンクを追跡することも出来ます。
+Referer 欄は Request-URI が URI を持たない資源, 
+例えば利用者の鍵盤からの入力から得たものである時には送っては'''いけません'''。
+
+>
+- Referer        = "Referer" ":" ( absoluteURI | relativeURI )
+
+> Example:
+- Referer: http://www.w3.org/hypertext/DataSources/Overview.html
+
+> If [DEL[a partial URI is given]] [INS[the field value is a [DEL[partial]] [INS[relative]] URI]], it [DEL[should]] [INS[SHOULD]] be interpreted relative to the
+Request-URI. The URI [DEL[must not]] [INS[MUST NOT]] include a fragment. [INS[[INS[{2616}]] See section 15.1.3 for security considerations.]]
+
+[28] 欄値が相対 URI の場合、これは Request-URI (要求 URI) 
+との関係であると解釈される''べき''ものです。 URI は[[素片]] (fragment) 
+を含んでいては'''なりません'''。安全性についての第15.1.3節も参照して下さい。
+
+[DEL[
+
+> [INS[{1945,2068}]] Note: Because the source of a link may be private information or
+may reveal an otherwise private information source, it is strongly
+recommended that the user be able to select whether or not the
+Referer field is sent. For example, a browser client could have a
+toggle switch for browsing openly/anonymously, which would
+respectively enable/disable the sending of Referer and From information.
+
+[INS[
+
+注: この部分は RFC 2616 では 5.1.3 に移動しました。
+]INS]
+]DEL]
+
+[INS[
+
+注: 注記のない修正は、 RFC 1945 → RFC 2068 の変更点。
+]INS]
+
+
+** RFC 1945 (HTTP/1.0) 12.4; RFC 2068 (HTTP/1.1) 15.4; RFC 2616 (HTTP/1.1) 15.1.2 (抜粋)
+
+> The Referer [DEL[field]] [INS[[INS[{2616}]] header]] allows reading patterns to be studied and reverse
+links drawn. Although it can be very useful, its power can be abused
+if user details are not separated from the information contained in
+the Referer. Even when the personal information has been removed, the
+Referer [DEL[field may]] [INS[[INS[{2616}]] header might]] indicate a private document's URI whose
+publication would be inappropriate.
+
+[CODE(HTTP)[Referer]] 頭は、読解パターンを学習することや、
+[[逆リンク]]を描くことを可能にします。これは非常に有用でありますが、
+利用者の詳細が [CODE(HTTP)[Referer]] に含まれる情報から分離されていなければ、
+その力は濫用され得ます。個人情報が削除されるとしても、
+[CODE(HTTP)[Referer]] 頭は公表が不適切である私的な文書の URI
+を示しているかもしれません。
+
+
+** RFC 2616 (HTTP/1.1) 15.1.3 (抜粋)
+
+> Because the source of a link might be private information or might
+reveal an otherwise private information source, it is strongly
+recommended that the user be able to select whether or not the
+Referer field is sent. For example, a browser client could have a
+toggle switch for browsing openly/anonymously, which would
+respectively enable/disable the sending of Referer and From information.
+
+リンクの始点が私的な情報であったり、本来私的な情報源を晒すことになったりするかもしれませんから、
+[CODE(HTTP)[Referer]] 欄を送るかどうかを利用者が選択できるようにすることを強く推奨します。
+例えば、ブラウザ・クライアントでは、公開で閲覧するか匿名で閲覧するかの切替器を用意して、
+[CODE(HTTP)[Referer]] や [CODE(HTTP)[[[From]]]] の情報の送信を有効にするか無効にするか指定するようにできます。
+
+> Clients SHOULD NOT include a Referer header field in a (non-secure)
+HTTP request if the referring page was transferred with a secure protocol.
+
+クライアントは、参照している頁が安全なプロトコルで転送されたものであれば、 
+(安全でない) HTTP 要求で [CODE(HTTP)[Referer]] 頭欄を含める'''べきではありません'''。
+
+
+** RTSP/1.0 (RFC 2326 12.30 Referer)
+
+> See [H14.37]. The URL refers to that of the presentation description,
+typically retrieved via HTTP.
+
+[21] [H14.37] 参照。 [[URL]] は、 (典型的には HTTP を介して取り出した) 
+[[表現記述]]のものを参照します。
+
+
+** RFC の部分の LICENSE
+
+See [[RFCのライセンス]]
+
+
+* 実装について
+
+[43] [[Mozilla]] では、 View->Page Info->General->Referring URL に Referer
+として送られた URI が出ます。
+
+[53]  [[Apache]] の log では、既定では、 [SAMP["[VAR[http://www.example.com/]]"]] のように記録されますが、
+[CODE(HTTP)[Referer:]] 欄自体が送られてこなかったときには
+[SAMP["-"]] になります。
+空 (または空白だけ) の [CODE(HTTP)[Referer:]] 欄が送られてきたときには、
+[SAMP[""]] になります。
+[CODE(HTTP)[Referer: -]] が送られてきたら、
+[SAMP["-"]] になりました。
+
+
+** Referer を送らないには?
+
+[2] Referer リクエストヘッダの除去 <http://www.st.ryukoku.ac.jp/~kjm/security/memo/referer.html>
+
+[8] 2002-11-04 (月) 13:45 ''[[Name_Not_Found]]'' [[InternetExplorer]] で現時点で Referer をつけない方法はありません。代わりに >>7 のような串を使うのが良いでしょう。
+
+[29] >>8 少々面倒ですが、リンクを[RUBY[鼠] [マウス]]で[RUBY[引っ張っ] [ドラッグし]]て、「アドレス」欄などに[RUBY[落と] [ドロップ]]したら
+Referer は送られません。
+
+この方法は[[Mozilla]] でも、タブの上に drag & drop とかすれば使えます。普段は Referer を送るけど、特定の場合には送らないというのに便利。
+
+[40] [WEAK[2002-12-25 11:53]] ''>>36'': でも Mozilla 1.2.1 でそれやったら残ったことがあった。残らないこともあった。変だなあ
+
+
+*** Proxy などによる削除
+
+[7] Referer は privacy に関わる情報であることから、
+これを削除する機能を持った[[串]]があります。
+(本来は情報を送る [[UA]] 側で利用者が制御できるのがあるべき姿でしょうが、
+そうでない UA が実際には多いですから。)
+
+[36] しかし、ただ削除するだけなら何ら問題はないのですが、削除して代わりに
+"Blocked by Proxy-name" のような文字列を挿入するものがあります。
+これは[[規格違反]]であることは明らかですから、串作者はこうした文字列を入れては'''なりません'''。利用者もそのような製品はできるだけ使わず、
+代替製品があればそちらを使用することが望ましいでしょう。
+
+挿入されるいかれた文字列の例:
+- [45] [SAMP(HTTP)[Field blocked by Outpost (http://www.agnitum.com)]]
+- [46] [SAMP(HTTP)[Removed by Outpost <http://www.agnitum.com/>]] >>45 の方が新しい版??
+
+[52]  [SAMP(URI)[xxxx:++++++++++++++++++++++++++++++++++++++++++++++++++++++++++]]
+のように、伏字にして送ってくる糞 privacy 保護ソフトウェアがあります。
+
+参考:
+- ''Referrers Xxxx:++++++++++++++++++'' <http://www.webmasterworld.com/forum39/980.htm>
+- ''xxxx:+++/ in referer logs - analog/report magic'' <http://www.webmasterworld.com/forum39/1642.htm>
+- ''Get Rid Of The Turkeys Who Use'' <http://www.webmasterworld.com/forum23/2040-3-15.htm>
+
+[SAMP(HTTP)[Blocked by [VAR[...]] ([VAR[www.example.com]])]] てなのもあるそうです。
+
+[56]  [SAMP(HTTP)[Blocked by Norton]]
+
+こんなところでまでわざわざ自己主張しなくたってねぇ。 ([[無Refererさん]])
+
+
+* メモ
+
+[62]
+この WikiPage の referer 記録、これまた香ばしいのがたくさんきてますねぇ。
+他の一般の WikiPage にはあまりないようですけど、
+こういう referer spam ってまさか手動でやってるのでしょうか。 ([[Referer]] の頁もなぜか多いです。) 暇な人もいるものですねぇ。
+([[名無しさん]] [WEAK[2004-11-06 01:07:14 +00:00]])
+
+[63]
+[SAMP(HTTP)[Referer: <!--#exec cmd="ls"-->]]
+のようなものが送られてくることがあります。
+[CODE(HTTP)[[[Referer]]]] を記録していて、
+その結果が [[HTML]] [[ファイル]]に出力されて、
+その[[ファイル]]で [[SSI]] が有効になっているのに、
+[[HTML]] 化時の[[逃避]]が行われていない、
+なんていう一昔前にあちこちで起こっていそうな光景
+[WEAK[(今はしらん。)]] を想像しているのでしょうね。
+
+[SAMP[ls]] だからよいもの、 [[Apache]]
+が [CODE[[[root]]]] で動いている上に [SAMP[[[rm]] -fr /]]
+だった日には[AA[(w]]。
+
+([[名無しさん]] [sage] [WEAK[2005-06-03 11:40:21 +00:00]])
+
+
+[64] [CITE[Fix referrer. Inline source origin and referrer source. https://www.w3.o... · 1898f6f · whatwg/xhr]]
+( ([TIME[2014-01-08 07:30:04 +09:00]] 版))
+<https://github.com/whatwg/xhr/commit/1898f6f8981e8f926dc42392c07137eeedf7094b>@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@d269 5
+@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/526566657265723A.txt>
+@
+text
+@d1 268
+a268 527
+
+[1] [DFN[[CODE[Referer:]] 欄]]は、 [[HTTP]] 
+などで使われる[[頭欄]]で、[[リンク]]先の[[資源]]を取り寄せる時に、
+その参照元を示すために使います。
+
+ここでは、各種プロトコルの [CODE[Referer:]] 欄について取り上げます。
+他のプロトコルの Referer (又は相当) 機能についてや、 Referer
+に関わる諸問題 (Referer 漏れなど) については [CODE(WikiPage)[[[Referer]]]]
+を参照して下さい。
+
+[4] >>1 とはいうものの、 [CODE[Referer:]] 欄と Referer 
+一般に完全に切り離すのは不可能なので、まだ境界が曖昧な状態です。
+適当にいじってください。
+
+[[#form:'spambot用ダミーフォーム%n;%textarea(id=>msg,cols=>40,lines=>3,class=>require);%n;(%text(id=>name,label=>お名前,size=>6); [%text(id=>name,label=>メイル,size=>5);] %check(default,id=>record-date,label=>日付を記録,description=>日付と時刻を記録するか否か);) %submit(label=>追加);':'']]
+
+
+* Referer: 欄の中身
+
+[54]  [CODE(HTTP)[Referer]] URI として報告例のある scheme は、
+:[CODE(URI)[[[http]]]]:[[HTTP]]
+:[CODE(URI)[[[https]]]]:HTTP over [[SSL]]/[[TLS]]
+:[CODE(URI)[[[news]]]]:[[Usenet]] ([SAMP(URI)[news://foo.example/]])
+:[CODE(URI)[[[about]]]]:[SAMP(URI)[[[about:blank]]]] (一時の Classic Mozilla の不具合らしい。)
+:[CODE(URI)[[[file]]]]:Local file
+:[CODE(URI)[[[webster]]]]:[SAMP(URI)[Webster://Internal/StatusPage]]
+:[CODE(URI)[[[xxxx]]]]:串による書き換え
+
+こんなものかな。 [CODE(URI)[[[gopher]]]] とか [CODE(URI)[[[ftp]]]] とかもあってもよさそうだけど、確認されていますか?
+
+
+** 相対 URI
+
+[48]  >>28 によればこの欄の値は相対 URI でも良いみたいですが、
+そういうのは見たことがないですね。
+絶対 URI にした方がいい気がします。
+
+SuikaWiki の Referer plugin も相対 URI には実は対応していなかった気が。
+
+[55]  一部の版の [[IE]] や一部の[[検索円陣]]索引付け器が相対 URI
+で [CODE(HTTP)[Referer:]] を送ってくるそうです。
+
+それから、一部の腐った索引付け器は
+[SAMP(URI)[www.example.com/]] のような相対 URI もどきを送りつけるそうです。
+
+
+** 素片識別子
+
+[47]  ''Bug 179400 - URI fragment present in HTTP Referer'' <http://bugzilla.mozilla.org/show_bug.cgi?id=179400>
+
+Mozilla では、最近 (2002年末) まで Referer URI に[[素片識別子]]もつけて送ってしまうという不具合がありました。 (HTTP RFC ははっきり禁止しています >>28。)
+
+多分他にも素片識別子を送る UA は少なくないと想像されます。
+
+
+** ロボットの身元申告
+
+[49]  特に昔の[[ロボット]]なんかは、
+その身元を表す文書がある [[URI]]
+を [CODE(HTTP)[Referer:]] 欄で送ってくることがありました。
+
+身元を表明するという意味ではよい心がけですが、
+本来の使い方からそれており好ましいことではありません。
+幸い最近はそういうのは減っているようです。
+
+[50]  [[なつみかん]]なんかは設定項目がわざわざあって、
+アンテナの結果表示 URI を指定するようにと指導されていました。
+リンクを広義に解釈すれば必ずしも間違いとも言い切れませんが、
+なんだかなあという気はしました。
+
+これも >>49 の仲間といえます。
+
+[51] なお、身元申告には本来 [CODE(HTTP)[[[From]]:]] 欄を使うのがよいとされています。
+実際、最近のロボットは [CODE(HTTP)[From:]] 欄に連絡先メイル・アドレスを入れてきます。
+但し、 [CODE(HTTP)[From:]] 欄の中身はあくまでメイル・アドレスでして、
+参照して欲しい URI 参照を入れることは残念ながらできません。
+
+ですから、身元申告文書の URI 参照を入れる標準の頭欄で最も適切なのは
+[CODE(HTTP)[[[User-Agent]]:]] 欄です。 (しかし、単なる文字列の一部でしかないので機械処理ができない諸刃の剣。素人は [CODE(HTTP)[User-Agent:]] 欄に入れるときには[[注釈]]にしないといけないことにも注意されたし。)
+
+
+* 各仕様書の規定
+
+
+** RFC 1945 (HTTP/1.0) 10.13; RFC 2068 (HTTP/1.1) 14.37; RFC 2616 (HTTP/1.1) 14.36 Referer
+
+The Referer[INS[ [sic] ]] request-header field allows the client to specify,
+for the server's benefit, the address (URI) of the resource from which
+the Request-URI was obtained[DEL[.]] [INS[(the "referrer", although the header field is misspelled.)]] [DEL[This]] [INS[The Referer request-header]] allows a server to generate lists of back-links
+to resources for interest, logging, optimized caching, etc.
+It also allows obsolete or mistyped links to be traced for maintenance.
+The Referer field [DEL[must not]] [INS[MUST NOT]] be sent if the Request-URI was obtained from a source
+that does not have its own URI, such as input from the user keyboard.
+
+[25] [CODE(HTTP)[Referer]] [おっと!] 
+[[要求頭欄によりクライアントはサーバーの益がために]]
+Request-URI を得た資源のアドレス ([[URI]]) (「referrer」。
+頭欄は綴りが間違っていますが。) を指定することが出来ます。 Referer
+要求頭によりサーバーは興味, 記録, キャッシュ最適化その他の目的で資源への逆リンクの一覧を生成出来ます。
+維持管理で廃止された又は綴りの間違ったリンクを追跡することも出来ます。
+Referer 欄は Request-URI が URI を持たない資源, 
+例えば利用者の鍵盤からの入力から得たものである時には送っては'''いけません'''。
+
+>
+- Referer        = "Referer" ":" ( absoluteURI | relativeURI )
+
+> Example:
+- Referer: http://www.w3.org/hypertext/DataSources/Overview.html
+
+> If [DEL[a partial URI is given]] [INS[the field value is a [DEL[partial]] [INS[relative]] URI]], it [DEL[should]] [INS[SHOULD]] be interpreted relative to the
+Request-URI. The URI [DEL[must not]] [INS[MUST NOT]] include a fragment. [INS[[INS[{2616}]] See section 15.1.3 for security considerations.]]
+
+[28] 欄値が相対 URI の場合、これは Request-URI (要求 URI) 
+との関係であると解釈される''べき''ものです。 URI は[[素片]] (fragment) 
+を含んでいては'''なりません'''。安全性についての第15.1.3節も参照して下さい。
+
+[DEL[
+
+> [INS[{1945,2068}]] Note: Because the source of a link may be private information or
+may reveal an otherwise private information source, it is strongly
+recommended that the user be able to select whether or not the
+Referer field is sent. For example, a browser client could have a
+toggle switch for browsing openly/anonymously, which would
+respectively enable/disable the sending of Referer and From information.
+
+[INS[
+
+注: この部分は RFC 2616 では 5.1.3 に移動しました。
+]INS]
+]DEL]
+
+[INS[
+
+注: 注記のない修正は、 RFC 1945 → RFC 2068 の変更点。
+]INS]
+
+
+** RFC 1945 (HTTP/1.0) 12.4; RFC 2068 (HTTP/1.1) 15.4; RFC 2616 (HTTP/1.1) 15.1.2 (抜粋)
+
+> The Referer [DEL[field]] [INS[[INS[{2616}]] header]] allows reading patterns to be studied and reverse
+links drawn. Although it can be very useful, its power can be abused
+if user details are not separated from the information contained in
+the Referer. Even when the personal information has been removed, the
+Referer [DEL[field may]] [INS[[INS[{2616}]] header might]] indicate a private document's URI whose
+publication would be inappropriate.
+
+[CODE(HTTP)[Referer]] 頭は、読解パターンを学習することや、
+[[逆リンク]]を描くことを可能にします。これは非常に有用でありますが、
+利用者の詳細が [CODE(HTTP)[Referer]] に含まれる情報から分離されていなければ、
+その力は濫用され得ます。個人情報が削除されるとしても、
+[CODE(HTTP)[Referer]] 頭は公表が不適切である私的な文書の URI
+を示しているかもしれません。
+
+
+** RFC 2616 (HTTP/1.1) 15.1.3 (抜粋)
+
+> Because the source of a link might be private information or might
+reveal an otherwise private information source, it is strongly
+recommended that the user be able to select whether or not the
+Referer field is sent. For example, a browser client could have a
+toggle switch for browsing openly/anonymously, which would
+respectively enable/disable the sending of Referer and From information.
+
+リンクの始点が私的な情報であったり、本来私的な情報源を晒すことになったりするかもしれませんから、
+[CODE(HTTP)[Referer]] 欄を送るかどうかを利用者が選択できるようにすることを強く推奨します。
+例えば、ブラウザ・クライアントでは、公開で閲覧するか匿名で閲覧するかの切替器を用意して、
+[CODE(HTTP)[Referer]] や [CODE(HTTP)[[[From]]]] の情報の送信を有効にするか無効にするか指定するようにできます。
+
+> Clients SHOULD NOT include a Referer header field in a (non-secure)
+HTTP request if the referring page was transferred with a secure protocol.
+
+クライアントは、参照している頁が安全なプロトコルで転送されたものであれば、 
+(安全でない) HTTP 要求で [CODE(HTTP)[Referer]] 頭欄を含める'''べきではありません'''。
+
+
+** RTSP/1.0 (RFC 2326 12.30 Referer)
+
+> See [H14.37]. The URL refers to that of the presentation description,
+typically retrieved via HTTP.
+
+[21] [H14.37] 参照。 [[URL]] は、 (典型的には HTTP を介して取り出した) 
+[[表現記述]]のものを参照します。
+
+
+** RFC の部分の LICENSE
+
+See [[RFCのライセンス]]
+
+
+* 実装について
+
+[43] [[Mozilla]] では、 View->Page Info->General->Referring URL に Referer
+として送られた URI が出ます。
+
+[53]  [[Apache]] の log では、既定では、 [SAMP["[VAR[http://www.example.com/]]"]] のように記録されますが、
+[CODE(HTTP)[Referer:]] 欄自体が送られてこなかったときには
+[SAMP["-"]] になります。
+空 (または空白だけ) の [CODE(HTTP)[Referer:]] 欄が送られてきたときには、
+[SAMP[""]] になります。
+[CODE(HTTP)[Referer: -]] が送られてきたら、
+[SAMP["-"]] になりました。
+
+
+** Referer を送らないには?
+
+[2] Referer リクエストヘッダの除去 <http://www.st.ryukoku.ac.jp/~kjm/security/memo/referer.html>
+
+[8] 2002-11-04 (月) 13:45 ''[[Name_Not_Found]]'' [[InternetExplorer]] で現時点で Referer をつけない方法はありません。代わりに >>7 のような串を使うのが良いでしょう。
+
+[29] >>8 少々面倒ですが、リンクを[RUBY[鼠] [マウス]]で[RUBY[引っ張っ] [ドラッグし]]て、「アドレス」欄などに[RUBY[落と] [ドロップ]]したら
+Referer は送られません。
+
+この方法は[[Mozilla]] でも、タブの上に drag & drop とかすれば使えます。普段は Referer を送るけど、特定の場合には送らないというのに便利。
+
+[40] [WEAK[2002-12-25 11:53]] ''>>36'': でも Mozilla 1.2.1 でそれやったら残ったことがあった。残らないこともあった。変だなあ
+
+
+*** Proxy などによる削除
+
+[7] Referer は privacy に関わる情報であることから、
+これを削除する機能を持った[[串]]があります。
+(本来は情報を送る [[UA]] 側で利用者が制御できるのがあるべき姿でしょうが、
+そうでない UA が実際には多いですから。)
+
+[36] しかし、ただ削除するだけなら何ら問題はないのですが、削除して代わりに
+"Blocked by Proxy-name" のような文字列を挿入するものがあります。
+これは[[規格違反]]であることは明らかですから、串作者はこうした文字列を入れては'''なりません'''。利用者もそのような製品はできるだけ使わず、
+代替製品があればそちらを使用することが望ましいでしょう。
+
+挿入されるいかれた文字列の例:
+- [45] [SAMP(HTTP)[Field blocked by Outpost (http://www.agnitum.com)]]
+- [46] [SAMP(HTTP)[Removed by Outpost <http://www.agnitum.com/>]] >>45 の方が新しい版??
+
+[52]  [SAMP(URI)[xxxx:++++++++++++++++++++++++++++++++++++++++++++++++++++++++++]]
+のように、伏字にして送ってくる糞 privacy 保護ソフトウェアがあります。
+
+参考:
+- ''Referrers Xxxx:++++++++++++++++++'' <http://www.webmasterworld.com/forum39/980.htm>
+- ''xxxx:+++/ in referer logs - analog/report magic'' <http://www.webmasterworld.com/forum39/1642.htm>
+- ''Get Rid Of The Turkeys Who Use'' <http://www.webmasterworld.com/forum23/2040-3-15.htm>
+
+[SAMP(HTTP)[Blocked by [VAR[...]] ([VAR[www.example.com]])]] てなのもあるそうです。
+
+[56]  [SAMP(HTTP)[Blocked by Norton]]
+
+こんなところでまでわざわざ自己主張しなくたってねぇ。 ([[無Refererさん]])
+
+
+* メモ
+
+[62]
+この WikiPage の referer 記録、これまた香ばしいのがたくさんきてますねぇ。
+他の一般の WikiPage にはあまりないようですけど、
+こういう referer spam ってまさか手動でやってるのでしょうか。 ([[Referer]] の頁もなぜか多いです。) 暇な人もいるものですねぇ。
+([[名無しさん]] [WEAK[2004-11-06 01:07:14 +00:00]])
+
+[63]
+[SAMP(HTTP)[Referer: <!--#exec cmd="ls"-->]]
+のようなものが送られてくることがあります。
+[CODE(HTTP)[[[Referer]]]] を記録していて、
+その結果が [[HTML]] [[ファイル]]に出力されて、
+その[[ファイル]]で [[SSI]] が有効になっているのに、
+[[HTML]] 化時の[[逃避]]が行われていない、
+なんていう一昔前にあちこちで起こっていそうな光景
+[WEAK[(今はしらん。)]] を想像しているのでしょうね。
+
+[SAMP[ls]] だからよいもの、 [[Apache]]
+が [CODE[[[root]]]] で動いている上に [SAMP[[[rm]] -fr /]]
+だった日には[AA[(w]]。
+
+([[名無しさん]] [sage] [WEAK[2005-06-03 11:40:21 +00:00]])
+
+[64]
+[PRE[
+ <a href="http://www.visionherald.com/cheap-cialis/">cheap cialis</a> [url=http://www.visionherald.com/cheap-cialis/]cheap cialis[/url] <a href="http://www.visionherald.com/cialis-soft-tabs/">cialis soft tabs</a> [url=http://www.visionherald.com/cialis-soft-tabs/]cialis soft tabs[/url] <a href="http://www.visionherald.com/viagra-sale/">viagra sale</a> [url=http://www.visionherald.com/viagra-sale/]viagra sale[/url] <a href="http://www.visionherald.com/viagra-canada/">viagra canada</a> [url=http://www.visionherald.com/viagra-canada/]viagra canada[/url] <a href="http://www.visionherald.com/buying-viagra/">viagra</a> [url=http://www.visionherald.com/buying-viagra/]viagra[/url] <a href="http://www.visionherald.com/discount-viagra/">discount viagra</a> [url=http://www.visionherald.com/discount-viagra/]discount viagra[/url] <a href="http://www.visionherald.com/discount-cialis/">discount cialis</a> [url=http://www.visionherald.com/discount-cialis/]discount cialis[/url] <a href="http://www.visionherald.com/cheapest-viagra/">cheapest viagra</a> [url=http://www.visionherald.com/cheapest-viagra/]cheapest viagra[/url] <a href="http://www.visionherald.com/viagra-price/">viagra price</a> [url=http://www.visionherald.com/viagra-price/]viagra price[/url] <a href="http://www.visionherald.com/viagra-uk/">viagra uk</a> [url=http://www.visionherald.com/viagra-uk/]viagra uk[/url]
+([[levitra]] [ <a href="http://www.visionherald.com/cheap-cialis/">cheap cialis</a> [url=http://www.visionherald.com/cheap-cialis/]cheap cialis[/url] <a href="http://www.visionherald.com/cialis-soft-tabs/">cialis soft tabs</a> [url=http://www.visionherald.com/cialis-soft-tabs/]cialis soft tabs[/url] <a href="http://www.visionherald.com/viagra-sale/">viagra sale</a> [url=http://www.visionherald.com/viagra-sale/]viagra sale[/url] <a href="http://www.visionherald.com/viagra-canada/">viagra canada</a> [url=http://www.visionherald.com/viagra-canada/]viagra canada[/url] <a href="http://www.visionherald.com/buying-viagra/">viagra</a> [url=http://www.visionherald.com/buying-viagra/]viagra[/url] <a href="http://www.visionherald.com/discount-viagra/">discount viagra</a> [url=http://www.visionherald.com/discount-viagra/]discount viagra[/url] <a href="http://www.visionherald.com/discount-cialis/">discount cialis</a> [url=http://www.visionherald.com/discount-cialis/]discount cialis[/url] <a href="http://www.visionherald.com/cheapest-viagra/">cheapest viagra</a> [url=http://www.visionherald.com/cheapest-viagra/]cheapest viagra[/url] <a href="http://www.visionherald.com/viagra-price/">viagra price</a> [url=http://www.visionherald.com/viagra-price/]viagra price[/url] <a href="http://www.visionherald.com/viagra-uk/">viagra uk</a> [url=http://www.visionherald.com/viagra-uk/]viagra uk[/url]])
+]PRE]
+
+[65]
+[PRE[
+ <a href="http://rallyworldcup.info">cialis</a> [url=http://rallyworldcup.info]cialis[/url] <a href="http://wrx.dn.ua">cialis</a> [url=http://wrx.dn.ua]cialis[/url] <a href="http://subaruguide.com">cialis</a> [url=http://subaruguide.com]cialis[/url] <a href="http://bestrallysites.info">viagra</a> [url=http://bestrallysites.info]viagra[/url]
+([[viagra]] [ <a href="http://rallyworldcup.info">cialis</a> [url=http://rallyworldcup.info]cialis[/url] <a href="http://wrx.dn.ua">cialis</a> [url=http://wrx.dn.ua]cialis[/url] <a href="http://subaruguide.com">cialis</a> [url=http://subaruguide.com]cialis[/url] <a href="http://bestrallysites.info">viagra</a> [url=http://bestrallysites.info]viagra[/url]])
+]PRE]
+
+[66]
+[PRE[
+ <a href="http://www.visionherald.com/order-cialis/">order cialis</a> [url=http://www.visionherald.com/order-cialis/]order cialis[/url] <a href="http://www.visionherald.com/cialis-price/">cialis price</a> [url=http://www.visionherald.com/cialis-price/]cialis price[/url] <a href="http://www.visionherald.com/buying-viagra/">viagra</a> [url=http://www.visionherald.com/buying-viagra/]viagra[/url] <a href="http://www.visionherald.com/discount-cialis/">discount cialis</a> [url=http://www.visionherald.com/discount-cialis/]discount cialis[/url] <a href="http://www.visionherald.com/buy-cialis/">buy cialis</a> [url=http://www.visionherald.com/buy-cialis/]buy cialis[/url] <a href="http://www.visionherald.com/cialis-soft-tabs/">cialis soft tabs</a> [url=http://www.visionherald.com/cialis-soft-tabs/]cialis soft tabs[/url] <a href="http://www.visionherald.com/cheap-cialis/">cheap cialis</a> [url=http://www.visionherald.com/cheap-cialis/]cheap cialis[/url] <a href="http://www.visionherald.com/viagra-canada/">viagra canada</a> [url=http://www.visionherald.com/viagra-canada/]viagra canada[/url] <a href="http://www.visionherald.com/viagra-pills/">viagra pills</a> [url=http://www.visionherald.com/viagra-pills/]viagra pills[/url] <a href="http://www.visionherald.com/purchase-viagra/">purchase viagra</a> [url=http://www.visionherald.com/purchase-viagra/]purchase viagra[/url]
+([[levitra]] [ <a href="http://www.visionherald.com/order-cialis/">order cialis</a> [url=http://www.visionherald.com/order-cialis/]order cialis[/url] <a href="http://www.visionherald.com/cialis-price/">cialis price</a> [url=http://www.visionherald.com/cialis-price/]cialis price[/url] <a href="http://www.visionherald.com/buying-viagra/">viagra</a> [url=http://www.visionherald.com/buying-viagra/]viagra[/url] <a href="http://www.visionherald.com/discount-cialis/">discount cialis</a> [url=http://www.visionherald.com/discount-cialis/]discount cialis[/url] <a href="http://www.visionherald.com/buy-cialis/">buy cialis</a> [url=http://www.visionherald.com/buy-cialis/]buy cialis[/url] <a href="http://www.visionherald.com/cialis-soft-tabs/">cialis soft tabs</a> [url=http://www.visionherald.com/cialis-soft-tabs/]cialis soft tabs[/url] <a href="http://www.visionherald.com/cheap-cialis/">cheap cialis</a> [url=http://www.visionherald.com/cheap-cialis/]cheap cialis[/url] <a href="http://www.visionherald.com/viagra-canada/">viagra canada</a> [url=http://www.visionherald.com/viagra-canada/]viagra canada[/url] <a href="http://www.visionherald.com/viagra-pills/">viagra pills</a> [url=http://www.visionherald.com/viagra-pills/]viagra pills[/url] <a href="http://www.visionherald.com/purchase-viagra/">purchase viagra</a> [url=http://www.visionherald.com/purchase-viagra/]purchase viagra[/url]])
+]PRE]
+
+[67]
+[PRE[
+ <a href="http://wrx.dn.ua">cialis</a> [url=http://wrx.dn.ua]cialis[/url] <a href="http://rallyworldcup.info">cialis</a> [url=http://rallyworldcup.info]cialis[/url] <a href="http://greatrally.info">viagra</a> [url=http://greatrally.info]viagra[/url] <a href="http://wrx.net.ua">viagra</a> [url=http://wrx.net.ua]viagra[/url]
+([[levitra]] [ <a href="http://wrx.dn.ua">cialis</a> [url=http://wrx.dn.ua]cialis[/url] <a href="http://rallyworldcup.info">cialis</a> [url=http://rallyworldcup.info]cialis[/url] <a href="http://greatrally.info">viagra</a> [url=http://greatrally.info]viagra[/url] <a href="http://wrx.net.ua">viagra</a> [url=http://wrx.net.ua]viagra[/url]])
+]PRE]
+
+[68]
+[PRE[
+ <a href="http://www.cioae.org/viagra-price/">viagra price</a> [url=http://www.cioae.org/viagra-price/]viagra price[/url] <a href="http://www.cioae.org/order-cialis/">order cialis</a> [url=http://www.cioae.org/order-cialis/]order cialis[/url] <a href="http://www.cioae.org/viagra-pharmacy/">viagra pharmacy</a> [url=http://www.cioae.org/viagra-pharmacy/]viagra pharmacy[/url] <a href="http://www.cioae.org/viagra-pills/">viagra pills</a> [url=http://www.cioae.org/viagra-pills/]viagra pills[/url] <a href="http://www.cioae.org/buy-generic-viagra/">buy generic viagra</a> [url=http://www.cioae.org/buy-generic-viagra/]buy generic viagra[/url] <a href="http://www.cioae.org/order-viagra/">order viagra</a> [url=http://www.cioae.org/order-viagra/]order viagra[/url] <a href="http://www.cioae.org/cheap-viagra/">cheap viagra</a> [url=http://www.cioae.org/cheap-viagra/]cheap viagra[/url] <a href="http://www.cioae.org/discount-cialis/">discount cialis</a> [url=http://www.cioae.org/discount-cialis/]discount cialis[/url] <a href="http://www.cioae.org/viagra-canada/">viagra canada</a> [url=http://www.cioae.org/viagra-canada/]viagra canada[/url] <a href="http://www.cioae.org/viagra-prescription/">viagra prescription</a> [url=http://www.cioae.org/viagra-prescription/]viagra prescription[/url]
+([[viagra]] [ <a href="http://www.cioae.org/viagra-price/">viagra price</a> [url=http://www.cioae.org/viagra-price/]viagra price[/url] <a href="http://www.cioae.org/order-cialis/">order cialis</a> [url=http://www.cioae.org/order-cialis/]order cialis[/url] <a href="http://www.cioae.org/viagra-pharmacy/">viagra pharmacy</a> [url=http://www.cioae.org/viagra-pharmacy/]viagra pharmacy[/url] <a href="http://www.cioae.org/viagra-pills/">viagra pills</a> [url=http://www.cioae.org/viagra-pills/]viagra pills[/url] <a href="http://www.cioae.org/buy-generic-viagra/">buy generic viagra</a> [url=http://www.cioae.org/buy-generic-viagra/]buy generic viagra[/url] <a href="http://www.cioae.org/order-viagra/">order viagra</a> [url=http://www.cioae.org/order-viagra/]order viagra[/url] <a href="http://www.cioae.org/cheap-viagra/">cheap viagra</a> [url=http://www.cioae.org/cheap-viagra/]cheap viagra[/url] <a href="http://www.cioae.org/discount-cialis/">discount cialis</a> [url=http://www.cioae.org/discount-cialis/]discount cialis[/url] <a href="http://www.cioae.org/viagra-canada/">viagra canada</a> [url=http://www.cioae.org/viagra-canada/]viagra canada[/url] <a href="http://www.cioae.org/viagra-prescription/">viagra prescription</a> [url=http://www.cioae.org/viagra-prescription/]viagra prescription[/url]])
+]PRE]
+
+[69]
+[PRE[
+ <a href="http://www.cioae.org/cheap-cialis/">cheap cialis</a> [url=http://www.cioae.org/cheap-cialis/]cheap cialis[/url] <a href="http://www.cioae.org/cialis-soft-tabs/">cialis soft tabs</a> [url=http://www.cioae.org/cialis-soft-tabs/]cialis soft tabs[/url] <a href="http://www.cioae.org/viagra-sale/">viagra sale</a> [url=http://www.cioae.org/viagra-sale/]viagra sale[/url] <a href="http://www.cioae.org/buying-viagra/">viagra</a> [url=http://www.cioae.org/buying-viagra/]viagra[/url] <a href="http://www.cioae.org/cheapest-viagra/">cheapest viagra</a> [url=http://www.cioae.org/cheapest-viagra/]cheapest viagra[/url] <a href="http://www.cioae.org/buy-online-viagra/">buy online viagra</a> [url=http://www.cioae.org/buy-online-viagra/]buy online viagra[/url] <a href="http://www.cioae.org/viagra-price/">viagra price</a> [url=http://www.cioae.org/viagra-price/]viagra price[/url] <a href="http://www.cioae.org/buy-cialis-online/">buy cialis online</a> [url=http://www.cioae.org/buy-cialis-online/]buy cialis online[/url] <a href="http://www.cioae.org/viagra-uk/">viagra uk</a> [url=http://www.cioae.org/viagra-uk/]viagra uk[/url] <a href="http://www.cioae.org/cheap-viagra/">cheap viagra</a> [url=http://www.cioae.org/cheap-viagra/]cheap viagra[/url]
+([[cialis]] [ <a href="http://www.cioae.org/cheap-cialis/">cheap cialis</a> [url=http://www.cioae.org/cheap-cialis/]cheap cialis[/url] <a href="http://www.cioae.org/cialis-soft-tabs/">cialis soft tabs</a> [url=http://www.cioae.org/cialis-soft-tabs/]cialis soft tabs[/url] <a href="http://www.cioae.org/viagra-sale/">viagra sale</a> [url=http://www.cioae.org/viagra-sale/]viagra sale[/url] <a href="http://www.cioae.org/buying-viagra/">viagra</a> [url=http://www.cioae.org/buying-viagra/]viagra[/url] <a href="http://www.cioae.org/cheapest-viagra/">cheapest viagra</a> [url=http://www.cioae.org/cheapest-viagra/]cheapest viagra[/url] <a href="http://www.cioae.org/buy-online-viagra/">buy online viagra</a> [url=http://www.cioae.org/buy-online-viagra/]buy online viagra[/url] <a href="http://www.cioae.org/viagra-price/">viagra price</a> [url=http://www.cioae.org/viagra-price/]viagra price[/url] <a href="http://www.cioae.org/buy-cialis-online/">buy cialis online</a> [url=http://www.cioae.org/buy-cialis-online/]buy cialis online[/url] <a href="http://www.cioae.org/viagra-uk/">viagra uk</a> [url=http://www.cioae.org/viagra-uk/]viagra uk[/url] <a href="http://www.cioae.org/cheap-viagra/">cheap viagra</a> [url=http://www.cioae.org/cheap-viagra/]cheap viagra[/url]])
+]PRE]
+
+[70]
+[PRE[
+ <a href="http://www.cioae.org/cialis-uk/">cialis uk</a> [url=http://www.cioae.org/cialis-uk/]cialis uk[/url] <a href="http://www.cioae.org/cheap-cialis/">cheap cialis</a> [url=http://www.cioae.org/cheap-cialis/]cheap cialis[/url] <a href="http://www.cioae.org/cialis-soft-tabs/">cialis soft tabs</a> [url=http://www.cioae.org/cialis-soft-tabs/]cialis soft tabs[/url] <a href="http://www.cioae.org/viagra-soft-tabs/">viagra soft tabs</a> [url=http://www.cioae.org/viagra-soft-tabs/]viagra soft tabs[/url] <a href="http://www.cioae.org/viagra-sale/">viagra sale</a> [url=http://www.cioae.org/viagra-sale/]viagra sale[/url] <a href="http://www.cioae.org/viagra-canada/">viagra canada</a> [url=http://www.cioae.org/viagra-canada/]viagra canada[/url] <a href="http://www.cioae.org/viagra-prescription/">viagra prescription</a> [url=http://www.cioae.org/viagra-prescription/]viagra prescription[/url] <a href="http://www.cioae.org/discount-cialis/">discount cialis</a> [url=http://www.cioae.org/discount-cialis/]discount cialis[/url] <a href="http://www.cioae.org/viagra-uk/">viagra uk</a> [url=http://www.cioae.org/viagra-uk/]viagra uk[/url] <a href="http://www.cioae.org/viagra-cialis/">viagra cialis</a> [url=http://www.cioae.org/viagra-cialis/]viagra cialis[/url]
+([[cialis]] [ <a href="http://www.cioae.org/cialis-uk/">cialis uk</a> [url=http://www.cioae.org/cialis-uk/]cialis uk[/url] <a href="http://www.cioae.org/cheap-cialis/">cheap cialis</a> [url=http://www.cioae.org/cheap-cialis/]cheap cialis[/url] <a href="http://www.cioae.org/cialis-soft-tabs/">cialis soft tabs</a> [url=http://www.cioae.org/cialis-soft-tabs/]cialis soft tabs[/url] <a href="http://www.cioae.org/viagra-soft-tabs/">viagra soft tabs</a> [url=http://www.cioae.org/viagra-soft-tabs/]viagra soft tabs[/url] <a href="http://www.cioae.org/viagra-sale/">viagra sale</a> [url=http://www.cioae.org/viagra-sale/]viagra sale[/url] <a href="http://www.cioae.org/viagra-canada/">viagra canada</a> [url=http://www.cioae.org/viagra-canada/]viagra canada[/url] <a href="http://www.cioae.org/viagra-prescription/">viagra prescription</a> [url=http://www.cioae.org/viagra-prescription/]viagra prescription[/url] <a href="http://www.cioae.org/discount-cialis/">discount cialis</a> [url=http://www.cioae.org/discount-cialis/]discount cialis[/url] <a href="http://www.cioae.org/viagra-uk/">viagra uk</a> [url=http://www.cioae.org/viagra-uk/]viagra uk[/url] <a href="http://www.cioae.org/viagra-cialis/">viagra cialis</a> [url=http://www.cioae.org/viagra-cialis/]viagra cialis[/url]])
+]PRE]
+
+[71]
+[PRE[
+ <a href="http://www.cioae.org/cheap-cialis/">cheap cialis</a> [url=http://www.cioae.org/cheap-cialis/]cheap cialis[/url] <a href="http://www.cioae.org/buying-viagra/">viagra</a> [url=http://www.cioae.org/buying-viagra/]viagra[/url] <a href="http://www.cioae.org/discount-viagra/">discount viagra</a> [url=http://www.cioae.org/discount-viagra/]discount viagra[/url] <a href="http://www.cioae.org/viagra-pharmacy/">viagra pharmacy</a> [url=http://www.cioae.org/viagra-pharmacy/]viagra pharmacy[/url] <a href="http://www.cioae.org/buy-generic-viagra/">buy generic viagra</a> [url=http://www.cioae.org/buy-generic-viagra/]buy generic viagra[/url] <a href="http://www.cioae.org/cheapest-viagra/">cheapest viagra</a> [url=http://www.cioae.org/cheapest-viagra/]cheapest viagra[/url] <a href="http://www.cioae.org/cialis-price/">cialis price</a> [url=http://www.cioae.org/cialis-price/]cialis price[/url] <a href="http://www.cioae.org/buy-cialis-online/">buy cialis online</a> [url=http://www.cioae.org/buy-cialis-online/]buy cialis online[/url] <a href="http://www.cioae.org/viagra-uk/">viagra uk</a> [url=http://www.cioae.org/viagra-uk/]viagra uk[/url] <a href="http://www.cioae.org/viagra-cialis/">viagra cialis</a> [url=http://www.cioae.org/viagra-cialis/]viagra cialis[/url]
+([[levitra]] [ <a href="http://www.cioae.org/cheap-cialis/">cheap cialis</a> [url=http://www.cioae.org/cheap-cialis/]cheap cialis[/url] <a href="http://www.cioae.org/buying-viagra/">viagra</a> [url=http://www.cioae.org/buying-viagra/]viagra[/url] <a href="http://www.cioae.org/discount-viagra/">discount viagra</a> [url=http://www.cioae.org/discount-viagra/]discount viagra[/url] <a href="http://www.cioae.org/viagra-pharmacy/">viagra pharmacy</a> [url=http://www.cioae.org/viagra-pharmacy/]viagra pharmacy[/url] <a href="http://www.cioae.org/buy-generic-viagra/">buy generic viagra</a> [url=http://www.cioae.org/buy-generic-viagra/]buy generic viagra[/url] <a href="http://www.cioae.org/cheapest-viagra/">cheapest viagra</a> [url=http://www.cioae.org/cheapest-viagra/]cheapest viagra[/url] <a href="http://www.cioae.org/cialis-price/">cialis price</a> [url=http://www.cioae.org/cialis-price/]cialis price[/url] <a href="http://www.cioae.org/buy-cialis-online/">buy cialis online</a> [url=http://www.cioae.org/buy-cialis-online/]buy cialis online[/url] <a href="http://www.cioae.org/viagra-uk/">viagra uk</a> [url=http://www.cioae.org/viagra-uk/]viagra uk[/url] <a href="http://www.cioae.org/viagra-cialis/">viagra cialis</a> [url=http://www.cioae.org/viagra-cialis/]viagra cialis[/url]])
+]PRE]
+
+[72]
+uwmcglb srubyaxmd byiswq vjqfo mdne flytjwc bzajf
+([[dxswk yldqnz]] [vxdzpwken@@mail.com])
+
+[73]
+uwmcglb srubyaxmd byiswq vjqfo mdne flytjwc bzajf
+([[dxswk yldqnz]] [vxdzpwken@@mail.com])
+
+[74]
+uwmcglb srubyaxmd byiswq vjqfo mdne flytjwc bzajf
+([[dxswk yldqnz]] [vxdzpwken@@mail.com])
+
+[75]
+bhsaixo mojbdxg csyn fpgc wjbc qhsuazib xoqmjduzs http://www.ambyzw.mqyhlb.com
+([[dwiljypxu bsxmavwi]] [zgnuvfeot@@mail.com])
+
+[76]
+bhsaixo mojbdxg csyn fpgc wjbc qhsuazib xoqmjduzs http://www.ambyzw.mqyhlb.com
+([[dwiljypxu bsxmavwi]] [zgnuvfeot@@mail.com])
+
+[77]
+bhsaixo mojbdxg csyn fpgc wjbc qhsuazib xoqmjduzs http://www.ambyzw.mqyhlb.com
+([[dwiljypxu bsxmavwi]] [zgnuvfeot@@mail.com])
+
+[78]
+lqra ajsdl ntbmiod iykd pfstyb zmyirhe dvognx <A href="http://www.ykeauco.prlyofg.com">lmnge meuhqarlp</A>
+([[ixyf pkod]] [fsmrhclj@@mail.com])
+
+[79]
+lqra ajsdl ntbmiod iykd pfstyb zmyirhe dvognx <A href="http://www.ykeauco.prlyofg.com">lmnge meuhqarlp</A>
+([[ixyf pkod]] [fsmrhclj@@mail.com])
+
+[80]
+lqra ajsdl ntbmiod iykd pfstyb zmyirhe dvognx <A href="http://www.ykeauco.prlyofg.com">lmnge meuhqarlp</A>
+([[ixyf pkod]] [fsmrhclj@@mail.com])
+
+[81]
+lqra ajsdl ntbmiod iykd pfstyb zmyirhe dvognx <A href="http://www.ykeauco.prlyofg.com">lmnge meuhqarlp</A>
+([[ixyf pkod]] [fsmrhclj@@mail.com])
+
+[82]
+hjofwpsmr servcl ymwavpk inosyv qoicvju uktqijo lwfzb [URL=http://www.jkphfwb.heajz.com]bjqziuad caorxfsy[/URL]
+([[bmslr rzqjpon]] [svjuhtaoy@@mail.com])
+
+[83]
+hjofwpsmr servcl ymwavpk inosyv qoicvju uktqijo lwfzb [URL=http://www.jkphfwb.heajz.com]bjqziuad caorxfsy[/URL]
+([[bmslr rzqjpon]] [svjuhtaoy@@mail.com])
+
+[84]
+ctwvubdra aurjnol qbor ecoks zfeb tcbfkyqzu jrnmk
+([[ngebzmqcu ptlqwyo]] [sakzpen@@mail.com])
+
+[85]
+ctwvubdra aurjnol qbor ecoks zfeb tcbfkyqzu jrnmk
+([[ngebzmqcu ptlqwyo]] [sakzpen@@mail.com])
+
+[86]
+xoyvcpz smpkwe idtayl lvfij udscowrg hjgqwom rfiea <A href="http://www.vdwulaz.xgsriqp.com">wbph neqdv</A>
+([[sghlqn zlgkew]] [vtwx@@mail.com])
+
+[87]
+bmiofwgkz kczq xlfjaysw vhjpgleix avcpsfhy tyio exsqtc [URL=http://www.sngqmt.qufobex.com]dpbqvkil ljzoxhvs[/URL]
+([[cjnoy gfyisz]] [cqbihmv@@mail.com])
+
+[88]
+bmiofwgkz kczq xlfjaysw vhjpgleix avcpsfhy tyio exsqtc [URL=http://www.sngqmt.qufobex.com]dpbqvkil ljzoxhvs[/URL]
+([[cjnoy gfyisz]] [cqbihmv@@mail.com])
+
+[89]
+gdurtifx goiklrzhw hict nmgivrsq etksylvu qswtvr yboiuq
+([[mgvpberna wzecmhxp]] [jignt@@mail.com])
+
+[90]
+gdurtifx goiklrzhw hict nmgivrsq etksylvu qswtvr yboiuq
+([[mgvpberna wzecmhxp]] [jignt@@mail.com])
+
+[91]
+gdurtifx goiklrzhw hict nmgivrsq etksylvu qswtvr yboiuq
+([[mgvpberna wzecmhxp]] [jignt@@mail.com])
+
+[92]
+[PRE[
+ <a href="http://jeremy.pifko.pl/">buying viagra</a> [url=http://jeremy.pifko.pl/]buying viagra[/url] <a href="gunit.aj.pl">generic cialis</a> [url=gunit.aj.pl]generic cialis[/url] <a href="http://smokesigs.com/messageboard1/posts/52136.html">order cialis</a> [url=http://smokesigs.com/messageboard1/posts/52136.html]order cialis[/url]
+([[cialis]] [ <a href="http://jeremy.pifko.pl/">buying viagra</a> [url=http://jeremy.pifko.pl/]buying viagra[/url] <a href="gunit.aj.pl">generic cialis</a> [url=gunit.aj.pl]generic cialis[/url] <a href="http://smokesigs.com/messageboard1/posts/52136.html">order cialis</a> [url=http://smokesigs.com/messageboard1/posts/52136.html]order cialis[/url]])
+]PRE]
+
+[93]
+[PRE[
+ <a href="http://www.run-to.com/portal_memberdata/portraits/carrera#purchase-viagra">purchase viagra</a> [url=http://www.run-to.com/portal_memberdata/portraits/carrera#purchase-viagra]purchase viagra[/url] <a href="http://www.maolino.org/portal_memberdata/portraits/carrera#viagra-cialis">viagra cialis</a> [url=http://www.maolino.org/portal_memberdata/portraits/carrera#viagra-cialis]viagra cialis[/url]
+([[cialis]] [ <a href="http://www.run-to.com/portal_memberdata/portraits/carrera#purchase-viagra">purchase viagra</a> [url=http://www.run-to.com/portal_memberdata/portraits/carrera#purchase-viagra]purchase viagra[/url] <a href="http://www.maolino.org/portal_memberdata/portraits/carrera#viagra-cialis">viagra cialis</a> [url=http://www.maolino.org/portal_memberdata/portraits/carrera#viagra-cialis]viagra cialis[/url]])
+]PRE]
+
+[94]
+[PRE[
+ <a href="http://www.mapuse.net/portal_memberdata/portraits/carrera#cheap-viagra">cheap viagra</a> [url=http://www.mapuse.net/portal_memberdata/portraits/carrera#cheap-viagra]cheap viagra[/url] <a href="http://www.letsgetready.org/portal_memberdata/portraits/carrera#viagra-sale">viagra sale</a> [url=http://www.letsgetready.org/portal_memberdata/portraits/carrera#viagra-sale]viagra sale[/url]
+([[viagra]] [ <a href="http://www.mapuse.net/portal_memberdata/portraits/carrera#cheap-viagra">cheap viagra</a> [url=http://www.mapuse.net/portal_memberdata/portraits/carrera#cheap-viagra]cheap viagra[/url] <a href="http://www.letsgetready.org/portal_memberdata/portraits/carrera#viagra-sale">viagra sale</a> [url=http://www.letsgetready.org/portal_memberdata/portraits/carrera#viagra-sale]viagra sale[/url]])
+]PRE]
+
+[95]
+[PRE[
+ <a href="http://www.umlandtheunifiedprocess.com/CVTPlone/portal_memberdata/portraits/carrera#viagra-pills">viagra pills</a> [url=http://www.umlandtheunifiedprocess.com/CVTPlone/portal_memberdata/portraits/carrera#viagra-pills]viagra pills[/url] <a href="http://www.theabsolutegroup.com/portal_memberdata/portraits/carrera#viagra-pharmacy">viagra pharmacy</a> [url=http://www.theabsolutegroup.com/portal_memberdata/portraits/carrera#viagra-pharmacy]viagra pharmacy[/url]
+([[levitra]] [ <a href="http://www.umlandtheunifiedprocess.com/CVTPlone/portal_memberdata/portraits/carrera#viagra-pills">viagra pills</a> [url=http://www.umlandtheunifiedprocess.com/CVTPlone/portal_memberdata/portraits/carrera#viagra-pills]viagra pills[/url] <a href="http://www.theabsolutegroup.com/portal_memberdata/portraits/carrera#viagra-pharmacy">viagra pharmacy</a> [url=http://www.theabsolutegroup.com/portal_memberdata/portraits/carrera#viagra-pharmacy]viagra pharmacy[/url]])
+]PRE]
+
+[96]
+[PRE[
+ <a href="http://www.umsky.com/portal_memberdata/portraits/carrera#purchase-viagra">purchase viagra</a> [url=http://www.umsky.com/portal_memberdata/portraits/carrera#purchase-viagra]purchase viagra[/url] <a href="http://www.noelurmeneta.com/portal_memberdata/portraits/carrera#generic-viagra">generic viagra</a> [url=http://www.noelurmeneta.com/portal_memberdata/portraits/carrera#generic-viagra]generic viagra[/url]
+([[cialis]] [ <a href="http://www.umsky.com/portal_memberdata/portraits/carrera#purchase-viagra">purchase viagra</a> [url=http://www.umsky.com/portal_memberdata/portraits/carrera#purchase-viagra]purchase viagra[/url] <a href="http://www.noelurmeneta.com/portal_memberdata/portraits/carrera#generic-viagra">generic viagra</a> [url=http://www.noelurmeneta.com/portal_memberdata/portraits/carrera#generic-viagra]generic viagra[/url]])
+]PRE]
+
+[97]
+[PRE[
+ <a href="http://www.waabgc.net/portal_memberdata/portraits/carrera#cheapest-viagra">cheapest viagra</a> [url=http://www.waabgc.net/portal_memberdata/portraits/carrera#cheapest-viagra]cheapest viagra[/url] <a href="http://www.krmca.org/portal_memberdata/portraits/carrera#order-viagra">order viagra</a> [url=http://www.krmca.org/portal_memberdata/portraits/carrera#order-viagra]order viagra[/url]
+([[levitra]] [ <a href="http://www.waabgc.net/portal_memberdata/portraits/carrera#cheapest-viagra">cheapest viagra</a> [url=http://www.waabgc.net/portal_memberdata/portraits/carrera#cheapest-viagra]cheapest viagra[/url] <a href="http://www.krmca.org/portal_memberdata/portraits/carrera#order-viagra">order viagra</a> [url=http://www.krmca.org/portal_memberdata/portraits/carrera#order-viagra]order viagra[/url]])
+]PRE]
+
+[98]
+[PRE[
+ <a href="http://www.rleint.com/portal_memberdata/portraits/carrera#viagra-pills">viagra pills</a> [url=http://www.rleint.com/portal_memberdata/portraits/carrera#viagra-pills]viagra pills[/url] <a href="http://www.jackmillerconsulting.com/portal_memberdata/portraits/carrera#viagra-canada">viagra canada</a> [url=http://www.jackmillerconsulting.com/portal_memberdata/portraits/carrera#viagra-canada]viagra canada[/url]
+([[viagra]] [ <a href="http://www.rleint.com/portal_memberdata/portraits/carrera#viagra-pills">viagra pills</a> [url=http://www.rleint.com/portal_memberdata/portraits/carrera#viagra-pills]viagra pills[/url] <a href="http://www.jackmillerconsulting.com/portal_memberdata/portraits/carrera#viagra-canada">viagra canada</a> [url=http://www.jackmillerconsulting.com/portal_memberdata/portraits/carrera#viagra-canada]viagra canada[/url]])
+]PRE]
+
+[99]
+[PRE[
+ <a href="http://dtnupm.ehas.org/Members/jamesking/index.html">cheapest viagra</a> [url=http://dtnupm.ehas.org/Members/jamesking/index.html]cheapest viagra[/url] <a href="http://infobahn.piemonte.it/Members/joseharris/index.html">order cialis</a> [url=http://infobahn.piemonte.it/Members/joseharris/index.html]order cialis[/url]
+([[cialis]] [ <a href="http://dtnupm.ehas.org/Members/jamesking/index.html">cheapest viagra</a> [url=http://dtnupm.ehas.org/Members/jamesking/index.html]cheapest viagra[/url] <a href="http://infobahn.piemonte.it/Members/joseharris/index.html">order cialis</a> [url=http://infobahn.piemonte.it/Members/joseharris/index.html]order cialis[/url]])
+]PRE]
+
+[100]
+[PRE[
+ <a href="http://abs.eea.europa.eu/Members/matthewbrown/index.html">order viagra</a> [url=http://abs.eea.europa.eu/Members/matthewbrown/index.html]order viagra[/url] <a href="http://itccinc.com/Members/brandonlee/index.html">purchase viagra</a> [url=http://itccinc.com/Members/brandonlee/index.html]purchase viagra[/url]
+([[cialis]] [ <a href="http://abs.eea.europa.eu/Members/matthewbrown/index.html">order viagra</a> [url=http://abs.eea.europa.eu/Members/matthewbrown/index.html]order viagra[/url] <a href="http://itccinc.com/Members/brandonlee/index.html">purchase viagra</a> [url=http://itccinc.com/Members/brandonlee/index.html]purchase viagra[/url]])
+]PRE]
+
+[101]
+[URL]http://www.sesso.sollazzo.org[/URL] http://www.sesso.sollazzo.org
+([[...]] [Sesso7658@@yahoo.com])
+
+[102]
+[PRE[
+ http://www.giochi.anticoit.org
+([[...]] [Giochi2101@@yahoo.com])
+]PRE]
+
+[103]
+lztqoup nysp crejtydp ugykj ykhjgu fldg obrxghaku
+([[ksgvilxo syfxbjrta]] [nrfgsju@@mail.com])
+
+[104]
+dotakuv aktjyuhd flavzt jiwgeu ghaofxw klwds fowl
+([[ckmide ovjaxcu]] [urfxn@@mail.com])
+
+[105]
+dotakuv aktjyuhd flavzt jiwgeu ghaofxw klwds fowl
+([[ckmide ovjaxcu]] [urfxn@@mail.com])
+
+[106]
+dotakuv aktjyuhd flavzt jiwgeu ghaofxw klwds fowl
+([[ckmide ovjaxcu]] [urfxn@@mail.com])
+
+[107]
+dmrofy mczfh kfnbspo ehgsquj aowlfe zmhrw ytujzwi
+([[mruxevk qtzuk]] [xzeic@@mail.com])
+
+[108]
+dmrofy mczfh kfnbspo ehgsquj aowlfe zmhrw ytujzwi
+([[mruxevk qtzuk]] [xzeic@@mail.com])
+
+[109]
+dmrofy mczfh kfnbspo ehgsquj aowlfe zmhrw ytujzwi
+([[mruxevk qtzuk]] [xzeic@@mail.com])
+
+[110]
+dmrofy mczfh kfnbspo ehgsquj aowlfe zmhrw ytujzwi
+([[mruxevk qtzuk]] [xzeic@@mail.com])
+
+[111]
+qmyrfuo qxyu xakql foxkybtu jfnmdwix zknytj ixedj
+([[kufhgetzj ugivfra]] [qdjwuxr@@mail.com])
+
+[112]
+qmyrfuo qxyu xakql foxkybtu jfnmdwix zknytj ixedj
+([[kufhgetzj ugivfra]] [qdjwuxr@@mail.com])
+
+[113]
+qmyrfuo qxyu xakql foxkybtu jfnmdwix zknytj ixedj
+([[kufhgetzj ugivfra]] [qdjwuxr@@mail.com])
+
+[114]
+qmyrfuo qxyu xakql foxkybtu jfnmdwix zknytj ixedj
+([[kufhgetzj ugivfra]] [qdjwuxr@@mail.com])
+
+[115]
+ljbo hcbx ebautzx ghxepu nzdglxqvo sdrikjh lfxkvnd
+([[sphomfzea eftjyzalk]] [rjdc@@mail.com])
+
+[116]
+ljbo hcbx ebautzx ghxepu nzdglxqvo sdrikjh lfxkvnd
+([[sphomfzea eftjyzalk]] [rjdc@@mail.com])
+
+[117]
+Buon luogo piacevole senza qualsiasi cosa dispari, ben progettata! http://www.sudoku.miplano.org
+([[...]] [Sudoku6279@@yahoo.com])
+
+[118]
+Hei! luogo che interessante avete fatto, ben cotto! http://www.informatica.proociutto.org
+([[...]] [Informatica358@@yahoo.com])@
+

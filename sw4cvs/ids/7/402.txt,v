@@ -1,0 +1,248 @@
+head	1.1;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2008.11.15.10.36.46;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/7065726CA4C7435353A4F2C0B8C0AEA4B9A4EBA5E2A5B8A5E5A1BCA5EBA4CEBAEEA4EAA4ABA4B1.txt>
+@
+text
+@
+
+[1] [[Message::Markup::XML]] 風に [[CSS]]
+を生成できたらいいなーと思って試作してみた途中です。
+最後のほうが使用例兼実験例になってます。
+
+[PRE[
+package foo::CSS;
+use strict;
+use overload '""' => sub {shift->stringify};
+my %Type = (
+	    '#attribute' => {
+		has_label => 1,
+		separator => ' ',
+		terminate_semicolon => 1,
+	    },
+	    '#block' => {
+		has_block => 1,
+		separator => "\n",
+		terminate_separator => 1,
+		use_indent => 1,
+	    },
+	    '#document' => {
+		separator => "\n",
+	    },
+	    '#rule' => {
+		has_block => 1,
+		has_label => 1,
+		separator => "\n",
+		terminate_separator => 1,
+		use_indent => 1,
+	    },
+	    '#statement' => {
+		is_at => 1,
+		separator => "\n",
+		terminate_semicolon => 1,
+	    },
+);
+sub new ($;%) {
+    my $class = shift;
+    my $self = bless {@@_}, $class;
+    $self->{node} = [];
+    $self;
+}
+sub _CLASS_TYPE ($) { 'foo::CSS' }
+sub _get_nest_level ($) {
+    my $self = shift;
+    my $node = $self;
+    my $n = 0;
+    while (ref ($node->{parent}) eq $self->_CLASS_TYPE) {
+	$n++;
+	$node = $node->{parent};
+    }
+    $n;
+}
+sub _indent_wsp ($) {
+    my $self = shift;
+    $Type{$self->{type}}->{use_indent} ?
+	    ('  ' x ($self->_get_nest_level + 1)) : '';''
+}
+sub inner_text ($) {
+    my $self = shift;
+    #if ($self->{type} eq '#block') {
+	my $r = '';#"{\n";''
+    my $indent = $self->_indent_wsp;
+	$r .= $indent . $self->{value} . $Type{$self->{type}}->{separator} if length $self->{value};
+	for (@@{$self->{node}}) {
+	    if ($_->{type} ne '#selector') {
+		$r .= $indent;
+		$r .= $_ . $Type{$self->{type}}->{separator};
+	    }
+	}
+	#$r .= "}";
+    $r =~ s/\Q$Type{$self->{type}}->{separator}\E$// unless $Type{$self->{type}}->{terminate_separator};
+	return $r;
+    #} else {
+    #  return $self->{value};
+    #}
+}
+sub outer_text ($) {
+    my $self = shift;
+    if ($Type{$self->{type}}->{has_block}) {
+	my $r = '';''
+	## Selector/@@-rules
+	if ($Type{$self->{type}}->{has_label}) {
+	    for (@@{$self->{node}}) {
+		if ($_->{type} eq '#selector') {
+		    $r .= $_;
+		    last;
+		}
+	    }
+	    $r .= ' ';
+	}
+	## Block
+	$r .= "{\n" . $self->inner_text;
+	$r .= $self->{parent}->_indent_wsp if ref $self->{parent};
+	return $r . "}";
+    } else {
+	my $r = '';''
+	## Attr/descriptor name
+	if ($Type{$self->{type}}->{has_label}) {
+	    if ($self->{local_name}) {
+		$r .= $self->{local_name} . ': ';
+	    }
+	## At statement
+	} elsif ($Type{$self->{type}}->{is_at}) {
+	    $r .= '@@' . $self->{local_name} . ' ';
+	}
+        ## Value
+	$r .= $self->inner_text;
+	$r .= ';' if $Type{$self->{type}}->{terminate_semicolon};
+	return $r;
+    }
+}
+{no warnings;
+ *stringify = \&outer_text;}
+sub append_new_node ($;%) {
+    my $self = shift;
+    my $new_node = __PACKAGE__->new (@@_);
+    push @@{$self->{node}}, $new_node;
+    $new_node->{parent} = $self;
+    $new_node;
+}
+sub append_new_value ($;%) {
+    my $self = shift;
+    my $new_node = foo::CSS::Value->new (@@_);
+    push @@{$self->{node}}, $new_node;
+    $new_node->{parent} = $self;
+    $new_node;
+}
+#sub set_attribute ($$$;%) {
+#   my ($self, $name, $value, %option) = @@_;
+#   $option{name} = $name;
+#   $option{value} = $value unless ref $value;
+#   $option{type} = '#attribute';#
+#
+#}
+package foo::CSS::Value;
+our @@ISA = qw/foo::CSS/;
+use strict;
+our %Type = (
+	 '#comment' => {},
+	 '#function' => {
+			 is_function => 1,
+			},
+	 '#keyword' => {},
+	 '#string'  => {},
+);
+sub outer_text ($) {
+    my $self = shift;
+    my $r = '';''
+    if ($self->{type} eq '#string') {
+	$r = $self->value;
+	$r =~ s/([\\"])/\\$1/g;   ## TODO: see spec!
+        $r = '"' . $r . '"';
+    } elsif ($self->{type} eq '#comment') {
+        $r = $self->value;
+        $r =~ s!\*/!*\\00002F!g;
+        $r = '/* ' . $r . ' */';
+    } elsif ($Type{$self->{type}}->{is_function}) {
+        $r = $self->{local_name} . '(' . $self->inner_text . ')';
+    } else {
+	$r = $self->inner_text;
+    }
+    $r;
+}
+sub inner_text ($) {
+    my $self = shift;
+    my $r = '';''
+    if ($self->{type} eq '#string') {
+	$r = $self->value;
+    } else {
+      $r = $self->{value};
+      for (@@{$self->{node}}) {
+	$r .= $_->outer_text;
+      }
+    }
+    $r;
+}
+sub value ($) {
+    my $self = shift;
+    my $r = '';''
+#    if ($self->{type} eq '#string') {
+	$r = $self->{value};
+	for (@@{$self->{node}}) {
+	    $r .= $_->value;
+	}
+#    }
+    $r;
+}
+{no warnings;
+ *stringify = \&outer_text;
+}
+package main;
+my $d = new foo::CSS (type=>'#document');
+$d->append_new_node (type => '#statement', local_name => 'charset')
+  ->append_new_value (type => '#string', value => 'us-ascii');
+my $c = $d->append_new_node (type => '#rule');
+$c->append_new_node (type => '#block')
+  ->append_new_node (type => '#attribute', value => 'none');
+$c->append_new_node (type => '#selector', value => 'e1 e2');
+$c->append_new_node (type => '#attribute', local_name => 'border-style')
+  ->append_new_value (type => '#keyword', value => 'solid');
+$d->append_new_node (type => '#attribute', local_name => 'Invalid')
+  ->append_new_value (type => '#string', value => 'invalid.');
+$d->append_new_value (type => '#comment', value => '*COMMENT*');
+my $v = $d->append_new_node (type => '#attribute', local_name => 'somewhat');
+$v->append_new_value (type => '#function', local_name => 'url')
+  ->append_new_value (type => '#string', value => 'http://foo.example/');
+$v->append_new_value (type => '#string', value => 'fooBar');
+$v->append_new_value (type => '#function', local_name => 'f');
+print $d,"\n";
+]PRE]
+
+[2] 作者はもうメンテナンスする意思が無いそうです。
+ライセンスは [[perlと同じライセンス]]。
+
+
+[3]
+というかこんなの使いまわすより1から書いたほうが早そうだけど。
+([[名無しさん]] [sage])
+
+@

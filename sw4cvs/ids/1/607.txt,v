@@ -1,0 +1,397 @@
+head	1.7;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.7
+date	2014.04.02.01.46.19;	author wakaba;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2012.11.18.10.42.09;	author wakaba;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2012.02.19.23.43.13;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2012.02.09.12.36.12;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2012.02.06.13.37.50;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2011.04.17.07.07.46;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2008.11.12.09.44.59;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.7
+log
+@updated by (anon)
+@
+text
+@
+[5]
+[[HTTP]] などで、[[内容折衝]]のために用いられる[[頭欄]]のひとつがこの [DFN[[CODE(HTTP)[Accept:]] 欄]]です。
+[CODE(HTTP)[Accept:]] 欄は、[[クライアント]]が[[鯖]]に対して、希望する (あるいは希望しない) [[媒体型]]とその希望度を伝達するために使用します。
+[[要求]]された[[資源]]について複数の媒体型を用意している鯖は、 [CODE(HTTP)[Accept:]] 欄の内容を参考にして、クライアントの希望に沿った版を送り返すことができます。
+
+[CODE(HTTP)[Accept:]] 頭欄の内容は、読点で分離した媒体型の零個以上の系列です。
+それぞれの媒体型には、優先度を表す引数
+[CODE(HTTP)[[[q]]]] を付けることができます。優先度は [CODE(HTTP)[0]] (希望しない) 〜[CODE(HTTP)[1]] (最優先) の、小数点以下最大3桁の数値で指定します。
+
+例:
+- [SAMP(HTTP)[Accept: text/html]]
+- [SAMP(HTTP)[Accept: text/html; q=1.0]]
+
+([CODE(HTTP)[q]] の既定値は [CODE(HTTP)[1]] なので、この二例は等価。)
+
+[CODE(HTTP)[Accept:]] [[要求頭欄]]は、ひとつの HTTP 要求メッセージ中に任意個 (零個以上) 入れることができます。複数個存在する場合には、一般の HTTP の頭欄の取扱いの規則により、すべてを[[読点分離]]でひとまとめにしたものと等価として扱います。
+
+例:
+[PRE(HTTP)[
+Accept: text/plain
+Accept: text/html
+]PRE]
+
+は、
+[PRE(HTTP)[
+Accept: text/plain,text/html
+]PRE]
+
+と等価です。
+
+[6] [CODE(HTTP)[Accept:]] 頭欄を受取った鯖は、
+それに従って適当な[[表現]]を送ることができるかどうかを調べ、
+可能であればそれで[[応答]]します。
+可能でなければ、 [CODE(HTTP)[[[406]]]] (受入れ不能)
+の[[状態符号]]の誤り応答を返します。
+
+ただし、鯖は必ずしも [CODE(HTTP)[Accept:]]
+頭欄を使った内容折衝に対応しなければならないわけではないので、
+[CODE(HTTP)[Accept:]] 欄を無視したり、
+[CODE(HTTP)[406]] を返さなかったりしても間違いではありません。
+
+
+[10]
+I like this! [url=http://google.com]google[/url]  <a href="http://google.com">google</a>  http://google.com  
+([[nonebolt]] [None] [WEAK[2008-04-21 10:53:38 +00:00]])
+
+
+[[#comment]]
+
+
+* 仕様書から
+
+
+** RFC 1945 (HTTP/1.0) D.2.1; RFC 2068・2616 (HTTP/1.1) 14.1 Accept
+
+> The Accept request-header field can be used to [DEL[[INS[{1945}]] indicate a list of media ranges]] [INS[specify certain media types]] which are acceptable [DEL[[INS[{1945}]] as a response to the request]] [INS[for the response]]. [INS[Accept headers can be used to indicate that the request is specifically limited to a small set of desired types, as in the case of a request for an in-line image.]]
+
+[CODE(HTTP)[Accept]] [[要求頭欄]]は、
+応答で受入れ可能な媒体型を指定するのに使うことが出来ます。
+[CODE(HTTP)[Accept]] 頭は、要求が行内画像の要求の場合のように望まれる型の小さな集合に限定することを示すのに使うことが出来ます。
+
+[INS[
+
+> [INS[{2068,2616}]]
+- [CODE(HTTP)[[DFN[Accept]] = "Accept" ":" #( media-range [ accept-params ] )]]
+- [CODE(HTTP)[[DFN[media-range]] = ( "*/*" | ( type "/" "*" ) | ( type "/" subtype ) ) *( ";" parameter )]]
+- [CODE(HTTP)[[DFN[accept-params]] = ";" "q" "=" qvalue *( accept-extension )]]
+- [CODE(HTTP)[[DFN[accept-extension]] = ";" token [ "=" ( token | quoted-string ) ] ]]
+]INS]
+
+> The asterisk "*" character is used to group media types into ranges,
+with "*/*" indicating all media types and "type/*" indicating all
+subtypes of that type. [DEL[[INS[{1945}]] The set of ranges given by the client should represent what types are acceptable given the context of the request.]] [INS[[INS[{2068,2616}]] The media-range MAY include media type parameters that are applicable to that range.]]
+
+星印 [CODE(char)[*]] 文字は、媒体型の範囲を集団化するのに使います。
+[CODE(HTTP)[*/*]] は全ての媒体型を示し、
+[CODE(HTTP)[[VAR[type]]/*]] はその型の全ての部分型を示します。
+[CODE(ABNF)[media-range]] は、その範囲に適用可能な媒体型引数を含んでいても'''構いません'''。
+
+[INS[
+
+> [INS[{2068,2616}]] Each media-range MAY be followed by one or more accept-params,
+beginning with the "q" parameter for indicating a relative quality
+factor. The first "q" parameter (if any) separates the media-range
+parameter(s) from the accept-params. Quality factors allow the user
+or user agent to indicate the relative degree of preference for that
+media-range, using the qvalue scale from 0 to 1 (section 3.9). The
+default value is q=1.
+
+各 [CODE(ABNF)[media-range]] の後には、
+相対的品質因子を示す [CODE(HTTP)[[[q]]]] 引数で始まる、
+1つ以上の [CODE(ABNF)[accept-params]]
+を続けても'''構いません'''。
+最初の [CODE(HTTP)[q]] 引数は、 (あれば) [CODE(ABNF)[media-range]]
+引数(群)を [CODE(ABNF)[accept-params]] から分離します。
+品質因子は利用者または利用者エージェントがその [CODE(ABNF)[media-range]]
+を優先させる想定的な度合いを、 [CODE(HTTP)[0]] から
+[CODE(HTTP)[1]] の [[qvalue]] 尺度を使って示すことが出来ます。
+既定値は [CODE(HTTP)[q=1]] です。
+
+> Note: Use of the "q" parameter name to separate media type
+parameters from Accept extension parameters is due to historical
+practice.  Although this prevents any media type parameter named
+"q" from being used with a media range, such an event is believed
+to be unlikely given the lack of any "q" parameters in the IANA
+media type registry and the rare usage of any media type parameters
+in Accept. Future media types should be discouraged from
+registering any parameter named "q".
+
+注意 : [CODE(HTTP)[q]] 引数名を、媒体型引数を
+[CODE(HTTP)[Accept]] 拡張引数から分離するのに使うのは歴史的慣習です。
+このために [CODE(HTTP)[q]] という名前の媒体型引数を媒体範囲に使うことが出来ませんが、
+そのような事象は起こりそうもないであろうと信じられています。
+IANA 媒体型登録簿には [CODE(HTTP)[q]] 引数はありませんし、
+[CODE(HTTP)[Accept]] 中での任意の媒体型の引数の使用も稀なことです。
+将来の媒体型が [CODE(HTTP)[q]] という名前の引数を登録することは非推奨されるべきです。
+
+> The example
+- Accept: audio/*; q=0.2, audio/basic
+
+> SHOULD be interpreted as "I prefer audio/basic, but send me any audio
+type if it is the best available after an 80% mark-down in quality."
+
+という例は、「私は [CODE(MIME)[[[audio/basic]]]]
+を最優先しますが、 80% 落とした品質でそれが最善であれば任意の音声型を送ってください。」
+と解釈される'''べきです'''。
+
+> If no Accept header field is present, then it is assumed that the
+client accepts all media types. If an Accept header field is present,
+and if the server cannot send a response which is acceptable
+according to the combined Accept field value, then the server SHOULD
+send a 406 (not acceptable) response.
+
+[CODE(HTTP)[Accept]] 頭欄が示されていなかった場合、
+クライアントは全ての媒体型を受け入れると仮定します。
+[CODE(HTTP)[Accept]] 頭欄が示されている場合、
+そしてサーバーが結合 [CODE(HTTP)[Accept]] 欄値に従って受け入れ可能な応答を遅れない場合、
+サーバーは [CODE(HTTP)[[[406]]]] (受入れ不能) 応答を送る'''べきです'''。
+
+> A more elaborate example is
+- Accept: text/plain; q=0.5, text/html,
+[PRE[
+                  text/x-dvi; q=0.8, text/x-c
+]PRE]
+
+> Verbally, this would be interpreted as "text/html and text/x-c are
+the preferred media types, but if they do not exist, then send the
+text/x-dvi entity, and if that does not exist, send the text/plain
+entity."
+
+言葉で言えば、これは「[CODE(HTTP)[[[text/html]]]] 及び
+[CODE(HTTP)[[[text/x-c]]]] が最優先媒体型ですが、これらが存在しない場合には、
+[CODE(HTTP)[[[text/x-dvi]]]] 実体を送り、それも存在しない場合には、
+[CODE(HTTP)[[[text/plain]]]] 実体を送ってください。」と解釈されます。
+
+> Media ranges can be overridden by more specific media ranges or
+specific media types. If more than one media range applies to a given
+type, the most specific reference has precedence. For example,
+
+媒体範囲は特定媒体範囲または特定媒体型で上書き可能です。
+ある型に複数の媒体範囲が適用できるなら、
+最も特定した参照が優先されます。例えば、
+
+>
+- Accept: text/*, text/html, text/html;level=1, */*
+
+> have the following precedence:
+
+は次の優先度を持ちます:
+
+= 1) text/html;level=1
+= 2) text/html
+= 3) text/*
+= 4) */*
+
+> The media type quality factor associated with a given type is
+determined by finding the media range with the highest precedence
+which matches that type. For example,
+
+ある型に関連付けられた媒体型品質因子は、
+その型に一致する最高の優先度の媒体範囲を探すことで決定します。
+例えば、
+
+>
+- Accept: text/*;q=0.3, text/html;q=0.7, text/html;level=1, text/html;level=2;q=0.4, */*;q=0.5
+
+> would cause the following values to be associated:
+
+には、次の値が関連付けられます:
+
+- text/html;level=1         = 1
+- text/html                 = 0.7
+- text/plain                = 0.3
+- image/jpeg                = 0.5
+- text/html;level=2         = 0.4
+- text/html;level=3         = 0.7
+
+> Note: A user agent may be provided with a default set of quality
+values for certain media ranges. However, unless the user agent is
+a closed system which cannot interact with other rendering agents,
+this default set should be configurable by the user.
+
+注意 : 利用者エージェントはある媒体範囲に品質値の既定集合を提供するかもしれません。
+しかし、利用者エージェントが他のレンダリング・エージェントと対話できない閉じたシステムでない限り、
+この既定集合は利用者により設定可能とするべきです。
+]INS]
+
+
+** 関連
+
+[4]
+[[XML]] の[[要素]]の[[内容]]として入れることができる[[媒体型]]を
+[[XML Schema]] 定義文書で記述するための
+[CODE(XMLa)[[QN[xmlmime:[[expectedContentTypes]]] [http://www.w3.org/2005/05/xmlmime]]]]
+[[属性]]なるものがあります。この値は [[RFC 2616]]
+の [CODE(HTTP)[[[Accept]]:]] 頭欄の欄本体と同じです
+[WEAK[(ただし使用できる文字の範囲は [[US-ASCII]] に限定されています)]]。
+
+[CITE[Describing Media Content of Binary Data in XML]] 
+<http://www.w3.org/TR/2005/NOTE-xml-media-types-20050504/#expectedContentTypes>
+
+[[#comment]]
+
+
+** メモ
+
+- [1] ''Mozillaが評価される理由の一つ。'' <http://www.popup.org/~matsushima/column/Lab/2001/0904a>
+- [2] [[M$IE]]6 でも未だに [SAMP[image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*]] なんて意味のあまりないのを送ってきます。だから [[text/html]] と [[application/xhtml+xml]] の内容折衝で前者を選んでもらえなかったりしてなかなか間抜けです。
+- [3] >>2 <http://pc3.2ch.net/test/read.cgi/hp/1039974316/253->
+
+[7]
+>>2 [[Apache]] なんかは [CODE(HTTP)[[[q]]]]
+引数が同順位だと前ほど優先するようなので、
+[[WinIE 6]] がこのような [CODE(HTTP)[[[Accept]]:]]
+欄を送ってくることを利用して、
+通常の [[WWWブラウザ]]向けの高品質画像を
+[[PNG]] ([CODE(MIME)[[[image/png]]]]) で、 [[WinIE]] 向けの低品質画像を
+[[GIF]] で送り返すような技が使えます。
+[WEAK[(都合がいいことに他の主要 [[WWWブラウザ]]は [[GIF]] よりも [[PNG]] を優先させてくれます。)]]
+([[名無しさん]])
+
+[8]
+[CODE(HTTP)@@en[[[Accept]]]]欄の構文解析を一々するのは面倒なので、適当な[[正規表現]]の[[一致]]で済ませたくなりますが、
+できるだけ正確に検査した方が無難です。
+
+特に注意しないといけないのは、[CODE(HTTP)@@en[[[q]]='''0''']]の場合があることです。[CODE(HTTP)@@en[[[Accept]]]]欄にある[[媒体型]]があったとしても、それが本当に受け入れられるものかどうかは[CODE(HTTP)@@en[[[q]]]]をみないとわかりません。
+([[名無しさん]])
+
+[9]
+[CITE[Bug 309438 &#8211; Accept: header too long on account of text types]] ([CODE[2007-02-26 08:33:13 +09:00]] 版) <https://bugzilla.mozilla.org/show_bug.cgi?id=309438>
+([[名無しさん]])
+
+[[#comment]]
+
+
+* メモ
+
+[407] [CITE[IRC logs: freenode / #whatwg / 20110416]]
+( ([TIME[2011-04-17 15:45:01 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20110416#l-39>
+
+[408] [CITE[''''''[''''''whatwg'''''']'''''' RWD Heaven: if browsers reported device capabilities in a request header]]
+( ([TIME[2012-02-06 22:37:54 +09:00]] 版))
+<http://lists.whatwg.org/htdig.cgi/whatwg-whatwg.org/2012-February/034642.html>
+
+[409] [CITE[IRC logs: freenode / #whatwg / 20120206]]
+( ([TIME[2012-02-09 21:33:22 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20120206>
+
+[410] [CITE[Request Headers in the HTTP protocol]]
+( ([TIME[2001-11-29 11:01:38 +09:00]] 版))
+<http://www.w3.org/Protocols/HTTP/HTRQ_Headers.html#z3>
+
+[411] [CITE@@en[RFC 6787 - Media Resource Control Protocol Version 2 (MRCPv2)]]
+( ([TIME[2012-11-13 15:18:40 +09:00]] 版))
+<http://tools.ietf.org/html/rfc6787#section-6.2.2>
+
+[412] [CITE[''''''[''''''whatwg'''''']'''''' microdata questions]]
+( ([TIME[2014-04-02 09:02:52 +09:00]] 版))
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2014-April/084610.html>@
+
+
+1.6
+log
+@updated by (anon)
+@
+text
+@d277 5
+a281 1
+<http://tools.ietf.org/html/rfc6787#section-6.2.2>@
+
+
+1.5
+log
+@updated by (anon)
+@
+text
+@d273 5
+a277 1
+<http://www.w3.org/Protocols/HTTP/HTRQ_Headers.html#z3>@
+
+
+1.4
+log
+@updated by (anon)
+@
+text
+@d269 5
+a273 1
+<http://krijnhoetmer.nl/irc-logs/whatwg/20120206>@
+
+
+1.3
+log
+@updated by (anon)
+@
+text
+@d265 5
+a269 1
+<http://lists.whatwg.org/htdig.cgi/whatwg-whatwg.org/2012-February/034642.html>@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@d261 5
+a265 1
+<http://krijnhoetmer.nl/irc-logs/whatwg/20110416#l-39>@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/416363657074.txt>
+@
+text
+@d257 5
+a261 1
+* メモ@
+

@@ -1,0 +1,409 @@
+head	1.15;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.15
+date	2014.03.05.00.21.06;	author wakaba;	state Exp;
+branches;
+next	1.14;
+
+1.14
+date	2013.08.24.05.51.26;	author wakaba;	state Exp;
+branches;
+next	1.13;
+
+1.13
+date	2013.08.24.05.50.59;	author wakaba;	state Exp;
+branches;
+next	1.12;
+
+1.12
+date	2013.08.19.13.30.21;	author wakaba;	state Exp;
+branches;
+next	1.11;
+
+1.11
+date	2013.08.19.13.23.59;	author wakaba;	state Exp;
+branches;
+next	1.10;
+
+1.10
+date	2013.08.17.07.12.59;	author wakaba;	state Exp;
+branches;
+next	1.9;
+
+1.9
+date	2013.07.15.05.17.37;	author wakaba;	state Exp;
+branches;
+next	1.8;
+
+1.8
+date	2013.07.15.04.11.17;	author wakaba;	state Exp;
+branches;
+next	1.7;
+
+1.7
+date	2013.07.15.03.04.53;	author wakaba;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2013.07.15.03.01.06;	author wakaba;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2013.07.15.02.55.01;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2013.07.15.02.32.46;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2012.08.05.06.02.36;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2012.06.01.14.27.43;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2012.04.15.05.53.45;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.15
+log
+@updated by (anon)
+@
+text
+@[10] [[CSS]] では[[構文解析]]の方法が仕様により定められており、どのような[[バイト列]]、[[文字列]]であってもそれが
+[[CSS]] [[スタイルシート]]としてどう解釈されるべきかが明確になっています。
+
+;;
+[11] 本項では[[構文解析器]] ([[利用者エージェント]]) の動作について扱います。構文一般について、あるいは[[著者]]の要件については
+[[CSSの構文解析]]の項をご覧ください。
+
+* 仕様書
+
+[REFS[
+- [4] [CITE@@en[CSS Syntax Module Level 3]] ([TIME[2013-06-29 19:17:26 +09:00]] 版) <http://dev.w3.org/csswg/css-syntax/>
+]REFS]
+
+* 入口点
+
+[5] [[css-syntax]] ではいくつかの[RUBYB[[[入口点]]]@@en[entry point]] (構文解析器の動作開始点) を定義しています。
+[FIG[
+- [15] [[スタイルシート]] / [[parse a style sheet]]
+-- [[外部スタイルシート]]
+-- [CODE(HTMLe)@@en[[[style]]]] [[要素]]
+- [16] [[規則リスト]] / [[parse a list of rules]]
+- [17] [[規則]] / [[parse a rule]]
+-- [CODE(DOMm)@@en[[[insertRule]]]]
+-- [CODE(DOMi)@@en[[[CSSRule]]]] [CODE(DOMa)@@en[[[cssText]]]]
+- [18] [[宣言]] / [[parse a declaration]]
+- [19] [[宣言リスト]] / [[parse a list of declarations]]
+- [20] [[構成値]] / [[parse a component value]]
+- [21] [[構成値リスト]] / [[parse a list of component values]]
+]FIG]
+
+[6] この他にも次のような[[入口点]]があります。
+[FIG[
+- [22] [[選択子群]] / [[parse a group of selectors]] / [[parse a selector]]
+-- [CODE(DOMa)@@en[[[selectorText]]]]
+-- [CODE(DOMm)@@en[[[querySelector]]]], [CODE(DOMm)@@en[[[querySelectorAll]]]]
+-- >>21 を特定の文法に従い解釈するもの
+- [23] [[相対選択子]] / [[parse a relative selector]]
+-- [CODE(DOMm)@@en[[[find]]]], [CODE(DOMm)@@en[[[findAll]]]]
+-- [CODE(DOMm)@@en[[[matches]]]]
+-- >>21 を特定の文法に従い解釈するもの
+- [24] [[ページ選択子リスト]] / [[parse a list of CSS page selectors]]
+-- [CODE(DOMi)@@en[[[CSSPageRule]]]] [CODE(DOMa)@@en[[[selectorText]]]]
+-- >>21 を特定の文法に従い解釈するもの
+- [25] [[媒体クエリーリスト]] / [[parse a media query list]]
+-- [CODE(HTMLa)@@en[[[media]]]] [[属性]]
+-- [CODE(DOMa)@@en[[[mediaText]]]]
+-- [CODE(DOMi)@@en[[[CSSMediaRule]]]] [CODE(DOMa)@@en[[[conditionText]]]]
+-- >>21 を特定の文法に従い解釈するもの
+- [26] [[媒体クエリー]] / [[parse a media query]]
+-- [CODE(DOMm)@@en[[[appendMedium]]]]
+-- >>25 で[[媒体クエリー]]1つの指定のみ受け付けるもの
+- [27] [[CSS宣言ブロック]] / [[parse a CSS declaration block]]
+-- [CODE(HTMLa)@@en[[[style]]]] [[属性]]
+-- [CODE(DOMi)@@en[[[CSSStyleDeclaration]]]] [CODE(DOMa)@@en[[[cssText]]]]
+-- >>19 で[[宣言]]を[[プロパティー]]の指定として解釈するもの
+- [28] [[特性値]] / [[parse a CSS value]]
+-- [CODE(DOMm)@@en[[[setProperty]]]]
+-- [CODE(DOMi)@@en[[[CSSStyleDeclaration]]]] の [[CSS特性]]を[[反映]]する[[属性]]
+-- [[SVG]] の [[CSS特性]]に対応する[[表現的属性]]
+-- [CODE(XMLe)@@en[[[animate]]]] ([CODE(XMLa)@@en[[[attributeType]]]] [CODE(XML)@@en[[[CSS]]]])
+-- >>21 を特定の文法に従い解釈するもの
+- [29] [[対応条件]]
+-- [CODE(DOMi)@@en[[[CSSSupportsRule]]]] [CODE(DOMa)@@en[[[conditionText]]]]
+-- [CODE(JS)@@en[[[CSS.supports]]]]
+-- >>21 を特定の文法に従い解釈するもの
+- [30] [CODE(CSS)@@en[[[<color>]]]] / [[parsed as CSS <color> value]]
+-- [CODE(DOMa)@@en[[[fillStyle]]]], [CODE(DOMa)@@en[[[strokeStyle]]]], [CODE(DOMm)@@en[[[addColorStop]]]], [CODE(DOMa)@@en[[[shadowColor]]]]
+-- >>21 を特定の文法に従い解釈するもの
+- [31] [CODE(CSS)@@en['[[font]]']] のようなもの
+-- [CODE(DOMi)@@en[[[DrawingStyle]]]] [CODE(DOMa)@@en[[[font]]]]
+-- >>21 を特定の文法に従い解釈するもの
+- [32] [CODE(CSS)@@en['[[cursor]]']]
+-- [CODE(DOMm)@@en[[[addHitRegion]]]]
+]FIG]
+
+* スタイルシートの読み込みと DOM
+
+[7] [[CSSOM]] へは [CODE(DOMa)@@en[[[sheet]]]] [[属性]]からアクセスできますが、 [[HTML]] [[DOM]] とは異なり読み込み途中の状態にはアクセスできないようです。
+
+[8] [[スタイルシート]]には [[style sheet ready]] フラグ [SRC[<http://www.whatwg.org/specs/web-apps/current-work/#styling>]]
+があり、適用の準備ができるまではこのフラグが未設定になっています。具体的にどの時点で準備ができたといえるのか明確にはなっていませんが、
+普通に考えれば構文解析が完了してブラウザー内部のデータ構造となり、[[カスケーディング]]の対象となったり、
+[[CSSOM]] のオブジェクトとして利用可能になったりした時点でしょう。
+
+[9] 通常のスタイルシートの場合、 [[style sheet ready]] フラグが設定されるまでは[[スクリプト]]の実行がブロックされます。
+[[代替スタイルシート]]ではブロックされません。 ([[WinIE10]] では[[代替スタイルシート]]でもブロックされます。)
+なので[[スクリプト]]から [[CSSOM]] にアクセスしようとしても、完全な [[CSSOM]] が返されるか、
+[CODE[[[null]]]] が返されるかのどちらかのようです。
+
+* 歴史
+
+[12] [[CSS1]] と [[CSS2]]、さらに 2000年代までの [[CSS3]] ([[css3-syntax]]) では [[Flex]] と [[Yacc]]
+により[[形式的]]に構文が記述されていましたが、[[参考]]であり、また様々な制約から不正確でした。
+[[規定]]としては英語で構文および[[前方互換構文解析規則]]が説明されており、また各[[特性]]の値は専用の文法記述方法が用いられていました。
+
+[14] このように構文と構文解析に関する規定が詳細に説明されているだけでも当時としては十分先進的ではありましたが、
+[[Flex]] によって記述された字句化とよりマクロな構文の対応関係が不明瞭で [CODE(CSS)[[[<an+b>]]]]
+のような災厄をもたらしたり、[[前方互換構文解析規則]]の細部が不明確であったりというような問題を抱えていました。
+
+[REFS[
+- [13] [CITE@@en[Grammar of CSS 2.1]] ([TIME[2011-06-07 13:09:52 +09:00]] 版) <http://www.w3.org/TR/CSS21/grammar.html>
+]REFS]
+
+** 状態機械の仕様化
+
+[REFS[
+-[1] [CITE[IRC logs: freenode / #whatwg / 20120409]]
+( ([TIME[2012-04-15 13:32:46 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20120409#l-406>
+]REFS]
+
+[2] 2012年の春になって、ようやく [[css3-syntax]] で [[HTML5]] 
+仕様風の[[字句化器]]と[[木構築器]]からなる[[状態機械]]として[[構文解析]]の挙動が明確に記述されるようになりました。
+
+[3] [CITE[tabatkins/css-parser]]
+( ([TIME[2012-08-05 15:02:04 +09:00]] 版))
+<https://github.com/tabatkins/css-parser>@
+
+
+1.14
+log
+@updated by (anon)
+@
+text
+@d72 2
+@
+
+
+1.13
+log
+@updated by (anon)
+@
+text
+@d22 1
+a22 1
+- [[17] [規則]] / [[parse a rule]]
+@
+
+
+1.12
+log
+@updated by (anon)
+@
+text
+@d18 1
+a18 1
+- [[スタイルシート]] / [[parse a style sheet]]
+d21 2
+a22 2
+- [[規則リスト]] / [[parse a list of rules]]
+- [[規則]] / [[parse a rule]]
+d25 4
+a28 6
+- [[宣言]] / [[parse a declaration]]
+- [[宣言リスト]] / [[parse a list of declarations]]
+-- [CODE(HTMLa)@@en[[[style]]]] [[属性]]
+-- [CODE(DOMi)@@en[[[CSSStyleDeclaration]]]] [CODE(DOMa)@@en[[[cssText]]]]
+- [[構成値]] / [[parse a component value]]
+- [[構成値リスト]] / [[parse a list of component values]]
+d33 1
+a33 1
+- [[選択子群]] / [[parse a group of selectors]] / [[parse a selector]]
+d36 2
+a37 1
+- [[相対選択子]] / [[parse a relative selector]]
+d40 2
+a41 1
+- [[ページ選択子リスト]] / [[parse a list of CSS page selectors]]
+d43 2
+a44 1
+- [[媒体クエリーリスト]] / [[parse a media query list]]
+d48 2
+a49 1
+- [[媒体クエリー]] / [[parse a media query]]
+d51 6
+a56 1
+- [[特性値]] / [[parse a CSS value]]
+d61 2
+a62 1
+- [[対応条件]]
+d65 2
+a66 1
+- [CODE(CSS)@@en[[[<color>]]]] / [[parsed as CSS <color> value]]
+d68 2
+a69 1
+- [CODE(CSS)@@en['[[font]]']] のようなもの
+d71 1
+@
+
+
+1.11
+log
+@updated by (anon)
+@
+text
+@d79 12
+@
+
+
+1.10
+log
+@updated by (anon)
+@
+text
+@d1 7
+@
+
+
+1.9
+log
+@updated by (anon)
+@
+text
+@d56 14
+@
+
+
+1.8
+log
+@updated by (anon)
+@
+text
+@d45 2
+@
+
+
+1.7
+log
+@updated by (anon)
+@
+text
+@d48 4
+@
+
+
+1.6
+log
+@updated by (anon)
+@
+text
+@d28 1
+a28 1
+- [[選択子群]] / [[parse a group of selectors]]
+d30 4
+a33 1
+-- [[選択子API]]
+@
+
+
+1.5
+log
+@updated by (anon)
+@
+text
+@a18 1
+-- [CODE(CSS)@@en[[[@@supports]]]]
+d36 1
+d42 3
+@
+
+
+1.4
+log
+@updated by (anon)
+@
+text
+@d9 1
+a9 2
+[5] [[css-syntax]] ではいくつかの[RUBYB[入口点]@@en[entry point]] (構文解析器の動作開始点) を定義しています。
+
+d11 3
+a13 1
+- [[スタイル・シート]] / [[parse a style sheet]]
+d16 2
+d19 1
+d21 2
+d27 17
+@
+
+
+1.3
+log
+@updated by (anon)
+@
+text
+@d1 20
+d32 4
+a35 4
+仕様風の[[字句化器]]と[[木構築器]]からなる[[状態機械]]として[[構文解析]]の挙動が明確に記述されるようになりました。
+
+[3] [CITE[tabatkins/css-parser]]
+( ([TIME[2012-08-05 15:02:04 +09:00]] 版))
+@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@d12 5
+a16 1
+仕様風の[[字句化器]]と[[木構築器]]からなる[[状態機械]]として[[構文解析]]の挙動が明確に記述されるようになりました。@
+
+
+1.1
+log
+@created by (anon)
+@
+text
+@d1 12
+a12 3
+[1] [CITE[IRC logs: freenode / #whatwg / 20120409]]
+( ([TIME[2012-04-15 13:32:46 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20120409#l-406>@
+

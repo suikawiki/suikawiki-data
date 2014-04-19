@@ -1,0 +1,688 @@
+head	1.1;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2008.11.12.20.56.21;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/5246432033383836.txt>
+@
+text
+@'''An Extensible Message Format for Message Tracking Responses'''
+-Network Working Group                                         
+-Request for Comments: 3886                              
+-Updates: 3463                                            
+-Category: Standards Track
+- E. Allman
+-  Sendmail, Inc.
+- September 2004
+
+*Status of this Memo
+>   This document specifies an Internet standards track protocol for the
+Internet community, and requests discussion and suggestions for
+improvements.  Please refer to the current edition of the "Internet
+Official Protocol Standards" (STD 1) for the standardization state
+and status of this protocol.  Distribution of this memo is unlimited.
+
+*Copyright Notice
+>   Copyright (C) The Internet Society (2004).
+
+*Abstract
+>   Message Tracking is expected to be used to determine the status of
+undelivered e-mail upon request.  Tracking is used in conjunction
+with Delivery Status Notifications (DSN) and Message Disposition
+Notifications (MDN); generally, a message tracking request will be
+issued only when a DSN or MDN has not been received within a
+reasonable timeout period.
+
+メッセージ追跡は未配電子メイルの状態を要求に応じて調べるために使うことが想定されています。
+追跡は配送状態通知 (DSN) やメッセージ配置通知 (MDN)
+と併用します。通常、メッセージ追跡要求は DSN や MDN
+を適当な期限内に受信しなかった時にのみ行います。
+
+>   This memo defines a MIME content-type for message tracking status in
+the same spirit as RFC 3464, "An Extensible Message Format for
+Delivery Status Notifications".  It is to be issued upon a request as
+described in "Message Tracking Query Protocol".  This memo defines
+only the format of the status information.  An extension to SMTP to
+label messages for further tracking and request tracking status is
+defined in a separate memo.
+
+このメモは [[RFC 3464]] [CITE[配送状態通知用拡張可能メッセージ書式]]
+と同じようにメッセージ追跡状態の MIME 内容型を定義します。
+これは[Q[メッセージ追跡照会プロトコル]]で説明されているように要求に応じて発行されます。
+このメモは状態情報の書式のみを定義します。更なる追跡のためにメッセージに札付けしたり状態追跡を要求したりするための
+SMTP 拡張は別のメモで定義します。
+
+*1.  Introduction
+>   Message Tracking is expected to be used to determine the status of
+undelivered e-mail upon request.  Tracking is used in conjunction
+with Delivery Status Notifications (DSN) [RFC-DSN-SMTP] and Message
+Disposition Notifications (MDN) [RFC-MDN]; generally, a message
+tracking request will be issued only when a DSN or MDN has not been
+received within a reasonable timeout period.
+
+メッセージ追跡は要求に応じて未配電子メイルの状態を調べるために使うことが想定されています。
+追跡は配達状態通知 (DSN) やメッセージ配置通知 (MDN)
+と併用します。通常、メッセージ要求は DNS や MDN
+を適当な期限内に受信しなかった時にのみ発行します。
+
+>   This memo defines a MIME [RFC-MIME] content-type for message tracking
+status in the same spirit as RFC 3464, "An Extensible Message Format
+for Delivery Status Notifications" [RFC-DSN-STAT].  It is to be
+issued upon a request as described in "Message Tracking Query
+Protocol" [RFC-MTRK-MTQP].  This memo defines only the format of the
+status information.  An extension to SMTP [RFC-ESMTP] to label
+messages for further tracking and request tracking status is defined
+in a separate memo [RFC-MTRK-SMTPEXT].
+
+このメモは [[RFC 3464]] [CITE[配送状態通知用拡張可能メッセージ書式]]
+と同じようにメッセージ追跡状態の MIME 内容型を定義します。
+これは[Q[メッセージ追跡照会プロトコル]]で説明されているように要求に応じて発行されます。
+このメモは状態情報の書式のみを定義します。更なる追跡のためにメッセージに札付けしたり状態追跡を要求したりするための
+SMTP 拡張は別のメモで定義します。
+
+* 2.  Other Documents and Conformance
+>   The model used for Message Tracking is described in [RFC-MTRK-MODEL].
+
+メッセージ追跡に使用する模型は [[RFC 3888]] で説明しています。
+
+>   Message tracking is intended for use as a "last resort" mechanism.
+Normally, Delivery Status Notifications (DSNs) [RFC-DSN-SMTP] and
+Message Disposition Notifications (MDNs) [RFC-MDN] would provide the
+primary delivery status.  Only if no response is received from either
+of these mechanisms would Message Tracking be used.
+
+メッセージ追跡は[Q[最終手段]]として使用することを想定しています。
+通常、配送状態通知 ([[DSN]]) とメッセージ配置通知 ([[MDN]])
+が本来の配送状態を知らせます。どちらの仕組みでも応答を受信しなかった場合にのみメッセージ追跡を使用します。
+
+>   This document is based on [RFC-DSN-STAT].  Sections 1.3
+(Terminology), 2.1.1 (General conventions for DSN fields), 2.1.2
+("*-type" subfields), and 2.1.3 (Lexical tokens imported from RFC
+822) of [RFC-DSN-STAT] are included into this document by reference.
+Other sections are further incorporated as described herein.
+
+この文書は [[RFC 3464]] を基にしています。 RFC 3464 の
+1.3 節 (用語), 2.1.1 節 (DSN 欄の一般規則), 2.1.2節
+([CODE[*-type]] 部分欄), 2.1.3節 ([[RFC 822]]
+から輸入した字句) を参照し、この文書に取込みます。
+他の章も更にここで説明するように取込みます。
+
+>   Syntax notation in this document conforms to [RFC-ABNF].
+
+この文書の構文記法は [[RFC 2234]] に適合します。
+
+>   The following lexical tokens, defined in [RFC-MSGFMT], are used in
+the ABNF grammar for MTSNs: atom, CHAR, comment, CR, CRLF, DIGIT, LF,
+linear-white-space, SPACE, text.  The date-time lexical token is
+defined in [RFC-HOSTREQ].
+
+[[RFC 2822]] で定義されている字句 [CODE(ABNF)[[[atom]]]],
+[CODE(ABNF)[[[CHAR]]]], [CODE(ABNF)[[[comment]]]],
+[CODE(ABNF)[[[CR]]]], [CODE(ABNF)[[[CRLF]]]],
+[CODE(ABNF)[[[DIGIT]]]], [CODE(ABNF)[[[LF]]]],
+[CODE(ABNF)[[[linear-white-space]]]], [CODE(ABNF)[[[SPACE]]]],
+[CODE(ABNF)[[[text]]]] を MTSN の ABNF 文法で使います。
+字句 [CODE(ABNF)[[[date-time]]]] は [[RFC 1123]]
+で定義されています。
+
+>   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+"SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
+document are to be interpreted as described in RFC 2119 [RFC-KEYWORDS].
+
+*3.  Format of a Message Tracking Status Notification
+>   A Message Tracking Status Notification (MTSN) is intended to be
+returned as the body of a Message Tracking request [RFC-MTRK-MTQP].
+The actual body MUST be a multipart/related [RFC-RELATED] with type
+parameter of "message/tracking-status"; each subpart MUST be of type
+"message/tracking-status" as described herein.  The multipart/related
+body can include multiple message/tracking-status parts if an MTQP
+server chains requests to the next server; see [RFC-MTRK-MODEL] and
+[RFC-MTRK-MTQP] for more information about chaining.
+
+メッセージ追跡状態通知 (MTSN) はメッセージ追跡要求の[[本体]]として返されることを想定しています。
+実際の本体は [CODE(MIME)[[[type]]]] 引数が [CODE(MIME)[[[message/tracking-status]]]]
+の [CODE(MIME)[[[multipart/related]]]] でなければ'''なりません'''。
+その亜部分はここで定義する型 [CODE(MIME)[[[message/tracking-status]]]]
+のものでなければ'''なりません'''。 [[MTQP]]
+鯖が次の鯖に要求を連鎖させたのであれば、 [CODE(MIME)[[[multipart/related]]]]
+本体は複数の [CODE(MIME)[[[message/tracking-status]]]]
+部分を含めることができます。連鎖について詳しくは [[RFC 3888]] と
+[[RFC 3887]] をご覧下さい。
+
+** 3.1.  The message/tracking-status content-type
+>   The message/tracking-status content-type is defined as follows:
+
+[CODE(MIME)[message/tracking-status]] 内容型は次のように定義します。
+
+>
+:   MIME type name:           message
+:   MIME subtype name:        tracking-status
+:   Optional parameters:      none
+:   Encoding considerations:  "7bit" encoding is sufficient and
+MUST be used to maintain readability
+when viewed by non-MIME mail readers.
+
+[CODE(MIME)[[[7bit]]]] 符号化が十分であり、非 MIME
+メイル読取り器で表示する時の可読性を維持するために
+[CODE(MIME)[7bit]] を使わなければ'''なりません'''。
+
+>
+:   Security considerations:  discussed in section 4 of this memo.
+
+>   The body of a message/tracking-status is modeled after [RFC-DSN-STAT].  
+That body consists of one or more "fields" formatted to
+according to the ABNF of RFC 2822 header "fields" (see [RFC-MSGFMT]).
+The per-message fields appear first, followed by a blank line.
+Following the per-message fields are one or more groups of 
+per-recipient fields.  Each group of per-recipient fields is preceded by
+a blank line.  Note that there will be a blank line between the final
+per-recipient field and the MIME boundary, since one CRLF is
+necessary to terminate the field, and a second is necessary to
+introduce the MIME boundary.  Formally, the syntax of the
+message/tracking-status content is as follows:
+
+[CODE(MIME)[message/tracking-status]] の本体は [[RFC 3464]]
+のものを基にしています。本体は RFC 2822 頭欄の ABNF [CODE(ABNF)[[[fields]]]]
+に従って書式付けした一つ以上の[Q[欄]]から成ります。
+まずはじめにメッセージ毎の欄が来て、空行が続きます。
+その後に一つ以上の受信者毎の欄の群が来ます。受信者毎の欄群それぞれの前には空行が来ます。
+なお、欄の最後に1つ [CODE(ABNF)[[[CRLF]]]] が必要であり、
+MIME 境界線の最初にも1つ必要ですから、
+最後の受信者毎欄と MIME 境界線の間には空行が入ります。正式には
+[CODE(MIME)[message/tracking-status]] 内容の構文は次の通りです。
+
+>
+   tracking-status-content =
+             per-message-fields 1*( CRLF per-recipient-fields )
+
+>   The per-message fields are described in section 3.2.  The 
+per-recipient fields are described in section 3.3.
+
+メッセージ毎欄は3.2節で説明します。受信者毎欄は3.3節で説明します。
+
+***3.1.1.  General conventions for MTSN fields
+>   Section 2.1.1 (General conventions for DSN fields) of [RFC-DSN-STAT]
+is included herein by reference.  Notably, the definition of xtext is
+identical to that of that document.
+
+[[RFC 3464]] の2.1.1節 (DSN 欄の一般的記法) をここに参照により取込みます。
+特に、 [CODE(ABNF)[[[xtext]]]] の定義は RFC 3464 のものと同一です。
+
+*** 3.1.2.  *-type subfields
+>   Section 2.1.2 (*-type subfields) of [RFC-DSN-STAT] is included herein
+by reference.  Notably, the definitions of address-type, 
+diagnostic-type, and MTA-name type are identical to that of RFC 3464.
+
+RFC 3464 の 2.1.2節 ([CODE[*-type]] 部分欄) をここに参照により取込みます。
+特に、 [CODE(ABNF)[[[address-type]]]], [CODE(ABNF)[[[diagnostic-type]]]],
+[CODE(ABNF)[[[MTA-name]]]] 型の定義は RFC 3464 のものと同一です。
+
+** 3.2.  Per-Message MTSN Fields
+>   Some fields of an MTSN apply to all of the addresses in a single
+envelope.  These fields may appear at most once in any MTSN.  These
+fields are used to correlate the MTSN with the original message
+transaction and to provide additional information which may be useful
+to gateways.
+
+MTSN 欄の幾つかは一つの封筒の中の番地すべてに適用します。
+そのような欄群は MTSN に高々一度出現し得ます。
+これらの欄は MTSN を元のメッセージ取引と関係付けるためと、
+関門に有用かもしれない追加情報を提供するために使います。
+
+>
+      per-message-fields =
+                original-envelope-id-field CRLF
+                reporting-mta-field CRLF
+                arrival-date-field CRLF
+                *( extension-field CRLF )
+
+***3.2.1.  The Original-Envelope-Id field
+>   The Original-Envelope-Id field is defined as in section 2.2.1 of
+[RFC-DSN-STAT].  This field is REQUIRED.
+
+[CODE[[[Original-Envelope-Id]]]] 欄は [[RFC 3464]] の2.2.1節で定義されています。
+この欄は'''必須'''です。
+
+*** 3.2.2.  The Reporting-MTA field
+>   The Reporting-MTA field is defined as in section 2.2.2 of [RFC-DSN-STAT].  
+This field is REQUIRED.
+
+[CODE[[[Reporting-MTA]]]] 欄は RFC 3464 の2.2.2節で定義されています。
+この欄は'''必須'''です。
+
+*** 3.2.3.  The Arrival-Date field
+>   The Arrival-Date field is defined as in section 2.2.5 of [RFC-DSN-STAT].  
+This field is REQUIRED.
+
+[CODE[[[Arrival-Date]]]] 欄は RFC 3464 の2.2.5節で定義されています。
+この欄は'''必須'''です。
+
+** 3.3.  Per-Recipient MTSN fields
+>   An MTSN contains information about attempts to deliver a message to
+one or more recipients.  The delivery information for any particular
+recipient is contained in a group of contiguous per-recipient fields.
+Each group of per-recipient fields is preceded by a blank line.
+
+MTSN は一人以上の受信者にメッセージを配送しようとした試行についての情報を含みます。
+ある特定の受信者についての配送情報は続く受信者毎の欄の群に含まれます。
+受信者毎の欄の群それぞれは空行が前に来ます。
+
+>   The syntax for the group of per-recipient fields is as follows:
+
+受信者毎の欄の群の構文は次の通りです。
+
+>
+      per-recipient-fields =
+                original-recipient-field CRLF
+                final-recipient-field CRLF
+                action-field CRLF
+                status-field CRLF
+                [ remote-mta-field CRLF ]
+                [ last-attempt-date-field CRLF ]
+                [ will-retry-until-field CRLF ]
+                *( extension-field CRLF )
+
+***3.3.1.  Original-Recipient field
+>   The Original-Recipient field is defined as in section 2.3.1 of [RFC-DSN-STAT].  
+This field is REQUIRED.
+
+[CODE[[[Original-Recipient]]]] 欄は [[RFC 3464]] の2.3.1節で定義されています。
+この欄は'''必須'''です。
+
+*** 3.3.2.  Final-Recipient field
+>   The required Final-Recipient field is defined as in section 2.3.2 of
+[RFC-DSN-STAT].  This field is REQUIRED.
+
+[CODE[[[Final-Recipient]]]] 欄は RFC 3464 の2.3.2節で定義されています。
+この欄は'''必須'''です。
+
+*** 3.3.3.  Action field
+>   The required Action field indicates the action performed by the
+Reporting-MTA as a result of its attempt to deliver the message to
+this recipient address.  This field MUST be present for each
+recipient named in the MTSN.  The syntax is as defined in RFC 3464.
+This field is REQUIRED.
+
+必須の [CODE[[[Action]]]] 欄は [CODE[[[Reporting-MTA]]]]
+がメッセージをこの受信番地に配送しようと試みた結果行った動作を示します。
+この欄は MTSN に挙げられた受信者それぞれに示さなければ'''なりません'''。
+構文は RFC 3464 で定義されています。この欄は'''必須'''です。
+
+>   Valid actions are:
+
+妥当な動作は次の通りです。
+
+>
+:   failed       :The message could not be delivered.  If DSNs have been
+enabled, a "failed" DSN should already have been returned.
+
+:[CODE[[[failed]]]]:メッセージは配送できませんでした。 DSN
+が有効であれば、 [CODE[failed]] DSN が既に返されているはずです。
+
+>
+:   delayed      :The message is currently waiting in the MTA queue for
+future delivery.  Essentially, this action means "the
+message is located, and it is here."
+
+:[CODE[[[delayed]]]]:メッセージは現在 MTA 待ち行列で将来の配送を待っています。
+本質的にこの動作は[Q[メッセージが位置付けられ、ここにある]]
+ことを意味します。
+
+>
+:   delivered    :The message has been successfully delivered to the final
+recipient.  This includes "delivery" to a mailing list
+exploder.  It does not indicate that the message has
+been read.  No further information is available; in
+particular, the tracking agent SHOULD NOT attempt
+further "downstream" tracking requests.
+
+:[CODE[[[delivered]]]]:メッセージは最終受信者に配送成功しました。
+これはメイリング・リスト展開器への[Q[配送]]も含みます。
+しかし、メッセージが読まれたことは示しません。
+これ以上の情報はありません。特に、追跡エージェントは更に
+[Q[下流]]の追跡要求を試みる'''べきではありません'''。
+
+>
+:   expanded     :The message has been successfully delivered to the
+recipient address as specified by the sender, and
+forwarded by the Reporting-MTA beyond that destination
+to multiple additional recipient addresses.  However,
+these additional addresses are not trackable, and the
+tracking agent SHOULD NOT attempt further "downstream"
+tracking requests.
+
+:[CODE[expanded]]:メッセージは送信者により指定された受信番地に配送成功し、
+[CODE[[[Reporting-MTA]]]] によって更に追加の受信番地複数に転送されました。
+しかし、これら追加の番地は追跡可能ではなく、追跡エージェントは更に
+[Q[下流]]の追跡要求を試みる'''べきではありません'''。
+
+>
+:   relayed      :The message has been delivered into an environment that
+does not support message tracking.  No further
+information is available; in particular, the tracking
+agent SHOULD NOT attempt further "downstream" tracking requests.
+
+:[CODE[[[relayed]]]]:メッセージはメッセージ追跡に対応していない環境に配送されました。
+これ以上の情報はありません。特に、
+追跡エージェントは更に[Q[下流]]の追跡要求を試みる'''べきではありません'''。
+
+>
+:   transferred  :The message has been transferred to another MTRK-compliant MTA.  The tracking agent SHOULD attempt
+further "downstream" tracking requests unless that
+information is already given in a chaining response.
+
+:[CODE[[[transferred]]]]:メッセージは他の MTRK
+適合 [[MTA]] に転送されました。追跡エージェントは既に情報が連鎖応答で示されていない限り更に
+[Q[下流]]の追跡要求を試みる'''べきです'''。
+
+>
+:   opaque       :The message may or may not have been seen by this
+system.  No further information is available or forthcoming.
+
+:[CODE[[[opaque]]]]:メッセージはこのシステムが見たかもしれませんし、
+見てないかもしれません。これ以上の情報は利用できませんし、
+やって来もしません。
+
+>   There may be some confusion between when to use "expanded" versus
+"delivered".  Whenever possible, "expanded" should be used when the
+MTA knows that the message will be sent to multiple addresses.
+However, in some cases the delivery occurs to a program which,
+unknown to the MTA, causes mailing list expansion; in the extreme
+case, the delivery may be to a real mailbox that has the side effect
+of list expansion.  If the MTA cannot ensure that this delivery will
+cause list expansion, it should set the action to "delivered".
+
+[CODE[expanded]] と [CODE[delivered]] をいつ使うかで混乱するかもしれません。
+MTA がメッセージは複数の番地に送られると知っていれば可能な限り
+[CODE[expanded]] を使うべきです。しかし、
+場合によってはメイリング・リスト展開を行う MTA
+が知らないプログラムに配送されることもあります。極端な場合、
+配送は副作用としてメイリング・リスト展開が起こる実メイル箱に配送されるかもしれません。
+MTA がメイリング・リスト展開が行われると確認できなければ、動作は
+[CODE[delivered]] とするべきです。
+
+*** 3.3.4.  Status field
+>  The Status field is defined as in RFC 3464.  A new code is added to
+RFC 3463 [RFC-EMSSC], "Enhanced Mail System Status Codes",
+
+[CODE[[[Status]]]] 欄は [[RFC 3464]] で定義されています。
+新しい符号を [[RFC 3463]] [Q[強化メイル・システム状態符号]]に追加します。
+
+>
+:      X.1.9   Message relayed to non-compliant mailer":
+The mailbox address specified was valid, but the message has
+been relayed to a system that does not speak this protocol; no
+further information can be provided.
+
+:[CODE[[VAR[X]].1.9]] メッセージは非適合メイル器に中継されました:
+指定されたメイル箱番地は妥当でしたが、メッセージはこのプロトコルを話さないシステムに中継されました。
+これ以上の情報を提供することはできません。
+
+>   A 2.1.9 Status field MUST be used exclusively with a "relayed" Action
+field.  This field is REQUIRED.
+
+[CODE[[[2.1.9]]]] [CODE[[[Status]]]] 欄を排他的に
+[CODE[[[relayed]]]] [CODE[[[Action]]]] 欄と使用しなければ'''なりません'''。
+この欄は'''必須'''です。
+
+*** 3.3.5.  Remote-MTA field
+>   The Remote-MTA field is defined as in section Reference 2.3.5 of
+[RFC-DSN-STAT].  This field MUST NOT be included if no delivery
+attempts have been made or if the Action field has value "opaque".
+If delivery to some agent other than an MTA (for example, a Local
+Delivery Agent) then this field MAY be included, giving the name of
+the host on which that agent was contacted.
+
+[CODE[[[Remote-MTA]]]] 欄は RFC 3464 の2.3.5節で定義されています。
+この欄は配送試行がなされていない場合や [CODE[[[Action]]]]
+欄の値が [CODE[[[opaque]]]] の時に含めては'''なりません'''。
+MTA 以外のエージェント (例えば局所配送エージェント)
+への配送が行われた場合は、そのエージェントに接触したホストの名前でこの欄を含めても'''構いません'''。
+
+*** 3.3.6.  Last-Attempt-Date field
+>   The Last-Attempt-Date field is defined as in section Reference 2.3.7
+of [RFC-DSN-STAT].  This field is REQUIRED if any delivery attempt
+has been made and the Action field does not have value "opaque", in
+which case it will specify when it last attempted to deliver this
+message to another MTA or other Delivery Agent.  This field MUST NOT
+be included if no delivery attempts have been made.
+
+[CODE[[[Last-Attempt-Date]]]] 欄は RFC 3464 の2.3.7節で定義されています。
+この欄は配送が試みられ、 [CODE[[[Action]]]] 欄が [CODE[[[opaque]]]]
+という値を持たない場合には'''必須'''であり、
+この場合このメッセージをいつ最後に他の MTA や他の配送エージェントに配送しようとしたかを指定します。
+この欄は配送が試みられなかった場合には含めては'''なりません'''。
+
+*** 3.3.7.  Will-Retry-Until field
+>   The Will-Retry-Until field is defined as in section Reference 2.3.9
+of [RFC-DSN-STAT].  If the message is not in the local queue or the
+Action field has the value "opaque" the Will-Retry-Until field MUST
+NOT be included; otherwise, this field SHOULD be included.
+
+[CODE[[[Will-Retry-Until]]]] 欄は RFC 3464 の2.3.9節で定義されています。
+メッセージが局所待ち行列にないか、 [CODE[[[Action]]]]
+欄が [CODE[[[opaque]]]] という値を持つ場合には
+[CODE[[[Will-Retry-Until]]]] 欄を含めては'''なりません'''。
+層でない場合には、この欄は含める'''べきです'''。
+
+** 3.4.  Extension fields
+>   Future extension fields may be defined as defined in section 2.4 of
+[RFC-DSN-STAT].
+
+将来拡張欄が RFC 3464 の2.4節で定義されているように定義されるかもしれません。
+
+** 3.5.  Interaction Between MTAs and LDAs
+>   A message that has been delivered to a Local Delivery Agent (LDA)
+that understands message tracking (in particular, an LDA speaking
+LMTP [RFC-LMTP] that supports the MTRK extension) SHOULD pass the
+tracking request to the LDA.  In this case, the Action field for the
+MTA->LDA exchange will look the same as a transfer to a compliant
+MTA; that is, a "transferred" tracking status will be issued.
+
+メッセージ追跡を理解する局所配送エージェント ([[LDA]])、
+特に [[MTRK]] 拡張に対応した [[LMTP]] を話す LDA 
+に配送されたメッセージは、追跡要求を LDA に渡す'''べきです''。
+この場合、 MTA→LDA 交換の [CODE[[[Action]]]]
+欄は適合 MTA へ転送するのと同じようにします。
+つまり、 [CODE[[[transferred]]]] 追跡状態とします。
+
+* 4.  Security Considerations
+** 4.1.  Forgery
+>   Malicious servers may attempt to subvert message tracking and return
+false information.  This could result in misdirection or
+misinterpretation of results.
+
+悪意ある鯖がメッセージ追跡を妨害して虚偽の情報を返そうとするかもしれません。
+その結果、結果の誤解・誤指示が起こるかもしれません。
+
+** 4.2.  Confidentiality
+>   Another dimension of security is confidentiality.  There may be cases
+in which a message recipient is autoforwarding messages but does not
+wish to divulge the address to which the messages are autoforwarded.
+The desire for such confidentiality will probably be heightened as
+wireless mailboxes", such as pagers, become more widely used as
+autoforward addresses.
+
+安全性の別の側面が機密性です。メッセージの受信者がメッセージを自動転送していて、
+その転送先の番地を秘密にしておきたいという場合があるかもしれません。
+このような機密性の要求はポケベルのような無線メイル箱が転送番地として広く使われるようになるにつれておそらく高まるはずです。
+
+>   MTA authors are encouraged to provide a mechanism which enables the
+end user to preserve the confidentiality of a forwarding address.
+Depending on the degree of confidentiality required, and the nature
+of the environment to which a message were being forwarded, this
+might be accomplished by one or more of:
+
+MTA の著者は末端利用者が転送番地の機密性を保持することができるような仕組みを用意することを推奨します。
+これは必要な機密性の度合いとメッセージが転送される環境の性質に応じて、
+次のどちらかか両方によって達成できるかもしれません。
+
+>
+-   (a)  respond with a "relayed" tracking status when a message is
+forwarded to a confidential forwarding address, and disabling
+further message tracking requests.
+-   (b)  declaring the message to be delivered, issuing a "delivered"
+tracking status, re-sending the message to the confidential
+forwarding address, and disabling further message tracking requests.
+
+- メッセージが機密転送番地に転送された時に [CODE[[[relayed]]]]
+追跡状態で応答し、それ以上のメッセージ追跡要求は無効化する。
+- メッセージが配送されたとして [CODE[[[delivered]]]]
+追跡状態とし、機密転送番地にメッセージを転送し、
+それ以上のメッセージ追跡要求は無効化する。
+
+>   The tracking algorithms MUST NOT allow tracking through list
+expansions.  When a message is delivered to a list, a tracking
+request MUST respond with an "expanded" tracking status and MUST NOT
+display the contents of the list.
+
+追跡の算法はメイリング・リスト展開をこえて追跡することを認めては'''なりません'''。
+メッセージがリストに配送された時に、転送要求は
+[CODE[[[expanded]]]] 追跡状態で応答しなければ'''なりません'''し、
+リストの内容を表示しては'''なりません'''。
+
+* 5.  IANA Considerations
+>   IANA has registered the SMTP extension defined in section 3.
+
+IANA は 3章で定義した SMTP 拡張を登録しています。
+
+* 6.  Acknowledgements
+>   Several individuals have commented on and enhanced this document,
+including Tony Hansen, Philip Hazel, Alexey Melnikov, Lyndon
+Nerenberg, Chris Newman, Gregory Neil Shapiro, and Dan Wing.
+
+* 7.  References
+
+** 7.1.  Normative References
+
+   [RFC-MTRK-MODEL]     Hansen, T., "Message Tracking Model and
+                        Requirements", RFC 3888, September 2004.
+
+   [RFC-MTRK-MTQP]      Hansen, T., "Message Tracking Query Protocol",
+                        RFC 3887, September 2004.
+
+   [RFC-MTRK-SMTPEXT]   Allman, E., "SMTP Service Extension for Message
+                        Tracking", RFC 3885, September 2004.
+
+   [RFC-ABNF]           Crocker, D., Ed. and P. Overell, "Augmented BNF
+                        for Syntax Specifications: ABNF", RFC 2234,
+                        November 1997.
+
+   [RFC-EMSSC]          Vaudreuil, G., "Enhanced Mail System Status
+                        Codes", RFC 3463, January 2003.
+
+   [RFC-HOSTREQ]        Braden, R., Ed., "Requirements for Internet
+                        Hosts -- Application and Support", STD 3, RFC
+                        1123, October 1989.
+
+   [RFC-KEYWORDS]       Bradner, S., "Key words for use in RFCs to
+                        Indicate Requirement Levels", BCP 14, RFC 2119,
+                        March 1997.
+
+   [RFC-MIME]           Freed, N. and N. Borenstein, "Multipurpose
+                        Internet Mail Extensions (MIME) Part One: Format
+                        of Internet Message Bodies", RFC 2045, November
+                        1996.
+
+   [RFC-MSGFMT]         Resnick, P., Ed., "Internet Message Format", RFC
+                        2822, April 2001.
+
+   [RFC-RELATED]        Levinson, E., "The MIME Multipart/Related
+                        Content-type", RFC 2387, August 1998.
+
+** 7.2.  Informational References
+
+   [RFC-DSN-SMTP]       Moore, K., "Simple Mail Transfer Protocol (SMTP)
+                        Service Extension for Delivery Status
+                        Notifications (DSNs)", RFC 3461, January 2003.
+
+   [RFC-DSN-STAT]       Moore, K. and G. Vaudreuil, "An Extensible
+                        Message Format for Delivery Status
+                        Notifications", RFC 3464, January 2003.
+
+   [RFC-ESMTP]          Rose, M., Stefferud, E., Crocker, D., Klensin,
+                        J., and N. Freed, "SMTP Service Extensions", STD
+                        10, RFC 1869, November 1995.
+
+   [RFC-LMTP]           Myers, J., "Local Mail Transfer Protocol", RFC
+                        2033, October 1996.
+
+   [RFC-MDN]            Hansen, T. and G. Vaudreuil, Eds., "Message
+                        Disposition Notifications", RFC 3798, May 2004.
+
+* 8.  Author's Address
+
+   Eric Allman
+   Sendmail, Inc.
+   6425 Christie Ave, 4th Floor
+   Emeryville, CA  94608
+   U.S.A.
+
+   Phone: +1 510 594 5501
+   Fax:   +1 510 594 5429
+   EMail: eric@@Sendmail.COM
+
+* 9. Full Copyright Statement
+
+   Copyright (C) The Internet Society (2004).
+
+   This document is subject to the rights, licenses and restrictions
+   contained in BCP 78, and except as set forth therein, the authors
+   retain all their rights.
+
+   This document and the information contained herein are provided on an
+   "AS IS" basis and THE CONTRIBUTOR, THE ORGANIZATION HE/S HE
+   REPRESENTS OR IS SPONSORED BY (IF ANY), THE INTERNET SOCIETY AND THE
+   INTERNET ENGINEERING TASK FORCE DISCLAIM ALL WARRANTIES, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF
+   THE INFORMATION HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED
+   WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+
+* Intellectual Property
+
+   The IETF takes no position regarding the validity or scope of any
+   Intellectual Property Rights or other rights that might be claimed to
+   pertain to the implementation or use of the technology described in
+   this document or the extent to which any license under such rights
+   might or might not be available; nor does it represent that it has
+   made any independent effort to identify any such rights.  Information
+   on the IETF's procedures with respect to rights in IETF Documents can
+   be found in BCP 78 and BCP 79.
+
+   Copies of IPR disclosures made to the IETF Secretariat and any
+   assurances of licenses to be made available, or the result of an
+   attempt made to obtain a general license or permission for the use of
+   such proprietary rights by implementers or users of this
+   specification can be obtained from the IETF on-line IPR repository at
+   http://www.ietf.org/ipr.
+
+   The IETF invites any interested party to bring to its attention any
+   copyrights, patents or patent applications, or other proprietary
+   rights that may cover technology that may be required to implement
+   this standard.  Please address the information to the IETF at ietf-
+   ipr@@ietf.org.
+
+* Acknowledgement
+
+   Funding for the RFC Editor function is currently provided by the
+   Internet Society.
+
+* メモ
+@

@@ -1,0 +1,266 @@
+head	1.3;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.3
+date	2013.09.04.11.53.09;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2010.09.26.13.16.04;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2008.11.11.12.37.46;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.3
+log
+@updated by (anon)
+@
+text
+@
+
+* Default-Style: 欄 (HTTP)
+
+[1] [[HTTP]] の [DFN[[CODE(HTTP)[Default-Style]] [[頭欄]]]]を使うと、
+文書の[[優先スタイル]]を指定することができます。
+
+[2] 仕様書:
+- [[HTML 4]] 14.3.2 Specifying external style sheets
+<IW:HTML4:"present/styles.html#idx-HTTP-1">
+
+[[#comment]]
+
+
+** 構文
+
+[4] この欄は、[[本体]]として優先スタイルの名前を指定するようです。
+構文は HTML 4 仕様書で明記されていませんが、 >>5-6
+の例と >>3 の規定から推測すると、
+- [7] [CODE(ABNF)[[DFN[[CODE(HTTP)[Default-Style]]-body]] := [FWS] [quoted-style-name / style-name] *([FWS] "," [FWS] [quoted-style-name / style-name]) [FWS] ]]
+-- 全体が空でも良いのかは不明。
+-- 読点による併記は、 HTML 4 仕様書に明記されていない
+(HTTP 仕様書による一般的な規定による。) ので、できれば使わない方が良い。
+-- HTML 4 仕様書の例に倣い、 HTTP では [CODE(ABNF)[quoted-style-name]]、
+HTML では [CODE(ABNF)[style-name]] を使う方が安全かもしれない。
+-- [CODE(HTMLe)[meta]] 要素では一番最初と最後の [CODE(ABNF)[FWS]]
+は使わない方が安全かもしれない。
+- [8] [CODE(ABNF)[[DFN[quoted-style-name]] := <"> 1*(CHAR − <">) <">]]
+-- [CODE(ABNF)[[[quoted-pair]]]] または SGML [[実体参照]]・[[文字参照]]または
+[CODE(ABNF)[[[encoded-word]]]] が使えるのかどうかは不明。
+- [15] [CODE(ABNF)[[DFN[style-name]] := 1*(CHAR − ",") − ((FWS / <">) *CHAR *FWS / *FWS *CHAR FWS)]]
+-- どんな文字が使えるのか不明。間違いなく使えるのは[[基本ラテン文字]]のみ。
+- [16] [CODE(ABNF)[[DFN[CHAR]] := <使用できる文字>]]
+-- [[HTTP/1.0]] では [[ASCII]] + 任意の[[符号化文字集合]]で
+[CODE(char)[0x80]]〜[CODE(char)[0xFF]] で表現できる任意の文字。
+-- [[HTTP/1.1]] では [CODE(charset)[[[ISO-8859-1]]]] 
+で表現できる任意の文字。
+-- [CODE(HTMLe)[meta]] 要素では不明。安全なのは ASCII [[印字可能文字]]のみ。
+
+と表せます。
+
+[3] この欄は、 HTTP 頭で欄として、また HTML の [CODE(HTMLe)[[[head]]]]
+要素内に [CODE(HTMLe)[[[meta]]]] 要素として、それぞれ任意個指定できます。
+[SUP[ [HTML 4] ]]
+
+複数個の指定がある場合には、一番最後のものが採用されます。
+(HTTP は HTML より前と見なします。) [SUP[ [HTML 4] ]]
+
+[[#comment]]
+
+
+** 他との関係
+
+[14] 優先スタイルは [CODE(HTMLe)[[[link]]]] 要素によっても指定できます
+([[[CODE(HTMLe)[link]]//スタイル・シート]]を参照してください)。
+[CODE(HTMLe)[link]] の指定と [CODE(HTTP)[Default-Style]]
+の指定では、後者が優先されます。 [SUP[ [HTML 4] ]]
+
+[[#comment]]
+
+
+** 実装
+
+[13]
+この頭欄を実装しているのは、 [[Gecko]] だけ・・・かなあ。
+Mozilla の拡張である[[コンテキストメニュー拡張]]はこの頭欄を 
+([CODE(HTMLe)[[[meta]]]] 要素として) 使っているみたいです。
+([[名無しさん]] [WEAK[2004-03-27 09:39:08 +00:00]])
+
+[18] スタイル・シートを切り替える[[スクリプト]]の類で
+[CODE(HTMLe)[meta]] 要素として [CODE(HTTP)[Default-Style]]
+欄を使ったものも複数見つかっています。
+
+[[#comment]]
+
+
+** 相互運用性
+
+[20] '''文字の種類''':
+[[HTTP]] の[[頭欄]]では [[ASCII]] または [[ISO/IEC 8869]]‐1
+が使われています。一方、 [[HTML]] の[[文書文字集合]]は [[UCS]]
+です。この差分の[[文字]]を表す方法は [[HTML 4]]
+では規定されていません。 [[HTML]] の [CODE(HTMLe)[[[meta]]]]
+要素として記述するのなら問題がないように思えるかもしれませんが、
+[CODE(HTMLa)[[[http-equiv]]]] 属性を使った [CODE(HTMLe)[[[meta]]]]
+要素はそもそも [[HTTP]] の[[頭欄]]として使われることを想定したものなのですから、
+これは [[ASCII]] 以外の[[文字]]を使うと正しく処理される保障が''ない''ことを意味します。 [[ASCII]] であっても、 [[HTML 4]]
+の規定する構文がいい加減なために [CODE(char)["]]
+を値に使うのも危険です。
+
+[22] '''非 HTML 文書''': この[[頭欄]]は [[HTML 4]] 
+で規定されていますから、 [[HTML]] 以外の[[文書]]と共に使用されたときの意味は規定されていません。
+
+ただし、 [CODE(XML)[[[xml-stylesheet]]]] [[処理指令]]は
+[CODE(HTMLe)[[[link]]]] 要素と同じと解釈することと規定されていますから、
+[CODE(HTTP)[Default-Style]] も [[XML]] 文書に適用可能と考えても互換性上の問題はないでしょう。
+
+それ以外の文書形式では、 [[HTML]] 
+と同じような[[スタイル・シート]]の選択に関する規定があるものには流用できるかもしれませんが、
+一般には無視されると考えるのが適当です。
+
+[[#comment]]
+
+
+** 安全性
+
+[19] スタイル・シートを切り替える[[スクリプト]]の類で
+[CODE(HTMLe)[meta]] 要素として [CODE(HTTP)[Default-Style]]
+欄を使ったものの中には、
+[PRE(example JS deprecated)[
+[VAR[tag]] = '<meta http-equiv="Default-Style" content="' + [VAR[styleName]] + '">';
+]PRE]
+
+のようにしているものもあります。このような場合は
+[CODE(JS)[[VAR[styleName]]]] の値に注意しないと、
+[[クロスサイト・スクリプティング脆弱性]]のような安全上の問題が発生することがあります。
+
+[[#comment]]
+
+
+** 例
+
+[5] [SAMP[compact]] というスタイルを [CODE(HTMLe)[[[meta]]]]
+要素を使って優先に指定する例
+[PRE(HTML)[
+<META http-equiv="Default-Style" content="compact">
+]PRE]
+
+[WEAK[(HTML 4 仕様書より)]]
+
+[6] >>5 と等価な HTTP 頭欄の例
+[PRE(HTTP)[
+Default-Style: "compact"
+]PRE]
+
+[WEAK[(HTML 4 仕様書より)]]
+
+
+[23]
+[CITE@@ja[FC2 News]] ([TIME[2007-07-22 17:55:50 +09:00]] 版) <http://news.fc2.com/>
+
+>
+[PRE(HTML example code)[
+<meta http-equiv="Content-Type" content="text/html; charset=EUC-JP">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<meta http-equiv="Content-Script-Type" content="text/javascript">
+<meta http-equiv="Default-Style" content="fc2">
+<meta http-equiv="adalign" content="right">
+<meta http-equiv="adimage" content="200">
+]PRE]
+
+
+([[名無しさん]])
+
+
+[[#comment]]
+
+
+** 歴史
+
+[11] 1997年7月8日の HTML 4.0 WD <http://www.w3.org/TR/WD-html40-970708/present/styles.html#h-8.1.1.5>
+
+これが [CODE(HTTP)[Default-Style:]] 欄の W3C draft 初出。
+
+[12] >>11 から現在まで規定はほとんどまったく変わってません。
+
+[[#comment]]
+
+
+** 参考文献
+
+- [9] ''XHTMLでのCSSスタイルシート・対応表'' <http://is.vis.ne.jp/charts/xhtml_styles/index.xhtml#meta_elt>
+- [10] ''HTMLでのCSSスタイルシート・対応表'' <http://is.vis.ne.jp/charts/html_styles/index.xhtml#meta_elt>
+[[#comment]]
+
+
+** メモ
+
+[5] スタイル名は非 [[ASCII]] 文字列が使われることが決して少なくないですから、 >>16
+は大問題です。これでは HTTP 頭欄としては使い物になりません。
+また、 [CODE(HTMLe)[meta]] 要素 + [CODE(HTMLa)[[[http-equiv]]]]
+属性はそもそも HTTP 頭欄として鯖が使うことを想定したものなのですから、
+HTTP で表現できないもの (非 ASCII 文字) が HTML 
+[[文書文字集合]]に含まれるからといって使っても良いのかどうか。
+
+[CODE(HTMLa)[[[title]]]] 属性の値ではなく [CODE(HTMLa)[[[id]]]] 
+属性の値を使うとか, 他の手段はなかったのでしょうか。
+
+[17] 複数の指定がある場合、有効なのは一番最後のものとされています。
+つまり [CODE(HTMLe)[meta]] 要素があればその最後が使われます。
+
+折角 HTTP 頭欄によって文書の内容をいじらずに優先スタイルを操作できるというのに、
+もし [CODE(HTMLe)[meta]] 要素があれば HTTP でいくら頑張っても上書きできません。
+これは欠陥ではないでしょうか。
+
+[21] 指定された名前のスタイルが文書に存在しない時の扱いは規定されていません。
+[[優先スタイル]]および[[代替スタイル]]がすべて無効になると解釈するのが適当と考えられます。
+
+[[#comment]]
+
+
+* メモ
+
+[24] [CITE[IRC logs: freenode / #whatwg / 20100910]]
+( ([TIME[2010-09-26 11:17:58 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20100910#l-384>
+
+[25] [CITE[IRC logs: freenode / #whatwg / 20130828]]
+( ([TIME[2013-09-04 20:49:29 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20130828>@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@d206 5
+a210 1
+<http://krijnhoetmer.nl/irc-logs/whatwg/20100910#l-384>@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/44656661756C742D5374796C65.txt>
+@
+text
+@d202 5
+a206 1
+* メモ@
+

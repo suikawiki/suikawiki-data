@@ -1,0 +1,176 @@
+head	1.1;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2008.11.13.18.04.48;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/6D616E616B6169.ns/A5E1A5E2.ns/323030352D30352D3039.txt>
+@
+text
+@
+
+[1] Specialized Node interface
+
+[2] 前提:
+- [前提1] manakai では (というか Perl) では、実装上界面や型キャストがない(がクラスはある)。
+- [前提2] Node (やその派生界面) を返すメソッドや属性では、
+必要に応じて Node (やその派生界面)
+を実装した[Q[大きな]]クラスで結果を返す。
+-- [前提2'] Node として返されるオブジェクトは、 DOMCore:ManakaiDOMNode
+と互換なものとする。すなわち、 role DOMCore:*Role を担うクラスでなければならない。
+- [前提3] 使用するクラスは毎回動的に
+(文脈、節点の型、利用できるクラスから)
+決定する。 (何らかのキャッシュを使っても良い。クラスをハードコードしない。ただし DOMCore:ManakaiDOMElement などの基本的なものは除く。)
+- [前提4] クラス決定方法は複数あっても良い。どの方法を使うかは文脈
+(メソッド・属性) で決める (ハードコード)。
+
+[3] Document に関する use case:
+
+- [DX1] DOMImplementation.createDocument 
+で作成したのが XHTML なら、 HTMLDocument を実装したものを返す
+(参考: <IW:DOM3:"Core/core.html#Level-2-Core-DOM-createDocument">
+- [DX2] Node.ownerDocument で文書が XHTML なら、
+HTMLDocument を実装したものを返す
+
+- [D?1] Node.ownerDocument で文書が XHTML でも、
+節点が MathML なら、 MathMLDocument を実装したものを返す??
+-- ownerDocument はその節点に拠らず文書型 (のようなもの)
+で決めた方が良いか (その方が今の manakai 的には実装は楽)
+-- それともその節点によって決めた方が良いか
+(その方が都合が良いこともある — 
+参考: <IW:DOM3:"Core/core.html#Embedded-DOM">
+
+- [DC1] HTML の要素型の要素だけを使った文書で、
+Document を返す時に HTMLDocument を実装した物体を返す
+-- [DC1.1] 非 XML 版 HTML
+--- [DS1.1.1] 外部情報 (例: 媒体型 [CODE(MIME)[[[text/html]]]])
+で [[HTML]] と分かっていれば。
+--- [DS1.1.1'] HTML として構文解析が行われて作られた木であるなら。
+--- [DS1.1.2] 文書型宣言があれば。
+---- [DS1.1.2.1] 公開識別子が HTML のものであれば。
+---- [DS1.1.2.2] システム識別子が HTML のものであれば。
+---- [[型録]]を使用する? (経費が掛かり過ぎる?)
+--- [DS1.1.3] 根要素の要素型が [CODE(HTMLe)[[[html]]]] であれば。
+--- ? 根要素が [CODE(HTMLe)[[[html]]]] 以外の時は?
+---- 例: [CODE(HTMLe)[[[pre-html]]]]
+---- 例: [CODE(HTMLe)[[[table]]]]
+-- [DC1.2] XML 名前空間を使わない XHTML
+--- ? 必要かどうか
+--- [DS1.2.1] 外部情報で HTML と分かっていれば。
+--- [DS1.2.2] HTML の文書型宣言があれば。
+---- ? 必要かどうか — W3C XHTML 勧告 DTD なら、 [CODE(XML)[[[xmlns]]]]
+属性が存在しているはず
+--- [DS1.2.3] 根要素の要素型が [CODE(HTMLe)[[[html]]]] であれば。
+---- ? 必要かどうか
+-- [DC1.3] XHTML 1 名前空間を使った XHTML
+--- [DS1.3.1] 外部情報で HTML と分かっていれば。
+---- ? 必要かどうか — [DS1.3.2] および [DS1.3.3] で十分対応でき、
+外部情報は不要
+--- [DS1.3.2] HTML の文書型宣言があれば。
+--- [DS1.3.3] 根要素が xhtml1:html であれば。
+-- [DC1.4] XHTML 1 とは異なる名前空間を使った XHTML
+--- ? 必要かどうか
+--- 例: XHTML 1.0 FE draft で使われていた名前空間
+--- [DS1.4.1] 外部情報で HTML と分かっていれば。
+--- [DS1.4.2] HTML の文書型宣言があれば。
+---- ? W3C XHTML 勧告の DTD なら、違う名前空間が使われていると非妥当
+--- [DS1.4.3] 根要素の局所名が html であれば。
+---- ? 判断材料として一般には弱すぎるか?
+- [DC2] SVG の要素型の要素だけを使った文書で、
+Document を返す時に SVGDocument を実装した物体を返す
+-- [DS2.3] 根要素が svg:svg であれば。
+--- 参考: <IW:SVG1:"struct.html#InterfaceSVGDocument">
+- [DC3] SMIL の要素型の要素だけを使った文書で、
+Document を返す時に SMILDocument (仮) を実装した物体を返す
+-- [DC3.1] SMIL 1.0 (名前空間なし)
+-- [DC3.2] SMIL 1.0 (名前空間あり)
+-- [DC3.3] SMIL 2.0 プロファイル [VAR[A]]
+-- [DC3.4] SMIL 2.0 プロファイル [VAR[B]]
+-- [DC3.4] SMIL プロファイル [VAR[P]]
+- [DC4] DocBook の要素型 (名前空間なし) の要素だけを使った文書で、
+Document を返す時に DocBookDocument (仮) を実装した物体を返す
+
+- [DC10] XHTML 文書の中に SVG が埋め込まれている場合、
+Document を返す時に HTMLDocument を返す
+-- 参考: <IW:SVG1:"struct.html#InterfaceSVGDocument">
+
+[4] Element に関する use case:
+
+- [EX1] Document.createElementNS で xhtml1:head なら、
+HTMLHeadElement を実装したものを返す
+- [EX2] Node.firstChild で xhtml1:head なら、 HTMLHeadElement
+を実装したものを返す
+- [EX3] Node.renameNode で xhtml1:head に変わったら、
+HTMLHeadElement を返す
+
+- [EC1] HTML の table 要素の Element を返す時に HTMLTableElement
+を実装した物体を返す
+-- [EC1.1] XML でない HTML の table 要素
+--- [EC1.1.1] HTML として構文解析されたものなら
+-- [EC1.2] 名前空間無しの XHTML の table 要素
+--- ? 必要かどうか
+--- [EC1.2.1] HTML として構文解析されたものなら
+-- [EC1.3] xhtml1:table 要素
+--- [EC1.4.3] 修飾名より
+-- [EC1.4] XHTML 1 以外の名前空間の XHTML の table 要素
+--- ? 必要かどうか
+--- [EC1.4.3] 修飾名より
+
+- [EC10] xhtml1:object 要素で SVG 文書が参照されている場合、
+Element を返す時に HTMLObjectElement と GetSVGDocument
+を実装した物体を返す
+-- 参考: <IW:SVG1:"struct.html#InterfaceGetSVGDocument">
+
+[5]
+@@@@ TODO: EventTarget, NSResolver,
+ElementStyle, ElementPSVI, ...
+
+([[名無しさん]] [WEAK[2005-05-09 11:58:22 +00:00]])
+
+[6]
+[CITE[Web Applications 1.0]] <http://whatwg.org/specs/web-apps/current-work/#the-document>
+(2005年5月4日版)
+
+> Every XML and HTML document in an HTML UA must be represented by a [CODE(DOMi)[Document]] object. [SRC[DOM3CORE]]
+> This object must also implement the document-level interface of any other namespaces found in the document that the UA supports. For example, if the implementation supports both HTML and SVG, then the [CODE(DOMi)[Document]] object must also implement [CODE(DOMi)[HTMLDocument]] and [CODE(DOMi)[SVGDocument]]. 
+
+([[名無しさん]] [WEAK[2005-05-10 01:47:52 +00:00]])
+
+[7]
+>>6 たまたま HTMLDocument と SVGDocument は矛盾無く作ってあるからいいけど、
+そうでないと困るかも。 HTMLDocument + SVGDocument + MathMLDocument + XULDocument + ・・・ と増えれば増えるほど版違いの組合せも増えるわけで、
+Web ブラウザの互換性問題も益々・・・というのはスレ違いだから置いておくとして、
+問題は HTML5 が完成するのも
+W3C CDF が by inclusion
+に関する結論を出すと見込まれるのもまだ数年先になろうことだ。
+
+([[名無しさん]] [WEAK[2005-05-10 02:06:04 +00:00]])
+
+[8]
+>>6 の通りにするとすれば、 (今の実装では) Document を作る前に文書全体をチェックする必要が生じる。
+Document が必要になるたびに文書全体のスキャンなんて悠長なことは言っていられないから、
+何らかのキャッシュがどうしても必要になる。
+([[名無しさん]] [WEAK[2005-05-10 02:07:56 +00:00]])
+
+
+[9]
+しかも要素の加除で Document の実装する界面が変わったりするのだろうか?
+([[名無しさん]] [WEAK[2005-05-10 02:09:45 +00:00]])
+
+@

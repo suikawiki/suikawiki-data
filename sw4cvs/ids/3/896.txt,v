@@ -1,0 +1,127 @@
+head	1.1;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2008.11.13.07.54.39;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/5365617263683A3A4E616D617A75.txt>
+@
+text
+@#?SuikaWiki/0.9
+
+[1] [[Perl]] モジュール [DFN[[CODE(perl)[Search::Namazu]]]]
+を使うと、 [[Namazu]] による検索を Perl のスクリプトから行えます。
+
+
+* 導入
+
+[2] まずは [CODE(perl)[Search::Namazu]] を入手します。
+(システムによっては binary package が付属しているかもしれません。)
+
+最新版は [[CVS]] から入手できます。
+Web からは ''Search-Namazu'' <http://cvs.namazu.org/Search-Namazu/>
+で access できます。 [Q[Download tarball]]
+のリンクからまとめて入手できます。
+[[pserver]] での入手方法は
+''Namazu: 開発情報'' <http://namazu.org/development.html#anoncvs>
+を参考にしてください。
+
+Release 版は ''Index of /~knok'' <http://www.namazu.org/~knok/> にありますが、
+あまり開発は活発ではないので、 CVS の最新版を使っても問題ないでしょう。
+
+[3] 入手したファイル群を適当なディレクトリに展開したら、
+あとは
+[PRE[
+$ [KBD[[[perl]] [[Makefile.PL]]]]
+$ [KBD[[[make]]]]
+$ [KBD[[[make test]]]]
+$ [KBD[[[make install]]]]
+]PRE]
+
+とするだけです。 ([KBD[make install]]
+は通常適切な権限が必要です。)
+
+[[#comment]]
+
+
+* 使い方
+
+[4] 使い方は [KBD[[[perldoc]] Search::Namazu]]
+で読むことができます。
+Web で <http://www.namazu.org/~knok/Search-Namazu/>
+でも読むことができます。
+
+[[#comment]]
+
+
+** 検索する
+
+[5] 検索するには、 [CODE(perl)[Search::Namazu::Search (index => [qw([VAR[/path/to/index/dir]])], query => $query)]]
+を使います。結果として
+[CODE(perl)[Search::Namazu::Result]] の配列が得られます。
+
+使用例:
+[PRE(perl)[
+my $query = q(あいうえお);
+for my $result (Search::Namazu::Search
+                   (index => [qw(/var/namazu/index/www1
+                                 /var/namazu/index/www2)],
+                    query => $query)) {
+   print $result->uri, "\n";
+}
+]PRE]
+
+そこらの[[検索円陣]]は一度に出力する検索結果の数を適当に制限しているのが普通です。
+しかし、 [CODE(perl)[Search::Namazu::Search]]
+はそのような機能を持っていないようなので、
+必要なら自分で実装します。例:
+[PRE(perl)[
+@@result = (Search::Namazu::Search ([VAR[略]]))[0..9];
+]PRE]
+
+
+[7]
+得点の高いものから順にするには [CODE(perl)[      sortMethod => NMZ_SORTBYSCORE, sortOrder => NMZ_ASCENDSORT]] を引数に入れておきます。
+([[名無しさん]])
+
+[[#comment]]
+
+
+** 検索結果の情報
+
+[6] [CODE(perl)[Search::Namazu::Search]]
+の結果は [CODE(perl)[Search::Namazu::Result]]
+物体の配列で、その method を使って情報を取出すことができます。
+どのような情報が取出せるのかは >>4 の説明を読んでください。
+
+:[CODE(perl)[[VAR[$method]]−>uri]]:
+検索結果の [[URI参照]]が返されます。
+返される URI 参照はそのまま使えるわけではなく、
+半分 local のファイル名に近い状態なので注意が必要です。
+この method で返される URI 参照は、
+[CODE(perl)[/home/foo/public_html/some/document]]
+のようなものなので、 [CODE(file)[namazu.cgi]]
+などを使うときに [CODE(file)[namazurc]] の [CODE[Replace]] で設定したように、
+適当に置換して実際に使用できる URI 参照
+[WEAK[(あるいはファイル名が欲しいならファイル名)]] を作る必要があります。
+
+[[#comment]]
+
+
+* メモ@

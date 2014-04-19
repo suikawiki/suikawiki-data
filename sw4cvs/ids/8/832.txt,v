@@ -1,0 +1,106 @@
+head	1.1;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2008.11.16.14.26.50;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/4E532E6465636C2E617474726962.txt>
+@
+text
+@#?SuikaWiki/0.9
+[1] 【[[XHTMLモジュール]]】 [[名前空間属性]]の[[属性並び宣言]]での定義を入れる[[引数実体]]。
+
+[2] ここいらは随分込み入った神業が使われてて分かりにくいんですが、、、。
+まずとりあえず、 XHTML モジュールの作り方の流れについて
+[CODE(WikiPage)[[[XHTML//名前空間]]]]を参照。
+
+で、関係する部分だけまとめると、
+
+[3] 説明のまえに、 XHTML m12n の DTD
+の注意すべき組み立て方の特性・制限を幾つか挙げておきます。
+- 基本的に、全要素で任意の xmlns:* 属性が使えるようになります。 [WEAK[(固定値属性なので、妥当性を検証する処理系で文書実現値に属性を補うとひどいことになります(藁)。)]]
+- 各名前空間について、接頭辞の文字列、あるいは接頭辞なしにするか、はその文書実現値を通じて一定です。
+途中で変更することは出来ません。 (× [SAMP(XML)[<ns1:parent xmlns="http://1.example/"><ns2:child xmlns:ns2="http://1.example/"/></ns1:parent>]])
+-[6] 同じ接頭辞, あるいは接頭辞無しを、
+複数の名前空間に対して与えることは、 DTD
+駆動器の書き方次第で可能です。
+(○ [SAMP(XML)[<ns1:parent xmlns:ns1="http://1.example/"><ns1:child xmlns:ns1="http://2.example/"/></ns1:parent>]])
+--但し、内容モデルや名前空間属性の宣言で問題が生じないように注意して
+DTD 駆動器を書かないといけません。
+(! [SAMP(XML)[<!ELEMENT ns1:parent (ns1:child)*>]] + [SAMP(XML)[<ns1:parent xmlns:ns1="http://1.example/"><ns1:child xmlns:ns1="http://1.example/"/><ns1:child xmlns:ns1="http://2.example/"/></ns1:parent>]])
+--だから多分、同時に1つの名前空間だけが接頭辞無し、とかとある接頭辞を使うようにしたほうが安全です。
+実際 [[XHTML+MathML+SVG]] は高々1つの名前空間だけを接頭辞なしにできるようにしています。
+
+>>4 ではややこしいことは考えずに、
+XHTML + MathML + SVG 式のやり方を説明します。
+
+[4] {修飾名モジュール} まず、個々のモジュールのそれぞれの名前空間の属性の属性並び宣言を用意します。
+例: [SAMP(XML)[<!ENTITY % MODULE1.xmlns.decl.attrib "xmlns:MODULE1 %URI.datatype; #FIXED 'http://1.example/'">]],
+[SAMP(XML)[<!ENTITY % MODULE2.xmlns.decl.attrib "xmlns %URI.datatype; #FIXED 'http://2.example/'">]]
+
+追加の名前空間を簡単に追加できるように placfolder
+も用意しておきます。
+[SAMP(XML)[<!ENTITY % MODULE1.xmlns.extra.attrib "">]]
+
+{修飾名モジュール} 次に、引数実体 [CODE(XML)[NS.decl.attrib]]
+を定義しておきます。
+ここには使える接頭辞名前空間属性
+([CODE(XML)[xmlns]] を除いた、 
+[CODE(XML)[xmlns:[VAR[*]]]]) を入れておきます。
+[SAMP(XML)[<!ENTITY % NS.decl.attrib "%MODULE1.xmlns.decl.attrib;%MODULE1.xmlns.extra.attrib;%MODULE2.xmlns.extra.attrib;">
+
+もっとも、これは optional で、 XHTML m12n
+附属書の説明にも特に書いてありません。普通
+DTD 駆動器で宣言しちゃうので。でもまあ既定値として書いといて損はないでしょう。
+
+{修飾名モジュール} 引数実体 [CODE(XML)[MODULE1.xmlns.attrib]]
+を定義します。ここには [CODE(XML)[xmlns]]
+属性の定義 (必要なら。) と、 [CODE(XML)[NS.decl.attrib]]
+の参照を書いときます。
+[SAMP(XML)[<!ENTITY % MODULE2.xmlns.attrib "%MODULE2.xmlns.decl.attrib;%NS.decl.attrib;">]]
+
+{宣言モジュール} 全ての要素型の属性並び宣言で、
+[CODE(XML)[MODULE.xmlns.attrib]] を参照します。
+[SAMP(XML)[<!ATTLIST %MODULE1.etype.qname; attr1 CDATA #IMPLIED %MODULE1.xmlns.attrib;>]]
+これによってこの要素の属性で名前空間属性が使えるようになるというわけです。
+
+[5] で、 DTD 駆動器モジュールでは必要に応じてこれを上書きするんです。
+ところが宣言順序の関係から、
+ほとんど全部再定義する羽目になっちゃいます。。。
+この辺は DTD を無理矢理モジュール化して使う無理さが滲み出まくってます。
+
+{DTD 駆動器モジュール} 名前空間属性を宣言 : 修飾名モジュールと同じことをします。
+
+{DTD 駆動器モジュール} [CODE(XML)[NS.decl.attrib]]
+を定義 : 必須。
+
+ここですべての名前空間の宣言を全部入れちゃいます。
+[WEAK[(前述の通り >>6 は無視の方向で。)]]
+XHTML + MathML + SVG では単なる [CODE(XML)[xmlns]]
+属性も気にせずここに入れちゃってます
+(たぶん >>6 を無視すれば気にする必要がないということでしょう)。
+[SAMP(XML)[<!ENTITY % NS.decl.attrib "%MODULE1.xmlns.decl.attrib; %MODULE1.xmlns.decl.attrib; %MODULE2.xmlns.decl.attrib; %MODULE2.xmlns.decl.attrib;">]]
+
+{DTD 駆動器モジュール} [CODE(XML)[[VAR[MODULE]].xmlns.attrib]]
+を定義 : 前述。
+
+これは普通に定義してあれば再定義する必要はないかも。
+
+- [7] >>3 でも、 XHTML + (ry では SVG だけ接頭辞ありで、 MathML と XHTML はなし、っていう選択肢もあった。
+@

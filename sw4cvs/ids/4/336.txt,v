@@ -1,0 +1,64 @@
+head	1.1;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2008.11.13.13.20.21;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/5375696B6157696B6933.ns/A5E1A5E2.ns/323030342D30322D3035.txt>
+@
+text
+@#?SuikaWiki/0.9
+
+[1]
+headline summary にはやっぱりバグがあるみたいです。空文字列になってしまいます。
+と思って調べてみたら、やっぱり WikiPageProp plugin に虫がいました。
+いや、 SuikaWiki::DB::FileSystem::SuikaWikiCache09 の虫だな、こりゃ。
+[[WikiDB]] の [CODE(perl)[exist]] メソッドで日付が考慮されていないので、
+[CODE(perl)[exist]] しているのに
+[CODE(perl)[get]] したら値がないという、そのせいで新しい summary が作られていなかったのです。
+([[名無しさん]] [WEAK[2004-02-05 03:17:07 +00:00]])
+
+[2]
+[CODE(perl)[SuikaWiki::Input::HTTP]] で絶対 [CODE(HTTP)[Request-URI]] の推定しているところで、 [CODE(CGI)[[[HTTPS]]]] など CGI メタ変数を使っていますけど、たとえば途中で[[串]]が勝手に [CODE(URI)[http:]] 要求を [CODE(URI)[https:]] 要求に読み替えてるとうまくいきませんね。もっとも、そんな変態的な使い方は HTTP では想定されていませんし、実際にも使われることがあるのか不明ですから考慮する必要もないでしょうがね。
+
+あ、[[逆串]]というのがあるな。
+これだともしかするとそういう使い方もあり得るかもしれない。
+しかもその場合、 URI scheme だけじゃなくて、 authority とか path にも問題が出てくること必死。
+
+ということはやっぱり、 $wiki->{config} で自分自身の URI 参照片を指定できるようにしておくべきですね。
+
+[[Apache]] の [CODE(CGI)[[[REDIRECT_[VAR[*]]]]]]
+対策と合わせていずれやっておきましょう。
+([[名無しさん]] [WEAK[2004-02-05 03:31:46 +00:00]])
+
+[3]
+それから、 anchor の問題。 [CODE[%read;]] が一ウェブ頁内に複数ある場合はもちろん、
+今の [CODE[edit]] mode で help WikiPage
+の anchor が普通に処理されてしまうのも問題でしょう。
+
+たぶん、 wiki 全体の素片識別子の扱いをちゃんと統一的に決めておかないといけないのだと思います。
+(でも [[Punycode]] による多文字化の件があるから、この問題も実装は先送りかな?)
+([[名無しさん]] [WEAK[2004-02-05 04:28:45 +00:00]])
+
+
+[4]
+>>1 [CODE(perl)[exist]] のほか、
+[CODE(perl)[keys]] にも同じ問題があったので、どちらも修正しました。
+([[名無しさん]] [WEAK[2004-02-07 02:55:22 +00:00]])
+@

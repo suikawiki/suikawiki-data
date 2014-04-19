@@ -1,0 +1,128 @@
+head	1.1;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2008.11.17.13.08.12;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/5375696B6157696B6933.ns/57696B69506C7567696E.ns/6D6F64756C65.txt>
+@
+text
+@#?SuikaWiki/0.9
+
+[1] [[SuikaWiki3]] の [[WikiPlugin]] module は、
+専用の原始形式で記述し、 [[Perl]] の module に変換して使用します。
+
+ここでは、 SuikaWiki 3 WikiPlugin 原始形式の書式について説明します。
+
+<IW:SuikaCVS:"suikawiki/script/misc/plugins/"> にある適当な plugin
+と見比べながらお読みになるとよいでしょう。
+
+* 構造
+
+[2] SuikaWiki 3 WikiPlugin 原始形式は、 [[SuikaWikiConfig/2.0]]
+で記述します。
+
+以降の説明では、 [[ABNF]] 風に構造を説明します。
+(木構造であることに注意。[CODE[{[VAR[name]]}]] は、
+[VAR[name]] という名前の要素を表します。また、
+異なる名前の要素同士の順序は多くの場合意味を持ちません。)
+
+- [CODE(ABNF)[[DFN[WikiPlugin]] := {Plugin} *definition ;; 順序に意味がある]]
+
+* Plugin module 全体の情報
+
+[4]
+-[CODE(ABNF)[[DFN[{Plugin}]] := {Name} {Description} {License} 1*{Author} {Date.RCS} {RequiredModule[list]} {RequiredPlugin[list]} {Use}]]
+
+[5] [CODE[RequiredModule]] は、必要な Perl module の並びです。
+その WikiPlugin の全部または一部の動作に必要な module の名前
+(名前空間名) を記述します。
+(Module 群は代表だけで OK。間接に呼ばれる module を書く必要はなし。
+Perl 標準の module も含めて下さい。) 
+
+この情報は現在のところ plugin 情報表示以外では使われていませんが、
+もしかすると将来 install 時などの検査に使われるかもしれません。
+[CODE(perl)[[[require]]]] や [CODE(perl)[[[use]]]] 
+は適当な場所で適宜する必要はありません。
+[WEAK[(それを自動化するための記述ではありません。)]]
+
+SuikaWiki 標準構成 module や [[manakai]] の module は、
+[WEAK[(古くからある plugin module には書かれていますが)]]
+あえて書く必要はありません。 SuikaWiki 2 
+から完全に移植しきれていない機能を使っているときには
+[CODE(perl)[[[main]]]] と書いています。
+
+[6] [CODE[RequiredPlugin]] には、その plugin module の一部または全部が必要としている別の
+plugin module を記述します。 (SuikaWiki 標準の plugin module
+でも、必要があれば記述して下さい。)
+この記述も、現在のところ情報表示にしか使っていません。
+
+[7] 
+[CODE[Use]] には、 [CODE(perl)[use]] による他の Perl module
+の使用や大域的な変数の宣言などの Perl の code を記述します。
+この記述は、 [CODE[{FormattingRule}]] や 
+[CODE[{Function}]] など、多くの部分の Perl code に適用されます。
+
+* 整形規則
+
+[3] 
+- [CODE(ABNF)[[DFN[definition]] /= {FormattingRule}]]
+- [CODE(ABNF)[[DFN[{FormattingRule}]] := {Category[list]} {Name} {Description} {Parameter} 1*formatting-rule-main]]
+- [CODE(ABNF)[[DFN[formatting-rule-main]] := {Main} / {Pre} / {Post} / {Before} / {After} / {Attribute}]]
+
+* ...
+
+@@@@TBD
+
+* 歴史
+
+[8] WikiPlugin の仕組みは SuikaWiki 2 で導入されました。
+当初は、 [[WikiForm]] の整形規則を定義するための仕組みでしたが、
+次第に適用範囲が拡大され、 [[WikiView]] の定義や書式変換などにも使うようになりました。
+
+[9] SuikaWiki 3 では界面も module の原始形式も全面的に見直され、
+より自然に、柔軟に種々の機能を提供できるようになりました。
+原始形式が変更されただけでなく、 [[WikiEngine]] そのものの界面もまったく異なるので、
+SuikaWiki 2 の plugin と SuikaWiki 3 の plugin はまったく互換性がありません。
+変換器もありません。 (機械的な変換は不可能です。)
+
+[10] SuikaWiki 2 WikiPlugin では、もともとは plugin module
+は Perl の module として記述することになっていましたが、
+定型部分が多く、人がその部分も含めて管理するとなると多大な手間であることから、
+原始形式を導入して、それからコンパイルして Perl module に変換することとしました。
+しかし、途中で導入されたために生成される code がつじつま合わせの必要からやや複雑なものとなっていました
+[WEAK[(普段人は見なくていいのでどうでもいいといえばどうでもいいのですが)]]。
+また、旧形式は表現能力の限界から、あとで追加された WikiView
+の定義の記述などで不自然さが生じていました。
+原始形式から Perl 形式に変換する [CODE(perl)[mkpkugin.pl]]
+も度重なる修正に耐えられない状態になっていました。
+
+このため、従来の方針は概ね維持しつつも、実装、すなわち
+- WikiPlugin 同士、内外の界面
+- WikiPlugin を記述する原始形式
+- 原始形式から Perl 形式に翻訳する [CODE(perl)[mkplugin2.pl]]
+
+を SuikaWiki 3 ではほぼ完全に新しく作りなおしました。
+この機会に既存の多くの plugin 構成要素を整理しなおしました。
+(ただし、整形規則や資源の名前などは、 SuikaWiki 2 
+の遺産をできるだけそのまま使うために、可能な限りかえないようにしています。
+そのために多くの部分で名前が不統一になっていますが、まあ仕方ないですね。)
+
+* メモ
+@

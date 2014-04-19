@@ -1,0 +1,242 @@
+head	1.1;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2008.11.13.02.28.08;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/4D6F7A696C6C61546F6F6C.ns/A5D1A5C3A5B1A1BCA5B8BAEEC0AE.txt>
+@
+text
+@[1] [[Mozilla Suite]] や [[Firefox]] などの拡張を作成・配布する際には、
+決められた書式にのっとって [CODE(file)[.xpi]] や [CODE(file)[.jar]]
+などを作成する必要がありますが、かなり面倒です。
+
+ここでは、 [CODE(file)[[[Makefile]]]] と簡単な Perl 
+スクリプトを使って自動パッケージ化する方法を説明します。
+
+[5]
+以後の説明では、
+
+- 親ディレクトリ
+-- ディレクトリ [CODE(file)[myext]]
+--- [CODE(file)[package-info.src]] (>>6 作業1)
+--- ディレクトリ [CODE(file)[myext.jarsrc]] (>>6 作業2)
+---- ([CODE(file)[myext.jar]] の元ファイル一式)
+--- [CODE(file)[install.rdf.in]] (>>6 作業3)
+--- [CODE(file)[Makefile]] (>>6 作業4)
+--- (その他、 [CODE(file)[myext.xpi]] の元ファイル一式)
+-- ディレクトリ [CODE(file)[tool]] (>>4)
+--- (支援ファイル一式)
+
+という構成を仮定しています。これ以外の構成にする時は適宜読み替えてください。
+
+* 対象
+
+[2] ここでの説明は、然程古くない Mozilla Suite
+や新しい [ABBR[EM][拡張管理器]] の導入された Mozilla Firefox (0.9 以降)
+で使う拡張を想定しています。 Mozilla Thunderbird
+などではこのままでは機能しないでしょう (が、基本的なやり方としては同じだと思います)。
+
+また、 Mozilla の拡張や [CODE(file)[Makefile]] 
+一般にそれ相応の知識があることも想定しています。 (特別詳しい必要はありませんが、
+最低でも、見よう見真似で良いので実例をいじくりまわせるような人が対象です。)
+
+* 用意するもの
+
+[3] 
+:[KBD[[[make]]]] と一般的な [[Un|x]] 命令:
+ここで紹介している [CODE(file)[Makefile]] は GNU make
+でないとそのままでは機能しないかもしれません。
+[[GNU/Linux]] の一般的な配布版なら、はじめから揃っているでしょう。
+:[KBD[[[zip]]]] 命令:
+Command line 版の zip が必要です。これも GNU/Linux
+などでは普通入っていると思います。
+:Perl 5.7.3 以降:
+ここで紹介している Perl スクリプトは [CODE(perl)[[[Encode]]]]
+モジュールを使っているので、比較的新しい版の perl
+が必要です (が、あまり重要ではないので、必要でなければもっと古い版でも問題ありません)。
+
+[4] <IW:SuikaCVS:"www/mozilla/tool/"> にある支援ファイルを一通り入手して
+(まとめて tar 玉: 
+<http://suika.fam.cx/gate/cvs/www/mozilla/tool/tool.tar.gz?tarball=1>)、
+[CODE(file)[tool/]] に保存してください。
+
+* パッケージの元データの準備
+
+[6] パッケージを作るための元データを配置します。
+もちろん、この作業は最初の一度だけで、以後の再パッケージ化の際には
+(変更の必要が生じない限り) 繰り返す必要はありません。
+
+参考までに、 [[LiveHTTPHeaders]] の日本語パックの元データ
+<http://suika.fam.cx/www/mozilla/livehttpheaders/> を紹介しておきます。
+見比べながら説明をお読みください。
+
+'''作業1: [CODE(file)[package-info.src]] の作成''':
+パッケージの名前や版などのメタ情報を記述したファイル
+[CODE(file)[package-info.src]] を作成します。
+このファイルの書式については後述します。
+
+このファイルの内容は、他の構成ファイル内でマクロ展開的に使うことができます。
+版番号などを集中管理するのに便利です。
+
+'''作業2: [CODE(file)[myext.jar]] の内容の配置''':
+[CODE(file)[myext.jar]] の内容となるファイル群 (拡張を実装するファイル群)
+をディレクトリ [CODE(file)[myext.jarsrc]] 内に配置します。
+
+各ファイルにパッケージ名や版番号などが含まれる時
+(特に各ディレクトリの [CODE(file)[contents.rdf]]) には、
+それをマクロ展開 (後述) に置き換えて、 [CODE(file)[.in]] を接尾辞に
+(例えば [CODE(file)[contents.rdf.in]] のように) します。
+
+[CODE(file)[.properties]] ファイルも、同様に生の [[UTF-8]]
+で記述したものを [CODE(file)[.in]] をつけて保存してください。
+
+パッケージ化時にこのディレクトリは [WEAK[(必要な前処理の上)]]
+そのまま圧縮されて [CODE(file)[myext.jar]] になります。
+
+'''作業3: 導入情報の用意''':
+Firefox などが拡張を導入する時に使うファイル
+[CODE(file)[install.rdf]] を用意します。
+
+拡張パッケージの名前や版などは直接記述せず、
+[CODE(file)[package-info.src]] から自動展開させますので、
+<http://suika.fam.cx/www/mozilla/livehttpheaders/install.rdf.in>
+を [CODE(file)[install.rdf.in]] という名前で [CODE(file)[myext/]]
+に置くだけでも大抵は十分です。
+
+なお、 Mozilla Suite の古い [CODE(file)[install.js]]
+方式のものは、 [CODE(file)[tool/]] にある雛形から
+[KBD[make]] 作業で自動的に生成するので、ここでの準備作業は不要です。
+
+'''作業4: [CODE(file)[Makefile]] の用意''':
+[CODE(file)[Makefile]] を用意します。
+
+LiveHTTPHeaders 日本語パックでは、 [CODE(file)[myext/Makefile]]
+に相当する <http://suika.fam.cx/www/mozilla/livehttpheaders/Makefile>
+の他、 [CODE(file)[myext/myext.jarsrc/.../Makefile]] に相当する
+<http://suika.fam.cx/www/mozilla/livehttpheaders/livehttpheaders-ja.jarsrc/locale/ja-JP/livehttpheaders/Makefile>
+もあります。 [CODE(file)[.in]] ファイルの場所などに応じて適宜用意してください。
+
+この [CODE(file)[Makefile]] では、変数 [CODE[$(REPPL_DIR)]]
+に [CODE(file)[tool/]] への path を、変数 [CODE[$(PACKAGE_BASENAME)]]
+にパッケージの名前 ([CODE(file)[.jar]] ファイルから接尾辞を取り除いたもの)
+を指定します。 (LiveHTTPHeaders は日本語パックなので
+[CODE[$(ORIGINAL_PACKAGE_BASENAME)]] なる変数がありますが、
+通常は [CODE[$(PACKAGE_BASENAME)]] と同じ値でよいはずです。)
+
+自動生成するべきファイルの名前は変数 [CODE[$(GENERATED_FILES)]]
+に入れてください。また、ファイルの種類ごとに
+[PRE[
+%.xml: %.xml.in $(REPPL_SRC) $(REPPL_SCRIPT)
+	$(REPPL) --output-type=xml --input=$< > $@@
+]PRE]
+のような行を加えてください。 ([CODE(file)[Makefile]]
+の規則の字下げは[[タブ]]文字です。注意してください。)
+
+引数 [CODE[output-type]] は、ファイルの内容のおおよその種類を指定してください。
+,値,ファイルの種類
+,[CODE[xml]],XML 系 (XML 文書実体、 XML DTD など)
+,[CODE[moz-properties]],[CODE(file)[.properties]] ファイル
+,[CODE[js]],JavaScript
+
+以上の作業で、おおよそ準備が整いました。
+実際に [KBD[make]] してみてエラーが出たり、
+思い通りの [CODE(file)[.xpi]] が得られない時には、
+[CODE(file)[Makefile]] の記述などを見直してみてください。
+
+* package-info.src の書式
+
+[7] [CODE(file)[package-info.src]] は、 [CODE(file)[Makefile]]
+のように
+[PRE[
+名前:
+	値
+]PRE]
+のように記述します。字下げはタブ文字を使ってください。
+
+[PRE[
+名前[list]:
+	値1
+	値2
+]PRE]
+のように複数の値を扱うことも [PRE[(限定的に)]] できます。
+
+なお、非 ASCII 文字を使う時には [[UTF-8]] にしてください。
+
+[8] [VAR[名前]]と[VAR[値]]は、基本的に自由に決められます。
+値の中では、 [SAMP[%%[VAR[名前]]%%]] 
+のようにして''それ以前に定義した''[VAR[名前]]の値に置換させることができます。
+
+[VAR[名前]]は[Q[基本的に自由]]と書きましたが、
+[CODE(file)[install.js.in]] や [CODE(file)[install.rdf.in]]
+で既に使っているもの (例えば [CODE[package-name]]) は、
+わざわざ他の名前に変えるのもまた面倒でしょうから、そのまま使ってください。
+また、名前と値が自動的に生成されるものもあります。
+
+使用済みの名前:
+,名前,説明
+,[CODE[current-date-time]],現在 (生成) 日時 ([[RFC 3339]] 形式、値は自動生成)
+,[CODE[package-name]],パッケージ名 (人間可読)
+,[CODE[package-guid]],パッケージの [[GUID]]
+,[CODE[package-version]],パッケージの版 (自由書式)
+,[CODE[package-display-name]],パッケージ完全名 (人間可読、普通は名前 + 版)
+,[CODE[package-basename]],パッケージのファイル名 (接尾辞除く)
+,[CODE[jar-filename]],普通 [CODE[package-basename]] + [CODE(file)[.jar]]
+,[CODE[jar-content-dir]][list],JAR 内の [CODE(file)[content]] 系ディレクトリ ([CODE(file)[contents.rdf]] があるディレクトリ [JAR 内 path]) すべて
+,[CODE[jar-locale-dir]][list],JAR 内の [CODE(file)[locale]] 系 (同前) すべて
+,[CODE[jar-skin-dir]][list],JAR 内の [CODE(file)[skin]] 系 (同前) すべて
+,[CODE[xpi-filename]],普通 [CODE[package-basename]] + [CODE(file)[.xpi]]
+,[CODE[xpi-versioned-filename]],版番号つき XPI ファイル名
+,[CODE[supported-firefox-min-version]],Firefox 最小版番号
+,[CODE[supported-firefox-max-version]],Firefox 最大版番号
+,[CODE[content-uri]],[CODE(file)[content]] の [CODE(URI)[[[chrome]]:]] URI
+,[CODE[locale-uri]],[CODE(file)[locale]] の [CODE(URI)[[[chrome]]:]] URI
+,[CODE[skin-uri]],[CODE(file)[skin]] の [CODE(URI)[[[chrome]]:]] URI
+,[CODE[program-config-uri]],設定 URI
+,[CODE[program-about-uri]],情報 URI
+,[CODE[program-icon-uri]],絵 URI
+,[CODE[urn-package-name]],普通 [CODE[package-basename]]
+,[CODE[package-description]],短めの説明文
+,[CODE[package-author]],著者名
+,[CODE[package-web-site-uri]],ウェブ・サイト URI
+,[CODE[package-update-uri]],更新情報 URI
+,[CODE[package-release-uri]],最新公開版 URI
+
+参考:
+- [CODE(file)[package-info.src]] の例:
+<http://suika.fam.cx/www/mozilla/livehttpheaders/package-info.src>
+- [CODE(file)[install.rdf]] の雛形の例:
+<http://suika.fam.cx/www/mozilla/livehttpheaders/install.rdf.in>
+- [CODE(file)[install.js]] の雛形:
+<http://suika.fam.cx/www/mozilla/tool/install-2004.js.in>
+
+[9] また、 [CODE(file)[.in]] ファイルでも、 [SAMP[%%[VAR[名前]]%%]]
+による置き換えが使えます。
+(<http://suika.fam.cx/www/mozilla/livehttpheaders/install.rdf.in>
+などを参考にしてください。)
+必要な escape なども大抵は自動的に行われます。
+
+(XUL や XBL のように XML の中に JavaScript が入っていたりする場合には、
+この置換の際の escape 必ずしもうまくいくとは限りません
+(構文解析しないで単純な置き換えを行っているだけですから)。)
+
+* メモ
+
+[10] わからないことなどがございましたら、気軽に書き込んでください。
+@

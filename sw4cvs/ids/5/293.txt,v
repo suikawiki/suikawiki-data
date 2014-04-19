@@ -1,0 +1,165 @@
+head	1.1;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2008.11.14.04.32.22;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/5375696B6157696B69.ns/496E74657257696B69.txt>
+@
+text
+@#?SuikaWiki/0.9
+
+[1] [DFN[InterWiki]] は、 ([[URI]] よりも人間に優しい)
+別の ([[wiki]] の外の) 文書群にリンクするための仕組みです。
+
+[[SuikaWiki]] は、他の多くの wiki システムよりも柔軟に
+InterWiki を扱うことができます。
+
+
+* InterWiki を使ったリンクの作成
+
+[2]
+[[SuikaWiki/0.9]] 形式の文書では、次のように InterWiki
+リンクを書くことができます。
+
+[PRE[
+'''<'''IW:[VAR["文書群名"]]:[VAR["文書名"]]'''>'''
+]PRE]
+
+例えば、[SAMP[どこかのwiki]] に属する [SAMP[InterWikiのテスト]]という文書にリンクしたい時には、
+[PRE[
+'''<'''IW:"どこかのwiki":"InterWikiのテスト"'''>'''
+]PRE]
+
+と書きます。
+(引用符はなくても安全な時は省略できます。
+安全でない時には警告が出ます。)
+
+[[#comment]]
+
+
+* InterWiki 文書群の定義
+
+[3] >>2 で説明した[VAR[文書群名]]には、
+[CODE(WikiPage)[[[Wiki//InterWikiName]]]]
+という特別な頁で定義した文書群の名前を指定します。
+
+たとえば、
+[PRE[
+Site:
+  @@Name: RFC
+  @@URIReference:
+    http://www.ietf.org/rfc/rfc%parameter;.txt
+]PRE]
+
+のような定義を [CODE(WikiPage)[Wiki//InterWikiName]]
+に追加すると、
+[PRE[
+'''<'''IW:RFC:2822'''>'''
+]PRE]
+
+と書いて <http://www.ietf.org/rfc/rfc2822.txt> にリンクできます。
+
+[4] [CODE[URIReference]] の欄は、
+[CODE(perl)[[[Message::Util::Formatter]]]] 形式で解釈されます。
+>>3 の例の [SAMP[%parameter;]] の部分のことを
+[CODE(perl)[Message::Util::Formatter]] 
+では[Q[整形規則]]と呼んでいます。
+
+整形規則は SuikaWiki の [[WikiPlugin]] を使って定義されています。
+従って、 wiki の管理者は (多少の知識は必要ですが)
+自由に整形規則を定義して、 InterWiki のリンク先 URI
+を自在に生成することができます。
+
+[5] SuikaWiki に標準で付属している整形規則を使って、
+[[Google]] にリンクするための InterWiki の定義を行ってみましょう。
+
+[PRE[
+Site:
+  @@Name: Google
+  @@URIReference:
+    %uri-with-query (
+      base => {http://www.google.com/search},
+      query => {%query-parameter (
+        name => q,
+        value => {%parameter;}p,
+        charset => {iso-2022-jp},
+      );}p,
+      query => {ie=iso-2022-jp},
+    );
+]PRE]
+
+この定義を使うと、
+[PRE[
+'''<'''IW:Google:SuikaWiki'''>'''
+]PRE]
+
+は <http://www.google.com/search?q=SuikaWiki&ie=iso-2022-jp>
+になります。
+
+>>3 の例のように [SAMP[http://www.google.com/search?q=%parameter;]]
+と定義しても良いように思えるかもしれません。
+しかし、それでは、 
+[PRE[
+'''<'''IW:Google:"すいかゐき"'''>'''
+]PRE]
+
+のように仮名や漢字を含んでいる場合や、 [SAMP[&]]
+という記号を含んでいる場合には正しい URI が生成できません。
+
+整形規則 [SAMP[uri-with-query]] や [SAMP[query-parameter]]
+は、そのような問題を解決してくれます。
+
+[6] このほかにも、 [SAMP[yukiwiki]] のように特定の相手先の URI
+の生成を楽にするための整形規則も用意しています。
+[[Wiki//InterWikiName]] には多くの例がありますから、
+参考にしてください。
+
+利用できる整形規則の一覧は、 [[Wiki//Plugin//Info]] にあります。
+(InterWiki の定義以外の目的に使う整形規則も含まれます。)
+整形規則が内部でどのような動作をしているのかは、
+<IW:SuikaCVS:"suikawiki/script/lib/SuikaWiki/Plugin/">
+や <IW:SuikaCVS:"suikawiki/script/misc/plugins/">
+にある WikiPlugin のソースを見てもらえばわかります。
+
+[[#comment]]
+
+
+* まだ実装していない機能
+
+[7] HTML 出力モードでは InterWiki のリンクは
+[SAMP['''<'''Google:SuikaWiki'''>''']]
+のようになりますが、より柔軟に、
+[SAMP[Google 検索: 「SuikaWiki」]]
+などとしたり、
+[SAMP[''HTML 4 仕様書'' ''4.1 節'' (''和訳'')]]
+のような感じで1つの InterWiki リンク指定から複数のリンク先を出力できるようにする予定です。
+
+また、 InterWiki の方法を応用して、 wiki 内のリンクの方法をより柔軟にできないか模索中です。
+
+
+[8]
+Wiki//InterWikiName の編集を HTML form を使って簡単にできるようにすることも考えています。
+([[名無しさん]] [WEAK[2004-06-03 07:23:33 +00:00]])
+
+
+[[#comment]]
+
+
+* メモ@

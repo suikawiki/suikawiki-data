@@ -1,0 +1,916 @@
+head	1.3;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.3
+date	2011.01.30.10.44.39;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2011.01.30.10.40.03;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2008.11.12.13.08.07;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.3
+log
+@updated by (anon)
+@
+text
+@[405] 本項では、 [[XML名前空間]]や [[RDF]] における[[名前空間URL]]
+[WEAK[([[名前空間URI]] / [[名前空間名]])]] の管理について扱います。
+
+* 名前空間 URI の決め方
+
+[5] [[XML名前空間]]や [[RDF]] などで使用する名前空間 URI
+を選ぶ際には、幾つか注意するべきことがあります。
+
+- 正しい URI 参照を使うこと
+- 絶対 URI 参照を使うこと
+- 自分に使用権のある名前を使うこと
+- 可能な限りいつまでも使える名前を使うこと
+- [[取出し]]によって何らかの定義 / 参照文書が得られること
+- [[局所名]]と連結してもおかしくないこと
+- URI として使いづらい文字を使わないこと
+- 他の名前空間 URI と似ていないこと
+
+** 正しい URI 参照を使うこと
+
+[28] 
+[[RFC 3986]] (URI の一般構文) をはじめとする関連仕様に照らして正しい
+URI 参照を使うことは大前提です。
+
+メモ: [[XML名前空間]]を含めて名前空間 URI を使う仕様の多くは、
+実装が名前空間 URI の URI としての正しさを検証することを義務付けていません。
+しかし、だからといって URI 参照として正しくないものを名前空間 URI
+として使うことの理由にはなりません。 
+(実装が正しさを検証することは義務ではありませんが、
+正しくないものを扱えることも義務ではありません。)
+
+
+** 絶対 URI 参照を使うこと
+
+[22] 元々 [[XML名前空間 1.0]] ではどんな URI 
+参照も名前空間名として認めていました
+[WEAK[(長さ0の文字列を除きます)]]。しかし、
+[[相対URI参照]]は解釈が一意に定まらない [WEAK[(文脈に依存する)]]
+ことから、使用しないことが望ましいと考えられるようになりました。
+名前空間を扱う多くの仕様や実装では、
+絶対 URI 参照でないものの取り扱いは未定義とするか、
+まったく使用を認めていません。ですから、
+名前空間 URI として絶対 URI 参照を使用することが実用上必須です。
+
+参考: XML 総会の決議
+[CITE[W3C XML Plenary Ballot on URIs and Namespaces]] 
+<http://www.w3.org/2000/09/xppa>
+
+
+** 自分に使用権のある名前を使うこと
+
+[6] 名前空間 URI は、必ず自分が使用権のあるものでなければなりません。
+これは、過去・現在・未来に他の人が使うかもしれない名前空間 URI
+と衝突してしまうことを防ぐために非常に重要です。
+
+[7]
+もしどこかの [[Webサイト]]を管理しているのなら、
+一番手軽なのはその Web サイトに属する URI を使うことです。
+
+たとえば John は
+[SAMP(URI)[http://www.example.org/john/]] で始まる URI
+の Web 頁群を管理しているとしましょう。
+[SAMP[www.example.org]] 全体の管理者が変態的な趣味を持っていなければ、
+あるいは John が妙にお人よしで他の人に貸してあげていなければ、
+[SAMP(URI)[http://www.example.org/john/2004/ns1/]]
+という URI を使う権利を John は持っています。
+ですから John はこれを名前空間 URI にできます。
+
+しかし、 [SAMP(URI)[http://www.example.org/mike/2004/ns1/]]
+までは John の管理権が行き届きません。これを名前空間 URI
+にしたいときには、まず Mike 
+のご機嫌をうかがうことにしたほうが身のためです。
+
+[8] 別の方法は、メイル・アドレスです。たとえば
+[SAMP(URI)[mailto:john@@example.org?subject=2004-ns1]]
+とします。 Web サイトは持っていなくてもメイル・アドレスを持っている人には有効な方法です。
+
+ただしこの方法の大きな欠点が2つあります。
+一つは、そのアドレスの使用権がいつまでも自分にあるとは限らないこと。
+これは名前に西暦年を入れることで気休め程度には衝突の虞を回避できます。
+
+もう一つは、 [CODE(URI)[[[mailto]]:]] URI の性質上、
+安全な文字が少ないことです。 [CODE(URI)[mailto:]] URI
+で使える文字は URI の制限と [[RFC 822]] 
+の制限の二重の制限を受けます。しかも [CODE(URI)[mailto:]]
+URI の仕様書は曖昧なので、安全に使えるのはアルファベットや数字やハイフン程度と考えておいたほうがよいでしょう
+(しかしほとんどの場合はこれで十分のはずです)。
+
+[21] '''大域固有でない URI についての注意''':
+URI のすべてが大域的に固有ではありません。
+例えば、 [CODE(URI)[[[file]]:]] URI scheme 
+は環境によって指すものが違います。
+そのような URI を名前空間 URI に使用すると、
+衝突を防ぐという本来の目的が達成できません。
+大域的に固有でない URI を名前空間名に使用するべきではありません。
+
+[11] '''[CODE(URI)[urn:]] URI scheme についての注意''':
+伝統的に名前空間 URI によく使われてきた URI [[scheme]]
+に [SAMP(URI)[[[urn]]:]] URI があります。
+もし [SAMP(URI)[urn:]] URI を名前空間に使いたいのであれば、
+[[URN]] [[NID]] が正当なものであるかを確認してください。
+URN NID ([SAMP(URI)[urn:]] の直後に来る部分) は [[IANA]]
+に登録されたものか、 [SAMP(URI)[x-]] で始まるものしか使ってはいけません。
+
+[12] '''他人の考案した概念に URI を割当てる時の注意''':
+自分以外の人の考えた概念を取り入れる時に、
+(許可なく) 自分が正当な使用権のない URI まで使ってしまわないように注意してください。
+
+例えば、 [[RFC 2822]] で定義された[[電子メイル]]の[[頭欄]]の語彙を
+[[XML]] で使いたいので、 XML 名前空間を作るとします。
+そのときに、 [SAMP(822)[[[Subject]]:]] 欄に対応する XML 
+要素の名前空間を [SAMP(URI)[urn:ietf:rfc:2822]]
+としたくなるかもしれません。
+
+確かに、その [SAMP(822)[Subject]] という語彙は 
+[SAMP(URI)[urn:ietf:rfc:2822]] 
+という文書で定義されているものなのですから、
+これは適当な態度に思えます。しかし、 [SAMP(URI)[urn:ietf:rfc:2822]] 
+という名前の使用権を持つのは [[IETF]] であり、
+その使い方を勝手に第三者が決めるべきではありません。
+第三者が [SAMP(URI)[urn:ietf:rfc:2822]] に勝手に意味を与えた後で、
+IETF がそれに気づかずに別な意味を [SAMP(URI)[urn:ietf:rfc:2822]] 
+に与えてしまったら、困ったことになります。
+(そうなる前に IETF が気づいたとしても、 IETF
+にとってはいい迷惑です。)
+
+[[#comment]]
+
+
+** 可能な限りいつまでも使える名前を使うこと
+
+[9] 新しく作ろうとしている名前空間に重要な意味を持たせたいのだとしたら、
+その名前をいつまでも使えるように保つことは極めて重要です。
+さして重要ではないことに名前空間を使おうとしている場合であっても、
+注意深く名前を選んで悪いことはありません。
+一般的に言って、設計者がすぐに廃れるだろうと思ったものほど長生きします。
+
+[10] 名前が使えなくなる状況は、おおよそ次の2つに集約できるでしょう。
+- その名前の使用権を喪失した、または使いたくなくなった
+- うっかり同じ名前の別の名前空間を作ってしまい、
+混乱が収拾できなくなった
+
+[12] 例えば John は
+[SAMP(URI)[http://www.example.org/john/ns1/]]
+という名前空間を使っていたとします。しかしその後 John
+は Example Organization から退会しました。それと同時に John
+が [SAMP(URI)[http://www.example.org/john/]] で始まる URI
+の使用権を喪失したとするとどうでしょう。
+
+Example Organization が大らかな組織であれば、
+それ以後も [SAMP(URI)[http://www.example.org/john/ns1/]]
+を使い続けたとしても、何の問題もないかもしれません。
+そうでなかったとしたら、たとえば[[商標]]の問題などが起こるかもしれません。
+
+別の可能性として、後から入会した別の John さんが
+[SAMP(URI)[http://www.example.org/john/ns1/]]
+という名前を他の用途に使ってしまうかもしれません。
+
+[13] 対策は、
+- いつまで自分が所属しているかわからない組織から割当てられた URI
+は使わない
+- 割当てた年月日を入れる
+
+などでしょう。後者の方法で、
+[SAMP(URI)[http://www.example.org/john/ns1/]] を
+[SAMP(URI)[http://www.example.org/john/2004/ns1/]]
+とするだけでも、衝突の危険性はかなり下がるはずです。
+
+年月日を URI に含めることは、他人との衝突だけではなく、
+自分が以前に使った名前との衝突も防ぐことができます。
+
+[14] [[ISP]] や無料鯖サービスの提供する Web
+サイト領域は、いつ名前が変わったり、サービスが中止されたりするかわかりません。
+大学などのアカウントも、卒業後に消されてしまうことが多いです。
+そのような URI を名前空間 URI に使うことは極力避けるべきです。
+
+長く利用できそうな URI を持っていない場合は、 [[PURL]]
+のようなサービスを利用するのが便利です。
+
+グループで多くの名前空間 URI を使う予定があるなら、 [SAMP(URI)[urn:]]
+URI を使うのも手です。ただし [SAMP(URI)[x-]] を使わない正式の
+NID を得るためには敷居が高いのが難点です。
+
+[[#comment]]
+
+
+** 取出しによって何らかの定義 / 参照文書が得られること
+
+[15] 名前空間 URI として [SAMP(URI)[[[http]]:]] URI
+のような[[取出し]]が定義されている [[URI scheme]] 
+に沿ったものを選んだ場合は特に、
+その URI を使って名前空間を定義する文書が得られるように設定しておくことが望ましいと考えられます。
+
+たとえば、 [SAMP(URI)[http://www.example.org/john/2004/ns1/]]
+という名前空間 URI を使うのであれば、
+[SAMP(URI)[http://www.example.org/john/2004/ns1/]]
+にはその名前空間を説明した文書を置いておくべきです。
+
+文書は、人間可読なものであっても、 [[XML Schema]] や [[DTD]]
+や [[RDF Schema]] などのような機械可読なものであっても、
+仕様書へのリンクだけであっても構いませんが、
+とにかく何か情報があることが重要です。
+[SAMP(URI)[http:]] URI なのに [SAMP(HTTP)[[[404]]]]
+であるとか、そもそも鯖が存在しないとかは論外です
+(が何も考えていない標準化団体や企業でそういうことをしているところが複数あります)。
+
+文書が用意されていれば、その名前空間 URI
+を見た人が必要な情報を得ることができますし、
+名前空間 URI の管理者にとっても、
+後からうっかり別の目的に使ってしまう危険性が減ります。
+
+[[#comment]]
+
+
+** 局所名と連結してもおかしくないこと
+
+[16] [[XML名前空間]]では[[名前]]は[[名前空間名]] (URI)
+と[[局所名]]の''組''ですが、 [[RDF]] や [[WebDAV]]
+など他の幾つかの規格では名前空間 URI と局所名を連結して一つの
+URI 参照として扱います。
+
+[SAMP(URI)[http://www.example.org/john/2004/ns]]
+のような「普通」の文字で終わる名前空間 URI を使うと、
+そのような規格を使った時に、
+[SAMP(URI)[http://www.example.org/john/2004/nslocal-name]]
+のように不恰好な URI となります。ですから、名前空間 URI
+の最後には
+[SAMP(URI)[http://www.example.org/john/2004/ns/]] や
+[SAMP(URI)[http://www.example.org/john/2004/ns#]]
+のように記号をつけると良いでしょう。
+
+関連: >>23
+
+[[#comment]]
+
+
+** URI として使いづらい文字を使わないこと
+
+[17] [[URI参照]]で使える文字は決まっています。
+どんな文字でも自由に使えるわけではありません。
+また、 URI 参照一般では認められていても、
+個々の URI scheme の制限により使えない文字・文字列もあります。
+
+名前空間 URI はその scheme の仕様に沿った正しい URI 参照としましょう。
+正しくない URI 参照を名前空間として使うことは、
+自分が無知であることを宣伝するようなものであると共に、
+他人にも規格違反を要求することにもなりかねません。
+
+[18] [[XML名前空間 1.1]] では URI 参照の代わりに、
+その[[超集合]]である [[IRI参照]]を使っています。
+しかし相互運用性を考えれば、 URI 参照を使うべきです。
+(XML 名前空間 1.1 仕様書にもそう書いてあります。)
+
+[19] URI で認められている文字であっても、
+使わない方が安全な文字があります。
+
+[SAMP(URI)[~]] は、 URI で使うことが認められた文字です。
+しかし、[[シフトJIS]] の [CODE(char)[[[0x7E]]]]
+の問題 ([SAMP(char)[[[TILDE]]]] vs [SAMP(char)[[[OVER LINE]]]])
+によって不都合が実際に生じています。
+うまく回避できる方法がある場面もありますが、
+いつも回避できる保証はないので、避けるほうが無難です。
+[WEAK[(名前空間 URI は文字として一致検査されるので、 [[URI符号化]]で [CODE(URI)[%7E]] と書き変えてしまうと、別の名前空間 URI になってしまいます。)]]
+
+[23] '''[CODE(charname)[NUMBER SIGN]]''':
+[[素片識別子]]の始まりを示す [CODE(char)[#]] は >>16 のため[[名前空間URI]]
+の最後につけられることが多いですが、 [[XPointer]]
+で使われることが多いと想定される[[名前空間]]では避けた方がよいです。
+[[素片識別子]]として使う [[XPointer]] の中に
+[CODE(char)[#]] (を含む名前空間 URI) が含まれていると、
+その [CODE(char)[#]] を [CODE(URI)[%23]] 
+と[[百分率符号化]]する必要が生じるからです。
+
+[25] 例:
+ある[[文書]]で使われている[[語彙]]の名前空間 URI
+は
+[PRE(example URI code)[
+http://www.example.com/vocab#
+]PRE]
+
+だとします。ここで、 [[XML文書]]
+[SAMP(URI)[http://www.example.net/document]]
+が
+[PRE(example XML code)[
+<document xmlns="http://www.example.com/vocab#">
+  <content/>
+</document>
+]PRE]
+
+という内容であるとき、 [CODE(XMLe)[content]]
+要素を識別する [[XPointer]] (の一例) は
+[PRE(example code)[
+xmlns(x=http://www.example.com/vocab#)xpointer(/x:document/x:content)
+]PRE]
+
+となります。この [[XPointer]] を[[素片識別子]]とする [[URI参照]]は、
+[PRE(example URI code)[
+http://www.example.net/document#xmlns(x=http://www.example.com/vocab%23)xpointer(/x:document/x:content)
+]PRE]
+
+となります。 [CODE(char)[#]] が [CODE(URI)[%23]] 
+となっていることに注意してください。
+
+[30]
+'''[CODE(charname)[[[AMPERSAND]]]]''':
+[[アンド記号]] ([CODE(char)[&]]) は一般の [[URI]] で
+(特に[[照会]]で) しばしば使われますが、 [[XML]]
+で [CODE(char)[&]] を記述する時は [CODE(XML)[&[[amp]];]]
+と[[逃避]]しなければなりません。
+名前空間 URI を何度も [[XML]] 文書中に手入力する必要があるなら、
+面倒でうっかりしてしまいがちですから、 [CODE(char)[&]]
+を使うのは避けるべきです。
+
+([[名無しさん]] [sage])
+
+[31]
+'''[CODE(charname)[[[APOSTIROHE]]]]''':
+[[アポストロフィ]] ([CODE(char)[']]) は [[URI]]
+で使うことができる[[文字]]ですが、[[属性値表記]]の[[引用符]]としても使われます。
+不要な混乱を避けるために [CODE(char)[']]
+を名前空間 URI で使うのは避けるべきです。
+([[名無しさん]] [sage])
+
+[[#comment]]
+
+
+** 他の名前空間 URI と似ていないこと
+
+[26] 一般論として、似たような URI が他に使われていると混乱の元です。
+似たような URI が名前空間 URI としても使われるのならなおさらです。
+
+[Q[似ている]]の基準は色々ありえますし、主観的なことでもあるので、
+一概には言えませんが、
+特に大文字・小文字だけの違いや記号類の有無や記号類だけの違いは気付きにくいので避けた方が良いです。
+
+悪い例: [[XHTML 2.0]] の古い案では名前空間 URI は
+[CODE(URI)[[[http://www.w3.org/2002/06/xhtml2]]]] でした。
+後の案で
+[CODE(URI)[[[http://www.w3.org/2002/06/xhtml2/]]]]
+に変わりました。 (最後に斜線が付いています。)
+
+悪い例: 株式会社単奈留玲の技術者であるトムは [Q[ABC 2004]] 
+という製品で使う名前空間 URI を
+[CODE(URI)[[[http://ns.example.com/abc-2004]]]]
+としました。単奈留玲は翌年新版の [Q[ABC 2005]] 
+を出荷しましたが、トムに代わって設計を担当したジョンは
+[CODE(URI)[[[http://ns.example.com/abc/2005]]]]
+という名前空間 URI にしました。
+
+[27] '''Java で使う場合''':
+[[JSR#31]] ([[JAXB]] 1.0) の C.5.1 で名前空間 URI
+から [[Java]] の[[パッケージ名]]への変換方法が規定されています。
+簡単に言えば、大文字は小文字になり、 [CODE(URI)[/]] と [CODE(URI)[:]]
+は [CODE(Java)[.]] になり、それ以外の記号類は
+[CODE(Java)[_]] になります。ですから、
+大文字・小文字や記号類だけが異なる名前空間 URI を使うのは避けた方が良いです。
+
+* メモ
+
+[4] ''URIs for W3C Namespaces'' <http://www.w3.org/1999/10/nsuri>
+
+この文書では、 [[W3C]] の仕様で使われる名前空間 URI
+の割当ての方針が述べられています。
+
+[32] [CITE@@en[DCMI Namespace Policy]] 
+<http://www.dublincore.org/documents/dcmi-namespace/>
+
+この文書では、 [[DCMI]] の仕様で規定される[[語彙]]の名前空間 URI
+の管理の方針が述べられています。
+
+[34]
+[CITE[Best Practice Recipes for Publishing RDF Vocabularies]] <http://www.w3.org/TR/2006/WD-swbp-vocab-pub-20060314/#naming>
+([[名無しさん]] [WEAK[2006-03-15 03:19:06 +00:00]])
+
+[29]
+組織で複数の名前空間 URI を使う予定があるのなら、
+その組織内の名前空間 URI の割当ての規則を設けた方が良いです。
+
+[36]
+[[名前空間URI]] に含まれる意味のない[[年号]]をどうにか汁という [[Ian Hickson]] の主張が通って、 [[W3C]] の[[名前空間URI]]
+の方針が変わりそうです。
+
+[CITE[Proposal for short namespace URIs for W3C TRs [Was: XBL Namespace uses the data: scheme from Ian B. Jacobs on 2006-07-20 (www-tag@@w3.org from July 2006)]] <http://lists.w3.org/Archives/Public/www-tag/2006Jul/0022>
+([[名無しさん]] [WEAK[2006-07-22 04:34:56 +00:00]])
+@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@d357 1
+a357 4
+[[#comment]]
+
+
+** 参考文献
+a373 2
+* メモ
+
+a377 4
+[35]
+[CITE[SMIL Namespace Documentation - Anne’s Weblog about Markup & Style]] <http://annevankesteren.nl/2006/03/smil>
+([[名無しさん]] [WEAK[2006-03-18 01:40:47 +00:00]])
+
+a383 7
+
+[37]
+[CITE[XML.com: XML Namespaces Don't Need URIs]] ([[Michael Day]] 著, [CODE[2007-05-19 17:33:00 +09:00]] 版) <http://www.xml.com/pub/a/2005/04/13/namespace-uris.html>
+([[名無しさん]])
+
+[38]
+In Adobe AIR documents, namespace URIs are used to identify the required (minimum) version of AIR runtime for the application.
+@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/CCBEC1B0B6F5B4D6555249.txt>
+@
+text
+@d1 399
+a399 456
+
+[1] [[XML名前空間]]本体仕様ではそうは規定されていませんが、
+幾つかの仕様では[[修飾名]]が1つの
+[[URI]] に展開できるとしています。
+
+[2] [[RDF/XML]] や [[WebDAV]]
+では、
+[SAMP(XML)[<del:glider xmlns:del="http://www.del.jensen.org/"/>]]
+と
+[SAMP(XML)[<foo:r xmlns:foo="http://www.del.jensen.org/glide"/>]]
+は同等です。
+
+[3] WebDAV については [[RFC 2518]] 23.4.2 参照。
+
+[[#comment]]
+
+
+* 実装
+
+[33]
+
+> [[Universal Feed Parser]] treats namespaces as case-insensitive to match the behavior of certain versions of [[iTunes]].
+
+;; [CITE[Namespace Handling [Universal Feed Parser]]] 
+<http://feedparser.org/docs/namespace-handling.html#id4756535>
+
+これが[[誤方互換性]]ってやつかW
+
+[[#comment]]
+
+
+* 名前空間 URI の決め方
+
+[5] [[XML名前空間]]や [[RDF]] などで使用する名前空間 URI
+を選ぶ際には、幾つか注意するべきことがあります。
+
+- 正しい URI 参照を使うこと
+- 絶対 URI 参照を使うこと
+- 自分に使用権のある名前を使うこと
+- 可能な限りいつまでも使える名前を使うこと
+- [[取出し]]によって何らかの定義 / 参照文書が得られること
+- [[局所名]]と連結してもおかしくないこと
+- URI として使いづらい文字を使わないこと
+- 他の名前空間 URI と似ていないこと
+
+[[#comment]]
+
+
+** 正しい URI 参照を使うこと
+
+[28] 
+[[RFC 3986]] (URI の一般構文) をはじめとする関連仕様に照らして正しい
+URI 参照を使うことは大前提です。
+
+メモ: [[XML名前空間]]を含めて名前空間 URI を使う仕様の多くは、
+実装が名前空間 URI の URI としての正しさを検証することを義務付けていません。
+しかし、だからといって URI 参照として正しくないものを名前空間 URI
+として使うことの理由にはなりません。 
+(実装が正しさを検証することは義務ではありませんが、
+正しくないものを扱えることも義務ではありません。)
+
+
+** 絶対 URI 参照を使うこと
+
+[22] 元々 [[XML名前空間 1.0]] ではどんな URI 
+参照も名前空間名として認めていました
+[WEAK[(長さ0の文字列を除きます)]]。しかし、
+[[相対URI参照]]は解釈が一意に定まらない [WEAK[(文脈に依存する)]]
+ことから、使用しないことが望ましいと考えられるようになりました。
+名前空間を扱う多くの仕様や実装では、
+絶対 URI 参照でないものの取り扱いは未定義とするか、
+まったく使用を認めていません。ですから、
+名前空間 URI として絶対 URI 参照を使用することが実用上必須です。
+
+参考: XML 総会の決議
+[CITE[W3C XML Plenary Ballot on URIs and Namespaces]] 
+<http://www.w3.org/2000/09/xppa>
+
+
+** 自分に使用権のある名前を使うこと
+
+[6] 名前空間 URI は、必ず自分が使用権のあるものでなければなりません。
+これは、過去・現在・未来に他の人が使うかもしれない名前空間 URI
+と衝突してしまうことを防ぐために非常に重要です。
+
+[7]
+もしどこかの [[Webサイト]]を管理しているのなら、
+一番手軽なのはその Web サイトに属する URI を使うことです。
+
+たとえば John は
+[SAMP(URI)[http://www.example.org/john/]] で始まる URI
+の Web 頁群を管理しているとしましょう。
+[SAMP[www.example.org]] 全体の管理者が変態的な趣味を持っていなければ、
+あるいは John が妙にお人よしで他の人に貸してあげていなければ、
+[SAMP(URI)[http://www.example.org/john/2004/ns1/]]
+という URI を使う権利を John は持っています。
+ですから John はこれを名前空間 URI にできます。
+
+しかし、 [SAMP(URI)[http://www.example.org/mike/2004/ns1/]]
+までは John の管理権が行き届きません。これを名前空間 URI
+にしたいときには、まず Mike 
+のご機嫌をうかがうことにしたほうが身のためです。
+
+[8] 別の方法は、メイル・アドレスです。たとえば
+[SAMP(URI)[mailto:john@@example.org?subject=2004-ns1]]
+とします。 Web サイトは持っていなくてもメイル・アドレスを持っている人には有効な方法です。
+
+ただしこの方法の大きな欠点が2つあります。
+一つは、そのアドレスの使用権がいつまでも自分にあるとは限らないこと。
+これは名前に西暦年を入れることで気休め程度には衝突の虞を回避できます。
+
+もう一つは、 [CODE(URI)[[[mailto]]:]] URI の性質上、
+安全な文字が少ないことです。 [CODE(URI)[mailto:]] URI
+で使える文字は URI の制限と [[RFC 822]] 
+の制限の二重の制限を受けます。しかも [CODE(URI)[mailto:]]
+URI の仕様書は曖昧なので、安全に使えるのはアルファベットや数字やハイフン程度と考えておいたほうがよいでしょう
+(しかしほとんどの場合はこれで十分のはずです)。
+
+[21] '''大域固有でない URI についての注意''':
+URI のすべてが大域的に固有ではありません。
+例えば、 [CODE(URI)[[[file]]:]] URI scheme 
+は環境によって指すものが違います。
+そのような URI を名前空間 URI に使用すると、
+衝突を防ぐという本来の目的が達成できません。
+大域的に固有でない URI を名前空間名に使用するべきではありません。
+
+[11] '''[CODE(URI)[urn:]] URI scheme についての注意''':
+伝統的に名前空間 URI によく使われてきた URI [[scheme]]
+に [SAMP(URI)[[[urn]]:]] URI があります。
+もし [SAMP(URI)[urn:]] URI を名前空間に使いたいのであれば、
+[[URN]] [[NID]] が正当なものであるかを確認してください。
+URN NID ([SAMP(URI)[urn:]] の直後に来る部分) は [[IANA]]
+に登録されたものか、 [SAMP(URI)[x-]] で始まるものしか使ってはいけません。
+
+[12] '''他人の考案した概念に URI を割当てる時の注意''':
+自分以外の人の考えた概念を取り入れる時に、
+(許可なく) 自分が正当な使用権のない URI まで使ってしまわないように注意してください。
+
+例えば、 [[RFC 2822]] で定義された[[電子メイル]]の[[頭欄]]の語彙を
+[[XML]] で使いたいので、 XML 名前空間を作るとします。
+そのときに、 [SAMP(822)[[[Subject]]:]] 欄に対応する XML 
+要素の名前空間を [SAMP(URI)[urn:ietf:rfc:2822]]
+としたくなるかもしれません。
+
+確かに、その [SAMP(822)[Subject]] という語彙は 
+[SAMP(URI)[urn:ietf:rfc:2822]] 
+という文書で定義されているものなのですから、
+これは適当な態度に思えます。しかし、 [SAMP(URI)[urn:ietf:rfc:2822]] 
+という名前の使用権を持つのは [[IETF]] であり、
+その使い方を勝手に第三者が決めるべきではありません。
+第三者が [SAMP(URI)[urn:ietf:rfc:2822]] に勝手に意味を与えた後で、
+IETF がそれに気づかずに別な意味を [SAMP(URI)[urn:ietf:rfc:2822]] 
+に与えてしまったら、困ったことになります。
+(そうなる前に IETF が気づいたとしても、 IETF
+にとってはいい迷惑です。)
+
+[[#comment]]
+
+
+** 可能な限りいつまでも使える名前を使うこと
+
+[9] 新しく作ろうとしている名前空間に重要な意味を持たせたいのだとしたら、
+その名前をいつまでも使えるように保つことは極めて重要です。
+さして重要ではないことに名前空間を使おうとしている場合であっても、
+注意深く名前を選んで悪いことはありません。
+一般的に言って、設計者がすぐに廃れるだろうと思ったものほど長生きします。
+
+[10] 名前が使えなくなる状況は、おおよそ次の2つに集約できるでしょう。
+- その名前の使用権を喪失した、または使いたくなくなった
+- うっかり同じ名前の別の名前空間を作ってしまい、
+混乱が収拾できなくなった
+
+[12] 例えば John は
+[SAMP(URI)[http://www.example.org/john/ns1/]]
+という名前空間を使っていたとします。しかしその後 John
+は Example Organization から退会しました。それと同時に John
+が [SAMP(URI)[http://www.example.org/john/]] で始まる URI
+の使用権を喪失したとするとどうでしょう。
+
+Example Organization が大らかな組織であれば、
+それ以後も [SAMP(URI)[http://www.example.org/john/ns1/]]
+を使い続けたとしても、何の問題もないかもしれません。
+そうでなかったとしたら、たとえば[[商標]]の問題などが起こるかもしれません。
+
+別の可能性として、後から入会した別の John さんが
+[SAMP(URI)[http://www.example.org/john/ns1/]]
+という名前を他の用途に使ってしまうかもしれません。
+
+[13] 対策は、
+- いつまで自分が所属しているかわからない組織から割当てられた URI
+は使わない
+- 割当てた年月日を入れる
+
+などでしょう。後者の方法で、
+[SAMP(URI)[http://www.example.org/john/ns1/]] を
+[SAMP(URI)[http://www.example.org/john/2004/ns1/]]
+とするだけでも、衝突の危険性はかなり下がるはずです。
+
+年月日を URI に含めることは、他人との衝突だけではなく、
+自分が以前に使った名前との衝突も防ぐことができます。
+
+[14] [[ISP]] や無料鯖サービスの提供する Web
+サイト領域は、いつ名前が変わったり、サービスが中止されたりするかわかりません。
+大学などのアカウントも、卒業後に消されてしまうことが多いです。
+そのような URI を名前空間 URI に使うことは極力避けるべきです。
+
+長く利用できそうな URI を持っていない場合は、 [[PURL]]
+のようなサービスを利用するのが便利です。
+
+グループで多くの名前空間 URI を使う予定があるなら、 [SAMP(URI)[urn:]]
+URI を使うのも手です。ただし [SAMP(URI)[x-]] を使わない正式の
+NID を得るためには敷居が高いのが難点です。
+
+[[#comment]]
+
+
+** 取出しによって何らかの定義 / 参照文書が得られること
+
+[15] 名前空間 URI として [SAMP(URI)[[[http]]:]] URI
+のような[[取出し]]が定義されている [[URI scheme]] 
+に沿ったものを選んだ場合は特に、
+その URI を使って名前空間を定義する文書が得られるように設定しておくことが望ましいと考えられます。
+
+たとえば、 [SAMP(URI)[http://www.example.org/john/2004/ns1/]]
+という名前空間 URI を使うのであれば、
+[SAMP(URI)[http://www.example.org/john/2004/ns1/]]
+にはその名前空間を説明した文書を置いておくべきです。
+
+文書は、人間可読なものであっても、 [[XML Schema]] や [[DTD]]
+や [[RDF Schema]] などのような機械可読なものであっても、
+仕様書へのリンクだけであっても構いませんが、
+とにかく何か情報があることが重要です。
+[SAMP(URI)[http:]] URI なのに [SAMP(HTTP)[[[404]]]]
+であるとか、そもそも鯖が存在しないとかは論外です
+(が何も考えていない標準化団体や企業でそういうことをしているところが複数あります)。
+
+文書が用意されていれば、その名前空間 URI
+を見た人が必要な情報を得ることができますし、
+名前空間 URI の管理者にとっても、
+後からうっかり別の目的に使ってしまう危険性が減ります。
+
+[[#comment]]
+
+
+** 局所名と連結してもおかしくないこと
+
+[16] [[XML名前空間]]では[[名前]]は[[名前空間名]] (URI)
+と[[局所名]]の''組''ですが、 [[RDF]] や [[WebDAV]]
+など他の幾つかの規格では名前空間 URI と局所名を連結して一つの
+URI 参照として扱います。
+
+[SAMP(URI)[http://www.example.org/john/2004/ns]]
+のような「普通」の文字で終わる名前空間 URI を使うと、
+そのような規格を使った時に、
+[SAMP(URI)[http://www.example.org/john/2004/nslocal-name]]
+のように不恰好な URI となります。ですから、名前空間 URI
+の最後には
+[SAMP(URI)[http://www.example.org/john/2004/ns/]] や
+[SAMP(URI)[http://www.example.org/john/2004/ns#]]
+のように記号をつけると良いでしょう。
+
+関連: >>23
+
+[[#comment]]
+
+
+** URI として使いづらい文字を使わないこと
+
+[17] [[URI参照]]で使える文字は決まっています。
+どんな文字でも自由に使えるわけではありません。
+また、 URI 参照一般では認められていても、
+個々の URI scheme の制限により使えない文字・文字列もあります。
+
+名前空間 URI はその scheme の仕様に沿った正しい URI 参照としましょう。
+正しくない URI 参照を名前空間として使うことは、
+自分が無知であることを宣伝するようなものであると共に、
+他人にも規格違反を要求することにもなりかねません。
+
+[18] [[XML名前空間 1.1]] では URI 参照の代わりに、
+その[[超集合]]である [[IRI参照]]を使っています。
+しかし相互運用性を考えれば、 URI 参照を使うべきです。
+(XML 名前空間 1.1 仕様書にもそう書いてあります。)
+
+[19] URI で認められている文字であっても、
+使わない方が安全な文字があります。
+
+[SAMP(URI)[~]] は、 URI で使うことが認められた文字です。
+しかし、[[シフトJIS]] の [CODE(char)[[[0x7E]]]]
+の問題 ([SAMP(char)[[[TILDE]]]] vs [SAMP(char)[[[OVER LINE]]]])
+によって不都合が実際に生じています。
+うまく回避できる方法がある場面もありますが、
+いつも回避できる保証はないので、避けるほうが無難です。
+[WEAK[(名前空間 URI は文字として一致検査されるので、 [[URI符号化]]で [CODE(URI)[%7E]] と書き変えてしまうと、別の名前空間 URI になってしまいます。)]]
+
+[23] '''[CODE(charname)[NUMBER SIGN]]''':
+[[素片識別子]]の始まりを示す [CODE(char)[#]] は >>16 のため[[名前空間URI]]
+の最後につけられることが多いですが、 [[XPointer]]
+で使われることが多いと想定される[[名前空間]]では避けた方がよいです。
+[[素片識別子]]として使う [[XPointer]] の中に
+[CODE(char)[#]] (を含む名前空間 URI) が含まれていると、
+その [CODE(char)[#]] を [CODE(URI)[%23]] 
+と[[百分率符号化]]する必要が生じるからです。
+
+[25] 例:
+ある[[文書]]で使われている[[語彙]]の名前空間 URI
+は
+[PRE(example URI code)[
+http://www.example.com/vocab#
+]PRE]
+
+だとします。ここで、 [[XML文書]]
+[SAMP(URI)[http://www.example.net/document]]
+が
+[PRE(example XML code)[
+<document xmlns="http://www.example.com/vocab#">
+  <content/>
+</document>
+]PRE]
+
+という内容であるとき、 [CODE(XMLe)[content]]
+要素を識別する [[XPointer]] (の一例) は
+[PRE(example code)[
+xmlns(x=http://www.example.com/vocab#)xpointer(/x:document/x:content)
+]PRE]
+
+となります。この [[XPointer]] を[[素片識別子]]とする [[URI参照]]は、
+[PRE(example URI code)[
+http://www.example.net/document#xmlns(x=http://www.example.com/vocab%23)xpointer(/x:document/x:content)
+]PRE]
+
+となります。 [CODE(char)[#]] が [CODE(URI)[%23]] 
+となっていることに注意してください。
+
+[30]
+'''[CODE(charname)[[[AMPERSAND]]]]''':
+[[アンド記号]] ([CODE(char)[&]]) は一般の [[URI]] で
+(特に[[照会]]で) しばしば使われますが、 [[XML]]
+で [CODE(char)[&]] を記述する時は [CODE(XML)[&[[amp]];]]
+と[[逃避]]しなければなりません。
+名前空間 URI を何度も [[XML]] 文書中に手入力する必要があるなら、
+面倒でうっかりしてしまいがちですから、 [CODE(char)[&]]
+を使うのは避けるべきです。
+
+([[名無しさん]] [sage])
+
+[31]
+'''[CODE(charname)[[[APOSTIROHE]]]]''':
+[[アポストロフィ]] ([CODE(char)[']]) は [[URI]]
+で使うことができる[[文字]]ですが、[[属性値表記]]の[[引用符]]としても使われます。
+不要な混乱を避けるために [CODE(char)[']]
+を名前空間 URI で使うのは避けるべきです。
+([[名無しさん]] [sage])
+
+[[#comment]]
+
+
+** 他の名前空間 URI と似ていないこと
+
+[26] 一般論として、似たような URI が他に使われていると混乱の元です。
+似たような URI が名前空間 URI としても使われるのならなおさらです。
+
+[Q[似ている]]の基準は色々ありえますし、主観的なことでもあるので、
+一概には言えませんが、
+特に大文字・小文字だけの違いや記号類の有無や記号類だけの違いは気付きにくいので避けた方が良いです。
+
+悪い例: [[XHTML 2.0]] の古い案では名前空間 URI は
+[CODE(URI)[[[http://www.w3.org/2002/06/xhtml2]]]] でした。
+後の案で
+[CODE(URI)[[[http://www.w3.org/2002/06/xhtml2/]]]]
+に変わりました。 (最後に斜線が付いています。)
+
+悪い例: 株式会社単奈留玲の技術者であるトムは [Q[ABC 2004]] 
+という製品で使う名前空間 URI を
+[CODE(URI)[[[http://ns.example.com/abc-2004]]]]
+としました。単奈留玲は翌年新版の [Q[ABC 2005]] 
+を出荷しましたが、トムに代わって設計を担当したジョンは
+[CODE(URI)[[[http://ns.example.com/abc/2005]]]]
+という名前空間 URI にしました。
+
+[27] '''Java で使う場合''':
+[[JSR#31]] ([[JAXB]] 1.0) の C.5.1 で名前空間 URI
+から [[Java]] の[[パッケージ名]]への変換方法が規定されています。
+簡単に言えば、大文字は小文字になり、 [CODE(URI)[/]] と [CODE(URI)[:]]
+は [CODE(Java)[.]] になり、それ以外の記号類は
+[CODE(Java)[_]] になります。ですから、
+大文字・小文字や記号類だけが異なる名前空間 URI を使うのは避けた方が良いです。
+
+[[#comment]]
+
+
+** 参考文献
+
+[4] ''URIs for W3C Namespaces'' <http://www.w3.org/1999/10/nsuri>
+
+この文書では、 [[W3C]] の仕様で使われる名前空間 URI
+の割当ての方針が述べられています。
+
+[32] [CITE@@en[DCMI Namespace Policy]] 
+<http://www.dublincore.org/documents/dcmi-namespace/>
+
+この文書では、 [[DCMI]] の仕様で規定される[[語彙]]の名前空間 URI
+の管理の方針が述べられています。
+
+[34]
+[CITE[Best Practice Recipes for Publishing RDF Vocabularies]] <http://www.w3.org/TR/2006/WD-swbp-vocab-pub-20060314/#naming>
+([[名無しさん]] [WEAK[2006-03-15 03:19:06 +00:00]])
+
+[[#comment]]
+
+
+** メモ
+
+[20] 
+[[CC/PP]] では、
+
+> All CC/PP attributes must be associated with a fully resolvable namespace identifier URI. (Relative URIs, or URIs whose interpretation may depend on the context in which they are used, should not be used.)
+
+([Q[すべての CC/PP 属性は完全に解決可能な名前空間識別子 URI と関連付けられていなければなりません。 (相対 URI は解釈が使用された文脈に依存する URI は使用するべきではありません。)]])
+
+とされています。ここでの[Q[完全に解決可能]]がどういう意味なのか
+(括弧内の意味なのか?) はよくわかりませんが・・・。
+文脈依存するべきではないというのは [CODE(URI)[[[file]]:]]
+URI scheme や [[XPointer]] の [CODE(XPointerScheme)[[[xmlns-local]]]]
+scheme のようなもののことを言っているのでしょう。
+
+[CITE[Composite Capability/Preference Profiles (CC/PP): Structure and Vocabularies 1.0]] <http://www.w3.org/TR/2004/REC-CCPP-struct-vocab-20040115/#namespaces>
+
+[[#comment]]
+
+
+* メモ
+
+[29]
+組織で複数の名前空間 URI を使う予定があるのなら、
+その組織内の名前空間 URI の割当ての規則を設けた方が良いです。
+([[名無しさん]] [sage])
+
+[35]
+[CITE[SMIL Namespace Documentation - Anne’s Weblog about Markup & Style]] <http://annevankesteren.nl/2006/03/smil>
+([[名無しさん]] [WEAK[2006-03-18 01:40:47 +00:00]])
+
+[36]
+[[名前空間URI]] に含まれる意味のない[[年号]]をどうにか汁という [[Ian Hickson]] の主張が通って、 [[W3C]] の[[名前空間URI]]
+の方針が変わりそうです。
+
+[CITE[Proposal for short namespace URIs for W3C TRs [Was: XBL Namespace uses the data: scheme from Ian B. Jacobs on 2006-07-20 (www-tag@@w3.org from July 2006)]] <http://lists.w3.org/Archives/Public/www-tag/2006Jul/0022>
+([[名無しさん]] [WEAK[2006-07-22 04:34:56 +00:00]])
+
+[37]
+[CITE[XML.com: XML Namespaces Don't Need URIs]] ([[Michael Day]] 著, [CODE[2007-05-19 17:33:00 +09:00]] 版) <http://www.xml.com/pub/a/2005/04/13/namespace-uris.html>
+([[名無しさん]])
+
+[38]
+In Adobe AIR documents, namespace URIs are used to identify the required (minimum) version of AIR runtime for the application.
+([[名無しさん]])
+
+@
+

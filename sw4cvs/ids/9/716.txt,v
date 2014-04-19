@@ -1,0 +1,252 @@
+head	1.7;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.7
+date	2011.07.17.02.40.16;	author wakaba;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2011.07.17.02.38.25;	author wakaba;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2011.07.17.02.37.43;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2011.07.17.02.17.21;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2011.07.17.02.15.29;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2011.07.17.02.15.07;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2008.11.18.05.16.46;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.7
+log
+@updated by (anon)
+@
+text
+@[4] [[CSS]] の [DFN[[CODE(CSS)@@en[[[hsl()]]]] [[関数]]]]は、 [[HSL]] による[[色]]の指定を表します。
+
+[6] [[CSS]] では以前から [CODE(CSS)@@en[[[rgb()]]]] による[[色]]の指定ができましたが、
+[[RGB]] は [[CRT]] という特定の[[ハードウェア]]に特化した[[色]]の指定方法であること、
+[[RGB]] は[[人間]]にとって直感的でないことから [[HSL]] もまた有用と判断したとされています [SRC[>>5]]。
+
+* 仕様書
+
+- [5] [CITE@@en[CSS Color Module Level 3]] ([TIME[2011-06-07 21:54:38 +09:00]] 版) <http://www.w3.org/TR/2011/REC-css3-color-20110607/#hsl-color>
+
+* [CODE(CSS)@@en[hsl()]]
+
+[7] [CODE(CSS)@@en[[[hsl()]]]] [[関数]]は構文的には
+- [8] [CODE(CSS)@@en[hsl(]]
+- [9] [[色相]]を表す[[整数値]]
+- [10] [[読点]]
+- [11] [[彩度]]を表す[[百分率値]]
+- [12] [[読点]]
+- [13] [[明度]]を表す[[百分率値]]
+- [14] [CODE(CSS)[)]]
+
+... で構成されます。
+
+[15] [[整数値]]や[[百分率値]]の前後には[[空白]]を挿入できます。
+
+[16] [[関数名]]は[[大文字]]でも[[小文字]]でも構いませんし、[[escape]]
+することもできます。
+
+;; [17] という構文はなぜか [[CSS3]] [SRC[>>5]] では明記されていません。
+
+* 色相 (H)
+
+[18] [RUBYB[[[色相]]]@@en[hue]]は[RUBYB[[[色環]]]@@en[color circle]]における[[角度]]で表します。
+[[単位]]は[[度]]ですが、 [[CSS]] では省略して[[整数値]]として記述します。 [SRC[>>5]]
+
+[19] [[度]]単位の[[角度]]なので、 0 と 360 は等しく、また負の整数や 360 以上の数を使って表すこともできますが、
+すべての値を 0 [[以上]] 360 [[未満]]の値に[[正規化]]できます。 [[CSS3]] には
+[PRE(math)[
+((([VAR[x]] mod 360) + 360) mod 360)
+]PRE]
+... という計算で [0, 360) の範囲に[[正規化]]することもできようと書かれています。 [SRC[>>5]]
+
+;; [20] なぜか、[[正規化]]しなければならないとも、いつのタイミングでしろとも書いてありません。
+
+* 彩度 (S)
+
+[21] [RUBYB[[[彩度]]]@@en[saturation]]は[[百分率値]]で表します。
+100% が最も高い[[彩度]]で、 0% は[[灰色]] ([[shade of gray]]) を表します。
+[SRC[>>5]]
+
+[28] [[利用者エージェント]]は、[[彩度]]が 0% よりも小さければ[[くりぬいて]] 0% 
+としなければ[['''なりません''']]。 [SRC[>>5]]
+
+;; [30] 100% よりも大きい場合については仕様書上明記されていません。
+
+* 明度 (L)
+
+[22] [RUBYB[[[明度]]]@@en[lightness]]は[[百分率値]]で表します。
+100% が[[白]]、 0% が[[黒]]で、 50% が「普通」を表します。 [SRC[>>5]]
+
+;; [31] 0% より小さい場合や 100% より大きい場合については仕様書上明記されていません。
+
+* 色空間と色域
+
+[29] [[利用者エージェント]]は、指定された[[色]]が[[装置]]の[[色域]]の範囲外である場合に[RUBYB[[[くりぬき]]]@@en[clip]]し[['''なければなりません''']]。
+この際[[色相]]は可能な限り保持する[['''べきです''']]が、それ以外の点は未定義です [SRC[>>5]]。
+
+;; [32] そのため、 [[HSL]] から [[RGB]] に変換してから[[くりぬき]]を行うのとは違った結果になることがあります
+[SRC[>>5]]。
+
+[33] [[HSL]] から [[RGB]] へは、次の [[ABC]] による手順により変換できます。
+ただし、[[入力]]となる H, S, L はいずれも 0 から 1 までの範囲の小数値に正規化されているものとします。 [SRC[>>5]]
+[PRE(code)[
+    HOW TO RETURN hsl.to.rgb(h, s, l): 
+       SELECT: 
+	  l<=0.5: PUT l*(s+1) IN m2
+	  ELSE: PUT l+s-l*s IN m2
+       PUT l*2-m2 IN m1
+       PUT hue.to.rgb(m1, m2, h+1/3) IN r
+       PUT hue.to.rgb(m1, m2, h    ) IN g
+       PUT hue.to.rgb(m1, m2, h-1/3) IN b
+       RETURN (r, g, b)
+
+    HOW TO RETURN hue.to.rgb(m1, m2, h): 
+       IF h<0: PUT h+1 IN h
+       IF h>1: PUT h-1 IN h
+       IF h*6<1: RETURN m1+(m2-m1)*h*6
+       IF h*2<1: RETURN m2
+       IF h*3<2: RETURN m1+(m2-m1)*(2/3-h)*6
+       RETURN m1
+]PRE]
+
+* 構文解析
+
+[2]
+[[Firefox]] 2 では [CODE(CSS)@@en[[[hsl]]()]] は[[構文解析]]時に
+[CODE(CSS)@@en[[[rgb]]()]] に置換されてから [[CSSOM]] に現れるようです。
+
+[3]
+[[Firefox]] 2 は s や l に [CODE(CSS)[0[[%]]]] より小さな値や
+[CODE(CSS)[100[[%]]]] より大きな値を指定しても大丈夫なようです。
+
+* 例
+
+- [23] [CODE(CSS)[hsl(0, 100%, 50%)]] [[赤]] [SRC[>>5]]
+- [24] [CODE(CSS)[hsl(120, 100%, 50%)]] [[lime]] [SRC[>>5]]
+- [25] [CODE(CSS)[hsl(120, 100%, 25%)]] 暗い[[緑]] [SRC[>>5]]
+- [26] [CODE(CSS)[hsl(120, 100%, 75%)]] 淡い[[緑]] [SRC[>>5]]
+- [27] [CODE(CSS)[hsl(120, 75%, 75%)]] [[パステル・グリーン]] [SRC[>>5]]
+
+[34] その他、 <http://www.w3.org/TR/2011/REC-css3-color-20110607/#hsl-examples>
+に分かりやすい表があります。
+
+* 関連
+
+[35] [[α値]]を追加した [CODE(CSS)@@en[[[hsla()]]]] [[関数]]もあります。
+
+* メモ
+
+[1]
+[CITE[HSL support in Core-2 - CSS3 . Info]] ([CODE[2007-11-17 13:43:26 +09:00]] 版) <http://www.css3.info/hsl-support-in-core-2/>
+@
+
+
+1.6
+log
+@updated by (anon)
+@
+text
+@d114 4
+@
+
+
+1.5
+log
+@updated by (anon)
+@
+text
+@d111 3
+@
+
+
+1.4
+log
+@updated by (anon)
+@
+text
+@d11 82
+d103 8
+@
+
+
+1.3
+log
+@updated by (anon)
+@
+text
+@d3 4
+@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@d3 4
+@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/68736C.txt>
+@
+text
+@d1 9
+a9 13
+
+[1]
+[CITE[HSL support in Core-2 - CSS3 . Info]] ([CODE[2007-11-17 13:43:26 +09:00]] 版) <http://www.css3.info/hsl-support-in-core-2/>
+([[名無しさん]])
+
+[2]
+[[Firefox]] 2 では [CODE(CSS)@@en[[[hsl]]()]] は[[構文解析]]時に
+[CODE(CSS)@@en[[[rgb]]()]] に置換されてから [[CSSOM]] に現れるようです。
+
+([[名無しさん]])
+
+
+[3]
+d11 6
+a16 3
+[CODE(CSS)[100[[%]]]] より大きな値を指定しても大丈夫なようです。
+([[名無しさん]])
+
+@
+

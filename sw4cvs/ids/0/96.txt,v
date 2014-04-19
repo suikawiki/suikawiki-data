@@ -1,0 +1,603 @@
+head	1.14;
+access;
+symbols
+	suika-20100509:1.5
+	before-graph-20090923:1.2;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.14
+date	2012.11.13.23.11.56;	author wakaba;	state Exp;
+branches;
+next	1.13;
+
+1.13
+date	2011.12.10.01.25.04;	author wakaba;	state Exp;
+branches;
+next	1.12;
+
+1.12
+date	2011.03.21.15.17.42;	author wakaba;	state Exp;
+branches;
+next	1.11;
+
+1.11
+date	2011.03.21.14.29.38;	author wakaba;	state Exp;
+branches;
+next	1.10;
+
+1.10
+date	2011.01.20.04.35.01;	author wakaba;	state Exp;
+branches;
+next	1.9;
+
+1.9
+date	2010.07.07.23.31.41;	author wakaba;	state Exp;
+branches;
+next	1.8;
+
+1.8
+date	2010.07.05.14.25.51;	author wakaba;	state Exp;
+branches;
+next	1.7;
+
+1.7
+date	2010.06.30.10.53.54;	author wakaba;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2010.05.22.03.35.58;	author wakaba;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2010.04.03.03.16.23;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2009.11.20.15.47.32;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2009.10.10.17.07.12;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2009.01.20.22.50.31;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2008.11.10.14.10.56;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.14
+log
+@updated by (anon)
+@
+text
+@
+
+* XML名前空間 (仕様)
+
+- [3] ''Namespaces in XML'' <http://www.w3.org/TR/REC-xml-names>
+
+[8] [[QName]] [SAMP(XML)[foo:xmlbar]] は予約されていませんが、 
+QName [SAMP(XML)[xmlbar]] は ([[XML]] で) 予約されている関係上、
+最初の例の如き名前 (つまり、 [[LocalName]] が [CODE(ABNF)["XML"]] 
+で始まる名前。) は使わないことを errata <http://www.w3.org/XML/xml-names-19990114-errata#NE06> 
+は勧めています。
+
+[9] Errata は仕様書にはない[[名前空間整形式]], 
+[[名前空間妥当]]という2つの重要な用語を定義しています。
+
+[10] このほかにも errata には重要な修正があります。
+修正に気づいてない人も少なくないでしょうから、とっとと 
+[[SE]] を出して欲しいところですが、担当 [[WG]] 
+は第1.1版出して誤魔化す気かな?
+
+[19] 名前空間 1.1 は、 XML 1.1 
+と併用する物だと仕様書に書いてありますが、無印名前空間は、
+単に XML としか書かれていません。だとすると XML 1.1 + 
+無印名前空間も可能かも、
+だとするといろいろ不整合が出てきて都合が悪いよなあ、
+と思ってよく調べてみると、ちゃんと無印 Errata で手は打ってあって、 
+XML 1.0 に適用すると修正されていました。
+
+[[#comment]]
+
+
+* 構文
+
+[5] 厳密には仕様書 (>>3) の記述を参照して下さい。
+
+- NSAttName        = PrefixedAttName / DefaultAttName
+- PrefixedAttName  = 'xmlns:' prefix  ;; NSC: Leading "XML"
+- prefix = (NCName -("XML" NCName)) / "XML" NCName
+- DefaultAttName   = 'xmlns'
+- NCName           = (xml.Letter | '_') (NCNameChar)* ;; xml.Name -":"
+- NCNameChar       = xml.Letter / xml.Digit / "." / "-" / "_" / xml.CombiningChar / xml.Extender
+
+- [6] 「Leading “XML”」 [[NSC]]: 接頭辞で最初の3文字が [CODE(ABNF)["XML"]] である (大文字・小文字の組合せは任意。) ものは、 XML 及び周辺仕様が使用するのに予約しています。
+-- <http://www.w3.org/TR/REC-xml-names#xmlReserved> 参照
+[[#comment]]
+
+
+* 属性の唯一性
+
+[7] [[SGML]]/[[XML]] では、同じ名前の属性を一つの要素に複数指定することはできませんでした。
+
+[PRE[
+ ×<element attribute="value" attribute="value"/>
+]PRE]
+
+XML 名前空間を利用する場合は更に制限が加えられ、
+[[修飾名]] ([[QName]]) が異なっていても[[名前空間名]]が同じであるなら、同じ local name
+の属性を一つの要素に指定することはできません。
+
+[PRE[
+ ×<element xmlns:ns1="http://ns.example/"
+            xmlns:ns2="http://ns.example/"
+            ns1:foo="bar" ns2:foo="BAR"/>
+]PRE]
+
+ただし、名前空間無しの属性とありの属性や名前空間名の異なる属性で
+local name が同じであるものは、もちろん問題ありません。
+
+[PRE[
+ ○<element xmlns="http://ns.example/1"
+            xmlns:ns1="http://ns.example/1"
+            xmlns:ns2="http://ns.example/2"
+            foo="bar" ns1:foo="bar" ns2:foo="BAR"/>
+]PRE]
+
+[14] 
+[PRE[
+ <!ATTLIST foo
+           ns:foo CDATA 'default'
+           xmlns:ns CDATA #FIXED 'http://uri.example'>
+ [INS[...]]
+ <foo ns2:foo="nondefault"
+      xmlns:ns2="http://uri.example"/>
+]PRE]
+
+は[[名前空間妥当]]だろうか? とふと思ったけど、[[妥当性を検証する処理系]]はまず省略属性を補って、その上で名前空間を知っている処理系は名前空間を処理するのが建前だろうから、やっぱり名前空間非妥当だろうなあ。
+
+[23]
+>>14 でも <IW:XMLNames:"#uniqAttrs"> には [Q@@en[no tag may contain]]
+としか書いてなくて、[[既定属性]]の話は出てこないぞ。。。
+([[名無しさん]])
+
+[24]
+少なくともその宣言が内部サブセットにあって、別途 xmlns:ns2 と ns2:foo が宣言されていれば名前空間妥当だと思うけど。
+([[名無しさん]] [WEAK[2006-02-18 05:29:08 +00:00]])
+
+[[#comment]]
+
+
+* XML 名前空間 (1.0) の修正
+
+→[[XML名前空間 1.0]]
+
+
+* XML 名前空間 1.1
+
+→ [[XML名前空間 1.1]]
+
+
+* 参考文献
+
+- [13] ''XML名前空間の簡単な説明'' <http://www.kanzaki.com/docs/sw/names.html>
+- [15] ''XML-NS Table of Contents'' <http://www.y-adagio.com/public/standards/tr_xml_ns/toc.htm>: 
+[[JIS TR]] X 0023:1999。
+- [16] ''XMLネームスペース'' <http://www.doraneko.org/xml/namespace/namespace.html>: >>15 の訳の方がまだまし。
+[[#comment]]
+
+
+** メモ
+
+[20]
+[[要素型名]]が [CODE(XMLe)@@en[[[xmlns]]]] とか
+[CODE(XMLe)@@en[[[xmlns]]:[VAR[*]]]] になることは禁止されていない??
+
+[25]
+>>20 わかりにくいけど禁止はされているらしい。
+
+[CITE[Re: Namespaces in XML 1.x test suite contribution from Richard Tobin on 2005-12-19 (xml-names-editor@@w3.org from December 2005)]] 
+<http://lists.w3.org/Archives/Public/xml-names-editor/2005Dec/0002.html>
+
+([[名無しさん]])
+
+
+[26]
+[CITE@@en[Re: porno on w3.org]] ([[Ian B. Jacobs]] 著, [TIME[2008-03-13 01:25:03 +09:00]] 版) <http://lists.w3.org/Archives/Public/w3c-translators/2008JanMar/0163.html>
+([[名無しさん]])
+
+
+[[#comment]]
+
+
+* XML名前空間 (一般名詞)
+
+[4]
+
+> [定義:] [DFN[XML[RUBY[名前空間] [なまえくうかん] @@en[namespace]]]]は、
+[[XML文書]]中で[[要素型名]]や[[属性名]]として使われる[[名前]]の[[集成]]であり、
+[[URI参照]][SRC@@en[[[RFC 2396]]]]によって[[識別]]される。
+[SRC[XML名前空間 1.0]]
+
+[21]
+
+> [定義: [DFN[XML[RUBY[名前空間] [なまえくうかん] @@en[namespace]]]]は[[IRI参照]]によって[[識別]]される。
+[[要素名]]と[[属性名]]はこの仕様書で説明する方法によって[[XML名前空間]]中に置くことができる。]
+[SRC[XML名前空間 1.1]]
+
+[22]
+仕様書:
+- [[XML名前空間]]
+-- <IW:XMLNames:"#dt-namespace">
+
+[[#comment]]
+
+
+* メモ
+
+[27] [CITE[XML Namespaces]] ([TIME[1999-02-04 14:37:37 +09:00]] 版) <http://www.jclark.com/xml/xmlns.htm>
+
+[28] [[XML名前空間]]の解説ですが、他の解説などでもわりとよく用いられた「{名前空間URL}局所名」
+という表記法を (おそらく) 最初に導入した文章でもあります。
+
+[29] [CITE@@en[Re: Re'''['''4''']''': XML namespaces and RDF]]
+([[Tim Berners-Lee]] 著, [TIME[2007-12-20 22:39:07 +09:00]] 版)
+<http://lists.w3.org/Archives/Public/semantic-web/2007Dec/0116.html>
+
+[30] [CITE@@en[Default Prefix Declaration - W3C Blog]]
+([TIME[2009-11-20 23:09:07 +09:00]] 版)
+<http://www.w3.org/QA/2009/11/default_prefix_declaration.html>
+
+[31] [CITE@@en[Why bound prefixes are an anti-pattern in language design]]
+([[Ian Hickson]] 著, [TIME[2009-08-06 07:28:52 +09:00]] 版)
+<http://lists.w3.org/Archives/Public/public-rdf-in-xhtml-tf/2009Aug/0035.html>
+
+[32] [CITE[XProc: An XML Pipeline Language]]
+([TIME[2010-05-11 22:38:07 +09:00]] 版)
+<http://www.w3.org/TR/2010/REC-xproc-20100511/#namespace-fixup-guidance>
+
+[33] [CITE[James Clark's Random Thoughts: XML Namespaces]]
+([TIME[2010-06-29 19:41:36 +09:00]] 版)
+<http://blog.jclark.com/2010/01/xml-namespaces.html>
+
+[34] [CITE[Name Spaces in XML]]
+([TIME[1998-01-30 06:57:17 +09:00]] 版)
+<http://www.w3.org/TR/1998/NOTE-xml-names-0119>
+
+[35] [CITE[XML.com: XML Namespaces Don't Need URIs]]
+([[Michael Day]] 著, [TIME[2010-07-07 07:57:29 +09:00]] 版)
+<http://www.xml.com/pub/a/2005/04/13/namespace-uris.html>
+
+[36] [CITE@@en[Change Proposal for ISSUE-120 - WHATWG Wiki]]
+([TIME[2011-01-20 05:49:03 +09:00]] 版)
+<http://wiki.whatwg.org/wiki/Change_Proposal_for_ISSUE-120>
+
+[37] [CITE[IRC logs: freenode / #whatwg / 20110210]]
+( ([TIME[2011-03-21 18:25:22 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20110210#l-618>
+
+[38] [CITE@@en[Re: Re''''''[''''''4'''''']'''''': XML namespaces and RDF]]
+( ([[Tim Berners-Lee]] 著, [TIME[2007-12-20 22:39:07 +09:00]] 版))
+<http://lists.w3.org/Archives/Public/semantic-web/2007Dec/0116.html>
+
+[39] [CITE@@ja[MySQL :: MySQL 5.1 リファレンスマニュアル :: 11.9 XML 関数]]
+( ([TIME[2011-12-10 10:22:20 +09:00]] 版))
+<http://dev.mysql.com/doc/refman/5.1/ja/xml-functions.html>
+
+[40] [CITE[''''''[''''''whatwg'''''']'''''' Including]]
+( ([TIME[2012-11-14 08:04:25 +09:00]] 版))
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2012-November/037903.html>@
+
+
+1.13
+log
+@updated by (anon)
+@
+text
+@d214 5
+a218 1
+<http://dev.mysql.com/doc/refman/5.1/ja/xml-functions.html>@
+
+
+1.12
+log
+@updated by (anon)
+@
+text
+@d210 5
+a214 1
+<http://lists.w3.org/Archives/Public/semantic-web/2007Dec/0116.html>@
+
+
+1.11
+log
+@updated by (anon)
+@
+text
+@d206 5
+a210 1
+<http://krijnhoetmer.nl/irc-logs/whatwg/20110210#l-618>@
+
+
+1.10
+log
+@updated by (anon)
+@
+text
+@d202 5
+a206 1
+<http://wiki.whatwg.org/wiki/Change_Proposal_for_ISSUE-120>@
+
+
+1.9
+log
+@updated by (anon)
+@
+text
+@d198 5
+a202 1
+<http://www.xml.com/pub/a/2005/04/13/namespace-uris.html>@
+
+
+1.8
+log
+@updated by (anon)
+@
+text
+@d194 5
+a198 1
+<http://www.w3.org/TR/1998/NOTE-xml-names-0119>@
+
+
+1.7
+log
+@updated by (anon)
+@
+text
+@d190 5
+a194 1
+<http://blog.jclark.com/2010/01/xml-namespaces.html>@
+
+
+1.6
+log
+@updated by (anon)
+@
+text
+@d186 5
+a190 1
+<http://www.w3.org/TR/2010/REC-xproc-20100511/#namespace-fixup-guidance>@
+
+
+1.5
+log
+@updated by (anon)
+@
+text
+@d182 5
+a186 1
+<http://lists.w3.org/Archives/Public/public-rdf-in-xhtml-tf/2009Aug/0035.html>@
+
+
+1.4
+log
+@updated by (anon)
+@
+text
+@d178 5
+a182 1
+<http://www.w3.org/QA/2009/11/default_prefix_declaration.html>@
+
+
+1.3
+log
+@updated by (anon)
+@
+text
+@d174 5
+a178 1
+<http://lists.w3.org/Archives/Public/semantic-web/2007Dec/0116.html>@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@d170 5
+a174 1
+という表記法を (おそらく) 最初に導入した文章でもあります。@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/584D4CCCBEC1B0B6F5B4D6.txt>
+@
+text
+@d1 170
+a170 165
+
+
+* XML名前空間 (仕様)
+
+- [3] ''Namespaces in XML'' <http://www.w3.org/TR/REC-xml-names>
+
+[8] [[QName]] [SAMP(XML)[foo:xmlbar]] は予約されていませんが、 
+QName [SAMP(XML)[xmlbar]] は ([[XML]] で) 予約されている関係上、
+最初の例の如き名前 (つまり、 [[LocalName]] が [CODE(ABNF)["XML"]] 
+で始まる名前。) は使わないことを errata <http://www.w3.org/XML/xml-names-19990114-errata#NE06> 
+は勧めています。
+
+[9] Errata は仕様書にはない[[名前空間整形式]], 
+[[名前空間妥当]]という2つの重要な用語を定義しています。
+
+[10] このほかにも errata には重要な修正があります。
+修正に気づいてない人も少なくないでしょうから、とっとと 
+[[SE]] を出して欲しいところですが、担当 [[WG]] 
+は第1.1版出して誤魔化す気かな?
+
+[19] 名前空間 1.1 は、 XML 1.1 
+と併用する物だと仕様書に書いてありますが、無印名前空間は、
+単に XML としか書かれていません。だとすると XML 1.1 + 
+無印名前空間も可能かも、
+だとするといろいろ不整合が出てきて都合が悪いよなあ、
+と思ってよく調べてみると、ちゃんと無印 Errata で手は打ってあって、 
+XML 1.0 に適用すると修正されていました。
+
+[[#comment]]
+
+
+* 構文
+
+[5] 厳密には仕様書 (>>3) の記述を参照して下さい。
+
+- NSAttName        = PrefixedAttName / DefaultAttName
+- PrefixedAttName  = 'xmlns:' prefix  ;; NSC: Leading "XML"
+- prefix = (NCName -("XML" NCName)) / "XML" NCName
+- DefaultAttName   = 'xmlns'
+- NCName           = (xml.Letter | '_') (NCNameChar)* ;; xml.Name -":"
+- NCNameChar       = xml.Letter / xml.Digit / "." / "-" / "_" / xml.CombiningChar / xml.Extender
+
+- [6] 「Leading “XML”」 [[NSC]]: 接頭辞で最初の3文字が [CODE(ABNF)["XML"]] である (大文字・小文字の組合せは任意。) ものは、 XML 及び周辺仕様が使用するのに予約しています。
+-- <http://www.w3.org/TR/REC-xml-names#xmlReserved> 参照
+[[#comment]]
+
+
+* 属性の唯一性
+
+[7] [[SGML]]/[[XML]] では、同じ名前の属性を一つの要素に複数指定することはできませんでした。
+
+[PRE[
+ ×<element attribute="value" attribute="value"/>
+]PRE]
+
+XML 名前空間を利用する場合は更に制限が加えられ、
+[[修飾名]] ([[QName]]) が異なっていても[[名前空間名]]が同じであるなら、同じ local name
+の属性を一つの要素に指定することはできません。
+
+[PRE[
+ ×<element xmlns:ns1="http://ns.example/"
+            xmlns:ns2="http://ns.example/"
+            ns1:foo="bar" ns2:foo="BAR"/>
+]PRE]
+
+ただし、名前空間無しの属性とありの属性や名前空間名の異なる属性で
+local name が同じであるものは、もちろん問題ありません。
+
+[PRE[
+ ○<element xmlns="http://ns.example/1"
+            xmlns:ns1="http://ns.example/1"
+            xmlns:ns2="http://ns.example/2"
+            foo="bar" ns1:foo="bar" ns2:foo="BAR"/>
+]PRE]
+
+[14] 
+[PRE[
+ <!ATTLIST foo
+           ns:foo CDATA 'default'
+           xmlns:ns CDATA #FIXED 'http://uri.example'>
+ [INS[...]]
+ <foo ns2:foo="nondefault"
+      xmlns:ns2="http://uri.example"/>
+]PRE]
+
+は[[名前空間妥当]]だろうか? とふと思ったけど、[[妥当性を検証する処理系]]はまず省略属性を補って、その上で名前空間を知っている処理系は名前空間を処理するのが建前だろうから、やっぱり名前空間非妥当だろうなあ。
+
+[23]
+>>14 でも <IW:XMLNames:"#uniqAttrs"> には [Q@@en[no tag may contain]]
+としか書いてなくて、[[既定属性]]の話は出てこないぞ。。。
+([[名無しさん]])
+
+[24]
+少なくともその宣言が内部サブセットにあって、別途 xmlns:ns2 と ns2:foo が宣言されていれば名前空間妥当だと思うけど。
+([[名無しさん]] [WEAK[2006-02-18 05:29:08 +00:00]])
+
+[[#comment]]
+
+
+* XML 名前空間 (1.0) の修正
+
+→[[XML名前空間 1.0]]
+
+
+* XML 名前空間 1.1
+
+→ [[XML名前空間 1.1]]
+
+
+* 参考文献
+
+- [13] ''XML名前空間の簡単な説明'' <http://www.kanzaki.com/docs/sw/names.html>
+- [15] ''XML-NS Table of Contents'' <http://www.y-adagio.com/public/standards/tr_xml_ns/toc.htm>: 
+[[JIS TR]] X 0023:1999。
+- [16] ''XMLネームスペース'' <http://www.doraneko.org/xml/namespace/namespace.html>: >>15 の訳の方がまだまし。
+[[#comment]]
+
+
+** メモ
+
+[20]
+[[要素型名]]が [CODE(XMLe)@@en[[[xmlns]]]] とか
+[CODE(XMLe)@@en[[[xmlns]]:[VAR[*]]]] になることは禁止されていない??
+
+[25]
+>>20 わかりにくいけど禁止はされているらしい。
+
+[CITE[Re: Namespaces in XML 1.x test suite contribution from Richard Tobin on 2005-12-19 (xml-names-editor@@w3.org from December 2005)]] 
+<http://lists.w3.org/Archives/Public/xml-names-editor/2005Dec/0002.html>
+
+([[名無しさん]])
+
+
+[26]
+[CITE@@en[Re: porno on w3.org]] ([[Ian B. Jacobs]] 著, [TIME[2008-03-13 01:25:03 +09:00]] 版) <http://lists.w3.org/Archives/Public/w3c-translators/2008JanMar/0163.html>
+([[名無しさん]])
+
+
+[[#comment]]
+
+
+* XML名前空間 (一般名詞)
+
+[4]
+
+> [定義:] [DFN[XML[RUBY[名前空間] [なまえくうかん] @@en[namespace]]]]は、
+[[XML文書]]中で[[要素型名]]や[[属性名]]として使われる[[名前]]の[[集成]]であり、
+[[URI参照]][SRC@@en[[[RFC 2396]]]]によって[[識別]]される。
+[SRC[XML名前空間 1.0]]
+
+[21]
+
+> [定義: [DFN[XML[RUBY[名前空間] [なまえくうかん] @@en[namespace]]]]は[[IRI参照]]によって[[識別]]される。
+[[要素名]]と[[属性名]]はこの仕様書で説明する方法によって[[XML名前空間]]中に置くことができる。]
+[SRC[XML名前空間 1.1]]
+
+[22]
+仕様書:
+- [[XML名前空間]]
+-- <IW:XMLNames:"#dt-namespace">
+
+[[#comment]]
+
+
+* メモ@
+

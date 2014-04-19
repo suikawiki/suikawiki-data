@@ -1,0 +1,379 @@
+head	1.14;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.14
+date	2014.02.22.03.12.45;	author wakaba;	state Exp;
+branches;
+next	1.13;
+
+1.13
+date	2014.02.22.02.59.25;	author wakaba;	state Exp;
+branches;
+next	1.12;
+
+1.12
+date	2014.02.22.02.58.00;	author wakaba;	state Exp;
+branches;
+next	1.11;
+
+1.11
+date	2014.02.22.02.54.34;	author wakaba;	state Exp;
+branches;
+next	1.10;
+
+1.10
+date	2014.02.14.11.44.58;	author wakaba;	state Exp;
+branches;
+next	1.9;
+
+1.9
+date	2014.01.09.04.55.49;	author wakaba;	state Exp;
+branches;
+next	1.8;
+
+1.8
+date	2012.11.18.04.42.18;	author wakaba;	state Exp;
+branches;
+next	1.7;
+
+1.7
+date	2012.04.01.12.14.17;	author wakaba;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2012.04.01.12.12.12;	author wakaba;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2012.04.01.11.40.51;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2012.04.01.11.40.22;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2012.04.01.11.34.39;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2012.04.01.11.31.37;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2012.04.01.08.17.59;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.14
+log
+@updated by (anon)
+@
+text
+@[2] [DFN[[RUBYB[ストレージ・ミューテックス]@@en[storage mutex]]]]は、
+[[Webブラウザー]]が [[Cookie]] の書き込み等の[[競合状態]]の回避のために使う[[ミューテックス]]です。
+
+[42] 仕様上の概念としては存在しますが、技術的問題から現実には実装されていません。
+
+* 仕様書
+
+[REFS[
+- '''[1] [CITE@@en-US-x-hixie[HTML Standard]]
+( ([TIME[2012-03-28 21:58:58 +09:00]] 版))
+<http://www.whatwg.org/specs/web-apps/current-work/#storage-mutex>'''
+- [44] [CITE@@en-US[Fetch Standard]] ([TIME[2014-02-07 15:59:32 +09:00]] 版) <http://fetch.spec.whatwg.org/#basic-fetch>
+- [11] [CITE@@en-US-x-hixie[HTML Standard]] ([TIME[2012-03-28 21:58:58 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#obtain-the-storage-mutex>
+- [34] [CITE@@en-US-x-hixie[HTML Standard]] ([TIME[2012-03-28 21:58:58 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#manually-releasing-the-storage-mutex>
+- [33] [CITE@@en-US-x-hixie[HTML Standard]] ([TIME[2012-03-28 21:58:58 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#threads>
+- [37] [CITE@@en-US[XMLHttpRequest Standard]] ([TIME[2012-11-14 13:48:01 +09:00]] 版) <http://xhr.spec.whatwg.org/#dom-xmlhttprequest-send>
+]REFS]
+
+* 処理モデル
+
+[3] [[利用者エージェント]]は、[[ストレージ・ミューテックス]]を1つ持って[['''構いません''']]。
+[[ストレージ・ミューテックス]]は、ある時点で
+- [RUBYB[解放されている]@@en[free]]
+- 特定の[[イベント・ループ]]が[RUBYB[所有]@@en[own]]している
+- 特定の [[fetch]] 算法の[[実現値]]が[RUBYB[所有]@@en[own]]している
+
+... のいずれかの状態にあります。 [SRC[>>1]]
+
+** イベント・ループによる所有
+
+[10] [DFN[[RUBYB[ストレージ・ミューテックスを得る]@@en[storage mutex]]]]場合は次のように処理しなければ[['''なりません''']]
+[SRC[>>11]]。
+[FIG[
+= [12] 当該[[タスク]]の[[イベント・ループ]]が既に[[ストレージ・ミューテックス]]を所有しているなら、
+これらの手順から抜けます。
+= [13] そうでなければ、[[イベント・ループ]]が[[ストレージ・ミューテックス]]を取得できるまで[[一時停止]]します。
+= [14] [[ストレージ・ミューテックス]]の所有権を取得します。
+]FIG]
+
+*** イベント・ループがストレージ・ミューテックスを得る状況
+
+[15] [[ストレージ・ミューテックスの取得]]は次の状況で行われます。
+- [16] [CODE(JS)@@en[[[document.cookie]]]] の読み書き
+- [17] [CODE(HTMLa)@@en[[[http-equiv]]]] が [CODE(HTTP)@@en[[[Set-Cookie]]]] である [CODE(HTMLe)@@en[[[meta]]]]
+[[要素]]の処理
+- [18] [CODE(DOMa)@@en[[[localStorage]]]] の読み書き
+
+;; [19] [CODE(DOMa)@@en[[[sessionStorage]]]] の読み書きには[[ストレージ・ミューテックス]]は関与しません。
+
+** fetch 算法による所有
+
+[20] [[ストレージ・ミューテックス]]は、 [[fetch]] 算法の中で [CODE(HTTP)@@en[[[Set-Cookie:]]]]
+の処理のために[[所有]]され、処理が終わり次第解放されます。
+
+** 解放
+
+[5] [[利用者エージェント]]は次の場合に[[ストレージ・ミューテックス]]を[RUBYB[解放]@@en[release]]しなければ[['''なりません''']]。
+[FIG[
+- [6] [[スクリプト]]が[[プラグイン]]を呼び出した時 [SRC[>>1]]
+- [7] [[プラグイン]]が[[スクリプト]]を呼び出した時 [SRC[>>1]]
+- [21] [[fetch]] 内での処理が終わった時 (>>20)
+- [22] [CODE(JS)@@en[[[window.open]]]] [[算法]]の途中
+- [23] [CODE(JS)@@en[[[document.domain]]]] の設定の途中
+- [24] [[navigate]] [[算法]]の途中
+- [25] [[prompt to unload a document]] [[算法]]の途中
+- [26] [[unload a document]] [[算法]]の途中
+- [27] [[イベント・ループ]]で[[タスク]]を処理した直後
+- [28] [CODE(JS)@@en[[[alert]]]], [CODE(JS)@@en[[[confirm]]]], [CODE(JS)@@en[[[prompt]]]] の途中
+- [29] [[printing steps]] [[算法]]の途中
+- [30] [CODE(DOMm)@@en[[[showModalDialog]]]] [[算法]]の途中
+- [31] [CODE(JS)@@en[[[navigator.yieldForStorageUpdates]]]]
+- [32] [[run a worker]] [[算法]]の途中
+- [38] [[XHR]] [CODE(DOMm)@@en[[[send]]]] ([[同期フラグ]]が設定されている場合) [SRC[>>37]]
+]FIG]
+
+*** [CODE(JS)@@en[navigator.yieldForStorageUpdates]]
+
+[35] [DFN[[CODE(JS)@@en[[[navigator.yieldForStorageUpdates]]]]]]
+([CODE(DOMi)@@en[[[NavigatorStorageUtils]]]] [[インターフェイス]]の
+[CODE(DOMm)@@en[[[yieldForStorageUpdates]]]] [[メソッド]]) が呼び出されると、
+[[利用者エージェント]]は、そのメソッド呼び出しを行った[[タスク]]の[[イベント・ループ]]が[[ストレージ・ミューテックス]]を所有しているなら、
+これを解放しなければ[['''なりません''']]。 [SRC[>>34]]
+
+** 実装しない
+
+[4] [[利用者エージェント]]は[[ストレージ・ミューテックス]]を実装しないことを選択しても構いません。
+その場合、[[ストレージ・ミューテックス]]の取得や解放に関する要件は実装しなくて構いません。 [SRC[>>1]]
+
+[8] [[ストレージ・ミューテックス]]を使わないと、あるサイトが複数の[[窓]]から同時に
+[[Cookie]] や [[Web Storage]] にアクセスした時にデータが壊れる危険性があります。
+しかし[[ストレージ・ミューテックス]]を使うと、ある[[サイト]]が [[Cookie]] や
+[[Web Storage]] を使うと他のすべての[[サイト]]がブロックされてしまうことから、
+[[Webブラウザー]]全体の[[パフォーマンス]]に大きく影響します。
+[[Webブラウザー]]の実装者はこの2つの「evil」のどちらかを選択せざるを得ません。 [SRC[>>1]]
+
+;; [9] これは [[Web Storage]] が失敗だったとされる理由の一つです。
+
+[36] [[Web Storage]] の仕様上、[[スクリプト]]の実行途中に [CODE(DOMa)@@en[[[localStorage]]]]
+の値は (その[[スクリプト]]自身が予測できない形で) 変化することはない、とされています。 [SRC[>>33]]
+しかし >>4 の通り[[ストレージ・ミューテックス]]を実装しないことを[[利用者エージェント]]が選択しているなら、
+これは保証されません。
+
+[43] 現実にはすべての [[Webブラウザー]]がこの方法を選択しています [SRC[>>41]]。
+すなわち[[ストレージミューテックス]]は仕様上にしか存在しません。
+通常は実装されない仕様は削除されるものですが、 [[HTML Standard]] の[[編集者]]である [[Ian Hickson]]
+は、データが破壊される可能性がある実装しか認められないのは好ましくないとして、
+[[ストレージミューテックス]]の仕様を残しています [SRC[>>40]]。
+
+* 歴史
+
+[REFS[
+- [45] [CITE@@en[Web Applications 1.0 r3705 Rename getStorageUpdates()]] ([TIME[2009-08-30 10:06:00 +09:00]] 版) <http://html5.org/tools/web-apps-tracker?from=3704&to=3705>
+- [46] [CITE['''['''whatwg''']''' Storage mutex feedback]] ([TIME[2014-02-22 03:09:56 +09:00]] 版) <http://lists.whatwg.org/htdig.cgi/whatwg-whatwg.org/2009-August/022458.html>
+- [39] [CITE[''''''[''''''whatwg'''''']'''''' localStorage, the storage mutex, document.domain, and workers]]
+( ([TIME[2009-09-27 11:33:07 +09:00]] 版))
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2009-September/023059.html>
+- [47] [CITE['''['''whatwg''']''' localStorage feedback]] ([TIME[2014-02-22 03:12:29 +09:00]] 版) <http://lists.whatwg.org/htdig.cgi/whatwg-whatwg.org/2009-December/024277.html>
+- [40] [CITE[IRC logs: freenode / #whatwg / 20140213]]
+( ([TIME[2014-02-14 20:43:39 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20140213#l-39>
+- [41] [CITE@@en[Web Applications 1.0 r8503 Add a note pointing out that browsers haven't implemented the storage mutex.]]
+( ([TIME[2014-02-22 07:18:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=8502&to=8503>
+]REFS]@
+
+
+1.13
+log
+@updated by (anon)
+@
+text
+@d112 2
+d117 1
+@
+
+
+1.12
+log
+@updated by (anon)
+@
+text
+@d12 1
+d121 1
+a121 1
+]REFS]
+@
+
+
+1.11
+log
+@updated by (anon)
+@
+text
+@d4 2
+d100 21
+a120 13
+これは保証されません。
+
+[39] [CITE[''''''[''''''whatwg'''''']'''''' localStorage, the storage mutex, document.domain, and workers]]
+( ([TIME[2009-09-27 11:33:07 +09:00]] 版))
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2009-September/023059.html>
+
+[40] [CITE[IRC logs: freenode / #whatwg / 20140213]]
+( ([TIME[2014-02-14 20:43:39 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20140213#l-39>
+
+[41] [CITE@@en[Web Applications 1.0 r8503 Add a note pointing out that browsers haven't implemented the storage mutex.]]
+( ([TIME[2014-02-22 07:18:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=8502&to=8503>@
+
+
+1.10
+log
+@updated by (anon)
+@
+text
+@d106 5
+a110 1
+<http://krijnhoetmer.nl/irc-logs/whatwg/20140213#l-39>@
+
+
+1.9
+log
+@updated by (anon)
+@
+text
+@d102 5
+a106 1
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2009-September/023059.html>@
+
+
+1.8
+log
+@updated by (anon)
+@
+text
+@d98 5
+a102 1
+これは保証されません。@
+
+
+1.7
+log
+@updated by (anon)
+@
+text
+@d13 1
+d55 1
+d70 2
+d98 1
+a98 1
+これは保証されません。
+@
+
+
+1.6
+log
+@updated by (anon)
+@
+text
+@d89 6
+a94 1
+;; [9] これは [[Web Storage]] が失敗だったとされる理由の一つです。@
+
+
+1.5
+log
+@updated by (anon)
+@
+text
+@d11 2
+d25 1
+a25 1
+** 取得
+d36 1
+a36 1
+*** ストレージ・ミューテックスを得る状況
+d46 5
+d56 20
+@
+
+
+1.4
+log
+@updated by (anon)
+@
+text
+@a43 2
+;; [20] [[HTTP]] [CODE(HTTP)@@en[[[Set-Cookie:]]]] 欄の処理はどうなんでしょう...
+
+@
+
+
+1.3
+log
+@updated by (anon)
+@
+text
+@d34 12
+@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@d7 1
+a7 1
+- [1] [CITE@@en-US-x-hixie[HTML Standard]]
+d9 2
+a10 1
+<http://www.whatwg.org/specs/web-apps/current-work/#storage-mutex>
+d23 11
+d52 1
+a52 1
+;; [9] これは [[Web Storage]] が失敗だったとされる理由の一つです。
+@
+
+
+1.1
+log
+@created by (anon)
+@
+text
+@d1 40
+a40 3
+[1] [CITE@@en-US-x-hixie[HTML Standard]]
+( ([TIME[2012-03-28 21:58:58 +09:00]] 版))
+<http://www.whatwg.org/specs/web-apps/current-work/#storage-mutex>@
+

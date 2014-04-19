@@ -1,0 +1,145 @@
+head	1.2;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.2
+date	2012.03.11.10.02.19;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2008.11.11.01.49.13;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@RFC 2298 <urn:ietf:rfc:2298> で、 [[Disposition-Notification-To:領域]]
+とセットで定義されています。 MDN (Message Disposition Notification)
+を送るに当たっての要求を書くんですが、 RFC 2298 では実際の
+値は定義していません。将来のための予約だけ。
+
+
+* BNF
+
+= Disposition-Notification-Options = "Disposition-Notification-Options" ":" disposition-notification-parameters
+= disposition-notification-parameters = parameter *(";" parameter)
+= parameter = attribute "=" importance "," 1#value
+= importance = "required" / "optional"
+
+このように、ステキで[[逸般的]]な構造をしています。
+RFC 822 [[ABNF]] での定義らしいですが、もしかして 1#value とか ","
+の前後に [[FWS]] が挿入できたりするんでしょうか。
+
+[3]
+[[RFC 3335]] ([[インターネットEDI]], [[IETF]] [[提案標準]]) 5.2
+は再掲なのか[[プロファイル]]的再定義なのかよくわかりませんが、
+構文が
+>
+[PRE(ABNF code)[
+parameter = attribute "=" importance ", " 1#value"
+]PRE]
+
+とされています。構文の記法についての説明が全然ないので
+[CODE(ABNF)@@en[[[FWS]]]] が自由に挿入できるのかは分かりませんが、
+[[読点]]の後に1つ [CODE(charname)@@en[[[SPACE]]]]
+を入れることを求めているようです。
+実際 [[RFC 3335]] に示されている例 (>>4) ではそのようになっています。
+
+[[#comment]]
+
+* パラメーターたち
+
+"required" つきのがあって、それを MUA が理解出来ない場合は、
+"failed" disposition-type 以外の MDN を送ってはいけません。
+
+属性名は、 [[IESG]] で認可された[[標準化過程]]または実験 RFC 
+で定義されて、 [[IANA]] に登録されたものでなければいけません。
+または、例によって "X-" 名を実験目的に使うことが出来ます。
+
+[5] [[RFC 3335]] 5.2 で2つ[[引数]]が定義されています。
+(なぜか [[IANAREG]] には登録されていません。同じ [[RFC]]
+で規定されている [[MDN]] の [CODE(MDN)@@en[[[Received-content-MIC]]]]
+欄は登録されているのに。)
+
+     signed-receipt-protocol=optional, <protocol symbol>;
+
+[CODE(822)@@en[[VAR[<protocol symbol>]]]]:
+,[CODE(822)@@en[[[pkcs7-signature]]]],[[S/MIME]],[[IETF]] [[提案標準]],[[RFC 3335]]
+,[CODE(822)@@en[[[pgp-signature]]]],[[PGP/MIME]],[[IETF]] [[提案標準]],[[RFC 3335]]
+
+[[署名]]付き受領証を要求します。
+
+     signed-receipt-micalg=optional, <micalg1>, <micalg2>,...;
+
+[CODE(822)@@en[[VAR[<micalg[VAR[n]]>]]]]:
+,[CODE(822)@@en[[[md5]]]],[[MD5]],[[IETF]] [[提案標準]],[[RFC 3335]]
+,[CODE(822)@@en[[[sha1]]]],[[SHA-1]],[[IETF]] [[提案標準]],[[RFC 3335]]
+,[CODE(822)@@en[[[rsa-md5]]]],[[MD5]],[[IETF]] [[提案標準]] (歴史的) →[CODE(822)@@en[[[md5]]]],[[RFC 3335]]
+,[CODE(822)@@en[[[rsa-sha1]]]],[[SHA-1]],[[IETF]] [[提案標準]] (歴史的) → [CODE(822)@@en[[[sha1]]]],[[RFC 3335]]
+
+[[署名]]付き受領証の [[MIC]] [[算法]]を指定します。
+最初程優先度が高いものです。[[署名]]付き[[受領証]]を要求する時は必須です。
+
+なお、 [[MDN]] の [CODE(MDN)@@en[[[Received-content-MIC]]]]
+欄と対応します。が、そちらの可能な値は [[RFC 1847]]
+に基づく [[IANAREG]] を参照しているのに、
+こちらはなぜかそうではなく、登録制度もないようです。
+
+- [1] [[[IANAREG]]] ''MDN-Dispostion-notification-option-names'' <http://www.iana.org/assignments/mdn/disp-not-opt/index.html>
+
+[2]
+名前:
+,[CODE(MDN)[[[Alternative-available]]]],代替版が利用可能,[RFC 3297]
+,[CODE(MDN)[[[Alternative-not-available]]]],代替版が利用可能ではない,RFC 3297
+
+09-Aug-2002
+([[名無しさん]])
+[[#comment]]
+
+* 例
+
+[4]
+>
+[PRE(822 example code)[
+Disposition-notification-options:
+  signed-receipt-protocol=optional, pkcs7-signature;
+  signed-receipt-micalg=optional, sha1, md5
+]PRE]
+
+[SRC[[[RFC 3335]] 5.2]]
+
+[[#comment]]
+
+* その他
+
+[[message/partial媒体型]]では、「内側」に入れることになってます。
+
+
+[6] [CITE@@en[RFC 4130 - MIME-Based Secure Peer-to-Peer Business Data Interchange Using HTTP, Applicability Statement 2 (AS2)]]
+( ([TIME[2012-02-19 22:05:33 +09:00]] 版))
+<http://tools.ietf.org/html/rfc4130#section-7.3>@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/446973706F736974696F6E2D4E6F74696669636174696F6E2D4F7074696F6E73.txt>
+@
+text
+@d101 5
+@
+

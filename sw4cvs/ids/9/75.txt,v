@@ -1,0 +1,163 @@
+head	1.2;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.2
+date	2013.10.26.14.00.12;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2008.11.16.23.08.33;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@* 排他的 XML 正準化仕様 (大文字)
+[1] 
+[DFN[[RUBY[排他的][はいたてき]@@en[Exclusive]] XML [RUBY[正準化][せいじゅんか]@@en[Canonicalization]]]]は、
+[[XML]] [[文書]]の一種の[[正準形]]を作成する方法を規定した仕様です。
+
+[[正準XML]] 仕様により [[XML]] [[文書]]の一部分の[[正準形]]を作成すると、
+その外側の[[名前空間宣言]]や [CODE(XMLa)@@en[[[xml]]:[VAR[*]]]]
+[[属性]]が[[継承]]されるため、[[電子署名]]など一部の[[応用]]で不都合が生じていました。
+[[排他的XML正準化]]仕様による[[正準形]]の作成方法を使えば、
+このような影響を排除できます。
+
+[2] 仕様書:
+- [CITE[Exclusive XML Canonicalization Version 1.0]] 
+-- 最新版
+<http://www.w3.org/TR/xml-exc-c14n/>
+== [[W3C]] [[勧告]]
+<http://www.w3.org/TR/2002/REC-xml-exc-c14n-20020718/>
+--- [[正誤表]]
+<http://www.w3.org/2002/07/xml-exc-c14n-errata>
+
+[3] '''応用'''
+
+排他的 XML 正準化が想定している[[応用]]は、
+[[正準XML]] と似ていますが、 [[XML]] 
+的文脈が変わり得るものです。
+[SRC[排他的 XML 正準化 1.0 1.2]]
+
+例えば、[[署名]]のために別の[[名前空間]]の[[要素]]の中にある[[文書]]片を入れると、
+その入れた中身にまで[[名前空間宣言]]が適用されてしまうので、
+[[正準XML]] では中身だけ[[正準化]]しても、
+[[名前空間宣言]]まで含まれてしまいます。
+[[排他的XML正準化]]はこの問題に対処するために開発されました。
+
+[5] 例えば、
+[PRE(XML example code)[
+   <n1:elem1 xmlns:n1="http://b.example">
+       content
+   </n1:elem1>
+]PRE]
+を[[封筒]]に包み、
+[PRE(XML example code)[
+   <n0:pdu xmlns:n0="http://a.example">
+      <n1:elem1 xmlns:n1="http://b.example">
+          content
+      </n1:elem1>
+   </n0:pdu>
+]PRE]
+とした[[文書]]を転送したとします。転送先で[[封筒]]の[[内容]]を
+[[XPath]] [[式]]
+[PRE(XPath example code)[
+(//. | //@@* | //namespace::*)[ancestor-or-self::n1:elem1]
+]PRE]
+で選択し、 (素の) [[正準XML]]
+化すると、
+[PRE(XML example code)[
+   <n1:elem1 xmlns:n0="http://a.example" xmlns:n1="http://b.example">
+       content
+   </n1:elem1>
+]PRE]
+のようになります。 [SRC[排他的 XML 正準化 1.0 2.1]]
+[[封筒]]のための[[名前空間]]が残ってしまいます。
+[[排他的XML正準化]]すると、
+[PRE(XML example code)[
+   <n1:elem1 xmlns:n1="http://b.example">
+       content
+   </n1:elem1>
+]PRE]
+となります。
+
+[4] '''制約'''
+
+[[正準XML]] と[[排他的XML正準化]]の違いは、
+[[排他的XML正準化]]の利点 (というか目的)
+であると同時に、欠点でもあります。
+
+[[排他的XML正準化]]には2つの欠点があります。
+[SRC[排他的 XML 正準化 1.0 1.3]]
+- [[文書部分集合]]の外 (かつ[[祖先]]) の
+[CODE(XMLa)@@en[[[xml]]:[[lang]]]]、
+[CODE(XMLa)@@en[[[xml]]:[[space]]]]、
+[CODE(XMLa)@@en[[[xml]]:[[base]]]]
+は (本来[[継承]]されますが) 失われます。
+予め[[文書部分集合]]内の[[要素]]に明示しておくしかありません。
+- [[文書部分集合]]の外 (かつ[[祖先]]) で[[宣言]]されている、
+[[可視的利用]]されていない[[名前空間接頭辞]]の関連付けは失われます。
+例えば [[XPath]] [[式]]でしか使われていない[[名前空間接頭辞]]の[[宣言]]は失われます。
+予め[[文書部分集合]]内の[[要素]]に明示しておくか、
+[[包括的名前空間接頭辞並び]]に[[名前空間接頭辞]]を含めておく必要があります。
+
+[[#comment]]
+
+* 排他的 XML 正準化 (小文字)
+
+[3]
+> [[用語]][DFN[[RUBY[排他的][exclusive]] XML [RUBY[正準化][せいじゅんか]@@en[canonicalization]]]]は、
+[[XML]][[文書部分集合]]に[[排他的XML正準化法]]を適用する処理を指します。
+
+;; 出典: <IW:XC14N:"#def-exclusive-XML-canonicalization">
+
+[6] '''識別'''
+
+[[XMLデジタル署名]]や[[XML暗号化]]の
+[CODE(XMLe)@@en[[[Transform]]]] や
+[CODE(XMLe)@@en[[[CanonicalizationMethod]]]]
+には、[[排他的XML正準化]]を表す次の [[URI]]
+を指定できます [SRC[排他的 XML 正準化 1.0 4.]]:
+
+-[7] [CODE(URI)@@en[[[http://www.w3.org/2001/10/xml-exc-c14n#]]]]
+([[注釈]]なし)
+-[8] [CODE(URI)@@en[[[http://www.w3.org/2001/10/xml-exc-c14n#WithComments]]]]
+([[注釈]]あり)
+
+;; [[正準XML]] と同様、[[注釈宣言]]を残すか否かで2種類あります。
+
+[[包括的名前空間接頭辞並び]][[引数]]は、
+[CODE(XMLe)@@en[[QN[[[InclusiveNamespaces]]][[[http://www.w3.org/2001/10/xml-exc-c14n#]]]]]]
+[[要素]]で指定できます。
+
+[[#comment]]
+
+* メモ
+
+[9] [[RDFa 1.1]] は [[rdf:XMLLiteral]] の[[直列化]]のために[[排他的XML正準化1.0]] を使っています。@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/C7D3C2BEC5AA584D4CC0B5BDE0B2BD.txt>
+@
+text
+@d123 1
+@
+

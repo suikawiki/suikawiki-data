@@ -1,0 +1,4568 @@
+head	1.2;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.2
+date	2013.09.21.07.53.43;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2008.11.12.21.26.27;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@'''HTML Tables [INS[HTML 表]]'''
+- Network Working Group                                         
+- Request for Comments: 1942                                          
+- Category: Experimental                                          
+- D. Raggett
+- W3C
+- May 1996                  
+
+
+* Status of this Memo
+
+> This memo defines an Experimental Protocol for the Internet
+community.  This memo does not specify an Internet standard of any
+kind.  Discussion and suggestions for improvement are requested.
+Distribution of this memo is unlimited.
+
+
+* Abstract
+
+> The HyperText Markup Language (HTML) is a simple markup language used
+to create hypertext documents that are portable from one platform to
+another. HTML documents are SGML documents with generic semantics
+that are appropriate for representing information from a wide range
+of applications. This specification extends HTML to support a wide
+variety of tables. The model is designed to work well with associated
+style sheets, but does not require them. It also supports rendering
+to braille, or speech, and exchange of tabular data with databases
+and spreadsheets. The HTML table model embodies certain aspects of
+the CALS table model, e.g. the ability to group table rows into
+thead, tbody and tfoot sections, plus the ability to specify cell
+alignment compactly for sets of cells according to the context.
+
+
+* Table of Contents
+
+- Recent Changes  ................................................. 1
+- Brief Introduction  ............................................. 2
+- Design Rationale  ............................................... 5
+- Walkthrough of the Table DTD  ................................... 8
+- Recommended Layout Algorithms  ................................. 23
+- HTML Table DTD  ................................................ 26
+- References  .................................................... 29
+- Security Considerations  ....................................... 30
+- Author's Address  .............................................. 30
+
+
+* Recent Changes [INS[最近の変更点]]
+
+> This specification extends HTML to support tables. The table model
+has grown out of early work on HTML+ and the initial draft of HTML3.
+The earlier model has been been extended in response to requests from
+information providers for improved control over the presentation of
+tabular information:
+
+この仕様書は表に対応するため HTML を拡張します。
+表__&&model&&__は早期の HTML+ の作業及び HTML3 の初期の原案で検討されました。
+早期の__&&model&&__は、情報提供者からの表情報の表現の制御性の向上の要求を受けて拡張しました。
+
+- alignment on designated characters such as "." and ":"
+e.g. aligning a column of numbers on the decimal point
+- more flexibility in specifying table frames and rules
+- incremental display for large tables as data is received
+- the ability to support scrollable tables with fixed headers plus
+better support for breaking tables across pages for printing
+- optional column based defaults for alignment properties
+
+- 「.」や「:」のような特定文字で揃える。例えば数値の欄を小数点で揃える。
+- 表枠・規則をより柔軟に指定
+- 大きな表をデータを受信しながら拡張しつつ表示
+- __&&header&&__を固定して__&&scroll&&__可能及び頁をまたぐ印刷で表をより良く分解することに対応する能力
+- 任意で行ごとの配置属性の既定値
+
+> In addition, a major goal has been to provide backwards compatibility
+with the widely deployed Netscape implementation of tables. A
+subsidiary goal has been to simplify importing tables conforming to
+the SGML CALS model. The latest draft makes the ALIGN attribute
+compatible with the latest Netscape and Microsoft browsers. Some
+clarifications have been made to the role of the DIR attribute and
+recommended behaviour when absolute and relative column widths are mixed.
+
+加えて、大きな目標として、広く採用されている Netscape の表の実装との後方互換性を保つことがあります。
+副次的な目標としては、 SGML CALS __&&model&&__に適合する表を簡単に__&&import&&__可能とします。
+この最新の原案は [CODE(HTML)[ALIGN]] 属性を最新の Netscape
+や Microsoft の__&&browser&&__と互換にします。
+[CODE(HTML)[DIR]] 属性の役割及び行幅に絶対値と相対値が混合されていた場合の推奨される動作の明確化を行います。
+
+> A new element COLGROUP has been introduced to allow sets of columns
+be grouped with different width and alignment properties specified by
+one or more COL elements. The semantics of COLGROUP have been
+clarified over previous drafts, and RULES=BASIC replaced by RULES=GROUPS.
+
+新しい要素 [CODE(HTML)[COLGROUP]] を導入し、1つ以上の [CODE(HTML)[COL]]
+要素で指定された異なる幅・配置属性を持った行の集合を集団化することを可能にします。
+[CODE(HTML)[COLGROUP]] の意味を以前の原案の元で明確化し、
+[CODE(HTML)[RULES=BASIC]] は [CODE(HTML)[RULES=GROUPS]]
+で置き換えます。
+
+> The FRAME and RULES attributes have been modified to avoid SGML name
+clashes with each other, and to avoid clashes with the ALIGN and
+VALIGN attributes. These changes were additionally motivated by the
+desire to avoid future problems if this specification is extended to
+allow FRAME and RULES attributes with other table elements.
+
+[CODE(HTML)[FRAME]] 及び [CODE(HTML)[RULES]] 両属性並びに
+[CODE(HTML)[ALIGN]] 及び [CODE(HTML)[VALIGN]] 両属性は、互いに SGML
+名が衝突することを防ぐため修正します。
+これらの変更は、将来この仕様が拡張されて [CODE(HTML)[FRAME]]
+及び [CODE(HTML)[RULES]] の両属性が他の表要素にも認められるようになったときに問題が起こるのを避ける意味合いもあります。
+
+
+* A Brief Introduction to HTML Tables [INS[HTML 表の概観]]
+
+> Tables start with an optional caption followed by one or more rows.
+Each row is formed by one or more cells, which are differentiated
+into header and data cells. Cells can be merged across rows and
+columns, and include attributes assisting rendering to speech and
+braille, or for exporting table data into databases. The model
+provides limited support for control over appearence, for example
+horizontal and vertical alignment of cell contents, border styles and
+cell margins. You can further affect this by grouping rows and
+columns together. Tables can contain a wide range of content, such as
+headers, lists, paragraphs, forms, figures, preformatted text and
+even nested tables.
+
+表は省略可能な[RUBYB[題] [caption]]から始まり、1つ以上の[RUBYB[列] [row]]が続きます。各列は1つ以上の__&&cell&&__で構成され、__&&cell&&__は__&&header cell&&__と__&&data cell&&__に分類されます。
+__&&cell&&__は行方向又は列方向に合併することや、発話又は点字で__&&rendering&&__する或いは__&&database&&__に__&&export&&__するのを補助する属性を含めることが出来ます。
+この__&&model&&__では__&&cell&&__内容の水平及び垂直方向の揃え位置,
+枠線様式及び__&&cell&&__の余白のような見た目をある程度制御することが出来ます。
+行や列を集団化することで更にこれを行えます。
+表は__&&heading&&__, __&&list&&__, 段落, __&&form&&__,
+図, __&&preformatted text&&__, それに入れ子の表など様々なものを含められます。
+
+
+* Example [INS[例]]
+
+[PRE[
+   <TABLE BORDER>
+     <CAPTION>A test table with merged cells</CAPTION>
+     <TR><TH ROWSPAN=2><TH COLSPAN=2>Average
+         <TH ROWSPAN=2>other<BR>category<TH>Misc
+     <TR><TH>height<TH>weight
+     <TR><TH ALIGN=LEFT>males<TD>1.9<TD>0.003
+     <TR><TH ALIGN=LEFT ROWSPAN=2>females<TD>1.7<TD>0.002
+   </TABLE>
+]PRE]
+
+> On a dumb terminal, this would be rendered something like:
+
+[PRE[
+                 A test table with merged cells
+       /--------------------------------------------------\
+       |          |      Average      |  other   |  Misc  |
+       |          |-------------------| category |--------|
+       |          |  height |  weight |          |        |
+       |-----------------------------------------|--------|
+       | males    | 1.9     | 0.003   |          |        |
+       |-----------------------------------------|--------|
+       | females  | 1.7     | 0.002   |          |        |
+       \--------------------------------------------------/
+]PRE]
+
+[PRE[
+   <TABLE BORDER>
+     <CAPTION>合併__&&cell&&__を含む__&&test&&__の表</CAPTION>
+     <TR><TH ROWSPAN=2><TH COLSPAN=2>平均
+         <TH ROWSPAN=2>他の<BR>部門<TH>その他
+     <TR><TH>身長<TH>体重
+     <TR><TH ALIGN=LEFT>男性<TD>1.9<TD>0.003
+     <TR><TH ALIGN=LEFT ROWSPAN=2>女性<TD>1.7<TD>0.002
+   </TABLE>
+]PRE]
+
+無言端末はこれを次のように__&&rendering&&__するでしょう。
+
+[PRE[
+               合併__&&cell&&__を含む__&&test&&__の表
+       /----------------------------------------\
+       |       |      平均      | 他の | その他 |
+       |       |----------------| 部門 |--------|
+       |       |  身長 |  体重  |      |        |
+       |-------------------------------|--------|
+       | 男性  | 1.9   | 0.003  |      |        |
+       |-------------------------------|--------|
+       | 女性  | 1.7   | 0.002  |      |        |
+       \----------------------------------------/
+]PRE]
+
+> Next, a richer example with grouped rows and columns (adapted from
+"Developing International Software" by Nadine Kano). First here is
+what the table looks like on paper:
+
+次は集団化された行と列がある込み入った例
+(Nadine Kano の『[RUBYB[国際ソフトウェアの開発] [Developing International Software]]』
+から採りました。) です。
+
+[PRE[
+                      CODE-PAGE SUPPORT IN MICROSOFT WINDOWS
+ ========================================================================
+ Code-Page| Name                      |ACP OEMCP| Windows Windows Windows
+     ID   |                           |         |  NT 3.1 NT 3.51    95
+ ------------------------------------------------------------------------
+    1200  |Unicode (BMP of ISO 10646) |         |     X       X       *
+    1250  |Windows 3.1 East. Europe   |  X      |     X       X       X
+    1251  |Windows 3.1 Cyrillic       |  X      |     X       X       X
+    1252  |Windows 3.1 US (ANSI)      |  X      |     X       X       X
+    1253  |Windows 3.1 Greek          |  X      |     X       X       X
+    1254  |Windows 3.1 Turkish        |  X      |     X       X       X
+    1255  |Hebrew                     |  X      |                     X
+    1256  |Arabic                     |  X      |                     X
+    1257  |Baltic                     |  X      |                     X
+    1361  |Korean (Johab)             |  X      |             **      X
+ ------------------------------------------------------------------------
+     437  |MS-DOS United States       |     X   |     X       X       X
+     708  |Arabic (ASMO 708)          |     X   |                     X
+     709  |Arabic (ASMO 449+, BCON V4)|     X   |                     X
+     710  |Arabic (Transparent Arabic)|     X   |                     X
+     720  |Arabic (Transparent ASMO)  |     X   |                     X
+ ========================================================================
+]PRE]
+
+> The markup for this uses COLGROUP elements to group columns and to
+set default column alignment. TBODY elements are used to group rows.
+The FRAME and RULES attributes are used to select which borders to render.
+
+これの__&&markup&&__には [CODE(HTML)[COLGROUP]] 要素を使って行を集団化し、行の配置の既定値を指定しています。
+[CODE(HTML)[TBODY]] 要素は列の集団に使います。
+[CODE(HTML)[FRAME]] 及び [CODE(HTML)[RULES]] 両属性は__&&rendering&&__する枠を選択するために使います。
+
+[PRE[
+   <table border=2 frame=hsides rules=groups>
+   <caption>CODE-PAGE SUPPORT IN MICROSOFT WINDOWS</caption>
+   <colgroup align=center>
+   <colgroup align=left>
+   <colgroup align=center span=2>
+   <colgroup align=center span=3>
+   <thead valign=top>
+   <tr>
+   <th>Code-Page<br>ID
+   <th>Name
+   <th>ACP
+   <th>OEMCP
+   <th>Windows<br>NT 3.1
+   <th>Windows<br>NT 3.51
+   <th>Windows<br>95
+   <tbody>
+   <tr><td>1200<td>Unicode (BMP of ISO 10646)<td><td><td>X<td>X<TD>*
+   <tr><td>1250<td>Windows 3.1 Eastern European<td>X<td><td>X<td>X<TD>X
+   <tr><td>1251<td>Windows 3.1 Cyrillic<td>X<td><td>X<td>X<TD>X
+   <tr><td>1252<td>Windows 3.1 US (ANSI)<td>X<td><td>X<td>X<TD>X
+   <tr><td>1253<td>Windows 3.1 Greek<td>X<td><td>X<td>X<TD>X
+   <tr><td>1254<td>Windows 3.1 Turkish<td>X<td><td>X<td>X<TD>X
+   <tr><td>1255<td>Hebrew<td>X<td><td><td><td>X
+   <tr><td>1256<td>Arabic<td>X<td><td><td><td>X
+   <tr><td>1257<td>Baltic<td>X<td><td><td><td>X
+   <tr><td>1361<td>Korean (Johab)<td>X<td><td><td>**<td>X
+   <tbody>
+   <tr><td>437<td>MS-DOS United States<td><td>X<td>X<td>X<TD>X
+   <tr><td>708<td>Arabic (ASMO 708)<td><td>X<td><td><td>X
+   <tr><td>709<td>Arabic (ASMO 449+, BCON V4)<td><td>X<td><td><td>X
+   <tr><td>710<td>Arabic (Transparent Arabic)<td><td>X<td><td><td>X
+   <tr><td>720<td>Arabic (Transparent ASMO)<td><td>X<td><td><td>X
+   </table>
+*Design Rationale [INS[設計論]]
+>The HTML table model has evolved from studies of existing SGML tables
+models, the treatment of tables in common word processing packages,
+and looking at a wide range of tabular layout in magazines, books and
+other paper-based documents. The model was chosen to allow simple
+tables to be expressed simply with extra complexity only when needed.
+This makes it practical to create the markup for HTML tables with
+everyday text editors and reduces the learning curve for getting
+started. This feature has been very important to the success of HTML 
+to date.
+]PRE]
+
+HTML 表__&&model&&__は既存の SGML 表__&&model&&__,
+文書処理__&&package&&__における表の扱いの研究及び雑誌・本や他の紙文書での表__&&layout&&__の広範囲の調査より発展しています。
+この__&&model&&__は単純な表は簡潔に表現出来、必要な時にだけ複雑となるように選びました。
+このため日常的な__&&text editor&&__での HTML 表の__&&markup&&__の作成及び開始のための__&&learning curve&&__の削減が現実的になります。
+この機能は HTML の成功に非常に重要です。
+
+> Increasingly people are using filters from other document formats or
+direct wysiwyg editors for HTML. It is important that the HTML table
+model fits well with these routes for authoring HTML. This affects
+how the representation handles cells which span multiple rows or
+columns, and how alignment and other presentation properties are
+associated with groups of cells.
+
+他の文書形式から HTML に濾過したり直接 WYSIWYG __&&editor&&__を使う人が増えています。
+HTML 表__&&model&&__がこうした HTML の書き方とよく合うことが重要です。
+このことは複数の行・列をまたぐ__&&cell&&__の取扱いの表現や揃え位置その他の表現属性を__&&cell&&__の集団と関連付ける方法に影響しています。
+
+> A major consideration for the HTML table model is that the fonts and
+window sizes etc. in use with browsers are not under the author's
+control. This makes it risky to rely on column widths specified in
+terms of absolute units such as picas or pixels. Instead, tables can
+be dynamically sized to match the current window size and fonts.
+Authors can provide guidance as to the relative widths of columns,
+but user agents should to ensure that columns are wide enough to
+render the width of the largest single element of the cell's content.
+If the author's specification must be overridden, it is preferred
+that the relative widths of individual columns are not changed drastically.
+
+HTML 表__&&model&&__の大きな考慮点は、__&&borwser&&__で使われる__&&font&&__や__&&window size&&__などは著者の制御の及ぶ範囲ではないことです。
+このため__&&pica&&__や__&&pixel&&__のような絶対単位で指定された行の幅を当てにすることは危険です。
+代わりに、表は現在の__&&window size&&__や__&&font&&__に応じて動的に大きさを設定できます。
+著者は行の相対幅の手引きを提供できますが、__&&user agent&&__は__&&cell&&__の内容の最大の一つの要素の幅を__&&rendering&&__できる十分な広さを行が確保できる__&&should&&_。
+著者の指定が上書きされなければならないときは、個々の行の相対幅は徹底的に変更しないのが好ましいです。
+
+> For large tables or slow network connections, it is desirable to be
+able to start displaying the table before all of the data has been
+received. The default window width for most user agents shows about
+80 characters, and the graphics for many HTML pages are designed with
+these defaults in mind. Authors can provide a hint to user agents to
+activate incremental display of table contents. This feature requires
+the author to specify the number of columns, and includes provision
+for control of table width and the widths of different columns in
+relative or absolute terms.
+
+大きな表又は低速ネットワーク接続では、全てのデータを受信する前に表を表示し始めることが出来るのが望ましいです。
+ほとんどの__&&user agent&&__の既定の__&&window&&__幅は80文字くらいで、多くの
+HTML __&&page&&__の図画はこの既定値を考慮して設計されています。
+著者は__&&user agent&&__に拡張しつつの表内容の表示を活性化するヒントを提供できます。
+この機能には著者が行数を指定することと、相対的又は絶対的な表幅及び異なる行の幅の制御の準備を含めることが必要です。
+
+> For incremental display, the browser needs the number of columns and
+their widths. The default width of the table is the current window
+size (width="100%"). This can be altered by including a WIDTH
+attribute in the TABLE start tag. By default all columns have the
+same width, but you can specify column widths with one or more COL
+elements before the table data starts.
+
+拡張しつつの表示では、__&&browser&&__は行の数とその幅を必要とします。
+表の幅の既定値は現在の__&&window size&&__ ([CODE(HTML)[width="100%"]])
+です。これは [CODE(HTML)[TABLE]] 開始__&&tag&&__の
+[CODE(HTML)[WIDTH]] 属性を含めることで代替出来ます。
+既定では全ての行が同じ幅ですが、表のデータが始まる前に一つ以上の
+[CODE(HTML)[COL]] 要素で行幅を指定することが出来ます。
+
+> The remaining issue is the number of columns. Some people have
+suggested waiting until the first row of the table has been received,
+but this could take a long time if the cells have a lot of content.
+On the whole it makes more sense, when incremental display is
+desired, to get authors to explicitly specify the number of columns
+in the TABLE start tag.
+
+残る問題は行の数です。表の最初の列を受信するまで待つことを提案した人もいますが、__&&cell&&__が多くの内容を持っていた場合多くの時間がかかります。
+拡張しつつの表示がのぞましいときは、概して著者が陽に行数を
+[CODE(HTML)[TABLE]] 開始__&&tag&&__に指定したほうが意味があります。
+
+> Authors still need a way of informing the browser whether to use
+incremental display or to automatically size the table to match the
+cell contents. For the two pass auto sizing mode, the number of
+columns is determined by the first pass, while for the incremental
+mode, the number of columns needs to be stated up front. So it seems
+to that COLS=_nn_ would be better for this purpose than a LAYOUT
+attribute such as LAYOUT=FIXED or LAYOUT=AUTO.
+
+著者は依然__&&browser&&__が拡張しつつの表示を使うか自動的に表を__&&cell&&__内容に合った大きさにするかの情報を入れる必要があります。
+2段階自動大きさ合わせ__&&mode&&__では、行の数は第1段階決定され、拡張しつつ__&&mode&&__では行の数は最初にある必要があります。
+ですからこの目的では [CODE(HTML)[LAYOUT=FIXED]] や [CODE(HTML)[KAYOUT=AUTO]]
+のような [CODE(HTML)[LAYOUT]] 属性よりは [CODE(HTML)[COLS=_nn_]]
+のほうが良いでしょう。
+
+> It is generally held useful to consider documents from two
+perspectives: Structural idioms such as headers, paragraphs, lists,
+tables, and figures; and rendering idioms such as margins, leading,
+font names and sizes. The wisdom of past experience encourages us to
+separate the structural information in documents from rendering
+information. Mixing them together ends up causing increased cost of
+ownership for maintaining documents, and reduced portability between
+applications and media.
+
+通常、文書を二つの角度から考えるのが有用です。
+__&&heading&&__, 段落, __&&list&&__, 表, 図のような構造表現と、余白,
+__&&leading&&__, __&&font&&__の名前や大きさのような__&&rendering&&__表現です。
+過去の経験からの知恵に従うなら文書の構造情報は__&&rendering&&__情報から分けた方が良いです。
+この2つを混合することは文書を維持する費用がかさみ、応用と媒体の間の可搬性を減らすこととなります。
+
+> For tables, the alignment of text within table cells, and the borders
+between cells are, from the purist's point of view, rendering
+information. In practice, though, it is useful to group these with
+the structural information, as these features are highly portable
+from one application to the next. The HTML table model leaves most
+rendering information to associated style sheets. The model is
+designed to take advantage of such style sheets but not to require them.
+
+表については、表の__&&cell&&__の中の__&&text&&__の配置や__&&cell&&__間の枠線は__&&purist&&__の視点からすれば、__&&rendering&&__情報です。
+しかし実際のところ、これらを構造情報と共に分類することは、これらの機能がある応用から次の応用へと非常に可搬ですから有用です。
+HTML 表__&&model&&__はほとんどの__&&rendering&&__情報を関連付けられた__&&style sheet&&__に委ねます。
+この__&&model&&__はそうした__&&style sheet&&__で優位に設計されていますが、必須ではありません。
+
+> This specification provides a superset of the simpler model presented
+in earlier work on HTML+. Tables are considered as being formed from
+an optional caption together with a sequence of rows, which in turn
+consist of a sequence of table cells. The model further
+differentiates header and data cells, and allows cells to span
+multiple rows and columns.
+
+この仕様書は早期の HTML+ の作業で提示された比較的単純な__&&model&&__の__&&superset&&__を提供します。
+表は省略可能な表題と列の連続があって、列は表__&&cell&&__の連続で構成される形と考えられます。
+この__&&model&&__は更に__&&header cell&&__と__&&data cell&&__を区別し、__&&cell&&__は行や列をまたぐことが出来ます。
+
+> Following the CALS table model, this specification allows table rows
+to be grouped into head and body and foot sections. This simplifies
+the representation of rendering information and can be used to repeat
+table head and foot rows when breaking tables across page boundaries,
+or to provide fixed headers above a scrollable body panel. In the
+markup, the foot section is placed before the body sections. This is
+an optimization shared with CALS for dealing with very long tables.
+It allows the foot to be rendered without having to wait for the
+entire table to be processed.
+
+CALS 表__&&model&&__に倣い、この仕様では表の列を__&&(table)head&&__,
+__&&(table)body&&__, __&&(table)foot&&__に集団化することが出来ます。
+このため__&&rendering&&__情報の表現が簡単になり、頁境界を越えるため表を分解する時に__&&(table)head&&__列や__&&(table)foot&&__列を繰り返すことが出来、また__&&scroll&&__可能な__&&(table)body&&__部分の上に固定の__&&(table)head&&__を配置出来ます。
+__&&markup&&__上では、__&&(table)foot&&__は__&&(table)body&&__の前に置かれます。
+これは CALS でと同じく非常に長い表を処理するための最適化です。
+これによって表全体を処理するのを待つことなしに__&&(table)foot&&__を__&&rendering&&__することが出来ます。
+
+> For the visually impaired, HTML offers the hope of setting to rights
+the damage caused by the adoption of windows based graphical user
+interfaces. The HTML table model includes attributes for labeling
+each cell, to support high quality text to speech conversion. The
+same attributes can also be used to support automated import and
+export of table data to databases or spreadsheets.
+
+視覚障害者に対しては、 HTML は__&&window&&__を基にした__&&graphical user interface&&__の採用に伴い発生する被害を改善できるかもしれません。
+HTML 表__&&model&&__は各__&&cell&&__に札付けして、発話合成のための高品質__&&text&&__に対応する属性を含んでいます。
+この属性は__&&database&&__や__&&spreadsheet&&__とのデータの__&&import&&__や__&&export&&__の自動化に対応するのにも使えます。
+
+[PRE[
+   Current desktop publishing packages provide very rich control over
+   the rendering of tables, and it would be impractical to reproduce
+   this in HTML, without making HTML into a bulky rich text format like
+   RTF or MIF. This specification does, however, offer authors the
+   ability to choose from a set of commonly used classes of border
+   styles. The FRAME attribute controls the appearence of the border
+   frame around the table while the RULES attribute determines the
+   choice of rulings within the table.
+]PRE]
+
+[PRE[
+   During the development of this specification, a number of avenues
+   were investigated for specifying the ruling patterns for tables. One
+   issue concerns the kinds of statements that can be made. Including
+   support for edge subtraction as well as edge addition leads to
+   relatively complex algorithms. For instance work on allowing the full
+   set of table elements to include the FRAME and RULES attributes led
+   to an algorithm involving some 24 steps to determine whether a
+   particular edge of a cell should be ruled or not. Even this
+   additional complexity doesn't provide enough rendering control to
+   meet the full range of needs for tables. The current specification
+   deliberately sticks to a simple intuitive model, sufficient for most
+   purposes. Further experimental work is needed before a more complex
+   approach is standardized.
+]PRE]
+
+
+* A walk through the table DTD [INS[表 DTD を読むに当たって]]
+
+> The table document type definition provides the formal definition of
+the allowed syntax for html tables. The following is an annotated
+listing of the DTD. The complete listing appears at the end of this document.
+
+表文書型定義は html 表で使用できる構文の正式な定義です。
+次に示すのは注釈をつけた DTD です。完全なものはこの文書の最後にあります。
+
+> Note that the TABLE element is a block-like element rather a
+character-level element. As such it is a peer of other HTML 
+block-like elements such as paragraphs, lists and headers.
+
+[CODE(HTML)[TABLE]] __&&element&&__は文字水準__&&element&&__ではなく__&&block&&__的__&&element&&__であることに注意して下さい。
+ですから段落や__&&list&&__, __&&heading&&__のようなほかの HTML
+の__&&block&&__的__&&element&&__と同等になります。
+
+
+* Common Attributes [INS[共通属性]]
+
+> The following attributes occur in several of the elements and are
+defined here for brevity. In general, all attribute names and values
+in this specification are case insensitive, except where noted
+otherwise. The ID, CLASS and attributes are required for use with
+style sheets, while LANG and DIR are needed for internationalization.
+
+次の属性は幾つかの__&&element&&__に登場するので簡単のためここで定義します。
+通常、この仕様中の全ての属性名及び値は特に注記の無い限り大文字・小文字を区別しません。
+[CODE(HTML)[ID]], [CODE(HTML)[CLASS]] 及び属性 [INS[(訳注: [CODE(HTML)[ID]], [CODE(HTML)[CLASS]] 両属性の誤り?)]] 
+は__&&style sheet&&__と併用するのに必要で、
+[CODE(HTML)[LANG]] 及び [CODE(HTML)[DIR]] は国際化に必要です。
+
+[PRE[
+   <!ENTITY % attrs
+          "id      ID       #IMPLIED  -- element identifier --
+                                      [INS[-- __&&element&&__識別子 --]]
+           class   NAMES    #IMPLIED  -- for subclassing elements --
+                                      [INS[-- __&&element&&__の__&&subclass&&__化 --]]
+           lang    NAME     #IMPLIED  -- as per RFC 1766 --
+                                      [INS[-- RFC 1766 による --]]
+                                      [INS[-- 国際化__&&text&&__方向 --]]
+           dir   (ltr|rtl)  #IMPLIED  -- I18N text direction --">
+]PRE]
+
+[PRE[
+   ID
+       Used to define a document-wide identifier. This can be used for
+       naming positions within documents as the destination of a
+       hypertext link. It may also be used by style sheets for
+       rendering an element in a unique style. An ID attribute value is
+       an SGML NAME token. NAME tokens are formed by an initial letter
+       followed by letters, digits, "-" and "." characters. The letters
+       are restricted to A-Z and a-z.
+]PRE]
+
+文書範囲の識別子を定義するのに使用。
+
+[PRE[
+   CLASS
+       A space separated list of SGML NAME tokens. CLASS names specify
+       that the element belongs to the corresponding named classes. It
+       allows authors to distinguish different roles played by the same
+       tag. The classes may be used by style sheets to provide
+       different renderings as appropriate to these roles.
+]PRE]
+
+[PRE[
+   LANG
+       A LANG attribute identifies the natural language used by the
+       content of the associated element.The syntax and registry of
+       language values are defined by RFC 1766. In summary the language
+       is given as a primary tag followed by zero or more subtags,
+       separated by "-". White space is not allowed and all tags are
+       case insensitive. The name space of tags is administered by
+       IANA. The two letter primary tag is an ISO 639 language
+       abbreviation, while the initial subtag is a two letter ISO 3166
+       country code. Example values for LANG include:
+]PRE]
+
+[PRE[
+             en, en-US, en-uk, i-cherokee, x-pig-latin.
+]PRE]
+
+[PRE[
+   DIR
+       Human writing systems are grouped into scripts, which determine
+       amongst other things, the direction the characters are written.
+       Elements of the Latin script are nominally left to right, while
+       those of the Arabic script are nominally right to left. These
+       characters have what is called strong directionality. Other
+       characters can be directionally neutral (spaces) or weak
+       (punctuation).
+]PRE]
+
+[PRE[
+       The DIR attribute specifies an encapsulation boundary which
+       governs the interpretation of neutral and weakly directional
+       characters. It does not override the directionality of strongly
+       directional characters. The DIR attribute value is one of LTR
+       for left to right, or RTL for right to left, e.g. DIR=RTL.
+]PRE]
+
+[PRE[
+       When applied to TABLE, it indicates the geometric layout of rows
+       (i.e. row 1 is on right if DIR=RTL, but on the left if DIR=LTR)
+       and it indicates a default base directionality for any text in
+       the table's content if no other DIR attribute applies to that
+       text.
+]PRE]
+
+
+* Horizontal and Vertical Alignment Attributes
+
+[PRE[
+   The alignment of cell contents can be specified on a cell by cell
+   basis, or inherited from enclosing elements, such as the row, column
+   or the table element itself.
+]PRE]
+
+[PRE[
+   ALIGN
+       This specifies the horizontal alignment of cell contents.
+]PRE]
+
+[PRE[
+   <!-- horizontal alignment attributes for cell contents -->
+   <!ENTITY % cell.halign
+           "align  (left|center|right|justify|char) #IMPLIED
+            char    CDATA   #IMPLIED -- alignment char, e.g. char=':' --
+            charoff CDATA   #IMPLIED -- offset for alignment char --"
+           >
+]PRE]
+
+[PRE[
+       The attribute value should be one of LEFT, CENTER, RIGHT,
+       JUSTIFY and CHAR. User agents may treat JUSTIFY as left
+       alignment if they lack support for text justification.
+       ALIGN=CHAR is used for aligning cell contents on a particular
+       character.
+]PRE]
+
+Raggett                       Experimental                      [Page 9]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+       For cells spanning multiple rows or columns, where the alignment
+       property is inherited from the row or column, the initial row
+       and column for the cell determines the appropriate alignment
+       property to use.
+]PRE]
+
+[PRE[
+       Note that an alignment attribute on elements within the cell,
+       e.g. on a P element, overrides the normal alignment value for
+       the cell.
+]PRE]
+
+[PRE[
+   CHAR
+       This is used to specify an alignment character for use with
+       align=char, e.g. char=":". The default character is the decimal
+       point for the current language, as set by the LANG attribute.
+       The CHAR attribute value is case sensitive.
+]PRE]
+
+[PRE[
+   CHAROFF
+       Specifies the offset to the first occurrence of the alignment
+       character on each line. If a line doesn't include the alignment
+       character, it should be horizontally shifted to end at the
+       alignment position. The resolved direction of the cell, as
+       determined by the inheritance of the DIR attribute, is used to
+       set whether the offset is from the left or right margin of the
+       cell. For Latin scripts, the offset will be from the left
+       margin, while for Arabic scripts, it will be from the right
+       margin. In addition to standard units, the "%" sign may be used
+       to indicate that the value specifies the alignment position as a
+       percentage offset of the current cell, e.g. CHAROFF="30%"
+       indicates the alignment character should be positioned 30%
+       through the cell.
+]PRE]
+
+[PRE[
+       When using the two pass layout algorithm, the default alignment
+       position in the absence of an explicit or inherited CHAROFF
+       attribute can be determined by choosing the position that would
+       center lines for which the width before and after the alignment
+       character are at the maximum values for any of the lines in the
+       column for which ALIGN=CHAR. For incremental table layout the
+       suggested default is CHAROFF="50%". If several cells in
+       different rows for the same column use character alignment, then
+       by default, all such cells should line up, regardless of which
+       character is used for alignment. Rules for handling objects too
+       large for column apply when the explicit or implied alignment
+       results in a situation where the data exceeds the assigned width
+       of the column.
+]PRE]
+
+[PRE[
+   VALIGN
+       Defines whether the cell contents are aligned with the top,
+       middle or bottom of the cell.
+]PRE]
+
+Raggett                       Experimental                     [Page 10]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+       <!-- vertical alignment attributes for cell contents -->
+       <!ENTITY % cell.valign
+               "valign  (top|middle|bottom|baseline)  #IMPLIED"
+               >
+]PRE]
+
+[PRE[
+       If present, the value of the attribute should be one of: TOP,
+       MIDDLE, BOTTOM or BASELINE. All cells in the same row with
+       valign=baseline should be vertically positioned so that the
+       first text line in each such cell occur on a common baseline.
+       This constraint does not apply to subsequent text lines in these
+       cells.
+]PRE]
+
+Inheritance Order
+
+[PRE[
+   Alignment properties can be included with most of the table elements:
+   COL, THEAD, TBODY, TFOOT, TR, TH and TD. When rendering cells,
+   horizontal alignment is determined by columns in preference to rows,
+   while for vertical alignment, the rows are more important than the
+   columns. The following table gives the detailed precedence order for
+   each attribute, where X > Y denotes that X takes precedence over Y:
+]PRE]
+
+[PRE[
+   ALIGN, CHAR and CHAROFF:
+]PRE]
+
+[PRE[
+   cells > columns > column groups > rows > row groups > default
+]PRE]
+
+[PRE[
+   VALIGN, LANG, and DIR:
+]PRE]
+
+[PRE[
+   cells > rows > row groups > columns > column groups > table > default
+]PRE]
+
+[PRE[
+   Where cells are defined by TH and TD elements; rows by TR elements;
+   row groups by THEAD, TBODY and TFOOT elements, columns by COL
+   elements; and column groups by COLGROUP and COL elements. Note that
+   there is no inheritance mechanism for the CLASS attribute.
+]PRE]
+
+[PRE[
+   Properties defined on cells take precedence over inherited
+   properties, but are in turn over-ridden by alignment properties on
+   elements within cells. In the absence of an ALIGN attribute along the
+   inheritance path, the recommended default alignment for table cell
+   contents is ALIGN=LEFT for table data and ALIGN=CENTER for table
+   headers. The recommended default for vertical alignment is
+   VALIGN=MIDDLE. These defaults are chosen to match the behaviour of
+   the widely deployed Netscape implementation.
+]PRE]
+
+Standard Units for Widths
+
+[PRE[
+   Several attributes specify widths as a number followed by an optional
+   suffix. The units for widths are specified by the suffix: pt denotes
+   points, pi denotes picas, in denotes inches, cm denotes centimeters,
+]PRE]
+
+Raggett                       Experimental                     [Page 11]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+   mm denotes millimeters, em denotes em units (equal to the height of
+   the default font), and px denotes screen pixels. The default units
+   are screen pixels (chosen for backwards compatibility). The number is
+   an integer value or a real valued number such as "2.5". Exponents, as
+   in "1.2e2", are not allowed.  White space is not allowed between the
+   number and the suffix.
+]PRE]
+
+[PRE[
+   The above set of suffices is augmented for certain elements: "%" is
+   used for the WIDTH attribute for the TABLE element. It indicates that
+   the attribute specifies the percentage width of the space between the
+   current left and right margins, e.g. width="50%". For the COL
+   element, "*" is used with the WIDTH attribute to specify relative
+   column widths, e.g. width="3*", using the same representation as the
+   CALS table model.
+]PRE]
+
+The TABLE element
+
+<!ENTITY % Where "(left|center|right)">
+
+<!ELEMENT table - - (caption?, (col*|colgroup*), thead?, tfoot?, tbody+)>
+
+<!ATTLIST table                    -- table element --
+[PRE[
+        %attrs;                    -- id, lang, dir and class --
+        align   %Where;  #IMPLIED  -- table position relative to --
+                                   -- window --
+        width   CDATA    #IMPLIED  -- table width relative to window --
+        cols    NUMBER   #IMPLIED  -- used for immediate display mode --
+        border  CDATA    #IMPLIED  -- controls frame width around --
+                                   -- table --
+        frame   %Frame;  #IMPLIED  -- which parts of table frame to --
+                                   -- include --
+        rules   %Rules;  #IMPLIED  -- controls rules between cells --
+        cellspacing CDATA #IMPLIED -- spacing between cells --
+        cellpadding CDATA #IMPLIED -- spacing within cells --
+        >
+]PRE]
+
+[PRE[
+   The TABLE element requires both start and end tags. Table elements
+   start with an optional CAPTION element, optionally followed by either
+   one or more COL elements, or one or more COLGROUP elements, then an
+   optional THEAD, an optional TFOOT, and finally one or more TBODY
+   elements.
+]PRE]
+
+[PRE[
+   ID, CLASS, LANG and DIR
+       See earlier description of common attributes.
+]PRE]
+
+[PRE[
+   ALIGN
+       Defines the horizontal position of the table relative to the
+       current left and right margins. ALIGN=CENTER centers the table
+]PRE]
+
+Raggett                       Experimental                     [Page 12]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+       midway between the left and right margins. ALIGN=LEFT positions
+       the table at the left margin, while ALIGN=RIGHT positions the
+       table at the right margin. User agents may flow text around the
+       right handside of the table for ALIGN=LEFT, or the left handside
+       for ALIGN=RIGHT.
+]PRE]
+
+[PRE[
+       Note you can use <BR CLEAR=LEFT> after the table element if you
+       want to avoid text flowing along side the table when you have
+       specified ALIGN=LEFT, or <BR CLEAR=RIGHT> for a right aligned
+       table. To prevent a right aligned table flowing around something
+       else, use <BR CLEAR=RIGHT> before the table etc. Greater control
+       over textflow is possible using style sheets.
+]PRE]
+
+[PRE[
+   WIDTH
+       Specifies the desired width of the table. In addition to the
+       standard units, the "%" sign may used to indicate that the width
+       specifies the percentage width of the space between the current
+       left and right margins, e.g. width="50%". In the absence of this
+       attribute, the table width can be determined by the layout
+       algorithm given later on.
+]PRE]
+
+[PRE[
+       It is recommended that the table width be increased beyond the
+       value indicated by the WIDTH attribute as needed to avoid any
+       overflow of cell contents. Such increases should try to avoid
+       drastic changes to relative column widths specified by the
+       author. To avoid the need for excessive horizontal scrolling, or
+       when such scrolling is impractical or undesired, it may be
+       appropriate to split words across lines.
+]PRE]
+
+[PRE[
+   COLS
+       Specifies the number of columns for the table. If present the
+       user agent may render the table dynamically as data is received
+       from the network without waiting for the complete table to be
+       received. If the WIDTH attribute is missing, a default of "100%"
+       may be assumed for this purpose. If the COLS attribute is
+       absent, a prepass through the table's contents is needed to
+       determine the number of columns together with suitable values
+       for the widths of each column.
+]PRE]
+
+[PRE[
+   BORDER
+       Specifies the width of the border framing the table, see
+       standard units.
+]PRE]
+
+[PRE[
+   FRAME
+       Specifies which sides of the frame to render.
+]PRE]
+
+[PRE[
+       <!ENTITY % Frame
+          "(void|above|below|hsides|lhs|rhs|vsides|box|border)">
+]PRE]
+
+Raggett                       Experimental                     [Page 13]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+       VOID
+           Don't render any sides of the frame.
+]PRE]
+
+[PRE[
+       ABOVE
+           The top side of the frame
+]PRE]
+
+[PRE[
+       BELOW
+           The bottom side of the frame
+]PRE]
+
+[PRE[
+       HSIDES
+           The top and bottom sides of the frame
+]PRE]
+
+[PRE[
+       LHS
+           The left hand side of the frame
+]PRE]
+
+[PRE[
+       RHS
+           The right hand side of the frame
+]PRE]
+
+[PRE[
+       VSIDES
+           The left and right sides of the frame
+]PRE]
+
+[PRE[
+       BOX
+           All four sides of the frame
+]PRE]
+
+[PRE[
+       BORDER
+           All four sides of the frame
+]PRE]
+
+[PRE[
+       The value "Border" is included for backwards compatibility with
+       deployed browsers. If a document includes <TABLE BORDER> the
+       user agent will see FRAME=BORDER and BORDER=_implied_. If the
+       document includes <TABLE BORDER=_n_> then the user agent should
+       treat this as FRAME=BORDER except if _n=0_ for which FRAME=VOID
+       is appropriate.
+]PRE]
+
+[PRE[
+       Note: it would have been preferable to choose values for FRAME
+       consistent with the RULES attribute and the values used for
+       alignment. For instance: none, top, bottom, topbot, left, right,
+       leftright, all. Unfortunately, SGML requires enumerated
+       attribute values to be unique for each element, independent of
+       the attribute name. This causes immediate problems for "none",
+       "left", "right" and "all". The values for FRAME have been chosen
+       to avoid clashes with the RULES, ALIGN and VALIGN attributes.
+       This provides a measure of future proofing, as it is anticipated
+       that that the FRAME and RULES attributes will be added to other
+       table elements in future revisions to this specification. An
+       alternative would be to make FRAME a CDATA attribute. The
+       consensus of the HTML-WG was that the benefits of being able to
+       use SGML validation tools to check attributes based on
+]PRE]
+
+Raggett                       Experimental                     [Page 14]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+       enumerated values outweighs the need for consistent names.
+]PRE]
+
+[PRE[
+   RULES
+       Specifies where to draw rules within the table interior.
+]PRE]
+
+[PRE[
+       <!ENTITY % Rules "(none | groups | rows | cols | all)">
+]PRE]
+
+[PRE[
+       NONE
+           Suppresses internal rulings.
+]PRE]
+
+[PRE[
+       GROUPS
+           The THEAD, TFOOT and TBODY elements divide the table into
+           groups of rows, while COLGROUP elements divide the table
+           into groups of columns. This choice places a horizontal rule
+           between each row group and a vertical rule between each
+           column group. Note that every table has at least one row and
+           one column group.
+]PRE]
+
+[PRE[
+       ROWS
+           As RULES=GROUPS plus horizontal rules between all rows. User
+           agents may choose to use a heavier rule between groups of
+           rows and columns for emphasis.
+]PRE]
+
+[PRE[
+       COLS
+           As RULES=GROUPS plus vertical rules between all columns.
+           User agents may choose to use a heavier rule between groups
+           of rows and columns for emphasis.
+]PRE]
+
+[PRE[
+       ALL
+           Place rules between all rows and all columns. User agents
+           may choose to use a heavier rule between groups of rows and
+           columns for emphasis.
+]PRE]
+
+[PRE[
+       If a document includes <TABLE BORDER> or <TABLE BORDER=_n_> then
+       the default for the table element is RULES=ALL, except if _n=0_
+       for which RULES=NONE is appropriate.
+]PRE]
+
+[PRE[
+   CELLSPACING
+       This attribute is intended for backwards compatibility with
+       deployed user agents. It specifies the space between the table
+       frame and the first or last cell border for each row or column,
+       and between other cells in the table. See standard units.
+       Greater control will be possible using style sheet languages.
+]PRE]
+
+[PRE[
+   CELLPADDING
+       This attribute is intended for backwards compatibility with
+       deployed user agents. It specifies the amount of space between
+       the border of the cell and its contents both above/below, and
+]PRE]
+
+Raggett                       Experimental                     [Page 15]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+       left//right. See standard units. Greater control will be
+       possible using style sheet languages.
+]PRE]
+
+[PRE[
+   If a fixed width is set for the table or column, the CELLSPACING and
+   CELLPADDING may demand more space than assigned. Current practice is
+   for the latter to take precedence over WIDTH attributes when a
+   conflict occurs, although this isn't required by this specification.
+]PRE]
+
+Table Captions
+
+[PRE[
+   <!ELEMENT caption - - (%text;)+>
+]PRE]
+
+[PRE[
+   <!ENTITY % Caption "(top|bottom|left|right)">
+]PRE]
+
+[PRE[
+   <!ATTLIST caption                  -- table caption --
+           %attrs;                    -- id, lang, dir and class --
+           align   %Caption; #IMPLIED -- relative to table --
+           >
+]PRE]
+
+[PRE[
+   The optional CAPTION element is used to provide a caption for the
+   table. Both start and end tags are required.
+]PRE]
+
+[PRE[
+   ID, CLASS, LANG and DIR
+       See earlier description of common attributes.
+]PRE]
+
+[PRE[
+   ALIGN
+       This may be used to control the placement of captions relative
+       to the table. When present, the ALIGN attribute should have one
+       of the values: TOP, BOTTOM, LEFT and RIGHT. It is recommended
+       that the caption is made to fit within the width or height of
+       the table as appropriate. The default position of the caption is
+       deliberately unspecified.
+]PRE]
+
+[PRE[
+       Note the ALIGN attribute is overused in HTML, but is retained
+       here for compatibility with currently deployed browsers.
+]PRE]
+
+The COLGROUP Element
+
+[PRE[
+   <!ELEMENT colgroup - O (col*)>
+]PRE]
+
+[PRE[
+   <!ATTLIST colgroup
+           %attrs;                    -- id, lang, dir and class --
+           span    NUMBER   1         -- default number of columns in --
+                                      -- group --
+           width   CDATA    #IMPLIED  -- default width for enclosed --
+                                      -- COLs --
+           %cell.halign;              -- horizontal alignment in --
+                                      -- cells --
+]PRE]
+
+Raggett                       Experimental                     [Page 16]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+           %cell.valign;              -- vertical alignment in cells --
+           >
+]PRE]
+
+[PRE[
+   The COLGROUP element acts as a container for a group of columns, and
+   allows you to set default properties for these columns. In the
+   absence of a COLGROUP element, all columns in the table are assumed
+   to belong to a single column group. Each COLGROUP element can
+   contain zero or more COL elements. COLGROUP requires a start tag,
+   but the end tag may be omitted. This is useful when defining a
+   sequence of COLGROUP elements, e.g.
+]PRE]
+
+[PRE[
+       <TABLE FRAME=BOX RULES=COLS>
+         <COLGROUP>
+           <COL WIDTH="1*">
+           <COL WIDTH="2*">
+         <COLGROUP>
+           <COL WIDTH="1*">
+           <COL WIDTH="3*">
+         <THEAD>
+           <TR> ...
+       </TABLE>
+]PRE]
+
+[PRE[
+   COLGROUP elements can be used with the following attributes:
+]PRE]
+
+[PRE[
+   ID, CLASS, LANG and DIR
+       See earlier description of common attributes.
+]PRE]
+
+[PRE[
+   SPAN
+       A positive integer value that specifies a default for how many
+       columns are in this group. This attribute should be ignored if
+       the COLGROUP element contains one or more COL elements. It
+       provides a convenient way of grouping columns without the need
+       to supply COL elements.
+]PRE]
+
+[PRE[
+   WIDTH
+       Specifies a default width for each of the grouped columns, see
+       standard units. In addition, the "*" suffix denotes relative
+       widths, e.g.
+]PRE]
+
+[PRE[
+            width=64        width in screen pixels
+            width=0.5*      a relative width of 0.5
+]PRE]
+
+[PRE[
+       Relative widths act as constraints on the relative widths of
+       different columns. If a COLGROUP element specifies a relative
+       width of zero, all of the columns in the group should be set to
+       their minimum widths, unless they are associated with a COL
+       element with an overriding WIDTH attribute. When widths are
+]PRE]
+
+Raggett                       Experimental                     [Page 17]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+       given in absolute units, the user agent can use these to
+       constrain the width of the table. The "*" suffix is used to
+       simplify importing tables from the CALS representation.
+]PRE]
+
+[PRE[
+   ALIGN, CHAR, CHAROFF and VALIGN
+       Specify values for horizontal and vertical alignment within
+       table cells. See inheritance order of alignment properties.
+]PRE]
+
+The COL Element
+
+[PRE[
+   <!ELEMENT col - O EMPTY>
+]PRE]
+
+[PRE[
+   <!ATTLIST col                      -- column groups and --
+                                      -- properties --
+           %attrs;                    -- id, lang, dir and class --
+           span    NUMBER   1         -- number of columns spanned --
+                                      -- by group --
+           width   CDATA    #IMPLIED  -- column width specification --
+           %cell.halign;              -- horizontal alignment in --
+                                      -- cells --
+           %cell.valign;              -- vertical alignment in cells --
+           >
+]PRE]
+
+[PRE[
+   This optional element is used to specify column based defaults for
+   table properties. It is an empty element, and as such has no
+   content, and shouldn't be given an end tag. Several COL elements may
+   be given in succession. COL attributes override those of the parent
+   COLGROUP element.
+]PRE]
+
+[PRE[
+   ID, CLASS, LANG and DIR
+       See earlier description of common attributes.
+]PRE]
+
+[PRE[
+   SPAN
+       A positive integer value that specifies how many columns this
+       element applies to, defaulting to one. In the absence of SPAN
+       attributes the first COL element applies to the first column,
+       the second COL element to the second column and so on. If the
+       second COL element had SPAN=2, it would apply to the second and
+       third column. The next COL element would then apply to the
+       fourth column and so on. SPAN=0 has a special significance and
+       implies that the COL element spans all columns from the current
+       column up to and including the last column. Note that a COL SPAN
+       does not define a group. It is merely a way to share attribute
+       definitions.
+]PRE]
+
+Raggett                       Experimental                     [Page 18]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+   WIDTH
+       Specifies the width of the columns, see standard units. If the
+       element spans several columns then the WIDTH attribute specifies
+       the width for each of the individual columns - not the width of
+       the span. In addition, the "*" suffix denotes relative widths,
+]PRE]
+
+[PRE[
+       e.g.
+]PRE]
+
+[PRE[
+            width=64        width in screen pixels
+            width=0.5*      a relative width of 0.5
+]PRE]
+
+[PRE[
+       Relative widths act as constraints on the relative widths of
+       different columns. If a COL element specifies a relative width
+       of zero, the column should always be set to its minimum width.
+       When widths are given in absolute units, the user agent can use
+       these to constrain the width of the table. The "*" suffix is
+       used to simplify importing tables from the CALS representation.
+]PRE]
+
+[PRE[
+   ALIGN, CHAR, CHAROFF and VALIGN
+       Specify values for horizontal and vertical alignment within
+       table cells. See inheritance order of alignment properties.
+]PRE]
+
+Table Head, Foot and Body Elements
+
+[PRE[
+   <!ELEMENT thead - O tr+>
+   <!ELEMENT tfoot - O tr+>
+   <!ELEMENT tbody O O tr+>
+]PRE]
+
+[PRE[
+   <!ATTLIST (thead|tbody|tfoot)      -- table section --
+           %attrs;                    -- id, lang, dir and class --
+           %cell.halign;              -- horizontal alignment in --
+                                      -- cells --
+           %cell.valign;              -- vertical alignment in cells --
+           >
+]PRE]
+
+[PRE[
+   Tables may be divided up into head and body sections. The THEAD and
+   TFOOT elements are optional, but one or more TBODY elements are
+   always required. If the table only consists of a TBODY section, the
+   TBODY start and end tags may be omitted, as the parser can infer
+   them. If a THEAD element is present, the THEAD start tag is
+   required, but the end tag can be omitted, provided a TFOOT or TBODY
+   start tag follows. The same applies to TFOOT.
+]PRE]
+
+[PRE[
+   Note: This definition provides compatibility with tables created
+   for the older model, as well as allowing the end tags for THEAD,
+   TFOOT and TBODY to be omitted.
+]PRE]
+
+Raggett                       Experimental                     [Page 19]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+   The THEAD, TFOOT and TBODY elements provide a convenient means for
+   controlling rendering. If the table has a large number of rows in
+   the body, user agents may choose to use a scrolling region for the
+   table body sections. When rendering to a paged device, tables will
+   often have to be broken across page boundaries. The THEAD, TFOOT and
+   TBODY elements allow the user agent to repeat the table foot at the
+   bottom of the current page, and then the table head at the top of
+   the new page before continuing on with the table body.
+]PRE]
+
+[PRE[
+   TFOOT is placed before the TBODY in the markup sequence, so that
+   browsers can render the foot before receiving all of the table data.
+   This is useful when very long tables are rendered with scrolling
+   body sections, or for paged output, involving breaking the table
+   over many pages.
+]PRE]
+
+[PRE[
+   Each THEAD, TFOOT and TBODY element must contain one or more TR
+   elements.
+]PRE]
+
+[PRE[
+   ID, CLASS, LANG and DIR
+       See earlier description of common attributes.
+]PRE]
+
+[PRE[
+   ALIGN, CHAR, CHAROFF and VALIGN
+       Specify values for horizontal and vertical alignment within
+       table cells. See inheritance order of alignment properties.
+]PRE]
+
+Table Row (TR) elements
+
+[PRE[
+   <!ELEMENT tr - O (th|td)+>
+]PRE]
+
+[PRE[
+   <!ATTLIST tr                       -- table row --
+           %attrs;                    -- id, lang, dir and class --
+           %cell.halign;              -- horizontal alignment in --
+                                      -- cells --
+           %cell.valign;              -- vertical alignment in cells --
+           >
+]PRE]
+
+[PRE[
+   The TR or table row element acts as a container for a row of table
+   cells. The end tag may be omitted.
+]PRE]
+
+[PRE[
+   ID, CLASS, LANG and DIR
+       See earlier description of common attributes.
+]PRE]
+
+[PRE[
+   ALIGN, CHAR, CHAROFF and VALIGN
+       Specify values for horizontal and vertical alignment within
+       table cells. See inheritance order of alignment properties.
+]PRE]
+
+Raggett                       Experimental                     [Page 20]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+Table Cells: TH and TD
+
+[PRE[
+   <!ELEMENT (th|td) - O %body.content>
+]PRE]
+
+[PRE[
+   <!ATTLIST (th|td)                  -- header or data cell --
+           %attrs;                    -- id, lang, dir and class --
+           axis    CDATA    #IMPLIED  -- defaults to cell content --
+           axes    CDATA    #IMPLIED  -- list of axis names --
+           nowrap (nowrap)  #IMPLIED  -- suppress word wrap --
+           rowspan NUMBER   1         -- number of rows spanned by --
+                                      -- cell --
+           colspan NUMBER   1         -- number of cols spanned by --
+                                      -- cell --
+           %cell.halign;              -- horizontal alignment in --
+                                      -- cells --
+           %cell.valign;              -- vertical alignment in cells --
+           >
+]PRE]
+
+[PRE[
+   TH elements are used to represent header cells, while TD elements
+   are used to represent data cells. This allows user agents to render
+   header and data cells distinctly, even in the absence of style
+   sheets.
+]PRE]
+
+[PRE[
+   Cells can span multiple rows and columns, and may be empty. Cells
+   spanning rows contribute to the column count on each of the spanned
+   rows, but only appear in the markup once (in the first row spanned).
+   The row count is determined by the number of TR elements. Any rows
+   implied by cells spanning rows beyond this should be ignored.
+]PRE]
+
+[PRE[
+   If the column count for the table is greater than the number of
+   cells for a given row (after including cells for spanned rows), the
+   missing cells are treated as occurring on the right hand side of the
+   table and rendered as empty cells. If the language context indicates
+   a right to left writing order, then the missing cells should be
+   placed on the left hand side.
+]PRE]
+
+[PRE[
+   It is possible to create tables with overlapping cells, for
+   instance:
+]PRE]
+
+[PRE[
+       <table border>
+       <tr><td rowspan=2>1<td>2<td>3
+       <tr><td rowspan=2>4
+       <tr><td colspan=2>5<td>6
+       </table>
+]PRE]
+
+Raggett                       Experimental                     [Page 21]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+   which might look something like:
+]PRE]
+
+[PRE[
+       /-----------\
+       | 1 | 2 | 3 |
+       |   |-------|
+       |   | 4 |   |
+       |---|...|---|
+       | 5 :   | 6 |
+       \-----------/
+]PRE]
+
+[PRE[
+   In this example, the cells labelled 4 and 5 overlap. In such cases,
+   the rendering is implementation dependent.
+]PRE]
+
+[PRE[
+   The AXIS and AXES attributes for cells provide a means for defining
+   concise labels for cells. When rendering to speech, these attributes
+   may be used to provide abbreviated names for the headers relevant to
+   each cell. Another application is when you want to be able to later
+   process table contents to enter them into a database. These
+   attributes are then used to give database field names. The table's
+   class attribute should be used to let the software recognize which
+   tables can be treated in this way.
+]PRE]
+
+[PRE[
+   ID, CLASS, LANG and DIR
+       See earlier description of common attributes.
+]PRE]
+
+[PRE[
+   AXIS
+       This defines an abbreviated name for a header cell, e.g. which
+       can be used when rendering to speech. It defaults to the cell's
+       content.
+]PRE]
+
+[PRE[
+   AXES
+       This is a comma separated list of axis names which together
+       identify the row and column headers that pertain to this cell.
+       It is used for example when rendering to speech to identify the
+       cell's position in the table. If missing the user agent can try
+       to follow up columns and left along rows (right for some
+       languages) to find the corresponding header cells.
+]PRE]
+
+[PRE[
+   NOWRAP, e.g. <TD NOWRAP>
+       The presence of this attribute disables automatic wrapping of
+       text lines for this cell. If used uncautiously, it may result in
+       excessively wide cells. This attribute is defined for backwards
+       compatibility with deployed user agents. Greater control is
+       possible with associated style sheet languages (for example for
+       control over overflow handling).
+]PRE]
+
+Raggett                       Experimental                     [Page 22]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+   ROWSPAN, e.g. <TD ROWSPAN=2>
+       A positive integer value that defines how may rows this cell
+       spans. The default ROWSPAN is 1. ROWSPAN=0 has a special
+       significance and implies that the cell spans all rows from the
+       current row up to the last row of the table.
+]PRE]
+
+[PRE[
+   COLSPAN, e.g. <TD COLSPAN=2>
+       A positive integer value that defines how may columns this cell
+       spans. The default COLSPAN is 1. COLSPAN=0 has a special
+       significance and implies that the cell spans all columns from
+       the current column up to the last column of the table.
+]PRE]
+
+[PRE[
+   ALIGN, CHAR, CHAROFF and VALIGN
+       Specify values for horizontal and vertical alignment within
+       table cells. See inheritance order of alignment properties.
+]PRE]
+
+[PRE[
+   Note: It is recommended that implementors provide support for the
+   Netscape 1.1 WIDTH attribute for TH and TD, although this isn't part
+   of the current specification. Document authors are advised to use
+   the width attribute for the COL element instead.
+]PRE]
+
+Recommended Layout Algorithms
+
+[PRE[
+   If the COLS attribute on the TABLE element specifies the number of
+   columns, then the table may be rendered using a fixed layout,
+   otherwise the autolayout algorithm described below should be used.
+]PRE]
+
+Fixed Layout Algorithm
+
+[PRE[
+   For this algorithm, it is assumed that the number of columns is
+   known. The column widths by default should be set to the same size.
+   Authors may override this by specifying relative or absolute column
+   widths, using the COLGROUP or COL elements. The default table width
+   is the space between the current left and right margins, but may be
+   overridden by the WIDTH attribute on the TABLE element, or determined
+   from absolute column widths. To deal with mixtures of absolute and
+   relative column widths, the first step is to allocate space from the
+   table width to columns with absolute widths. After this, the space
+   remaining is divided up between the columns with relative widths.
+]PRE]
+
+[PRE[
+   The table syntax alone is insufficient to guarantee the consistency
+   of attribute values. For instance, the number of columns specified by
+   the COLS attribute may be inconsistent with the number of columns
+   implied by the COL elements. This in turn, may be inconsistent with
+   the number of columns implied by the table cells. A further problem
+   occurs when the columns are too narrow to avoid overflow of cell
+   contents. The width of the table as specified by the TABLE element or
+   COL elements may result in overflow of cell contents. It is
+]PRE]
+
+Raggett                       Experimental                     [Page 23]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+   recommended that user agents attempt to recover gracefully from these
+   situations, e.g. by hyphenating words and resorting to splitting
+   words if hyphenation points are unknown.
+]PRE]
+
+[PRE[
+   In the event that an indivisible element causes cell overflow, the
+   user agent may consider adjusting column widths and re-rendering the
+   table. In the worst case clipping may be considered if column width
+   adjustments and/or scrollable cell content are not feasible. In any
+   case if cell content is split or clipped this should be indicated to
+   the user in an appropriate manner.
+]PRE]
+
+Autolayout Algorithm
+
+[PRE[
+   If the COLS attribute is missing from the table start tag, then the
+   user agent should use the following autolayout algorithm. It uses two
+   passes through the table data and scales linearly with the size of
+   the table.
+]PRE]
+
+[PRE[
+   In the first pass, line wrapping is disabled, and the user agent
+   keeps track of the minimum and maximum width of each cell. The
+   maximum width is given by the widest line. As line wrap has been
+   disabled, paragraphs are treated as long lines unless broken by <BR>
+   elements. The minimum width is given by the widest word or image etc.
+   taking into account leading indents and list bullets etc. In other
+   words, if you were to format the cell's content in a window of its
+   own, determine the minimum width you could make the window before the
+   cell begins to overflow. Allowing user agents to split words will
+   minimize the need for horizontal scrolling or in the worst case
+   clipping of cell contents.
+]PRE]
+
+[PRE[
+   This process also applies to any nested tables occuring in cell
+   content. The minimum and maximum widths for cells in nested tables
+   are used to determine the minimum and maximum widths for these tables
+   and hence for the parent table cell itself. The algorithm is linear
+   with aggregate cell content, and broadly speaking independent of the
+   depth of nesting.
+]PRE]
+
+[PRE[
+   To cope with character alignment of cell contents, the algorithm
+   keeps three running min/max totals for each column: Left of align
+   char, right of align char and un-aligned. The minimum width for a
+   column is then: max(min_left + min_right, min_non-aligned).
+]PRE]
+
+[PRE[
+   The minimum and maximum cell widths are then used to determine the
+   corresponding minimum and maximum widths for the columns. These in
+   turn, are used to find the minimum and maximum width for the table.
+   Note that cells can contain nested tables, but this doesn't
+   complicate the code significantly. The next step is to assign column
+   widths according to the available space (i.e. the space between the
+]PRE]
+
+Raggett                       Experimental                     [Page 24]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+   current left and right margins).
+]PRE]
+
+[PRE[
+   For cells which span multiple columns, a simple approach, as used by
+   Arena, is to evenly apportion the min/max widths to each of the
+   constituent columns. A slightly more complex approach is to use the
+   min/max widths of unspanned cells to weight how spanned widths are
+   apportioned. Experimental study suggests a blend of the two
+   approaches will give good results for a wide range of tables.
+]PRE]
+
+[PRE[
+   The table borders and intercell margins need to be included in
+   assigning column widths. There are three cases:
+]PRE]
+
+[PRE[
+   1.  The minimum table width is equal to or wider than the available
+       space. In this case, assign the minimum widths and allow the
+       user to scroll horizontally. For conversion to braille, it will
+       be necessary to replace the cells by references to notes
+       containing their full content. By convention these appear before
+       the table.
+]PRE]
+
+[PRE[
+   2.  The maximum table width fits within the available space. In this
+       case, set the columns to their maximum widths.
+]PRE]
+
+[PRE[
+   3.  The maximum width of the table is greater than the available
+       space, but the minimum table width is smaller. In this case,
+       find the difference between the available space and the minimum
+       table width, lets call it W. Lets also call D the difference
+       between maximum and minimum width of the table.
+]PRE]
+
+[PRE[
+       For each column, let d be the difference between maximum and
+       minimum width of that column. Now set the column's width to the
+       minimum width plus d times W over D. This makes columns with
+       large differences between minimum and maximum widths wider than
+       columns with smaller differences.
+]PRE]
+
+[PRE[
+   This assignment step is then repeated for nested tables using the
+   minimum and maximum widths derived for all such tables in the first
+   pass. In this case, the width of the parent (i.e. enclosing) table
+   cell plays the role of the current window size in the above
+   description. This process is repeated recursively for all nested
+   tables. The topmost table is then rendered using the assigned widths.
+   Nested tables are subsequently rendered as part of the parent table's
+   cell contents.
+]PRE]
+
+[PRE[
+   If the table width is specified with the WIDTH attribute, the user
+   agent attempts to set column widths to match. The WIDTH attribute is
+   not binding if this results in columns having less than their minimum
+   (i.e. indivisible) widths.
+]PRE]
+
+Raggett                       Experimental                     [Page 25]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+   If relative widths are specified with the COL element, the algorithm
+   is modified to increase column widths over the minimum width to meet
+   the relative width constraints. The COL elements should be taken as
+   hints only, so columns shouldn't be set to less than their minimum
+   width. Similarly, columns shouldn't be made so wide that the table
+   stretches well beyond the extent of the window. If a COL element
+   specifies a relative width of zero, the column should always be set
+   to its minimum width.
+]PRE]
+
+HTML Table DTD
+
+[PRE[
+   The DTD or document type definition provides the formal definition of
+   the allowed syntax for HTML tables.
+]PRE]
+
+<!-- Content model entities imported from parent DTD:
+
+[PRE[
+  %body.content; allows table cells to contain headers, paras,
+  lists, form elements and even arbitrarily nested tables.
+]PRE]
+
+[PRE[
+  %text; is text characters, including character entities and
+  character emphasis elements, IMG and anchors
+-->
+]PRE]
+
+<!ENTITY % attrs
+[PRE[
+       "id      ID       #IMPLIED  -- element identifier --
+        class   NAMES    #IMPLIED  -- for subclassing elements --
+        lang    NAME     #IMPLIED  -- as per RFC 1766 --
+        dir   (ltr|rtl)  #IMPLIED  -- I18N text direction --">
+]PRE]
+
+<!--
+[PRE[
+ The BORDER attribute sets the thickness of the frame around the
+ table. The default units are screen pixels.
+]PRE]
+
+[PRE[
+ The FRAME attribute specifies which parts of the frame around
+ the table should be rendered. The values are not the same as
+ CALS to avoid a name clash with the VALIGN attribute.
+]PRE]
+
+[PRE[
+ The value "border" is included for backwards compatibility with
+  <TABLE BORDER> which yields frame=border and border=implied
+  For <TABLE BORDER=1> you get border=1 and frame=implied. In this
+ case, its appropriate to treat this as frame=border for backwards
+ compatibility with deployed browsers.
+-->
+]PRE]
+
+<!ENTITY % Frame "(void|above|below|hsides|lhs|rhs|vsides|box|border)">
+
+Raggett                       Experimental                     [Page 26]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+<!--
+[PRE[
+ The RULES attribute defines which rules to draw between cells:
+]PRE]
+
+[PRE[
+ If RULES is absent then assume:
+     "none" if BORDER is absent or BORDER=0 otherwise "all"
+-->
+]PRE]
+
+<!ENTITY % Rules "(none | groups | rows | cols | all)">
+
+<!-- horizontal placement of table relative to window -->
+<!ENTITY % Where "(left|center|right)">
+
+<!-- horizontal alignment attributes for cell contents -->
+<!ENTITY % cell.halign
+[PRE[
+        "align  (left|center|right|justify|char) #IMPLIED
+         char    CDATA   #IMPLIED -- alignment char, e.g. char=':' --
+         charoff CDATA   #IMPLIED -- offset for alignment char --"
+        >
+]PRE]
+
+<!-- vertical alignment attributes for cell contents -->
+<!ENTITY % cell.valign
+[PRE[
+        "valign  (top|middle|bottom|baseline)  #IMPLIED"
+        >
+]PRE]
+
+<!ELEMENT table - - (caption?, (col*|colgroup*), thead?, tfoot?, t
+[PRE[
+                    body+)>
+<!ELEMENT caption - - (%text;)+>
+<!ELEMENT thead - O (tr+)>
+<!ELEMENT tfoot - O (tr+)>
+<!ELEMENT tbody O O (tr+)>
+<!ELEMENT colgroup - O (col*)>
+<!ELEMENT col - O EMPTY>
+<!ELEMENT tr - O (th|td)+>
+<!ELEMENT (th|td) - O %body.content>
+]PRE]
+
+<!ATTLIST table                    -- table element --
+[PRE[
+        %attrs;                    -- id, lang, dir and class --
+        align   %Where;  #IMPLIED  -- table position relative to --
+                                   -- window --
+        width   CDATA    #IMPLIED  -- table width relative to window --
+        cols    NUMBER   #IMPLIED  -- used for immediate display mode --
+        border  CDATA    #IMPLIED  -- controls frame width around --
+                                   -- table --
+        frame   %Frame;  #IMPLIED  -- which parts of table frame to --
+                                   -- include --
+        rules   %Rules;  #IMPLIED  -- rulings between rows and cols --
+        cellspacing CDATA #IMPLIED -- spacing between cells --
+        cellpadding CDATA #IMPLIED -- spacing within cells --
+]PRE]
+
+Raggett                       Experimental                     [Page 27]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+        >
+]PRE]
+
+<!-- ALIGN is used here for compatibility with deployed browsers -->
+<!ENTITY % Caption "(top|bottom|left|right)">
+
+<!ATTLIST caption                  -- table caption --
+[PRE[
+        %attrs;                    -- id, lang, dir and class --
+        align  %Caption; #IMPLIED  -- relative to table --
+        >
+]PRE]
+
+<!--
+COLGROUP groups a set of COL elements. It allows you to group
+several columns together.
+- >
+<!ATTLIST colgroup
+[PRE[
+        %attrs;                    -- id, lang, dir and class --
+        span    NUMBER   1         -- default number of columns in --
+                                   -- group --
+        width   CDATA    #IMPLIED  -- default width for enclosed COLs --
+        %cell.halign;              -- horizontal alignment in cells --
+        %cell.valign;              -- vertical alignment in cells --
+        >
+]PRE]
+
+<!--
+[PRE[
+ COL elements define the alignment properties for cells in a given
+ column or spanned columns. The WIDTH attribute specifies the
+ width of the columns, e.g.
+]PRE]
+
+[PRE[
+     width=64        width in screen pixels
+     width=0.5*      relative width of 0.5
+-->
+]PRE]
+
+<!ATTLIST col                      -- column groups and properties --
+[PRE[
+        %attrs;                    -- id, lang, dir and class --
+        span    NUMBER   1         -- number of columns spanned by --
+                                   -- group --
+        width   CDATA    #IMPLIED  -- column width specification --
+        %cell.halign;              -- horizontal alignment in cells --
+        %cell.valign;              -- vertical alignment in cells --
+        >
+]PRE]
+
+<!--
+[PRE[
+    Use THEAD to duplicate headers when breaking table
+    across page boundaries, or for static headers when
+    body sections are rendered in scrolling panel.
+]PRE]
+
+[PRE[
+    Use TFOOT to duplicate footers when breaking table
+    across page boundaries, or for static footers when
+]PRE]
+
+Raggett                       Experimental                     [Page 28]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+    body sections are rendered in scrolling panel.
+]PRE]
+
+[PRE[
+    Use multiple TBODY sections when rules are needed
+    between groups of table rows.
+-->
+<!ATTLIST (thead|tbody|tfoot)      -- table section --
+        %attrs;                    -- id, lang, dir and class --
+        %cell.halign;              -- horizontal alignment in cells --
+        %cell.valign;              -- vertical alignment in cells --
+        >
+]PRE]
+
+<!ATTLIST tr                       -- table row --
+[PRE[
+        %attrs;                    -- id, lang, dir and class --
+        %cell.halign;              -- horizontal alignment in cells --
+        %cell.valign;              -- vertical alignment in cells --
+        >
+]PRE]
+
+<!ATTLIST (th|td)                  -- header or data cell --
+[PRE[
+        %attrs;                    -- id, lang, dir and class --
+        axis    CDATA    #IMPLIED  -- defaults to cell content --
+        axes    CDATA    #IMPLIED  -- list of axis names --
+        nowrap (nowrap)  #IMPLIED  -- suppress word wrap --
+        rowspan NUMBER   1         -- number of rows spanned by cell --
+        colspan NUMBER   1         -- number of cols spanned by cell --
+        %cell.halign;              -- horizontal alignment in cells --
+        %cell.valign;              -- vertical alignment in cells --
+        >
+]PRE]
+
+References
+
+[PRE[
+   Arena
+       W3C's HTML3 browser, see http://www.w3.org/pub/WWW/Arena/.
+       Arena was originally created as a proof of concept demo for
+       ideas in the HTML+ specification that preceded HTML3. The
+       browser is now being re-implemented to provide a reference
+       implementation of HTML3 along with support for style sheets and
+       client-side scripting.
+]PRE]
+
+[PRE[
+   CALS
+       Continuous Acquisition and Life-Cycle Support (formerly
+       Computer-aided Acquisition and Logistics Support) (CALS) is a
+       Department of Defense (DoD) strategy for achieving effective
+       creation, exchange, and use of digital data for weapon systems
+       and equipment. More information can be found from the US Navy
+       CALS home page at http://navysgml.dt.navy.mil/cals.html
+]PRE]
+
+Raggett                       Experimental                     [Page 29]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+   HTML 2.0 (RFC1866)
+       Hypertext Markup Language Specification Version 2.0 by T.
+       Berners-Lee and D. Connolly, November 1995. Further information
+       can be found at http://www.w3.org/pub/WWW/MarkUp/ or at
+       ftp://ds.internic.net/rfc/rfc1866.txt
+]PRE]
+
+[PRE[
+   HTML 3.0
+       Hypertext Markup Language Specification Version 3.0. The initial
+       draft specification as published in March 1995. Work on refining
+       HTML3 is proceeding piecemeal with the new table specification
+       as one of the pieces. For W3C related work on HTML, see
+       http://www.w3.org/pub/WWW/MarkUp/.
+]PRE]
+
+[PRE[
+   RFC 1766
+       "Tags for the Identification of Languages", by H. Alvestrand,
+       UNINETT, March 1995. This document can be downloaded from
+       ftp://ds.internic.net/rfc/rfc1766.txt.
+]PRE]
+
+Security Considerations
+
+[PRE[
+   Security issues are not discussed in this memo.
+]PRE]
+
+Author's Address
+
+[PRE[
+   Dave Raggett W3C
+]PRE]
+
+[PRE[
+   EMail: dsr@@w3.org
+]PRE]
+
+[PRE[
+   The World Wide Web Consortium: http://www.w3.org/
+]PRE]
+
+*License
+[[RFCのライセンス]]
+*メモ
+@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/5246432031393432.txt>
+@
+text
+@d1 2055
+a2055 2471
+#?SuikaWiki/0.9 import="RFC訳語集,HTML訳語集,その他の訳語集" page-icon="HTML"
+
+'''HTML Tables [INS[HTML 表]]'''
+- Network Working Group                                         
+- Request for Comments: 1942                                          
+- Category: Experimental                                          
+- D. Raggett
+- W3C
+- May 1996                  
+
+
+* Status of this Memo
+
+> This memo defines an Experimental Protocol for the Internet
+community.  This memo does not specify an Internet standard of any
+kind.  Discussion and suggestions for improvement are requested.
+Distribution of this memo is unlimited.
+
+
+* Abstract
+
+> The HyperText Markup Language (HTML) is a simple markup language used
+to create hypertext documents that are portable from one platform to
+another. HTML documents are SGML documents with generic semantics
+that are appropriate for representing information from a wide range
+of applications. This specification extends HTML to support a wide
+variety of tables. The model is designed to work well with associated
+style sheets, but does not require them. It also supports rendering
+to braille, or speech, and exchange of tabular data with databases
+and spreadsheets. The HTML table model embodies certain aspects of
+the CALS table model, e.g. the ability to group table rows into
+thead, tbody and tfoot sections, plus the ability to specify cell
+alignment compactly for sets of cells according to the context.
+
+
+* Table of Contents
+
+- Recent Changes  ................................................. 1
+- Brief Introduction  ............................................. 2
+- Design Rationale  ............................................... 5
+- Walkthrough of the Table DTD  ................................... 8
+- Recommended Layout Algorithms  ................................. 23
+- HTML Table DTD  ................................................ 26
+- References  .................................................... 29
+- Security Considerations  ....................................... 30
+- Author's Address  .............................................. 30
+
+
+* Recent Changes [INS[最近の変更点]]
+
+> This specification extends HTML to support tables. The table model
+has grown out of early work on HTML+ and the initial draft of HTML3.
+The earlier model has been been extended in response to requests from
+information providers for improved control over the presentation of
+tabular information:
+
+この仕様書は表に対応するため HTML を拡張します。
+表__&&model&&__は早期の HTML+ の作業及び HTML3 の初期の原案で検討されました。
+早期の__&&model&&__は、情報提供者からの表情報の表現の制御性の向上の要求を受けて拡張しました。
+
+- alignment on designated characters such as "." and ":"
+e.g. aligning a column of numbers on the decimal point
+- more flexibility in specifying table frames and rules
+- incremental display for large tables as data is received
+- the ability to support scrollable tables with fixed headers plus
+better support for breaking tables across pages for printing
+- optional column based defaults for alignment properties
+
+- 「.」や「:」のような特定文字で揃える。例えば数値の欄を小数点で揃える。
+- 表枠・規則をより柔軟に指定
+- 大きな表をデータを受信しながら拡張しつつ表示
+- __&&header&&__を固定して__&&scroll&&__可能及び頁をまたぐ印刷で表をより良く分解することに対応する能力
+- 任意で行ごとの配置属性の既定値
+
+> In addition, a major goal has been to provide backwards compatibility
+with the widely deployed Netscape implementation of tables. A
+subsidiary goal has been to simplify importing tables conforming to
+the SGML CALS model. The latest draft makes the ALIGN attribute
+compatible with the latest Netscape and Microsoft browsers. Some
+clarifications have been made to the role of the DIR attribute and
+recommended behaviour when absolute and relative column widths are mixed.
+
+加えて、大きな目標として、広く採用されている Netscape の表の実装との後方互換性を保つことがあります。
+副次的な目標としては、 SGML CALS __&&model&&__に適合する表を簡単に__&&import&&__可能とします。
+この最新の原案は [CODE(HTML)[ALIGN]] 属性を最新の Netscape
+や Microsoft の__&&browser&&__と互換にします。
+[CODE(HTML)[DIR]] 属性の役割及び行幅に絶対値と相対値が混合されていた場合の推奨される動作の明確化を行います。
+
+> A new element COLGROUP has been introduced to allow sets of columns
+be grouped with different width and alignment properties specified by
+one or more COL elements. The semantics of COLGROUP have been
+clarified over previous drafts, and RULES=BASIC replaced by RULES=GROUPS.
+
+新しい要素 [CODE(HTML)[COLGROUP]] を導入し、1つ以上の [CODE(HTML)[COL]]
+要素で指定された異なる幅・配置属性を持った行の集合を集団化することを可能にします。
+[CODE(HTML)[COLGROUP]] の意味を以前の原案の元で明確化し、
+[CODE(HTML)[RULES=BASIC]] は [CODE(HTML)[RULES=GROUPS]]
+で置き換えます。
+
+> The FRAME and RULES attributes have been modified to avoid SGML name
+clashes with each other, and to avoid clashes with the ALIGN and
+VALIGN attributes. These changes were additionally motivated by the
+desire to avoid future problems if this specification is extended to
+allow FRAME and RULES attributes with other table elements.
+
+[CODE(HTML)[FRAME]] 及び [CODE(HTML)[RULES]] 両属性並びに
+[CODE(HTML)[ALIGN]] 及び [CODE(HTML)[VALIGN]] 両属性は、互いに SGML
+名が衝突することを防ぐため修正します。
+これらの変更は、将来この仕様が拡張されて [CODE(HTML)[FRAME]]
+及び [CODE(HTML)[RULES]] の両属性が他の表要素にも認められるようになったときに問題が起こるのを避ける意味合いもあります。
+
+
+* A Brief Introduction to HTML Tables [INS[HTML 表の概観]]
+
+> Tables start with an optional caption followed by one or more rows.
+Each row is formed by one or more cells, which are differentiated
+into header and data cells. Cells can be merged across rows and
+columns, and include attributes assisting rendering to speech and
+braille, or for exporting table data into databases. The model
+provides limited support for control over appearence, for example
+horizontal and vertical alignment of cell contents, border styles and
+cell margins. You can further affect this by grouping rows and
+columns together. Tables can contain a wide range of content, such as
+headers, lists, paragraphs, forms, figures, preformatted text and
+even nested tables.
+
+表は省略可能な[RUBYB[題] [caption]]から始まり、1つ以上の[RUBYB[列] [row]]が続きます。各列は1つ以上の__&&cell&&__で構成され、__&&cell&&__は__&&header cell&&__と__&&data cell&&__に分類されます。
+__&&cell&&__は行方向又は列方向に合併することや、発話又は点字で__&&rendering&&__する或いは__&&database&&__に__&&export&&__するのを補助する属性を含めることが出来ます。
+この__&&model&&__では__&&cell&&__内容の水平及び垂直方向の揃え位置,
+枠線様式及び__&&cell&&__の余白のような見た目をある程度制御することが出来ます。
+行や列を集団化することで更にこれを行えます。
+表は__&&heading&&__, __&&list&&__, 段落, __&&form&&__,
+図, __&&preformatted text&&__, それに入れ子の表など様々なものを含められます。
+
+
+* Example [INS[例]]
+
+[PRE[
+   <TABLE BORDER>
+     <CAPTION>A test table with merged cells</CAPTION>
+     <TR><TH ROWSPAN=2><TH COLSPAN=2>Average
+         <TH ROWSPAN=2>other<BR>category<TH>Misc
+     <TR><TH>height<TH>weight
+     <TR><TH ALIGN=LEFT>males<TD>1.9<TD>0.003
+     <TR><TH ALIGN=LEFT ROWSPAN=2>females<TD>1.7<TD>0.002
+   </TABLE>
+]PRE]
+
+> On a dumb terminal, this would be rendered something like:
+
+[PRE[
+                 A test table with merged cells
+       /--------------------------------------------------\
+       |          |      Average      |  other   |  Misc  |
+       |          |-------------------| category |--------|
+       |          |  height |  weight |          |        |
+       |-----------------------------------------|--------|
+       | males    | 1.9     | 0.003   |          |        |
+       |-----------------------------------------|--------|
+       | females  | 1.7     | 0.002   |          |        |
+       \--------------------------------------------------/
+]PRE]
+
+[PRE[
+   <TABLE BORDER>
+     <CAPTION>合併__&&cell&&__を含む__&&test&&__の表</CAPTION>
+     <TR><TH ROWSPAN=2><TH COLSPAN=2>平均
+         <TH ROWSPAN=2>他の<BR>部門<TH>その他
+     <TR><TH>身長<TH>体重
+     <TR><TH ALIGN=LEFT>男性<TD>1.9<TD>0.003
+     <TR><TH ALIGN=LEFT ROWSPAN=2>女性<TD>1.7<TD>0.002
+   </TABLE>
+]PRE]
+
+無言端末はこれを次のように__&&rendering&&__するでしょう。
+
+[PRE[
+               合併__&&cell&&__を含む__&&test&&__の表
+       /----------------------------------------\
+       |       |      平均      | 他の | その他 |
+       |       |----------------| 部門 |--------|
+       |       |  身長 |  体重  |      |        |
+       |-------------------------------|--------|
+       | 男性  | 1.9   | 0.003  |      |        |
+       |-------------------------------|--------|
+       | 女性  | 1.7   | 0.002  |      |        |
+       \----------------------------------------/
+]PRE]
+
+> Next, a richer example with grouped rows and columns (adapted from
+"Developing International Software" by Nadine Kano). First here is
+what the table looks like on paper:
+
+次は集団化された行と列がある込み入った例
+(Nadine Kano の『[RUBYB[国際ソフトウェアの開発] [Developing International Software]]』
+から採りました。) です。
+
+[PRE[
+                      CODE-PAGE SUPPORT IN MICROSOFT WINDOWS
+ ========================================================================
+ Code-Page| Name                      |ACP OEMCP| Windows Windows Windows
+     ID   |                           |         |  NT 3.1 NT 3.51    95
+ ------------------------------------------------------------------------
+    1200  |Unicode (BMP of ISO 10646) |         |     X       X       *
+    1250  |Windows 3.1 East. Europe   |  X      |     X       X       X
+    1251  |Windows 3.1 Cyrillic       |  X      |     X       X       X
+    1252  |Windows 3.1 US (ANSI)      |  X      |     X       X       X
+    1253  |Windows 3.1 Greek          |  X      |     X       X       X
+    1254  |Windows 3.1 Turkish        |  X      |     X       X       X
+    1255  |Hebrew                     |  X      |                     X
+    1256  |Arabic                     |  X      |                     X
+    1257  |Baltic                     |  X      |                     X
+    1361  |Korean (Johab)             |  X      |             **      X
+ ------------------------------------------------------------------------
+     437  |MS-DOS United States       |     X   |     X       X       X
+     708  |Arabic (ASMO 708)          |     X   |                     X
+     709  |Arabic (ASMO 449+, BCON V4)|     X   |                     X
+     710  |Arabic (Transparent Arabic)|     X   |                     X
+     720  |Arabic (Transparent ASMO)  |     X   |                     X
+ ========================================================================
+]PRE]
+
+> The markup for this uses COLGROUP elements to group columns and to
+set default column alignment. TBODY elements are used to group rows.
+The FRAME and RULES attributes are used to select which borders to render.
+
+これの__&&markup&&__には [CODE(HTML)[COLGROUP]] 要素を使って行を集団化し、行の配置の既定値を指定しています。
+[CODE(HTML)[TBODY]] 要素は列の集団に使います。
+[CODE(HTML)[FRAME]] 及び [CODE(HTML)[RULES]] 両属性は__&&rendering&&__する枠を選択するために使います。
+
+[PRE[
+   <table border=2 frame=hsides rules=groups>
+   <caption>CODE-PAGE SUPPORT IN MICROSOFT WINDOWS</caption>
+   <colgroup align=center>
+   <colgroup align=left>
+   <colgroup align=center span=2>
+   <colgroup align=center span=3>
+   <thead valign=top>
+   <tr>
+   <th>Code-Page<br>ID
+   <th>Name
+   <th>ACP
+   <th>OEMCP
+   <th>Windows<br>NT 3.1
+   <th>Windows<br>NT 3.51
+   <th>Windows<br>95
+   <tbody>
+   <tr><td>1200<td>Unicode (BMP of ISO 10646)<td><td><td>X<td>X<TD>*
+   <tr><td>1250<td>Windows 3.1 Eastern European<td>X<td><td>X<td>X<TD>X
+   <tr><td>1251<td>Windows 3.1 Cyrillic<td>X<td><td>X<td>X<TD>X
+   <tr><td>1252<td>Windows 3.1 US (ANSI)<td>X<td><td>X<td>X<TD>X
+   <tr><td>1253<td>Windows 3.1 Greek<td>X<td><td>X<td>X<TD>X
+   <tr><td>1254<td>Windows 3.1 Turkish<td>X<td><td>X<td>X<TD>X
+   <tr><td>1255<td>Hebrew<td>X<td><td><td><td>X
+   <tr><td>1256<td>Arabic<td>X<td><td><td><td>X
+   <tr><td>1257<td>Baltic<td>X<td><td><td><td>X
+   <tr><td>1361<td>Korean (Johab)<td>X<td><td><td>**<td>X
+   <tbody>
+   <tr><td>437<td>MS-DOS United States<td><td>X<td>X<td>X<TD>X
+   <tr><td>708<td>Arabic (ASMO 708)<td><td>X<td><td><td>X
+   <tr><td>709<td>Arabic (ASMO 449+, BCON V4)<td><td>X<td><td><td>X
+   <tr><td>710<td>Arabic (Transparent Arabic)<td><td>X<td><td><td>X
+   <tr><td>720<td>Arabic (Transparent ASMO)<td><td>X<td><td><td>X
+   </table>
+*Design Rationale [INS[設計論]]
+>The HTML table model has evolved from studies of existing SGML tables
+models, the treatment of tables in common word processing packages,
+and looking at a wide range of tabular layout in magazines, books and
+other paper-based documents. The model was chosen to allow simple
+tables to be expressed simply with extra complexity only when needed.
+This makes it practical to create the markup for HTML tables with
+everyday text editors and reduces the learning curve for getting
+started. This feature has been very important to the success of HTML 
+to date.
+]PRE]
+
+HTML 表__&&model&&__は既存の SGML 表__&&model&&__,
+文書処理__&&package&&__における表の扱いの研究及び雑誌・本や他の紙文書での表__&&layout&&__の広範囲の調査より発展しています。
+この__&&model&&__は単純な表は簡潔に表現出来、必要な時にだけ複雑となるように選びました。
+このため日常的な__&&text editor&&__での HTML 表の__&&markup&&__の作成及び開始のための__&&learning curve&&__の削減が現実的になります。
+この機能は HTML の成功に非常に重要です。
+
+> Increasingly people are using filters from other document formats or
+direct wysiwyg editors for HTML. It is important that the HTML table
+model fits well with these routes for authoring HTML. This affects
+how the representation handles cells which span multiple rows or
+columns, and how alignment and other presentation properties are
+associated with groups of cells.
+
+他の文書形式から HTML に濾過したり直接 WYSIWYG __&&editor&&__を使う人が増えています。
+HTML 表__&&model&&__がこうした HTML の書き方とよく合うことが重要です。
+このことは複数の行・列をまたぐ__&&cell&&__の取扱いの表現や揃え位置その他の表現属性を__&&cell&&__の集団と関連付ける方法に影響しています。
+
+> A major consideration for the HTML table model is that the fonts and
+window sizes etc. in use with browsers are not under the author's
+control. This makes it risky to rely on column widths specified in
+terms of absolute units such as picas or pixels. Instead, tables can
+be dynamically sized to match the current window size and fonts.
+Authors can provide guidance as to the relative widths of columns,
+but user agents should to ensure that columns are wide enough to
+render the width of the largest single element of the cell's content.
+If the author's specification must be overridden, it is preferred
+that the relative widths of individual columns are not changed drastically.
+
+HTML 表__&&model&&__の大きな考慮点は、__&&borwser&&__で使われる__&&font&&__や__&&window size&&__などは著者の制御の及ぶ範囲ではないことです。
+このため__&&pica&&__や__&&pixel&&__のような絶対単位で指定された行の幅を当てにすることは危険です。
+代わりに、表は現在の__&&window size&&__や__&&font&&__に応じて動的に大きさを設定できます。
+著者は行の相対幅の手引きを提供できますが、__&&user agent&&__は__&&cell&&__の内容の最大の一つの要素の幅を__&&rendering&&__できる十分な広さを行が確保できる__&&should&&_。
+著者の指定が上書きされなければならないときは、個々の行の相対幅は徹底的に変更しないのが好ましいです。
+
+> For large tables or slow network connections, it is desirable to be
+able to start displaying the table before all of the data has been
+received. The default window width for most user agents shows about
+80 characters, and the graphics for many HTML pages are designed with
+these defaults in mind. Authors can provide a hint to user agents to
+activate incremental display of table contents. This feature requires
+the author to specify the number of columns, and includes provision
+for control of table width and the widths of different columns in
+relative or absolute terms.
+
+大きな表又は低速ネットワーク接続では、全てのデータを受信する前に表を表示し始めることが出来るのが望ましいです。
+ほとんどの__&&user agent&&__の既定の__&&window&&__幅は80文字くらいで、多くの
+HTML __&&page&&__の図画はこの既定値を考慮して設計されています。
+著者は__&&user agent&&__に拡張しつつの表内容の表示を活性化するヒントを提供できます。
+この機能には著者が行数を指定することと、相対的又は絶対的な表幅及び異なる行の幅の制御の準備を含めることが必要です。
+
+> For incremental display, the browser needs the number of columns and
+their widths. The default width of the table is the current window
+size (width="100%"). This can be altered by including a WIDTH
+attribute in the TABLE start tag. By default all columns have the
+same width, but you can specify column widths with one or more COL
+elements before the table data starts.
+
+拡張しつつの表示では、__&&browser&&__は行の数とその幅を必要とします。
+表の幅の既定値は現在の__&&window size&&__ ([CODE(HTML)[width="100%"]])
+です。これは [CODE(HTML)[TABLE]] 開始__&&tag&&__の
+[CODE(HTML)[WIDTH]] 属性を含めることで代替出来ます。
+既定では全ての行が同じ幅ですが、表のデータが始まる前に一つ以上の
+[CODE(HTML)[COL]] 要素で行幅を指定することが出来ます。
+
+> The remaining issue is the number of columns. Some people have
+suggested waiting until the first row of the table has been received,
+but this could take a long time if the cells have a lot of content.
+On the whole it makes more sense, when incremental display is
+desired, to get authors to explicitly specify the number of columns
+in the TABLE start tag.
+
+残る問題は行の数です。表の最初の列を受信するまで待つことを提案した人もいますが、__&&cell&&__が多くの内容を持っていた場合多くの時間がかかります。
+拡張しつつの表示がのぞましいときは、概して著者が陽に行数を
+[CODE(HTML)[TABLE]] 開始__&&tag&&__に指定したほうが意味があります。
+
+> Authors still need a way of informing the browser whether to use
+incremental display or to automatically size the table to match the
+cell contents. For the two pass auto sizing mode, the number of
+columns is determined by the first pass, while for the incremental
+mode, the number of columns needs to be stated up front. So it seems
+to that COLS=_nn_ would be better for this purpose than a LAYOUT
+attribute such as LAYOUT=FIXED or LAYOUT=AUTO.
+
+著者は依然__&&browser&&__が拡張しつつの表示を使うか自動的に表を__&&cell&&__内容に合った大きさにするかの情報を入れる必要があります。
+2段階自動大きさ合わせ__&&mode&&__では、行の数は第1段階決定され、拡張しつつ__&&mode&&__では行の数は最初にある必要があります。
+ですからこの目的では [CODE(HTML)[LAYOUT=FIXED]] や [CODE(HTML)[KAYOUT=AUTO]]
+のような [CODE(HTML)[LAYOUT]] 属性よりは [CODE(HTML)[COLS=_nn_]]
+のほうが良いでしょう。
+
+> It is generally held useful to consider documents from two
+perspectives: Structural idioms such as headers, paragraphs, lists,
+tables, and figures; and rendering idioms such as margins, leading,
+font names and sizes. The wisdom of past experience encourages us to
+separate the structural information in documents from rendering
+information. Mixing them together ends up causing increased cost of
+ownership for maintaining documents, and reduced portability between
+applications and media.
+
+通常、文書を二つの角度から考えるのが有用です。
+__&&heading&&__, 段落, __&&list&&__, 表, 図のような構造表現と、余白,
+__&&leading&&__, __&&font&&__の名前や大きさのような__&&rendering&&__表現です。
+過去の経験からの知恵に従うなら文書の構造情報は__&&rendering&&__情報から分けた方が良いです。
+この2つを混合することは文書を維持する費用がかさみ、応用と媒体の間の可搬性を減らすこととなります。
+
+> For tables, the alignment of text within table cells, and the borders
+between cells are, from the purist's point of view, rendering
+information. In practice, though, it is useful to group these with
+the structural information, as these features are highly portable
+from one application to the next. The HTML table model leaves most
+rendering information to associated style sheets. The model is
+designed to take advantage of such style sheets but not to require them.
+
+表については、表の__&&cell&&__の中の__&&text&&__の配置や__&&cell&&__間の枠線は__&&purist&&__の視点からすれば、__&&rendering&&__情報です。
+しかし実際のところ、これらを構造情報と共に分類することは、これらの機能がある応用から次の応用へと非常に可搬ですから有用です。
+HTML 表__&&model&&__はほとんどの__&&rendering&&__情報を関連付けられた__&&style sheet&&__に委ねます。
+この__&&model&&__はそうした__&&style sheet&&__で優位に設計されていますが、必須ではありません。
+
+> This specification provides a superset of the simpler model presented
+in earlier work on HTML+. Tables are considered as being formed from
+an optional caption together with a sequence of rows, which in turn
+consist of a sequence of table cells. The model further
+differentiates header and data cells, and allows cells to span
+multiple rows and columns.
+
+この仕様書は早期の HTML+ の作業で提示された比較的単純な__&&model&&__の__&&superset&&__を提供します。
+表は省略可能な表題と列の連続があって、列は表__&&cell&&__の連続で構成される形と考えられます。
+この__&&model&&__は更に__&&header cell&&__と__&&data cell&&__を区別し、__&&cell&&__は行や列をまたぐことが出来ます。
+
+> Following the CALS table model, this specification allows table rows
+to be grouped into head and body and foot sections. This simplifies
+the representation of rendering information and can be used to repeat
+table head and foot rows when breaking tables across page boundaries,
+or to provide fixed headers above a scrollable body panel. In the
+markup, the foot section is placed before the body sections. This is
+an optimization shared with CALS for dealing with very long tables.
+It allows the foot to be rendered without having to wait for the
+entire table to be processed.
+
+CALS 表__&&model&&__に倣い、この仕様では表の列を__&&(table)head&&__,
+__&&(table)body&&__, __&&(table)foot&&__に集団化することが出来ます。
+このため__&&rendering&&__情報の表現が簡単になり、頁境界を越えるため表を分解する時に__&&(table)head&&__列や__&&(table)foot&&__列を繰り返すことが出来、また__&&scroll&&__可能な__&&(table)body&&__部分の上に固定の__&&(table)head&&__を配置出来ます。
+__&&markup&&__上では、__&&(table)foot&&__は__&&(table)body&&__の前に置かれます。
+これは CALS でと同じく非常に長い表を処理するための最適化です。
+これによって表全体を処理するのを待つことなしに__&&(table)foot&&__を__&&rendering&&__することが出来ます。
+
+> For the visually impaired, HTML offers the hope of setting to rights
+the damage caused by the adoption of windows based graphical user
+interfaces. The HTML table model includes attributes for labeling
+each cell, to support high quality text to speech conversion. The
+same attributes can also be used to support automated import and
+export of table data to databases or spreadsheets.
+
+視覚障害者に対しては、 HTML は__&&window&&__を基にした__&&graphical user interface&&__の採用に伴い発生する被害を改善できるかもしれません。
+HTML 表__&&model&&__は各__&&cell&&__に札付けして、発話合成のための高品質__&&text&&__に対応する属性を含んでいます。
+この属性は__&&database&&__や__&&spreadsheet&&__とのデータの__&&import&&__や__&&export&&__の自動化に対応するのにも使えます。
+
+[PRE[
+   Current desktop publishing packages provide very rich control over
+   the rendering of tables, and it would be impractical to reproduce
+   this in HTML, without making HTML into a bulky rich text format like
+   RTF or MIF. This specification does, however, offer authors the
+   ability to choose from a set of commonly used classes of border
+   styles. The FRAME attribute controls the appearence of the border
+   frame around the table while the RULES attribute determines the
+   choice of rulings within the table.
+]PRE]
+
+[PRE[
+   During the development of this specification, a number of avenues
+   were investigated for specifying the ruling patterns for tables. One
+   issue concerns the kinds of statements that can be made. Including
+   support for edge subtraction as well as edge addition leads to
+   relatively complex algorithms. For instance work on allowing the full
+   set of table elements to include the FRAME and RULES attributes led
+   to an algorithm involving some 24 steps to determine whether a
+   particular edge of a cell should be ruled or not. Even this
+   additional complexity doesn't provide enough rendering control to
+   meet the full range of needs for tables. The current specification
+   deliberately sticks to a simple intuitive model, sufficient for most
+   purposes. Further experimental work is needed before a more complex
+   approach is standardized.
+]PRE]
+
+
+* A walk through the table DTD [INS[表 DTD を読むに当たって]]
+
+> The table document type definition provides the formal definition of
+the allowed syntax for html tables. The following is an annotated
+listing of the DTD. The complete listing appears at the end of this document.
+
+表文書型定義は html 表で使用できる構文の正式な定義です。
+次に示すのは注釈をつけた DTD です。完全なものはこの文書の最後にあります。
+
+> Note that the TABLE element is a block-like element rather a
+character-level element. As such it is a peer of other HTML 
+block-like elements such as paragraphs, lists and headers.
+
+[CODE(HTML)[TABLE]] __&&element&&__は文字水準__&&element&&__ではなく__&&block&&__的__&&element&&__であることに注意して下さい。
+ですから段落や__&&list&&__, __&&heading&&__のようなほかの HTML
+の__&&block&&__的__&&element&&__と同等になります。
+
+
+* Common Attributes [INS[共通属性]]
+
+> The following attributes occur in several of the elements and are
+defined here for brevity. In general, all attribute names and values
+in this specification are case insensitive, except where noted
+otherwise. The ID, CLASS and attributes are required for use with
+style sheets, while LANG and DIR are needed for internationalization.
+
+次の属性は幾つかの__&&element&&__に登場するので簡単のためここで定義します。
+通常、この仕様中の全ての属性名及び値は特に注記の無い限り大文字・小文字を区別しません。
+[CODE(HTML)[ID]], [CODE(HTML)[CLASS]] 及び属性 [INS[(訳注: [CODE(HTML)[ID]], [CODE(HTML)[CLASS]] 両属性の誤り?)]] 
+は__&&style sheet&&__と併用するのに必要で、
+[CODE(HTML)[LANG]] 及び [CODE(HTML)[DIR]] は国際化に必要です。
+
+[PRE[
+   <!ENTITY % attrs
+          "id      ID       #IMPLIED  -- element identifier --
+                                      [INS[-- __&&element&&__識別子 --]]
+           class   NAMES    #IMPLIED  -- for subclassing elements --
+                                      [INS[-- __&&element&&__の__&&subclass&&__化 --]]
+           lang    NAME     #IMPLIED  -- as per RFC 1766 --
+                                      [INS[-- RFC 1766 による --]]
+                                      [INS[-- 国際化__&&text&&__方向 --]]
+           dir   (ltr|rtl)  #IMPLIED  -- I18N text direction --">
+]PRE]
+
+[PRE[
+   ID
+       Used to define a document-wide identifier. This can be used for
+       naming positions within documents as the destination of a
+       hypertext link. It may also be used by style sheets for
+       rendering an element in a unique style. An ID attribute value is
+       an SGML NAME token. NAME tokens are formed by an initial letter
+       followed by letters, digits, "-" and "." characters. The letters
+       are restricted to A-Z and a-z.
+]PRE]
+
+文書範囲の識別子を定義するのに使用。
+
+[PRE[
+   CLASS
+       A space separated list of SGML NAME tokens. CLASS names specify
+       that the element belongs to the corresponding named classes. It
+       allows authors to distinguish different roles played by the same
+       tag. The classes may be used by style sheets to provide
+       different renderings as appropriate to these roles.
+]PRE]
+
+[PRE[
+   LANG
+       A LANG attribute identifies the natural language used by the
+       content of the associated element.The syntax and registry of
+       language values are defined by RFC 1766. In summary the language
+       is given as a primary tag followed by zero or more subtags,
+       separated by "-". White space is not allowed and all tags are
+       case insensitive. The name space of tags is administered by
+       IANA. The two letter primary tag is an ISO 639 language
+       abbreviation, while the initial subtag is a two letter ISO 3166
+       country code. Example values for LANG include:
+]PRE]
+
+[PRE[
+             en, en-US, en-uk, i-cherokee, x-pig-latin.
+]PRE]
+
+[PRE[
+   DIR
+       Human writing systems are grouped into scripts, which determine
+       amongst other things, the direction the characters are written.
+       Elements of the Latin script are nominally left to right, while
+       those of the Arabic script are nominally right to left. These
+       characters have what is called strong directionality. Other
+       characters can be directionally neutral (spaces) or weak
+       (punctuation).
+]PRE]
+
+[PRE[
+       The DIR attribute specifies an encapsulation boundary which
+       governs the interpretation of neutral and weakly directional
+       characters. It does not override the directionality of strongly
+       directional characters. The DIR attribute value is one of LTR
+       for left to right, or RTL for right to left, e.g. DIR=RTL.
+]PRE]
+
+[PRE[
+       When applied to TABLE, it indicates the geometric layout of rows
+       (i.e. row 1 is on right if DIR=RTL, but on the left if DIR=LTR)
+       and it indicates a default base directionality for any text in
+       the table's content if no other DIR attribute applies to that
+       text.
+]PRE]
+
+
+* Horizontal and Vertical Alignment Attributes
+
+[PRE[
+   The alignment of cell contents can be specified on a cell by cell
+   basis, or inherited from enclosing elements, such as the row, column
+   or the table element itself.
+]PRE]
+
+[PRE[
+   ALIGN
+       This specifies the horizontal alignment of cell contents.
+]PRE]
+
+[PRE[
+   <!-- horizontal alignment attributes for cell contents -->
+   <!ENTITY % cell.halign
+           "align  (left|center|right|justify|char) #IMPLIED
+            char    CDATA   #IMPLIED -- alignment char, e.g. char=':' --
+            charoff CDATA   #IMPLIED -- offset for alignment char --"
+           >
+]PRE]
+
+[PRE[
+       The attribute value should be one of LEFT, CENTER, RIGHT,
+       JUSTIFY and CHAR. User agents may treat JUSTIFY as left
+       alignment if they lack support for text justification.
+       ALIGN=CHAR is used for aligning cell contents on a particular
+       character.
+]PRE]
+
+Raggett                       Experimental                      [Page 9]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+       For cells spanning multiple rows or columns, where the alignment
+       property is inherited from the row or column, the initial row
+       and column for the cell determines the appropriate alignment
+       property to use.
+]PRE]
+
+[PRE[
+       Note that an alignment attribute on elements within the cell,
+       e.g. on a P element, overrides the normal alignment value for
+       the cell.
+]PRE]
+
+[PRE[
+   CHAR
+       This is used to specify an alignment character for use with
+       align=char, e.g. char=":". The default character is the decimal
+       point for the current language, as set by the LANG attribute.
+       The CHAR attribute value is case sensitive.
+]PRE]
+
+[PRE[
+   CHAROFF
+       Specifies the offset to the first occurrence of the alignment
+       character on each line. If a line doesn't include the alignment
+       character, it should be horizontally shifted to end at the
+       alignment position. The resolved direction of the cell, as
+       determined by the inheritance of the DIR attribute, is used to
+       set whether the offset is from the left or right margin of the
+       cell. For Latin scripts, the offset will be from the left
+       margin, while for Arabic scripts, it will be from the right
+       margin. In addition to standard units, the "%" sign may be used
+       to indicate that the value specifies the alignment position as a
+       percentage offset of the current cell, e.g. CHAROFF="30%"
+       indicates the alignment character should be positioned 30%
+       through the cell.
+]PRE]
+
+[PRE[
+       When using the two pass layout algorithm, the default alignment
+       position in the absence of an explicit or inherited CHAROFF
+       attribute can be determined by choosing the position that would
+       center lines for which the width before and after the alignment
+       character are at the maximum values for any of the lines in the
+       column for which ALIGN=CHAR. For incremental table layout the
+       suggested default is CHAROFF="50%". If several cells in
+       different rows for the same column use character alignment, then
+       by default, all such cells should line up, regardless of which
+       character is used for alignment. Rules for handling objects too
+       large for column apply when the explicit or implied alignment
+       results in a situation where the data exceeds the assigned width
+       of the column.
+]PRE]
+
+[PRE[
+   VALIGN
+       Defines whether the cell contents are aligned with the top,
+       middle or bottom of the cell.
+]PRE]
+
+Raggett                       Experimental                     [Page 10]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+       <!-- vertical alignment attributes for cell contents -->
+       <!ENTITY % cell.valign
+               "valign  (top|middle|bottom|baseline)  #IMPLIED"
+               >
+]PRE]
+
+[PRE[
+       If present, the value of the attribute should be one of: TOP,
+       MIDDLE, BOTTOM or BASELINE. All cells in the same row with
+       valign=baseline should be vertically positioned so that the
+       first text line in each such cell occur on a common baseline.
+       This constraint does not apply to subsequent text lines in these
+       cells.
+]PRE]
+
+Inheritance Order
+
+[PRE[
+   Alignment properties can be included with most of the table elements:
+   COL, THEAD, TBODY, TFOOT, TR, TH and TD. When rendering cells,
+   horizontal alignment is determined by columns in preference to rows,
+   while for vertical alignment, the rows are more important than the
+   columns. The following table gives the detailed precedence order for
+   each attribute, where X > Y denotes that X takes precedence over Y:
+]PRE]
+
+[PRE[
+   ALIGN, CHAR and CHAROFF:
+]PRE]
+
+[PRE[
+   cells > columns > column groups > rows > row groups > default
+]PRE]
+
+[PRE[
+   VALIGN, LANG, and DIR:
+]PRE]
+
+[PRE[
+   cells > rows > row groups > columns > column groups > table > default
+]PRE]
+
+[PRE[
+   Where cells are defined by TH and TD elements; rows by TR elements;
+   row groups by THEAD, TBODY and TFOOT elements, columns by COL
+   elements; and column groups by COLGROUP and COL elements. Note that
+   there is no inheritance mechanism for the CLASS attribute.
+]PRE]
+
+[PRE[
+   Properties defined on cells take precedence over inherited
+   properties, but are in turn over-ridden by alignment properties on
+   elements within cells. In the absence of an ALIGN attribute along the
+   inheritance path, the recommended default alignment for table cell
+   contents is ALIGN=LEFT for table data and ALIGN=CENTER for table
+   headers. The recommended default for vertical alignment is
+   VALIGN=MIDDLE. These defaults are chosen to match the behaviour of
+   the widely deployed Netscape implementation.
+]PRE]
+
+Standard Units for Widths
+
+[PRE[
+   Several attributes specify widths as a number followed by an optional
+   suffix. The units for widths are specified by the suffix: pt denotes
+   points, pi denotes picas, in denotes inches, cm denotes centimeters,
+]PRE]
+
+Raggett                       Experimental                     [Page 11]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+   mm denotes millimeters, em denotes em units (equal to the height of
+   the default font), and px denotes screen pixels. The default units
+   are screen pixels (chosen for backwards compatibility). The number is
+   an integer value or a real valued number such as "2.5". Exponents, as
+   in "1.2e2", are not allowed.  White space is not allowed between the
+   number and the suffix.
+]PRE]
+
+[PRE[
+   The above set of suffices is augmented for certain elements: "%" is
+   used for the WIDTH attribute for the TABLE element. It indicates that
+   the attribute specifies the percentage width of the space between the
+   current left and right margins, e.g. width="50%". For the COL
+   element, "*" is used with the WIDTH attribute to specify relative
+   column widths, e.g. width="3*", using the same representation as the
+   CALS table model.
+]PRE]
+
+The TABLE element
+
+<!ENTITY % Where "(left|center|right)">
+
+<!ELEMENT table - - (caption?, (col*|colgroup*), thead?, tfoot?, tbody+)>
+
+<!ATTLIST table                    -- table element --
+[PRE[
+        %attrs;                    -- id, lang, dir and class --
+        align   %Where;  #IMPLIED  -- table position relative to --
+                                   -- window --
+        width   CDATA    #IMPLIED  -- table width relative to window --
+        cols    NUMBER   #IMPLIED  -- used for immediate display mode --
+        border  CDATA    #IMPLIED  -- controls frame width around --
+                                   -- table --
+        frame   %Frame;  #IMPLIED  -- which parts of table frame to --
+                                   -- include --
+        rules   %Rules;  #IMPLIED  -- controls rules between cells --
+        cellspacing CDATA #IMPLIED -- spacing between cells --
+        cellpadding CDATA #IMPLIED -- spacing within cells --
+        >
+]PRE]
+
+[PRE[
+   The TABLE element requires both start and end tags. Table elements
+   start with an optional CAPTION element, optionally followed by either
+   one or more COL elements, or one or more COLGROUP elements, then an
+   optional THEAD, an optional TFOOT, and finally one or more TBODY
+   elements.
+]PRE]
+
+[PRE[
+   ID, CLASS, LANG and DIR
+       See earlier description of common attributes.
+]PRE]
+
+[PRE[
+   ALIGN
+       Defines the horizontal position of the table relative to the
+       current left and right margins. ALIGN=CENTER centers the table
+]PRE]
+
+Raggett                       Experimental                     [Page 12]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+       midway between the left and right margins. ALIGN=LEFT positions
+       the table at the left margin, while ALIGN=RIGHT positions the
+       table at the right margin. User agents may flow text around the
+       right handside of the table for ALIGN=LEFT, or the left handside
+       for ALIGN=RIGHT.
+]PRE]
+
+[PRE[
+       Note you can use <BR CLEAR=LEFT> after the table element if you
+       want to avoid text flowing along side the table when you have
+       specified ALIGN=LEFT, or <BR CLEAR=RIGHT> for a right aligned
+       table. To prevent a right aligned table flowing around something
+       else, use <BR CLEAR=RIGHT> before the table etc. Greater control
+       over textflow is possible using style sheets.
+]PRE]
+
+[PRE[
+   WIDTH
+       Specifies the desired width of the table. In addition to the
+       standard units, the "%" sign may used to indicate that the width
+       specifies the percentage width of the space between the current
+       left and right margins, e.g. width="50%". In the absence of this
+       attribute, the table width can be determined by the layout
+       algorithm given later on.
+]PRE]
+
+[PRE[
+       It is recommended that the table width be increased beyond the
+       value indicated by the WIDTH attribute as needed to avoid any
+       overflow of cell contents. Such increases should try to avoid
+       drastic changes to relative column widths specified by the
+       author. To avoid the need for excessive horizontal scrolling, or
+       when such scrolling is impractical or undesired, it may be
+       appropriate to split words across lines.
+]PRE]
+
+[PRE[
+   COLS
+       Specifies the number of columns for the table. If present the
+       user agent may render the table dynamically as data is received
+       from the network without waiting for the complete table to be
+       received. If the WIDTH attribute is missing, a default of "100%"
+       may be assumed for this purpose. If the COLS attribute is
+       absent, a prepass through the table's contents is needed to
+       determine the number of columns together with suitable values
+       for the widths of each column.
+]PRE]
+
+[PRE[
+   BORDER
+       Specifies the width of the border framing the table, see
+       standard units.
+]PRE]
+
+[PRE[
+   FRAME
+       Specifies which sides of the frame to render.
+]PRE]
+
+[PRE[
+       <!ENTITY % Frame
+          "(void|above|below|hsides|lhs|rhs|vsides|box|border)">
+]PRE]
+
+Raggett                       Experimental                     [Page 13]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+       VOID
+           Don't render any sides of the frame.
+]PRE]
+
+[PRE[
+       ABOVE
+           The top side of the frame
+]PRE]
+
+[PRE[
+       BELOW
+           The bottom side of the frame
+]PRE]
+
+[PRE[
+       HSIDES
+           The top and bottom sides of the frame
+]PRE]
+
+[PRE[
+       LHS
+           The left hand side of the frame
+]PRE]
+
+[PRE[
+       RHS
+           The right hand side of the frame
+]PRE]
+
+[PRE[
+       VSIDES
+           The left and right sides of the frame
+]PRE]
+
+[PRE[
+       BOX
+           All four sides of the frame
+]PRE]
+
+[PRE[
+       BORDER
+           All four sides of the frame
+]PRE]
+
+[PRE[
+       The value "Border" is included for backwards compatibility with
+       deployed browsers. If a document includes <TABLE BORDER> the
+       user agent will see FRAME=BORDER and BORDER=_implied_. If the
+       document includes <TABLE BORDER=_n_> then the user agent should
+       treat this as FRAME=BORDER except if _n=0_ for which FRAME=VOID
+       is appropriate.
+]PRE]
+
+[PRE[
+       Note: it would have been preferable to choose values for FRAME
+       consistent with the RULES attribute and the values used for
+       alignment. For instance: none, top, bottom, topbot, left, right,
+       leftright, all. Unfortunately, SGML requires enumerated
+       attribute values to be unique for each element, independent of
+       the attribute name. This causes immediate problems for "none",
+       "left", "right" and "all". The values for FRAME have been chosen
+       to avoid clashes with the RULES, ALIGN and VALIGN attributes.
+       This provides a measure of future proofing, as it is anticipated
+       that that the FRAME and RULES attributes will be added to other
+       table elements in future revisions to this specification. An
+       alternative would be to make FRAME a CDATA attribute. The
+       consensus of the HTML-WG was that the benefits of being able to
+       use SGML validation tools to check attributes based on
+]PRE]
+
+Raggett                       Experimental                     [Page 14]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+       enumerated values outweighs the need for consistent names.
+]PRE]
+
+[PRE[
+   RULES
+       Specifies where to draw rules within the table interior.
+]PRE]
+
+[PRE[
+       <!ENTITY % Rules "(none | groups | rows | cols | all)">
+]PRE]
+
+[PRE[
+       NONE
+           Suppresses internal rulings.
+]PRE]
+
+[PRE[
+       GROUPS
+           The THEAD, TFOOT and TBODY elements divide the table into
+           groups of rows, while COLGROUP elements divide the table
+           into groups of columns. This choice places a horizontal rule
+           between each row group and a vertical rule between each
+           column group. Note that every table has at least one row and
+           one column group.
+]PRE]
+
+[PRE[
+       ROWS
+           As RULES=GROUPS plus horizontal rules between all rows. User
+           agents may choose to use a heavier rule between groups of
+           rows and columns for emphasis.
+]PRE]
+
+[PRE[
+       COLS
+           As RULES=GROUPS plus vertical rules between all columns.
+           User agents may choose to use a heavier rule between groups
+           of rows and columns for emphasis.
+]PRE]
+
+[PRE[
+       ALL
+           Place rules between all rows and all columns. User agents
+           may choose to use a heavier rule between groups of rows and
+           columns for emphasis.
+]PRE]
+
+[PRE[
+       If a document includes <TABLE BORDER> or <TABLE BORDER=_n_> then
+       the default for the table element is RULES=ALL, except if _n=0_
+       for which RULES=NONE is appropriate.
+]PRE]
+
+[PRE[
+   CELLSPACING
+       This attribute is intended for backwards compatibility with
+       deployed user agents. It specifies the space between the table
+       frame and the first or last cell border for each row or column,
+       and between other cells in the table. See standard units.
+       Greater control will be possible using style sheet languages.
+]PRE]
+
+[PRE[
+   CELLPADDING
+       This attribute is intended for backwards compatibility with
+       deployed user agents. It specifies the amount of space between
+       the border of the cell and its contents both above/below, and
+]PRE]
+
+Raggett                       Experimental                     [Page 15]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+       left//right. See standard units. Greater control will be
+       possible using style sheet languages.
+]PRE]
+
+[PRE[
+   If a fixed width is set for the table or column, the CELLSPACING and
+   CELLPADDING may demand more space than assigned. Current practice is
+   for the latter to take precedence over WIDTH attributes when a
+   conflict occurs, although this isn't required by this specification.
+]PRE]
+
+Table Captions
+
+[PRE[
+   <!ELEMENT caption - - (%text;)+>
+]PRE]
+
+[PRE[
+   <!ENTITY % Caption "(top|bottom|left|right)">
+]PRE]
+
+[PRE[
+   <!ATTLIST caption                  -- table caption --
+           %attrs;                    -- id, lang, dir and class --
+           align   %Caption; #IMPLIED -- relative to table --
+           >
+]PRE]
+
+[PRE[
+   The optional CAPTION element is used to provide a caption for the
+   table. Both start and end tags are required.
+]PRE]
+
+[PRE[
+   ID, CLASS, LANG and DIR
+       See earlier description of common attributes.
+]PRE]
+
+[PRE[
+   ALIGN
+       This may be used to control the placement of captions relative
+       to the table. When present, the ALIGN attribute should have one
+       of the values: TOP, BOTTOM, LEFT and RIGHT. It is recommended
+       that the caption is made to fit within the width or height of
+       the table as appropriate. The default position of the caption is
+       deliberately unspecified.
+]PRE]
+
+[PRE[
+       Note the ALIGN attribute is overused in HTML, but is retained
+       here for compatibility with currently deployed browsers.
+]PRE]
+
+The COLGROUP Element
+
+[PRE[
+   <!ELEMENT colgroup - O (col*)>
+]PRE]
+
+[PRE[
+   <!ATTLIST colgroup
+           %attrs;                    -- id, lang, dir and class --
+           span    NUMBER   1         -- default number of columns in --
+                                      -- group --
+           width   CDATA    #IMPLIED  -- default width for enclosed --
+                                      -- COLs --
+           %cell.halign;              -- horizontal alignment in --
+                                      -- cells --
+]PRE]
+
+Raggett                       Experimental                     [Page 16]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+           %cell.valign;              -- vertical alignment in cells --
+           >
+]PRE]
+
+[PRE[
+   The COLGROUP element acts as a container for a group of columns, and
+   allows you to set default properties for these columns. In the
+   absence of a COLGROUP element, all columns in the table are assumed
+   to belong to a single column group. Each COLGROUP element can
+   contain zero or more COL elements. COLGROUP requires a start tag,
+   but the end tag may be omitted. This is useful when defining a
+   sequence of COLGROUP elements, e.g.
+]PRE]
+
+[PRE[
+       <TABLE FRAME=BOX RULES=COLS>
+         <COLGROUP>
+           <COL WIDTH="1*">
+           <COL WIDTH="2*">
+         <COLGROUP>
+           <COL WIDTH="1*">
+           <COL WIDTH="3*">
+         <THEAD>
+           <TR> ...
+       </TABLE>
+]PRE]
+
+[PRE[
+   COLGROUP elements can be used with the following attributes:
+]PRE]
+
+[PRE[
+   ID, CLASS, LANG and DIR
+       See earlier description of common attributes.
+]PRE]
+
+[PRE[
+   SPAN
+       A positive integer value that specifies a default for how many
+       columns are in this group. This attribute should be ignored if
+       the COLGROUP element contains one or more COL elements. It
+       provides a convenient way of grouping columns without the need
+       to supply COL elements.
+]PRE]
+
+[PRE[
+   WIDTH
+       Specifies a default width for each of the grouped columns, see
+       standard units. In addition, the "*" suffix denotes relative
+       widths, e.g.
+]PRE]
+
+[PRE[
+            width=64        width in screen pixels
+            width=0.5*      a relative width of 0.5
+]PRE]
+
+[PRE[
+       Relative widths act as constraints on the relative widths of
+       different columns. If a COLGROUP element specifies a relative
+       width of zero, all of the columns in the group should be set to
+       their minimum widths, unless they are associated with a COL
+       element with an overriding WIDTH attribute. When widths are
+]PRE]
+
+Raggett                       Experimental                     [Page 17]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+       given in absolute units, the user agent can use these to
+       constrain the width of the table. The "*" suffix is used to
+       simplify importing tables from the CALS representation.
+]PRE]
+
+[PRE[
+   ALIGN, CHAR, CHAROFF and VALIGN
+       Specify values for horizontal and vertical alignment within
+       table cells. See inheritance order of alignment properties.
+]PRE]
+
+The COL Element
+
+[PRE[
+   <!ELEMENT col - O EMPTY>
+]PRE]
+
+[PRE[
+   <!ATTLIST col                      -- column groups and --
+                                      -- properties --
+           %attrs;                    -- id, lang, dir and class --
+           span    NUMBER   1         -- number of columns spanned --
+                                      -- by group --
+           width   CDATA    #IMPLIED  -- column width specification --
+           %cell.halign;              -- horizontal alignment in --
+                                      -- cells --
+           %cell.valign;              -- vertical alignment in cells --
+           >
+]PRE]
+
+[PRE[
+   This optional element is used to specify column based defaults for
+   table properties. It is an empty element, and as such has no
+   content, and shouldn't be given an end tag. Several COL elements may
+   be given in succession. COL attributes override those of the parent
+   COLGROUP element.
+]PRE]
+
+[PRE[
+   ID, CLASS, LANG and DIR
+       See earlier description of common attributes.
+]PRE]
+
+[PRE[
+   SPAN
+       A positive integer value that specifies how many columns this
+       element applies to, defaulting to one. In the absence of SPAN
+       attributes the first COL element applies to the first column,
+       the second COL element to the second column and so on. If the
+       second COL element had SPAN=2, it would apply to the second and
+       third column. The next COL element would then apply to the
+       fourth column and so on. SPAN=0 has a special significance and
+       implies that the COL element spans all columns from the current
+       column up to and including the last column. Note that a COL SPAN
+       does not define a group. It is merely a way to share attribute
+       definitions.
+]PRE]
+
+Raggett                       Experimental                     [Page 18]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+   WIDTH
+       Specifies the width of the columns, see standard units. If the
+       element spans several columns then the WIDTH attribute specifies
+       the width for each of the individual columns - not the width of
+       the span. In addition, the "*" suffix denotes relative widths,
+]PRE]
+
+[PRE[
+       e.g.
+]PRE]
+
+[PRE[
+            width=64        width in screen pixels
+            width=0.5*      a relative width of 0.5
+]PRE]
+
+[PRE[
+       Relative widths act as constraints on the relative widths of
+       different columns. If a COL element specifies a relative width
+       of zero, the column should always be set to its minimum width.
+       When widths are given in absolute units, the user agent can use
+       these to constrain the width of the table. The "*" suffix is
+       used to simplify importing tables from the CALS representation.
+]PRE]
+
+[PRE[
+   ALIGN, CHAR, CHAROFF and VALIGN
+       Specify values for horizontal and vertical alignment within
+       table cells. See inheritance order of alignment properties.
+]PRE]
+
+Table Head, Foot and Body Elements
+
+[PRE[
+   <!ELEMENT thead - O tr+>
+   <!ELEMENT tfoot - O tr+>
+   <!ELEMENT tbody O O tr+>
+]PRE]
+
+[PRE[
+   <!ATTLIST (thead|tbody|tfoot)      -- table section --
+           %attrs;                    -- id, lang, dir and class --
+           %cell.halign;              -- horizontal alignment in --
+                                      -- cells --
+           %cell.valign;              -- vertical alignment in cells --
+           >
+]PRE]
+
+[PRE[
+   Tables may be divided up into head and body sections. The THEAD and
+   TFOOT elements are optional, but one or more TBODY elements are
+   always required. If the table only consists of a TBODY section, the
+   TBODY start and end tags may be omitted, as the parser can infer
+   them. If a THEAD element is present, the THEAD start tag is
+   required, but the end tag can be omitted, provided a TFOOT or TBODY
+   start tag follows. The same applies to TFOOT.
+]PRE]
+
+[PRE[
+   Note: This definition provides compatibility with tables created
+   for the older model, as well as allowing the end tags for THEAD,
+   TFOOT and TBODY to be omitted.
+]PRE]
+
+Raggett                       Experimental                     [Page 19]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+   The THEAD, TFOOT and TBODY elements provide a convenient means for
+   controlling rendering. If the table has a large number of rows in
+   the body, user agents may choose to use a scrolling region for the
+   table body sections. When rendering to a paged device, tables will
+   often have to be broken across page boundaries. The THEAD, TFOOT and
+   TBODY elements allow the user agent to repeat the table foot at the
+   bottom of the current page, and then the table head at the top of
+   the new page before continuing on with the table body.
+]PRE]
+
+[PRE[
+   TFOOT is placed before the TBODY in the markup sequence, so that
+   browsers can render the foot before receiving all of the table data.
+   This is useful when very long tables are rendered with scrolling
+   body sections, or for paged output, involving breaking the table
+   over many pages.
+]PRE]
+
+[PRE[
+   Each THEAD, TFOOT and TBODY element must contain one or more TR
+   elements.
+]PRE]
+
+[PRE[
+   ID, CLASS, LANG and DIR
+       See earlier description of common attributes.
+]PRE]
+
+[PRE[
+   ALIGN, CHAR, CHAROFF and VALIGN
+       Specify values for horizontal and vertical alignment within
+       table cells. See inheritance order of alignment properties.
+]PRE]
+
+Table Row (TR) elements
+
+[PRE[
+   <!ELEMENT tr - O (th|td)+>
+]PRE]
+
+[PRE[
+   <!ATTLIST tr                       -- table row --
+           %attrs;                    -- id, lang, dir and class --
+           %cell.halign;              -- horizontal alignment in --
+                                      -- cells --
+           %cell.valign;              -- vertical alignment in cells --
+           >
+]PRE]
+
+[PRE[
+   The TR or table row element acts as a container for a row of table
+   cells. The end tag may be omitted.
+]PRE]
+
+[PRE[
+   ID, CLASS, LANG and DIR
+       See earlier description of common attributes.
+]PRE]
+
+[PRE[
+   ALIGN, CHAR, CHAROFF and VALIGN
+       Specify values for horizontal and vertical alignment within
+       table cells. See inheritance order of alignment properties.
+]PRE]
+
+Raggett                       Experimental                     [Page 20]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+Table Cells: TH and TD
+
+[PRE[
+   <!ELEMENT (th|td) - O %body.content>
+]PRE]
+
+[PRE[
+   <!ATTLIST (th|td)                  -- header or data cell --
+           %attrs;                    -- id, lang, dir and class --
+           axis    CDATA    #IMPLIED  -- defaults to cell content --
+           axes    CDATA    #IMPLIED  -- list of axis names --
+           nowrap (nowrap)  #IMPLIED  -- suppress word wrap --
+           rowspan NUMBER   1         -- number of rows spanned by --
+                                      -- cell --
+           colspan NUMBER   1         -- number of cols spanned by --
+                                      -- cell --
+           %cell.halign;              -- horizontal alignment in --
+                                      -- cells --
+           %cell.valign;              -- vertical alignment in cells --
+           >
+]PRE]
+
+[PRE[
+   TH elements are used to represent header cells, while TD elements
+   are used to represent data cells. This allows user agents to render
+   header and data cells distinctly, even in the absence of style
+   sheets.
+]PRE]
+
+[PRE[
+   Cells can span multiple rows and columns, and may be empty. Cells
+   spanning rows contribute to the column count on each of the spanned
+   rows, but only appear in the markup once (in the first row spanned).
+   The row count is determined by the number of TR elements. Any rows
+   implied by cells spanning rows beyond this should be ignored.
+]PRE]
+
+[PRE[
+   If the column count for the table is greater than the number of
+   cells for a given row (after including cells for spanned rows), the
+   missing cells are treated as occurring on the right hand side of the
+   table and rendered as empty cells. If the language context indicates
+   a right to left writing order, then the missing cells should be
+   placed on the left hand side.
+]PRE]
+
+[PRE[
+   It is possible to create tables with overlapping cells, for
+   instance:
+]PRE]
+
+[PRE[
+       <table border>
+       <tr><td rowspan=2>1<td>2<td>3
+       <tr><td rowspan=2>4
+       <tr><td colspan=2>5<td>6
+       </table>
+]PRE]
+
+Raggett                       Experimental                     [Page 21]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+   which might look something like:
+]PRE]
+
+[PRE[
+       /-----------\
+       | 1 | 2 | 3 |
+       |   |-------|
+       |   | 4 |   |
+       |---|...|---|
+       | 5 :   | 6 |
+       \-----------/
+]PRE]
+
+[PRE[
+   In this example, the cells labelled 4 and 5 overlap. In such cases,
+   the rendering is implementation dependent.
+]PRE]
+
+[PRE[
+   The AXIS and AXES attributes for cells provide a means for defining
+   concise labels for cells. When rendering to speech, these attributes
+   may be used to provide abbreviated names for the headers relevant to
+   each cell. Another application is when you want to be able to later
+   process table contents to enter them into a database. These
+   attributes are then used to give database field names. The table's
+   class attribute should be used to let the software recognize which
+   tables can be treated in this way.
+]PRE]
+
+[PRE[
+   ID, CLASS, LANG and DIR
+       See earlier description of common attributes.
+]PRE]
+
+[PRE[
+   AXIS
+       This defines an abbreviated name for a header cell, e.g. which
+       can be used when rendering to speech. It defaults to the cell's
+       content.
+]PRE]
+
+[PRE[
+   AXES
+       This is a comma separated list of axis names which together
+       identify the row and column headers that pertain to this cell.
+       It is used for example when rendering to speech to identify the
+       cell's position in the table. If missing the user agent can try
+       to follow up columns and left along rows (right for some
+       languages) to find the corresponding header cells.
+]PRE]
+
+[PRE[
+   NOWRAP, e.g. <TD NOWRAP>
+       The presence of this attribute disables automatic wrapping of
+       text lines for this cell. If used uncautiously, it may result in
+       excessively wide cells. This attribute is defined for backwards
+       compatibility with deployed user agents. Greater control is
+       possible with associated style sheet languages (for example for
+       control over overflow handling).
+]PRE]
+
+Raggett                       Experimental                     [Page 22]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+   ROWSPAN, e.g. <TD ROWSPAN=2>
+       A positive integer value that defines how may rows this cell
+       spans. The default ROWSPAN is 1. ROWSPAN=0 has a special
+       significance and implies that the cell spans all rows from the
+       current row up to the last row of the table.
+]PRE]
+
+[PRE[
+   COLSPAN, e.g. <TD COLSPAN=2>
+       A positive integer value that defines how may columns this cell
+       spans. The default COLSPAN is 1. COLSPAN=0 has a special
+       significance and implies that the cell spans all columns from
+       the current column up to the last column of the table.
+]PRE]
+
+[PRE[
+   ALIGN, CHAR, CHAROFF and VALIGN
+       Specify values for horizontal and vertical alignment within
+       table cells. See inheritance order of alignment properties.
+]PRE]
+
+[PRE[
+   Note: It is recommended that implementors provide support for the
+   Netscape 1.1 WIDTH attribute for TH and TD, although this isn't part
+   of the current specification. Document authors are advised to use
+   the width attribute for the COL element instead.
+]PRE]
+
+Recommended Layout Algorithms
+
+[PRE[
+   If the COLS attribute on the TABLE element specifies the number of
+   columns, then the table may be rendered using a fixed layout,
+   otherwise the autolayout algorithm described below should be used.
+]PRE]
+
+Fixed Layout Algorithm
+
+[PRE[
+   For this algorithm, it is assumed that the number of columns is
+   known. The column widths by default should be set to the same size.
+   Authors may override this by specifying relative or absolute column
+   widths, using the COLGROUP or COL elements. The default table width
+   is the space between the current left and right margins, but may be
+   overridden by the WIDTH attribute on the TABLE element, or determined
+   from absolute column widths. To deal with mixtures of absolute and
+   relative column widths, the first step is to allocate space from the
+   table width to columns with absolute widths. After this, the space
+   remaining is divided up between the columns with relative widths.
+]PRE]
+
+[PRE[
+   The table syntax alone is insufficient to guarantee the consistency
+   of attribute values. For instance, the number of columns specified by
+   the COLS attribute may be inconsistent with the number of columns
+   implied by the COL elements. This in turn, may be inconsistent with
+   the number of columns implied by the table cells. A further problem
+   occurs when the columns are too narrow to avoid overflow of cell
+   contents. The width of the table as specified by the TABLE element or
+   COL elements may result in overflow of cell contents. It is
+]PRE]
+
+Raggett                       Experimental                     [Page 23]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+   recommended that user agents attempt to recover gracefully from these
+   situations, e.g. by hyphenating words and resorting to splitting
+   words if hyphenation points are unknown.
+]PRE]
+
+[PRE[
+   In the event that an indivisible element causes cell overflow, the
+   user agent may consider adjusting column widths and re-rendering the
+   table. In the worst case clipping may be considered if column width
+   adjustments and/or scrollable cell content are not feasible. In any
+   case if cell content is split or clipped this should be indicated to
+   the user in an appropriate manner.
+]PRE]
+
+Autolayout Algorithm
+
+[PRE[
+   If the COLS attribute is missing from the table start tag, then the
+   user agent should use the following autolayout algorithm. It uses two
+   passes through the table data and scales linearly with the size of
+   the table.
+]PRE]
+
+[PRE[
+   In the first pass, line wrapping is disabled, and the user agent
+   keeps track of the minimum and maximum width of each cell. The
+   maximum width is given by the widest line. As line wrap has been
+   disabled, paragraphs are treated as long lines unless broken by <BR>
+   elements. The minimum width is given by the widest word or image etc.
+   taking into account leading indents and list bullets etc. In other
+   words, if you were to format the cell's content in a window of its
+   own, determine the minimum width you could make the window before the
+   cell begins to overflow. Allowing user agents to split words will
+   minimize the need for horizontal scrolling or in the worst case
+   clipping of cell contents.
+]PRE]
+
+[PRE[
+   This process also applies to any nested tables occuring in cell
+   content. The minimum and maximum widths for cells in nested tables
+   are used to determine the minimum and maximum widths for these tables
+   and hence for the parent table cell itself. The algorithm is linear
+   with aggregate cell content, and broadly speaking independent of the
+   depth of nesting.
+]PRE]
+
+[PRE[
+   To cope with character alignment of cell contents, the algorithm
+   keeps three running min/max totals for each column: Left of align
+   char, right of align char and un-aligned. The minimum width for a
+   column is then: max(min_left + min_right, min_non-aligned).
+]PRE]
+
+[PRE[
+   The minimum and maximum cell widths are then used to determine the
+   corresponding minimum and maximum widths for the columns. These in
+   turn, are used to find the minimum and maximum width for the table.
+   Note that cells can contain nested tables, but this doesn't
+   complicate the code significantly. The next step is to assign column
+   widths according to the available space (i.e. the space between the
+]PRE]
+
+Raggett                       Experimental                     [Page 24]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+   current left and right margins).
+]PRE]
+
+[PRE[
+   For cells which span multiple columns, a simple approach, as used by
+   Arena, is to evenly apportion the min/max widths to each of the
+   constituent columns. A slightly more complex approach is to use the
+   min/max widths of unspanned cells to weight how spanned widths are
+   apportioned. Experimental study suggests a blend of the two
+   approaches will give good results for a wide range of tables.
+]PRE]
+
+[PRE[
+   The table borders and intercell margins need to be included in
+   assigning column widths. There are three cases:
+]PRE]
+
+[PRE[
+   1.  The minimum table width is equal to or wider than the available
+       space. In this case, assign the minimum widths and allow the
+       user to scroll horizontally. For conversion to braille, it will
+       be necessary to replace the cells by references to notes
+       containing their full content. By convention these appear before
+       the table.
+]PRE]
+
+[PRE[
+   2.  The maximum table width fits within the available space. In this
+       case, set the columns to their maximum widths.
+]PRE]
+
+[PRE[
+   3.  The maximum width of the table is greater than the available
+       space, but the minimum table width is smaller. In this case,
+       find the difference between the available space and the minimum
+       table width, lets call it W. Lets also call D the difference
+       between maximum and minimum width of the table.
+]PRE]
+
+[PRE[
+       For each column, let d be the difference between maximum and
+       minimum width of that column. Now set the column's width to the
+       minimum width plus d times W over D. This makes columns with
+       large differences between minimum and maximum widths wider than
+       columns with smaller differences.
+]PRE]
+
+[PRE[
+   This assignment step is then repeated for nested tables using the
+   minimum and maximum widths derived for all such tables in the first
+   pass. In this case, the width of the parent (i.e. enclosing) table
+   cell plays the role of the current window size in the above
+   description. This process is repeated recursively for all nested
+   tables. The topmost table is then rendered using the assigned widths.
+   Nested tables are subsequently rendered as part of the parent table's
+   cell contents.
+]PRE]
+
+[PRE[
+   If the table width is specified with the WIDTH attribute, the user
+   agent attempts to set column widths to match. The WIDTH attribute is
+   not binding if this results in columns having less than their minimum
+   (i.e. indivisible) widths.
+]PRE]
+
+Raggett                       Experimental                     [Page 25]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+   If relative widths are specified with the COL element, the algorithm
+   is modified to increase column widths over the minimum width to meet
+   the relative width constraints. The COL elements should be taken as
+   hints only, so columns shouldn't be set to less than their minimum
+   width. Similarly, columns shouldn't be made so wide that the table
+   stretches well beyond the extent of the window. If a COL element
+   specifies a relative width of zero, the column should always be set
+   to its minimum width.
+]PRE]
+
+HTML Table DTD
+
+[PRE[
+   The DTD or document type definition provides the formal definition of
+   the allowed syntax for HTML tables.
+]PRE]
+
+<!-- Content model entities imported from parent DTD:
+
+[PRE[
+  %body.content; allows table cells to contain headers, paras,
+  lists, form elements and even arbitrarily nested tables.
+]PRE]
+
+[PRE[
+  %text; is text characters, including character entities and
+  character emphasis elements, IMG and anchors
+-->
+]PRE]
+
+<!ENTITY % attrs
+[PRE[
+       "id      ID       #IMPLIED  -- element identifier --
+        class   NAMES    #IMPLIED  -- for subclassing elements --
+        lang    NAME     #IMPLIED  -- as per RFC 1766 --
+        dir   (ltr|rtl)  #IMPLIED  -- I18N text direction --">
+]PRE]
+
+<!--
+[PRE[
+ The BORDER attribute sets the thickness of the frame around the
+ table. The default units are screen pixels.
+]PRE]
+
+[PRE[
+ The FRAME attribute specifies which parts of the frame around
+ the table should be rendered. The values are not the same as
+ CALS to avoid a name clash with the VALIGN attribute.
+]PRE]
+
+[PRE[
+ The value "border" is included for backwards compatibility with
+  <TABLE BORDER> which yields frame=border and border=implied
+  For <TABLE BORDER=1> you get border=1 and frame=implied. In this
+ case, its appropriate to treat this as frame=border for backwards
+ compatibility with deployed browsers.
+-->
+]PRE]
+
+<!ENTITY % Frame "(void|above|below|hsides|lhs|rhs|vsides|box|border)">
+
+Raggett                       Experimental                     [Page 26]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+<!--
+[PRE[
+ The RULES attribute defines which rules to draw between cells:
+]PRE]
+
+[PRE[
+ If RULES is absent then assume:
+     "none" if BORDER is absent or BORDER=0 otherwise "all"
+-->
+]PRE]
+
+<!ENTITY % Rules "(none | groups | rows | cols | all)">
+
+<!-- horizontal placement of table relative to window -->
+<!ENTITY % Where "(left|center|right)">
+
+<!-- horizontal alignment attributes for cell contents -->
+<!ENTITY % cell.halign
+[PRE[
+        "align  (left|center|right|justify|char) #IMPLIED
+         char    CDATA   #IMPLIED -- alignment char, e.g. char=':' --
+         charoff CDATA   #IMPLIED -- offset for alignment char --"
+        >
+]PRE]
+
+<!-- vertical alignment attributes for cell contents -->
+<!ENTITY % cell.valign
+[PRE[
+        "valign  (top|middle|bottom|baseline)  #IMPLIED"
+        >
+]PRE]
+
+<!ELEMENT table - - (caption?, (col*|colgroup*), thead?, tfoot?, t
+[PRE[
+                    body+)>
+<!ELEMENT caption - - (%text;)+>
+<!ELEMENT thead - O (tr+)>
+<!ELEMENT tfoot - O (tr+)>
+<!ELEMENT tbody O O (tr+)>
+<!ELEMENT colgroup - O (col*)>
+<!ELEMENT col - O EMPTY>
+<!ELEMENT tr - O (th|td)+>
+<!ELEMENT (th|td) - O %body.content>
+]PRE]
+
+<!ATTLIST table                    -- table element --
+[PRE[
+        %attrs;                    -- id, lang, dir and class --
+        align   %Where;  #IMPLIED  -- table position relative to --
+                                   -- window --
+        width   CDATA    #IMPLIED  -- table width relative to window --
+        cols    NUMBER   #IMPLIED  -- used for immediate display mode --
+        border  CDATA    #IMPLIED  -- controls frame width around --
+                                   -- table --
+        frame   %Frame;  #IMPLIED  -- which parts of table frame to --
+                                   -- include --
+        rules   %Rules;  #IMPLIED  -- rulings between rows and cols --
+        cellspacing CDATA #IMPLIED -- spacing between cells --
+        cellpadding CDATA #IMPLIED -- spacing within cells --
+]PRE]
+
+Raggett                       Experimental                     [Page 27]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+        >
+]PRE]
+
+<!-- ALIGN is used here for compatibility with deployed browsers -->
+<!ENTITY % Caption "(top|bottom|left|right)">
+
+<!ATTLIST caption                  -- table caption --
+[PRE[
+        %attrs;                    -- id, lang, dir and class --
+        align  %Caption; #IMPLIED  -- relative to table --
+        >
+]PRE]
+
+<!--
+COLGROUP groups a set of COL elements. It allows you to group
+several columns together.
+- >
+<!ATTLIST colgroup
+[PRE[
+        %attrs;                    -- id, lang, dir and class --
+        span    NUMBER   1         -- default number of columns in --
+                                   -- group --
+        width   CDATA    #IMPLIED  -- default width for enclosed COLs --
+        %cell.halign;              -- horizontal alignment in cells --
+        %cell.valign;              -- vertical alignment in cells --
+        >
+]PRE]
+
+<!--
+[PRE[
+ COL elements define the alignment properties for cells in a given
+ column or spanned columns. The WIDTH attribute specifies the
+ width of the columns, e.g.
+]PRE]
+
+[PRE[
+     width=64        width in screen pixels
+     width=0.5*      relative width of 0.5
+-->
+]PRE]
+
+<!ATTLIST col                      -- column groups and properties --
+[PRE[
+        %attrs;                    -- id, lang, dir and class --
+        span    NUMBER   1         -- number of columns spanned by --
+                                   -- group --
+        width   CDATA    #IMPLIED  -- column width specification --
+        %cell.halign;              -- horizontal alignment in cells --
+        %cell.valign;              -- vertical alignment in cells --
+        >
+]PRE]
+
+<!--
+[PRE[
+    Use THEAD to duplicate headers when breaking table
+    across page boundaries, or for static headers when
+    body sections are rendered in scrolling panel.
+]PRE]
+
+[PRE[
+    Use TFOOT to duplicate footers when breaking table
+    across page boundaries, or for static footers when
+]PRE]
+
+Raggett                       Experimental                     [Page 28]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+    body sections are rendered in scrolling panel.
+]PRE]
+
+[PRE[
+    Use multiple TBODY sections when rules are needed
+    between groups of table rows.
+-->
+<!ATTLIST (thead|tbody|tfoot)      -- table section --
+        %attrs;                    -- id, lang, dir and class --
+        %cell.halign;              -- horizontal alignment in cells --
+        %cell.valign;              -- vertical alignment in cells --
+        >
+]PRE]
+
+<!ATTLIST tr                       -- table row --
+[PRE[
+        %attrs;                    -- id, lang, dir and class --
+        %cell.halign;              -- horizontal alignment in cells --
+        %cell.valign;              -- vertical alignment in cells --
+        >
+]PRE]
+
+<!ATTLIST (th|td)                  -- header or data cell --
+[PRE[
+        %attrs;                    -- id, lang, dir and class --
+        axis    CDATA    #IMPLIED  -- defaults to cell content --
+        axes    CDATA    #IMPLIED  -- list of axis names --
+        nowrap (nowrap)  #IMPLIED  -- suppress word wrap --
+        rowspan NUMBER   1         -- number of rows spanned by cell --
+        colspan NUMBER   1         -- number of cols spanned by cell --
+        %cell.halign;              -- horizontal alignment in cells --
+        %cell.valign;              -- vertical alignment in cells --
+        >
+]PRE]
+
+References
+
+[PRE[
+   Arena
+       W3C's HTML3 browser, see http://www.w3.org/pub/WWW/Arena/.
+       Arena was originally created as a proof of concept demo for
+       ideas in the HTML+ specification that preceded HTML3. The
+       browser is now being re-implemented to provide a reference
+       implementation of HTML3 along with support for style sheets and
+       client-side scripting.
+]PRE]
+
+[PRE[
+   CALS
+       Continuous Acquisition and Life-Cycle Support (formerly
+       Computer-aided Acquisition and Logistics Support) (CALS) is a
+       Department of Defense (DoD) strategy for achieving effective
+       creation, exchange, and use of digital data for weapon systems
+       and equipment. More information can be found from the US Navy
+       CALS home page at http://navysgml.dt.navy.mil/cals.html
+]PRE]
+
+Raggett                       Experimental                     [Page 29]
+[PRE[
+
+RFC 1942                      HTML Tables                       May 1996
+]PRE]
+
+[PRE[
+   HTML 2.0 (RFC1866)
+       Hypertext Markup Language Specification Version 2.0 by T.
+       Berners-Lee and D. Connolly, November 1995. Further information
+       can be found at http://www.w3.org/pub/WWW/MarkUp/ or at
+       ftp://ds.internic.net/rfc/rfc1866.txt
+]PRE]
+
+[PRE[
+   HTML 3.0
+       Hypertext Markup Language Specification Version 3.0. The initial
+       draft specification as published in March 1995. Work on refining
+       HTML3 is proceeding piecemeal with the new table specification
+       as one of the pieces. For W3C related work on HTML, see
+       http://www.w3.org/pub/WWW/MarkUp/.
+]PRE]
+
+[PRE[
+   RFC 1766
+       "Tags for the Identification of Languages", by H. Alvestrand,
+       UNINETT, March 1995. This document can be downloaded from
+       ftp://ds.internic.net/rfc/rfc1766.txt.
+]PRE]
+
+Security Considerations
+
+[PRE[
+   Security issues are not discussed in this memo.
+]PRE]
+
+Author's Address
+
+[PRE[
+   Dave Raggett W3C
+]PRE]
+
+[PRE[
+   EMail: dsr@@w3.org
+]PRE]
+
+[PRE[
+   The World Wide Web Consortium: http://www.w3.org/
+*License
+[[RFCのライセンス]]
+*メモ
+]PRE]
+
+[1]
+Interesting site http://oooauthors.org/Members/derik/poker.html
+
+([[Chris]] [Alex@@mail.com] [WEAK[2006-09-09 11:21:06 +00:00]])
+
+[2]
+It very interesting http://www.tchezope.org/Members/de/poker-6.htm
+
+([[Brianna]] [George@@mail.com] [WEAK[2006-09-09 17:44:46 +00:00]])
+
+[3]
+Very nice site! http://oooauthors.org/Members/pc/poker-11.htm
+
+([[Robert]] [Alexis@@hotmail.com] [WEAK[2006-09-10 12:02:42 +00:00]])
+
+[4]
+Very nice site! http://oooauthors.org/Members/pc/poker-12.htm
+
+([[Ange]] [Brianna@@hotmail.com] [WEAK[2006-09-10 14:53:08 +00:00]])
+
+[5]
+It very interesting http://jobs.msdinc.com/Members/de/game-poker.html
+
+([[Joshua]] [Kaylee@@mail.com] [WEAK[2006-09-10 23:08:41 +00:00]])
+
+[6]
+Great work on website. http://jobs.msdinc.com/Members/de/poker-table.html
+
+([[Elizabeth]] [Samantha@@mail.com] [WEAK[2006-09-11 07:55:08 +00:00]])
+
+[7]
+Cool design http://jobs.msdinc.com/Members/de/free-poker-site.html
+
+([[Robert]] [Maureen@@mail.com] [WEAK[2006-09-11 14:38:49 +00:00]])
+
+[8]
+archy it i http://pen.bme.gatech.edu/Members/de/poker-20.htm
+
+([[Robert]] [Leonard@@mail.com] [WEAK[2006-09-12 17:09:36 +00:00]])
+
+[9]
+VERY GOOD I THINK http://learning.swc.hccs.edu/members/de/poker-21.htm
+
+([[Lori]] [Reginald@@mail.com] [WEAK[2006-09-12 19:45:48 +00:00]])
+
+[10]
+Great work on website. http://kaon.semanticweb.org/Members/de/poker-22.htm
+
+([[Michael]] [Herman@@mail.com] [WEAK[2006-09-12 22:54:49 +00:00]])
+
+[11]
+Your hard work paid off http://xoomer.alice.it/a3e/internet-car-insurance/
+
+([[Samantha]] [Christopher@@hotmail.com] [WEAK[2006-09-13 05:06:14 +00:00]])
+
+[12]
+Thanks for taking http://xoomer.alice.it/a3e/disney-tickets/
+
+([[Frank]] [Hailey@@mail.com] [WEAK[2006-09-13 08:19:52 +00:00]])
+
+[13]
+Exciting website. http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-26.htm
+
+([[Dale]] [Matthew@@mail.com] [WEAK[2006-09-13 11:21:55 +00:00]])
+
+[14]
+Thank you... http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-27.htm
+
+([[Michael]] [Maureen@@mail.com] [WEAK[2006-09-13 14:21:48 +00:00]])
+
+[15]
+Very nice site! http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-28.htm
+
+([[Alexis]] [Kaylee@@hotmail.com] [WEAK[2006-09-13 17:21:39 +00:00]])
+
+[16]
+Very good site http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-29.htm
+
+([[Elizabeth]] [Michael@@hotmail.com] [WEAK[2006-09-13 20:06:53 +00:00]])
+
+[17]
+this site rocks! http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-30.htm
+
+([[Christopher]] [Samantha@@hotmail.com] [WEAK[2006-09-13 23:05:17 +00:00]])
+
+[18]
+It very interesting http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-31.htm
+
+([[Jasmine]] [Leonard@@mail.com] [WEAK[2006-09-14 02:01:15 +00:00]])
+
+[19]
+Good Luck! http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-33.htm
+
+([[Hailey]] [Elizabeth@@mail.com] [WEAK[2006-09-14 05:11:52 +00:00]])
+
+[20]
+archy it i http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-35.htm
+
+([[Daniel]] [Jacob@@mail.com] [WEAK[2006-09-14 11:22:35 +00:00]])
+
+[21]
+Is very interesting http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-36.htm
+
+([[Elizabeth]] [Kaylee@@hotmail.com] [WEAK[2006-09-14 13:56:01 +00:00]])
+
+[22]
+Very nice site! http://xoomer.alice.it/a3e/foreclosure/
+
+([[Herman]] [Samantha@@hotmail.com] [WEAK[2006-09-14 16:53:31 +00:00]])
+
+[23]
+Very nice site! http://pen.bme.gatech.edu/Members/koz/1/poker-37.htm
+
+([[Daniel]] [Elizabeth@@mail.com] [WEAK[2006-09-14 19:55:09 +00:00]])
+
+[24]
+Your hard work paid off http://pen.bme.gatech.edu/Members/koz/1/poker-38.htm
+
+([[Ange]] [Zachary@@mail.com] [WEAK[2006-09-14 22:37:33 +00:00]])
+
+[25]
+It very interesting http://pen.bme.gatech.edu/Members/koz/1/poker-39.htm
+
+([[Ange]] [Joshua@@mail.com] [WEAK[2006-09-15 01:49:16 +00:00]])
+
+[26]
+Thanks for taking http://pen.bme.gatech.edu/Members/koz/1/poker-40.htm
+
+([[Anthony]] [Barbara@@mail.com] [WEAK[2006-09-15 04:55:31 +00:00]])
+
+[27]
+Great work on website. http://pen.bme.gatech.edu/Members/koz/1/poker-41.htm
+
+([[Anthony]] [Alexis@@mail.com] [WEAK[2006-09-15 08:27:02 +00:00]])
+
+[28]
+thanks for mentioning http://www.ballview.org/Members/pi/poker-42.htm
+
+([[Maureen]] [Michael@@hotmail.com] [WEAK[2006-09-15 11:37:50 +00:00]])
+
+[29]
+Interesting site http://www.andreaskapsalis.com/includes/2/
+
+([[Reginald]] [Christopher@@hotmail.com] [WEAK[2006-09-15 14:22:20 +00:00]])
+
+[30]
+Very good site http://bloomhost.net/cache/inc/
+
+([[Larry]] [Hannah@@hotmail.com] [WEAK[2006-09-15 20:01:39 +00:00]])
+
+[31]
+Thanks for taking http://projects.objectrealms.net/Members/derik/poker-44.htm
+
+([[Paul]] [Elizabeth@@hotmail.com] [WEAK[2006-09-16 02:20:06 +00:00]])
+
+[32]
+Cool design http://repo.isis.vanderbilt.edu/Members/de/poker-45.htm
+
+([[Joshua]] [Michael@@mail.com] [WEAK[2006-09-16 04:55:34 +00:00]])
+
+[33]
+this site rocks! http://www.opensourcearmenia.com/Members/brr/1.html
+
+([[Carol]] [Dale@@mail.com] [WEAK[2006-09-16 08:09:43 +00:00]])
+
+[34]
+Great work on website. http://www.opensourcearmenia.com/Members/brr/2.html
+
+([[Jacob]] [Carol@@mail.com] [WEAK[2006-09-16 10:57:47 +00:00]])
+
+[35]
+Very nice site http://www.opensourcearmenia.com/Members/brr/3.html
+
+([[Anthony]] [Samantha@@mail.com] [WEAK[2006-09-16 13:43:08 +00:00]])
+
+[36]
+Very nice site! http://www.opensourcearmenia.com/Members/brr/4.html
+
+([[Richard]] [Michael@@hotmail.com] [WEAK[2006-09-16 16:44:08 +00:00]])
+
+[37]
+Thank you... http://www.opensourcearmenia.com/Members/brr/5.html
+
+([[Emily]] [Anthony@@hotmail.com] [WEAK[2006-09-16 19:38:00 +00:00]])
+
+[38]
+Very good website http://www.bloopdiary.com/users/72599/poker-46.htm
+
+([[Christopher]] [Zachary@@mail.com] [WEAK[2006-09-16 22:32:24 +00:00]])
+
+[39]
+Exciting website. http://www.bloopdiary.com/users/72599/poker-47.htm
+
+([[Alton]] [Elizabeth@@mail.com] [WEAK[2006-09-17 01:27:04 +00:00]])
+
+[40]
+Very nice site! http://www.bloopdiary.com/users/72599/poker-48.htm
+
+([[Donald]] [Kaylee@@hotmail.com] [WEAK[2006-09-17 04:34:29 +00:00]])
+
+[41]
+Very good website http://www.opensourcearmenia.com/Members/brr/6.html
+
+([[Samantha]] [Robert@@mail.com] [WEAK[2006-09-17 10:37:57 +00:00]])
+
+[42]
+archy it i <a href="http://xoomer.alice.it/po4/poker-game/">poker game</a> [url=http://xoomer.alice.it/po4/poker-game/]poker game[/url] http://xoomer.alice.it/po4/poker-game/
+([[Michael]] [Christopher@@hotmail.com] [WEAK[2006-09-17 16:49:28 +00:00]])
+
+[43]
+Hi, nice site! <a href="http://xoomer.alice.it/po4/freeroll-poker-tournaments/">freeroll poker tournaments</a> [url=http://xoomer.alice.it/po4/freeroll-poker-tournaments/]freeroll poker tournaments[/url] http://xoomer.alice.it/po4/freeroll-poker-tournaments/
+([[Christopher]] [Jacob@@mail.com] [WEAK[2006-09-17 19:30:13 +00:00]])
+
+[44]
+Thanks for taking <a href="http://xoomer.alice.it/a3e/internet-poker/">internet poker</a> [url=http://xoomer.alice.it/a3e/internet-poker/]internet poker[/url] http://xoomer.alice.it/a3e/internet-poker/
+([[Joshua]] [Alton@@mail.com] [WEAK[2006-09-17 21:32:00 +00:00]])
+
+[45]
+i like you! <a href="http://xoomer.alice.it/a3e/slot-machine/">slot machine</a> [url=http://xoomer.alice.it/a3e/slot-machine/]slot machine[/url] http://xoomer.alice.it/a3e/slot-machine/
+([[Carol]] [George@@mail.com] [WEAK[2006-09-17 23:46:17 +00:00]])
+
+[46]
+Thank you... <a href="http://xoomer.alice.it/a3e/laser-hair-removal/">laser hair removal</a> [url=http://xoomer.alice.it/a3e/laser-hair-removal/]laser hair removal[/url] http://xoomer.alice.it/a3e/laser-hair-removal/
+([[Ada]] [Jacob@@hotmail.com] [WEAK[2006-09-18 01:41:19 +00:00]])
+
+[47]
+this site rocks! <a href="http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-26.htm">poker 26</a> [url=http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-26.htm]poker 26[/url] http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-26.htm
+([[Jacob]] [Anthony@@hotmail.com] [WEAK[2006-09-18 03:51:11 +00:00]])
+
+[48]
+thanks for mentioning <a href="http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-28.htm">poker 28</a> [url=http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-28.htm]poker 28[/url] http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-28.htm
+([[Dale]] [Elizabeth@@mail.com] [WEAK[2006-09-18 07:59:17 +00:00]])
+
+[49]
+Very useful <a href="http://ibo.awardspace.com/poker/">poker</a> [url=http://ibo.awardspace.com/poker/]poker[/url] http://ibo.awardspace.com/poker/
+([[Robert]] [Christopher@@mail.com] [WEAK[2006-09-18 09:59:39 +00:00]])
+
+[50]
+i like you! <a href="http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-30.htm">poker 30</a> [url=http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-30.htm]poker 30[/url] http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-30.htm
+([[Leonard]] [Alton@@mail.com] [WEAK[2006-09-18 13:58:49 +00:00]])
+
+[51]
+Very good site <a href="http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-31.htm">poker 31</a> [url=http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-31.htm]poker 31[/url] http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-31.htm
+([[Zachary]] [Hannah@@hotmail.com] [WEAK[2006-09-18 15:43:39 +00:00]])
+
+[52]
+archy it i <a href="http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-34.htm">poker 34</a> [url=http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-34.htm]poker 34[/url] http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-34.htm
+([[Brianna]] [Brianna@@hotmail.com] [WEAK[2006-09-18 19:39:58 +00:00]])
+
+[53]
+Great work on website. <a href="http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-35.htm">poker 35</a> [url=http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-35.htm]poker 35[/url] http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-35.htm
+([[Brian]] [Mark@@mail.com] [WEAK[2006-09-18 21:40:32 +00:00]])
+
+[54]
+Very nice site! <a href="http://free.45.kg/pisya/poker-internet.htm">internet poker</a> [url=http://free.45.kg/pisya/poker-internet.htm]internet poker[/url] http://free.45.kg/pisya/poker-internet.htm
+([[John]] [Robert@@mail.com] [WEAK[2006-09-20 21:23:42 +00:00]])
+
+[55]
+archy it i <a href="http://free.45.kg/piz/poker.htm">poker</a> [url=http://free.45.kg/piz/poker.htm]poker[/url] http://free.45.kg/piz/poker.htm
+([[Brianna]] [Jacob@@hotmail.com] [WEAK[2006-09-20 23:26:00 +00:00]])
+
+[56]
+Great work on website. <a href="http://xoomer.alice.it/pidr/gg/">gg</a> [url=http://xoomer.alice.it/pidr/gg/]gg[/url] http://xoomer.alice.it/pidr/gg/
+([[Christopher]] [John@@mail.com] [WEAK[2006-09-21 01:30:08 +00:00]])
+
+[57]
+Great work on website. <a href="http://xoomer.alice.it/naxibo/3/">3</a> [url=http://xoomer.alice.it/naxibo/3/]3[/url] http://xoomer.alice.it/naxibo/3/
+([[Michael]] [Anthony@@mail.com] [WEAK[2006-09-22 13:17:46 +00:00]])
+
+[58]
+Very useful <a href="http://xoomer.alice.it/naxibo/4/">4</a> [url=http://xoomer.alice.it/naxibo/4/]4[/url] http://xoomer.alice.it/naxibo/4/
+([[Jacob]] [Samantha@@hotmail.com] [WEAK[2006-09-22 15:25:29 +00:00]])
+
+[59]
+Great web site <a href="http://xoomer.alice.it/naxibo/5/">5</a> [url=http://xoomer.alice.it/naxibo/5/]5[/url] http://xoomer.alice.it/naxibo/5/
+([[George]] [Larry@@mail.com] [WEAK[2006-09-22 17:22:15 +00:00]])
+
+[60]
+this site rocks! <a href="http://xoomer.alice.it/icrest/royale/">royale</a> [url=http://xoomer.alice.it/icrest/royale/]royale[/url] http://xoomer.alice.it/icrest/royale/
+([[Ada]] [Brianna@@hotmail.com] [WEAK[2006-09-22 19:16:07 +00:00]])
+
+[61]
+Very nice site <a href="http://xoomer.alice.it/kuk1/foreclosure/">foreclosure</a> [url=http://xoomer.alice.it/kuk1/foreclosure/]foreclosure[/url] http://xoomer.alice.it/kuk1/foreclosure/
+([[Robert]] [Matthew@@mail.com] [WEAK[2006-09-22 21:23:05 +00:00]])
+
+[62]
+It very interesting <a href="http://xoomer.alice.it/kuk1/satellite-tv/">satellite tv</a> [url=http://xoomer.alice.it/kuk1/satellite-tv/]satellite tv[/url] http://xoomer.alice.it/kuk1/satellite-tv/
+([[Zachary]] [Frank@@mail.com] [WEAK[2006-09-22 23:20:12 +00:00]])
+
+[63]
+Interesting site <a href="http://xoomer.alice.it/icrest/morongo/">morongo</a> [url=http://xoomer.alice.it/icrest/morongo/]morongo[/url] http://xoomer.alice.it/icrest/morongo/
+([[Matthew]] [Hailey@@hotmail.com] [WEAK[2006-09-23 03:18:14 +00:00]])
+
+[64]
+It very interesting <a href="http://xoomer.alice.it/icrest/rewards/">rewards</a> [url=http://xoomer.alice.it/icrest/rewards/]rewards[/url] http://xoomer.alice.it/icrest/rewards/
+([[John]] [Kaylee@@hotmail.com] [WEAK[2006-09-23 05:15:53 +00:00]])
+
+[65]
+VERY GOOD I THINK <a href="http://xoomer.alice.it/icrest/arizona/">arizona</a> [url=http://xoomer.alice.it/icrest/arizona/]arizona[/url] http://xoomer.alice.it/icrest/arizona/
+([[Hannah]] [Ada@@mail.com] [WEAK[2006-09-23 07:37:34 +00:00]])
+
+[66]
+thanks for mentioning <a href="http://lemon.awardspace.biz/lemon-law/">lemon law</a> [url=http://lemon.awardspace.biz/lemon-law/]lemon law[/url] http://lemon.awardspace.biz/lemon-law/
+([[Richard]] [Hailey@@mail.com] [WEAK[2006-09-23 13:37:30 +00:00]])
+
+[67]
+thanks for mentioning <a href="http://slot.awardspace.biz/slot-machine/">slot machine</a> [url=http://slot.awardspace.biz/slot-machine/]slot machine[/url] http://slot.awardspace.biz/slot-machine/
+([[Hannah]] [Frank@@mail.com] [WEAK[2006-09-23 17:37:22 +00:00]])
+
+[68]
+Very good site <a href="http://xoomer.alice.it/ddoys/pr/">pr</a> [url=http://xoomer.alice.it/ddoys/pr/]pr[/url] http://xoomer.alice.it/ddoys/pr/
+([[Dale]] [Jasmine@@hotmail.com] [WEAK[2006-09-23 21:35:43 +00:00]])
+
+[69]
+It very interesting <a href="http://experian.awardspace.biz/experian/">experian</a> [url=http://experian.awardspace.biz/experian/]experian[/url] http://experian.awardspace.biz/experian/
+([[Daniel]] [Emily@@hotmail.com] [WEAK[2006-09-23 23:30:50 +00:00]])
+
+[70]
+Hi, nice site! <a href="http://cons.awardspace.biz/consolidation/">consolidation</a> [url=http://cons.awardspace.biz/consolidation/]consolidation[/url] http://cons.awardspace.biz/consolidation/
+([[Dylan]] [Maureen@@mail.com] [WEAK[2006-09-24 01:32:06 +00:00]])
+
+[71]
+Thank you... <a href="http://po.awardspace.biz/pokers/">pokers</a> [url=http://po.awardspace.biz/pokers/]pokers[/url] http://po.awardspace.biz/pokers/
+([[Donald]] [Jacob@@hotmail.com] [WEAK[2006-09-24 03:31:06 +00:00]])
+
+[72]
+Very nice site! <a href="http://ster.awardspace.biz/steroid/">steroid</a> [url=http://ster.awardspace.biz/steroid/]steroid[/url] http://ster.awardspace.biz/steroid/
+([[Dale]] [John@@mail.com] [WEAK[2006-09-24 05:33:10 +00:00]])
+
+[73]
+thanks for mentioning <a href="http://xoomer.alice.it/pok3/az/">az</a> [url=http://xoomer.alice.it/pok3/az/]az[/url] http://xoomer.alice.it/pok3/az/
+([[Larry]] [Lori@@mail.com] [WEAK[2006-09-24 07:41:49 +00:00]])
+
+[74]
+This great resource <a href="http://xoomer.alice.it/j18/xe/">xe</a> [url=http://xoomer.alice.it/j18/xe/]xe[/url] http://xoomer.alice.it/j18/xe/
+([[Brian]] [Emily@@mail.com] [WEAK[2006-09-24 09:44:06 +00:00]])
+
+[75]
+Good Luck! <a href="http://xoomer.alice.it/scukona/anti/">anti</a> [url=http://xoomer.alice.it/scukona/anti/]anti[/url] http://xoomer.alice.it/scukona/anti/
+([[Reginald]] [Lori@@mail.com] [WEAK[2006-09-24 11:58:43 +00:00]])
+
+[76]
+this site rocks! <a href="http://xoomer.alice.it/jopa/download-music/">download music</a> [url=http://xoomer.alice.it/jopa/download-music/]download music[/url] http://xoomer.alice.it/jopa/download-music/
+([[Bill]] [Jacob@@mail.com] [WEAK[2006-09-24 16:05:36 +00:00]])
+
+[77]
+this site rocks! <a href="http://xoomer.alice.it/jopa/download-music/">download music</a> [url=http://xoomer.alice.it/jopa/download-music/]download music[/url] http://xoomer.alice.it/jopa/download-music/
+([[Bill]] [Jacob@@mail.com] [WEAK[2006-09-24 18:02:24 +00:00]])
+
+[78]
+Very useful http://bbi.awardspace.co.uk/air-ticket/
+
+([[John]] [Matthew@@mail.com] [WEAK[2006-09-24 19:47:13 +00:00]])
+
+[79]
+thanks for mentioning http://nlp.awardspace.co.uk/cartridge-inkjet/
+
+([[Daniel]] [Ada@@mail.com] [WEAK[2006-09-24 21:38:50 +00:00]])
+
+[80]
+It very interesting http://sosi.awardspace.co.uk/casin/
+
+([[John]] [John@@mail.com] [WEAK[2006-09-24 23:41:25 +00:00]])
+
+[81]
+Very nice site http://xoomer.alice.it/jopa/anti-virus/
+
+([[Hannah]] [Hannah@@mail.com] [WEAK[2006-09-25 01:51:18 +00:00]])
+
+[82]
+Good Luck! http://xoomer.alice.it/fe7/texas-holdem-poker-table/
+
+([[Frank]] [Dale@@mail.com] [WEAK[2006-09-25 11:36:11 +00:00]])
+
+[83]
+[CITE@@en[RFC 1942 - HTML Tables]] ([CODE[2007-01-14 17:48:08 +09:00]] 版) <http://tools.ietf.org/html/rfc1942>
+([[名無しさん]])
+
+[84]
+Hi. Nice site! Just change that background :) See my site: <a href="http://encyko.bee.pl/sedas.html">Sedas</a> http://encyko.bee.pl/sedas.html [url=http://encyko.bee.pl/sedas.html]Sedas[/url]
+([[encyko.bee.pl/sedas.html]] [20287@@gmail.com])
+
+[85]
+<a href="http://encyko.bee.pl/wikipedia.caf.marzo.de.2005.01.html">Wikipedia:Caf辿/Marzo de 2005 01</a> http://encyko.bee.pl/wikipedia.caf.marzo.de.2005.01.html [url=http://encyko.bee.pl/wikipedia.caf.marzo.de.2005.01.html]Wikipedia:Caf辿/Marzo de 2005 01[/url]
+([[encyko.bee.pl/wikipedia.caf.marzo.de.2005.01.html]] [24532@@gmail.com])
+
+[86]
+Hello. I like your site very much. Please visit my site: <a href="http://encyko.bee.pl/journal.of.medical.internet.research.html">Journal of Medical Internet Research</a> http://encyko.bee.pl/journal.of.medical.internet.research.html [url=http://encyko.bee.pl/journal.of.medical.internet.research.html]Journal of Medical Internet Research[/url] and leave some feedback. Thanks!
+([[encyko.bee.pl/journal.of.medical.internet.research.html]] [20149@@gmail.com])
+
+[87]
+Dobrii den'! Ya chelovek!
+([[Tommy]] [koturren.gol@@yahho.com])
+
+[88]
+Zlv81q  <a href="http://uihsxubrqyuc.com/">uihsxubrqyuc</a>, [url=http://haprkgsvzubr.com/]haprkgsvzubr[/url], [link=http://ixfhichtotli.com/]ixfhichtotli[/link], http://ckewnrdijsxp.com/
+([[uixvlrzw]] [etblnl@@ntqdht.com] [WEAK[2007-10-28 17:05:16 +00:00]])
+
+[89]
+Zlv81q  <a href="http://uihsxubrqyuc.com/">uihsxubrqyuc</a>, [url=http://haprkgsvzubr.com/]haprkgsvzubr[/url], [link=http://ixfhichtotli.com/]ixfhichtotli[/link], http://ckewnrdijsxp.com/
+([[uixvlrzw]] [etblnl@@ntqdht.com] [WEAK[2007-10-28 17:05:59 +00:00]])
+
+[90]
+Zlv81q  <a href="http://uihsxubrqyuc.com/">uihsxubrqyuc</a>, [url=http://haprkgsvzubr.com/]haprkgsvzubr[/url], [link=http://ixfhichtotli.com/]ixfhichtotli[/link], http://ckewnrdijsxp.com/
+([[uixvlrzw]] [etblnl@@ntqdht.com] [WEAK[2007-10-28 17:06:16 +00:00]])
+
+[91]
+vkncGG <a href="http://madxwvtgxsre.com/">madxwvtgxsre</a>, [url=http://ivyqzgumpcyn.com/]ivyqzgumpcyn[/url], [link=http://qowozexufhsu.com/]qowozexufhsu[/link], http://nfckfxdgftjz.com/
+([[aqlhjfd]] [xhofjk@@ytvrxn.com] [WEAK[2007-10-28 17:09:13 +00:00]])
+
+[92]
+vkncGG <a href="http://madxwvtgxsre.com/">madxwvtgxsre</a>, [url=http://ivyqzgumpcyn.com/]ivyqzgumpcyn[/url], [link=http://qowozexufhsu.com/]qowozexufhsu[/link], http://nfckfxdgftjz.com/
+([[aqlhjfd]] [xhofjk@@ytvrxn.com] [WEAK[2007-10-28 17:10:20 +00:00]])
+
+@
+

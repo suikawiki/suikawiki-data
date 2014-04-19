@@ -1,0 +1,378 @@
+head	1.7;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.7
+date	2012.02.22.13.53.05;	author wakaba;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2012.02.16.14.42.05;	author wakaba;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2012.02.12.14.30.59;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2012.02.12.08.47.02;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2012.02.12.08.46.00;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2010.06.05.08.07.46;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2008.11.11.09.55.44;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.7
+log
+@updated by (anon)
+@
+text
+@[5] [[CGI]] の[[メタ変数]]群 [DFN[[CODE(CGI)[HTTP_[VAR[*]]]]]]
+は、[[クライアント]]から送られてきた[[要求メッセージ]]中の[[頭欄]]を[[鯖]]が
+[[CGIスクリプト]]に提供するためのものです。
+
+* 仕様書
+[REFS[
+- [25] [CITE@@en[RFC 3875 - The Common Gateway Interface (CGI) Version 1.1]] 
+-- [7] '''<http://tools.ietf.org/html/rfc3875#section-4.1.18>'''
+-- [26] <http://tools.ietf.org/html/rfc3875#section-9.2>
+- [28] [CITE@@en[PEP 333 -- Python Web Server Gateway Interface v1.0]] ([TIME[2012-02-16 21:06:34 +09:00]] 版) <http://www.python.org/dev/peps/pep-0333/#environ-variables>
+- [29] [CITE@@en[File: SPEC '''[''''Rack Documentation'''']''']] ([TIME[2010-01-11 00:57:50 +09:00]] 版) <http://rack.rubyforge.org/doc/SPEC.html>
+- [30] [CITE[jack - jsgi spec]] ([TIME[2009-09-04 16:47:22 +09:00]] 版) <http://jackjs.org/jsgi-spec.html#the_environment>
+- [31] [CITE[PSGI - search.cpan.org]] ([TIME[2012-02-16 22:39:56 +09:00]] 版) <http://search.cpan.org/dist/PSGI/PSGI.pod#The_Environment>
+]REFS]
+
+* 名前
+
+[6]
+[CODE(CGI)[HTTP_[VAR[*]]]] の [CODE(CGI)[[VAR[*]]]]
+の部分は、[[頭欄]]の[[名前]]をすべて[[大文字]]にし、
+[CODE(HTTP)[-]] が含まれていればすべて [CODE(CGI)[_]]
+に置き換えたものとなります。 [SRC[>>7]]
+
+[EG[
+[20] 例えば、
+[CODE(HTTP)[[[Accept]]:]] 欄に対応する[[メタ変数]]名は
+[CODE(CGI)[[[HTTP_ACCEPT]]]] となりますし、
+[CODE(HTTP)[[[If-Modified-Since]]:]] 欄に対応するものは
+[CODE(CGI)[[[HTTP_IF_MODIFIED_SINCE]]]] となります。
+]EG]
+
+[33] [CODE(HTTP)[[[_]]]] が元々[[頭欄]]の[[名前]]に含まれている場合どうしたらいいのでしょう・・・。
+
+* 値
+
+[13] 各 [CODE(CGI)[HTTP_[VAR[*]]]] [[メタ変数]]の値には、
+[[クライアント]]からの [[HTTP]] [[要求]]の[[頭欄]]の[[欄本体]]がそのまま入れられます。
+ただし、次に示すものも含め、意味的に等価な変形を行なって構わないことになっています。 [SRC[>>7]]
+
+- [21] 同じ名前の[[頭欄]]が複数あれば、 [CODE[[[,]]]] で連結することによって1つにしなければ[['''なりません''']]。
+- [22] [[欄本体]]が複数行で表されていれば ([[折り畳み]])、一行に直さなければ[['''なりません''']]。
+- [23] [[メタ変数]]として適当になるように[[文字コード]]変換などを適宜行わなければ[['''なりません''']]。
+
+;; [24] [CODE(HTTP)@@en[[[Accept-Language]]]] と [CODE(HTTP)@@en[[[Accept_language]]]] のように本来別の[[頭欄]]が命名規則のために衝突する場合や、
+複数の値を [CODE(HTTP)[,]] によって意味的に等価でありつつ連結できない場合 
+[WEAK[(本来それは [[HTTP]] 違反ですが、しばしばあります。)]] にどうするべきかは規定されていません。
+後者については実際には[[頭欄]]の種類ごとに処理を分ける意味もないでしょうから、
+何も考えずに連結しているものと思われます。
+
+* 提供されないことが多い頭欄
+
+[14] 鯖はすべての[[頭欄]]をこの形の[[メタ変数]]として提供する必要はありません。
+[SRC[[[RFC 3875]] 4.1.18]] 特に [CODE(CGI)[[[CONTENT_TYPE]]]]
+([CODE(HTTP)[[[Content-Type]]]]) 
+など他に[[メタ変数]]が用意されているもの、
+[CODE(HTTP)[[[Authorization]]]] など安全上好ましくないもの、
+[CODE(HTTP)[[[Connection]]]] など通信にのみ関係するものは提供されないかもしれません。
+
+[11] >>9 に規定されているように、鯖は CGI スクリプトに要求メッセージのすべての頭欄を
+[CODE(CGI)[HTTP_[VAR[*]]]] メタ変数を通じて提供する必要はありません。
+多くの実装では、次の頭欄は提供されません。
+
+,HTTP 頭欄                     ,代替メタ変数
+,[CODE(HTTP)[[[Authorization]]]],[CODE(CGI)[[[AUTH_[VAR[*]]]]]]
+,[CODE(HTTP)[[[Content-Length]]]],[CODE(CGI)[[[CONTENT_LENGTH]]]]
+,[CODE(HTTP)[[[Content-Type]]]],[CODE(CGI)[[[CONTENT_TYPE]]]]
+
+[3] >>9 つまり、 CGI 的には [CODE(CGI)[HTTP_AUTHORIZATION]] と かが提供されていて''も''問題がないということです。
+
+[4] >>3 でも [[Apache]] は提供してくれません。
+
+[10] CGI メタ変数はほとんどの環境では[[環境変数]]として実装されていますが、
+環境変数が安全でない環境も少なくありません。
+その鯖の任意の利用者が環境変数の値を見ることができるかもしれません。
+CGI で昔から認証系の頭欄が提供されないことになっているのはそのような事情があります。
+
+[27] [CODE(HTTP)@@en[[[Authorization:]]]] の他、 [CODE(HTTP)@@en[[[Proxy-Authorization:]]]]
+も安全上注意が必要であり、提供しないことも検討するべきだと指摘されています [SRC[>>26]]。
+
+[32] [[WSGI]] と派生仕様は [CODE(CGI)@@en[[[HTTP_*]]]] は [[HTTP]] [[要求]]の[[頭欄]]に対応するべきであるとしており、
+[CODE(CGI)@@en[[[CONTENT_TYPE]]]] と [CODE(CGI)@@en[[[CONTENT_LENGTH]]]] を除き、
+一部の[[頭欄]]を引き渡さないことは原則として認められていないようです。 [SRC[>>28, >>29, >>30, >>31]]
+
+* 歴史
+
+[17] [CODE(CGI)[HTTP_[VAR[*]]]] メタ変数群を使った[[要求]]中の一般の[[頭欄]]を
+[[CGIスクリプト]]に提供する方法は [[CGI/1.1]]
+で導入されました。 [[CGI/1.0]] では [CODE(CGI)[[[CONTENT_TYPE]]]]
+や [CODE(CGI)[[[HTTP_ACCEPT]]]] など一部の[[頭欄]]のみが提供されていました。
+
+** [NCSA] での説明
+[6]
+>In addition to these, the header lines received from
+the client, if any, are placed into the environment
+with the prefix HTTP_ followed by the header name.
+Any - characters in the header name are changed to _
+characters. The server may exclude any headers which
+it has already processed, such as Authorization,
+Content-type, and Content-length. If necessary, the
+server may choose to exclude any or all of these
+headers if including them would exceed any system
+environment limits. 
+
+これら [INS[(訳注: 他の CGI メタ変数群)]]
+に加えて、クライアントから受け取った[[頭行]]があれば、
+これが接頭辞 [CODE(CGI)[HTTP_]]
+で始まって頭名が続く環境[INS[変数]]に入れられます。
+頭名中の [CODE(HTTP)[[[-]]]]
+はすべて [CODE(CGI)[[[_]]]]
+に変更します。
+サーバーは既に処理した頭、
+例えば [CODE(HTTP)[Authorization]],
+[CODE(HTTP)[Content-type]],
+[CODE(HTTP)[Content-length]]
+は除いても構いません。
+必要なら、サーバーはこうした頭の一部又は全部を含めるとシステムの環境制限を越える時には除いても構いません。
+
+**RFC 3875 (CGI/1.1)
+
+[7] [[RFC 3875]] 4.1.18 節を参照。
+
+* 安全性
+
+[15] [[要求メッセージ]]の[[頭欄]]には安全上注意して扱うべき情報が含まれていることもあります。
+>>10 のように実装方法によっては[[メタ変数]]は安全ではないので、
+>>14 の通り危険な情報は提供しないなどの注意を[[鯖]]は払う必要があります。
+
+[16] ただし >>15 のような配慮が可能なのは、
+注意するべき[[頭欄]]の種類をあらかじめ[[鯖]]が把握している場合だけです。
+[SAMP(HTTP)[X-Foo-Private-Information: some-important-thing]]
+のような[[頭欄]]を使っていると、[[鯖]]が[[メタ変数]]を生成し、
+それによって [[CGI]] が使われている環境にアクセス可能な第三者に盗み見られる危険性があります。
+
+もちろん、[Q[盗み見]]ることができる権限があるのが信頼できる限定された人だけである場合など、
+必ずしも危険であるわけではありません。
+このようなシステムの設計者は使用するシステムの技術的・
+運用上の性質によく注意して、
+安全性と技術的な実装の簡単さや技術的整合性のバランスが取れるようにしなければなりません。
+
+* 関連
+
+** HTTP/TLS、HTTP/SSL (HTTPS)
+
+[12]
+[[SSL]] や [[TLS]] の上で [[HTTP]] 通信を行っている場合
+(いわゆる [[HTTPS]]) であっても、
+[[HTTP]] であることには変わりありませんので、
+[[TCP]] 上の [[HTTP]] と同じ名前で同じように[[メタ変数]]が提供されます。
+(ただし実装によってはより安全を配慮した形になっているかもしれません。)
+実装によっては [[SSL]] や [[TLS]] 
+によって得られた情報が別の[[メタ変数]]を通じて提供されています。
+
+[DEL[
+- [1] 方式 (scheme) が [[https:]] だったら ''HTTPS_[VAR[*]]'' になるんでしょうか。そんなの見たこと無いなあ。
+- [2] >>1 そんなことはないです。 HTTP over SSL でも [CODE(CGI)[HTTP_[VAR[*]]]] になります。
+]DEL]
+
+[19] [[HTTPS]] であることは[[メタ変数]] [CODE(CGI)@@en[[[HTTPS]]]] によって表されます。
+
+** SIP_* メタ変数
+
+[18] [[SIP CGI]] では [[SIP]] [[要求メッセージ]]は[[メタ変数]]
+[CODE(CGI)@@en[[[SIP_[VAR[*]]]]]] として提供されます。
+
+** [CODE[HTTP_[VAR[*]]]] 環境変数
+
+[12] 
+:[CODE(CGI)[[[HTTP_[VAR[*]]]]]]:[[Apache]] をはじめ多くの [[CGI]]
+の実装で、 [CODE(CGI)[[[HTTP_[VAR[*]]]]]] 
+[[メタ変数]] (>>5) は同名の[[環境変数]]として実装されています。
+:[CODE[[[HTTP_HOME]]]]:[[w3m]] など [[Webブラウザ]]類で[[ホーム頁]]の
+[[URI]] を指定する[[環境変数]]として使われています。
+:[CODE[[[HTTP_PROXY]]]]:[[w3m]] など [[WWW]]
+系プログラムで利用するべき[[串]]を指定する[[環境変数]]として使われています。
+@
+
+
+1.6
+log
+@updated by (anon)
+@
+text
+@d32 2
+@
+
+
+1.5
+log
+@updated by (anon)
+@
+text
+@d10 4
+d78 4
+@
+
+
+1.4
+log
+@updated by (anon)
+@
+text
+@d7 3
+a9 1
+- [7] [CITE@@en[RFC 3875 - The Common Gateway Interface (CGI) Version 1.1]] ([TIME[2011-11-20 06:09:05 +09:00]] 版) <http://tools.ietf.org/html/rfc3875#section-4.1.18>
+d71 3
+@
+
+
+1.3
+log
+@updated by (anon)
+@
+text
+@d69 8
+a76 3
+[[#comment]]
+** 仕様書から
+*** [NCSA] での説明
+d103 1
+a103 5
+***RFC 3875 (CGI/1.1)
+[7]
+[8]
+[9]
+[[RFC 3875]] 4.1.18 節を参照。
+d105 3
+a107 1
+** 安全性
+a124 11
+[[#comment]]
+
+** 歴史
+
+[17] [CODE(CGI)[HTTP_[VAR[*]]]] メタ変数群を使った[[要求]]中の一般の[[頭欄]]を
+[[CGIスクリプト]]に提供する方法は [[CGI/1.1]]
+で導入されました。 [[CGI/1.0]] では [CODE(CGI)[[[CONTENT_TYPE]]]]
+や [CODE(CGI)[[[HTTP_ACCEPT]]]] など一部の[[頭欄]]のみが提供されていました。
+
+[[#comment]]
+
+@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@d5 8
+a12 1
+[6] '''メタ変数名''':
+d16 1
+a16 10
+に置き換えたものとなります。例えば、
+[SAMP(HTTP)[[[Accept]]:]] 欄に対応する[[メタ変数]]名は
+[SAMP(CGI)[[[HTTP_ACCEPT]]]] となりますし、
+[SAMP(HTTP)[[[If-Modified-Since]]:]] 欄に対応するものは
+[SAMP(CGI)[[[HTTP_IF_MODIFIED_SINCE]]]] となります。
+
+[7] 仕様書:
+= [NCSA] [[NCSA]] の元々の [[CGI/1.1]] の定義 >>6
+= [[RFC 3875]] ([[CGI/1.1]]) ([[IETF]] [[情報提供]])
+-- [CSECTION@@en[4.1.18. Protocol-Specific Meta-Variables]]
+d18 7
+a24 1
+[[#comment]]
+d26 1
+a26 1
+** 構文
+d29 2
+a30 8
+対応する [[HTTP]] [[要求メッセージ]]の[[頭欄]]の[[欄本体]]がそのまま入れられます。
+ただし、その[[要求メッセージ]]に同じ[[欄名]]の[[頭欄]]が複数ある場合は、
+[[読点]]で連結されます ([[HTTP]] の規定により、
+[[読点]]で連結しても等価です)。また、
+[[鯖]]は意味的に透過な変形
+([[空白]]の適当な場所への挿入・削除など) を施しても構いません。
+また、[[メタ変数]]として適当であるように[[文字コード]]の変換が必要であれば行われます。
+[SRC[[[RFC 3875]] 4.1.18]]
+d32 9
+a40 1
+[[#comment]]
+d42 1
+a42 1
+** 提供されないことが多い頭欄
+d151 2
+@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/485454505F2A.txt>
+@
+text
+@a0 2
+* [CODE(CGI)[HTTP_[VAR[*]]]] メタ変数 (CGI)
+
+d127 3
+a129 1
+** 関連
+d131 3
+a133 2
+[12] '''HTTP over TLS''': 
+[[SSL]] や [[TLS]] の上で [[HTTP]] 通信を行っている場合であっても、
+d145 1
+a145 1
+[[#comment]]
+d147 2
+a148 1
+** メモ
+d150 1
+a150 4
+
+[[#comment]]
+
+* [CODE[HTTP_[VAR[*]]]] 環境変数
+a159 4
+
+[[#comment]]
+
+* メモ
+@
+

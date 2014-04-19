@@ -1,0 +1,107 @@
+head	1.1;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2008.11.12.20.55.55;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/C0A9B8E6A5B7A1BCA5B1A5F3A5B9.txt>
+@
+text
+@[4]
+>
+:制御シーケンス (control sequence):
+制御機能 [CODE(char)[[[CONTROL SEQUENCE INTRODUCER]]]] ([CODE(char)[[[CSI]]]], [CODE(char)[制御シーケンス開始]])
+から始まるビット組合せの列であって、
+[[パラメタ]]をもつか又はもたない制御機能の符号化表現のために使う。
+([[JIS X 0211]]‐1994 4.2.24)
+
+[3]
+>
+:制御シーケンス (control sequence):
+[[制御機能]] [CODE(charname)@@en[[[CONTROL SEQUENCE INTRODUCER]]]]
+([CODE(charname)@@en[[[CSI]]]], 
+[CODE(jcharname)[[[制御シーケンス開始]]]])
+から始まる一つ以上の[[ビット組合せ]]であって、
+[[制御機能]]の[[符号化表現]]のために使う。
+[SRC[[[JIS X 0201]]:1997 3.5]]
+
+
+具体的には [[ISO/IEC6429]] / [[JISX0211]] で定義されてます。
+
+ISO/IEC 6429:1991 5.4 を元に [[ABNF]] で書くと、大まかな構造はこんなんです。
+-control-sequence = CSI [P] *I F
+-CSI = ESC %x5B / %x9B  ;; ESC Fe / [[CR]] ([[符号]]の構造・[[告知]]による)
+-P = std-P / private-P ;; Parameter byte(s)
+-std-P = %x30-3B *( %x30-3F )
+-pvt-P = %x3C-3F *( %x30-3F )
+-I = %x20-2F  ;; Intermediate byte
+-F = std-F / private-F  ;; Final byte
+-std-F = %x40-6F
+-private-F = %x70-7E
+
+- [2] [WEAK[2004-01-05 03:55:03 +00:00]] ''[[SPCU]]'': 
+[[#comment]]
+
+*パラメーター・バイト
+-P = std-P / pvt-P
+-std-P = sub-string *(separator sub-string)
+-separator = %x3B
+-sub-string = *( DIGIT / digit-separator )
+-DIGIT = %x30-39
+-digit-separator = %x3A  ;; 小数点などに使用
+
+sub-string の先導 *"0" は無視可能。 ("0123" == "123", "000" == "0")
+sub-string は空 (empty) になり得る。最後の sub-string が空であるのは、その直前の
+separator が無いのと同じ意味。 ("1;1;" == "1;1")
+
+[[#comment]]
+
+*7ビット・8ビット変換のための例外的解釈
+
+冒頭の ABNF は、こんな風に修正しないといけません。
+
+-control-sequence = CSI *(s P) *(s I) s F
+-s = %x0E / %x0F  ;; SHIFT OUT / SHIFT IN
+-P = %x30-3F / %xB0-BF
+-I = %x20-2F / %xA0-AF
+-F = %x40-7E / %xC0-FE
+
+詳しくは[[7ビット符号と8ビット符号]]を参照。
+
+*SGML での定義
+
+[5]
+>
+:(137) [DFN[制御シーケンス]] ([DFN@@en[control sequence]]):
+それ以降の[[文字列]]の[[解釈]]、[[表現]]又はその他の[[処理]]を[[制御]]する[[機能制御文字]]で始まる[[文字]]の[[並び]]。
+- 例 [[エスケープシーケンス]]
+
+;; 出典: [[JIS X 4151]]‐1992 3.
+
+[1] [[SGML]]では、>>5と定義しています。[[符号化文字集合]]規格で言う[[制御シーケンス]]
+([CODE(char)[CSI]] で始まる列) のほかに、
+例示にあるように[[エスケープ・シーケンス]]も含みます。
+(ほかに [CODE(char)[[[SS2]]]] 
+などの[[制御文字]]も含むのかもしれません。 SGML
+の[[文字集合]]は ISO の体系に限りませんから、[[漢字イン]]・
+[[漢字アウト]]なども含まれると思われます。)
+
+[[#comment]]
+
+*メモ@

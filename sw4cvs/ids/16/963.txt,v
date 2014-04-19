@@ -1,0 +1,197 @@
+head	1.2;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.2
+date	2011.01.08.12.31.30;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2011.01.08.12.30.55;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@* ノード
+
+data gathering timer を単位時間毎に減らす。
+data provision timer を単位時間毎に減らす。
+
+** source
+
+情報提供間隔毎にセンサデータを含めたデータパケットを送出する。
+
+データパケット送出 n=5 回毎に proactive forward ant
+を送出するが、 source が経路情報を持たなければ、
+代わりに reactive forward ant を送出する。
+
+** sink
+
+情報取得間隔毎にデータパケットを送出する。
+
+データパケット送出 n=5 回毎に proactive forward ant
+を送出するが、 source が経路情報を持たなければ、
+代わりに reactive forward ant を送出する。
+
+** RP
+
+センサデータはアプリケーション依存の方針で適宜削除する。
+実験では一定の寿命を超えたら削除する。
+
+data gathering timer または data provision timer
+が 0 になると unmark し、保管していたセンサデータは削除する。
+
+unmark されたら unmark notification message を送信する。
+unmark notification message は link failure message
+と同様に処理される。
+
+* forward ant
+
+巣は sink または source。餌は RP。
+
+** reactive forward data gathering ant
+
+到着したノード (非 sink、非 source) で data gathering timer に初期値を設定する。
+
+data provision timer が正の非 RP ノードに到着したら、
+そのノードを RP として mark する。
+
+** proactive forward data gathering ant
+
+到着した RP で data gathering timer に初期値を設定する。
+
+** reactive forward data provision ant
+
+到着したノード (非 sink、非 source) で data provision timer に初期値を設定する。
+
+data gathering timer が正の非 RP ノードに到着したら、
+そのノードを RP として mark する。
+
+** proactive forward data provision ant
+
+到着した RP で data provision timer に初期値を設定する。
+
+* データパケット
+
+AntHocNet のデータパケットを forward データパケットと呼ぶ。
+
+forward データパケットが RP に到着したら、backward
+データパケットになり巣に戻る。帰路は backward ant と同じ動作だがフェロモンの更新はしない。
+
+;; source への backward データパケットは意味がない。
+対称性のためにいれてある。
+
+;; backward データパケットがフェロモンを更新しない理由はない。
+(転送がわずかに早くなるかもしれないが。)
+
+source からの forward データパケットは RP に到着した際にセンサデータを置く。
+センサデータをどう保管するかはアプリケーション依存。
+実験では単純に追加する。
+
+sink への
+backward データパケットは RP を離れる際にそこに保管されているセンサデータを持つ。
+backward データパケットが持っていくセンサデータの取捨選択はアプリケーション依存。
+実験ではあるものすべて持つことにする。
+
+source からの forward データパケットはセンサデータを含む。
+sink への backward データパケットはセンサデータを含む。
+その他のデータパケットは空。
+
+* link failure notification message
+
+Link failure notification message を受信し、
+餌への経路がなくなったと判断するのは、
+そのセンサノードにランデブフェロモンがまったくなく、
+しかもそのセンサノード自身が餌ではないときとする。
+
+;; あまり起こらないはずだが、 RP の mark/unmark のタイミング等で起こり得る
+
+* RP 位置制御
+
+- 同じ頻度でアリが来るなら、 source や sink の中間に RP を置きたい
+- アリが来る頻度が高い source や sink の近くに RP を置きたい
+
+forward 経路制御アリは、 RP に到着したら、確率 p_r でその RP 
+(以下旧 RP) を移動させる。その forward 経路制御アリ自体は旧 RP 
+で通常通り backward 経路制御アリとなる。
+
+p_r = ν * hop / TTL
+
+- ν ∈ [0, 1] はパラメータ
+- hop は巣からのホップ数
+- TTL はパラメータ
+
+その backward 経路制御アリは、次のノード
+(以下新 RP) を RP として mark する。
+
+旧 RP では、
+- unmark する
+-- このとき link failure notification は送らない
+- 一旦すべてのランデブフェロモンを消す
+-- RP として mark されたときにランデブフェロモンは消されているはず
+-- mark 後他の RP から旧 RP を経由して帰るアリがフェロモンを置く可能性はあるが、 mark 以後すべてのアリは旧 RP で backward アリになって帰っていくから、使われていない
+- 新 RP へのリンクにランデブフェロモンを置く
+-- T = (T_hop)^-1
+--- 新 RP → 旧 RP への時間推測値がないので、 T_hop だけを使う
+---- forward アリに持たせることは可能だが、これだけのために余計な値をアリに持たせることになる
+---- どうせ次にアリが実際にここを通れば正しい値に近づいていく
+-- U = N_data
+-- N_data はこの時点で旧 RP にあるセンサデータの数
+- センサデータはすべて消す
+
+;; アプリケーションによっては移動させたいかもしれない
+
+;; U が次のアリの更新時に (たぶん N_data が少ないので) 
+減ってしまうのが問題を起こす可能性がある
+
+新 RP では、
+- mark する
+-- ランデブフェロモンはすべて消す
+- 旧 RP と同値の痕跡フェロモンを置く
+-- RP を移動させたアリが情報提供アリなら情報収集痕跡フェロモンを
+-- RP を移動させたアリが情報収集アリなら情報提供痕跡フェロモンを
+-- これがないと痕跡フェロモンが一種類しかないとして unmark されてしまう
+-- 元々新 RP に痕跡フェロモンがあって、そちらの方が値が大きければ、そのままにする
+
+;; 新 RP が既に RP であっても問題ないはず
+(タイミングの問題で起こり得る? 稀?)
+
+;; 旧 RP が unmark されて、新 RP が mark される前にアリが何らかの理由で死ぬとか、
+新 RP が故障するとかだと RP がなくなる
+→ アリが来る前に新 RP が故障したというのは、新 RP が mark されてから故障するのとなんらかわりない
+→ 特別な対処は不要;
+アリが何らかの理由で死んだときは何か対処が必要かもしれないが・・・
+
+@
+
+
+1.1
+log
+@created by (anon)
+@
+text
+@d134 7
+a140 7
+* mark する
+** ランデブフェロモンはすべて消す
+* 旧 RP と同値の痕跡フェロモンを置く
+** RP を移動させたアリが情報提供アリなら情報収集痕跡フェロモンを
+** RP を移動させたアリが情報収集アリなら情報提供痕跡フェロモンを
+** これがないと痕跡フェロモンが一種類しかないとして unmark されてしまう
+** 元々新 RP に痕跡フェロモンがあって、そちらの方が値が大きければ、そのままにする
+@
+

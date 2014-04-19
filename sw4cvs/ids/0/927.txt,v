@@ -1,0 +1,342 @@
+head	1.4;
+access;
+symbols
+	suika-20100509:1.2
+	before-graph-20090923:1.2;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.4
+date	2013.03.05.11.15.41;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2011.10.14.00.21.03;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2009.01.31.09.59.14;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2008.11.11.07.04.00;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.4
+log
+@updated by (anon)
+@
+text
+@
+* RFC 2045 の BNF
+
+[PRE[
+     quoted-printable := qp-line *(CRLF qp-line)
+     qp-line := *(qp-segment transport-padding CRLF)
+                qp-part transport-padding
+     qp-part := qp-section
+                ; Maximum length of 76 characters 最大長76文字
+     qp-segment := qp-section *(SPACE / TAB) "="
+                   ; Maximum length of 76 characters 最大長76文字
+     qp-section := [*(ptext / SPACE / TAB) ptext]
+     ptext := hex-octet / safe-char
+     safe-char := <any octet with decimal value of 33 through
+                  60 inclusive, and 62 through 126>
+                  ; Characters not listed as "mail-safe" in
+                  ; RFC 2049 are also not recommended.
+                  ;; RFC 2049 の 「mail-safe」 (メイル安全)に無い文字は
+                  ;; 使用しないのが良い。
+     hex-octet := "=" 2(DIGIT / "A" / "B" / "C" / "D" / "E" / "F")
+                  ; Octet must be used for characters > 127, =,
+                  ; SPACEs or TABs at the ends of lines, and is
+                  ; recommended for any character not listed in
+                  ; RFC 2049 as "mail-safe".
+                  ;; 127以上、 = 、行末の SP・TAB  はダメ。
+                  ;; RFC 2049 の(以下同文)。
+                  ;; 書いてないけど大文字・小文字を区別する。
+     transport-padding := *LWSP-char
+                          ; Composers MUST NOT generate
+                          ; non-zero length transport
+                          ; padding, but receivers MUST
+                          ; be able to handle padding
+                          ; added by message transports.
+                  ;; 構成者は生成しちゃ'''ダメ'''。受信者は扱えないと'''ダメ'''。
+]PRE]
+
+
+* 説明 (RFC 2045, 2047 より抜粋・補足)
+
+CTE で使われるのが Quoted-Printable, それに似た encoded-word で使われてる
+のが Q 符号化。
+
+1. text/* で CRLF やってる CR (0x0D), LF (0x0A) 以外のオクテットは
+「"=" 2HEXDIGIT」で表せる。 A 〜 F は大文字のみ、小文字は禁止。
+ところがどっこい、 RFC 2047 では大文字にするべき (小文字 should)。
+なんだ、小文字でもいい(こともある)んだ?
+
+2. 0x21 〜 0x3C, 0x3E 〜 0x7E は生で出現可能。但し場面に左右される。
+(cf. 0x3D "=")
+
+- メイル本体では全部 OK。
+- でも EBCDIC 関門考えると、 !"#$@@[\]^`{|}~ も 1 で符号化した方が。
+- [[非構造化領域]]の encoded-word では、 =?_ は 1 で符号化。
+- comment 中の encoded-word では、更に ()\ も駄目。 (ここ、RFC 2047 では誤植があって、 " も止めた方がいいかも。)
+- word の置き換えたる encoded-word は、 A-Za-z0-9!*+-/= ''しかだめ''。
+
+3. SP, TAB は生で出現 OK。但し符号化行の最後にあたる部分 (CRLF の手前)
+では生では現れたら駄目。その時は 1 に従い =20 とかする。
+encoded-word の Q 符号化では駄目。 =20, =09 を使うべし。
+
+4. text/* で CRLF はそのまま。そうでない 0x0A, 0x0D は 1 
+に従い =0A とかする。 encoded-word の Q 符号化では当然駄目。 =0D 
+とか =0A 使うべし。
+
+5. (軟改行 soft line-break) = で終わる (あるいは = のあとに SP, TAB
+だけが幾つか続いて終わる) (終わるというか、その次が改行 CRLF になる)
+時は、その改行は元データの改行ではない。 (から、
+復号した時に = 以降まとめてなくなる。) encoded-word 
+の Q 符号化では当然駄目。 
+
+6. 符号化した人は行末に SP, TAB を入れちゃいけないけど、
+中継者が入れるかもしれないから、復号する人は必ず無視しないといけない。
+encoded-word の Q 符号化では関係なし。
+
+7. Q 符号化では、 0x20 を 「_」(0x5F)で表現できる。 (もちろん、本来の
+0x5F は =5F になる。) Quoted-Printable では駄目。「_」は単に 0x5F。
+
+
+* エラー処理
+
+RFC 2045 にはエラー処理の話が。
+
+1. = の後2文字は 0-9A-F で大文字 only だけど、
+慈悲深い人 (原文は robust でごーいんな人:-) は小文字も解釈してあげたら。
+(でもこれは解釈するべきだと思う。前節の 1 参照。)
+
+2. = の後に来るはず無い文字が来たら、そのまま処理 (=xy をそのまま 0x5C
+0x78 0x79 と解釈) して、利用者にイかれてたよって教えてあげたら良さげ。
+
+3. いっちばん最後かその手前に = が来た時も 2 とおんなじ。
+
+4. 0x09 (TAB), CRLF, 0x20 〜 0x7E 以外のオクテットが来たら、
+ごーいんな人はそいつを取り除いちゃって、利用者にイかれてたよって
+教えてあげたら良さげ。
+
+5. 76オクテットを超えてても、ふつーに処理して、利用者に以下略。
+
+* 変種
+
+** QPRINTABLE
+
+- [1] [[JISX4346]]:1999 = [[ISO/IEC13522-6]]:1998 の B.3.4 で規定されている QPRINTABLE は、 RFC 1521 の Quoted‐Printable の変種で、(1) 16進数に小文字を使っても構わない (2) 改行は [CODE(ABNF)[CRLF]] ではなく [CODE(ABNF)[1*(CR / LF / [[FF]])]] とし、一行の文字数も規制しないという修正を加えたものです。
+
+** DKIM-Quoted-Printable
+
+[2] [[RFC 4871]] は [[DKIM-Quoted-Printable]] という Quoted Printable
+の変種を定義しています。 [[MIME]] の Quoted Printable との違いは、
+(1) [[空白]]が意味を持つ場合は符号化しなければならず、 
+[[DKIM-Quoted-Printable]] された文字列中には[[空白]]
+([CODE(ABNF)@@en[[[FWS]]]]) を自由に挿入でき、
+無視されること、 (2) やわらかい改行 (行末の [CODE(char)[[[=]]]] 
+により[[改行]]が無視されるというもの) を使えないこと、 (3) 
+行長制限を持たないことです。[[本体]]に適用することが想定されている
+[[MIME]] の Quoted Printable に対して、 [[DKIM-Quoted-Printable]]
+は[[プロトコル要素]]で利用することが想定されているため、
+このような違いがあるものと考えられます。なお、
+[[DKIM-Quoted-Printable]] でも[[十六進数]]は[[大文字]]でなければなりません。
+
+[3] [[DKIM-Quoted-Printable]] 自体は、 [CODE(char)[[[;]]]] 
+([[タグ]]の[[分離]]に使われます。) と
+[CODE(char)[[[=]]]] (符号化オクテットの1文字目に使われます。)
+と [CODE(charname)@@en[[[SPACE]]]] を除くすべての [[ASCII]]
+[[印字可能文字]]をそのまま用いることを認めています。
+(なお、 [[ABNF]] の[[注釈]]において、 [[RFC 2049]]
+[CODE(ABNF)@@en[[[mail-safe]]]] でない[[文字]]は符号化することが推奨
+(小文字 recommend) されています。)
+しかし、 [[DKIM-Quoted-Printable]] を使う場所によっては、
+そのまま用いられる文字を更に制限していることがあります。
+[CODE(822)@@en[[[DKIM-Signature]]:]] [[頭欄]]の
+[CODE(822)[[[z]]=]] [[タグ]]では、 [CODE(char)[[[|]]]]
+も符号化しなければなりません。
+
+** qp-section
+
+[4] [[RFC 4871]] における [[DKIM]] [[鍵]]の[[文章表現]] (3.6.1. 節) における
+[CODE@@en[[[n]]=]] [[タグ]]の値は [CODE(ABNF)@@en[[[qp-section]]]] 
+として定義されています。
+[CODE(ABNF)@@en[[[qp-section]]]] は、 [[MIME]] Quoted Printable
+の1行にあたります。同じ [[RFC 4871]] で定義されている
+[[DKIM-Quoted-Printable]] とは異なり、[[空白]]は無視されず、
+その[[空白]]自体として解釈されることになります。
+[CODE(char)[[[;]]]] は[[タグ]]を[[分離]]するために使われるので、
+[[文字]]としての [CODE(char)[[[;]]]] を[[タグ]]の値で使う場合、
+[[符号化]]する必要があります (なぜか 3.5. で説明されています)。
+
+[5] [CITE@@en[RFC 6376 - DomainKeys Identified Mail (DKIM) Signatures]]
+([TIME[2011-10-09 12:08:31 +09:00]] 版)
+<http://tools.ietf.org/html/rfc6376>
+
+[6] [CITE[Article delegate/1443 (95Apr23) Re: Netscape 1.1b3 mail]]
+( ([TIME[1995-04-23 07:08:46 +09:00]] 版))
+<http://news.delegate.org/mail-lists/delegate/1443>@
+
+
+1.3
+log
+@updated by (anon)
+@
+text
+@d148 5
+a152 1
+<http://tools.ietf.org/html/rfc6376>@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@d144 5
+a148 1
+[[符号化]]する必要があります (なぜか 3.5. で説明されています)。@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/51756F7465642D5072696E7461626C65.txt>
+@
+text
+@d1 144
+a144 119
+#?SuikaWiki/0.9
+
+
+* RFC 2045 の BNF
+
+[PRE[
+     quoted-printable := qp-line *(CRLF qp-line)
+     qp-line := *(qp-segment transport-padding CRLF)
+                qp-part transport-padding
+     qp-part := qp-section
+                ; Maximum length of 76 characters 最大長76文字
+     qp-segment := qp-section *(SPACE / TAB) "="
+                   ; Maximum length of 76 characters 最大長76文字
+     qp-section := [*(ptext / SPACE / TAB) ptext]
+     ptext := hex-octet / safe-char
+     safe-char := <any octet with decimal value of 33 through
+                  60 inclusive, and 62 through 126>
+                  ; Characters not listed as "mail-safe" in
+                  ; RFC 2049 are also not recommended.
+                  ;; RFC 2049 の 「mail-safe」 (メイル安全)に無い文字は
+                  ;; 使用しないのが良い。
+     hex-octet := "=" 2(DIGIT / "A" / "B" / "C" / "D" / "E" / "F")
+                  ; Octet must be used for characters > 127, =,
+                  ; SPACEs or TABs at the ends of lines, and is
+                  ; recommended for any character not listed in
+                  ; RFC 2049 as "mail-safe".
+                  ;; 127以上、 = 、行末の SP・TAB  はダメ。
+                  ;; RFC 2049 の(以下同文)。
+                  ;; 書いてないけど大文字・小文字を区別する。
+     transport-padding := *LWSP-char
+                          ; Composers MUST NOT generate
+                          ; non-zero length transport
+                          ; padding, but receivers MUST
+                          ; be able to handle padding
+                          ; added by message transports.
+                  ;; 構成者は生成しちゃ'''ダメ'''。受信者は扱えないと'''ダメ'''。
+]PRE]
+
+
+* 説明 (RFC 2045, 2047 より抜粋・補足)
+
+CTE で使われるのが Quoted-Printable, それに似た encoded-word で使われてる
+のが Q 符号化。
+
+1. text/* で CRLF やってる CR (0x0D), LF (0x0A) 以外のオクテットは
+「"=" 2HEXDIGIT」で表せる。 A 〜 F は大文字のみ、小文字は禁止。
+ところがどっこい、 RFC 2047 では大文字にするべき (小文字 should)。
+なんだ、小文字でもいい(こともある)んだ?
+
+2. 0x21 〜 0x3C, 0x3E 〜 0x7E は生で出現可能。但し場面に左右される。
+(cf. 0x3D "=")
+
+- メイル本体では全部 OK。
+- でも EBCDIC 関門考えると、 !"#$@@[\]^`{|}~ も 1 で符号化した方が。
+- [[非構造化領域]]の encoded-word では、 =?_ は 1 で符号化。
+- comment 中の encoded-word では、更に ()\ も駄目。 (ここ、RFC 2047 では誤植があって、 " も止めた方がいいかも。)
+- word の置き換えたる encoded-word は、 A-Za-z0-9!*+-/= ''しかだめ''。
+
+3. SP, TAB は生で出現 OK。但し符号化行の最後にあたる部分 (CRLF の手前)
+では生では現れたら駄目。その時は 1 に従い =20 とかする。
+encoded-word の Q 符号化では駄目。 =20, =09 を使うべし。
+
+4. text/* で CRLF はそのまま。そうでない 0x0A, 0x0D は 1 
+に従い =0A とかする。 encoded-word の Q 符号化では当然駄目。 =0D 
+とか =0A 使うべし。
+
+5. (軟改行 soft line-break) = で終わる (あるいは = のあとに SP, TAB
+だけが幾つか続いて終わる) (終わるというか、その次が改行 CRLF になる)
+時は、その改行は元データの改行ではない。 (から、
+復号した時に = 以降まとめてなくなる。) encoded-word 
+の Q 符号化では当然駄目。 
+
+6. 符号化した人は行末に SP, TAB を入れちゃいけないけど、
+中継者が入れるかもしれないから、復号する人は必ず無視しないといけない。
+encoded-word の Q 符号化では関係なし。
+
+7. Q 符号化では、 0x20 を 「_」(0x5F)で表現できる。 (もちろん、本来の
+0x5F は =5F になる。) Quoted-Printable では駄目。「_」は単に 0x5F。
+
+
+* エラー処理
+
+RFC 2045 にはエラー処理の話が。
+
+1. = の後2文字は 0-9A-F で大文字 only だけど、
+慈悲深い人 (原文は robust でごーいんな人:-) は小文字も解釈してあげたら。
+(でもこれは解釈するべきだと思う。前節の 1 参照。)
+
+2. = の後に来るはず無い文字が来たら、そのまま処理 (=xy をそのまま 0x5C
+0x78 0x79 と解釈) して、利用者にイかれてたよって教えてあげたら良さげ。
+
+3. いっちばん最後かその手前に = が来た時も 2 とおんなじ。
+
+4. 0x09 (TAB), CRLF, 0x20 〜 0x7E 以外のオクテットが来たら、
+ごーいんな人はそいつを取り除いちゃって、利用者にイかれてたよって
+教えてあげたら良さげ。
+
+5. 76オクテットを超えてても、ふつーに処理して、利用者に以下略。
+
+
+* See also
+
+- [[符号化]]
+-- [[転送符号化]]
+--- [[Base64]]
+- [[MIME]]
+-- [[Encoded-Word]]
+-- [[Content-Transfer-Encoding:領域]]
+- [1] [[JISX4346]]:1999 = [[ISO/IEC13522-6]]:1998 の B.3.4 で規定されている QPRINTABLE は、 RFC 1521 の Quoted‐Printable の変種で、(1) 16進数に小文字を使っても構わない (2) 改行は [CODE(ABNF)[CRLF]] ではなく [CODE(ABNF)[1*(CR / LF / [[FF]])]] とし、一行の文字数も規制しないという修正を加えたものです。
+- [2] [WEAK[2004-02-06 00:36:31 +00:00]] ''[[aiueo]]'': aiueo
+
+[3]
+iouoiuoi
+([[名無しさん]] [WEAK[2004-06-17 09:16:24 +00:00]])
+
+[4]
+iouoiuoi
+([[名無しさん]] [WEAK[2004-06-17 09:16:27 +00:00]])
+
+@
+

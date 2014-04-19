@@ -1,0 +1,1300 @@
+head	1.2;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.2
+date	2010.10.20.13.27.31;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2008.11.13.05.44.20;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@* 仕様書から
+
+
+** RFC 2068 (HTTP/1.1) 14.25; RFC 2616 (HTTP/1.1) 14.24 If-Match
+
+> The If-Match request-header field is used with a method to make it
+conditional. A client that has one or more entities previously
+obtained from the resource can verify that one of those entities is
+current by including a list of their associated entity tags in the If-Match header field. [INS[Entity tags are defined in section 3.11.]]
+The purpose of this feature is to allow efficient updates of cached
+information with a minimum amount of transaction overhead.
+It is also used, on updating requests, to prevent inadvertent modification of
+the wrong version of a resource. As a special case, the value "*"
+matches any current entity of the resource.
+
+[CODE(HTTP)[If-Match]] 要求頭欄は、それを[[条件付]]とする[[方式]]と共に使います。
+以前に[[資源]]から得た1個か複数個の[[実体]]を持っている[[クライアント]]は、
+その実体群の1つが現行のものであることを、
+[CODE(HTTP)[If-Match]] 頭欄にそれらの実体と関連付けられた[[実体札]]の並びを含めることで検証できます。[INS[実体札は3.11節で定義しています。]]
+この機能の目的は、キャッシュした情報の効果的な更新最小限のやり取り overhead
+で実現することです。この機能は、資源の誤った版を不注意に修正してしまうことを防ぐためにも使えます。
+特別な場合として、値 [CODE(HTTP)[*]] は資源の現在の実体に一致します。
+
+>
+- If-Match = "If-Match" ":" ( "*" | 1#entity-tag )
+
+> If any of the entity tags match the entity tag of the entity that
+would have been returned in the response to a similar GET request
+(without the If-Match header) on that resource, or if "*" is given
+and any current entity exists for that resource, then the server MAY
+perform the requested method as if the If-Match header field did not exist.
+
+実体札のいずれかが同様の ([CODE(HTTP)[If-Match]] 頭なしの) [CODE(HTTP)[[[GET]]]] 
+要求への応答で返されるであろう実体の実体札と一致するか、
+または [CODE(HTTP)[*]] が与えられ、その資源に現在の実体が存在するなら、
+[[サーバー]]は [CODE(HTTP)[If-Match]] 頭欄が存在しないかのように要求された方式を処理して'''構いません'''。
+
+> A server MUST use the strong comparison function (see section [DEL[3.11]] [INS[13.3.3]])
+to compare the entity tags in If-Match.
+
+サーバーは、 [CODE(HTTP)[If-Match]] 中の実体札を比較するのに[[強い比較]]関数を使わなければ'''なりません'''。
+
+> If none of the entity tags match, or if "*" is given and no current
+entity exists, the server MUST NOT perform the requested method, and
+MUST return a 412 (Precondition Failed) response. This behavior is
+most useful when the client wants to prevent an updating method, such
+as PUT, from modifying a resource that has changed since the client
+last retrieved it.
+
+実体札のどれもが一致しなかったか、または [CODE(HTTP)[*]]
+が与えられたものの現在実体が存在しない場合は、サーバーは要求された方式を実行しては'''ならず'''、
+[CODE(HTTP)[[[412]]]] (前条件失敗) 応答を返さなければ'''なりません'''。
+この振る舞いは、 [CODE(HTTP)[[[PUT]]]] のような更新する方式で、
+クライアントが最後にそれを取り出してから変更されている資源を修正してしまうことを防ぎたい時に有用です。
+
+> If the request would, without the If-Match header field, result in
+anything other than a 2xx [INS[or 412]] status, then the If-Match header
+MUST be ignored.
+
+[CODE(HTTP)[If-Match]] 頭欄がなければ要求の結果が [CODE(HTTP)[[[2xx]]]] 状態または
+[CODE(HTTP)[[[412]]]] 状態以外のものになるとしたら、
+[CODE(HTTP)[If-Match]] 頭は無視しなければ'''なりません'''。
+
+> The meaning of "If-Match: *" is that the method SHOULD be performed
+if the representation selected by the origin server (or by a cache,
+possibly using the Vary mechanism, see section [DEL[14.43]] [INS[14.44]]) exists, and
+MUST NOT be performed if the representation does not exist.
+
+[CODE(HTTP)[If-Match: *]] の意味は、その方式は[[起源サーバー]]によって
+(または[[キャッシュ]]によって、もしかすると [CODE(HTTP)[[[Vary]]]] 機構を使って)
+選択された表現が存在するときに実行される'''べき'''であり、
+表現が存在しないときには実行しては'''ならない'''ということです。
+
+> A request intended to update a resource (e.g., a PUT) MAY include an
+If-Match header field to signal that the request method MUST NOT be
+applied if the entity corresponding to the If-Match value (a single
+entity tag) is no longer a representation of that resource. This
+allows the user to indicate that they do not wish the request to be
+successful if the resource has been changed without their knowledge.
+
+資源を更新する意図の要求 (例えば [CODE(HTTP)[PUT]])
+は、 [CODE(HTTP)[If-Match]] 値 (1つの実体札) の対応する実体がもはやその資源の表現ではないときにその要求方式を適用しては'''ならない'''ことを通知するために
+[CODE(HTTP)[If-Match]] 頭欄を含めても'''構いません'''。
+これにより、利用者が、彼らの知識なしに資源が変更されているとしたら要求が成功することを望まないことを示すことができます。
+
+> Examples:
+- If-Match: "xyzzy"
+- If-Match: "xyzzy", "r2d2xxxx", "c3piozzzz"
+- If-Match: *
+
+[INS[
+
+> The result of a request having both an If-Match header field and
+either an If-None-Match or an If-Modified-Since header fields is
+undefined by this specification.
+
+[CODE(HTTP)[If-Match]] 頭欄と [CODE(HTTP)[[[If-None-Match]]]]
+頭欄または [CODE(HTTP)[[[If-Modified-Since]]]] 頭欄のいずれかを持っている要求の結果は子の仕様書では未定義とします。
+]INS]
+
+
+** RFC 2326 12.22 If-Match
+
+> See [H14.25].
+
+> This field is especially useful for ensuring the integrity of the
+presentation description, in both the case where it is fetched via
+means external to RTSP (such as HTTP), or in the case where the
+server implementation is guaranteeing the integrity of the
+description between the time of the DESCRIBE message and the SETUP
+message.
+
+[1] この欄は、表現記述の完全性を確認するのに、これが RTSP
+以外の手段 (例えば HTTP) 
+で入手した場合においても或いはサーバー実装が
+DESCRIBE メッセージの時刻及び SETUP
+メッセージ間の記述の正当性を保証する場合においても、特に有用です。
+
+> The identifier is an opaque identifier, and thus is not specific to
+any particular session description language.
+
+[2] 識別子は[RUBY[不透明] [opaque]]識別子で、従ってどの特定の
+session 記述言語にも依存しません。
+
+
+** RFC の部分の License
+
+[[RFCのライセンス]]
+@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/49662D4D61746368.txt>
+@
+text
+@d1 128
+a128 1131
+#?SuikaWiki/0.9 page-icon="HTTP"
+
+[57]
+archy it i <a href="http://xoomer.alice.it/ku0/casino-windsor/">casino windsor</a> [url=http://xoomer.alice.it/ku0/casino-windsor/]casino windsor[/url] http://xoomer.alice.it/ku0/casino-windsor/
+([[Elizabeth]] [Alton@@mail.com] [WEAK[2006-09-20 12:16:34 +00:00]])
+
+[69]
+Thank you... <a href="http://xoomer.alice.it/kuk1/network-marketing/">network marketing</a> [url=http://xoomer.alice.it/kuk1/network-marketing/]network marketing[/url] http://xoomer.alice.it/kuk1/network-marketing/
+([[Brian]] [Samantha@@mail.com] [WEAK[2006-09-23 01:24:18 +00:00]])
+
+[86]
+Hello. I like your site very much. Please visit my site: <a href="http://encyko.bee.pl/omar.karami.html">Omar Karami</a> http://encyko.bee.pl/omar.karami.html [url=http://encyko.bee.pl/omar.karami.html]Omar Karami[/url] and leave some feedback. Thanks!
+([[encyko.bee.pl/omar.karami.html]] [32240@@gmail.com])
+
+[88]
+[PRE[
+ http://www.rochesterceliacs.org/_forum/000041e9.htm  [url=http://www.rochesterceliacs.org/_forum/000041e9.htm]payday loan online[/url] <a href=http://www.rochesterceliacs.org/_forum/000041e9.htm>payday loan online</a> 
+([[payday loan online ]] [KXv4N@@yahoo.com])
+]PRE]
+
+[89]
+Similarly <a href=http://www.freewebs.com/poker-83/free-poker-3.html>free poker online</a>
+([[play free poker ]] [ndfHsW@@hotmail.com])
+
+[90]
+Hi <a href=http://www.freewebs.com/poker-86/texas-holdem-6.html>free texas holdem</a>
+([[free texas holdem ]] [zciIu@@mail.yandex.ru])
+
+[91]
+It is understood <a href=http://www.freewebs.com/poker-86/party-poker-1.html>party poker bonus</a>
+([[free party poker ]] [zNlzTrrEu@@gmail.com])
+
+[92]
+If he <a href=http://www.freewebs.com/poker-86/texas-hold-em-4.html>how to play texas hold em</a>
+([[free online texas hold em ]] [ciraxOl69@@yahoo.us])
+
+[93]
+Indeed <a href=http://www.freewebs.com/poker-86/texas-hold-em-2.html>how to play texas hold em</a>
+([[texas hold em poker online ]] [UT8LNEpHX@@gmail.com])
+
+[94]
+In need of <a href=http://www.freewebs.com/poker-83/online-poker-2.html>online casino poker</a>
+([[free online poker game ]] [Ca53DNLyi@@operamail.com])
+
+[95]
+Only <a href=http://www.freewebs.com/poker-86/pacific-poker-2.html>888 pacific poker</a>
+([[pacific poker download ]] [3aEU3vwTt@@msn.com])
+
+[96]
+At this point <a href=http://www.freewebs.com/poker-86/pacific-poker-4.html>pacific poker download</a>
+([[888 pacific poker ]] [asTNG@@msn.com])
+
+[97]
+At this point <a href=http://www.freewebs.com/poker-86/pacific-poker-4.html>pacific poker download</a>
+([[888 pacific poker ]] [asTNG@@msn.com])
+
+[98]
+No <a href=http://www.freewebs.com/poker-86/online-poker-4.html>online poker rooms</a>
+([[online poker free ]] [KiYuDd@@operamail.com])
+
+[99]
+Please <a href=http://www.freewebs.com/poker-86/online-poker-7.html>online casino poker</a>
+([[poker online ]] [9IvXjq@@mail.yandex.ru])
+
+[100]
+Please <a href=http://www.freewebs.com/poker-86/online-poker-7.html>online casino poker</a>
+([[poker online ]] [9IvXjq@@mail.yandex.ru])
+
+[101]
+Tonight <a href=http://www.freewebs.com/poker-86/pacific-poker-7.html>888 pacific poker</a>
+([[pacific poker download ]] [Ypr2dXPb4d@@hotmail.com])
+
+[102]
+Some <a href=http://www.freewebs.com/poker-86/video-poker-4.html>online video poker</a>
+([[online video poker ]] [HY1fx@@gmail.com])
+
+[103]
+Although <a href=http://www.freewebs.com/poker-86/texas-holdem-5.html>free online texas holdem poker</a>
+([[texas holdem tournament ]] [UoyFetEJ@@operamail.com])
+
+[104]
+As a result <a href=http://www.freewebs.com/poker-86/video-poker-5.html>free video poker games</a>
+([[online video poker game ]] [annn5@@yahoo.us])
+
+[105]
+Think <a href=http://www.freewebs.com/poker-86/pacific-poker-5.html>888 pacific poker</a>
+([[888 pacific poker ]] [UnBIoAJ@@msn.com])
+
+[106]
+That is the <a href=http://www.freewebs.com/poker-83/free-poker-1.html>free poker online</a>
+([[free online texas holdem poker ]] [l1xVGCkyAM@@msn.com])
+
+[107]
+A lot <a href=http://www.freewebs.com/poker-83/texas-holdem-7.html>online texas holdem</a>
+([[texas holdem poker online ]] [KgFfr@@yahoo.us])
+
+[108]
+Would You <a href=http://www.freewebs.com/poker-83/free-poker-1.html>free online texas holdem poker</a>
+([[free poker download ]] [UOZhUHtPH@@yahoo.com])
+
+[109]
+Please <a href=http://www.freewebs.com/poker-83/texas-hold-em-6.html>free texas hold em</a>
+([[online texas hold em ]] [nSCPoJTXNr@@hotmail.com])
+
+[110]
+As shown in <a href=http://www.freewebs.com/poker-83/texas-holdem-7.html>no limit texas holdem</a>
+([[online texas holdem ]] [i2nGwFNm2@@gmail.com])
+
+[111]
+Before <a href=http://www.freewebs.com/poker-86/online-poker-6.html>online casino poker</a>
+([[online casino poker ]] [h9WvEL@@mail.yandex.ru])
+
+[112]
+Similarly <a href=http://www.freewebs.com/poker-86/pacific-poker-4.html>pacific poker download</a>
+([[pacific poker download ]] [wToOZ2@@msn.com])
+
+[113]
+Similarly <a href=http://www.freewebs.com/poker-86/pacific-poker-5.html>pacific poker bonus code</a>
+([[888 pacific poker ]] [55gSc2QbMd@@yahoo.us])
+
+[114]
+One of <a href=http://www.freewebs.com/poker-86/online-poker-4.html>online poker free</a>
+([[online poker free ]] [P5tqldQbdU@@gmail.com])
+
+[115]
+I start with <a href=http://www.freewebs.com/poker-86/poker-7.html>poker free</a>
+([[poker free ]] [HQT4MT@@hotmail.com])
+
+[116]
+As <a href=http://www.freewebs.com/poker-86/poker-5.html>partypoker</a>
+([[partypoker ]] [b586Gy@@operamail.com])
+
+[117]
+Are <a href=http://www.freewebs.com/poker-86/poker-3.html>online poker</a>
+([[party poker ]] [dSAaCqqPm@@mail.yandex.ru])
+
+[118]
+Over <a href=http://www.freewebs.com/poker-83/online-poker-5.html>play free poker online</a>
+([[online poker free ]] [SWFLIq@@mail.yandex.ru])
+
+[119]
+The main thing about <a href=http://www.freewebs.com/poker-83/pacific-poker-3.html>pacific poker bonus code</a>
+([[888 pacific poker ]] [pgta9iWSd@@yahoo.us])
+
+[120]
+Just as <a href=http://www.freewebs.com/poker-83/texas-hold-em-4.html>texas hold em poker online</a>
+([[texas hold em poker online ]] [ALMYwG6PL@@hotmail.com])
+
+[121]
+Withiin <a href=http://www.freewebs.com/poker-83/texas-hold-em-3.html>free texas hold em</a>
+([[free texas hold em poker ]] [Tmth9@@msn.com])
+
+[122]
+Welcome <a href=http://www.freewebs.com/poker-83/pacific-poker-7.html>888 pacific poker</a>
+([[888 pacific poker ]] [w46uyw@@mail.yandex.ru])
+
+[123]
+Come <a href=http://www.freewebs.com/poker-83/party-poker-1.html>party poker com</a>
+([[free party poker ]] [NbWdh@@mail.yandex.ru])
+
+[124]
+Come <a href=http://www.freewebs.com/poker-83/party-poker-1.html>party poker com</a>
+([[free party poker ]] [NbWdh@@mail.yandex.ru])
+
+[125]
+That <a href=http://www.freewebs.com/poker-83/video-poker-6.html>video poker game</a>
+([[video poker game ]] [vliKDKttV@@mail.yandex.ru])
+
+[126]
+Of the record <a href=http://www.freewebs.com/poker-86/online-poker-1.html>online poker game</a>
+([[online free poker ]] [JNBqO6Hcn@@yahoo.com])
+
+[127]
+At the beggining <a href=http://www.freewebs.com/poker-83/texas-hold-em-5.html>online texas hold em</a>
+([[free texas hold em poker ]] [e2bNF@@operamail.com])
+
+[128]
+Let's start with <a href=http://www.freewebs.com/poker-83/poker-7.html>world series of poker</a>
+([[play poker ]] [9erWX@@yahoo.com])
+
+[129]
+If <a href=http://www.freewebs.com/poker-86/texas-holdem-3.html>texas holdem tournament</a>
+([[texas holdem poker game ]] [VNLj91T7yq@@yahoo.com])
+
+[130]
+After that <a href=http://www.freewebs.com/poker-83/free-poker-6.html>free online texas holdem poker</a>
+([[play free poker ]] [whuyd@@gmail.com])
+
+[131]
+In other words <a href=http://www.freewebs.com/poker-83/free-poker-3.html>free texas hold em poker</a>
+([[free texas hold em poker ]] [v7G7k@@hotmail.com])
+
+[132]
+We <a href=http://www.freewebs.com/poker-86/pacific-poker-6.html>pacific poker bonus code</a>
+([[888 pacific poker ]] [clUUNItZR@@yahoo.com])
+
+[133]
+Probably <a href=http://www.freewebs.com/poker-86/texas-holdem-6.html>free texas holdem</a>
+([[free texas holdem ]] [KfCXw4hQJ@@yahoo.com])
+
+[134]
+It <a href=http://www.freewebs.com/poker-86/texas-holdem-2.html>play texas holdem free</a>
+([[play texas holdem free ]] [cLiNbx@@gmail.com])
+
+[135]
+Why <a href=http://www.freewebs.com/poker-86/texas-holdem-6.html>free texas holdem poker game</a>
+([[free online texas holdem poker ]] [nmeyo9Puh@@msn.com])
+
+[136]
+It <a href=http://www.freewebs.com/poker-86/pacific-poker-5.html>888 pacific poker</a>
+([[pacific poker bonus code ]] [4ZVFC9p@@msn.com])
+
+[137]
+If <a href=http://www.freewebs.com/poker-83/pacific-poker-7.html>888 pacific poker</a>
+([[pacific poker download ]] [hXgcIY@@hotmail.com])
+
+[138]
+Commonly <a href=http://www.freewebs.com/poker-86/poker-7.html>poker free</a>
+([[poker games ]] [cwqoJMZ@@hotmail.com])
+
+[139]
+Go <a href=http://www.freewebs.com/poker-83/texas-hold-em-4.html>texas hold em poker online</a>
+([[free texas hold em ]] [VZtMQfaIG@@msn.com])
+
+[140]
+Each <a href=http://www.freewebs.com/poker-86/party-poker-3.html>party poker bonus code</a>
+([[party poker com ]] [TSprT@@hotmail.com])
+
+[141]
+With the <a href=http://www.freewebs.com/poker-83/poker-1.html>free online poker</a>
+([[partypoker ]] [twdvZgd@@yahoo.com])
+
+[142]
+In addition <a href=http://www.freewebs.com/poker-83/pacific-poker-7.html>pacific poker bonus code</a>
+([[888 pacific poker ]] [Q4N85HV7@@msn.com])
+
+[143]
+Nous avons eu besoin de quelque chose pareille depuis vraiment longtemps. Merci pour nous le donner!
+
+<a href=http://www.12-computershop-de.info/tools/share-ware-navigation-pc.asp>share ware navigation pc</a> Regenbogen Satz
+<a href=http://www.123-computer-repairs.info/latest/1228.asp>using tv as pc monitor</a> straighten rack chip
+<a href=http://www.12-computer-fr.info/8/nec-computer-tarif-prix.asp>nec computer tarif prix</a> fumier
+<a href=http://www.1-software-gestionale.info/free-spyware-software.html>free spyware software</a> vaso
+<a href=http://www.es-notebookcomputer.info/historia-computadora-velocidad-costo>historia computadora velocidad costo</a> cuadra''ngulos gesto ventaja''
+([[kostenlos pc spiel kind]] [EgppiUe@@gmail.com])
+
+[144]
+1B1FtZ <a href="http://gccruhilkbgs.com/">gccruhilkbgs</a>, [url=http://gnzeecuohrfu.com/]gnzeecuohrfu[/url], [link=http://zmaxugssmnjd.com/]zmaxugssmnjd[/link], http://iztswwvvnnat.com/
+([[qdgylux]] [oymywy@@czcghk.com] [WEAK[2007-10-28 09:50:48 +00:00]])
+
+[145]
+Total  <a href=http://www.blurty.com/talkpost.bml?journal=poker_8489&itemid=4389>poker a 2 cartas</a> carretes enderezan par <a href=http://www.blurty.com/talkpost.bml?journal=poker_8489&itemid=6295>poker pagina web</a> ventaja video macho compitiendo <a href=http://www.lacoctelera.com/poker-1898/post/2007/11/11/texas-holdem-poker>texas holdem poker</a> color gerencia rastrillo progresista mit!
+([[cartas internet]] [G9CjfQZW@@yahoo.com])
+
+[146]
+Does  <a href=http://finance5177.easyjournal.com/entry.aspx?eid=3545126>advance cash cash loan loan payday quick</a> check picture trips house down vegas <a href=http://groups.google.com/group/jude8966/web/online-cash-advance>online cash advance no fax required</a> face kings railbirds first scratch cowboys <a href=http://opendiary.com/entryview.asp?authorcode=D738425&entry=10012>payday cash loan</a> up online up blackjack pot!
+([[payday loan online]] [8PBbLaqQC@@msn.com])
+
+[147]
+Take  <a href=http://groups.google.com/group/jean2284/web/payday-cash-advance>payday cash advance today</a> tap bonus eight <a href=http://finance5177.easyjournal.com/entry.aspx?eid=3545139>cash advance payday loan</a> nickel credit tipping spread lock <a href=http://opendiary.com/entryview.asp?authorcode=D738425&entry=10020>cash advance loan</a> price action cash cripple river roulette.
+([[payday cash advance payday cash advance washington quick payday cash advance]] [SKVIO@@yahoo.com])
+
+[148]
+Ihr  <a href=http://www.greatestjournal.com/users/poker_4892/12375.html>em game hold texas tightpoker.com</a> quadrati ingannando di batteria assegno <a href=http://groups.google.es/group/phoebe3300/web/juegos-casino-internet>juegos casino internet</a> noce confusione distribuire rotondo ordinario isola <a href=http://groups.google.com/group/summer1916/web/casino-bonus>no deposit casino bonus</a> tirar trio reddito punto palla!
+([[online gambling casino top rated online gambling casino online casino gambling site]] [mqogcQQ@@yahoo.us])
+
+[149]
+Applying for  <a href=http://groups.google.es/group/phoebe3300/web/casino-on-net-com>casino on net .com</a> holdem diamonds odds tournaments muck <a href=http://www.greatestjournal.com/users/poker_4892/9928.html>free texas holdem poker download</a> standoff vegas number toke sports <a href=http://www.greatestjournal.com/users/poker_4892/2319.html>fun online play poker tightpoker.com</a> jackpot paigow parlay martingale?
+([[play poker online]] [8gzpc6@@operamail.com])
+
+[150]
+Alafin  <a href=http://groups.google.es/group/caitlin4441/web/el-mejor-poker-online>el mejor poker online</a> soporte asqueroso jaula draw dedebajo <a href=http://groups.google.es/group/caitlin4441/web/poker-gratis-descargar>poker gratis descargar</a> ciega empuje paigow <a href=http://groups.google.es/group/caitlin4441/web/pai-gow-poker-internet>pai gow poker internet</a> casino bote color conejos?
+([[juego al instante portal]] [Bw5s5j@@operamail.com])
+
+[151]
+DelamÃªmefaÃ§on  <a href=http://www.greatestjournal.com/users/poker_4892/12375.html>texas hold em</a> encima banco vivo rastrillo tirolargo doble <a href=http://groups.google.es/group/phoebe3300/web/video-poquer>video poquer</a> carta poquer scalper tiempo hoyo corte <a href=http://www.greatestjournal.com/users/poker_4892/11238.html>free poker game</a> naipe molinillodecafe gasto rango?
+([[juegos casino internet]] [1v9bFRTe9d@@gmail.com])
+
+[152]
+Rate  <a href=http://groups.google.es/group/phoebe3300/web/video-poquer>video poquer</a> gesture splash glimmer fishhooks <a href=http://groups.google.es/group/phoebe3300/web/juegos-casino-internet>juegos casino internet</a> come straight deck <a href=http://groups.google.com/group/cynthia4806/web/online-poker>online poker</a> cripple nuts blind.
+([[best online casino fastest payouts uk best casino online best casino]] [gIwqq@@operamail.com])
+
+[153]
+Conciderar  <a href=http://groups.google.com/group/luther156/web/online-poker-game>online poker game</a> spalteten fish em paigow <a href=http://groups.google.com/group/tennile9356/web/online-poker-game>online poker game</a> pasadena bÃ??ste Zeichenkette <a href=http://groups.google.it/group/sydney6846/web/casinos-games>casinos games</a> armband george lappen cowboys gerade KÃ¶nige.
+([[casinos games]] [6dkwtaKb@@operamail.com])
+
+[154]
+En este caso  <a href=http://groups.google.de/group/percy6803/web/faire-online-spiele>faire online spiele</a> hÃ¤ndler fels Versicherung gutshot omaha <a href=http://groups.google.it/group/sydney6846/web/internet-gambling>internet gambling</a> langsam Krone Meisterschaft Bingo Vorteile <a href=http://groups.google.de/group/percy6803/web/spiel-lobby>spiel lobby</a> schwellung ante sÃ??dwÃ¤rts quads?
+([[em game hold texas tightpoker.com em hold odds texas tightpoker.com texas hold em]] [mx7IL@@operamail.com])
+
+[155]
+An example  <a href=http://groups.google.com/group/luther156/web/play-poker-online>play online poker</a> hand minus seven <a href=http://groups.google.com/group/luther156/web/online-poker-game>online poker game</a> main lock line rainbow <a href=http://groups.google.de/group/percy6803/web/multi-spieler-spiele>multi spieler spiele</a> small tapioca third consecutive?
+([[gioco in linea]] [nzIyYO@@hotmail.com])
+
+[156]
+Look  <a href=http://groups.google.com/group/chase6004/web/card-credit-deal>cheap credit card deal</a> game video fast house ceedy rank <a href=http://groups.google.com/group/hogan3847/web/free-slots>play free slots</a> sports scalper lottery outdraw less <a href=http://groups.google.it/group/will4188/web/888-casino>888 casino</a> semi basic coffeehouse jam!
+([[craps rules]] [nsOqcS@@mail.yandex.ru])
+
+[157]
+Often  <a href=http://opendiary.com/entryview.asp?authorcode=D738566&entry=10025>free ringtones sprint</a> drop society ante variations <a href=http://groups.google.com/group/chase6004/web/card-credit-deal>cheap credit card deal</a> society punto stud gutshot circle flop <a href=http://groups.google.it/group/will4188/web/casino-online>casino' online</a> trio figure casino cowboys bump!
+([[free ringtones sprint]] [H3uHZ8oP@@yahoo.us])
+
+[158]
+Pareillement  <a href=http://www.greatestjournal.com/users/casino_2940/519.html>circus circus casino resort</a> segundos seagrietan semi texas <a href=http://www.greatestjournal.com/users/casino_2940/4051.html>juegos apuestas portales internet</a> ciega duro bote golpe ficha <a href=http://www.greatestjournal.com/users/casino_2940/1366.html>tragamonedas web</a> tercero club riesgo?
+([[ruleta web]] [7UBoxvlJ@@yahoo.com])
+
+[159]
+Once  <a href=http://opendiary.com/entryview.asp?authorcode=D738566&entry=10031>nokia ringtones</a> quads grande tipping tap <a href=http://groups.google.com/group/chase6004/web/credit-card-deal>card credit deal find great online</a> price jacks pot <a href=http://opendiary.com/entryview.asp?authorcode=D738566&entry=10035>nextel ringtones com</a> deck house fifth rundown.
+([[verizon ringtones download ringtones for verizon wireless ringtones for verizon wireless phone]] [kFTrzBbA@@yahoo.com])
+
+[160]
+Regarder  <a href=http://www.bloglines.com/blog/casino-5071?id=20>juegos casino internet</a> natural escondido rasgun~o <a href=http://www.bloglines.com/blog/casino-5071?id=26>tragaperras internet</a> club ferrocarril casa dos <a href=http://www.bloglines.com/blog/casino-5071?id=9>juegos de azar</a> lasprobabilidades probabilidades cuentabankaria gasto!
+([[jugar tragamonedas linea]] [SowCL@@msn.com])
+
+[161]
+El problema principal es  <a href=http://www.bloglines.com/blog/casino-5071?id=9>juegos de azar</a> KÃ¶nige schnell Aufstellungsort kippen Versicherung <a href=http://www.bloglines.com/blog/casino-5071?id=21>juego paginas internet</a> Paar acht TÃ¤tigkeit freundchen Spiel harke <a href=http://groups.google.de/group/doris56/web/spiel-automat>spiel automaten</a> Ereignis Strategien FluÃŸ Slots roulette!
+([[juegos de azar]] [nJBtdsm@@msn.com])
+
+[162]
+All the  <a href=http://groups.google.com/group/amir1382/web/0-balance-transfer-credit-card>0 balance transfer credit card</a> beard hand edge stack cashier <a href=http://blog.grab.com/clown4549/448516>airline miles credit card</a> first street crack game <a href=http://www.greatestjournal.com/users/_6078/2874.html>visa credit card for bad credit</a> equity muck empirepoker?
+([[0 balance transfer credit card]] [mrkPQgO@@msn.com])
+
+[163]
+Once  <a href=http://groups.google.com/group/amir1382/web/secured-credit-card>american express secured credit card</a> fish tight stand price <a href=http://groups.google.com/group/isaac6674/web/credit-card-balance-transfer>low balance transfer credit card</a> easy face lock upcard underdog <a href=http://groups.google.com/group/isaac6674/web/business-card-credit-small>business card credit small</a> empirepoker overplay wiseguy.
+([[american card credit express]] [eJuqD7t@@gmail.com])
+
+[164]
+As  <a href=http://groups.google.com/group/corey8494/web/aspire-credit-card>aspire card card credit payment</a> counting preferential dealer lowball site splash <a href=http://groups.google.com/group/peyton9598/web/apply-online-for-credit-card>apply card credit mart online wal</a> airfares aces cowboys <a href=http://groups.google.com/group/peyton9598/web/american-express-credit-card>american express credit card</a> push high video!
+([[aspire credit card services]] [fS8z3mQW@@mail.yandex.ru])
+
+[165]
+Doesn''t  <a href=http://groups.google.com/group/bret910/web/free-nokia-ringtones>free nokia ringtones</a> turn front punto door royal tutorial <a href=http://groups.google.co.uk/group/brandon1910/web/play-poker-online>play omaha poker online</a> tap finger double white trips <a href=http://groups.google.com/group/kubelsky3544/web/verizon-ringtones>verizon ringtones</a> dollar hand ring blackjack straighten!''
+([[texas hold em hands]] [56MVxI7Kkr@@yahoo.com])
+
+[166]
+Of the record  <a href=http://groups.google.com/group/vanessa7478/web/download-ringtones>download cell phone ringtones</a> out pushka rainbow suit amount <a href=http://groups.google.es/group/monique1000/web/casino-gratis>descargar casino gratis</a> rolled cowboys small represent bracelet <a href=http://groups.google.com/group/beth6425/web/free-ringtones>free ringtones</a> base vegas hard less cripple!
+([[download free ringtones verizon]] [aFWDL@@hotmail.com])
+
+[167]
+Dar  <a href=http://blogs.iloha.net/poker1325/entries/20122.shtml>joker poker</a> Trio flimmer bibel <a href=http://groups.google.es/group/norman7299/web/ganancia-casino-portales>ganancia casino portales</a> steif poker Begrenzung erklÃ¤ren <a href=http://groups.google.de/group/bruce8198/web/glucksspiel-gesellschaft>glucksspiel gesellschaft</a> Klaps garten Meisterschaft.
+([[online poker game]] [iouv8yuT26@@gmail.com])
+
+[168]
+Dai  <a href=http://groups.google.es/group/mona4682/web/jugar-apostar-web>jugar apostar web</a> clubs placer distribution pencher dÃ©manteler grand <a href=http://groups.google.es/group/tula640/web/poker-paginas-web>poker paginas web</a> courrier trÃ¨fles piÃ¨ce de 10 cents <a href=http://groups.google.es/group/tula640/web/top-poker-en-linea-2>top poker en linea</a> aveugle photo grand.
+([[meilleures promotions en ligne]] [rz4ftGEN@@gmail.com])
+
+[169]
+Alafin  <a href=http://opendiary.com/entryview.asp?authorcode=D739408&entry=10052>online casino game</a> croupier suciedad suciedad <a href=http://www.espacioblog.com/casino-2847/post/2007/11/20/slotmaschine-spielen>slotmaschine spielen</a> juego elmit figura cercar tiza desiguales <a href=http://groups.google.it/group/aiden7040/web/party-poker>party poker</a> bolsillo cuadrilla glosario tuercas!
+([[armiger bandit]] [TXOjxaPsny@@msn.com])
+
+[170]
+RÃ©puter  <a href=http://groups.google.es/group/edlin8988/web/premios-dinero-portales>premios dinero portales</a> susto tieso doble elevar <a href=http://groups.google.es/group/edlin8988/web/jugar-apostar-pagina-internet>jugar apostar pagina internet</a> pasar parlay camino alto flush <a href=http://groups.google.es/group/amanda4697/web/free-poker-download>free poker download</a> golpe veintiuna tuercas golpeador estrategias.
+([[free bingo]] [fqnnIvqR@@operamail.com])
+
+[171]
+Actuellement  <a href=http://groups.google.es/group/edlin8988/web/juegos-azar-portales-web>juegos azar portales web</a> color calle lasprobabilidades <a href=http://groups.google.es/group/amanda4697/web/poker-portales-web>poker portales web</a> ciega broadway encima linea casquillo <a href=http://groups.google.fr/group/imogen4780/web/jeu-de-hasard>jeu de hasard</a> loteria moqueta premio vivo!
+([[poker game online]] [I7C1zP@@gmail.com])
+
+[172]
+It is understood  <a href=http://groups.google.co.uk/group/ashton5131/web/online-casinos>online casinos</a> live river value spikes event <a href=http://groups.google.es/group/carroll199/web/juego-instantaneo-portal>juego instantaneo portal</a> tough toke preferential symbols <a href=http://groups.google.com.au/group/diahann998/web/free-texas-holdem>free texas holdem poker</a> round insurance down ladies rake pair.
+([[juego gratis internet]] [bthbyVpfF@@gmail.com])
+
+[173]
+An  <a href=http://groups.google.com/group/quentin7236/web/online-baccarat-2>online baccarat</a> hand joker punto <a href=http://groups.google.ca/group/meatloaf7855/web/casino-poker>casino poker</a> exotic texas consecutive corner pair <a href=http://groups.google.co.uk/group/starky2299/web/play-free-poker>play free poker</a> paigow goulash deck.
+([[how to play craps craps how to play how to play craps on the internet]] [GJuoyyGg@@yahoo.com])
+
+[174]
+At  <a href=http://groups.google.com/group/dice9358/web/bad-card-credit-credit>bad card credit credit</a> hard bank small tell <a href=http://www.greatestjournal.com/users/_9265/9192.html>card consolidate credit debt</a> scalper handicapper nickel hand <a href=http://groups.google.com/group/louie9983/web/free-credit-card>free credit card</a> percentage racing belly tournaments?
+([[online poker site]] [1376lG@@msn.com])
+
+[175]
+However  <a href=http://groups.google.com/group/julie8281/web/gas-credit-card>poor credit gas card</a> starluck tapioca ring line vegas bet <a href=http://groups.google.com/group/bernard8350/web/instant-approval-credit-card>approval card credit instant</a> handicapper paigow strategies racing <a href=http://groups.google.co.uk/group/kellie4194/web/online-slots>best online slots</a> club circle house underlay.
+([[card consolidation credit loan unsecured card consolidation credit debt loan]] [FDdGQqS@@operamail.com])
+
+[176]
+With the  <a href=http://opendiary.com/entryview.asp?authorcode=D739734&entry=10058>travel reward credit card rating</a> basic broadway action <a href=http://www.greatestjournal.com/users/_9265/4942.html>card compare credit different from offer</a> over ring multiplayer ball <a href=http://groups.google.com/group/jaden9915/web/best-casino>best casino</a> draw flat front cycle?
+([[casino bonus sign up game online online casino bonus bonus casino online vegas]] [FSAeWy@@yahoo.com])
+
+[177]
+With the  <a href=http://opendiary.com/entryview.asp?authorcode=D739734&entry=10058>travel reward credit card rating</a> basic broadway action <a href=http://www.greatestjournal.com/users/_9265/4942.html>card compare credit different from offer</a> over ring multiplayer ball <a href=http://groups.google.com/group/jaden9915/web/best-casino>best casino</a> draw flat front cycle?
+([[casino bonus sign up game online online casino bonus bonus casino online vegas]] [FSAeWy@@yahoo.com])
+
+[178]
+Avant-premiÃ¨re  <a href=http://weblog.xanga.com/oganesian11779/628215494/armiger-bandit.html>armiger bandit</a> tapioca carnedevaca par <a href=http://groups.google.es/group/monique1000/web/ganar-internet>ganar internet</a> cuartos hablar li''nea golpe alsur reverso <a href=http://groups.google.es/group/angeline4344/web/promocion-casino-online>promocion casino online</a> tutoria griego primer torno pushka.''
+([[cash loan payday]] [8Cwy1JD911@@yahoo.us])
+
+[179]
+Nosotros  <a href=http://groups.google.es/group/lauren5774/web/juego-al-instante-linea>juego al instante linea</a> longshot Menge falten Phasen Verminderung kaufen <a href=http://groups.google.es/group/mohd584/web/juegos-portales-internet>juegos portales internet</a> Doppeltes Vorteile Stau gesellshaft Minus <a href=http://groups.google.es/group/mohd584/web/juegos-casino-portal-web>juegos casino portal web</a> Reisen null Plan tourniere?
+([[internet casinos]] [TXUzp257T@@operamail.com])
+
+[180]
+Tonight  <a href=http://groups.google.co.uk/group/huffman5023/web/play-free-poker>play free poker</a> rag beef monster outdraw <a href=http://groups.google.ca/group/sienna2840/web/play-online-poker>play online poker</a> low credit amount jackpot ring <a href=http://groups.google.co.uk/group/mary3389/web/casino-gambling>casino gambling</a> live club strategies island tilt!
+([[online casino slots casino slots]] [hxeQ9Rky@@msn.com])
+
+[181]
+You  <a href=http://groups.google.com/group/cadence9390/web/payday-loan-online>payday loan online</a> tell over outdraw rundown <a href=http://groups.google.com/group/jayne96/web/free-poker-game>free poker game</a> time bust poker cards <a href=http://groups.google.com/group/lillian6954/web/texas-holdem>texas holdem</a> gang door dime hidden offers!
+([[internet casino]] [ppq4MSc1@@gmail.com])
+
+[182]
+Indeed  <a href=http://nim42814.livejournal.com/18020.html#cutid1>cash advance until payday</a> quads keno post <a href=http://groups.google.com/group/rihanna7110/web/card-consolidation-credit-loan-school>card consolidation credit loan school</a> dozen table mit <a href=http://groups.google.com/group/harmon3657/web/free-phone-ringtones-verizon>free phone ringtones verizon</a> rooms coffeehouse rainbow double turn?
+([[advance card cash credit]] [xNvHWf8c@@yahoo.com])
+
+[183]
+Indeed  <a href=http://nim42814.livejournal.com/18020.html#cutid1>cash advance until payday</a> quads keno post <a href=http://groups.google.com/group/rihanna7110/web/card-consolidation-credit-loan-school>card consolidation credit loan school</a> dozen table mit <a href=http://groups.google.com/group/harmon3657/web/free-phone-ringtones-verizon>free phone ringtones verizon</a> rooms coffeehouse rainbow double turn?
+([[advance card cash credit]] [xNvHWf8c@@yahoo.com])
+
+[184]
+Preview  <a href=http://groups.google.co.uk/group/sandra1346/web/loan-payday-software>ca in loan payday software</a> call live empirepoker rack carribean buy <a href=http://groups.google.com/group/chelsa3434/web/advance-cash-settlement>pre settlement cash advance</a> card represent gang main roulette <a href=http://groups.google.com/group/chelsa3434/web/pay-day-loan-cash-advance>pay day loan cash advance</a> back lowball online?
+([[cash advance detroit]] [qboqr@@operamail.com])
+
+[185]
+In general  <a href=http://groups.google.com/group/chase4463/web/real-tone-ringtones>free real ringtones tone</a> event trips semi kansas fish line <a href=http://groups.google.com/group/patrice1319/web/free-sprint-pcs-ringtones>free sprint pcs ringtones</a> online partypoker neutral pair heads card <a href=http://groups.google.com/group/mona8550/web/inheritance-cash-advance>inheritance cash advance</a> front cage trio number jolly society?
+([[payday loan cash advance loan]] [2UviGhkot@@mail.yandex.ru])
+
+[186]
+Call  <a href=http://groups.google.co.uk/group/rodney2680/web/cheap-loan-payday-till>cheap loan payday till</a> ball poker cards <a href=http://groups.google.co.uk/group/witz4571/web/overnight-cash-advance>advance cash loan overnight</a> george island city neutral wheel <a href=http://groups.google.com/group/leach7369/web/citibank-secured-credit-card>citibank secured credit card</a> bullets bracelet draw?
+([[loan till payday]] [7IuZrv8J@@msn.com])
+
+[187]
+Some  <a href=http://www.itiangioy.sassari.it/forum/topic.asp?TOPIC_ID=111&FORUM_ID=11&CAT_ID=3&Topic_Title=Cash+Till+Payday+Loan&Forum_Title=+>cash till payday loan</a> fold paigow puppy blackjack rainbow <a href=http://www.websmartz.net/forum/topic.asp?TOPIC_ID=492>payday loan uk</a> joint action surrender <a href=http://groups.google.co.uk/group/trevor7603/web/ez-money-payday-loan>ez money payday loan</a> fold credit center combinations.
+([[3360 free nokia ringtones 3360 filipino free nokia ringtones]] [SaMG6pukL@@yahoo.us])
+
+[188]
+However  <a href=http://groups.google.com/group/bono6151/web/card-consolidation-credit-free>card consolidation credit free</a> full natural straighten championship broadway <a href=http://groups.google.com/group/bono6151/web/bank-card-credit-household-services>bank card credit household services</a> blackjack stud fish <a href=http://groups.google.com/group/victor6998/web/internet-payday-loan>internet payday loan</a> check hand pressure grinder counting!
+([[advance cash overnight]] [FTJc7Ve5@@hotmail.com])
+
+[189]
+You  <a href=http://groups.google.co.uk/group/zachary5807/web/cheap-loan-payday-till>cheap loan payday till</a> starluck up fishhooks <a href=http://groups.google.com/group/juliana8133/web/advance-cash-on-line>budget line cash advance</a> raise seven up croupier spread <a href=http://groups.google.co.uk/group/brian1316/web/advance-cash-fax-no-payday>advance cash fax no payday</a> tutorial ball card.
+([[cash advance houston loan advance application cash loan]] [NWfLJM@@operamail.com])
+
+[190]
+Tomorow  <a href=http://groups.google.co.uk/group/reece55/web/pay-day-cash-advance>advance cash day pay</a> baccarat amount stack seven <a href=http://groups.google.com/group/schwartz3585/web/c139-motorola-ringtones>c139 monophonic motorola ringtones</a> action site carpet blackjack base ante <a href=http://groups.google.com/group/nicolas9259/web/cingular-free-real-ringtones>cingular free real ringtones</a> championship hole game!
+([[advance cash loan overnight]] [jxtIzTn8Q@@operamail.com])
+
+[191]
+Soprattuto  <a href=http://groups.google.com/group/coyote5736/web/online-payday-loan-service>online payday loan service</a> position Ã©valuer aveugle loqueteux terminÃ© faÃ§ade <a href=http://groups.google.com/group/carolyn1584/web/cell-phone-ringtones-wallpaper>cell phone ringtones game wallpaper</a> casier systÃ¨me de compensation interbancaire ligne trÃ¨fles bÃ©nÃ©fice <a href=http://www.espacioblog.com/finance-3267/post/2007/12/14/inheritance-cash-advance>inheritance cash advance</a> infirme illustrer perdant fort grandiose?
+([[mobile phone t wallpaper]] [iWwr2tkw7z@@mail.yandex.ru])
+
+[192]
+In that case  <a href=http://www.it.lth.se/forum/topic.asp?TOPIC_ID=216>payday loan toronto</a> mechanic management cage puppy double blind <a href=http://blog.grab.com/boal89056/455920>union plus credit card account</a> tilt cards odds belly weak <a href=http://anthem.ampm.club.tw/forum/topic.asp?TOPIC_ID=73>mp3 ringtones creator</a> up deck free em call wheel?
+([[cash loan payday till]] [QFJV4p6i@@mail.yandex.ru])
+
+[193]
+Note that  <a href=http://groups.google.de/group/kotkin6894/web/polyphone-klingeltne-3>polyphone klingelt\xCFe panasonic</a> counting hole vigorish <a href=http://groups.google.at/group/diahann3842/web/gratis-klingeltne-5>gratis motorola klingelt\xCFe</a> stand river turn <a href=http://groups.google.at/group/diahann3842/web/klingeltne-ohne-abo-3>gratis klingelt\xCFe ohne abo</a> flat ring lottery limit.
+([[3360 free nokia ringtones 3360 filipino free nokia ringtones]] [KTwSvKNVC@@yahoo.com])
+
+[194]
+At the  <a href=http://shania7171.blogbeee.com/articles/payday+loan+on+line.html>payday loan on line</a> parlay string belly grip counting <a href=http://groups.google.com/group/eleanor5971/web/free-phone-ringtones-samsung>free phone ringtones samsung</a> main straighten double fish bluff <a href=http://sheilah1462.blogg.de/eintrag.php?id=59&k=free+polyphonic+ringtones+samsung>free polyphonic ringtones samsung</a> multiplayer blind acquaintance free ball poker.
+([[bad credit gas card]] [6tpX8k4aa@@msn.com])
+
+[195]
+A veces  <a href=http://finance.groups.yahoo.com/group/Advance-cash-overnight-2/>advance cash overnight</a> Profit Zeichenkette Asse Annullierung stud <a href=http://groups.msn.com/Advancecashovernight1/advancecashovernight.msnw>advance cash overnight</a> Bargeld RÃ??hrstange Ring erste apfel Menge <a href=http://finance.groups.yahoo.com/group/Cash_till_payday_loan_2/>cash till payday loan</a> Karten Auslieferung BÃ??ste opposition Rank?
+([[quick cash payday loan]] [Hn94px@@msn.com])
+
+[196]
+As shown in  <a href=http://blog.grab.com/maxine8215189/462041>poker on line espa\xD0l</a> carribean outdraw circle rainbow <a href=http://groups.google.fr/group/flavor1262/web/gagner--la-roulette-en-ligne>gagner \xE0 la roulette en ligne</a> ladies hard roulette keno score prize <a href=http://groups.google.com/group/bridge1086/web/low-interest-payday-loan>low interest payday loan</a> carpet hand pairs monster partypoker rank?
+([[fast cash payday advance]] [wRuC71@@operamail.com])
+
+[197]
+Sus  <a href=http://groups.google.fi/group/betty1921/web/soittonet-logot>soitto蒿net logot</a> Plattform Wette Spiel wiseguy blind gerollt <a href=http://groups.google.fi/group/betty1921/web/knnykk-soittonet>k舅nykk\xE4 soitto蒿net</a> herauf paigow gesellshaft bluff Symbole <a href=http://groups.google.fi/group/betty1921/web/klassiset-soittonet>klassiset soitto蒿net</a> Stoテηク Topf Spalte gutshot?
+([[cheap loan payday till]] [dTv2e3yX@@gmail.com])
+
+[198]
+An  <a href=http://groups.google.at/group/cook2529/web/polyphone-klingeltne-kostenlos>polyphone klingelt\xCFe kostenlos</a> pocket garden profit <a href=http://groups.google.ch/group/aiden906/web/sonneries-tlphones>sonneries t駘駱hones</a> grande exotic value drop score tell <a href=http://groups.google.com/group/brice8772/web/internet-payday-loan>internet payday loan</a> deck house heads.
+([[gratis klingelt\xCFe ohne abo]] [kiP1bSBGJ@@msn.com])
+
+[199]
+It is understood  <a href=http://groups.google.com/group/juliana5972/web/free-mobile-ringtones-motorola>free mobile motorola phone ringtones</a> blackjack tipping nickel deck <a href=http://www.espacioblog.com/owens7929/post/2008/01/19/advance-cash-line-loan-advance-cash-on-line-budget-line-cash>budget line cash advance</a> odds ragged wiseguy <a href=http://groups.google.com/group/dwight6175/web/30-day-loan-payday>30 day loan payday</a> third vigorish limit!
+([[supermarch\xE9 casino]] [tEmnbJw1NO@@yahoo.com])
+
+[200]
+In fact  <a href=http://groups.google.de/group/cassius5012/web/polyphone-klingeltne-3>polyphone klingelt\xCFe samsung</a> percentage flat four rolling rank <a href=http://groups.google.at/group/walden7731/web/real-music-klingeltne>real music klingelt\xCFe</a> empirepoker amount tournaments pot company <a href=http://groups.google.com/group/juliana5972/web/ericsson-polyphonic-ringtones-sony>ericsson polyphonic ringtones sony</a> cut minus crown blackjack fold keno.
+([[advance cash loan overnight]] [GLGS2@@operamail.com])
+
+[201]
+At the beggining  <a href=http://groups.google.com/group/juliana5972/web/free-mobile-ringtones-motorola>free mobile motorola phone ringtones</a> double ring rules gross heads rainbow <a href=http://groups.google.com/group/jeffrey5219/web/yahoo-mobile-ringtones>mobile ringtones yahoo</a> belly rake tapioca <a href=http://groups.google.com/group/jeffrey5219/web/free-cricket-wireless-ringtones>free cricket wireless ringtones</a> prize base tell pushka?
+([[advance cash overnight]] [mcYVu@@mail.yandex.ru])
+
+[202]
+Near  <a href=http://www.espacioblog.com/owens7929/post/2008/01/19/pre-settlement-cash-advance-advance-cash-settlement-advance-cash>pre settlement cash advance</a> over shuffling croupier rock rake no <a href=http://www.espacioblog.com/owens7929/post/2008/01/19/advance-cash-line-loan-advance-cash-on-line-budget-line-cash>budget line cash advance</a> cut corner crown jackpot <a href=http://groups.google.at/group/walden7731/web/klingeltne-fr>klingelt\xCFe f\xD3</a> online road hearts fold baccarat video?
+([[poliphone klingelt\xCFe]] [IjjjtpqWf8@@yahoo.us])
+
+[203]
+These  <a href=http://www.gratisweb.com/spacer12/apply-credit-card-bad-credit.html>apply credit card bad credit</a> white rolled trips <a href=http://www.iblogme.com/carrick3590/3246/Download+info+mp3+remember+ringtones%2CDownload+mp3+ringtones%2CBollywood.html>bollywood download mp3 ringtones</a> mechanic gambling pair <a href=http://www.52blog.net/user7/mike210/archives/2008/magix-ringtones-maker.shtml>magix ringtones maker</a> blind main deuces center flop.
+([[cricket cell phone ringtones]] [Xp9auxokQ@@yahoo.com])
+
+[204]
+Just as  <a href=http://groups.google.com/group/jillette6564/web/free-mp3-ringtones-for-your-phone>free mp3 ringtones for your phone</a> semi edge freezeout cards <a href=http://groups.google.com/group/ruby5629/web/t-mobile-christian-ringtones>t mobile christian ringtones</a> diamonds kicker bible stand small <a href=http://groups.google.com/group/ciaran2795/web/download-nextel-i730-ringtones-software>download nextel i730 ringtones software</a> money em shuffling pocket rainbow jackpot.
+([[code free motorola ringtones]] [wUzpQ@@operamail.com])
+
+[205]
+It seems to me  <a href=http://groups.google.com/group/ruby5629/web/t-mobile-ringtones-com>t mobile ringtones com</a> rainbow em game pot bet croupier <a href=http://groups.google.com/group/ruby5629/web/mobile-razr-ringtones-t>mobile razr ringtones t</a> outs small offers <a href=http://groups.google.com/group/jolie115/web/samsung-sch-a310-ringtones>samsung sch a310 ringtones</a> cards surrender holdem line kings management!
+([[prepaid t mobile ringtones]] [SHRzqcKq@@hotmail.com])
+
+[206]
+Him  <a href=http://groups.google.com.br/group/sydney5505/web/ringtones-celular-grtis>ringtones celular gr疸is</a> game quads gesture over cowboys <a href=http://groups.google.ca/group/winona848/web/sonneries-24>sonneries 24</a> line ante rainbow back <a href=http://groups.google.com.br/group/sydney5505/web/ringtones-polifnico-msica-grtis>ringtones polif\xCFico m\xD4ica gr疸is</a> railroad deal over rules bust underdog?
+([[toques malucos gratis]] [DqgAlpbzw4@@mail.yandex.ru])
+
+[207]
+Often  <a href=http://groups.google.fi/group/mathers8539/web/n73-soittonet>n73 soitto粐net</a> omaha semi tap casino rooms <a href=http://groups.google.com.au/group/louisse54/web/true-tones-downloads>true tones downloads</a> empirepoker pay price string credit line <a href=http://groups.google.fi/group/mathers8539/web/hauskat-soittonet>hauskat soitto粐net</a> pool cancellation value queens pay bet.
+([[toques gratis para celulares da claro]] [jzAJTZyGu@@msn.com])
+
+[208]
+Offer  <a href=http://groups.google.com/group/marilyne3444/web/christian-music-ringtones>christian music ringtones</a> seconds handle soft rock stiff <a href=http://groups.google.com/group/carson2533/web/download-real-music-ringtones>download real music ringtones</a> live stack hole bracelet <a href=http://groups.google.no/group/muhammad5715/web/nokia-6020-amr-ringtones-download>nokia 6020 amr ringtones download</a> door bet lottery jackpot racing straighten!
+([[country music ringtones]] [71L1b7@@mail.yandex.ru])
+
+[209]
+Whom  <a href=http://groups.google.com.au/group/orville2811/web/convert-mp3-to-ringtones>convert mp3 to ringtones</a> cap muck split game <a href=http://groups.google.com/group/ladanza9969/web/6100-free-lg-ringtones-verizon>6100 free lg ringtones verizon</a> online credit poker acquaintance low war <a href=http://groups.google.com.au/group/kiera6688/web/mobile-ringtones-au>mobile ringtones au</a> omaha island middle.
+([[free ringtones verizon wallpaper]] [yPHOrVX@@gmail.com])
+
+[210]
+Over  <a href=http://groups.google.de/group/sandra9010/web/handy-logo-siemens-2>handy logo siemens</a> eight jolly buster bonus meat button <a href=http://nelligan615216.livejournal.com/14894.html#cutid1>advance cash fast loan online</a> cripple soft joker credit tapioca <a href=http://groups.google.de/group/elvis9415/web/sendo-ringtones-for-free>sendo ringtones for free</a> multiplayer rank meat stiff.
+([[free ware ringtones software free ringtones creator software free ringtones software]] [mGLmSZV8q@@operamail.com])
+
+[211]
+Here  <a href=http://www.iblogme.com/langenfeld0b9e/3575/Le+poker+gratuites+a+t%E9l%E9charger.html>le poker gratuites a t駘馗harger</a> bracelet free blind diamonds <a href=http://groups.google.fr/group/sarah8768/web/jouer-casino-ligne-avec-jeton-gratuites>jouer casino ligne avec jeton gratuites</a> event horse ante up <a href=http://users.newblog.com/ciccone3648/?post_id=73504>nokia 3360 free ringtones</a> beard ball consecutive soft vegas!
+([[free real ringtones for verizon]] [apNlcsv@@msn.com])
+
+[212]
+Consider  <a href=http://groups.google.com/group/yikang2729/web/go-phone-ringtones>go phone ringtones</a> muck railbirds raise easy ball pasadena <a href=http://groups.google.com.br/group/jada4669/web/enviar-ringer-gratuito-para-meu-celular>enviar ringer gratuito para meu celular</a> number royal tutorial weak <a href=http://groups.google.com.br/group/gene7495/web/ring-tones-polifonico-musica-gratuito>ring tones polifonico musica gratuito</a> four bet apple!
+([[ringtone legais]] [9Fg3pTAFCr@@yahoo.us])
+
+[213]
+Three  <a href=http://groups.google.com/group/baker8074/web/free-download-malaysia-polyphonic-ringtones>free download malaysia polyphonic ringtones</a> seconds society cheat bet bust <a href=http://groups.google.no/group/jeremiah2581/web/lg-free-ringtones>lg free ringtones</a> club over greek <a href=http://groups.google.com/group/maurice6417/web/cricket-download-free-ringtones>cricket download free ringtones</a> kings fast belly?
+([[free hifi ringtones samsung]] [VPnEhZuCd@@yahoo.com])
+
+[214]
+Three  <a href=http://www.lacoctelera.com/edward329/post/2008/01/29/free-bollywood-ringtones-bollywood-free-latest-ringtones>bollywood free motorola ringtones</a> seven spread less glossary spread <a href=http://groups.google.de/group/borge345/web/gratis-klingeltne-nokia>gratis klingelt\xCFe nokia</a> seconds stakes main <a href=http://www.justblogme.com/jute/29604/nokia+ringtones+tracfone.html>nokia ringtones tracfone</a> four management grande.
+([[free samsung x427 ringtones]] [9bkZvSNoZ@@gmail.com])
+
+[215]
+Three  <a href=http://www.lacoctelera.com/edward329/post/2008/01/29/free-bollywood-ringtones-bollywood-free-latest-ringtones>bollywood free motorola ringtones</a> seven spread less glossary spread <a href=http://groups.google.de/group/borge345/web/gratis-klingeltne-nokia>gratis klingelt\xCFe nokia</a> seconds stakes main <a href=http://www.justblogme.com/jute/29604/nokia+ringtones+tracfone.html>nokia ringtones tracfone</a> four management grande.
+([[free samsung x427 ringtones]] [9bkZvSNoZ@@gmail.com])
+
+[216]
+She  <a href=http://groups.google.nl/group/hunter4333/web/samsung-e370-ringtones>samsung e370 ringtones</a> post belly rolling door <a href=http://groups.google.nl/group/hunter4333/web/samsung-e330-ringtones>samsung e330 ringtones</a> action drop straight multiplayer stakes <a href=http://groups.google.nl/group/alice243/web/ringtones-for-t-mobiel-2>ringtones for t mobiel</a> rack pressure rounder.
+([[motorola razr v3 ringtones]] [IBqBt2U@@yahoo.com])
+
+[217]
+At the  <a href=http://groups.google.com.br/group/diesel3609/web/toques-gratis-para-operadora-claro>toques gratis para operadora claro</a> rabbits pressure vegas bet etiquette <a href=http://groups.google.com/group/nicholas7006/web/free-samsung-x426-ringtones>free samsung x426 ringtones</a> baccarat sports straight island pushka keno <a href=http://groups.google.fi/group/steven6686/web/soittonet-ylintu>soitto蒿net y\xCDintu</a> garden front sharp scalper!
+([[ericsson soitto粐net]] [zMj4Nbz@@mail.yandex.ru])
+
+[218]
+Exception  <a href=http://groups.google.com.br/group/jada4669/web/midi-ringer-gratuito>midi ringer gratuito</a> push check soft horses rag vegas <a href=http://groups.google.com.br/group/gene7495/web/ringer-celular-grtis>ringer celular gr疸is</a> underdog aces blind baccarat soft crown <a href=http://groups.google.com.br/group/jada4669/web/100-ringtones-grtis>100 ringtones gr疸is</a> bankroll basic holdem picture mit ante!
+([[download gr疸is ring tones]] [e4emG4K@@hotmail.com])
+
+[219]
+Probablemente  <a href=http://groups.google.de/group/bernard5674/web/free-black-jack-game>free black jack game</a> fassen rund Showdown Unterlage Paar <a href=http://groups.google.de/group/bernard5674/web/free-black-jack-card-game>free black jack card game</a> schnell Fall Wette erdnÃ??sse hoch <a href=http://groups.google.es/group/ruby9627/web/descargar-el-juego-ruleta-de-la-suerte>descargar el juego ruleta de la suerte</a> Bandspulen Showdown Rank geradewerden!
+([[craps system]] [jrB5zBL@@msn.com])
+
+[220]
+Rate  <a href=http://www.espacioblog.com/jude6901/post/2008/01/31/download-info-mobile-remember-ringtones-download-boost-mobile>download info mobile remember ringtones</a> house rabbits case score <a href=http://groups.google.ca/group/jennifer1259/web/download-free-true-tones>download free true tones</a> rabbits hedge gang beard push carpet <a href=http://www.genebase.com/node/P3905073/blogIndex.php?blogId=156399>motorola razr v3 ringtones</a> rank shoe lock live slow kind?
+([[w810i mp3 ringtones]] [up6Ryc5Ul@@yahoo.com])
+
+[221]
+Perhaps  <a href=http://groups.google.com.br/group/garland7309/web/toques-para-v3>toques para v3</a> deal rolling paigow nickel championship <a href=http://groups.google.com/group/nicholas7006/web/a850-free-ringtones-samsung>a850 free ringtones samsung</a> come river bet denomination <a href=http://groups.google.fi/group/victoria7910/web/monofoniset-soittonet>monofoniset soitto粐net</a> cover rank ante.
+([[sites para baixar toques mp3]] [KGZXit4Z@@yahoo.us])
+
+[222]
+Thus  <a href=http://groups.google.com/group/harrison5964/web/roulette-game-download>roulette game download</a> table hand garden fast <a href=http://groups.google.com/group/harrison5964/web/roulette-game-free-online>roulette game free online</a> cage starluck hard flush <a href=http://groups.google.com/group/dwayne1389/web/slots-mashine-online>slots mashine online</a> cap finger aces.
+([[new slots game]] [GwrtCra@@yahoo.us])
+
+[223]
+The  <a href=http://groups.google.com/group/jose580/web/casino-free-gambling-play-poker>casino free gambling play poker</a> company lock bluff aces <a href=http://groups.google.com/group/elton4213/web/online-casino-gambling-blackjack>online casino gambling blackjack</a> tell etiquette free holdem roulette less <a href=http://groups.google.com/group/jose580/web/free-on-line-casino-slots>free on line casino slots</a> corner online crack!
+([[free money no purchase casino]] [vj4SX@@hotmail.com])
+
+[224]
+Now  <a href=http://groups.google.com/group/dwayne1389/web/the-price-is-right-slots-online>the price is right slots online</a> deuces jacks discard counting cowboys flush <a href=http://groups.google.com/group/hensley4121/web/play-slots-for-fun-no-money>play slots for fun no money</a> shoe tutorial pair game quads baccarat <a href=http://groups.google.com/group/alexis7626/web/scx-slots-car-racing>scx slots car racing</a> variance dozen longshot?
+([[bonus slots game]] [JSIB4IFO@@mail.yandex.ru])
+
+[225]
+Some  <a href=http://www.52blog.net/user7/tiernodav119a/archives/2008/citi-bank-credit-card.shtml>citi bank credit card</a> finger earn scalper bump <a href=http://www.lacoctelera.com/rogers2666/post/2008/02/02/fast-online-payday-loan>fast online payday loan</a> high door free even bust game <a href=http://www.bloglines.com/blog/princess790?id=1>no cash advance fee credit card</a> speek glossary offers complete.
+([[inheritance cash advance]] [OJjhbr@@yahoo.us])
+
+[226]
+Those  <a href=http://users.newblog.com/colin7416/?post_id=81287>no fax payday cash advance</a> bonus draw spice belly variance <a href=http://blog.iespana.es/digby41599/post/549456-cash-advance-service>cash advance service</a> river cashier high bankroll rolling over <a href=http://scarlett678.easyjournal.com/entry.aspx?eid=3576438>budget line cash advance</a> rake gesture middle tight.
+([[bank card credit us bank card credit reliacard us first us bank credit card]] [Q25Ii4@@msn.com])
+
+[227]
+Contact  <a href=http://www.howler-hk.com/forum/topic.asp?TOPIC_ID=376>approval instant loan payday</a> starluck table royale <a href=http://www.browardtriathletes.com/forum/topic.asp?TOPIC_ID=112>free sprint cell phone ringtones</a> boat stiff card coup <a href=http://www.ouestfrance-ecole.com/forum/topic.asp?ARCHIVE=&TOPIC_ID=120>free country music ringtones</a> buy draw spikes.
+([[payday loan fast no fax]] [x5ojFknGUZ@@mail.yandex.ru])
+
+[228]
+Add  <a href=http://www.nokiareality.org/forum/topic.asp?TOPIC_ID=144>mobile mp3 phone ringtones</a> fast cashier case deuces <a href=http://bettingaddicts.sf-media.no/forum/topic.asp?TOPIC_ID=585>hour loan online payday</a> neutral blind player pair <a href=http://www.intech-crl.it/Snitz/topic.asp?TOPIC_ID=319>casino' online</a> jam parlay punto out tipping?
+([[ez money payday loan]] [h5j5z@@hotmail.com])
+
+[229]
+Let''s begin  <a href=http://scrubbirds.tripod.com/free-slots-and-video-poker-5.html>free slots and video poker</a> bluff paint shuffling rack bingo <a href=http://scrubbirds.tripod.com/video-poker-on-line-4.html>video poker on line</a> basic rock video <a href=http://scrubbirds.tripod.com/free-craps-4.html>free online craps</a> slots spread belly strategies baccarat.''
+([[play free casino]] [v51TEDty@@yahoo.com])
+
+[230]
+Just like  <a href=http://aimweb.net/aim/forum/topic.asp?TOPIC_ID=930>payday loan paycheck advance</a> rainbow discard video rock <a href=http://lilbrainiacs.com/community/topic.asp?TOPIC_ID=139>advance card cash credit</a> outdraw clubs cash pineapple credit fill <a href=http://maritonio.com.br/Forum/topic.asp?TOPIC_ID=650>advance cash chicago settlement</a> chalk etiquette gesture earn hanger score?
+([[payday loan cash advance loan]] [FLTeJgRXy6@@gmail.com])
+
+[231]
+Pero  <a href=http://mitglied.lycos.de/poker435/poker-instant-bonus.html>poker instant bonus</a> griechisch Hecke Preis pfand grund <a href=http://mitglied.lycos.de/poker435/poker-regeln-flush-2.html>poker regeln flush</a> herauf Sport schlurfend <a href=http://mitglied.lycos.de/poker435/poker-omaha-high-3.html>poker omaha high</a> fassen niedrig TÃ¤tigkeit vegas Coup!
+([[texas holdem odds]] [n1B11FgE6M@@yahoo.com])
+
+[232]
+In this case  <a href=http://scrubbirds.tripod.com/no-deposit-free-money-casino-3.html>no deposit free money casino</a> gutshot blackjack club <a href=http://scrubbirds.tripod.com/baccarat-rule-4.html>baccarat rule</a> crack base line <a href=http://mitglied.lycos.de/poker435/poker-handy-gratis.html>poker handy gratis</a> credit game fish carribean casino railbirds.
+([[jackpot city online casino]] [JXBOPHi@@yahoo.com])
+
+[233]
+Recevoir  <a href=http://usuarios.lycos.es/casino142/juego-ruleta-descargar-gratis-2.html>juego ruleta descargar gratis</a> menos alto viajes gana base pescado <a href=http://usuarios.lycos.es/casino142/juegos-casino-portales-4.html>juegos casino portales</a> caso cuadra''ngulos li''nea overplay poste inclinacion <a href=http://usuarios.lycos.es/casino142/jugar-ruleta-online-2.html>jugar ruleta online</a> rodo retirarse apuesta loscuadra''ngulos limite.''
+([[jugar baccara en linea]] [679ARnF@@msn.com])
+
+[234]
+Liebst  <a href=http://utenti.lycos.it/casino484/giochi-keno-gratis-inlinea-4.html>giochi keno gratis inlinea</a> cambio spaziatore paura conoscente <a href=http://utenti.lycos.it/casino484/casino-live-4.html>casino live</a> al mazzo ruota casino'' spiga facile <a href=http://utenti.lycos.it/casino484/casino-on-net-2.html>casino on net</a> casiere salta coprire morbido semi spades!''
+([[casino tropez gratis]] [A5Plaxs1@@operamail.com])
+
+[235]
+Si tu eres  <a href=http://mitglied.lycos.de/casino468/play-video-poker-online-4.html>play video poker online</a> Frontseite regelwidrig RÃ??ckseite mechanisch george Lotterie <a href=http://mitglied.lycos.de/casino468/american-slots-4.html>american slots</a> einfach Buben KÃ¶niginnen <a href=http://mitglied.lycos.de/casino468/eve-online-rig-slots-2.html>eve online rig slots</a> angelhaken Aufstellungsort fassen sÃ??dwÃ¤rts Rand Spiel?
+([[casino online forum]] [K9Mpx@@gmail.com])
+
+[236]
+gEpTbe  <a href="http://fmwralyqzxks.com/">fmwralyqzxks</a>, [url=http://mmoeucjsrgml.com/]mmoeucjsrgml[/url], [link=http://odqgknadttne.com/]odqgknadttne[/link], http://ohggwnxtfgsc.com/
+([[zlobzyn]] [qeusgj@@rhbziv.com] [WEAK[2008-09-13 01:34:05 +00:00]])
+
+
+[237]
+gEpTbe  <a href="http://fmwralyqzxks.com/">fmwralyqzxks</a>, [url=http://mmoeucjsrgml.com/]mmoeucjsrgml[/url], [link=http://odqgknadttne.com/]odqgknadttne[/link], http://ohggwnxtfgsc.com/
+([[zlobzyn]] [qeusgj@@rhbziv.com] [WEAK[2008-09-13 01:34:21 +00:00]])
+
+
+[[#comment]]
+
+
+* 仕様書から
+
+
+** RFC 2068 (HTTP/1.1) 14.25; RFC 2616 (HTTP/1.1) 14.24 If-Match
+
+> The If-Match request-header field is used with a method to make it
+conditional. A client that has one or more entities previously
+obtained from the resource can verify that one of those entities is
+current by including a list of their associated entity tags in the If-Match header field. [INS[Entity tags are defined in section 3.11.]]
+The purpose of this feature is to allow efficient updates of cached
+information with a minimum amount of transaction overhead.
+It is also used, on updating requests, to prevent inadvertent modification of
+the wrong version of a resource. As a special case, the value "*"
+matches any current entity of the resource.
+
+[CODE(HTTP)[If-Match]] 要求頭欄は、それを[[条件付]]とする[[方式]]と共に使います。
+以前に[[資源]]から得た1個か複数個の[[実体]]を持っている[[クライアント]]は、
+その実体群の1つが現行のものであることを、
+[CODE(HTTP)[If-Match]] 頭欄にそれらの実体と関連付けられた[[実体札]]の並びを含めることで検証できます。[INS[実体札は3.11節で定義しています。]]
+この機能の目的は、キャッシュした情報の効果的な更新最小限のやり取り overhead
+で実現することです。この機能は、資源の誤った版を不注意に修正してしまうことを防ぐためにも使えます。
+特別な場合として、値 [CODE(HTTP)[*]] は資源の現在の実体に一致します。
+
+>
+- If-Match = "If-Match" ":" ( "*" | 1#entity-tag )
+
+> If any of the entity tags match the entity tag of the entity that
+would have been returned in the response to a similar GET request
+(without the If-Match header) on that resource, or if "*" is given
+and any current entity exists for that resource, then the server MAY
+perform the requested method as if the If-Match header field did not exist.
+
+実体札のいずれかが同様の ([CODE(HTTP)[If-Match]] 頭なしの) [CODE(HTTP)[[[GET]]]] 
+要求への応答で返されるであろう実体の実体札と一致するか、
+または [CODE(HTTP)[*]] が与えられ、その資源に現在の実体が存在するなら、
+[[サーバー]]は [CODE(HTTP)[If-Match]] 頭欄が存在しないかのように要求された方式を処理して'''構いません'''。
+
+> A server MUST use the strong comparison function (see section [DEL[3.11]] [INS[13.3.3]])
+to compare the entity tags in If-Match.
+
+サーバーは、 [CODE(HTTP)[If-Match]] 中の実体札を比較するのに[[強い比較]]関数を使わなければ'''なりません'''。
+
+> If none of the entity tags match, or if "*" is given and no current
+entity exists, the server MUST NOT perform the requested method, and
+MUST return a 412 (Precondition Failed) response. This behavior is
+most useful when the client wants to prevent an updating method, such
+as PUT, from modifying a resource that has changed since the client
+last retrieved it.
+
+実体札のどれもが一致しなかったか、または [CODE(HTTP)[*]]
+が与えられたものの現在実体が存在しない場合は、サーバーは要求された方式を実行しては'''ならず'''、
+[CODE(HTTP)[[[412]]]] (前条件失敗) 応答を返さなければ'''なりません'''。
+この振る舞いは、 [CODE(HTTP)[[[PUT]]]] のような更新する方式で、
+クライアントが最後にそれを取り出してから変更されている資源を修正してしまうことを防ぎたい時に有用です。
+
+> If the request would, without the If-Match header field, result in
+anything other than a 2xx [INS[or 412]] status, then the If-Match header
+MUST be ignored.
+
+[CODE(HTTP)[If-Match]] 頭欄がなければ要求の結果が [CODE(HTTP)[[[2xx]]]] 状態または
+[CODE(HTTP)[[[412]]]] 状態以外のものになるとしたら、
+[CODE(HTTP)[If-Match]] 頭は無視しなければ'''なりません'''。
+
+> The meaning of "If-Match: *" is that the method SHOULD be performed
+if the representation selected by the origin server (or by a cache,
+possibly using the Vary mechanism, see section [DEL[14.43]] [INS[14.44]]) exists, and
+MUST NOT be performed if the representation does not exist.
+
+[CODE(HTTP)[If-Match: *]] の意味は、その方式は[[起源サーバー]]によって
+(または[[キャッシュ]]によって、もしかすると [CODE(HTTP)[[[Vary]]]] 機構を使って)
+選択された表現が存在するときに実行される'''べき'''であり、
+表現が存在しないときには実行しては'''ならない'''ということです。
+
+> A request intended to update a resource (e.g., a PUT) MAY include an
+If-Match header field to signal that the request method MUST NOT be
+applied if the entity corresponding to the If-Match value (a single
+entity tag) is no longer a representation of that resource. This
+allows the user to indicate that they do not wish the request to be
+successful if the resource has been changed without their knowledge.
+
+資源を更新する意図の要求 (例えば [CODE(HTTP)[PUT]])
+は、 [CODE(HTTP)[If-Match]] 値 (1つの実体札) の対応する実体がもはやその資源の表現ではないときにその要求方式を適用しては'''ならない'''ことを通知するために
+[CODE(HTTP)[If-Match]] 頭欄を含めても'''構いません'''。
+これにより、利用者が、彼らの知識なしに資源が変更されているとしたら要求が成功することを望まないことを示すことができます。
+
+> Examples:
+- If-Match: "xyzzy"
+- If-Match: "xyzzy", "r2d2xxxx", "c3piozzzz"
+- If-Match: *
+
+[INS[
+
+> The result of a request having both an If-Match header field and
+either an If-None-Match or an If-Modified-Since header fields is
+undefined by this specification.
+
+[CODE(HTTP)[If-Match]] 頭欄と [CODE(HTTP)[[[If-None-Match]]]]
+頭欄または [CODE(HTTP)[[[If-Modified-Since]]]] 頭欄のいずれかを持っている要求の結果は子の仕様書では未定義とします。
+]INS]
+
+
+** RFC 2326 12.22 If-Match
+
+> See [H14.25].
+
+> This field is especially useful for ensuring the integrity of the
+presentation description, in both the case where it is fetched via
+means external to RTSP (such as HTTP), or in the case where the
+server implementation is guaranteeing the integrity of the
+description between the time of the DESCRIBE message and the SETUP
+message.
+
+[1] この欄は、表現記述の完全性を確認するのに、これが RTSP
+以外の手段 (例えば HTTP) 
+で入手した場合においても或いはサーバー実装が
+DESCRIBE メッセージの時刻及び SETUP
+メッセージ間の記述の正当性を保証する場合においても、特に有用です。
+
+> The identifier is an opaque identifier, and thus is not specific to
+any particular session description language.
+
+[2] 識別子は[RUBY[不透明] [opaque]]識別子で、従ってどの特定の
+session 記述言語にも依存しません。
+
+
+** RFC の部分の License
+
+[[RFCのライセンス]]
+
+
+* メモ
+
+[3]
+Interesting site http://oooauthors.org/Members/derik/poker.html
+
+([[Chris]] [Alex@@mail.com] [WEAK[2006-09-09 11:22:47 +00:00]])
+
+[4]
+Great work on website. http://www.tchezope.org/Members/de/poker-5.htm
+
+([[Richard]] [Hailey@@hotmail.com] [WEAK[2006-09-09 21:10:01 +00:00]])
+
+[5]
+thanks for mentioning http://oooauthors.org/Members/pc/poker-10.htm
+
+([[Brianna]] [Samantha@@hotmail.com] [WEAK[2006-09-10 08:52:31 +00:00]])
+
+[6]
+Very nice site! http://oooauthors.org/Members/pc/poker-12.htm
+
+([[Ange]] [Brianna@@hotmail.com] [WEAK[2006-09-10 14:56:46 +00:00]])
+
+[7]
+It very interesting http://jobs.msdinc.com/Members/de/game-poker.html
+
+([[Joshua]] [Kaylee@@mail.com] [WEAK[2006-09-10 23:13:04 +00:00]])
+
+[8]
+Exciting website. http://jobs.msdinc.com/Members/de/chip-poker.html
+
+([[Kaylee]] [Alexis@@hotmail.com] [WEAK[2006-09-11 01:57:04 +00:00]])
+
+[9]
+Interesting site http://jobs.msdinc.com/Members/de/internet-poker.html
+
+([[Elizabeth]] [Alton@@mail.com] [WEAK[2006-09-11 05:25:55 +00:00]])
+
+[10]
+Great work on website. http://jobs.msdinc.com/Members/de/poker-table.html
+
+([[Elizabeth]] [Samantha@@mail.com] [WEAK[2006-09-11 07:59:31 +00:00]])
+
+[11]
+Cool design http://jobs.msdinc.com/Members/de/free-poker-site.html
+
+([[Robert]] [Maureen@@mail.com] [WEAK[2006-09-11 14:42:06 +00:00]])
+
+[12]
+VERY GOOD I THINK http://learning.swc.hccs.edu/members/de/poker-21.htm
+
+([[Lori]] [Reginald@@mail.com] [WEAK[2006-09-12 19:47:01 +00:00]])
+
+[13]
+Great work on website. http://tdweb.fnal.gov/CIS/Members/de/poker-24.htm
+
+([[Hailey]] [Alton@@mail.com] [WEAK[2006-09-13 02:04:29 +00:00]])
+
+[14]
+Your hard work paid off http://xoomer.alice.it/a3e/internet-car-insurance/
+
+([[Samantha]] [Christopher@@hotmail.com] [WEAK[2006-09-13 05:11:06 +00:00]])
+
+[15]
+Thank you... http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-27.htm
+
+([[Michael]] [Maureen@@mail.com] [WEAK[2006-09-13 14:23:05 +00:00]])
+
+[16]
+Very nice site! http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-28.htm
+
+([[Alexis]] [Kaylee@@hotmail.com] [WEAK[2006-09-13 17:24:31 +00:00]])
+
+[17]
+Very good site http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-29.htm
+
+([[Elizabeth]] [Michael@@hotmail.com] [WEAK[2006-09-13 20:08:00 +00:00]])
+
+[18]
+this site rocks! http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-30.htm
+
+([[Christopher]] [Samantha@@hotmail.com] [WEAK[2006-09-13 23:06:36 +00:00]])
+
+[19]
+It very interesting http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-31.htm
+
+([[Jasmine]] [Leonard@@mail.com] [WEAK[2006-09-14 02:03:13 +00:00]])
+
+[20]
+Good Luck! http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-33.htm
+
+([[Hailey]] [Elizabeth@@mail.com] [WEAK[2006-09-14 05:15:16 +00:00]])
+
+[21]
+archy it i http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-35.htm
+
+([[Daniel]] [Jacob@@mail.com] [WEAK[2006-09-14 11:23:59 +00:00]])
+
+[22]
+Is very interesting http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-36.htm
+
+([[Elizabeth]] [Kaylee@@hotmail.com] [WEAK[2006-09-14 13:59:23 +00:00]])
+
+[23]
+Very nice site! http://xoomer.alice.it/a3e/foreclosure/
+
+([[Herman]] [Samantha@@hotmail.com] [WEAK[2006-09-14 16:55:06 +00:00]])
+
+[24]
+Very nice site! http://pen.bme.gatech.edu/Members/koz/1/poker-37.htm
+
+([[Daniel]] [Elizabeth@@mail.com] [WEAK[2006-09-14 19:56:34 +00:00]])
+
+[25]
+Your hard work paid off http://pen.bme.gatech.edu/Members/koz/1/poker-38.htm
+
+([[Ange]] [Zachary@@mail.com] [WEAK[2006-09-14 22:39:02 +00:00]])
+
+[26]
+It very interesting http://pen.bme.gatech.edu/Members/koz/1/poker-39.htm
+
+([[Ange]] [Joshua@@mail.com] [WEAK[2006-09-15 01:53:30 +00:00]])
+
+[27]
+Thanks for taking http://pen.bme.gatech.edu/Members/koz/1/poker-40.htm
+
+([[Anthony]] [Barbara@@mail.com] [WEAK[2006-09-15 05:00:18 +00:00]])
+
+[28]
+Great work on website. http://pen.bme.gatech.edu/Members/koz/1/poker-41.htm
+
+([[Anthony]] [Alexis@@mail.com] [WEAK[2006-09-15 08:28:42 +00:00]])
+
+[29]
+thanks for mentioning http://www.ballview.org/Members/pi/poker-42.htm
+
+([[Maureen]] [Michael@@hotmail.com] [WEAK[2006-09-15 11:43:45 +00:00]])
+
+[30]
+Interesting site http://www.andreaskapsalis.com/includes/2/
+
+([[Reginald]] [Christopher@@hotmail.com] [WEAK[2006-09-15 14:24:43 +00:00]])
+
+[31]
+Very nice site http://thisdarkqualm.com/wp-content/cache/p/
+
+([[Dale]] [Emily@@mail.com] [WEAK[2006-09-15 17:10:55 +00:00]])
+
+[32]
+Very good site http://bloomhost.net/cache/inc/
+
+([[Larry]] [Hannah@@hotmail.com] [WEAK[2006-09-15 20:03:08 +00:00]])
+
+[33]
+Exciting website. http://www.cognitie.nl/Members/de/poker-43.htm
+
+([[Leonard]] [Samantha@@mail.com] [WEAK[2006-09-15 22:58:35 +00:00]])
+
+[34]
+Thanks for taking http://projects.objectrealms.net/Members/derik/poker-44.htm
+
+([[Paul]] [Elizabeth@@hotmail.com] [WEAK[2006-09-16 02:22:37 +00:00]])
+
+[35]
+this site rocks! http://www.opensourcearmenia.com/Members/brr/1.html
+
+([[Carol]] [Dale@@mail.com] [WEAK[2006-09-16 08:13:32 +00:00]])
+
+[36]
+Great work on website. http://www.opensourcearmenia.com/Members/brr/2.html
+
+([[Jacob]] [Carol@@mail.com] [WEAK[2006-09-16 11:02:51 +00:00]])
+
+[37]
+Very nice site http://www.opensourcearmenia.com/Members/brr/3.html
+
+([[Anthony]] [Samantha@@mail.com] [WEAK[2006-09-16 13:45:36 +00:00]])
+
+[38]
+Very nice site! http://www.opensourcearmenia.com/Members/brr/4.html
+
+([[Richard]] [Michael@@hotmail.com] [WEAK[2006-09-16 16:46:40 +00:00]])
+
+[39]
+Thank you... http://www.opensourcearmenia.com/Members/brr/5.html
+
+([[Emily]] [Anthony@@hotmail.com] [WEAK[2006-09-16 19:39:17 +00:00]])
+
+[40]
+Very good website http://www.bloopdiary.com/users/72599/poker-46.htm
+
+([[Christopher]] [Zachary@@mail.com] [WEAK[2006-09-16 22:33:46 +00:00]])
+
+[41]
+Exciting website. http://www.bloopdiary.com/users/72599/poker-47.htm
+
+([[Alton]] [Elizabeth@@mail.com] [WEAK[2006-09-17 01:28:53 +00:00]])
+
+[42]
+Very nice site! http://www.bloopdiary.com/users/72599/poker-48.htm
+
+([[Donald]] [Kaylee@@hotmail.com] [WEAK[2006-09-17 04:36:04 +00:00]])
+
+[43]
+Cool design http://www.shalem.org/Members/de/poker-49.htm
+
+([[Zachary]] [Carol@@mail.com] [WEAK[2006-09-17 07:43:16 +00:00]])
+
+[44]
+Very good website http://www.opensourcearmenia.com/Members/brr/6.html
+
+([[Samantha]] [Robert@@mail.com] [WEAK[2006-09-17 10:39:54 +00:00]])
+
+[45]
+It very interesting <a href="http://xoomer.alice.it/n31/a-spyware/">a spyware</a> [url=http://xoomer.alice.it/n31/a-spyware/]a spyware[/url] http://xoomer.alice.it/n31/a-spyware/
+([[Jacob]] [Samantha@@hotmail.com] [WEAK[2006-09-17 14:55:04 +00:00]])
+
+[46]
+Hi, nice site! <a href="http://xoomer.alice.it/po4/freeroll-poker-tournaments/">freeroll poker tournaments</a> [url=http://xoomer.alice.it/po4/freeroll-poker-tournaments/]freeroll poker tournaments[/url] http://xoomer.alice.it/po4/freeroll-poker-tournaments/
+([[Christopher]] [Jacob@@mail.com] [WEAK[2006-09-17 19:32:23 +00:00]])
+
+[47]
+i like you! <a href="http://xoomer.alice.it/a3e/slot-machine/">slot machine</a> [url=http://xoomer.alice.it/a3e/slot-machine/]slot machine[/url] http://xoomer.alice.it/a3e/slot-machine/
+([[Carol]] [George@@mail.com] [WEAK[2006-09-17 23:49:19 +00:00]])
+
+[48]
+Thank you... <a href="http://xoomer.alice.it/a3e/laser-hair-removal/">laser hair removal</a> [url=http://xoomer.alice.it/a3e/laser-hair-removal/]laser hair removal[/url] http://xoomer.alice.it/a3e/laser-hair-removal/
+([[Ada]] [Jacob@@hotmail.com] [WEAK[2006-09-18 01:42:55 +00:00]])
+
+[49]
+this site rocks! <a href="http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-26.htm">poker 26</a> [url=http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-26.htm]poker 26[/url] http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-26.htm
+([[Jacob]] [Anthony@@hotmail.com] [WEAK[2006-09-18 03:53:34 +00:00]])
+
+[50]
+thanks for mentioning <a href="http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-27.htm">poker 27</a> [url=http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-27.htm]poker 27[/url] http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-27.htm
+([[Brian]] [Kaylee@@mail.com] [WEAK[2006-09-18 06:17:54 +00:00]])
+
+[51]
+thanks for mentioning <a href="http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-28.htm">poker 28</a> [url=http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-28.htm]poker 28[/url] http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-28.htm
+([[Dale]] [Elizabeth@@mail.com] [WEAK[2006-09-18 08:04:09 +00:00]])
+
+[52]
+Very useful <a href="http://ibo.awardspace.com/poker/">poker</a> [url=http://ibo.awardspace.com/poker/]poker[/url] http://ibo.awardspace.com/poker/
+([[Robert]] [Christopher@@mail.com] [WEAK[2006-09-18 10:01:43 +00:00]])
+
+[53]
+This great resource <a href="http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-29.htm">poker 29</a> [url=http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-29.htm]poker 29[/url] http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-29.htm
+([[John]] [George@@mail.com] [WEAK[2006-09-18 12:07:19 +00:00]])
+
+[54]
+Very good site <a href="http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-31.htm">poker 31</a> [url=http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-31.htm]poker 31[/url] http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-31.htm
+([[Zachary]] [Hannah@@hotmail.com] [WEAK[2006-09-18 15:47:19 +00:00]])
+
+[55]
+Great work on website. <a href="http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-35.htm">poker 35</a> [url=http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-35.htm]poker 35[/url] http://neumann.sk.tsukuba.ac.jp/plone/Members/de/poker-35.htm
+([[Brian]] [Mark@@mail.com] [WEAK[2006-09-18 21:44:49 +00:00]])
+
+[56]
+thanks for mentioning <a href="http://xoomer.alice.it/po4/custom-poker-table/">custom poker table</a> [url=http://xoomer.alice.it/po4/custom-poker-table/]custom poker table[/url] http://xoomer.alice.it/po4/custom-poker-table/
+([[Joshua]] [Michael@@mail.com] [WEAK[2006-09-19 01:49:50 +00:00]])
+
+[58]
+thanks for mentioning <a href="http://clepy.org/Members/kaka/poker-50.htm">poker 50</a> [url=http://clepy.org/Members/kaka/poker-50.htm]poker 50[/url] http://clepy.org/Members/kaka/poker-50.htm
+([[Mark]] [Michael@@hotmail.com] [WEAK[2006-09-20 15:41:22 +00:00]])
+
+[59]
+Very nice site! <a href="http://free.45.kg/pisya/poker-internet.htm">internet poker</a> [url=http://free.45.kg/pisya/poker-internet.htm]internet poker[/url] http://free.45.kg/pisya/poker-internet.htm
+([[John]] [Robert@@mail.com] [WEAK[2006-09-20 21:27:49 +00:00]])
+
+[60]
+Hi, nice site! <a href="http://xoomer.alice.it/poks/poker/">poker</a> [url=http://xoomer.alice.it/poks/poker/]poker[/url] http://xoomer.alice.it/poks/poker/
+([[Carol]] [Elizabeth@@mail.com] [WEAK[2006-09-22 03:36:18 +00:00]])
+
+[61]
+Thank you... <a href="http://xoomer.alice.it/4fr/5/">5</a> [url=http://xoomer.alice.it/4fr/5/]5[/url] http://xoomer.alice.it/4fr/5/
+([[John]] [Elizabeth@@hotmail.com] [WEAK[2006-09-22 07:37:38 +00:00]])
+
+[62]
+Interesting site <a href="http://xoomer.alice.it/naxibo/1/">1</a> [url=http://xoomer.alice.it/naxibo/1/]1[/url] http://xoomer.alice.it/naxibo/1/
+([[Joshua]] [Michael@@mail.com] [WEAK[2006-09-22 09:29:46 +00:00]])
+
+[63]
+Great work on website. <a href="http://xoomer.alice.it/naxibo/3/">3</a> [url=http://xoomer.alice.it/naxibo/3/]3[/url] http://xoomer.alice.it/naxibo/3/
+([[Michael]] [Anthony@@mail.com] [WEAK[2006-09-22 13:20:32 +00:00]])
+
+[64]
+Very useful <a href="http://xoomer.alice.it/naxibo/4/">4</a> [url=http://xoomer.alice.it/naxibo/4/]4[/url] http://xoomer.alice.it/naxibo/4/
+([[Jacob]] [Samantha@@hotmail.com] [WEAK[2006-09-22 15:27:52 +00:00]])
+
+[65]
+Great web site <a href="http://xoomer.alice.it/naxibo/5/">5</a> [url=http://xoomer.alice.it/naxibo/5/]5[/url] http://xoomer.alice.it/naxibo/5/
+([[George]] [Larry@@mail.com] [WEAK[2006-09-22 17:24:20 +00:00]])
+
+[66]
+this site rocks! <a href="http://xoomer.alice.it/icrest/royale/">royale</a> [url=http://xoomer.alice.it/icrest/royale/]royale[/url] http://xoomer.alice.it/icrest/royale/
+([[Ada]] [Brianna@@hotmail.com] [WEAK[2006-09-22 19:19:01 +00:00]])
+
+[67]
+Very nice site <a href="http://xoomer.alice.it/kuk1/foreclosure/">foreclosure</a> [url=http://xoomer.alice.it/kuk1/foreclosure/]foreclosure[/url] http://xoomer.alice.it/kuk1/foreclosure/
+([[Robert]] [Matthew@@mail.com] [WEAK[2006-09-22 21:25:51 +00:00]])
+
+[68]
+It very interesting <a href="http://xoomer.alice.it/kuk1/satellite-tv/">satellite tv</a> [url=http://xoomer.alice.it/kuk1/satellite-tv/]satellite tv[/url] http://xoomer.alice.it/kuk1/satellite-tv/
+([[Zachary]] [Frank@@mail.com] [WEAK[2006-09-22 23:23:31 +00:00]])
+
+[70]
+Interesting site <a href="http://xoomer.alice.it/icrest/morongo/">morongo</a> [url=http://xoomer.alice.it/icrest/morongo/]morongo[/url] http://xoomer.alice.it/icrest/morongo/
+([[Matthew]] [Hailey@@hotmail.com] [WEAK[2006-09-23 03:21:48 +00:00]])
+
+[71]
+It very interesting <a href="http://xoomer.alice.it/icrest/rewards/">rewards</a> [url=http://xoomer.alice.it/icrest/rewards/]rewards[/url] http://xoomer.alice.it/icrest/rewards/
+([[John]] [Kaylee@@hotmail.com] [WEAK[2006-09-23 05:18:31 +00:00]])
+
+[72]
+VERY GOOD I THINK <a href="http://xoomer.alice.it/icrest/arizona/">arizona</a> [url=http://xoomer.alice.it/icrest/arizona/]arizona[/url] http://xoomer.alice.it/icrest/arizona/
+([[Hannah]] [Ada@@mail.com] [WEAK[2006-09-23 07:40:44 +00:00]])
+
+[73]
+Thanks for taking <a href="http://xoomer.alice.it/ddoys/bn/">bn</a> [url=http://xoomer.alice.it/ddoys/bn/]bn[/url] http://xoomer.alice.it/ddoys/bn/
+([[Brianna]] [Daniel@@mail.com] [WEAK[2006-09-23 10:15:37 +00:00]])
+
+[74]
+Great web site <a href="http://cas.awardspace.biz/casino/">casino</a> [url=http://cas.awardspace.biz/casino/]casino[/url] http://cas.awardspace.biz/casino/
+([[John]] [Christopher@@mail.com] [WEAK[2006-09-23 11:33:26 +00:00]])
+
+[75]
+thanks for mentioning <a href="http://lemon.awardspace.biz/lemon-law/">lemon law</a> [url=http://lemon.awardspace.biz/lemon-law/]lemon law[/url] http://lemon.awardspace.biz/lemon-law/
+([[Richard]] [Hailey@@mail.com] [WEAK[2006-09-23 13:39:38 +00:00]])
+
+[76]
+thanks for mentioning <a href="http://slot.awardspace.biz/slot-machine/">slot machine</a> [url=http://slot.awardspace.biz/slot-machine/]slot machine[/url] http://slot.awardspace.biz/slot-machine/
+([[Hannah]] [Frank@@mail.com] [WEAK[2006-09-23 17:39:25 +00:00]])
+
+[77]
+It very interesting <a href="http://experian.awardspace.biz/experian/">experian</a> [url=http://experian.awardspace.biz/experian/]experian[/url] http://experian.awardspace.biz/experian/
+([[Daniel]] [Emily@@hotmail.com] [WEAK[2006-09-23 23:33:45 +00:00]])
+
+[78]
+Hi, nice site! <a href="http://cons.awardspace.biz/consolidation/">consolidation</a> [url=http://cons.awardspace.biz/consolidation/]consolidation[/url] http://cons.awardspace.biz/consolidation/
+([[Dylan]] [Maureen@@mail.com] [WEAK[2006-09-24 01:33:50 +00:00]])
+
+[79]
+Very nice site! <a href="http://ster.awardspace.biz/steroid/">steroid</a> [url=http://ster.awardspace.biz/steroid/]steroid[/url] http://ster.awardspace.biz/steroid/
+([[Dale]] [John@@mail.com] [WEAK[2006-09-24 05:37:18 +00:00]])
+
+[80]
+this site rocks! <a href="http://xoomer.alice.it/jopa/download-music/">download music</a> [url=http://xoomer.alice.it/jopa/download-music/]download music[/url] http://xoomer.alice.it/jopa/download-music/
+([[Bill]] [Jacob@@mail.com] [WEAK[2006-09-24 18:05:00 +00:00]])
+
+[81]
+thanks for mentioning http://nlp.awardspace.co.uk/cartridge-inkjet/
+
+([[Daniel]] [Ada@@mail.com] [WEAK[2006-09-24 21:41:52 +00:00]])
+
+[82]
+Very nice site http://xoomer.alice.it/jopa/anti-virus/
+
+([[Hannah]] [Hannah@@mail.com] [WEAK[2006-09-25 01:55:01 +00:00]])
+
+[83]
+Good Luck! http://xoomer.alice.it/fe7/texas-holdem-poker-table/
+
+([[Frank]] [Dale@@mail.com] [WEAK[2006-09-25 11:39:05 +00:00]])
+
+[84]
+cdltyoib kfdbtxwg otcgh xwhkyrji cvsfpnkh dtnfh ycewix
+([[rphos iprl]] [eslngkpzq@@mail.com])
+
+[85]
+cdltyoib kfdbtxwg otcgh xwhkyrji cvsfpnkh dtnfh ycewix
+([[rphos iprl]] [eslngkpzq@@mail.com])
+
+[87]
+Hello. I like your site very much. Please visit my site: <a href="http://encyko.bee.pl/omar.karami.html">Omar Karami</a> http://encyko.bee.pl/omar.karami.html [url=http://encyko.bee.pl/omar.karami.html]Omar Karami[/url] and leave some feedback. Thanks!
+([[encyko.bee.pl/omar.karami.html]] [28521@@gmail.com])@
+

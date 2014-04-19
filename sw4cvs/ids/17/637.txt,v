@@ -1,0 +1,167 @@
+head	1.6;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.6
+date	2011.10.25.15.24.03;	author wakaba;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2011.06.12.02.55.53;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2011.06.12.02.46.19;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2011.06.12.02.42.40;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2011.06.12.02.41.34;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2011.06.12.02.36.40;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.6
+log
+@updated by (anon)
+@
+text
+@[1] [[JavaScript]] の[[関数]] [DFN[[CODE(JS)@@en[[[escape()]]]], [DFN[[CODE(JS)@@en[[[unescape()]]]]]]
+は、[[文字列]]を[[パーセント符号化]]や [CODE(URI)[[[%u]]]] [[符号化]]します。
+
+[2] [[URL]] で用いられている[[パーセント符号化]]とは互換性がなく、 [[URL]]
+用としては [CODE(JS)@@en[[[encodeURIComponent()]]]], [CODE(JS)@@en[[[decodeURIComponent()]]]]
+などが用意されています。
+
+* 符号化
+
+[4] [[Latin1]] [[文字]] ([CODE(char)[[[U+00FF]]]] [[以下]]) は[[百分率符号化]]されます。
+
+[5] それ以外の[[文字]]は [[UTF-16]] [[符号単位]]ごとに [CODE(URI)[[[%u]]]] を使って[[符号化]]されます。
+
+[6] 歴史的には、[[JavaScript]] [[エンジン]]の[[内部コード]] ([[シフトJIS]]、[[UTF-16LE]] + [[BOM]] など) 
+のまま[[百分率符号化]]されることがありました。
+
+[7] 歴史的には、 [CODE(char)[[[U+0020]]]] が [CODE(URI)[[[+]]]] になることがありました。
+
+* 歴史
+
+[9] [CITE@@ja[Escape]] ([TIME[2011-06-12 11:47:57 +09:00]] 版) <http://web.archive.org/web/20050222015746/http://www.felix.jp/~yugo/js/guide/escape.html>
+
+>ECMA TC39 が ECMA-262 を制定するとき、escape および unescape は Unicode を用いると決めた。具体的には、Unicode エンコーディングが 0xFF 以下の文字は、16進法の数字二つの %HH 形式を用いる。 0xFF より大きい場合には、%uHHHH 形式を用いる。
+
+>MSIE のバージョン 4以降が用いる JScript では escape/unescape による URL エスケープが出来なくなった。
+
+>Netscape は、ECMA-262 に従わず、従来の ISO Latin-1 を使うと決定したため、Netscape Communicator 4.06 以降で用いられている JavaScript 1.3 でも escape/unescape を URL エスケープに利用できる。そのため、%uHHHH 形式はサポートされていない。 
+
+>当初の実装では Mozilla でも ECMA-262 準拠で RFC 1738 非準拠の escape/unescape を使っていた。ところが、バグ報告があったため、2000年1月に従来通りの ISO Latin-1 を使った escape/unescape に変更された。 
+
+>String Class を実装している js/src/jsstr.c で escape/unescape を実装している。 String Class を実装しているファイルに記述しているが、もちろん escape と unescape は Global オブジェクトのプロパティーである。実は、DOM の Window オブジェクトを実装している dom/src/base/nsJSWindow.cpp でも escape/unescape を実装している。こちらは従来通り ISO Latin-1 を使っている。 Mozilla は内部コードとして UCS-2 を用いており、読み込んだページは内部コードに変換されるが、DOM の escape/unescape は元のページの文字コードでエンコード/デコードする。 
+
+>Mozilla では起動時に、SpiderMonkey の escape/unescape をいったん定義するが、その後 DOM の escape/unescape で上書きする。このため、Mozilla 上で escape/unescape を使うと ISO Latin-1 を用いた escape/unescape が呼び出され、SpiderMonkey を単体で動かした場合には ECMA-262 準拠の escape/unescape が呼ばれる。 Mozilla からは Unicode エスケープである ECMA-262 準拠の escape/unescape は利用できない。
+
+> もともと escape/unescape は JavaScript engine ではなく、Client-side 部分である libmocha で実装していたが、ECMA-262 が escape/unescape の仕様を定めたので、1998年5月に JavaScript engine で実装するように変更された。また、ECMA-262 になってスペースと "/" の扱いも変更された。「昔の libmocha の escape をエミュレートしたいのなら、第2引数で escape の振る舞いを指定しろ」というコメントが /js/src/jsstr.c に書いてある。このコメントの通り、第2引数に Bit 0, 1, 2 からなる mask を指定でき、この値に応じてスペースと "/" に対する振る舞いが変更される。 mask の値が不適切だと、"invalid string escape mask" というエラーが発生することがあるので注意すること。デフォルトが ECMA-262 の escape に対応した 7 である。ちなみに Java による JavaScript engine Rhino でも、mask 指定に対応している。
+
+> その escape/unescape だが、1999年12月に出た ECMA-262 3rd Edition では Compatibility の項に移されて、正式な仕様の一部ではなくなった。もっとも動作自体は 2nd Edition から変更されていない。
+
+[10] [CITE[Bug 22594 – '''['''dogfood''']''' JavaScript escape() is incompatable w/ 4.x]] ([TIME[2011-06-12 11:51:18 +09:00]] 版) <https://bugzilla.mozilla.org/show_bug.cgi?id=22594>
+
+* 実装
+
+[3] [CITE@@en[Functions - MDC Docs]] ([TIME[2011-06-12 11:38:48 +09:00]] 版) <https://developer.mozilla.org/en/Core_JavaScript_1.5_Guide/Functions#escape_and_unescape_Functions>
+
+>The escape and unescape functions let you encode and decode strings. The escape function returns the hexadecimal encoding of an argument in the ISO Latin character set. The unescape function returns the ASCII string for the specified hexadecimal encoding value.
+
+[REFS[
+- [12]  [CITE@@en[Functions - MDC Docs]]
+( ([TIME[2011-06-12 11:38:08 +09:00]] 版))
+<https://developer.mozilla.org/en/Core_JavaScript_1.5_Guide/Functions#escape_and_unescape_Functions>
+- [8] [CITE@@en[window.unescape - MDC Docs]]
+( ([TIME[2011-06-12 11:45:25 +09:00]] 版))
+<https://developer.mozilla.org/en/window.unescape>
+- [13] [CITE@@en[window.escape - MDC Docs]]
+( ([TIME[2011-06-12 11:45:44 +09:00]] 版))
+<https://developer.mozilla.org/en/DOM/window.escape>
+]REFS]
+
+[14] [CITE[JavaScriptにおけるURLエンコードの処理]]
+( ([TIME[2003-02-03 15:40:49 +09:00]] 版))
+<http://www.cresc.co.jp/tech/java/URLencoding/JavaScript_URLEncoding.htm>
+@
+
+
+1.5
+log
+@updated by (anon)
+@
+text
+@d47 11
+d59 3
+a61 3
+[8] [CITE@@en[window.unescape - MDC Docs]]
+( ([TIME[2011-06-12 11:45:25 +09:00]] 版))
+<https://developer.mozilla.org/en/window.unescape>@
+
+
+1.4
+log
+@updated by (anon)
+@
+text
+@d19 22
+d46 4
+a49 4
+
+
+[8] [CITE@@en[window.unescape - MDC Docs]]
+( ([TIME[2011-06-12 11:45:25 +09:00]] 版))
+@
+
+
+1.3
+log
+@updated by (anon)
+@
+text
+@d24 5
+@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@d17 2
+@
+
+
+1.1
+log
+@created by (anon)
+@
+text
+@d6 16
+a21 1
+などが用意されています。@
+

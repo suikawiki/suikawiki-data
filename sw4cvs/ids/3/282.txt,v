@@ -1,0 +1,645 @@
+head	1.1;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2008.11.13.02.41.41;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/5375696B6157696B6933.ns/A5E1A5E2.ns/323030352D30382D3038.txt>
+@
+text
+@[1] Wiki Object Model (仮称、 Work in progress)
+for next version of [[SuikaWiki]]
+
+[2]
+本当に実装可能かどうかはまだわかんね。
+
+* Wiki 中核モジュール
+
+[PRE[
+Interface WikiImplementation
+  This interface provides factory methods.  The objects 
+  implementing this method must also implement the 
+  DOMMinimumImplementation interface that provides "getFeature"
+  and "hasFeature" methods.  WikiImplementation objects can be
+  obtained via the DOMImplementationRegistry object with
+  the feature @@@@FEATURE_NAME@@@@ with version "4.0" and might
+  be accessed via the "getFeature" method of the DOMImplementation object.
+  Methods
+    createWikiEngine
+      Creates a new instance of a wiki engine.
+      Parameters
+        features of type DOMString
+          A list of feature names and versions (see DOM Level 3 Core recommendation)
+          the wiki engine instance created by this method must be
+          implementing.  Note that feature names may be prefixed by a PLUS SIGN.
+      Return Value
+        WikiEngine  A newly created wiki engine instance or "null"
+                    if there is no implementation that supports
+                    features requested by the "features" parameter.
+    createWikiResponse
+      Creates a new instance of wiki response object.
+      Parameters
+        features of type DOMString
+      Return Value
+        WikiResponse or "null"
+      No Exception
+    createWikiStorage
+      Creates a new instance of wiki storage object.
+      Parameters
+        features of type DOMString
+      Return Value
+        WikiStorage  The newly created storage object or "null" if 
+                     there is no storage implementation that provides
+                     the features requested by "features" value.
+      No Exceptions
+
+Interface WikiEngine
+  Attributes
+    storageManager of type WikiStorageManager
+      The wiki storage manager object that management the main
+      database connected to this wiki engine.
+    @@@@ WikiEngine and wiki application information
+    wikiResources of type WikiResourceCollection, read-only
+      The collection of the wiki resources assigned to this wiki engine.
+  Methods
+    initWikiEngine
+      Initializes the attribute value of the wiki engine object. 
+      This method may only be called before the wiki engine has been
+      in use via the "request" method.  If this method is called several
+      times before invoking "request" method, only the final invocation
+      takes precedence.  This method has no effect if called
+      after the wiki engine has been in use.
+      Parameters
+        rootResource of type WikiResourceCollection
+          Specifies "wikiResources".
+        storageManagerArg of type WikiStorageManager
+          Specifies "storageManager".
+      No Return Value
+      No Exceptions
+    request
+      Posts (dispatches) a request to this wiki engine.  Note that depending on the
+      language binding and configurations, the requests might
+      be processed in asynchronous manner (i.e. processed in another
+      thread).
+      Any error or warning other than NOT_SUPPORTED_ERR (see "Exception")
+      might be reported to the DOMError object associated to the session object
+      or might be reported as the response of the session.
+      Parameters
+        requestArg of type WikiRequest
+          An object which provides parameters that describe the request.
+          Once a WikiRequest object is passed to this method,
+          applications must not modify that object (and any
+          objects which are considered "part" of it).  The wiki engine
+          may make some modification to the objects.
+      Return Value
+        WikiSession    The session object which procedes the request.
+      Exceptions
+        WikiException  NOT_SUPPORTED_ERR: The "requestArg" does not
+                       provides enough information this wiki engine 
+                       requests.  (For example, the "requestArg" 
+                       object does not implement one or more interfaces
+                       required by the wiki engine.)
+]PRE]
+
+[PRE[
+Interface WikiRequest
+  Objects implementing the WikiRequest interface provides
+  information on the request, including what action should be done
+  for what resource and how the result should be reported.
+  Objects implementing this interface are expected to
+  implement other interfaces so that the wiki engine
+  produces meaningful results.
+      Objects implementing this interface must also implement
+  the GetFeature interface.
+  Attributes
+    wikiMethod of type DOMString
+      A URI reference which identifies the operation requested
+      by this object.
+    wikiProtocol of type DOMString
+      A URI reference which identifies the protocol by which
+      the request has been issued.  It should also identify
+      any gateway interface if necessary; for example, HTTP
+      accesses received via the CGI/1.1 interface is identified
+      by the URI @@@@NAMESPACE_URI@@@@.
+    wikiResourceURI of type DOMString
+      An absolute URI reference which identifies the resource
+      which is the target of the operation requested by this object.
+]PRE]
+
+[PRE[
+Interface WikiSession
+  Attributes
+    wikiEngine of type WikiEngine, read-only
+    wikiRequest of type WikiRequest, read-only
+      The request which initiates this session.
+    wikiResponse of type WikiResponse, read-only
+      The response object that the session is expected
+      to complete.  If the session does not takes the
+      form of simple request-response model, the value
+      of this attribute might be "null".
+  Methods
+    initWikiSession
+      Parameters
+        wikiEngineArg of type WikiEngine
+        wikiRequestArg of type WikiRequest
+        wikiResponseArg of type WikiResponse
+      No Return Value
+      No Exception
+]PRE]
+
+[3] 節点、資源、データ、特性の関係に関する参考図
+
+[PRE[
+<S> SomeTheme : WikiResourceCollection
+    ... semantics = :resourceCollection, struct = :resourceReferences
+  <SA> SomeTheme meaning A : WikiResource
+  <SB> SomeTheme meaning B : WikiResource
+      ... semantics = :data, struct = :dataReferences
+    <SB1> SomeThemeB description part 1 : WikiDataEntity
+    <SB2> SomeThemeB description part 2 : WikiDataEntity
+        ... semantics = :content, struct = :propList
+      <SB2> #
+          ... semantics = :contentData, struct = :any
+      <SB2> #
+          ... semantics = :contentMediaType, struct = :string
+      <SB2> #
+          ... semantics = :copyrightStatement, struct = :propList
+              parent = :content,:data
+              -> physical = p:copyright
+        #
+            ... semantics = :contentData, struct = :any
+                parent = :copyrightStatement,:propList
+                -> physical = p:copyrightData
+        #
+            ... semantics = :contentMediaType, struct = :string
+                parent = :copyrightStatement,:propList
+                -> physical = p:copyrightMediaType
+      <SB2> #
+          ... semantics = :lastModified, struct = :date
+              parent = :data
+              -> physical = :dataLastModifiedDate
+    <SB> #
+        ... semantics = :lastModified, struct = :date
+            parent = :resource
+            -> physical = p:resourceLastModifiedDate
+]PRE]
+
+[PRE[
+Interface WikiNode
+  The object implementing the WikiNode interface must also implement
+  the EventTarget interface defined by the DOM Level 3 Events specification.
+  An event is dispatched following a path in the tree consists of WikiNode
+  objects.  Since a WikiNode object may be a child of two or more
+  WikiNode objects, there may be multiple pathes in the WikiNode grove.
+  In such case, only one path selected by the context in which
+  an event is dispatched is used for the event flow.  Because of the
+  same reason, the path may contain a WikiNode object twice or more times.
+      The object implementing the WikiNode interface must also implement
+  the GetFeature interface.
+  Attributes
+    value of type WikiDocument
+      The value of this node, if any, or "null" otherwise.
+      Exception on setting
+        WikiException  NO_MODIFICATION_ALLOWED_ERR
+                       NOT_SUPPORTED_ERR
+    wikiNodeType of type DOMString, read-only
+      The URI reference that identifies the type or structure of this node.
+  Methods
+    flushModifications
+      Saves any modifications to this and child nodes.  The implementations
+      may choose to process it by itself and/or to dispatch a
+      nodeev:flush event.
+      No Parameter
+      No Return Value
+      No Exception
+    getChildNodeByRole
+      Parameters
+        childRole of type WikiResourceName
+      Return Value
+        WikiNode  The child node identified by "childRole" if any,
+                  or "null" otherwise.
+      No Exceptions
+    getChildNodesByRole
+      Parameters
+        childRole of type WikiResourceName
+      Return Value
+        WikiNodeList A snapshot of the child nodes whose role is "childRole".
+      No Exceptions
+  Events
+    nodeev:flush
+      Asked to save the values of this and descendant nodes.
+      The event tree contains only one node (i.e. the target node).
+      Bubbling phase:   No
+      Cancelable:       No
+      Target node type: WikiNode
+      Event interface:  WikiSessionEvent
+    nodeev:nodeModified
+      A node value is modified.  The target node is the node which
+      is modified.
+      Bubbling phase:   Yes
+      Cancelable:       No
+      Target node type: WikiNode
+      Event interface:  WikiSessionEvent
+]PRE]
+
+[PRE[
+Interface WikiNodeList
+  "dead" collection.
+]PRE]
+
+[PRE[
+Interface WikiEvent extends Event
+  Attributes
+    wikiEngine of type WikiEngine, read-only
+  Methods
+    initWikiEventNS
+      Parameters
+        namespaceURI of type DOMString
+        typeArg of type DOMString
+        canBubbleArg of type boolean
+        cancelableArg of type boolean
+        wikiEngineArg of type WikiEngine
+]PRE]
+
+[PRE[
+Interface WikiResource extends WikiNode
+  An object implementing this interface represents a resource
+  exists in the wiki.
+     "wikiNodeType" attribute value: @@@@NAMESPACE_URI@@@@.
+  Attributes
+    wikiResourceName of type WikiResourceName, read-only
+      A resource name of this resources, if any, or "null" otherwise.
+      If the resource has multiple names, which one is the value
+      of this attribute is implementation dependent.
+    wikiResourceURI of type DOMString, read-only
+      A canonical absolute URI reference which identifies this resource,
+      if known, or "null" otherwise.
+]PRE]
+
+[PRE[
+Interface WikiResourceCollection extends WikiResource
+  An object implementing this interface represents a collection
+  of resources in the wiki.  Note that a resource collection
+  is also a resource.  A resource collection may contain
+  the collection itself directly or indirectly, while
+  any particular application of this interface may
+  prohibit this (so that a collection is a tree).  A collection
+  may or may not be ordered and may or may not have dupulications,
+  depending on the context and applications.
+  Bindings may provide native interface such as array-like operations, too.
+  Methods
+    getChildResourceByName
+      Returns the resource contained in this collection
+      identified by the name.  If multiple resources matched
+      to the name, the result is implementation dependent.
+      Parameters
+        nameArg of type WikiResourceName
+      Return Value
+        WikiResource  The resource identified by the name, if any,
+                      or "null" otherwise.
+      No Exceptions
+]PRE]
+
+[PRE[
+Interface WikiDataEntity extends WikiNode
+  "wikiNodeType" attribute value: @@@@NAMESPACE_URI@@@@.
+]PRE]
+
+[PRE[
+Interface WikiResourceName
+  Attributes
+    isAbsolute of type boolean, read-only
+      Whether this name is absolute (context-free) or relative (context
+      dependent).  If absolute, the value is "true", othterwise "false".
+    uri of type DOMString, read-only
+      The textual representation of one of DOM URI which
+      is directly corresponding to this name, if any, or "null" otherwise.
+  Methods
+    resolve
+      Returns an absolute name created from this name object
+      and a context object.
+      Parameters
+        contextArg of type DOMObject
+          The context object against which the relative name is
+          resolved.
+      Return Value
+        WikiResourceName  An absolute name instance.  Even if this
+                          object is already an absolute name, a
+                          new instance is created.
+      Exceptions       @@@@?? other error? @@@@
+        WikiException  NOT_SUPPORTED_ERR: The "contextArg" parameter
+                       does not provide enough information.
+]PRE]
+
+[PRE[
+Interface WikiStorageManager
+  Methods
+    addContextStorageMapping
+      Adds a node to storage mapping.
+      Parameters
+        parentNodeType of type DOMString
+          The node type URI reference of the parent node or
+          "null" which matches to everything.
+        parentStorageName of type WikiResourceName
+          The name of the storage associated with the parent node or
+          "null" which matches to everything.
+        nodeRole of type WikiResourceName
+          The name of the role (semantics) of the node (from the
+          viewpoint of the parent node) for which the storage object
+          is requested or "null" which matches to everything.
+        nodeTypeArg of type DOMString
+          The node type URI reference of the node or
+          "null" which matches to everything.
+        storageName of type WikiResourceName
+          The name of the storage associated with the node.  There
+          may be no storage registered that is identified by this
+          storage name. 
+      No Return Value
+      No Exceptions
+    getStorageByContext
+      Returns the storage object identified by the context in
+      the grove in which the storage is requested.
+      Parameters
+        parentNodeType of type DOMString
+          The node type URI reference of the parent node or
+          "null" if no parent.
+        parentStorageName of type WikiResourceName
+          The name of the storage associated with the parent node or
+          "null" if no parent.
+        nodeRole of type WikiResourceName
+          The name of the role (semantics) of the node (from the
+          viewpoint of the parent node) for which the storage object
+          is requested.
+        nodeTypeArg of type DOMString
+          The node type URI reference of the node.
+      Return Value
+        WikiStorage  The storage object identified by parameters if exists,
+                     or "null" otherwise.  Note that even if the context to
+                     storage mapping is registered by the "addContextStorageMapping"
+                     method, there may be no storage object identified
+                     by the storage name set by that method so that this
+                     method be return "null".
+      No Exceptions
+    getStorageByName
+      Parameters
+        storageName of type WikiResourceName
+          A name that identifies the storage object.
+      Return Value
+        WikiStorage  The storage object identified by the "storageName",
+                     or "null" if not found.
+      No Exceptions
+    setStorage
+      Parameters
+        newStorage of type WikiStorage
+      Return Value
+        WikiStorage  The storage object replaced by the "newStorage", if any,
+                     or "null".
+      No Exceptions
+]PRE]
+
+[PRE[
+Interface WikiStorage
+  Objects implementing this interface must also implement
+  the GetFeature interface.
+  Attributes
+    name of type WikiResourceName, read-only
+      The name of this storage object.
+    valueType of type DOMString, read-only
+      A URI reference that identifies the type of storage data.
+  Methods
+    initWikiStorage
+      Parameters
+        nameArg of type DOMString
+        valueTypeArg of type DOMString
+]PRE]
+
+[PRE[
+Interface WikiDocument
+  This interface is implemented by the objects in the wiki
+  data structure.
+      The objects implementing this interface must also implement
+  the AnyDocument interface in the Document Module.  They may also implement
+  format-specific interfaces such as the TextPlainDocument interface in
+  the Document Module or the HTMLDocument interface in the Web Applications 1.0
+  specification.
+      The object implementing this method must also implement
+  the EventTarget interface defined in the DOM Level 3 Events
+  specification.  Note that the event tree created from WikiNode
+  objects and the event tree that contains WikiDocument objects
+  are independent and no event flow spans them.
+  Attributes
+    isWikiDocumentModified of type boolean
+      Whether the document has been marked as modified or not.  If the
+      value of this attribute is "true", setting the "false" value
+      has no effect.  Note that unless explicitly specified,
+      no operation turns this flag "true" automatically.  For example,
+      any DOM mutation never marks the flag "true", unless an event
+      handler is registered and is implemented so.
+  Events
+    docev:formRequest
+      A WikiForm request is issued.  The target node is the node
+      identified as the target by the request.
+      Bubbling phase:   Yes
+      Cancelable:       No
+      Target node type: WikiDocument or a node in the grove 
+                        that contains WikiDocument
+      Event interface:  WikiFormRequestEvent
+]PRE]
+
+[PRE[
+Interface WikiSessionEvent extends WikiEvent
+  Attributes
+    wikiRequest of type WikiRequest, read-only
+  Methods
+    initWikiSessionEventNS
+      Parameters
+        namespaceURI of type DOMString
+        typeArg of type DOMString
+        canBubbleArg of type boolean
+        cancelableArg of type boolean
+        wikiEngineArg of type WikiEngine
+        wikiSessionArg of type WikiSession
+]PRE]
+
+[PRE[
+Interface WikiResponse
+  Objects implementing this interface must also implement
+  the GetFeature interface.
+  Attributes
+    wikiProtocol of type DOMString
+]PRE]
+
+* The WikiForm Module
+
+[4]
+[[WikiForm]] を実装する WikiEngine のためのモジュール。
+
+[PRE[
+Interface WikiFormRequestEvent extends WikiSessionEvent
+  Attributes
+    wikiFormRequest of type WikiFormRequest, read-only
+  Methods
+    initWikiFormRequestEventNS
+      Parameters
+        namespaceURI of type DOMString
+        typeArg of type DOMString
+        canBubbleArg of type boolean
+        cancelableArg of type boolean
+        wikiEngineArg of type WikiEngine
+        wikiSessionArg of type WikiSession
+        wikiFormRequestArg of type WikiFormRequest
+]PRE]
+
+[PRE[
+Interface WikiFormRequest
+  Attributes
+    wikiFormMethod of type DOMString, read-only
+      A URI reference that identifies the request method
+      of this wiki form request.
+    wikiRequest of type WikiRequest, read-only
+  Methods
+    getWikiFormParameterByName
+      Parameters
+        paramName of type WikiResourceName
+      Return Value
+        DOMString or "null"
+      No Exceptions
+    getWikiFormParametersByName
+      Parameters
+        paramName of type WikiResourceName
+      ReturnValue
+        DOMStringList
+      No Exceptions
+]PRE]
+
+* The Document Module
+
+[5]
+HTML や XML 以外の[[媒体型]]用の [CODE(DOMi)@@en[[[Document]]]]
+界面。 Wiki には依存しないものばかり。
+
+[PRE[
+Interface AnyDocument
+  This interface is expected to be implemented by any object that
+  represents any media type of document.
+  Attributes
+    documentURI of type DOMString, read-only
+      See DOM Level 3 Core specification, Document interface.
+    implementation of type DOMMinimumImplementation, read-only
+      The DOMMinimumImplementation object that handles this document.
+    textContent
+      The textual content of the document, if any, or "null" otherwise.
+      Exception on setting
+        DocumentException NO_MODIFICATION_ALLOWED_ERR
+                          NOT_SUPPORTED_ERR
+  Methods
+    getObjectByFragmentIdentifier
+      Returns a part of this document.
+      Parameters
+        frag of type DOMString
+          The fragment identifier of the subresource, without leading
+          "#" character.  In other word, the substring after the first
+          occurence of the "#" character in the DOM URI of the subresource.
+          If this parameter is set to "null", this object itself is returned.
+          Note that this does not always match to the empty (zero-length)
+          fragment identifier, depending on the definition of the
+          fragment identifier semantics for the media type of the document.
+      Return Value
+        DOMObject  An object representing the part of the document, 
+                   or "null" if the fragment identifier identifies no
+                   part of this document or it is invalid.
+      No Exception
+]PRE]
+
+[PRE[
+Interface AnyTextDocument extends AnyDocument
+  This interface is expected to be implemetned by any object whose
+  source document format is textual.  Instances of XML-based formats
+  are expected to also implement the Document interface of the DOM.
+  HTML documents are expected to also implement the HTMLDocument interface
+  of the DOM.
+  Attributes
+    inputEncoding of type DOMString, read-only
+      See DOM Level 3 Core specification, Document interface.
+]PRE]
+
+[PRE[
+Interface TextDocument extends AnyTextDocument
+  This interface is expected to be implemented by documents
+  whose media type is "text".
+]PRE]
+
+[PRE[
+Interface TextPlainDocument extends TextDocument
+  This interface is expected to be implemented by plain
+  text ("text/plain") documents.
+      The "textContent" attribute of the AnyDocument interface
+  is the exact value of the document for the "text/plain" documents.
+]PRE]
+
+* The Features Module
+
+[6]
+[[DOM水準3]] 型の feature による界面選択メソッド群。
+Wiki には依存しないものばかり。
+
+
+[PRE[
+Interface GetFeature
+  Methods
+    getFeature
+      Parameters
+        feature
+        version
+      Return Value
+        DOMObject or "null"
+      No Exception
+    hasFeature
+      Parameters
+        feature
+        version
+      Return Value
+        boolean
+      No Exception
+]PRE]
+
+@@@@ 適当な feature name & version を定義しておくべきか?
+でもそれを使うためには getFeature メソッドが要るぞ。。。
+
+[PRE[
+Interface DOMMinimumImplementation extends GetFeature
+  This is a lightweight interface of the DOM Level 3 DOMImplementation
+  interface.  This interface is a superset of the DOM Level 1
+  DOMImplementation interface and a subset of the DOM Level 3
+  DOMImplementation interface.
+    An object implementing this interface should be available via
+  the "getDOMImplementation" method or the "getDOMImplementationList"
+  method of the DOMImplementationRegistry object or via
+  the "getFeature" method of the objects which implement
+  GetFeature and/or DOMImplementation interface with
+  the feature name 
+  "http://suika.fam.cx/~wakaba/archive/2004/8/18/manakai-dom#Minimum"
+  and the version "3.0".
+]PRE]
+
+[CODE(perl)@@en[Message::DOM::DOMMetaImpl]]
+<http://suika.fam.cx/gate/cvs/messaging/manakai/lib/Message/DOM/DOMMetaImpl.dis>
+で実装済み。
+
+* メモ@

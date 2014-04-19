@@ -1,0 +1,1474 @@
+head	1.1;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2008.11.11.18.37.42;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/6D616E616B6169.ns/A5E1A5E2.ns/323030352D30392D3239.txt>
+@
+text
+@Interface HTTPImplementation
+  Methods
+    createHTTPClientConnection
+      Parameters
+        hostArg of type DOMString
+          Host name as in the "authority" part of URIs, e.g.
+          Internet FQDN, dotted-decimal IPv4 address or 
+          standard COLON-separated IPv6 address enclosed by the square
+          brankets.
+        portArg of type unsigned-long
+          If this parameter is set to "null" or zero, the "schemeArg"
+          dependent default port number, if any, or "80" is assumed.
+        schemeArg of type DOMString
+          A URI scheme name that implies the transport layer.
+          For example, "http" implies TCP connection while "https"
+          means TLS or SSL over TCP.  This parameter is case-insensitive.
+          If this parameter is set to "null", "http" is assumed.
+      Exceptions
+        HTTPException  NOT_SUPPORTED_ERR: "schemeArg" not supported.
+                       @@@@CONNECTION_ESTABLISHMENT_ERR@@@@
+    createHTTPRequest
+      Creates an HTTP request message.  The version of the
+      HTTP for the new message is determined by the implementation.
+      The implementation MAY choose to direct the request to
+      a proxy; in such case, the message MUST be constructed
+      so that the proxies can understand the request and the
+      "viaProxy" attribute MUST be set to "true".
+      Parameters
+        methodArg of type DOMString
+          The request method of the message.
+        requestURI of type DOMString
+          The request URI part of the Request-Line.  It MUST
+          be a valid URI unless the "methodArg" allows
+          other kind of string.  Any fragment identifiers are stripped.
+          Scheme and authority parts MUST also be removed
+          if the "viaProxy" attribute of the message is set to "true"
+          and the "methodArg" is the method in which they are usually
+          omitted (e.g. "GET" method in HTTP/1.1).  If the parameter
+          value contains the "host" part, a new "Host"
+          header field MUST be created and the "host" and the "port" (if any)
+          MUST be copied from this parameter even if the protocol version
+          is HTTP/1.0.
+      Return Value
+        HTTPRequestMessage
+
+Interface HTTPMessage
+  The objects implementing this interface represents an HTTP message.
+  The objects implementing this interface must also implement
+  either the HTTPRequestMessage interface or the HTTPResponseMessage
+  interface.
+  Constant Group HTTPMessageType
+    HTTP_MESSAGE_TYPE_REQUEST of type unsigned-short
+      The object is an HTTP request message.
+    HTTP_MESSAGE_TYPE_RESPONSE of type unsigned-short
+      The object is an HTTP response message.
+  Attributes
+    entityBody of type HTTPEntityBody, read-only
+      The entity-body of this HTTP message.  There is an entity-body
+      object for each message even if the message has no entity-body.
+    messageBody of type HTTPMessageBody, read-only
+      The message-body part of this HTTP message.  There is an message-body
+      object for each message even if the message has no message-body.
+    messageType of type unsigned-short (HTTPMessageType), read-only
+      The type of the message represented by this object.
+    protocolVersion of type DOMString
+      The "HTTP-Version" portion of the message.  If the version
+      of the protocol in use is the HTTP/0.9, the attribute
+      value is "HTTP/0.9".
+    transferLength of type long, read-only
+      The "transfer-length" of the message-body.  If it does
+      not has body or it is not unknown, "-1" is returned.
+    viaProxy of type boolean
+      Whether the message is either passed from a proxy or passed
+      to a proxy or not.
+          If the message is a request, this
+      attribute value is maintained by some internal flag whose
+      default is "false".  If it is turned "true" and
+      the "requestURI" attribute value is a "path" (i.e. begines with a SOLIDUS),
+      a string "http://" and the field-content of the "Host"
+      header field is prepended if there is a "Host" header field.
+      The implementations MAY perform any other changes appropriate
+      for proxy or non-proxy messages.
+          If the message is a response, this attribute denotes the
+      presence of any evidence the message is passed from the proxy.
+      The implementation MUST set the attribute value "true"
+      if the message contains a "Via" header field.  The implementation
+      MAY determine whether the message is via proxy or not by any
+      other source.  Setting a value to this attribute has no effect.
+      Note that this attribute is "live"; adding a "Via" header field
+      will turn the attribute value "true".
+  Methods
+    hasMessageBody of type boolean, read-only
+      In HTTP/0.9, this attribute is always "true".  In HTTP/1.0
+      and HTTP/1.1, this attribute is "true" if and only if the
+      "transferLength" is greater than or equal to zero.
+          NOTE (informational):  An HTTP message MUST NOT contain
+          the "message-body" if:
+              - it is a request message and its Request-Method is either:
+                  - "LINK"
+              - it is a response message and its Status-Code is either:
+                  - "1xx" (Informational)
+                  - "204" (No Content)
+                  - "205" (Reset Content)
+                  - "304" (Not Modified)
+              - it is a request message and corresponding Request-Method is either:
+                  - "HEAD"
+    @@@@ normalize? @@@@
+      If there is a "Content-Length" header field or there is no "Content-Length"
+      header field but the protocol requires the occurrence of that field,
+      the current "transferLength" value is set to the "Content-Length" field.
+          If there is a "Content-MD5" field, its digest value is recalculated.
+
+Interface HTTPRequestMessage extends HTTPMessage
+  Attributes
+    isConditionalRequest of type boolean, read-only
+      Whether the request is conditional or not.  If no "conditional"
+      option is defined for the Request-Method in use, this attribute
+      denotes "false".
+          NOTE (informational):  A "GET" request is "conditional 'GET'"
+          if the request contains "If-Modified-Since", "If-Unmodified-Since",
+          "If-Match", "If-None-Match" or "If-Range" header field.
+    isContinueAllowed of type boolean, read-only
+      Whether a "100" (Continue) response is allowed or not.
+      If the "protocolVersion" is "HTTP/0.9" or "HTTP/1.0",
+      the "100" responses are not allowed.  In "HTTP/1.1",
+      there is an "Expect" header field in the request and
+      one of whose value matches with "100-continue" then
+      the "100" responses are allowed.
+          NOTE: RFC 2616 allows "100" response in some 
+      other cases.
+    isPartialRequest of type boolean, read-only
+      Whether the request is partial or not.  If no "partial"
+      option is defined for the Request-Method in use, this attribute
+      denotes "false".
+          NOTE (informational):  A "GET" request is "partial 'GET'"
+          if the request contains "Range" header field.
+    requestMethod of type DOMString
+    requestURI of type DOMString
+  Methods
+    isCharsetAccepted
+      @@@@ as defined in HTTP spec. @@@@
+      Parameters
+        charset of type DOMString
+    isContentCodingAccepted
+      @@@@ as in HTTP @@@@
+      Parameters
+        contentCoding of type DOMString
+    isLanguageAccepted
+      @@@@ as in HTTP @@@@
+      Parameters
+        langTag of type DOMString
+    isMediaTypeAccepted
+      @@@@ as defined in HTTP spec @@@@
+      Parameters
+        mediaType of type InternetMediaType
+
+Interface HTTPResponseMessage extends HTTPMessage
+  Attributes
+    isCacheable of type boolean, read-only
+      Whether the response is cacheable or not.
+          NOTE (informational): 
+              #. If the request method is either
+                   - "CONNECT",
+                   - "DELETE",
+                   - "LINK",
+                   - "OPTION",
+                   - "PUT",
+                   - "TRACE", or
+                   - "UNLINK"
+                 ... then the response is _not_ cacheable.
+              #. If the Status-Code of the response message
+                 is "303" or unrecognized, the response is _not_ cacheable.
+              #. If the request method is either
+                   - "HEAD"
+                 ... then the response is cacheable.
+              #. If the request method is either
+                   - "GET"
+                 ... then the request might be cacheable.
+              #. If the request method is either
+                   - "POST"
+                 ... then the request is _not_ cachable unless
+                 "Expires" or "Cache-Control" header field explicitly 
+                 indicates it is cacheable.
+              #. 300-302, 307 MAY if condition.
+    reasonPhrase of type DOMString
+    request of type HTTPRequestMessage, read-only
+      The request message associated to this object, if any,
+      or "null" otherwise.
+    statusCode of type unsigned-short
+      Setting a value to this attribute also changes the value
+      of the "reasonPhrase" attribute.  If the implementation
+      knows the new status-code, a default reason-phrase as
+      shown in the specification will be set.  Otherwise,
+      an implementation dependent default SHOULD be set.
+      For this reason, applications wish to use custom reason-phrase
+      must set the "reasonPhrase" attribute _after_ the setting
+      of this attribute.
+
+Interface HTTPMessageHeader
+  Attributes
+  Methods
+    addFieldByName
+    combineFields
+      Concatenates header fields with the same field-name
+      into a header field.
+      Parameters
+        forceVia of type boolean
+          Whether forces the "Via" header fields combined or not.  If "true",
+          all "Via" header fields in the header is combined.  Otherwise,
+          the implementation MUST NOT combine the fields if they have 
+          different "received-protocol" values and it SHOULD NOT
+          combine them unless they are all under the same organizational
+          control and the "host"s have already been replaced by "pseudonym"s
+          (see RFC 2616 14.45).
+    getFieldByName
+      Parameter
+        fieldName of type DOMString
+          Case-insensitive.
+    getFieldsByName
+    removeFieldsByName
+    sortFieldsByGoodPractce
+      Reorders header fields by their field-names 
+      to the "good practice" order -- the general-header fields
+      precedes the request or response header fields, which
+      are followed by the entity-header fields.  Orders of
+      the header fields whose names are the same are preserved.
+      How different header fields of the same kind are 
+      ordered is implementation dependent.
+
+Interface HTTPHeaderField
+  Constant Group HTTPHeaderFieldConnectionType
+    HTTP_CONNECTION_UNKNOWN_FIELD of type unsigned-short
+    HTTP_CONNECTION_HOP_BY_HOP_FIELD of type unsigned-short
+    @@@@@@@@
+  Constant Group HTTPHeaderFieldType
+    HTTP_UNKNOWN_HEADER_FIELD of type unsigned-short
+    HTTP_GENERAL_HEADER_FIELD of type unsigned-short
+    HTTP_REQUEST_HEADER_FIELD of type unsigned-short
+    HTTP_RESPONSE_HEADER_FIELD of type unsigned-short
+    HTTP_ENTITY_HEADER_FIELD of type unsigned-short
+  Attributes
+    fieldType of type unsigned-short (HTTPHeaderFieldType), read-only
+      The type of the header field.  Although the HTTP specification
+      defines that all unknown header fields are treated as entity-header
+      fields, HTTP_UNKNOWN_HEADER_FIELD SHOULD be used.
+    qualifiedName of type DOMString, read-only
+      The entire "field-name" of this field.  Applications MUST compare
+      field names by case-insensitive match.
+  Methods
+    equalField
+      Examines whether two header fields match or not.  Two
+      header fields are defined to match if any additions and/or
+      removal of "LWS"es where it is allowed make two fields literally
+      identical (see RFC 2616 13.6).  Applications are encouraged
+      to "combineFields" ("HTTPMessageHeader" interface) before
+      the comparison of two header field since there might be 
+      multiple header fields with the same field-name.   The implementations
+      MAY choose another algorithm to determine the equality
+      if the algorithm will return the same result as the definitive one.
+      Parameters
+        refField of type HTTPHeaderField
+      Return Value
+        boolean
+
+Interface HTTPCombineableHeaderField extends HTTPHeaderField
+  Header field defined as "#something".
+  Attributes
+    length of type unsigned-long, read-only
+  Methods
+    item
+      Parameters
+        index of type unsigned-long
+      Return Value
+        @@@@HTTPObject@@@@
+      Exceptions
+        HTTPException  INDEX_SIZE_ERR
+
+Interface HTTPAcceptField extends HTTPCombineableHeaderField
+  Each "item" MUST be an HTTPMediaRange object.
+
+Interface HTTPMediaRange extends HTTPValOptParameterContainer
+  The first parameter MUST be "q" in HTTP/1.0 and HTTP/1.1.
+  Attributes
+    mediaType of type InternetMediaType, read-only
+      The media type.  Either only "imtSubtype" or both "imtType" and 
+      "imtSubType" MAY be "*".
+    q of type DOMString
+      "Reflect"s the "q" parameter.
+  Methods
+    compareRange
+      @@@@sort key : "q" value -> document order@@@@
+      Parameters
+        range of type HTTPMediaRange
+      Return Value
+        @@@@-1, 0, 1@@@@
+    match
+      @@@@matching for imts with parameters@@@@
+      Parameters
+        valueArg of type InternetMediaType
+      Return Value
+        boolean
+
+Interface HTTPAcceptCharsetField extends HTTPCombineableHeaderField
+  Each "item" MUST be an "HTTPCharsetRange" object.
+
+Interface HTTPCharsetRange extends HTTPValueValOptParameter
+  The "value" attribute MUST be a "charset" or the string "*" in HTTP/1.1.
+  Attributes
+    q of type DOMString
+      "Reflect"s the "q" parameter.
+  Methods
+    compareRange
+    match
+      Parameters
+        valueArg of type DOMString
+          A "charset" name.
+
+Interface HTTPAcceptEncodingField extends HTTPCombineableHeaderField
+  Each "item" MUST be an "HTTPCodingRange" object, whose
+  "value" attribute MUST be a "content-coding" or the string "*"
+  and the only allowed parameter is "q" in HTTP/1.1.
+
+Interface HTTPCodingRange extends HTTPValueValOptParameter
+  Attributes
+    q of type DOMString
+      "Reflect"s the "q" parameter.
+  Methods
+    compareRange
+    match
+      Note that "gzip" matches with "x-gzip" and "compress" with "x-compress".
+      Parameters
+        valueArg of type DOMString
+          A "content-coding" name.
+
+Interface HTTPAcceptLanguageField extends HTTPCombineableHeaderField
+  Each "item" MUST be an "HTTPLanguageRange" object.
+
+Interface HTTPLanguageRange extends HTTPValueValOptParameter
+  The "value" attribute MUST be a "language-tag" or the "*".
+  Attributes
+    q of type DOMString
+      "Reflect"s the "q" parameter.
+  Methods
+    compareRange
+    match
+      Parameters
+        Prefix match.  See RFC 2616 14.4 for HTTP/1.1.
+        valueArg of type DOMString
+
+Interface HTTPAcceptRangesField extends HTTPCombineableHeaderField
+  Each "item" MUST be an "HTTPRangeUnit" object, whose value MAY be "none".
+
+Interface HTTPRangeUnit
+  Attributes
+    value of type DOMString
+      Either a "range-unit" or "none".
+  Methods
+    compareRange
+      Literal case-insensitive match.
+    match
+      Literal case-insensitive match.
+
+Interface HTTPAgeField extends HTTPHeaderField, HTTPDateTime
+  The "dateType" attribute MUST be "HTTP_DETE_DELTA".
+
+Interface HTTPAllowField extends HTTPCombineableHeaderField
+  Each "item" MUST be an "HTTPMethodRange" object.
+
+Interface HTTPMethodRange
+  Attributes
+    value of type DOMString
+      A "Request-Method".
+  Methods
+    compareRange
+      Literal case-sensitive match.
+    match
+      Literal case-sensitive match.
+
+Interface HTTPAuthorizationField extends HTTPHeaderField
+  Attributes
+    credentials of type HTTPCredentials
+      If the implementation does not support the HTTP Authentication Module,
+      the attribute value MUST be "null".
+
+Interface HTTPCredentials
+  @@@@Authentication module@@@@
+
+Interface HTTPCacheControlField extends HTTPCombineableHeaderField
+  Each "item" MUST be an "HTTPCacheDirective" object.
+  Attributes
+    httpPrivate of type HTTPFieldNameList
+      This attribute "reflect"s the "private" directive in this header field.
+    httpPublic of type boolean
+      This attribute "reflect"s the "public" directive in this header field.
+    maxAge of type HTTPDateTime
+      This attribute "reflect"s the "max-age" directive in this header field.
+    maxStale of type HTTPDateTime
+      This attribute "reflect"s the "max-stale" directive in this header field.
+    minFresh of type HTTPDateTime
+      This attribute "reflect"s the "min-fresh" directive in this header field.
+    mustRevalidate of type boolean
+      This attribute "reflect"s the "must-revalidate" directive in this header field.
+    noCache of type HTTPFieldNameList
+      This attribute "reflect"s the "no-cache" directive in this header field.
+      @@@@ "no-cache" (w/o "field-name"s) vs no "no-cache" @@@@
+    noStore of type boolean
+      This attribute "reflect"s the "no-store" directive in this header field.
+    noTransform of type boolean
+      This attribute "reflect"s the "no-transform" directive in this header field.
+    onlyIfCached of type boolean
+      This attribute "reflect"s the "no-transform" directive in this header field.
+    proxyRevalidate of type boolean
+      This attribute "reflect"s the "proxy-revalidate" directive in this header field.
+    sMaxage of type HTTPDateTime
+      This attribute "reflect"s the "s-maxage" directive in this header field.
+
+Interface HTTPCacheDirective
+  Attributes
+    name of type DOMString, read-only
+      The name of the directive.
+    value of type DOMString
+      The value for the directive, if any, or "null".
+      @@@@ invalid syntax error? @@@@
+
+Interface HTTPConnectionField extends HTTPCombineableHeaderField
+  Each "item" MUST be an "HTTPFieldName" object.
+  Attributes
+    httpClose of type boolean
+      If this header field contains the "close" option, this attribute
+      denotes "true", otherwise "false".  Turning this attribute "true"
+      makes "close" token added and turning "false" removes all such
+      tokens.
+    keepAlive of type boolean
+      "Reflect"s "keep-alive" token.
+
+Interface HTTPFieldName
+  Attributes
+    qualifiedName of type DOMString
+
+Interface HTTPFieldNameList
+  Attributes
+    length of type unsigned-long, read-only
+  Methods
+    addFieldName
+    contains
+    item
+    removeFieldName
+
+Interface HTTPURIHeaderField extends HTTPHeaderField, HTTPURIContainer
+
+Interface HTTPURIContainer
+  Attributes
+    absoluteURI of type DOMString (DOM URI), read-only
+      If the "field-name" of this header field is "Content-Base",
+      the attribute value is same as the "value" attribute.  Otherwise,
+      the attribute value is the URI obtained by resolving "value" attribute
+      value with the "baseURI" of the entity.  The attribute value MUST
+      be "null" if the "value" is "null" or the "value" is a relative
+      reference and the "baseURI" is "null".
+    value of type DOMString (DOM URI)
+      The URI reference set to this field.
+
+Interface HTTPContentBaseField extends HTTPURIHeaderField
+  Although the "Content-Base" header field has removed from HTTP/1.1
+  specification (RFC 2616), the implementations MUST implement
+  this interface.
+      The "value" MUST be an absolute DOM URI without fragment identifier,
+  although the implementation doesn't need to ensure it.
+
+Interface HTTPContentEncodingField extends HTTPCombineableHeaderField
+  Each "item" MUST be a "DOMString" object which is a "content-coding".
+
+Interface HTTPContentLanguageField extends HTTPCombineableHeaderField
+  Each "item" MUST be a "DOMString" object which is a "language-tag".
+
+Interface HTTPContentLengthField extends HTTPHeaderField
+  Attributes
+    value of type unsigned-long
+      This attribute "reflect"s the "field-body".
+
+Interface HTTPContentLocationField extends HTTPURIHeaderField
+  The "value" MUST be an absolute or relative DOM URI without fragment
+  identifier, although the implementation don't need to ensure it.
+
+Interface HTTPContentMD5Field extends HTTPHeaderField
+  Attributes
+    value of type OctetSequence
+      The MD5 digest.
+    valueBase64 of type DOMString
+      The MD5 digest encoded in Base64 [RFC 2045].
+
+Interface HTTPContentRangeField extends HTTPHeaderField
+  Attributes
+    rangeUnit of type DOMString, read-only
+      A shortcut for "rangeUnit" attribute of the "value" value.
+    value of type HTTPContentRangeSpec
+
+Interface HTTPContentRangeSpec
+  Attributes
+    rangeUnit of type DOMString, read-only
+      The range unit that would be used in the "Accept-Ranges" header field.
+
+Interface HTTPByteContentRangeSpec extends HTTPContentRangeSpec
+  The "rangeUnit" attribute value is "bytes".
+  Attributes
+    firstBytePos of type long
+      "-1" if "byte-range-resp-spec" is "*".
+    instanceLength of type long
+      "-1" if "*".
+    isValid of type boolean, read-only
+      Whether the "byte-content-range-spec" is valid or not.
+      See RFC 2616 14.16 for HTTP/1.1.
+    lastBytePos of type long
+      "-1" if "byte-range-resp-spec" is "*".
+
+Interface HTTPContentTypeField extends HTTPHeaderField
+  Attributes
+    charset of type DOMString
+      A shortcut for the "charset" parameter of the media type specified
+      in this field.  If the current media type defines the "charset"
+      parameter in the manner so that it is compatible with MIME (e.g. "text/plain")
+      "charset" parameter, its value is used as the value of this attribute.
+      If there is no such "charset" parameter but the implementation can
+      provide MIME-compatible charset name, it MAY provide such value
+      through this attribute.  If there is "charset" parameter defined
+      but the entity has no parameter specified, the implementation MUST
+      provide the default charset name as specified in specification.
+      In the other cases, the attribute value MUST be "null". 
+          For example, the implementation MUST reflect the "charset" parameter
+      value for "text/plain" and "text/html" (their default is "iso-8859-1" as 
+      defined in RFC 2616).  It MUST reflect the "charset" parameter
+      for "application/xhtml+xml" if the implementation supports the type
+      (the default is "null", since the type defines no default charset
+      in transfer protocol level).  It MUST NOT reflect the "charset" parameter
+      for "application/x-www-form-urlencoded" since its definition differs
+      from the MIME definition (it MAY be "us-ascii").  For "message/delivery-status"
+      the implementation MAY provide the value "us-ascii" since
+      the only charset allowed for the media type is "us-ascii".  For
+      "application/octet-stream" the value MUST be "null".
+          On setting, if the value "reflect"s some parameter, that parameter
+      value is updated.  If the value is defined as permanently "null",
+      the implementation MUST ignore the new value.  In other case, 
+      the implementation MAY try to update to the new value, but if it cannot,
+      it MUST ignore the new value.  Anyway, updating this attribute
+      makes no convertion for the "entity-body".
+    value of type InternetMediaType
+      "*" is not allowed in "imtType" and "imtSubtype" although
+      the implementation does not have to ensure it.
+
+Interface HTTPDateField extends HTTPHeaderField
+  Attributes
+    value of type HTTPDate
+      Only full date ("HTTP-date") is allowed.
+
+Interface HTTPETagField extends HTTPHeaderField
+  Attributes
+    value of type HTTPEntityTag
+
+Interface HTTPEntityTag
+  Attributes
+    isStar of type boolean
+    isWeak of type boolean
+      Whether the entity tag has the "W/" prefix or not.
+    value of type DOMString
+      The string in the "quoted-string".
+  Methods
+    compareRange
+      Parameters
+        range of type HTTPEntityTag
+    match
+      Parameters
+        tag of type HTTPEntityTag
+    matchWeak
+
+Interface HTTPExpectField extends HTTPCombineableHeaderField
+  Each "item" MUST be an "HTTPNVValOptParameterContainer" object.
+  Attributes
+    http100Continue of type boolean
+      "Reflect"s "100-continue" token.
+
+Interface HTTPExpiresField extends HTTPHeaderField
+  Attributes
+    value of type HTTPDate
+      Formally, only full date ("HTTP-date") is allowed.
+
+Interface HTTPFromField extends HTTPHeaderField
+  Attributes
+    value of type HTTPMailbox
+
+Interface HTTPMailbox
+  The objects implementing this interface SHOULD also implement other
+  interface that provides access to the "mailbox" content.
+  @@@@
+
+Interface HTTPHostField extends HTTPHeaderField
+  Attributes
+    host of type DOMString
+    port of type long
+      "-1" if missing. @@@@ "0" ?  But it's a valid "port" component. @@@@
+
+Interface HTTPIfMatchField extends HTTPCombineableHeaderField
+  @@@@ Combineable ??
+  Each "item" MUST be an "HTTPEntityTag" object whose "isStar" attribute
+  MAY be "true".
+  Methods
+    match
+
+Interface HTTPIfModifiedSinceField extends HTTPHeaderField
+  Attributes
+    value of type HTTPDate
+      MUST be "HTTP-date".
+
+Interface HTTPIfNoneMatchField extends HTTPCombineableHeaderField
+  @@@@ Combineable ??
+  Each "item" MUST be an "HTTPEntityTag" object whose "isStar" attribute
+  MAY be "true".
+  Methods
+    match
+
+Interface HTTPIfRangeField extends HTTPHeaderField
+  Attributes
+    value of type DOMObject
+      MUST be either "HTTPEntityTag" or "HTTPDate".
+      @@@@@@@@
+
+Interface HTTPIfUnmodifiedSinceField extends HTTPHeaderField
+  Attributes
+    value of type HTTPDate
+      "HTTP-date".
+  Methods
+    match
+      Parameters
+        refDate of type HTTPDate
+
+Interface HTTPLastModifiedField extends HTTPHeaderField
+  Attributes
+    value of type HTTPDate
+      "HTTP-date".
+
+Interface HTTPLocationField extends HTTPURIHeaderField
+  The "value" MUST be an absolute DOM URI with optional fragment
+  identifier, although the implementation don't have to ensure it.
+
+Interface HTTPMaxForwardsField extends HTTPHeaderField
+  Attributes
+    value of type unsigned-long
+
+Interface HTTPPragmaField extends HTTPCombineableHeaderField
+  Each "item" MUST be an "HTTPNameValuePair" object.
+  Attributes
+    noCache of type boolean
+      "Reflect"s the "no-cache" token.
+
+Interface HTTPProxyAuthenticateField extends HTTPCombineableHeaderField
+  Each "item" MUST be an "HTTPChallenge" object.
+
+Interface HTTPChallenge
+
+Interface HTTPProxyAuthorizationField extends HTTPHeaderField
+  Attributes
+    value of type HTTPCredentials
+
+Interface HTTPRangesSpecifier
+  Attributes
+    httpUnit of type DOMString, read-only
+
+Interface HTTPByteRangesSpecifier extends HTTPRangesSpecifier
+  The "httpUnit" attribute value MUST be "bytes".
+  Attributes
+    length of type unsigned-long, read-only
+  Methods
+    addRangeSpec
+      Parameters
+        firstBytePos of type long
+        lastBytePos of type long
+    getFirstBytePos
+      Parameters
+        index of type unsigned-long
+      Return Value
+        long  "-1" if missing.
+      Exceptions
+        HTTPException  INDEX_SIZE_ERR
+    getLastBytePos
+      "-1" if missing.
+    removeRangeSpec
+      Parameters
+        index of type unsigned-long
+
+Interface HTTPRangeField extends HTTPHeaderField
+  Attributes
+    value of type HTTPRangeSpecifier
+
+Interface HTTPRefererField extends HTTPURIHeaderField
+  The "value" MUST be an absolute or relative DOM URI without fragment
+  identifier, although the implementation doesn't have to ensure it.
+
+Interface HTTPRetryAfterField extends HTTPHeaderField
+  Attributes
+    value of type HTTPDate
+      Either "HTTP-date" or "delta-seconds" in HTTP/1.1.
+
+Interface HTTPServerField extends HTTPProductHeaderField
+
+Interface HTTPProductHeaderField extends HTTPHeaderField
+  Attributes
+    length of type unsigned-long, read-only
+  Methods
+    appendItem
+      Parameters
+        newItem of type DOMObject
+          Either an "HTTPProduct" or "HTTPCommentNode".
+    getItem
+      Parameters
+        index of type unsigned-long
+    removeItem
+
+Interface HTTPTEField extends HTTPCombineableHeaderField
+  Each "item" MUST be an "HTTPCodingRange" object, whose "value"
+  attribute MUST be a "transfer-extension" or "trailer".
+  Parameters
+    compareRange
+    match
+      Matches either if at least one "item" "match"es to the "transferCoding"
+      or if the protocol in use forces the support of the "transferCoding".
+      Note that all HTTP/1.1 implementations are expected to support "chunked"
+      "transfer-coding".
+      Parameters
+        transferCoding of type DOMString
+
+Interface HTTPTrailerField extends HTTPCombineableHeaderField
+  Attributes
+    value of type HTTPFieldName
+
+Interface HTTPTransferEncodingField extends HTTPCombineableHeaderField
+  Each "item" MUST be a "DOMString" object which is a "transfer-coding".
+
+Interface HTTPUpgradeField extends HTTPCombineableHeaderField
+  Each "item" MUST be an "HTTPProduct" object.
+
+Interface HTTPUserAgentField extends HTTPProductHeaderField
+
+Interface HTTPVaryField extends HTTPCombineableHeaderField
+  @@@@ combineable ?? @@@@
+  Each "item" MUST be an "HTTPFieldName" object whose "qualifiedName"
+  MAY be "*".
+
+Interface HTTPViaField extends HTTPCombineableHeaderField
+  Each "item" MUST be an "HTTPVia" object.
+
+Interface HTTPVia
+  Attributes
+    comment of type HTTPCommentNode
+      "null" if missing.
+    host of type DOMString
+      "host" or "pseudonym".
+    port of type long
+      "-1" if missing or "pseudonym".
+    receivedProtocolName of type DOMString
+      "null" if missing.
+    receivedProtocolVersion of type DOMString
+
+Interface HTTPWarningField extends HTTPCombineableHeaderField
+  Each "item" MUST be an "HTTPWarningValue" object.
+
+Interface HTTPWarningValue
+  Attributes
+    host of type DOMString
+      "host" or "pseudonym".
+    port of type long
+      "-1" if missing or "pseudonym".
+    warnCode of type unsigned-long
+      The "warn-code".  It is "2DIGIT" in RFC 2068 or "3DIGIT" in RFC 2616.
+    warnDate of type HTTPDate
+      "HTTP-date" or "null" if missing.
+    warnText of type HTTPString
+      The "warn-text", without enclosing "QUOTATION MARK"s.
+
+Interface HTTPString
+  The objects implementing this interface MAY also implement 
+  the "HTTPLexicalContainerNode" interface.
+  Attributes
+    value of type DOMString
+      String value.
+          If this is also an "HTTPLexicalNode" object
+      whose descendants includes an "HTTPEncodedWordNode" object
+      whose charset or encoding is not supported by the implementation,
+      it is replaced by "encoded-word" representation of the node,
+      with enclosing "SPACE" character(s) if necessary, for
+      the purpose of computing this attribute value.  Setting a value
+      removes all descendant and appends a new "HTTPTextNode" whose
+      "value" is the new value.
+
+Interface HTTPLexicalContainerNode extends HTTPLexicalNode
+  @@@@ MAY have children of text and encoded-word @@@@
+
+Interface HTTPEncodedWordNode extends HTTPLexicalNode
+  @@@@ charset, language, encoding, value, octets, issupported @@@@
+
+Interface HTTPWWWAuthenticateField extends HTTPCombineableHeaderField
+  Each "item" MUST be an "HTTPChallenge" object.
+
+Interface HTTPMIMEVersionField extends HTTPHeaderField
+  Attributes
+    value of type DOMString
+
+Interface HTTPContentDispositionField extends HTTPHeaderField, HTTPValueValManParameterContainer
+  Attributes
+    dispositionType of type DOMString
+      Equals to the "value" attribute.
+    filename of type DOMString
+      "Reflect"s the "filename" parameter.
+
+Interface HTTPTitleHeaderField extends HTTPHeaderField
+  Attributes
+    value of type DOMString
+
+Interface HTTPContentVersionField extends HTTPHeaderField
+  Attributes
+    value of type DOMString
+      The "quoted-string", without encloseing "QUOTATION MARK" 
+      and any "REVERSE SOLIDUS" in "quoted-pair".
+
+Interface HTTPDerivedFromField extends HTTPHeaderField
+  Attributes
+    value of type DOMString
+      The "quoted-string", without encloseing "QUOTATION MARK" 
+      and any "REVERSE SOLIDUS" in "quoted-pair".
+
+Interface HTTPLinkField extends HTTPCombineableHeaderField
+  Each "item" MUST be an "HTTPLinkParam" object.
+
+Interface HTTPLinkParam extends HTTPValueValOptParameterContainer, HTTPURIContainer
+  The "value" attribute valus is the "URI" part of the field.
+  Attributes
+    anchor of type DOMString
+    rel of type DOMString
+      @@@@ DOMTokenString @@@@
+    rev of type DOMString
+    title of type DOMString
+
+Interface HTTPURIField extends HTTPCombineableHeaderField
+  Each "item" MUST be a "DOMString" object whose value is a DOM URI.
+
+Interface HTTPKeepAliveField extends HTTPCombineableHeaderField
+  Each "item" MUST be an "HTTPNameValuePair" object.
+
+Interface HTTPNVValOptParameter extends HTTPValOptParameterContainer, HTTPNameValueParameterContainer
+
+Interface HTTPValueValOptParameterContainer extends HTTPValOptParameterContainer, HTTPValueParameterContainer
+
+Interface HTTPValueValManParameterContainer extends HTTPValManParameterContainer, HTTPValueParameterContainer
+
+Interface HTTPValueParameterContainer
+  The objects implementing this interface MUST also implement the 
+  "HTTPParameterContainer" interface.
+  Attributes
+    value of type DOMString
+
+Interface HTTPNameValueParameterContainer extends HTTPNameValuePair
+  The objects implementing this interface MUST also implement the 
+  "HTTPParameterContainer" interface.
+
+Interface HTTPNameValuePair
+  Attributes
+    name of type DOMString
+    value of type DOMString
+      "null" if missing.
+    valueCaseSensitive of type boolean
+      Whether the "value" is case-sensitive or not.  For "Expect"
+      header field, see RFC 2616 14.20.  Note that if the implementation
+      does not know whether the "value" should be case-sensitive in
+      particular context or not, it MUST return "true".
+
+Interface HTTPEntity
+  The object implementing the HTTPMessage interface MUST
+  also implement this interface.
+  Attributes
+    baseURI of type DOMString (DOM URI)
+      If there is a "Content-Base" header field, the URI in that field
+      is the attribute value.  If not and this message is a request,
+      the URI constructed from the "Request-URI" of the message is the value.
+      If no "Content-Base" and this is a response message, the "Request-URI"
+      of the request message corresponding to the response, if available, 
+      is used to construct the base URI.  The URI constructed from the 
+      "Request-URI" might not be same as the URI that the client initiates
+      the request, e.g. if the connection is over TLS.  The implementation MAY
+      use other sources to construct the base URI.  If the implementation
+      cannot compute the base URI of the entity, the attribute value MUST
+      be "null".
+          Setting this attribute makes the "Content-Base" header
+      field set to the new value.  The new value MUST be an absolute DOM URI
+      although the implementation need not ensure it.
+    hasEntityBody of type boolean, read-only
+      In HTTP/0.9, this attribute is always "true".  In HTTP/1.0 and
+      HTTP/1.1, this attribute denotes the same value as 
+      the "hasMessageBody" attribute of the HTTPMessage interface.
+    httpMediaType of InternetMediaType, read-only
+      The media type of the entity.  If the message
+      does not contain any entity, this attribute denotes "null".
+      Otherwise, an "InternetMediaType" object corresponding to the
+      "Content-Type" header field is the value of this 
+      attribute.  Any modification to that object will change
+      the field-body of the "Content-Type" header field.
+      If there IS an entity but it has no "Content-Type" header
+      field, the implementation MAY guess the media type
+      as defined in the protocol specification and construct
+      an "InternetMediaType" object.  Modifications to such objects
+      SHOULD result in the creation of a "Content-Type" header field.
+    mimeMediatype of InternetMediaType, read-only
+      The Internet media type of the entity, in the MIME context.
+      If the message does not contain any entity, this attribute denotes "null".
+      If the entity has one or more "Content-Encoding" header fields,
+      the attribute value reflect the "Content-Encoding"
+      header fields; the actual mapping between the header fields
+      and the object is implementation dependent.  Implementations
+      MAY restrict the modification of the "InternetMediaType"
+      objects in this case; any attempt to modify the objects
+      should raise "NO_MODIFICATION_ALLOWED" exception.  In the
+      other cases, this attribute is the same as the "httpMediaType"
+      attribute.
+  Methods
+    checkMD5Digest
+      Checks the integrity of the "entity-body".  If there is a "Content-MD5"
+      field and its value does not match to the MD5 digest of the "entity-body"
+      then this method returns "false".  Otherwise it returns "true".
+      Return Value
+        boolean
+    computeMD5Digest
+      Computes the MD5 digest of the "entity-body" and sets it
+      to the "Content-MD5" field.
+
+Interface HTTPMessageBody
+  This interface is implemented by objects which represents the message-body
+  of HTTP messages.  In HTTP/1.1, the message-body is defined by
+  the "message-body" production rule.  In HTTP/1.0,
+  which does not have the Transfer-Encoding, the message-body 
+  is equal to the entity-body of the message.  In HTTP/0.9,
+  which does not have message headers, the message-body is equal
+  to the Simple-Response, i.e. the entire message.  Even if the message
+  does not (or cannot) have the message-body, the HTTPMessage object has
+  a message-body object implementing this interface.
+      The objects implementing this interface must also implement
+  the HTTPEntityBody interface.
+  Attributes
+    messageBodyLength of type long
+      The length of the message-body, if there is, or "-1" otherwise.
+  Methods
+    addTransferEncoding
+      Parameters
+        transferCoding of type DOMString
+      No Return
+      Exceptions
+        HTTPException  ???_ERR:  The combination of the "transferCoding"
+                       and the current transfer-coding stack is not allowed.
+                       (For example, the message-body is already encoded
+                       by the "chunk" encoding)
+                       NOT_SUPPORTED_ERR:  The implementation does not
+                       supports the specified "transferCoding".
+    removeTransferEncoding
+      Schedules to remove the last transfer-coding applied to
+      the message-body, if any.  The actual decoding may be done
+      at the time of the method call or may be done later.
+      No Parameter
+      No Return
+      Exceptions
+        HTTPException  NOT_SUPPORTED_ERR:  The implementation is unable
+                       to decode the last transfer-coding.
+
+Interface HTTPEntityBody
+  This interface is implemented by objects which represents the entity-body
+  of HTTP messages.  Even if the message does not (or cannot) have the
+  entity-body, the HTTPMessage object has an entity-body object implementing
+  this interface.
+      The object implementing this interface must also implement the
+  HTTPMessageBody interface.
+  Attributes
+    document of type AnyDocument, read-only
+      The document conveyed by this entity.
+    entityBodyLength of type long
+      The length of the entity-body, if there is, or "-1" otherwise.
+
+Interface HTTPLexicalNode
+  Constant Group HTTPLexicalNodeType
+    HTTP_LEX_CHUNK of type unsigned-short
+    HTTP_LEX_COMMENT_NODE of type unsigned-short
+      The objects whose "lexNodeType" is this value MUST
+      also implement the HTTPCommentNode interface.
+    HTTP_LEX_FIELD_NODE of type unsigned-rhort
+      The objects whose "lexNodeType" is this value MUST
+      also implement the HTTPHeaderField interface.
+    HTTP_LEX_MESSAGE_NODE of type unsigned-short
+      The objects whose "lexNodeType" is this value MUST
+      also implement the HTTPMessage interface.
+    HTTP_LEX_MESSAGE_HEADER_NODE of type unsigned-rhort
+      The objects whose "lexNodeType" is this value MUST
+      also implement the HTTPMessageHeader interface.
+    HTTP_LEX_MESSAGE_BODY_NODE of type unsigned-short
+      The objects whose "lexNodeType" is this value MUST
+      also implement the HTTPMessageBody interface.
+    HTTP_LEX_PRODUCT_NODE of type unsigned-short
+    HTTP_LEX_TEXT_NODE of type unsigned-short
+      The objects whose "lexNodeType" is this value MUST
+      also implement the HTTPTextNode interface.
+    HTTP_LEX_TRAILER of type unsigned-short
+  Attributes
+    lexChildNodes of type HTTPLexicalNodeList, read-only
+      The value will be "null" if the type of node is 
+      defined not to have any children.
+    lexFirstChild of type HTTPLexicalNode, read-only
+    lexLastChild of type HTTPLexicalNode, read-only
+    lexNextSibling of type HTTPLexicalNode, read-only
+    lexNodeType of type unsigned-short (HTTPLexicalNodeType), read-only
+      The type of this node.
+    lexParentNode of type HTTPLexicalNode, read-only
+      The parent node of this node, if any, or "null" otherwise.
+    lexPrevSibling of type HTTPLexicalNode, read-only
+    lexTextContent of type DOMString
+      Textual content of this node, with any HTTPCommentNode
+      descendant enclosed by the "(" and ")" pair and
+      any "(", ")" and "\" is quoted by "\" if necessary.
+      Other characters SHOULD NOT be quoted unless otherwise
+      it may be misinterpreted as part of a "encoded-word".
+      It may contain any character (including ones not allowed
+      in the "comment" token) and "encoded-word"s are not allowed.
+          On setting, any existing child nodes (if any) are removed
+      and if the length of the new value is greater than one, then
+      the "lexValue" attribute is set to the value if the node is a text node
+      or a new HTTPTextNode is appended and whose "lexValue" is set to
+      the new value otherwise.
+      Exceptions on setting
+        HTTPException  NO_MODIFICATION_ALLOWED_ERR: Raised if this 
+                       node is read-only.
+  Methods
+    lexAppendChild
+    lexInsertBefore
+    lexReplaceChild
+
+Interface HTTPChunkedBody
+  The HTTPMessageBody objects whose transfer-coding is "chunked"
+  may also implement this interface.  The support for this interface
+  is optional.  @@@@Feature@@@@ feature name "@@@@NAMESPACE@@@@chunkedBody"
+  with version "1.0".
+      The HTTPChunkedBody objects may have children of type HTTPChunk.
+  It also has an HTTPChunkTrailer object but it is not a child of the node.
+  Attributes
+    lexTrailer of type HTTPChunkTrailer, read-only
+      The placeholder for the entity-header fields in the "trailer".
+
+Interface HTTPChunk extends HTTPLexicalNode, HTTPValOptParameterContainer
+  The implementations supporting the HTTPChunkedBody interface
+  MUST also support this interface.  Other implementations MAY
+  support this interface.
+  Attributes
+    chunkData of type HTTPOctetSequence
+      A octet-sequence or "null".
+    chunkSize of type unsigned-long, read-only
+
+Interface HTTPTrailer extends HTTPLexicalNode, HTTPHeaderFieldContainer
+  The implementations supporting the HTTPChunkedBody interface
+  MUST also support this interface.  Other implementations MAY
+  support this interface.
+
+Interface HTTPCommentNode extends HTTPLexicalNode
+  The HTTPCommentNode objects represents lexical structures
+  matched to the "comment" production rule.  They may
+  contain child nodes of types HTTPTextNode and HTTPCommentNode.
+
+Interface HTTPTextNode extends HTTPLexicalNode
+  HTTPTextNode objects may be corresponding to "quoted-string", "token" or
+  "ctext" and "quoted-pair" in "comment"s.  
+      This kind of nodes MUST NOT have any chidren.
+  Attributes
+    lexValue of type DOMString
+      The value of this node.
+          It may contain any character nevertheless the kind of the original
+      production rule.  It may not contain any syntaxical characters
+      such as preceding "\" in the "quoted-pair".  The "textContent" 
+      attribute of this node has the same value as this attribute.
+      Exceptions on setting
+        HTTPException  NO_MODIFICATION_ALLOWED_ERR: Raised if this 
+                       node is read-only.
+
+Interface HTTPDateTime
+  Constant Group HTTPDateTimeType
+    HTTP_DATE_FULL of type unsigned-short
+    HTTP_DATE_DELTA of type unsigned-short
+  Attributes
+    dateFormat of DOMString
+      The format of the date.  It MUST be a DOM URI.  The implementation
+      MUST support the URIs "##NAMESPACE##rfc1123", "##NAMESPACE##rfc850"
+      and "##NAMESPACE##asctime" if the "dateType" is HTTP_DATE_FULL
+      and the URI "##NAMESPACE##delta" if the "dateType" is HTTP_DATE_DELTA.
+      Exceptions on setting
+        HTTPException  NO_MODIFICATION_ALLOWED_ERR: Raised if this 
+                       node is read-only.
+                       NOT_SUPPORTED_ERR: Raised if the 
+    dateType of unsigned-short (HTTPDateTimeType), read-only
+  Methods
+    setFullDate
+      Parameter
+        newDate of type DOMTimeStamp (??)
+      Exceptions
+        HTTPException  NO_MODIFICATION_ALLOWED_ERR: Raised if this 
+                       node is read-only.
+                       NOT_SUPPORTED_ERR: Raised if the context does
+                       not allow the "HTTP-date".
+    setDeltaSecond
+      Parameter
+        deltaSecond of type DOMTimeStamp (??)
+      Exceptions
+        HTTPException  NO_MODIFICATION_ALLOWED_ERR: Raised if this 
+                       node is read-only.
+                       NOT_SUPPORTED_ERR: Raised if the context does
+                       not allow the "delta-second".
+
+Interface HTTPParameterContainer
+  Attributes
+    length of type unsigned-long, read-only
+      The number of parameters.
+  Methods
+    addParamValue
+    getParamByIndex
+      In document order.  If the order of the parameters
+      is not significant, the order is implementation dependent
+      but it MUST be consistent.
+      Parameter
+        index of type unsigned-long
+    getParamValue
+      Returns the value of the parameter.  If there is
+      multiple parameters of the same name, the first one in document
+      order is returned.  If the parameter name is specified
+      but the value is missing, the "null" value is returned.
+      If there is no parameter with the name, the "null" value
+      is specified.  To distinguish these two cases, use 
+      "hasParam" method.
+      Parameter
+        name of type DOMString
+          The parameter name.
+    hasParam
+    isParamValueCaseSensitive
+      Whether a parameter value is case-sensitive or not.  For "Expect"
+      header field, see RFC 2616 14.20.  Note that if the implementation
+      does not know whether the value should be case-sensitive in
+      particular context or not, it MUST return "true".
+    isParamValueCaseSensitiveByIndex
+    removeParam
+    setParamValue
+      If there is multiple parameters with the same name, all
+      such parameters other than the first one in document
+      order are removed and the new value is set to the first one.
+      If there is no parameter whose name matches to the specified one,
+      a new attribute node is created and its value is set to the
+      new value.
+      Parameters
+        name of type DOMString
+        newValue of type DOMString
+          The new value.  If it is "null", the parameter
+          is set to have no value.
+      Exception
+        HTTPException  NO_MODIFICATION_ALLOWED_ERR
+
+Interface HTTPValOptParameterContainer extends HTTPParameterContainer
+  The objects implementing this interface may have one or more
+  parameters (name and value pairs) whose value is optional.
+  The parameters has no uniqueness constraint.
+
+Interface HTTPValManParameterContainer extends HTTPParameterContainer
+
+Interface HTTPProduct
+  Attributes
+    productName of type DOMString
+      Exception on setting
+        HTTPException  NO_MODIFICATION_ALLOWED_ERR
+    productVersion of type DOMString
+      "null" if missing.
+      Exception on setting
+        HTTPException  NO_MODIFICATION_ALLOWED_ERR
+
+Interface HTTPConnection
+  Connection to an HTTP host.
+      The implementations SHOULD define some interface or the way 
+  to access lower level connection such as binding-dependent
+  objects that provide TCP connections or to pass this connection
+  object to such objects.
+      This interface is optional.
+      @@@@TODO: More study is expected for persistent connection,
+  pipelinging and reconnection for the case of failure@@@@
+  Attributes
+    clientProtocolVersion of type DOMString, read-only
+      @@@@@@@@
+    isClosed of type boolean, read-only
+      Whether the connection is known to be closed or not.
+    protocolVersion of type DOMString, read-only
+      The highest version of the HTTP in use in this connection.
+      When the connection object is initialized, this attribute
+      MUST be the highest version of the HTTP that the implementation
+      supports.  Once the first request is received (by 
+      the "sendRequest" method of the "HTTPClientConnection" interface
+      or via the network in the "HTTPServerConnection" interface),
+      the attribute value MUST be reset to the highest version of 
+      the HTTP whose major version is equal to the version of
+      the request message and that the implementation supports.
+      The implementation MAY update the value if it received
+      a message with the higher major version.
+          For example, the implementation supports HTTP/0.9, HTTP/1.0 and
+      HTTP/1.1 and it receives an HTTP/0.9 "Simple-Request", 
+      this attribute is set to "HTTP/0.9".  If the same implementation
+      receives an HTTP/1.0 message, the attribute value may be 
+      updated to "HTTP/1.1".
+    serverProtocolVersion of type DOMString, read-only
+      @@@@@@@@
+    willBeClosed of type boolean, read-only
+      Whether this connection is scheduled to close or not.
+      The connection will be closed if the "closeConnection"
+      method of the "HTTPConnection" or "HTTPResponsedEvent"
+      interface is called, if any processed request or response
+      message has a "Connection" or "Proxy-Connection"
+      header field set to "close", if the "protocolVersion"
+      is "HTTP/0.9" or "HTTP/1.0" and there is no "Keep-Alive"
+      header field or if some implementation dependent condition.
+  Methods
+    clearCue
+      If there are messages waiting for sending, they are canceled
+      and the failure will be reported.  Messages currenly in process
+      are not canceled.
+    closeConnection
+      Schedules to close the connection after the last response
+      for the requests currently in the cue is received.  Any
+      subsequent arrival of request is refused. @@@@requests awaiting respomse@@@@
+    closeConnectionImmediately
+      Closes the connection immediately.  If any message is being
+      processed, it MAY be interrupted and the failure will be reported
+      (it MUST NOT be put back to the cue).
+      The cue is not cleared by this method.
+  Events
+    hc:closed
+      @@@@@@@@
+      This event is dispatched after the connection is closed.
+
+Interface HTTPClientConnection extends HTTPConnection
+  Connection to an HTTP server or proxy acting as if a server.
+  The "HTTPClientConnection" objects accept HTTP response message.
+      This interface is optional; @@@@feature@@@@ "@@@@NAMESPACE@@@@clientConnection"
+  or "@@@@NAMESPACE@@@@clientConnectionAsync" version "1.0".
+      The objects implementing this interface MUST also
+  implement the "EventTarget" interface of the DOM Level 3
+  Events module. @@@@if async@@@@
+  Methods
+    reconnect
+      Tries to reestablish the connection.  If the connection has not
+      been closed, it is once closed as if the "closeConnectionImmediately"
+      method is called and then reconnected.  The
+      implementations MAY choose to ignore this method.  If there
+      are unsent message in the cue, their process will be restarted.
+      Return Value
+        boolean  "true" if the connection has established, "false" otherwise.
+    sendRequest
+      Sends an HTTP request.
+          In asynchronous mode, multiple calls of this method
+      MAY result in the order of the request to the server being
+      arranged for optimization while the request methods are safe.
+      For example, a sequence of method call with the request methods
+      "GET"1, "POST"1, "GET"2, "GET"3, "GET"4, "POST"2, "GET"5, "HEAD"1
+      may cause the request messages issues in the order "GET"1, "POST"1,
+      "GET"2, "GET"4, "GET"3, "POST"2, "HEAD"1, "GET"5 since "GET" and
+      "HEAD" are safe but "POST" is not.
+      Parameters
+        requestArg of type HTTPRequestMessage
+        async of type boolean
+      Return Value
+        HTTPResponseMessage  If the "async" parameter is set to "true"
+                             and a response message has been received.
+                             Otherwise, "null" is returned.
+      Exceptions
+        HTTPException  NOT_SUPPORTED_ERR: @@@@async@@@@
+  Events
+    hc:failure
+      Event Interface: @@@@if@@@@
+      @@@@async only@@@@ @@@@server error, user cancel, 102 response@@@@
+    hc:responsed
+      Event Interface: HTTPResponsedEvent
+      Received a response message to a request.
+      @@@@async only@@@@
+    @@@@progress@@@@
+      @@@@async only@@@@
+    hc:switchProtocol
+      @@@@@@@@
+      A "102 (Switching Protocol)" response has been received.
+
+Interface HTTPServerConnection extends HTTPConnection
+  Connection to an HTTP client or proxy acting as if a client.
+  The "HTTPServerConnection" objects accept HTTP request messages.
+      The objects implementing this interface MUST also
+  implement the "EventTarget" interface of the DOM Level 3
+  Events module.
+      This interface is optional; @@@@feature@@@@ "@@@@NAMESPACE@@@@serverConnection"
+  version "1.0".
+  Events
+    hc:canceled
+      @@@@@@@@
+      The connection between this host and the client or proxy
+      is interruputed and the request is considered as canceled
+      during the process of the "hc:requested" event.  The cancels
+      before or after the process of the event does not cause
+      this event dispatched.  If this event is dispatched,
+      "hc:failure" will also be dispatched after the completion
+      of the "hc:requested" event processing as usual.
+    hc:complete
+      @@@@@@@@
+    hc:failure
+      @@@@@@@@
+    hc:requested
+      Event Interface: HTTPRequestedEvent
+      Recived a request message.
+          If the object received a request from the network or 
+      any implementation dependent source, this event is dispatched.
+      The implementation MAY choose to schedule to dispatch the event
+      in optimized order while the safeness as in "sendRequest"
+      method of the "HTTPClientConnection" interface is preserved. 
+      Netheless the order of the completion of the event processing,
+      the order in which the response messages are actually sent
+      to the client or proxy MUST be same as the order in which
+      the requests are received.
+
+Interface HTTPRequestedEvent
+  This interface is optional; @@@@feature@@@@ @@@@serverConnection@@@@
+  Attributes
+    request of type HTTPRequestMessage, read-only
+    response of type HTTPResponseMessage, read-only
+  Methods
+    closeConnection
+      Schedules to close the connection.  It means that
+      no more request should be accepted and the implementations
+      SHOULD continue the process of the already accepted requests
+      including the current request.  The implementations MUST
+      ensure that either the last response to the client includes
+      the "Connection: close" header field (or equivalent) or
+      the underlying (e.g. TCP) connection is closed after sending
+      the last response.
+    sendContinue
+      Sends a non-final response such as "100 (Continue)".
+      The implementations MAY ignore this method call
+      if the response passed as a parameter is inappropriate
+      as such response or the client or proxy does not seem
+      to want such responses.
+      Parameters
+        responseArg of type HTTPResonseMessage
+        async of type boolean
+          The implementations MAY choose to ignore this flag.
+
+Interface HTTPResponsedEvent
+  This interface is optional; @@@@feature@@@@ @@@@clientConnectionAsync@@@@
+  Attributes
+    request of type HTTPRequestMessage, read-only
+    response of type HTTPResponseMessage, read-only
+
+
+Shared cache
+  If the request message has "Authorization" field, it MUST NOT
+  return corresponding response as a reply to any other request,
+  unless (one of):
+    - the response message includes the "s-maxage" directive.
+    - the response message includes the "must-revalidate" directive.
+    - the response message includes the "public" directive.
+
+  The "Expires" header field.  The "max-age" directive overrides it.
+  (RFC 2616 14.21)
+  
+  If the "Expires" date <= "Date" date, receivers MUST NOT cache
+  the entity.  (RFC 1945 14.21)  Its stale.  
+  If the format of the "Expires" field is invalid,
+  it MUST be treated as expired.  Setting future "Expires" makes
+  a non-cacheable response cacheable unless "Cache-Control" indicates otherwise.
+  (RFC 2616 14.21)
+
+@@@@RFC 2295 module@@@@
+Interface HTTPVaryFieldCN
+  MUST also implement the "HTTPVaryField" interface.
+  Attributes
+    acceptCharset of type boolean
+    acceptFeatures of type boolean
+    acceptLanguage of type boolean
+    acceptType of type boolean
+    negotiate of type boolean
+      "Reflect"s.
+
+
+Interface InternetMediaType
+  Implementations which support the "@@@@NAMESPACE@@@@" version "1.0"
+  MUST also implement the HTTPValManParameterContainer interface
+  for the InternetMediaType objects.
+  Attributes
+    imtType of type DOMString
+      The major part of the media type.
+      Exceptions on setting
+        HTTPException  NO_MODIFICATION_ALLOWED_ERR
+    imtSubtype of type DOMString
+      The subtype part of the media type.
+      Exceptions on setting
+        HTTPException  NO_MODIFICATION_ALLOWED_ERR
+  Methods
+    addParamValue
+      Exceptions on setting
+        HTTPException  NO_MODIFICATION_ALLOWED_ERR
+    getParamValue
+    removeParamValue
+      Exceptions on setting
+        HTTPException  NO_MODIFICATION_ALLOWED_ERR
+    setParamValue
+      Exceptions on setting
+        HTTPException  NO_MODIFICATION_ALLOWED_ERR
+
+
+
+
+Interface AnyDocument
+  Methods
+    canonicalize
+      If the media type of the document is "text/*", 
+      any occurence of bare "CR" and bare "LF" and any
+      implementation dependent line break character or sequence
+      are replaced by a "CRLF" pair, as defined in RFC 2046.
+      Exceptions
+        *Exception  NO_MODIFICATION_ALLOWED_ERR
+
+Interface HTTPDocument
+  The "message/http" objects MUST also implement the "MessageDocument"
+  interface.  The "application/http" objects MUST also implement the
+  "ApplicationDocument" interface.
+      @@@@ feature name & version "1.0" @@@@
+  Attributes
+    msgtype of type DOMString
+      "Reflect"s "msgtype" parameter.  "request" or "response".
+    version of type DOMString
+      "Reflect"s "version" parameter.
+
+Interface MultipartByterangesDocument extends MultipartDocument
+  @@@@ feature name & version "1.0" @@@@
+      Each body-part object MUST also implement the "MultipartByterangeBodyPart"
+  interface.
+
+Interface MultipartByterangeBodyPart extends MultipartBodyPart
+  Attributes
+    contentRange of type HTTPContentRangeField
+      "null" if missing.
+    contentType of type HTTPContentTypeField
+      "null" if missing.
+
+@

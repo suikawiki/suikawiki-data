@@ -1,0 +1,142 @@
+head	1.1;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2008.11.12.15.24.00;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/53657269616C57616C6B6572.txt>
+@
+text
+@* 紹介
+[1] 
+[DFN@@en[[CODE(DOMi)@@en[[[SerialWalker]]]]]] は、
+[[manakai]] 独自の [[DOM]] [[界面]]です。
+[[DOM]] [[木]]を[[文書順]]にたどることができますが、
+[[子節点]]を訪問した後、もう一度[[親節点]]を訪問してから次の[[子節点]]へ向かいます。
+
+@@@@ もっとよい[[界面]]名があればと思っていますが。。。
+
+[2]
+例えば、
+[PRE(aafig)[
+    [VAR@@en[A]]
+  / | \
+ [VAR@@en[B]]  [VAR@@en[C]]  [VAR@@en[D]]
+      / \
+     [VAR@@en[E]]   [VAR@@en[F]]
+]PRE]
+という[[木]]では、
+,[CODE(DOMa)@@en[[[currentNode]]]],[CODE(DOMa)@@en[[[currentPhase]]]],[CODE(DOMa)@@en[[[currentIndex]]]]
+,[VAR@@en[A]],[CODE(DOMc)@@en[[[PRE_PHASE]]]],0
+,[VAR@@en[B]],[CODE(DOMc)@@en[[[PRE_PHASE]]]],0
+,[VAR@@en[B]],[CODE(DOMc)@@en[[[POST_PHASE]]]],1
+,[VAR@@en[A]],[CODE(DOMc)@@en[[[IN_PHASE]]]],1
+,[VAR@@en[C]],[CODE(DOMc)@@en[[[PRE_PHASE]]]],0
+,[VAR@@en[C]],[CODE(DOMc)@@en[[[POST_PHASE]]]],1
+,[VAR@@en[A]],[CODE(DOMc)@@en[[[IN_PHASE]]]],2
+,[VAR@@en[D]],[CODE(DOMc)@@en[[[PRE_PHASE]]]],0
+,[VAR@@en[E]],[CODE(DOMc)@@en[[[PRE_PHASE]]]],0
+,[VAR@@en[E]],[CODE(DOMc)@@en[[[POST_PHASE]]]],1
+,[VAR@@en[D]],[CODE(DOMc)@@en[[[IN_PHASE]]]],1
+,[VAR@@en[F]],[CODE(DOMc)@@en[[[PRE_PHASE]]]],0
+,[VAR@@en[F]],[CODE(DOMc)@@en[[[POST_PHASE]]]],1
+,[VAR@@en[D]],[CODE(DOMc)@@en[[[POST_PHASE]]]],2
+,[VAR@@en[A]],[CODE(DOMc)@@en[[[POST_PHASE]]]],3
+の順に訪問します。
+
+[3]
+[[節点]]と[[節点]]の間や[[子節点]]の後で作業が必要な時に便利です。
+例えば、[[SAX]] の[[事象]]列を生成したり、
+[[DOM]] [[木]]を [[SXML]] に[[直列化]]したりするのに使うことができます。
+
+* 使い方
+
+[4] '''作成''':
+[CODE(DOMi)@@en[[[TreeWalker]]]] と同じように、
+[CODE(DOMi)@@en[[[DocumentTraversal]]]] 
+[[界面]]の[[メソッド]] 
+[CODE(DOMm)@@en[[[manakaiCreateSerialWalker]]]] から作成します。
+[[引数]]も [CODE(DOMm)@@en[[[createTreeWalker]]]] と同じです。
+
+[PRE(DOM perl example code)[
+[CODE(keyword)@@en[my]] [VAR@@en[$doctrv]] = [VAR@@en[$doc]]->[CODE(DOMm)@@en[get_feature]] ('Traversal');
+[CODE(keyword)@@en[my]] [VAR@@en[$sw]] = [VAR@@en[$doctrv]]->[CODE(DOMm)@@en[manakai_create_serial_walker]]
+                    ([VAR@@en[$root_node]],
+                     [VAR@@en[$what_to_show]],
+                     [VAR@@en[$filter]],
+                     [VAR@@en[$expand_entity_references]]);
+]PRE]
+
+[5] '''探索''':
+[CODE(DOMi)@@en[[[SerialWalker]]]] の唯一の[[探索]][[メソッド]]は
+[CODE(DOMm)@@en[[[nextNode]]]] です。
+次の[[節点]]があれば、それを返します。なければ、
+[CODE(DOM)@@en[[[null]]]] を返します。
+
+[CODE(DOMi)@@en[[[TreeWalker]]]] の[[探索]][[メソッド]]と同じように、
+この[[メソッド]]が [CODE(DOM)@@en[[[null]]]] でない値を返した時は
+[CODE(DOMa)@@en[[[currentNode]]]], [CODE(DOMa)@@en[[[currentPhase]]]],
+[CODE(DOMa)@@en[[[currentIndex]]]] が更新されます。
+
+[PRE(DOM perl example code)[
+[SPAN(comemnt)@@en[## 節点名、フェーズ、索引番号を順に出力する]]
+[CODE(keyword)@@en[while]] ([CODE(keyword)@@en[defined]] [VAR@@en[$sw]]->[CODE(DOMm)@@en[next_node]]) {
+  [CODE(keyword)@@en[print]] [VAR@@en[$sw]]->[CODE(DOMa)@@en[current_node]]->[CODE(DOMa)@@en[node_name]], "\t",
+        [VAR@@en[$sw]]->[CODE(DOMa)@@en[current_phase]], "\t",
+        [VAR@@en[$sw]]->[CODE(DOMa)@@en[current_index]], "\n";
+}
+]PRE]
+
+[6] '''属性''':
+:[CODE(DOMa)@@en[[[root]]]]:[CODE(DOMi)@@en[[[SerialWalker]]]]
+を作成する時に指定した[[根節点]]です。
+[CODE(DOMi)@@en[[[SerialWalker]]]] はこの[[節点]]を[[根]]とする[[部分木]]を歩き回ります。
+:[CODE(DOMa)@@en[[[expandEntityReference]]]]:[CODE(DOMi)@@en[[[SerialWalker]]]]
+を作成する時に指定した、[[実体参照]]の見せ方の指定です。
+取り得る値と意味は [CODE(DOMi)@@en[[[TreeWalker]]]] のものと同じです。
+:[CODE(DOMa)@@en[[[whatToShow]]]]:[CODE(DOMi)@@en[[[SerialWalker]]]]
+を作成する時に指定した、見せる[[節点]]の種類です。
+取り得る値と意味は [CODE(DOMi)@@en[[[TreeWalker]]]] のものと同じです。
+:[CODE(DOMa)@@en[[[filter]]]]:[CODE(DOMi)@@en[[[SerialWalker]]]]
+を作成する時に指定した [CODE(DOMi)@@en[[[NodeFilter]]]] です。
+取り得る値と意味は [CODE(DOMi)@@en[[[TreeWalker]]]] のものと同じです。
+:[CODE(DOMa)@@en[[[currentNode]]]]:最後に
+[CODE(DOMm)@@en[[[nextNode]]]] が返した[[節点]]です。
+[CODE(DOMi)@@en[[[TreeWalker]]]] とは異なり、
+この[[属性]]は読取専用です。
+:[CODE(DOMa)@@en[[[currentPhase]]]]:[CODE(DOMa)@@en[[[currentPhase]]]]
+のフェーズ番号です。
+[CODE(DOMc)@@en[[[PRE_PHASE]]]] は、その[[節点]]に初めて訪問したことを示します。
+[[子節点]]があれば、次にそれが訪問されます。
+[CODE(DOMc)@@en[[[IN_PHASE]]]] は、その[[節点]]のある[[子節点]]を訪問し、
+その次の[[子節点]]を訪問する前に一旦[[親節点]]を訪問していることを示します。
+[CODE(DOMc)@@en[[[POST_PHASE]]]] は、その[[節点]]の[[子節点]]があればすべて訪問し終え、その[[節点]]に戻ってきたことを示します。
+[[子節点]]がない (または見えない) [[節点]]では、
+[CODE(DOMc)@@en[[[PRE_PHASE]]]] の後すぐに
+[CODE(DOMc)@@en[[[POST_PHASE]]]] で同じ[[節点]]を訪問します。
+:[CODE(DOMa)@@en[[[currentIndex]]]]:前にその[[節点]]を訪問した回数を示します。
+[CODE(DOMa)@@en[[[currentPhase]]]] が [CODE(DOMc)@@en[[[PRE_PHASE]]]]
+なら、[CODE(DOMa)@@en[[[currentIndex]]]] は零です。
+その後同じ[[節点]]に訪問する度に、値が1ずつ増えていきます。
+
+* メモ
+
+
+
+@

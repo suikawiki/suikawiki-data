@@ -1,0 +1,153 @@
+head	1.2;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.2
+date	2014.03.26.11.50.33;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2008.11.12.10.48.57;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@[[属性値]]@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/C2B0C0ADC3CD.ns/C0B5B5ACB2BD.txt>
+@
+text
+@d1 1
+a1 111
+
+
+[1] 【[[SGML]]】 [[属性値表記]]を[[属性値]]として解釈するに当たっては、
+= [CODE(SGML)[[[lit]]]] 又は [CODE(SGML)[[[lita]]]] を取り除く。
+= [[参照]] ([[文字参照]]及び[[一般実体参照]]) を[[置換]]する。
+= [CODE(SGML)[[[Ee]]]] 及び [CODE(SGML)[[[RS]]]] を無視する。
+= [CODE(SGML)[[[RE]]]] 又は [CODE(SGML)[[[SEPCHAR]]]] を
+[CODE(SGML)[[[SPACE]]]] に置換する。
+
+という手順を経ます。なお、属性値表記の内容は、その[[属性]]がどんな[[型]]と[[宣言]]されていようと、
+このように解釈されます。
+ですから、例えば [SAMP(SGML)[id="&id;"]]
+のような属性値指定は間違いではありません。
+
+属性値の型が [CODE(SGML)[CDATA]] 以外の場合は、更に
+= 2個以上連続する [CODE(SGML)[SPACE]] を1個の [CODE(SGML)[SPACE]] に置換する。
+= 先頭及び末尾に現れる [CODE(SGML)[SPACE]] を無視する。
+
+[[空白]]文字が元々存在していたのが [CODE(SGML)[CDATA]]
+実体だろうが [CODE(SGML)[[[SDATA]]]]
+実体だろうが、この通りに処理されます。
+(以上、 [[JISX4151]]‐1992 6.9.3 参照。)
+
+実際に属性値として使用することが出来るのは、
+以上の処理の結果得られた値です。
+型ごとに決められた構文への[[一致]]が求められたり、
+「属性値の正規の長さ」の算出の元になるのはこの値であって、
+元の表記の値ではありません。
+
+[2] 【[[XML]]】 XML でも、大体は素の SGML
+と同じように処理されます。
+''Extensible Markup Language (XML) 1.0 3.3.3 Attribute-Value Normalization'' <http://www.w3.org/TR/REC-xml#AVNormalize>,
+<http://www.w3.org/XML/xml-V10-2e-errata#E6>
+
+= [[XML//空白]]にあるように、改行は [CODE(XML)[#xA]] に変換されている。ここから処理を開始する。
+= [3] 最初から最後に向かって順に、次の処理を施す。
+-- 文字参照は、その参照する文字とする。
+-- 一般実体参照は、その[[置換文]]について、再帰的に >>3 の処理を行う。
+-- 空白文字 ([CODE(XML)[#x20]], [CODE(XML)[#xA]], [CODE(XML)[#xD]], [CODE(XML)[#x9]]) は、 [CODE(XML)[#x20]] とする。
+-- その他の文字は、そのままとする。
+= 属性値の型が [CODE(XML)[CDATA]] 以外の場合は、更に
+-- 先頭及び末尾に現れる [CODE(XML)[SPACE]] を全て無視する。
+-- 2個以上連続する [CODE(XML)[#x20]] を1個の [CODE(XML)[#x20]] に置換する。
+
+なお、宣言されていないか読まれていない属性の型は、
+[CODE(XML)[CDATA]] として扱います。
+
+[4] XML 1.0 仕様書の例:
+[PRE[
+<!ENTITY d "&#xD;">
+<!ENTITY a "&#xA;">
+<!ENTITY da "&#xD;&#xA;">
+]PRE]
+
+.属性指定        ,a が [CODE(XML)[CDATA]] で,==
+,	,ない	,ある
+,"a=\"[CODE(XML)[#xD]][CODE(XML)[#xA]]xyz\""	,x y z	,#x20 #x20 x y z
+,"a=\"&d;&d;A&a;&#x20;&a;B&da;\""	,A #x20 B	,#x20 #x20 A #x20 #x20 #x20 B #x20 #x20
+
+.a="&#xd;&#xd;A&#xa;&#xa;B&#xd;&#xa;"	,#xD #xD A #xA #xA B #xD #xA	,#xD #xD A #xA #xA B #xD #xD
+
+[5] XML でも、 SGML 同様に属性値の構文一致
+(妥当性制約。) が求められるのは正規化後の値です。
+その辺、 XML 中核作業部会も認識が甘かったらしく、
+二転三転の修正があったりしました。
+<http://www.w3.org/XML/xml-V10-2e-errata#E20>
+
+[6] ところで、 >>4 の3番目の例に示されていること、
+つまり属性値表記に直接記述された数値文字参照の参照値が正規化の対象にならず、
+[CODE(XML)[#xD]] とかがそのまま残る、というのは
+SGML と話が全然違いませんか? Web SGML
+にも、こういう解釈が出来るという話は書かれていない気がしますが。
+
+[7]
+>>6 は、次の例のような場合です。
+
+[PRE(XML)[
+<!ENTITY foo "あいうえお&#x0A;">
+]PRE]
+
+[PRE(XML)[
+<element attr="&foo;"/>
+]PRE]
+
+>>1 の手順に従うなら、 [SAMP(XMLa)[attr]] の値は、[Q[あいうえお[CODE(char)[#x0A]]]]
+となり、 [CODE(char)[#x0A]] は [CODE(SGML)[RS]] なので、無視されて[Q[あいうえお]]になるはずです。
+
+ところが、 >>2 の手順に従うと、
+[Q[あいうえお[CODE(char)[#x0A]]]]
+は[Q[あいうえお[CODE(char)[#x20]]]]
+にならなければいけません。
+
+XML で [CODE(char)[#x0A]] が [CODE(SGML)[RS]] でないのなら、何も問題ではありませんが・・・。
+([[名無しさん]])
+
+[8]
+幸いなことに、 >>2 の規定は [[XML 1.1]] では変更されませんでした。
+([[名無しさん]])
+
+
+[9]
+[[XHTML 1.0]] の互換性指針は、
+[[属性値表記]]に[[改行]]や複数の[[空白]]を入れると実装によって扱いが違うので好ましくないとしています。
+
+仕様書:
+-[[XHTML 1.0]]
+--[CSECTION[C.5. Line Breaks within Attribute Values]]
+<IW:XHTML10:"C_5">
+
+([[名無しさん]] [sage])
+
+@
+

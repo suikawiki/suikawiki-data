@@ -1,0 +1,1241 @@
+head	1.10;
+access;
+symbols
+	suika-20100509:1.2
+	before-graph-20090923:1.2;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.10
+date	2014.01.21.07.58.47;	author wakaba;	state Exp;
+branches;
+next	1.9;
+
+1.9
+date	2013.05.28.23.47.26;	author wakaba;	state Exp;
+branches;
+next	1.8;
+
+1.8
+date	2013.03.16.02.27.58;	author wakaba;	state Exp;
+branches;
+next	1.7;
+
+1.7
+date	2012.08.28.12.01.34;	author wakaba;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2012.08.28.05.08.39;	author wakaba;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2012.01.27.13.08.00;	author wakaba;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2010.10.23.14.48.54;	author wakaba;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2010.10.12.23.09.50;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2009.01.10.10.18.58;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2008.11.12.16.39.37;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.10
+log
+@updated by (anon)
+@
+text
+@
+
+* [CODE(DOMa)@@en[write]] メソッド (HTML DOM)
+
+
+** HTML 5
+
+@@@@ TBW
+
+[[#comment]]
+
+
+** HTML 4
+
+[1] 仕様書:
+- [[HTML 4]]
+-- [CITE[18.2.4 Dynamic modification of documents]]
+<IW:HTML4:"interact/scripts.html#idx-document">
+-- [CITE[18.2.3 Intrinsic events]]
+<IW:HTML4:"interact/scripts.html#idx-control">
+
+[2] HTML 4 の 18.2.4 は文書読込み時に実行される[[スクリプト]]による文書内容の動的な編集について触れています。
+そこでは [CODE(JS)[[[document]].write]] 
+はその実現手段の一例として挙げられていますが、
+実用的なレベルで存在したもので該当するのは他になかったでしょうし、
+[[DOM]] が整理される以前の規定ですから、
+[CODE(JS)[document.write]] と HTML 文書・UA の関係に関する規定と捉えてよいでしょう。
+また、一般の DOM による操作等は想定範囲外でしょうから、
+拡大して解釈することには慎重であるべきと考えられます。
+
+さて、 18.2.4 によれば、文書の動的な編集は次の通りモデル化できるそうです。
+= すべての [CODE(HTMLe)[[[script]]]] が、
+文書の読込まれる順序で評価されます。
+= [[SGML]] [CODE(SGML)[[[CDATA]]]] を生成する [CODE(HTMLe)[[[script]]]]
+要素中のスクリプト構造がすべて評価されます。
+その生成文を結合したものが文書中の [CODE(HTMLe)[[[script]]]]
+要素の場所に挿入されます。
+= 生成された [CODE(SGML)[CDATA]] が再評価されます。
+
+このモデルは、 SGML 構文解析器で HTML 文書から木構造を抽出し、
+それを HTML 仕様書の規定する意味と表現によってレンダリングするという
+SGML 的に本来あるべき UA の処理方法ではなく、 HTML
+文書を適当に読込みながら適当に解析しつつ適当にレンダリングし続けるという
+WWW ブラウザの伝統的な処理方法に依拠しているように思えます。
+
+[18]
+HTML 4 仕様書に示された例によれば、
+[PRE(HTML example code)[
+ <TITLE>Test Document</TITLE>
+ <SCRIPT type="text/javascript">
+     document.write("<p><b>Hello World!<\/b>")
+ </SCRIPT>
+]PRE]
+
+は
+[PRE(HTML example code)[
+ <TITLE>Test Document</TITLE>
+ <P><B>Hello World!</B>
+]PRE]
+
+という HTML マークと同じ効果を持ちます。[Q[効果]]という曖昧な言葉を使っているため、
+何を指しているのか (レンダリング結果? 出来上がる構造?) はっきりとはしませんが、
+ともかくある意味においてこの2例は HTML 的に等価です。
+
+ところが、 SGML 的には、前者は
+[PRE(HTML invalid example code)[
+<HTML><HEAD> <TITLE>Test Document</TITLE>
+ <SCRIPT type="text/javascript">
+     document.write("<p><b>Hello World!<\/b>")
+ </SCRIPT>
+</HEAD></HTML>
+]PRE]
+
+と等価 (完全に交換可能) であり、
+
+;; 注: これだけでは [CODE(HTMLe)@@en[[[body]]]] [[要素]]がないので、
+[[非妥当]]です。
+
+後者は
+[PRE(HTML example code)[
+<HTML><HEAD> <TITLE>Test Document</TITLE>
+ </HEAD><BODY><P><B>Hello World!</B>
+</BODY></HTML>
+]PRE]
+
+と等価ですから、両者は異なる構造を持っています。そして、
+[CODE(JS)[document.write]] の結果は常に [CODE(HTMLe)[[[body]]]]
+内に書込まれるとか (これは先のモデルと矛盾します。)、
+[CODE(HTMLe)[[[head]]]] 内にも [CODE(HTMLe)[[[p]]]] 要素が含められるとか
+(これは HTML DTD と矛盾します。) の仮定を置かない限り、
+適切な結果が得られません。
+
+[3] HTML 4 は、次のようにも述べています。
+
+> HTML 文書は、 [CODE(HTMLe)[script]] 要素の処理の前後いずれにおいても
+HTML DTD に適合するよう制約されます。
+
+[CODE(HTMLe)[script]] の出力であるからといって
+[CODE(HTMLe)[[[ul]]]] 要素の子供に [CODE(HTMLe)[[[td]]]]
+要素があっても困りますから、これは当然の規定といえましょう。
+しかし、ここで、 >>2 とも関係しますが、
+処理後の適合性は何について判断するのかという疑問が生じます。
+
+[PRE(HTML)[
+ <TITLE>Test Document</TITLE>
+ <SCRIPT type="text/javascript">
+     document.write("<p><b>Hello World!<\/b>")
+ </SCRIPT>
+]PRE]
+
+が >>2 の SGML 的解釈のように
+[PRE(HTML invalid example code)[
+<HTML><HEAD> <TITLE>Test Document</TITLE>
+ <p><b>Hello World!</b>
+</HEAD></HTML>
+]PRE]
+
+となるなら、 ([CODE(HTMLe)@@en[[[body]]]] [[要素]]がないことには目をつぶっても)
+[CODE(HTMLe)@@en[[[head]]]] [[要素]]内に [CODE(HTMLe)@@en[[[p]]]]
+[[要素]]を入れることはできないので、[[非妥当]]です。しかし、
+一旦
+[PRE(HTML example code)[
+ <TITLE>Test Document</TITLE>
+ <p><b>Hello World!</b>
+]PRE]
+
+となり、更に
+[PRE(HTML example code)[
+<HTML><HEAD> <TITLE>Test Document</TITLE>
+ </HEAD><BODY><p><b>Hello World!</b>
+</BODY></HTML>
+]PRE]
+
+と解釈されるなら、この文書片は[[妥当]]です。
+
+また、
+[PRE(HTML)[
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+[INS[...]]
+<script type="text/javascript">
+  document.write ('<p>');
+</script>
+A paragraph.
+[INS[...]]
+]PRE]
+
+は、果たして
+[PRE(HTML)[
+<p>
+A paragraph?
+</p>
+]PRE]
+
+でしょうか、
+[PRE(HTML)[
+<p></p>
+A paragraph?
+]PRE]
+
+でしょうか。 (この例はどちらの解釈でも結果は[[妥当]]です。)
+
+[4] '''スクリプト実行結果の静的妥当性検証''':
+>>2-3 のような仕様の解釈に関する問題があるとはいえ、
+ある解釈を選べば、ある文書がスクリプト実行後に DTD
+妥当であるか否かはスクリプトを実際に実行してみれば容易に判断できます。
+
+一方で、スクリプトを実行せずとも出力が妥当であるかどうかを検証できれば、
+([CODE(JS)[document.write]] はもう使われなくなっていますが、
+[[CGIスクリプト]]などにも応用できますから) 便利かもしれません。
+実際にその方法を研究していた人もいたようですが、
+良い方法は見つかっていません。
+
+[5] '''スクリプト実行後の文書構造''':
+現代の UA などは文書をその構造によって保持しています。 HTML
+文書は読込まれると構文解析されて [[DOM]] 
+などのモデルによる木として記憶上で持っているか、
+持っているかのように操作できるようになっています。
+
+そうすると、 >>2 の規定を忠実に解釈すると、結果の文書木に
+[CODE(HTMLe)[script]] 要素は含まれないことになってしまいます。
+
+?? WinIE や Gecko はどうしている ??
+
+また、 [CODE(JS)[document]] 物体は DOM の [CODE(DOMi)[[[Document]]]]
+界面の物体 ([[文書要素]]に対応する物体) として再定義されてしまったので、
+文書木が完成する前には存在しない虞があります (解析しながら木を作っているなら、
+あるかもしれません)。
+
+[6] [[内在事象取扱器]]で [CODE(JS)[document.write]] すると、
+新しい文書が作られてそこに書かれるそうです [SRC[18.2.3 Note]]。
+それもまたおかしな話です。
+
+
+** DOM2 HTML
+
+@@@@ TBW
+
+[[#comment]]
+
+
+** XHTML1 との関係
+
+[8]
+[CITE@@ja[空繰再繰 - application/xhtml+xmlなページでdocument.writeを動作させる #2]] ([CODE[2007-05-01 11:21:43 +09:00]] 版) <http://nyarla.net/blog/javascript-tips6>
+([[名無しさん]] [WEAK[2007-05-01 02:24:18 +00:00]])
+
+[50] [CITE@@ja[document.writeを完全にDOM仕様にする - 空繰再繰]] ([TIME[2009-01-10 14:15:20 +09:00]] 版) <http://blog.nyarla.net/2007/11/17/1>
+
+
+** メモ
+
+[7]
+[CITE[d:id:quaa]] ([CODE[2006-11-28 10:39:05 +09:00]] 版) <http://d.hatena.ne.jp/quaa/20061227#p1>
+([[名無しさん]] [WEAK[2006-12-28 01:52:17 +00:00]])
+
+[11]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0Adocument.write%20('%3Cstyle%3E%20p%20%7Bcolor%3A%20green%20%7D%20%3C%2Fst')%3B%0A%3C%2Fscript%3Eyle%3E%0A%3Cp%3EPASS%20iff%20green%3C%2Fp%3E>
+
+[[Firefox]] 2 も [[WinIE]] 7 も PASS。
+
+[12]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0Adocument.write%20('%3Cstyle%3E%20p%20%7Bcolor%3A%20gr')%3B%0A%3C%2Fscript%3Eeen%20%7D%20%3C%2Fstyle%3E%0A%3Cp%3EPASS%20iff%20green%3C%2Fp%3E>
+
+[[Firefox]] 2 も [[WinIE]] 7 も PASS。
+
+[13]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cp%3EFAIL%3C%2Fp%3E%0A%3Cscript%20defer%3E%0A%20%20document.write%20('%3Cstyle%3Ep%20%7Bcolor%3A%20green%7D%3C%2Fstyle%3E')%3B%0A%3C%2Fscript%3E%0A%3Cscript%20defer%3E%0A%20%20document.write%20('%3Cp%3EPASS%20iff%20green%3C%2Fp%3E')%3B%0A%3C%2Fscript%3E%20%0A%3Cstyle%3E%0Ap%20%7B%20color%3A%20red%20%7D%0A%3C%2Fstyle%3E>
+
+[[WinIE 7]] は DOM view はただしいが、なぜか Rendered view
+には何もレンダリングされない。
+
+[[Firefox]] 2 は FAIL ([CODE(HTMLa)@@en[[[defer]]]] 未対応)。
+
+[14]
+>>13 の [[WinIE 7]] で[[レンダリング]]されないのは
+[CODE(HTMLe)@@en[[[script]]]] が2つあるかららしく、
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cp%3EFAIL%3C%2Fp%3E%0D%0A%3Cscript%20defer%3E%0D%0A%20%20document.write%20('%3Cstyle%3Ep%20%7Bcolor%3A%20green%7D%3C%2Fstyle%3E')%3B%0D%0A%20%20document.write%20('%3Cp%3EPASS%20iff%20green%3C%2Fp%3E')%3B%0D%0A%3C%2Fscript%3E%20%0D%0A%3Cstyle%3E%0D%0Ap%20%7B%20color%3A%20red%20%7D%0D%0A%3C%2Fstyle%3E>
+なら[[レンダリング]]される。
+
+[15]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cp%3EFAIL%3C%2Fp%3E%0D%0A%3Cscript%20defer%3E%0D%0A%20%20document.write%20('%3Cstyle%3Ep%20%7Bcolor%3A%20green%7D%3C%2Fstyle%3E')%3B%0D%0A%20%20document.write%20('%3Cp%3EPASS%20iff%20green%3C%2Fp%3E')%3B%0D%0A%3C%2Fscript%3E%20%0D%0A%3Cscript%3E%0D%0A%20%20document.write%20('%3Cstyle%3Ep%20%7B%20color%3A%20red%20%7D%3C%2Fstyle%3E')%3B%0D%0A%20%20document.write%20('%3Cp%3EFAIL%3C%2Fp%3E')%3B%0D%0A%3C%2Fscript%3E>
+
+「CODE(JS)@@円「「「document]].[[write]]]] というより
+[CODE(HTMLa)@@en[[[defer]]]] のテスト。
+[[WinIE 7]] は PASS。
+
+後の [CODE(HTMLe)@@en[[[script]]]] 内に 「CODE(DOMm)@@en[[[alert]]()]] を入れれば、
+ちゃんと後の [CODE(HTMLe)@@en[[[script]]]] も実行されていることが確認できる。
+
+[16]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0A%20%20document.write%20('%3Cscript%3E%20document.write%20(%22aa%22)%3B%20%3C%2Fsc')%3B%0A%20%20document.write%20('ript%3E')%3B%0A%3C%2Fscript%3E>
+
+[[Firefox]] 2 でも [[WinIE 7]] でも、 [CODE(HTMLe)@@en[[[script]]]]
+内の [CODE(HTMLe)@@en[[[script]]]] が実行され、[Q[aa]] と[[レンダリング&#65379;&#65379;されます。]]
+[[HTML 5]] の[[構文解析算法]]でも、ややこしいですがおそらく、
+[Q[aa]] と&#65378;&#65378;レンダリング]]されるのが正しい動作です。
+(1つ目の [CODE(JS)@@en[[[[document]].[[write]]]]
+によって行われる[[構文解析]]で、与えられた&#65378;&#65378;引数]]の末尾に到達したところで、
+[[挿入点]]に到着したということで[[字句化器]]が停止します。
+[[木構築段階]]は [CODE(HTMLe)@@en[[[script]]]] 
+[[開始タグ]]が現れると[[文字字句]]を集め続けますが、
+それは[[字句化器]]が停止したところで一旦終わるので、
+[CODE(HTMLe)@@en[</[[script]]]] [[終了タグ&#65379;&#65379;の直前までいきます。ここで、 [CODE(JS)@@en[[[document]].[[write]]]] は[[返る]]のですが、]]
+それによって外側の[[構文解析]]が再開されます。そして、
+次の[[字句]]が [CODE(HTMLe)@@en[[[script]]]] の[[終了タグ]]になるので、
+[[木構築段階]]の [CODE(HTMLe)@@en[[[script]]]] [[開始タグ]]の処理の続きで、[[スクリプト]]が実行されます。)
+
+[17]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0A%20%20document.write%20('%3Cstyle%3E%20p%20%7B')%3B%0Aw(document.documentElement.innerHTML)%3B%0A%20%20document.write%20('color%3A%20gree')%3B%0Aw(document.documentElement.innerHTML)%3B%20%0A%20%20document.write%20('n%20%7D')%3B%0A%3C%2Fscript%3E%3C%2Fstyle%3E%3Cp%3Exxxx>
+
+[[WinIE 7]] でも [[Firefox]] 2 でも、緑の[Q[xxxx]]が[[レンダリング]]されます。
+
+[19]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0A%20%20document.write%20('%3Cstyle%3E')%3B%0Aw%20(document.documentElement.innerHTML)%3B%0A%20%20document.write%20('color%3A%20gree')%3B%0Aw%20(document.documentElement.innerHTML)%3B%20%0A%20%20document.write%20('n%20%7D')%3B%0A%3C%2Fscript%3E%3C%2Fstyle%3E%3Cp%3Exxxx%0A%3Cscript%3E%0Aw%20(document.documentElement.innerHTML)%3B%20%0A%3C%2Fscript%3E%0A%3Cpre%3E%0Axxxx>
+
+[CODE(JS)@@en[[[document]].[[write]]]] による追加分が [[DOM]] [[木]]に反映されるのはいつか?
+(ここでは [CODE(DOMa)@@en[[[innerHTML]]]] を使用。)
+
+- 通常の[[要素]]なら、直前の [CODE(JS)@@en[[[document]].[[write]]]]
+で与えられたものすべてが既に反映済み
+- [CODE(HTMLe)@@en[[[style]]]] [[要素]]の場合、
+-- [[WinIE 7]] では [CODE(HTMLe)@@en[[[style]]]] [[要素]]自体は追加されるが、
+その[[内容]]は[[終了タグ]]を処理するまで[[空]]のまま
+-- [[Firefox]] 2 では[[終了タグ]]が処理されるまで
+[CODE(HTMLe)@@en[[[style]]]] [[要素]]自体が追加されない
+
+([[名無しさん]])
+
+[20]
+>>19 [[WinIE 7]] で [CODE(HTMLe)@@en[[[style]]]]
+[[要素]]の [CODE(DOMa)@@en[[[sheet]]]]
+[[属性]]は [CODE(DOM)@@en[[[null]]]] になっているようです。
+([[名無しさん]])
+
+[21]
+>>20 訂正: [CODE(DOMa)@@en[[[styleSheet]]]] [[属性]]。
+([[名無しさん]])
+
+[22]
+>>19 [[Opera]] 9.27、[[Safari]] 3.1.1 では、
+[[WinIE 7]] 同様、[[終了タグ]]を処理するまでは空のままのようです。
+[CODE(DOMa)@@en[[[sheet]]]] [[属性]]は空の[[スタイル・シート]]になっているようです。
+([[名無しさん]])
+
+[23]
+>>22 [CODE(DOMa)@@en[[[sheet]]]] [[属性]]の指す[[スタイル・シート]]は[[終了タグ]]が処理されるまでずっと空のままのようです。
+
+;; <http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0D%0A%20%20document.write%20('%3Cstyle%3E')%3B%0D%0A%20%20document.write%20('p%20%7B%20color%3A%20green%20%7D')%3B%0D%0A%20%20w%20(document.getElementsByTagName%20('style')%5B0%5D.sheet.cssRules.length)%3B%0D%0A%3C%2Fscript%3E%3C%2Fstyle%3E>
+
+([[名無しさん]])
+
+[24]
+[CODE(JS)@@en[[[document]].[[write]] ('<pre>\na</pre>')]]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0D%0A%20%20document.write%20('%3Cpre%3E%5Cna%3C%2Fpre%3E')%3B%0D%0A%3C%2Fscript%3E>
+
+[[WinIE 7]], [[Firefox]] 2, [[Opera]] 9.27, [[Safari]] 3.1.1 のいずれも、
+[[開始タグ]]直後の[[改行]]を無視。
+([[名無しさん]])
+
+[25]
+[CODE(JS)@@en[[[document]].[[write]] ('<pre>'); [[document]].[[write]] ('\na</pre>')]]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0A%20%20document.write%20('%3Cpre%3E')%3B%0A%20%20document.write%20('%5Cna%3C%2Fpre%3E')%3B%0A%3C%2Fscript%3E>
+
+>>24 の4ブラウザ中、[[Firefox]] 2 だけは[[改行]]を無視''せず''。
+([[名無しさん]])
+
+[26]
+[CODE(JS)@@en[[[document]].[[write]] ('<pre>', '\na</pre>');]]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0A%20%20document.write%20('%3Cpre%3E'%2C%20'%5Cna%3C%2Fpre%3E')%3B%0A%3C%2Fscript%3E>
+
+これなら [[Firefox]] 2 も[[改行]]を無視する。
+([[名無しさん]])
+
+[27]
+[CODE(JS)@@en[[[document]].[[writeln]] ('<pre>'); [[document]].[[write]] ('a</pre>');]]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0A%20%20document.writeln%20('%3Cpre%3E')%3B%0A%20%20document.write%20('a%3C%2Fpre%3E')%3B%0A%3C%2Fscript%3E>
+
+だけどこっちは [[Firefox]] 2 が[[改行]]を[[無視]]しない。
+([[名無しさん]])
+
+[28]
+[[Opera]] 9.27 と [[Safari]] 3.1.1 の結果
+
+>>11、>>12 PASS
+
+>>13、>>15 FAIL ([CODE(HTMLa)@@en[[[defer]]]] 未対応)
+
+>>16 同じ (実行される)
+
+([[名無しさん]])
+
+[29]
+>>19 みたいなことを [CODE(HTMLe)@@en[[[script]]]]
+[[要素]]を書き出す場合でやってみた
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0Aw%20(document.documentElement.innerHTML)%3B%0A%20%20document.write%20('%3Cscript%3E%20document.')%3B%0Aw%20(document.documentElement.innerHTML)%3B%0A%20%20document.write%20('write%20(%22a%22)%3B%20%3C%2F'%20%2B%20'script%3E')%3B%0Aw%20(document.documentElement.innerHTML)%3B%0A%3C%2Fscript%3E>
+
+4ブラウザとも、 [CODE(HTMLe)@@en[[[script]]]] [[要素]]が
+[CODE(DOMa)@@en[[[innerHTML]]]] に現れるのは[[終了タグ]]が処理されたあとのようです。
+
+この例だと [[Safari]] だけは3番目の [CODE[w]] で生成された
+[CODE(HTMLe)@@en[[[script]]]] [[要素]]によって書き込まれた
+[CODE[a]] が反映されていないのですが、
+これはその [CODE(HTMLe)@@en[[[script]]]] [[要素]]が実行されていないわけではなく、
+[[文字データ]]を書いても次の[[タグ]]などが現れるまで
+[[DOM]] に追加されないという ([[Safari]] だけの) 動作のためのようです。
+([[名無しさん]])
+
+[30]
+>>29 
+
+書き出される [CODE(HTMLe)@@en[[[script]]]] [[要素]]が実行される時点での
+[CODE(DOMa)@@en[[[innerHTML]]]] は?
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0D%0A%20%20document.write%20('%3Cscript%3E%20w%20(document.documentElement.innerHTML)%3B%20document.')%3B%0D%0A%20%20document.write%20('write%20(%22a%22)%3B%20%3C%2F'%20%2B%20'script%3E')%3B%0D%0A%3C%2Fscript%3E>
+
+書き出された [CODE(HTMLe)@@en[[[script]]]] [[要素]]が [[DOM]]
+に追加された状態の [CODE(DOMa)@@en[[[innerHTML]]]] が出てくるようです。
+([[名無しさん]])
+
+[31]
+>>30 は4ブラウザとも。
+([[名無しさん]])
+
+[32]
+[CODE(HTMLe)@@en[[[script]]]] の途中からが外側の
+[CODE(HTMLe)@@en[[[script]]]] [[要素]]の後にいっていてもよいのか?
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0A%20%20document.write%20('%3Cscript%3E%20w%20(document.documentElement.innerHTML)%3B%20document.')%3B%0A%20%20document.write%20('write%20(%22a')%3B%0A%3C%2Fscript%3E%22)%3B%20%3C%2Fscript%3E>
+
+4ブラウザともおk ([CODE(HTMLe)@@en[[[script]]]] 
+[[要素]]の続きとみなす) のようです。
+([[名無しさん]])
+
+[33]
+わけがわからないくらい複雑な例 with [CODE(HTMLe)@@en[[[script]]]] [CODE(HTMLa)@@en[[[src]]]]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%20src%3D%22javascript%3A'%20document.write%20(%26quot%3Baaaaa%26quot%3B)%3B%20'%22%3E%3C%2Fscript%3E%0A%3Cscript%3E%0A%20%20document.write%20(%22%3Cscript%3Edocument.write%20('%3Cscript%20src%3Djavascript%3A%26apos%3Bdocument.write(%26quot%3Baaaaa%26quot%3B)%3B%26apos%3B%3E%3C%2F'%2C%20'script%3E%3Cscript%3E%20document.wri')%3B%3C%2F%22%2C%20%22script%3E%22)%3B%0A%3C%2Fscript%3Ete%20('ccc')%3B%20%3C%2Fscript%3E>
+
+[[Firefox]] 2 では、最初の
+[CODE(HTMLe)@@en[[[script]]]] [[要素]]があるかないか
+([CODE(URI)@@en[[[javascript]]:]] [[URI]] を使っていることに起因している模様)、
+[[Live DOM Viewer]] 内で見るかどうか、
+[[Live DOM Viewer]] でも直接入力か permalink 使用かによって結果が変わってくる
+(2つ目の [CODE(HTMLe)@@en[[[script]]]] による書き込みが反映されたりされなかったりする、というか [CODE(HTMLe)@@en[[[script]]]] が [[DOM]]
+に現れなかったり、 [CODE(HTMLe)@@en[[[body]]]] が2つでてきたり、よくわからん。) ようです。
+
+;; [[Live DOM Viewer]] かどうかで結果が変わるのは、
+[[Live DOM Viewer]] 自体が [CODE(JS)@@en[[[document]].[[write]]]] を使っているせいでしょう。
+
+([[名無しさん]])
+
+[34]
+>>33 他の3ブラウザはいずれも [Q[ccc]] とだけでてきます。
+[[Safari]] と [[WinIE]] は、
+[CODE(HTMLa)@@en[[[src]]]] 内の [CODE(URI)@@en[[[javascript]]:]]
+[[URI]] を実行していないようです。 [[Opera]] は外部スクリプト内の
+[CODE(JS)@@en[[[document]].[[write]]]] を実行していないようです。
+([[名無しさん]])
+
+[35]
+>>34 [[Opera]] は [CODE(JS)@@en[[[document]].[[write]]]] を実行しないのではなく、
+[CODE(HTMLa)@@en[[[javascript]]:]] [[URI]] を実行はするのですが、
+最後に得られた[[文字列]]を外部スクリプトとみなすのではないようで、
+[[エラーコンソール]]に
+[Q[リンク先のスクリプトを読み込むことができません]]とでてきます。
+([[名無しさん]])
+
+[36]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%20src%3D%22javascript%3A%20document.write%20('x')%3B%20%22%3E%3C%2Fscript%3E%20%20%20>
+
+[[Opera]] では [Q[x]] が [CODE(HTMLe)@@en[[[body]]]] [[要素]]中にでてきます。
+
+[[Firefox]] の [CODE(HTMLa)@@en[[[src]]]] 内の [CODE(URI)@@en[[[javascripot]]:]]
+[[URI]] の実行される文脈では文書本体の [CODE(JS)@@en[[[Global]]]]
+[[物体]]とは違うものを使っているようで、
+[CODE(JS)@@en[[[window]]]] にも [CODE(JS)@@en[[[document]]]]
+にもその他[[大域変数]]にもアクセスできません
+([CODE(JS)@@en[[[ReferenceError]]]] になります)。
+([[名無しさん]])
+
+[37]
+[CITE@@en[Hixie's Natural Log: Tag Soup: Blocks-in-inlines]] ([CODE[2008-04-25 22:46:42 +09:00]] 版) <http://ln.hixie.ch/?start=1138169545&count=1>
+([[名無しさん]])
+
+[38]
+[CITE@@en[Hixie's Natural Log: Why document.write() doesn't work in XML]] ([CODE[2008-04-25 22:48:57 +09:00]] 版) <http://ln.hixie.ch/?start=1091626816&count=1>
+([[名無しさん]])
+
+[39]
+[CITE@@en[Hixie's Natural Log: Tag Soup: appendChild() of a script that calls document.write()]] ([CODE[2008-04-25 22:49:24 +09:00]] 版) <http://ln.hixie.ch/?start=1155195074&count=1>
+([[名無しさん]])
+
+[40]
+[CITE[Index of /tests/adhoc/dom/level0/write]] ([CODE[2008-04-25 23:07:32 +09:00]] 版) <http://hixie.ch/tests/adhoc/dom/level0/write/>
+([[名無しさん]])
+
+[41]
+んー、カオス。
+([[名無しさん]])
+
+[42]
+[CODE(JS)@@en[[[document]].[[write]]]] で始まった
+[CODE@@en[[[CDATA]]]] [[内容モデル旗]]とその[[スクリプト]]の[[終了タグ]]の関係は?
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0A%20%20document.write%20(%22%3Cstyle%3E%20p%20%7B%22)%3B%0A%20%20w%20(document.documentElement.innerHTML)%3B%0A%3C%2Fscript%3E%20color%3A%20green%3B%0A%3Cscript%3E%0A%20%20document.write%20('%7D%20%3C%2Fstyle%3E')%3B%0A%3C%2Fscript%3E%3Cp%3Exxxx%0A>
+
+4ブラウザとも、[CODE(HTML)@@en[</[[script]]>]] 以後も[[内容モデル旗]]は
+[CODE@@en[[[CDATA]]]] にしたまま処理を続行するようで、
+次の [CODE(HTML)@@en[<[[script]]>]] [[開始タグ]]は[[開始タグ]]ではなく、
+[[文字データ]]として処理します。
+
+([[名無しさん]])
+
+[43]
+[CITE@@en[Live Scripting HTML Parser]] ([CODE[2008-04-27 20:27:04 +09:00]] 版) <http://suika.fam.cx/www/markup/html/scripting-parser/parser>
+([[名無しさん]])
+
+[44]
+[CITE[Bug 95487 &#8211; JavaScript-generated table never completes]] ([CODE[2008-06-18 09:05:55 +09:00]] 版) <https://bugzilla.mozilla.org/show_bug.cgi?id=95487>
+([[名無しさん]])
+
+[45]
+[CITE@@ja[document.write()の実行タイミングをずらす方法]] ([CODE[2008-06-22 15:16:43 +09:00]] 版) <http://p2b.jp/index.php?UID=1153728573>
+([[名無しさん]])
+
+[46]
+[CITE[最速インターフェース研究会 :: ページレンダリングを妨げないdocument.writeの実装]] ([CODE[2008-06-22 15:21:04 +09:00]] 版) <http://la.ma.la/blog/diary_200612061928.htm>
+([[名無しさん]])
+
+[47]
+[CITE[Fenrir's BLog: Ajaxでdocument.writeするJavaScriptへの対策]] ([CODE[2008-06-02 14:24:53 +09:00]] 版) <http://fenrir.naruoka.org/archives/000555.html>
+([[名無しさん]])
+
+[48]
+[CITE@@ja-JP[野ログはノロキュアMaxHeart - document.writeをバッファリングするJavaScript]] ([[nog]] 著, [CODE[2008-04-18 09:41:41 +09:00]] 版) <http://cureblack.com/20080418.html#p01>
+([[名無しさん]])
+
+
+[49]
+[CITE[Javascriptの外部ファイル内でdocument.writeしたら文字化け(Mac IE 4.5編)]] ([TIME[2007-02-19 06:57:31 +09:00]] 版) <http://www.shtml.jp/mojibake/macie45.html>
+([[名無しさん]])
+
+
+[[#comment]]
+
+
+* メモ
+
+[51] [CITE@@en[Web Applications 1.0 r5616     Change how document.write() is ignored.Fixing http://www.w3.org/Bugs/Public/show_bug.cgi?id=9767]]
+( ([TIME[2010-10-13 06:20:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=5615&to=5616>
+
+[52] [CITE[IRC logs: freenode / #whatwg / 20101013]]
+( ([TIME[2010-10-23 23:42:03 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20101013>
+
+[53] [CITE@@en[Web Applications 1.0 r6924 More tweaks to the text (including a comment that describes one of the situations in question).Fixing https://www.w3.org/Bugs/Public/show_bug.cgi?id=14275]]
+( ([TIME[2012-01-27 09:30:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=6923&to=6924>
+
+[54] [CITE[''''''[''''''whatwg'''''']'''''' HTMLLinkElement.disabled and HTMLLinkElement.sheet behavior]]
+( ([TIME[2012-08-28 04:46:43 +09:00]] 版))
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2012-August/037001.html>
+
+[55] [CITE@@en[Web Applications 1.0 r7290     Change how <script> is handled in re-entrant parser situations when there's a blocking style sheet.]]
+( ([TIME[2012-08-28 13:48:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=7289&to=7290>
+
+[56] [CITE@@en[Web Applications 1.0 r7757     Try to define when document.open() doesn't work more precisely.]]
+( ([TIME[2013-03-16 07:41:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=7756&to=7757>
+
+[57] [CITE@@en[Web Applications 1.0 r7869     Make document.write() a no-op on non-active documents.]]
+( ([TIME[2013-05-29 05:47:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=7868&to=7869>
+
+[FIG[
+[FIGCAPTION[
+[58] 
+[CITE[新暦と旧暦の変換計算(長期)]] ([TIME[2006-05-28 08:57:13 +09:00]] 版) <http://koyomi8.com/9reki/9rekicgi.htm>
+
+;; [59] [CODE(HTMLa)@@en[[[action]]]] を可変にするために [CODE(JS)@@en[[[document.write]]]]
+が使われています。なお[[終了タグ]]は直接 [[HTML]] として記述されています。
+]FIGCAPTION]
+
+[PRE(HTML code)[
+<SCRIPT Language="JavaScript">
+<!--
+document.writeln('<form NAME="9reki" method="POST" action="' + CGISERVER + 'cgi/9reki_f.cgi">');
+// -->
+</SCRIPT>
+]PRE]
+]FIG]
+@
+
+
+1.9
+log
+@updated by (anon)
+@
+text
+@d503 47
+a549 29
+* メモ
+
+[51] [CITE@@en[Web Applications 1.0 r5616     Change how document.write() is ignored.Fixing http://www.w3.org/Bugs/Public/show_bug.cgi?id=9767]]
+( ([TIME[2010-10-13 06:20:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=5615&to=5616>
+
+[52] [CITE[IRC logs: freenode / #whatwg / 20101013]]
+( ([TIME[2010-10-23 23:42:03 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20101013>
+
+[53] [CITE@@en[Web Applications 1.0 r6924 More tweaks to the text (including a comment that describes one of the situations in question).Fixing https://www.w3.org/Bugs/Public/show_bug.cgi?id=14275]]
+( ([TIME[2012-01-27 09:30:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=6923&to=6924>
+
+[54] [CITE[''''''[''''''whatwg'''''']'''''' HTMLLinkElement.disabled and HTMLLinkElement.sheet behavior]]
+( ([TIME[2012-08-28 04:46:43 +09:00]] 版))
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2012-August/037001.html>
+
+[55] [CITE@@en[Web Applications 1.0 r7290     Change how <script> is handled in re-entrant parser situations when there's a blocking style sheet.]]
+( ([TIME[2012-08-28 13:48:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=7289&to=7290>
+
+[56] [CITE@@en[Web Applications 1.0 r7757     Try to define when document.open() doesn't work more precisely.]]
+( ([TIME[2013-03-16 07:41:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=7756&to=7757>
+
+[57] [CITE@@en[Web Applications 1.0 r7869     Make document.write() a no-op on non-active documents.]]
+( ([TIME[2013-05-29 05:47:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=7868&to=7869>@
+
+
+1.8
+log
+@updated by (anon)
+@
+text
+@d527 5
+a531 1
+<http://html5.org/tools/web-apps-tracker?from=7756&to=7757>@
+
+
+1.7
+log
+@updated by (anon)
+@
+text
+@d523 5
+a527 1
+<http://html5.org/tools/web-apps-tracker?from=7289&to=7290>@
+
+
+1.6
+log
+@updated by (anon)
+@
+text
+@d519 5
+a523 1
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2012-August/037001.html>@
+
+
+1.5
+log
+@updated by (anon)
+@
+text
+@d515 5
+a519 1
+<http://html5.org/tools/web-apps-tracker?from=6923&to=6924>@
+
+
+1.4
+log
+@updated by (anon)
+@
+text
+@d511 5
+a515 1
+<http://krijnhoetmer.nl/irc-logs/whatwg/20101013>@
+
+
+1.3
+log
+@updated by (anon)
+@
+text
+@d507 5
+a511 1
+<http://html5.org/tools/web-apps-tracker?from=5615&to=5616>@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@d503 5
+a507 1
+* メモ@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/7772697465.txt>
+@
+text
+@d1 502
+a502 502
+
+
+* [CODE(DOMa)@@en[write]] メソッド (HTML DOM)
+
+
+** HTML 5
+
+@@@@ TBW
+
+[[#comment]]
+
+
+** HTML 4
+
+[1] 仕様書:
+- [[HTML 4]]
+-- [CITE[18.2.4 Dynamic modification of documents]]
+<IW:HTML4:"interact/scripts.html#idx-document">
+-- [CITE[18.2.3 Intrinsic events]]
+<IW:HTML4:"interact/scripts.html#idx-control">
+
+[2] HTML 4 の 18.2.4 は文書読込み時に実行される[[スクリプト]]による文書内容の動的な編集について触れています。
+そこでは [CODE(JS)[[[document]].write]] 
+はその実現手段の一例として挙げられていますが、
+実用的なレベルで存在したもので該当するのは他になかったでしょうし、
+[[DOM]] が整理される以前の規定ですから、
+[CODE(JS)[document.write]] と HTML 文書・UA の関係に関する規定と捉えてよいでしょう。
+また、一般の DOM による操作等は想定範囲外でしょうから、
+拡大して解釈することには慎重であるべきと考えられます。
+
+さて、 18.2.4 によれば、文書の動的な編集は次の通りモデル化できるそうです。
+= すべての [CODE(HTMLe)[[[script]]]] が、
+文書の読込まれる順序で評価されます。
+= [[SGML]] [CODE(SGML)[[[CDATA]]]] を生成する [CODE(HTMLe)[[[script]]]]
+要素中のスクリプト構造がすべて評価されます。
+その生成文を結合したものが文書中の [CODE(HTMLe)[[[script]]]]
+要素の場所に挿入されます。
+= 生成された [CODE(SGML)[CDATA]] が再評価されます。
+
+このモデルは、 SGML 構文解析器で HTML 文書から木構造を抽出し、
+それを HTML 仕様書の規定する意味と表現によってレンダリングするという
+SGML 的に本来あるべき UA の処理方法ではなく、 HTML
+文書を適当に読込みながら適当に解析しつつ適当にレンダリングし続けるという
+WWW ブラウザの伝統的な処理方法に依拠しているように思えます。
+
+[18]
+HTML 4 仕様書に示された例によれば、
+[PRE(HTML example code)[
+ <TITLE>Test Document</TITLE>
+ <SCRIPT type="text/javascript">
+     document.write("<p><b>Hello World!<\/b>")
+ </SCRIPT>
+]PRE]
+
+は
+[PRE(HTML example code)[
+ <TITLE>Test Document</TITLE>
+ <P><B>Hello World!</B>
+]PRE]
+
+という HTML マークと同じ効果を持ちます。[Q[効果]]という曖昧な言葉を使っているため、
+何を指しているのか (レンダリング結果? 出来上がる構造?) はっきりとはしませんが、
+ともかくある意味においてこの2例は HTML 的に等価です。
+
+ところが、 SGML 的には、前者は
+[PRE(HTML invalid example code)[
+<HTML><HEAD> <TITLE>Test Document</TITLE>
+ <SCRIPT type="text/javascript">
+     document.write("<p><b>Hello World!<\/b>")
+ </SCRIPT>
+</HEAD></HTML>
+]PRE]
+
+と等価 (完全に交換可能) であり、
+
+;; 注: これだけでは [CODE(HTMLe)@@en[[[body]]]] [[要素]]がないので、
+[[非妥当]]です。
+
+後者は
+[PRE(HTML example code)[
+<HTML><HEAD> <TITLE>Test Document</TITLE>
+ </HEAD><BODY><P><B>Hello World!</B>
+</BODY></HTML>
+]PRE]
+
+と等価ですから、両者は異なる構造を持っています。そして、
+[CODE(JS)[document.write]] の結果は常に [CODE(HTMLe)[[[body]]]]
+内に書込まれるとか (これは先のモデルと矛盾します。)、
+[CODE(HTMLe)[[[head]]]] 内にも [CODE(HTMLe)[[[p]]]] 要素が含められるとか
+(これは HTML DTD と矛盾します。) の仮定を置かない限り、
+適切な結果が得られません。
+
+[3] HTML 4 は、次のようにも述べています。
+
+> HTML 文書は、 [CODE(HTMLe)[script]] 要素の処理の前後いずれにおいても
+HTML DTD に適合するよう制約されます。
+
+[CODE(HTMLe)[script]] の出力であるからといって
+[CODE(HTMLe)[[[ul]]]] 要素の子供に [CODE(HTMLe)[[[td]]]]
+要素があっても困りますから、これは当然の規定といえましょう。
+しかし、ここで、 >>2 とも関係しますが、
+処理後の適合性は何について判断するのかという疑問が生じます。
+
+[PRE(HTML)[
+ <TITLE>Test Document</TITLE>
+ <SCRIPT type="text/javascript">
+     document.write("<p><b>Hello World!<\/b>")
+ </SCRIPT>
+]PRE]
+
+が >>2 の SGML 的解釈のように
+[PRE(HTML invalid example code)[
+<HTML><HEAD> <TITLE>Test Document</TITLE>
+ <p><b>Hello World!</b>
+</HEAD></HTML>
+]PRE]
+
+となるなら、 ([CODE(HTMLe)@@en[[[body]]]] [[要素]]がないことには目をつぶっても)
+[CODE(HTMLe)@@en[[[head]]]] [[要素]]内に [CODE(HTMLe)@@en[[[p]]]]
+[[要素]]を入れることはできないので、[[非妥当]]です。しかし、
+一旦
+[PRE(HTML example code)[
+ <TITLE>Test Document</TITLE>
+ <p><b>Hello World!</b>
+]PRE]
+
+となり、更に
+[PRE(HTML example code)[
+<HTML><HEAD> <TITLE>Test Document</TITLE>
+ </HEAD><BODY><p><b>Hello World!</b>
+</BODY></HTML>
+]PRE]
+
+と解釈されるなら、この文書片は[[妥当]]です。
+
+また、
+[PRE(HTML)[
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+[INS[...]]
+<script type="text/javascript">
+  document.write ('<p>');
+</script>
+A paragraph.
+[INS[...]]
+]PRE]
+
+は、果たして
+[PRE(HTML)[
+<p>
+A paragraph?
+</p>
+]PRE]
+
+でしょうか、
+[PRE(HTML)[
+<p></p>
+A paragraph?
+]PRE]
+
+でしょうか。 (この例はどちらの解釈でも結果は[[妥当]]です。)
+
+[4] '''スクリプト実行結果の静的妥当性検証''':
+>>2-3 のような仕様の解釈に関する問題があるとはいえ、
+ある解釈を選べば、ある文書がスクリプト実行後に DTD
+妥当であるか否かはスクリプトを実際に実行してみれば容易に判断できます。
+
+一方で、スクリプトを実行せずとも出力が妥当であるかどうかを検証できれば、
+([CODE(JS)[document.write]] はもう使われなくなっていますが、
+[[CGIスクリプト]]などにも応用できますから) 便利かもしれません。
+実際にその方法を研究していた人もいたようですが、
+良い方法は見つかっていません。
+
+[5] '''スクリプト実行後の文書構造''':
+現代の UA などは文書をその構造によって保持しています。 HTML
+文書は読込まれると構文解析されて [[DOM]] 
+などのモデルによる木として記憶上で持っているか、
+持っているかのように操作できるようになっています。
+
+そうすると、 >>2 の規定を忠実に解釈すると、結果の文書木に
+[CODE(HTMLe)[script]] 要素は含まれないことになってしまいます。
+
+?? WinIE や Gecko はどうしている ??
+
+また、 [CODE(JS)[document]] 物体は DOM の [CODE(DOMi)[[[Document]]]]
+界面の物体 ([[文書要素]]に対応する物体) として再定義されてしまったので、
+文書木が完成する前には存在しない虞があります (解析しながら木を作っているなら、
+あるかもしれません)。
+
+[6] [[内在事象取扱器]]で [CODE(JS)[document.write]] すると、
+新しい文書が作られてそこに書かれるそうです [SRC[18.2.3 Note]]。
+それもまたおかしな話です。
+
+
+** DOM2 HTML
+
+@@@@ TBW
+
+[[#comment]]
+
+
+** XHTML1 との関係
+
+[8]
+[CITE@@ja[空繰再繰 - application/xhtml+xmlなページでdocument.writeを動作させる #2]] ([CODE[2007-05-01 11:21:43 +09:00]] 版) <http://nyarla.net/blog/javascript-tips6>
+([[名無しさん]] [WEAK[2007-05-01 02:24:18 +00:00]])
+
+[[#comment]]
+
+
+** メモ
+
+[7]
+[CITE[d:id:quaa]] ([CODE[2006-11-28 10:39:05 +09:00]] 版) <http://d.hatena.ne.jp/quaa/20061227#p1>
+([[名無しさん]] [WEAK[2006-12-28 01:52:17 +00:00]])
+
+[11]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0Adocument.write%20('%3Cstyle%3E%20p%20%7Bcolor%3A%20green%20%7D%20%3C%2Fst')%3B%0A%3C%2Fscript%3Eyle%3E%0A%3Cp%3EPASS%20iff%20green%3C%2Fp%3E>
+
+[[Firefox]] 2 も [[WinIE]] 7 も PASS。
+
+[12]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0Adocument.write%20('%3Cstyle%3E%20p%20%7Bcolor%3A%20gr')%3B%0A%3C%2Fscript%3Eeen%20%7D%20%3C%2Fstyle%3E%0A%3Cp%3EPASS%20iff%20green%3C%2Fp%3E>
+
+[[Firefox]] 2 も [[WinIE]] 7 も PASS。
+
+[13]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cp%3EFAIL%3C%2Fp%3E%0A%3Cscript%20defer%3E%0A%20%20document.write%20('%3Cstyle%3Ep%20%7Bcolor%3A%20green%7D%3C%2Fstyle%3E')%3B%0A%3C%2Fscript%3E%0A%3Cscript%20defer%3E%0A%20%20document.write%20('%3Cp%3EPASS%20iff%20green%3C%2Fp%3E')%3B%0A%3C%2Fscript%3E%20%0A%3Cstyle%3E%0Ap%20%7B%20color%3A%20red%20%7D%0A%3C%2Fstyle%3E>
+
+[[WinIE 7]] は DOM view はただしいが、なぜか Rendered view
+には何もレンダリングされない。
+
+[[Firefox]] 2 は FAIL ([CODE(HTMLa)@@en[[[defer]]]] 未対応)。
+
+[14]
+>>13 の [[WinIE 7]] で[[レンダリング]]されないのは
+[CODE(HTMLe)@@en[[[script]]]] が2つあるかららしく、
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cp%3EFAIL%3C%2Fp%3E%0D%0A%3Cscript%20defer%3E%0D%0A%20%20document.write%20('%3Cstyle%3Ep%20%7Bcolor%3A%20green%7D%3C%2Fstyle%3E')%3B%0D%0A%20%20document.write%20('%3Cp%3EPASS%20iff%20green%3C%2Fp%3E')%3B%0D%0A%3C%2Fscript%3E%20%0D%0A%3Cstyle%3E%0D%0Ap%20%7B%20color%3A%20red%20%7D%0D%0A%3C%2Fstyle%3E>
+なら[[レンダリング]]される。
+
+[15]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cp%3EFAIL%3C%2Fp%3E%0D%0A%3Cscript%20defer%3E%0D%0A%20%20document.write%20('%3Cstyle%3Ep%20%7Bcolor%3A%20green%7D%3C%2Fstyle%3E')%3B%0D%0A%20%20document.write%20('%3Cp%3EPASS%20iff%20green%3C%2Fp%3E')%3B%0D%0A%3C%2Fscript%3E%20%0D%0A%3Cscript%3E%0D%0A%20%20document.write%20('%3Cstyle%3Ep%20%7B%20color%3A%20red%20%7D%3C%2Fstyle%3E')%3B%0D%0A%20%20document.write%20('%3Cp%3EFAIL%3C%2Fp%3E')%3B%0D%0A%3C%2Fscript%3E>
+
+「CODE(JS)@@円「「「document]].[[write]]]] というより
+[CODE(HTMLa)@@en[[[defer]]]] のテスト。
+[[WinIE 7]] は PASS。
+
+後の [CODE(HTMLe)@@en[[[script]]]] 内に 「CODE(DOMm)@@en[[[alert]]()]] を入れれば、
+ちゃんと後の [CODE(HTMLe)@@en[[[script]]]] も実行されていることが確認できる。
+
+[16]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0A%20%20document.write%20('%3Cscript%3E%20document.write%20(%22aa%22)%3B%20%3C%2Fsc')%3B%0A%20%20document.write%20('ript%3E')%3B%0A%3C%2Fscript%3E>
+
+[[Firefox]] 2 でも [[WinIE 7]] でも、 [CODE(HTMLe)@@en[[[script]]]]
+内の [CODE(HTMLe)@@en[[[script]]]] が実行され、[Q[aa]] と[[レンダリング&#65379;&#65379;されます。]]
+[[HTML 5]] の[[構文解析算法]]でも、ややこしいですがおそらく、
+[Q[aa]] と&#65378;&#65378;レンダリング]]されるのが正しい動作です。
+(1つ目の [CODE(JS)@@en[[[[document]].[[write]]]]
+によって行われる[[構文解析]]で、与えられた&#65378;&#65378;引数]]の末尾に到達したところで、
+[[挿入点]]に到着したということで[[字句化器]]が停止します。
+[[木構築段階]]は [CODE(HTMLe)@@en[[[script]]]] 
+[[開始タグ]]が現れると[[文字字句]]を集め続けますが、
+それは[[字句化器]]が停止したところで一旦終わるので、
+[CODE(HTMLe)@@en[</[[script]]]] [[終了タグ&#65379;&#65379;の直前までいきます。ここで、 [CODE(JS)@@en[[[document]].[[write]]]] は[[返る]]のですが、]]
+それによって外側の[[構文解析]]が再開されます。そして、
+次の[[字句]]が [CODE(HTMLe)@@en[[[script]]]] の[[終了タグ]]になるので、
+[[木構築段階]]の [CODE(HTMLe)@@en[[[script]]]] [[開始タグ]]の処理の続きで、[[スクリプト]]が実行されます。)
+
+[17]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0A%20%20document.write%20('%3Cstyle%3E%20p%20%7B')%3B%0Aw(document.documentElement.innerHTML)%3B%0A%20%20document.write%20('color%3A%20gree')%3B%0Aw(document.documentElement.innerHTML)%3B%20%0A%20%20document.write%20('n%20%7D')%3B%0A%3C%2Fscript%3E%3C%2Fstyle%3E%3Cp%3Exxxx>
+
+[[WinIE 7]] でも [[Firefox]] 2 でも、緑の[Q[xxxx]]が[[レンダリング]]されます。
+
+[19]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0A%20%20document.write%20('%3Cstyle%3E')%3B%0Aw%20(document.documentElement.innerHTML)%3B%0A%20%20document.write%20('color%3A%20gree')%3B%0Aw%20(document.documentElement.innerHTML)%3B%20%0A%20%20document.write%20('n%20%7D')%3B%0A%3C%2Fscript%3E%3C%2Fstyle%3E%3Cp%3Exxxx%0A%3Cscript%3E%0Aw%20(document.documentElement.innerHTML)%3B%20%0A%3C%2Fscript%3E%0A%3Cpre%3E%0Axxxx>
+
+[CODE(JS)@@en[[[document]].[[write]]]] による追加分が [[DOM]] [[木]]に反映されるのはいつか?
+(ここでは [CODE(DOMa)@@en[[[innerHTML]]]] を使用。)
+
+- 通常の[[要素]]なら、直前の [CODE(JS)@@en[[[document]].[[write]]]]
+で与えられたものすべてが既に反映済み
+- [CODE(HTMLe)@@en[[[style]]]] [[要素]]の場合、
+-- [[WinIE 7]] では [CODE(HTMLe)@@en[[[style]]]] [[要素]]自体は追加されるが、
+その[[内容]]は[[終了タグ]]を処理するまで[[空]]のまま
+-- [[Firefox]] 2 では[[終了タグ]]が処理されるまで
+[CODE(HTMLe)@@en[[[style]]]] [[要素]]自体が追加されない
+
+([[名無しさん]])
+
+[20]
+>>19 [[WinIE 7]] で [CODE(HTMLe)@@en[[[style]]]]
+[[要素]]の [CODE(DOMa)@@en[[[sheet]]]]
+[[属性]]は [CODE(DOM)@@en[[[null]]]] になっているようです。
+([[名無しさん]])
+
+[21]
+>>20 訂正: [CODE(DOMa)@@en[[[styleSheet]]]] [[属性]]。
+([[名無しさん]])
+
+[22]
+>>19 [[Opera]] 9.27、[[Safari]] 3.1.1 では、
+[[WinIE 7]] 同様、[[終了タグ]]を処理するまでは空のままのようです。
+[CODE(DOMa)@@en[[[sheet]]]] [[属性]]は空の[[スタイル・シート]]になっているようです。
+([[名無しさん]])
+
+[23]
+>>22 [CODE(DOMa)@@en[[[sheet]]]] [[属性]]の指す[[スタイル・シート]]は[[終了タグ]]が処理されるまでずっと空のままのようです。
+
+;; <http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0D%0A%20%20document.write%20('%3Cstyle%3E')%3B%0D%0A%20%20document.write%20('p%20%7B%20color%3A%20green%20%7D')%3B%0D%0A%20%20w%20(document.getElementsByTagName%20('style')%5B0%5D.sheet.cssRules.length)%3B%0D%0A%3C%2Fscript%3E%3C%2Fstyle%3E>
+
+([[名無しさん]])
+
+[24]
+[CODE(JS)@@en[[[document]].[[write]] ('<pre>\na</pre>')]]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0D%0A%20%20document.write%20('%3Cpre%3E%5Cna%3C%2Fpre%3E')%3B%0D%0A%3C%2Fscript%3E>
+
+[[WinIE 7]], [[Firefox]] 2, [[Opera]] 9.27, [[Safari]] 3.1.1 のいずれも、
+[[開始タグ]]直後の[[改行]]を無視。
+([[名無しさん]])
+
+[25]
+[CODE(JS)@@en[[[document]].[[write]] ('<pre>'); [[document]].[[write]] ('\na</pre>')]]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0A%20%20document.write%20('%3Cpre%3E')%3B%0A%20%20document.write%20('%5Cna%3C%2Fpre%3E')%3B%0A%3C%2Fscript%3E>
+
+>>24 の4ブラウザ中、[[Firefox]] 2 だけは[[改行]]を無視''せず''。
+([[名無しさん]])
+
+[26]
+[CODE(JS)@@en[[[document]].[[write]] ('<pre>', '\na</pre>');]]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0A%20%20document.write%20('%3Cpre%3E'%2C%20'%5Cna%3C%2Fpre%3E')%3B%0A%3C%2Fscript%3E>
+
+これなら [[Firefox]] 2 も[[改行]]を無視する。
+([[名無しさん]])
+
+[27]
+[CODE(JS)@@en[[[document]].[[writeln]] ('<pre>'); [[document]].[[write]] ('a</pre>');]]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0A%20%20document.writeln%20('%3Cpre%3E')%3B%0A%20%20document.write%20('a%3C%2Fpre%3E')%3B%0A%3C%2Fscript%3E>
+
+だけどこっちは [[Firefox]] 2 が[[改行]]を[[無視]]しない。
+([[名無しさん]])
+
+[28]
+[[Opera]] 9.27 と [[Safari]] 3.1.1 の結果
+
+>>11、>>12 PASS
+
+>>13、>>15 FAIL ([CODE(HTMLa)@@en[[[defer]]]] 未対応)
+
+>>16 同じ (実行される)
+
+([[名無しさん]])
+
+[29]
+>>19 みたいなことを [CODE(HTMLe)@@en[[[script]]]]
+[[要素]]を書き出す場合でやってみた
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0Aw%20(document.documentElement.innerHTML)%3B%0A%20%20document.write%20('%3Cscript%3E%20document.')%3B%0Aw%20(document.documentElement.innerHTML)%3B%0A%20%20document.write%20('write%20(%22a%22)%3B%20%3C%2F'%20%2B%20'script%3E')%3B%0Aw%20(document.documentElement.innerHTML)%3B%0A%3C%2Fscript%3E>
+
+4ブラウザとも、 [CODE(HTMLe)@@en[[[script]]]] [[要素]]が
+[CODE(DOMa)@@en[[[innerHTML]]]] に現れるのは[[終了タグ]]が処理されたあとのようです。
+
+この例だと [[Safari]] だけは3番目の [CODE[w]] で生成された
+[CODE(HTMLe)@@en[[[script]]]] [[要素]]によって書き込まれた
+[CODE[a]] が反映されていないのですが、
+これはその [CODE(HTMLe)@@en[[[script]]]] [[要素]]が実行されていないわけではなく、
+[[文字データ]]を書いても次の[[タグ]]などが現れるまで
+[[DOM]] に追加されないという ([[Safari]] だけの) 動作のためのようです。
+([[名無しさん]])
+
+[30]
+>>29 
+
+書き出される [CODE(HTMLe)@@en[[[script]]]] [[要素]]が実行される時点での
+[CODE(DOMa)@@en[[[innerHTML]]]] は?
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0D%0A%20%20document.write%20('%3Cscript%3E%20w%20(document.documentElement.innerHTML)%3B%20document.')%3B%0D%0A%20%20document.write%20('write%20(%22a%22)%3B%20%3C%2F'%20%2B%20'script%3E')%3B%0D%0A%3C%2Fscript%3E>
+
+書き出された [CODE(HTMLe)@@en[[[script]]]] [[要素]]が [[DOM]]
+に追加された状態の [CODE(DOMa)@@en[[[innerHTML]]]] が出てくるようです。
+([[名無しさん]])
+
+[31]
+>>30 は4ブラウザとも。
+([[名無しさん]])
+
+[32]
+[CODE(HTMLe)@@en[[[script]]]] の途中からが外側の
+[CODE(HTMLe)@@en[[[script]]]] [[要素]]の後にいっていてもよいのか?
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0A%20%20document.write%20('%3Cscript%3E%20w%20(document.documentElement.innerHTML)%3B%20document.')%3B%0A%20%20document.write%20('write%20(%22a')%3B%0A%3C%2Fscript%3E%22)%3B%20%3C%2Fscript%3E>
+
+4ブラウザともおk ([CODE(HTMLe)@@en[[[script]]]] 
+[[要素]]の続きとみなす) のようです。
+([[名無しさん]])
+
+[33]
+わけがわからないくらい複雑な例 with [CODE(HTMLe)@@en[[[script]]]] [CODE(HTMLa)@@en[[[src]]]]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%20src%3D%22javascript%3A'%20document.write%20(%26quot%3Baaaaa%26quot%3B)%3B%20'%22%3E%3C%2Fscript%3E%0A%3Cscript%3E%0A%20%20document.write%20(%22%3Cscript%3Edocument.write%20('%3Cscript%20src%3Djavascript%3A%26apos%3Bdocument.write(%26quot%3Baaaaa%26quot%3B)%3B%26apos%3B%3E%3C%2F'%2C%20'script%3E%3Cscript%3E%20document.wri')%3B%3C%2F%22%2C%20%22script%3E%22)%3B%0A%3C%2Fscript%3Ete%20('ccc')%3B%20%3C%2Fscript%3E>
+
+[[Firefox]] 2 では、最初の
+[CODE(HTMLe)@@en[[[script]]]] [[要素]]があるかないか
+([CODE(URI)@@en[[[javascript]]:]] [[URI]] を使っていることに起因している模様)、
+[[Live DOM Viewer]] 内で見るかどうか、
+[[Live DOM Viewer]] でも直接入力か permalink 使用かによって結果が変わってくる
+(2つ目の [CODE(HTMLe)@@en[[[script]]]] による書き込みが反映されたりされなかったりする、というか [CODE(HTMLe)@@en[[[script]]]] が [[DOM]]
+に現れなかったり、 [CODE(HTMLe)@@en[[[body]]]] が2つでてきたり、よくわからん。) ようです。
+
+;; [[Live DOM Viewer]] かどうかで結果が変わるのは、
+[[Live DOM Viewer]] 自体が [CODE(JS)@@en[[[document]].[[write]]]] を使っているせいでしょう。
+
+([[名無しさん]])
+
+[34]
+>>33 他の3ブラウザはいずれも [Q[ccc]] とだけでてきます。
+[[Safari]] と [[WinIE]] は、
+[CODE(HTMLa)@@en[[[src]]]] 内の [CODE(URI)@@en[[[javascript]]:]]
+[[URI]] を実行していないようです。 [[Opera]] は外部スクリプト内の
+[CODE(JS)@@en[[[document]].[[write]]]] を実行していないようです。
+([[名無しさん]])
+
+[35]
+>>34 [[Opera]] は [CODE(JS)@@en[[[document]].[[write]]]] を実行しないのではなく、
+[CODE(HTMLa)@@en[[[javascript]]:]] [[URI]] を実行はするのですが、
+最後に得られた[[文字列]]を外部スクリプトとみなすのではないようで、
+[[エラーコンソール]]に
+[Q[リンク先のスクリプトを読み込むことができません]]とでてきます。
+([[名無しさん]])
+
+[36]
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%20src%3D%22javascript%3A%20document.write%20('x')%3B%20%22%3E%3C%2Fscript%3E%20%20%20>
+
+[[Opera]] では [Q[x]] が [CODE(HTMLe)@@en[[[body]]]] [[要素]]中にでてきます。
+
+[[Firefox]] の [CODE(HTMLa)@@en[[[src]]]] 内の [CODE(URI)@@en[[[javascripot]]:]]
+[[URI]] の実行される文脈では文書本体の [CODE(JS)@@en[[[Global]]]]
+[[物体]]とは違うものを使っているようで、
+[CODE(JS)@@en[[[window]]]] にも [CODE(JS)@@en[[[document]]]]
+にもその他[[大域変数]]にもアクセスできません
+([CODE(JS)@@en[[[ReferenceError]]]] になります)。
+([[名無しさん]])
+
+[37]
+[CITE@@en[Hixie's Natural Log: Tag Soup: Blocks-in-inlines]] ([CODE[2008-04-25 22:46:42 +09:00]] 版) <http://ln.hixie.ch/?start=1138169545&count=1>
+([[名無しさん]])
+
+[38]
+[CITE@@en[Hixie's Natural Log: Why document.write() doesn't work in XML]] ([CODE[2008-04-25 22:48:57 +09:00]] 版) <http://ln.hixie.ch/?start=1091626816&count=1>
+([[名無しさん]])
+
+[39]
+[CITE@@en[Hixie's Natural Log: Tag Soup: appendChild() of a script that calls document.write()]] ([CODE[2008-04-25 22:49:24 +09:00]] 版) <http://ln.hixie.ch/?start=1155195074&count=1>
+([[名無しさん]])
+
+[40]
+[CITE[Index of /tests/adhoc/dom/level0/write]] ([CODE[2008-04-25 23:07:32 +09:00]] 版) <http://hixie.ch/tests/adhoc/dom/level0/write/>
+([[名無しさん]])
+
+[41]
+んー、カオス。
+([[名無しさん]])
+
+[42]
+[CODE(JS)@@en[[[document]].[[write]]]] で始まった
+[CODE@@en[[[CDATA]]]] [[内容モデル旗]]とその[[スクリプト]]の[[終了タグ]]の関係は?
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0A%20%20document.write%20(%22%3Cstyle%3E%20p%20%7B%22)%3B%0A%20%20w%20(document.documentElement.innerHTML)%3B%0A%3C%2Fscript%3E%20color%3A%20green%3B%0A%3Cscript%3E%0A%20%20document.write%20('%7D%20%3C%2Fstyle%3E')%3B%0A%3C%2Fscript%3E%3Cp%3Exxxx%0A>
+
+4ブラウザとも、[CODE(HTML)@@en[</[[script]]>]] 以後も[[内容モデル旗]]は
+[CODE@@en[[[CDATA]]]] にしたまま処理を続行するようで、
+次の [CODE(HTML)@@en[<[[script]]>]] [[開始タグ]]は[[開始タグ]]ではなく、
+[[文字データ]]として処理します。
+
+([[名無しさん]])
+
+[43]
+[CITE@@en[Live Scripting HTML Parser]] ([CODE[2008-04-27 20:27:04 +09:00]] 版) <http://suika.fam.cx/www/markup/html/scripting-parser/parser>
+([[名無しさん]])
+
+[44]
+[CITE[Bug 95487 &#8211; JavaScript-generated table never completes]] ([CODE[2008-06-18 09:05:55 +09:00]] 版) <https://bugzilla.mozilla.org/show_bug.cgi?id=95487>
+([[名無しさん]])
+
+[45]
+[CITE@@ja[document.write()の実行タイミングをずらす方法]] ([CODE[2008-06-22 15:16:43 +09:00]] 版) <http://p2b.jp/index.php?UID=1153728573>
+([[名無しさん]])
+
+[46]
+[CITE[最速インターフェース研究会 :: ページレンダリングを妨げないdocument.writeの実装]] ([CODE[2008-06-22 15:21:04 +09:00]] 版) <http://la.ma.la/blog/diary_200612061928.htm>
+([[名無しさん]])
+
+[47]
+[CITE[Fenrir's BLog: Ajaxでdocument.writeするJavaScriptへの対策]] ([CODE[2008-06-02 14:24:53 +09:00]] 版) <http://fenrir.naruoka.org/archives/000555.html>
+([[名無しさん]])
+
+[48]
+[CITE@@ja-JP[野ログはノロキュアMaxHeart - document.writeをバッファリングするJavaScript]] ([[nog]] 著, [CODE[2008-04-18 09:41:41 +09:00]] 版) <http://cureblack.com/20080418.html#p01>
+([[名無しさん]])
+
+
+[49]
+[CITE[Javascriptの外部ファイル内でdocument.writeしたら文字化け(Mac IE 4.5編)]] ([TIME[2007-02-19 06:57:31 +09:00]] 版) <http://www.shtml.jp/mojibake/macie45.html>
+([[名無しさん]])
+
+
+[[#comment]]
+
+
+@
+

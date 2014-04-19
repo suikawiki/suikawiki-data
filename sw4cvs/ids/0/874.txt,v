@@ -1,0 +1,165 @@
+head	1.1;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2008.11.11.05.35.38;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/456E746974795265666572656E6365.txt>
+@
+text
+@
+
+* EntityReference 節・EntityReference 界面 (DOM)
+
+[2] [CODE(DOM)[EntityReference]] は、 [[XML]]
+の[[一般実体参照]]に対応します。
+
+[3] [[HTML]] 及び XML の[[数値文字参照]]や HTML
+の[[文字実体参照]], XML の定義済み一般実体参照
+([CODE(XML)[amp]] など。) は予め展開されて [CODE(DOM)[[[Text]]]]
+節などとして表現されます。
+
+また、処理系は元の文書に存在した一般実体参照を、
+[CODE(DOM)[EntityReference]] 節とはせずに、
+展開してから DOM 木を作っても構いません。
+(この場合実体参照であったことは分からなくなります。)
+
+[4] 実体参照の参照先の実体 ([CODE(DOM)[[[Entity]]]] 節)
+が存在する時は、子節はそれと同じ内容になります。
+存在しない時は、子節はなしになります。
+
+子孫節はすべて読取専用になります。
+
+[1] [RUBYB[実体参照節] [[CODE(DOM)[EntityReference]] node]]は、
+[[DOM1]] では次の種類の[[節]]を子供に持てます。
+- [[Element]]
+- [[ProcessingInstruction]]
+- [[Comment]]
+- [[Text]]
+- [[CDATASection]]
+- [[EntityReference]]
+
+[5] [CODE(DOM)[EntityReference]] 界面は、 [CODE(DOM)[[[Node]]]]
+を継承します。
+
+[6] この界面は拡張界面です。
+DOM 1 HTML では、この界面は実装しなくても構いません。
+
+- [DOM1] ''Document Object Model (Core) Level 1'' <http://www.w3.org/TR/REC-DOM-Level-1/level-one-core.html#ID-11C98490>
+- [7] >>4 実体参照節自体も読取専用になります。 (FE には明記されていませんが、 SE で追記されています。)
+
+[8]
+>>3 [SAMP(DOM)[[CODE(DOMm)[[[createEntityReference]] ('amp')]]]]
+とかしたら何が起こるのか、 DOM 仕様書には書かれていません。
+何が起こるのでしょう?
+
+
+** 未束縛の名前空間接頭辞
+
+[9]
+[[一般実体]]の[[置換文]]は ([[XML名前空間]]に従って解釈した時に)
+[[束縛]]されていない[[名前空間接頭辞]]が登場する可能性があります。
+その時、[CODE(DOMi)@@en[[[Entity]]]][[部分木]]では[CODE(DOMa)@@en[[[prefix]]]]あり、[CODE(DOMa)@@en[[[namespaceURI]]]]が[CODE(DOM)@@en[[[null]]]]になります。対応する[CODE(DOMi)@@en[[[EntityReference]]]][[部分木]]では[[解決]]された[[名前空間URI]]が入ります。
+
+;; 普通[CODE(DOMi)@@en[[[EntityReference]]]][[部分木]]は[CODE(DOMi)@@en[[[Entity]]]][[部分木]]の複製になりますが、[[束縛]]されていない[[名前空間接頭辞]]がある場合は例外です。
+
+;; <IW:DOM3:"Core/core.html#ID-11C98490">
+
+[10]
+[CODE(DOMm)@@en[[[createEntityReference]]]]は[CODE(DOMi)@@en[[[Entity]]]][[部分木]]を複製します。つまりこの場合[CODE(DOMa)@@en[[[namespaceURI]]]]は[CODE(DOM)@@en[[[null]]]]のままです。
+
+;; <IW:DOM3:"Core/core.html#ID-527DCFF2">
+
+それを[[文書木]]に挿入したら[[解決]]されるかというと、されるともされないとも規定されていません。しかし[[LS]][[モジュール]]で[CODE(DOM)@@en[[[unbound-prefix-in-entity-reference]]]]という[[直列化]]時の[[誤り]]が定義されているくらいですから、しなくても問題なさそうです。
+
+[11]
+[CODE(DOMm)@@en[[[normalizeDocument]]]][[メソッド]]の処理内容には[CODE(DOMi)@@en[[[EntityReference]]]][[置換木]]の更新が含まれています。
+
+;; <IW:DOM3:"Core/core.html#Document3-normalizeDocument">
+
+[12]
+が、 >>11 で具体的に何をすればよいのか分かりません。
+[CODE(DOMa)@@en[[[namespaceURI]]]]が[CODE(DOM)@@en[[[null]]]]でもそのまま複製すればよいのでしょうか、それともその文脈で[[解決]]すればよいのでしょうか。
+後者だとしたら、[[宣言]]されていない[[名前空間接頭辞]]が出たらどうすればよいのでしょうか。
+
+元々[CODE(DOMi)@@en[[[EntityReference]]]][[部分木]]も[CODE(DOMi)@@en[[[Entity]]]][[置換木]]も読取専用なので、[Q[更新]]に意味があるとしたら、[[名前空間]]に関する不整合の解消だけです。
+しかし、[Q[[CODE(DOMi)@@en[[[EntityReference]]]][[置換木]]の更新]]だけでは何を指しているのか分かりません。
+
+[13]
+[[設定]][CODE(DOM)@@en[[[entities]]]]を[CODE(DOM)@@en[[[false]]]]にして[CODE(DOMm)@@en[[[normalizeDocument]]]]すると、[[実体参照]]は[[展開]]されます。
+とすると、元々[CODE(DOMi)@@en[[[EntityReference]]]][[部分木]]で未[[束縛]]な[[名前空間接頭辞]]があると
+(>>12 についてどういう処理をするのかによっては) それが[CODE(DOMi)@@en[[[EntityReference]]]]外であっても残ることになります。
+
+また、[CODE(DOMm)@@en[[[cloneNode]]]]や[CODE(DOMm)@@en[[[adoptNode]]]]や[CODE(DOMm)@@en[[[importNode]]]]にも特に規定は無いようですから、未[[束縛]]な[[名前空間接頭辞]]を持った[[節点]]が[[実体参照]]外に存在することは普通に可能なようです。
+
+[17]
+>>9 [DOM2, DOM3]
+([[名無しさん]])
+
+[18]
+[CODE(DOMi)@@en[[[EntityReference]]]] [[節点]]が未知の[[実体]]を表す場合、その[[節点]]は[[子孫]]を持たず、
+[CODE(DOMa)@@en[[[value]]]] などで使われる[[置換値]]は[[空文字列]]となります。
+[SRC@@en[[[DOM 3]]]]
+([[名無しさん]])
+
+[19]
+[CODE(DOMi)@@en[[[EntityReference]]]] [[節点]]が未知の[[実体]]を表す場合、その[[節点]]は[[子孫]]を持たず、
+[CODE(DOMa)@@en[[[value]]]] などで使われる[[置換値]]は[[空文字列]]となります。
+[SRC@@en[[[DOM 3]]]]
+([[名無しさん]])
+
+[20]
+[[DOM水準1]] (だけ) によれば、 [CODE(DOMi)@@en[[[EntityReference]]]]
+[[節点]]の[[子供]] ([[参照]]されている [CODE(DOMi)@@en[[[Entity]]]] [[節点]]の[[置換値]]) の[[解決]]は[[遅延評価]]にしても構いません。
+例えば、 [CODE(DOMi)@@en[[[EntityReference]]]] [[節点]]の
+[CODE(DOMa)@@en[[[childNodes]]]] [[値]]に[[アクセス]]するなどの[[利用者]]の行為により[[評価]]が行われることにしても構いません。
+
+([[名無しさん]])
+
+[[#comment]]
+
+
+** メモ
+
+[14]
+[CODE(DOMi)@@en[[[EntityReference]]]]の[[子供]]に[CODE(DOMi)@@en[[[Element]]]]などが来ることがありますが、そんな[CODE(DOMi)@@en[[[EntityReference]]]]が[CODE(DOMi)@@en[[[Attr]]]]の[[子供]]になることが禁止されていないように思えます。良いのでしょうか。。。
+([[名無しさん]])
+
+[15]
+>>14 はじめはそうでないとしても、[CODE(DOMm)@@en[[[normalizeDocument]]]]や[CODE(DOMm)@@en[[[importNode]]]]で途中からそうなることがあり得る。。。
+([[名無しさん]])
+
+[16]
+[[XML]]では[[属性値表記]]内の[[外部解析対象実体]]への[[参照]]は[[整形式制約]]違反ですが、[[DOM]]にはそういう制約は無いみたいです。。。
+([[名無しさん]])
+
+[[#comment]]
+
+
+* メモ
+
+[21]
+loaftv wtrn zgqp wkbpvs zlpetuy kjxiydwpu kzqfuwabo
+([[zdpkoth rktihnxds]] [pdysnbeh@@gmail.com])
+
+[22]
+loaftv wtrn zgqp wkbpvs zlpetuy kjxiydwpu kzqfuwabo
+([[zdpkoth rktihnxds]] [pdysnbeh@@gmail.com])
+
+@

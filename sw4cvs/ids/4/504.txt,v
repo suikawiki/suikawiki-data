@@ -1,0 +1,558 @@
+head	1.1;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2008.11.13.16.08.56;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/BBFDC2B3C0DCC2B3.txt>
+@
+text
+@
+[1] [[HTTP/0.9]] 以来の [[HTTP]] の仕様では、一つの[[要求]]・[[応答]]の組ごとに ([[TCP]] など下位層の) [[接続]]を確立しては閉じることになっていました。
+つまり、一度の connection では一つの[[資源]]にしか access できませんでした。
+
+最初のうちはこれでよかったのですが、
+[[画像]]の埋め込みなどが行われるようになり、複数の資源にほぼ同時に access するようになると、この仕様は極めて不効率です。
+
+[2] そこで導入されることになったのが[DFN[[RUBYB[持続接続] [persistent conenction]]]]です。
+持続接続では、 (仕様上は) 任意の時間[[鯖]]と[[クライアント]]の間の接続を確立したままの状態にしておくことができます。そして、任意の資源に access できるのです。
+
+しかしながら、持続接続の導入は、
+従来の実装との互換性の問題のためにかなり難航しました。
+
+[3] 最初に導入された [DFN[[CODE(HTTP)[[[Keep-Alive]]]] 方式]]は、
+従来の HTTP/1.0 のメッセージに [CODE(HTTP)[[[Connection]]: Keep-Alive]] という修飾子を加えることで持続接続を実現しようとしました。
+
+ところが、この方法では、[[鎖]]の途中に古い[[串]]と新しい串が混在していると、意図しない接続が持続してしまい、結果としてハングアップ状態になってしまう可能性があることが分かりました。
+これを回避するための修正案である
+[CODE(HTTP)[[[Proxy-Connection]]]]
+方式も、解決するには至りませんでした。
+
+[4] [[HTTP/1.1]] は、根本的に考え方を改め、接続が持続することを既定としました。
+従来のように要求・応答の後に接続を閉じるときには
+[CODE(HTTP)[Connection: [[close]]]]
+と指定することにしました。
+これでようやく、既存の実装と互換でありながら持続接続を実現できました。
+
+[5] ''Nonstandard HTTP Headers'' <http://web.archive.org/web/20020610043404/http://www.dais.is.tohoku.ac.jp/~kabe/WWW/nonstdhdr.html#Xonnection>: >>1-4 の話がもうちょっと具体的に説明されています。
+
+[6] 接続の制御に関係する頭欄: 
+- [CODE(HTTP)[[[Connection]]]]
+- [CODE(HTTP)[[[Proxy-Connection]]]]
+- [CODE(HTTP)[[[Keep-Alive]]]]
+- [CODE(HTTP)[[[Xonnection]]]]
+- [CODE(HTTP)[[[Xroxy-Connection]]]]
+
+メッセージの長さに関係して:
+- [[メッセージ//長さ]]
+- [CODE(HTTP)[[[Content-Length]]]]
+- [CODE(HTTP)[[[Transfer-Encoding]]: [[chunked]]]]
+
+[[#comment]]
+
+* 仕様書から
+**RFC 2068・2616 (HTTP/1.1) 8 Connections
+***8.1 Persistent Connections
+****8.1.1 Purpose
+> Prior to persistent connections, a separate TCP connection was
+established to fetch each URL, increasing the load on HTTP servers
+and causing congestion on the Internet. The use of inline images and
+other associated data often require[DEL[s]] a client to make multiple
+requests of the same server in a short amount of time. Analysis of
+these performance problems [DEL[are available [30][27]; analysis]] and
+results from a prototype implementation are [DEL[in]] [INS[available]] [26] [INS[ [30] ]]. [INS[Implementation experience and measurements of actual HTTP/1.1 (RFC 2068) implementations show good results [39]. Alternatives have also been explored, for example, T/TCP [27].]]
+
+持続接続以前には、各 [[URL]] を引き出すために別々の [[TCP]]
+接続を確立しており、 [[HTTP]] [[サーバー]]の読み込みを増やし、
+[[インターネット]]に渋滞を起こしていました。
+行内画像や他の関連データの使用のために、
+しばしば短い時間内で同じサーバーに複数の要求を行うことが必要となります。
+この性能問題と鋳型実装の結果が利用可能です。[INS[実際の HTTP/1.1 (RFC 2068) 実装の実装経験・測定は良い結果を示しています。代替案、例えば [[T/TCP]] も探求されています。]]
+
+> Persistent HTTP connections have a number of advantages:
+
+持続 HTTP 接続には多くの利点があります。
+
+>
+-[DEL[o]] [INS[-]] By opening and closing fewer TCP connections, CPU time is saved [INS[in routers and hosts (clients, servers, proxies, gateways, tunnels, or caches)]],
+and memory used for TCP protocol control blocks [DEL[is also]] [INS[can be]] saved [INS[in hosts]].
+-[DEL[o]] [INS[-]] HTTP requests and responses can be pipelined on a connection.
+Pipelining allows a client to make multiple requests without
+waiting for each response, allowing a single TCP connection to be
+used much more efficiently, with much lower elapsed time.
+-[DEL[o]] [INS[-]] Network congestion is reduced by reducing the number of packets
+caused by TCP opens, and by allowing TCP sufficient time to
+determine the congestion state of the network.
+-[INS[- Latency on subsequent requests is reduced since there is no time spent in TCP's connection opening handshake.]]
+-[DEL[o]] [INS[-]] HTTP can evolve more gracefully[DEL[;]][INS[,]] since errors can be reported without the penalty of closing the TCP connection. Clients using
+future versions of HTTP might optimistically try a new feature,
+but if communicating with an older server, retry with old semantics
+after an error is reported.
+
+- より少数の TCP 接続を開いたり閉じたりすることで、[INS[router とホスト ([[クライアント]], [[サーバー]], [[串]], [[関門]], [[トンネル]]あるいは[[キャッシュ]]) の]] [[CPU時間]]を節約できます。
+- HTTP の[[要求]]と[[応答]]は一つの接続で[[パイプライン]]化できます。
+パイプライン化でクライアントはそれぞれの応答を待たずに複数の要求を行うことができ、
+一つの TCP 接続をより効果的に、より少ない経過時間で使用できます。
+- TCP を開く際の小包の数を減らし、 TCP
+にネットワークの混雑状態を決定するのに十分な時間を認めることでネットワークの混雑を緩和します。
+-[INS[TCP の接続を開く握手に費やす時間がないので、後続要求の遅延が減ります。]]
+- TCP 接続を閉じる罰を負わずに誤りを報告できるので、
+HTTP がより優美に進化できます。将来の版の HTTP
+を使うクライアントは楽天的に新しい機能を試し、
+古いサーバーと通信していて誤りが報告された後に古い意味で再試行できることでしょう。
+
+> HTTP implementations SHOULD implement persistent connections.
+
+HTTP 実装は持続接続を実装する'''べきです'''。
+
+****8.1.2 Overall Operation
+> A significant difference between HTTP/1.1 and earlier versions of
+HTTP is that persistent connections are the default behavior of any
+HTTP connection. That is, unless otherwise indicated, the 
+client [DEL[may]] [INS[SHOULD]]
+assume that the server will maintain a persistent connection[INS[, even after error responses from the server]].
+
+HTTP/1.1 と以前の版の HTTP の重大な差異は、持続接続がすべての HTTP
+接続の規定の振舞いであることです。つまり、別途指定しない限り、
+サーバーは[INS[たとえサーバーからの誤り応答の後でも、]]サーバーは持続接続を維持するとクライアントは仮定する'''べきです'''。
+
+> Persistent connections provide a mechanism by which a client and a
+server can signal the close of a TCP connection. This signaling takes
+place using the Connection header field [INS[(section 14.10)]].
+Once a close has been signaled, the client MUST [DEL[not]] [INS[NOT]]
+send any more requests on that connection.
+
+持続接続は、クライアントとサーバーが TCP 接続を閉じることを合図する機構を提供しています。
+この合図は [CODE(HTTP)[[[Connection]]]] 頭欄を使って行います。
+一度閉じることを合図したら、クライアントはその接続でそれ以上要求を送っては'''なりません'''。
+
+***** 8.1.2.1 Negotiation
+> An HTTP/1.1 server MAY assume that a HTTP/1.1 client intends to
+maintain a persistent connection unless a Connection header including
+the connection-token "close" was sent in the request. If the server
+chooses to close the connection immediately after sending the
+response, it SHOULD send a Connection header including the
+connection-token close.
+
+HTTP/1.1 サーバーは、 HTTP/1.1 クライアントが要求で接続字句 [CODE(HTTP)[[[close]]]]
+を含む [CODE(HTTP)[Connection]] 頭を送った場合以外は持続接続を維持することを意図していると仮定して'''構いません'''。
+サーバーが応答を送信してすぐに接続を閉じることを選ぶなら、
+接続字句 [CODE(HTTP)[close]] を含んだ [CODE(HTTP)[Connection]]
+頭を送る'''べきです'''。
+
+> An HTTP/1.1 client MAY expect a connection to remain open, but would
+decide to keep it open based on whether the response from a server
+contains a Connection header with the connection-token close. In case
+the client does not want to maintain a connection for more than that
+request, it SHOULD send a Connection header including the connection-token close.
+
+HTTP/1.1 クライアントは、接続が開かれ続けることを期待して'''構いません'''が、
+接続を開き続けるかどうかをサーバーからの接続字句 [CODE(HTTP)[close]]
+の [CODE(HTTP)[Connection]] を含んだ応答に基づき決めることになります。
+クライアントがその要求以降の接続を維持することを望まない場合は、
+接続字句 [CODE(HTTP)[close]] を含めた [CODE(HTTP)[Connection]]
+を送る'''べきです'''。
+
+> If either the client or the server sends the close token in the
+Connection header, that request becomes the last one for the connection.
+
+クライアントまたはサーバーが [CODE(HTTP)[Connection]]
+頭に [CODE(HTTP)[close]] 字句を送ったら、
+その要求はその接続で最後のものになります。
+
+> Clients and servers SHOULD NOT assume that a persistent connection is
+maintained for HTTP versions less than 1.1 unless it is explicitly
+signaled. See section [DEL[19.7.1]] [INS[19.6.2]] for more information on backward[DEL[s]]
+compatibility with HTTP/1.0 clients.
+
+クライアントとサーバーは、陽に合図しない限り、 1.1 
+より小さい HTTP 版では持続接続が維持されると仮定する'''べきではありません'''。
+HTTP/1.0 クライアントとの後方互換性についての更なる情報は
+[[RFC2068]] 19.7.1 節や [[RFC2616]] 19.6.2 節をご覧下さい。
+
+> In order to remain persistent, all messages on the connection [DEL[must]] [INS[MUST]]
+have a self-defined message length (i.e., one not defined by closure
+of the connection), as described in section 4.4.
+
+持続し続けるために、接続のすべてのメッセージは自己定義メッセージ長
+(つまり、接続を閉じることによって定義されるのではないメッセージ長) 
+を持たなければ'''なりません'''。
+
+***** 8.1.2.2 Pipelining
+→[CODE(WikiPage)[[[HTTPパイプライン]]]]
+**** 8.1.3 Proxy Servers
+> It is especially important that proxies correctly implement the
+properties of the Connection header field as specified in [DEL[14.2.1]] [INS[section 14.10]].
+
+串が 14.10 節に規定されている通り [CODE(HTTP)[Connection]]
+頭欄の特性を正しく実装することがとりわけ重要であります。
+
+> The proxy server MUST signal persistent connections separately with
+its clients and the origin servers (or other proxy servers) that it
+connects to. Each persistent connection applies to only one transport link.
+
+串サーバーは、その接続するクライアントおよび[[起源サーバー]] (または他の串サーバー)
+と別々に持続接続を合図しなければ'''なりません'''。
+それぞれの持続接続は一つの転送連結にのみ適用します。
+
+> A proxy server MUST NOT establish a [INS[HTTP/1.1]]
+persistent connection with an HTTP/1.0 client [INS[(but see RFC 2068 [33] for information and discussion of the problems with the Keep-Alive header implemented by many HTTP/1.0 clients)]].
+
+串サーバーは、 HTTP/1.0 クライアントと [INS[HTTP/1.1]] 持続接続を確立しては'''なりません''' [INS[(が、多くの HTTP/1.0 クライアントが実装している [CODE(HTTP)[[[Keep-Alive]]]] の情報と問題の議論について RFC 2068 をご覧下さい)]]。
+
+**** 8.1.4 Practical Considerations
+> Servers will usually have some time-out value beyond which they will
+no longer maintain an inactive connection. Proxy servers might make
+this a higher value since it is likely that the client will be making
+more connections through the same server. The use of persistent
+connections places no requirements on the length [INS[(or existence)]]
+of this time-out for either the client or the server.
+
+サーバーは、普通非活性接続をそれ以上維持しない時間切れ値を持っています。
+串サーバーは、クライアントが同じサーバーを通してより多くの接続を行うでしょうから、
+時間切れ値はより高めになっているでしょう。
+持続接続の使用ではクライアントについてもサーバーについてもこの時間切れ値についての長さ [INS[(や存在)]] についての要件はありません。
+
+> When a client or server wishes to time-out it SHOULD issue a graceful
+close on the transport connection. Clients and servers SHOULD both
+constantly watch for the other side of the transport close, and
+respond to it as appropriate. If a client or server does not detect
+the other side's close promptly it could cause unnecessary resource drain on the network.
+
+クライアントかサーバーが時間切れとしたいと思ったときは、
+輸送接続に優美な閉じを発行する'''べきです'''。
+クライアントとサーバーは恒常的に輸送路の反対側が閉じられるのを監視して、
+これに適切に応答する'''べきです'''。クライアントまたはサーバーが反対側が閉じられるのを即座に検出できなかったら、ネットワークに不必要に資源が流出してしまうことになります、
+
+> A client, server, or proxy MAY close the transport connection at any
+time. For example, a client [DEL[MAY]] [INS[might]]
+have started to send a new request at the same time that the server has decided to close the "idle"
+connection. From the server's point of view, the connection is being
+closed while it was idle, but from the client's point of view, a
+request is in progress.
+
+クライアント、サーバーまたは串は、いつ何時でも輸送接続を閉じて'''構いません'''。
+例えば、クライアントはサーバーが「遊び」接続を閉じると決めたときに同時に新しい要求を送り始めるかもしれません。
+サーバーの視点から見れば、接続は遊んでいた間に閉じられ始めますが、
+クライアントの視点から見れば、要求は進行中です。
+
+> This means that clients, servers, and proxies MUST be able to recover
+from asynchronous close events. Client software SHOULD reopen the
+transport connection and retransmit the aborted [INS[sequence of]] request[INS[s]]
+without user interaction so long as the request [DEL[method]] [INS[sequence]] is
+idempotent (see section 9.1.2)[DEL[; other methods]][INS[. Non-idempotent methods or sequences]]
+MUST NOT be automatically retried, although user agents MAY offer
+a human operator the choice of retrying the request[INS[(s)]]. [INS[Confirmation by user-agent software with semantic understanding of the application MAY substitute for user confirmation.]] [DEL[However, this]] [INS[The]]
+automatic retry SHOULD NOT be repeated if the second [INS[sequence of]] request[INS[s]] fails.
+
+これは、クライアント、サーバーおよび串が非同期の閉じ事象から回復できなければ'''ならない'''ことを意味します。
+クライアント・ソフトウェアは、打ち切られた要求[INS[列]]を、
+要求列が[[冪等]]であるなら、
+利用者の相互作用なしに輸送接続を再び開いて再転送する'''べきです'''。
+同効能でない方式や列は自動的に再試行しては'''なりません'''。
+但し[[利用者エージェント]]は要求(群)を再試行する選択肢を人間操作者に示しても'''構いません'''。[INS[応用の意味的理解のある利用者エージェント・ソフトウェアの確認をもって利用者の確認に代えても'''構いません'''。]]
+二回目の要求[INS[列]]が失敗したら自動再試行はする'''べきではありません'''。
+
+> Servers SHOULD always respond to at least one request per connection,
+if at all possible. Servers SHOULD NOT close a connection in the
+middle of transmitting a response, unless a network or client failure is suspected.
+
+サーバーは、まったく可能であれば、接続毎に最低一つの要求に必ず応答する'''べきです'''。
+サーバーは、ネットワークまたはクライアントの失敗が疑われない限り、
+応答の転送の途中で接続を閉じる'''べきではありません'''。
+
+> Clients that use persistent connections SHOULD limit the number of
+simultaneous connections that they maintain to a given server. A
+single-user client SHOULD [INS[NOT]] maintain [DEL[AT MOST]] [INS[more than]]
+2 connections with any server or proxy. A proxy SHOULD use up to 2*N connections to another
+server or proxy, where N is the number of simultaneously active
+users. These guidelines are intended to improve HTTP response times and avoid congestion [DEL[of the Internet or other networks]].
+
+持続接続を使用するクライアントは、特定のサーバーについて同時に維持する接続の数を制限する'''べきです'''。
+単一利用者のクライアントは、サーバーまたは串と2つより多くの接続を維持する'''べきではありません'''。
+串は、他のサーバーまたは串との [CODE(math)[2*[VAR[N]]]] 個
+([VAR[N]] は同時活性利用者数) 以下の接続を使用する'''べきです'''。
+この指針は HTTP 応答時間を向上し、[DEL[インターネットや他のネットワークの]]混雑を避けることを意図しています。
+
+*** 8.2 Message Transmission Requirements
+>[DEL[General requirements:]]
+[INS[
+**** 8.2.1 Persistent Connections and Flow Control
+]INS]
+
+>[DEL[o]] HTTP/1.1 servers SHOULD maintain persistent connections and use
+TCP's flow control mechanisms to resolve temporary overloads,
+rather than terminating connections with the expectation that clients will retry.
+The latter technique can exacerbate network congestion.
+
+HTTP/1.1 サーバーは、クライアントが再試行するであろうとの期待の元に接続を終端するのではなく、持続接続を維持し、一時的な過負担を解決するために [[TCP]]
+の流れ制御機構を使う'''べきです'''。
+一々接続を閉じる方法はネットワークの混雑を悪化させ得ます
+
+[INS[
+**** 8.2.2 Monitoring Connections for Error Status Messages
+]INS]
+
+>[DEL[o]] An HTTP/1.1 (or later) client sending a message-body SHOULD monitor
+the network connection for an error status while it is transmitting
+the request. If the client sees an error status, it SHOULD
+immediately cease transmitting the body. If the body is being sent
+using a "chunked" encoding (section 3.6), a zero length chunk and
+empty [DEL[footer]] [INS[trailer]]
+MAY be used to prematurely mark the end of the message. If the body was preceded by a Content-Length header, the client MUST close the connection.
+
+HTTP/1.1 (以降) のクライアントで [CODE(ABNF)[[[message-body]]]]
+を送るものは、要求を転送する間ネットワーク接続の誤り状態を監視する'''べきです'''。
+クライアントが誤り状態を見たら、すぐに本体の転送をやめる'''べきです'''。
+本体を [CODE(HTTP)[[[chunked]]]] 符号化を使って送っている場合は、
+早まったメッセージの終わりを印すのに零長の塊と空の[[後書き]]を使っても'''構いません'''。
+本体に先んじて [CODE(HTTP)[[[Content-Length]]]] 頭を送っているときは、
+クライアントは接続を閉じなければ'''なりません'''。
+
+[INS[
+**** RFC 2616 (HTTP/1.1) 8.2.3 Use of the 100 (Continue) Status
+→[CODE(WikiPage)[[[100]]]]
+**** RFC 2616 (HTTP/1.1) 8.2.4 Client Behavior if Server Prematurely Closes Connection
+]INS]
+
+[DEL[
+> o  An HTTP/1.1 (or later) client MUST be prepared to accept a 100
+(Continue) status followed by a regular response.
+
+HTTP/1.1 (以降) のクライアントは [CODE(HTTP)[[[100]]]] (継続 
+状態とそれに続く通常の応答を受け入れる準備をしなければ'''なりません'''、
+
+> o  An HTTP/1.1 (or later) server that receives a request from a
+HTTP/1.0 (or earlier) client MUST NOT transmit the 100 (continue)
+response; it SHOULD either wait for the request to be completed
+normally (thus avoiding an interrupted request) or close the
+connection prematurely.
+
+HTTP/1.0 (以前) のクライアントからの要求を受信した HTTP/1.1 (以降) のサーバーは、
+[CODE(HTTP)[100]] (継続) 応答を転送しては'''なりません'''。
+その場合は要求が普通に完了するのを待つ (従って割込み要求を避ける) か、または接続を早くも閉じるかする'''べきです'''。
+
+> Upon receiving a method subject to these requirements from an
+HTTP/1.1 (or later) client, an HTTP/1.1 (or later) server MUST either
+respond with 100 (Continue) status and continue to read from the
+input stream, or respond with an error status. If it responds with an
+error status, it MAY close the transport (TCP) connection or it MAY
+continue to read and discard the rest of the request. It MUST NOT
+perform the requested method if it returns an error status.
+
+この要件の対象の方式を HTTP/1.1 (以降) のクライアントから受信した際には、
+HTTP/1.1 (以降) のサーバーは [CODE(HTTP)[100]] (継続)
+状態で応答して入力流を読み続けるか、または誤り状態で応答するかしなければ'''なりません'''。
+誤り状態で応答する場合は、輸送路 (TCP) 接続を閉じても'''構いません'''し、
+要求の残りを読み続けて捨てても'''構いません'''。
+誤り状態を返したら要求された方式を行っては'''なりません'''。
+
+> Clients SHOULD remember the version number of at least the most
+recently used server; if an HTTP/1.1 client has seen an HTTP/1.1 or
+later response from the server, and it sees the connection close
+before receiving any status from the server, the client SHOULD retry
+the request without user interaction so long as the request method is
+idempotent (see section 9.1.2); other methods MUST NOT be
+automatically retried, although user agents MAY offer a human
+operator the choice of retrying the request.. [INS[(ママ)]] If the client does
+retry the request, the client
+
+クライアントは、すくなくても直近の使用サーバーの版番号を覚えておく'''べきです'''。
+HTTP/1.1 クライアントがサーバーから HTTP/1.1 以降の応答を見て、
+サーバーから何らかの状態を受信する前に接続を閉じられる目にあったら、
+クライアントは方式が[[冪等]]であれば利用者の相互作用なしに要求を再試行する'''べきです'''。
+他の方式は自動的に再試行しては'''なりません'''が、
+利用者エージェントは要求を再試行する選択肢を人間操作者に提示しても'''構いません'''。
+クライアントが要求を再試行しない場合、クライアントは
+
+>
+- o  MUST first send the request header fields, and then
+- o  MUST wait for the server to respond with either a 100 (Continue)
+response, in which case the client should continue, or with an error status.
+
+- 最初の要求頭欄を送らなければ'''なりません'''。それから、
+- サーバーが [CODE(HTTP)[[[100]]]] (継続) 状態か、または誤り状態で応答するのを待たなければ'''なりません'''。
+前者の場合クライアントは継続するべきです。
+]DEL]
+
+> [DEL[If an HTTP/1.1 client has not seen an HTTP/1.1 or later response from
+the server, it should assume that the server implements HTTP/1.0 or
+older and will not use the 100 (Continue) response.]] [INS[If an HTTP/1.1 client sends a request which includes a request body, but which does not include an Expect request-header field with the "100-continue" expectation, and if the client is not directly connected to an HTTP/1.1 origin server, and if]] [DEL[If in this case]]
+the client sees the connection close before
+receiving any status from the server, the client SHOULD retry the request.  
+If the client does retry [DEL[the]] [INS[this]] request [DEL[to this HTTP/1.0 server]],
+it [DEL[should]] [INS[MAY]]
+use the following "binary exponential backoff"
+algorithm to be assured of obtaining a reliable response:
+
+;[DEL[HTTP/1.1 クライアントがサーバーからの HTTP/1.1 以降の応答を見ていない場合は、サーバーは HTTP/1.0 以前を実装していると仮定するべきで、 [CODE(HTTP)[100]] (継続) 応答は使用しません。]] [INS[HTTP/1.1 クライアントが要求本体を含む要求を送る場合で、その要求が [CODE(HTTP)[[[Expect]]]] 要求頭欄に [CODE(HTTP)[[[100-continue]]]] [CODE(ABNF)[expectation]] を含んでいない場合およびクライアントが HTTP/1.1 起源サーバーに直接接続していない場合および]][DEL[この場合で]]クライアントがサーバーから状態を受信する前に接続が閉じられる目にあった場合は、
+クライアントは要求を再試行する'''べきです'''。クライアントが [DEL[HTTP/1.0 サーバーに]]この要求を再試行するときは、信頼できる応答を確実に得られるように次の
+「二進指数待機」法を使って'''構いません'''。
+
+>
+=1. Initiate a new connection to the server
+=2. Transmit the request-headers
+=3. Initialize a variable R to the estimated round-trip time to the
+server (e.g., based on the time it took to establish the
+connection), or to a constant value of 5 seconds if the round-trip
+time is not available.
+=4. Compute T = R * (2**N), where N is the number of previous
+retries of this request.
+=5. Wait either for an error response from the server, or for T seconds
+seconds (whichever comes first)
+=6. If no error response is received, after T seconds transmit the
+body of the request.
+=7. If client sees that the connection is closed prematurely, repeat
+from step 1 until the request is accepted, an error
+response is received, or the user becomes impatient and terminates the retry process.
+
+= サーバーへの新しい接続を初期化する
+= 要求頭を転送する
+= 変数 [VAR[R]] をサーバーへの往復時間の見積もり
+(例えば接続の確立にかかった時間に基づいた) 
+値に初期化するか、または往復時間が利用できないときは定数値 5 秒に初期化する。
+= [CODE(math)[[VAR[T]] = [VAR[R]] * (2**[VAR[N]])]] を計算する。
+ただし [VAR[N]] はこの要求の以前の再試行数。
+= サーバーからの誤り応答または [VAR[T]] 秒 (の最初に来る方) を待つ。
+= 誤り応答を受信しなければ、 [VAR[T]] 秒後に要求の本体を転送する。
+= クライアントが早くも接続を閉じられる目にあったときは、
+要求が受け入れるか、誤り応答を受信するか、または利用者が我慢できなくなって再試行過程を終えるかするまで手順1から繰り返す。
+
+[DEL[
+> No matter what the server version, if an error status is received, the client
+-  o  MUST NOT continue and
+-  o  MUST close the connection if it has not completed sending the message.
+
+サーバーの版がどうあれ、誤り応答を受信したら、クライアントは
+- 継続しては'''ならず'''、
+- メッセージの送信を完了していなければ接続を閉じなければ'''なりません'''。
+
+> An HTTP/1.1 (or later) client that sees the connection close after
+receiving a 100 (Continue) but before receiving any other status
+SHOULD retry the request, and need not wait for 100 (Continue)
+response (but MAY do so if this simplifies the implementation).
+
+[CODE(HTTP)[100]] (継続) を受信した後接続を閉じられる目にあったもののほかの状態を受信する前である
+HTTP/1.1 (以降) のクライアントは、要求を再試行する'''べき'''で、
+[CODE(HTTP)[100]] (継続) 応答を待つ必要はありません (が、実装の単純化につながるなら待っても'''構いません''')。
+]DEL]
+
+[INS[
+> If at any point an error status is received, the client
+- SHOULD NOT continue and
+- SHOULD close the connection if it has not completed sending the
+request message.
+
+誤り状態を受信した任意の時点で、クライアントは
+-継続する'''べきではなく'''、
+- 要求メッセージを送信完了していなければ接続を閉じる'''べきです'''。
+]INS]
+
+** RFC 2068 19.7.1; RFC 2616 19.6.2 Compatibility with HTTP/1.0 Persistent Connections
+> Some clients and servers [DEL[may]] [INS[might]] wish to be compatible with some previous
+implementations of persistent connections in HTTP/1.0 clients and
+servers. Persistent connections in HTTP/1.0 [DEL[must be]] [INS[are]] explicitly
+negotiated as they are not the default behavior. HTTP/1.0
+experimental implementations of persistent connections are faulty,
+and the new facilities in HTTP/1.1 are designed to rectify these
+problems. The problem was that some existing 1.0 clients may be
+sending Keep-Alive to a proxy server that doesn't understand
+Connection, which would then erroneously forward it to the next
+inbound server, which would establish the Keep-Alive connection and
+result in a hung HTTP/1.0 proxy waiting for the close on the
+response. The result is that HTTP/1.0 clients must be prevented from
+using Keep-Alive when talking to proxies.
+
+[[クライアント]]や[[鯖]]は、 HTTP/1.0 クライアント・鯖の以前の[[持続接続]]の実装と互換でありたいと思うかもしれません。 HTTP/1.0 の持続接続は、
+既定の振る舞いではありませんから、陽に折衝します。実験的な HTTP/1.0
+接続接続の実装は欠陥があり、 HTTP/1.1 の新機能はその問題を修正して設計しています。
+その問題は、既存の 1.0 クライアントが [CODE(HTTP)[Connection]]
+を理解しない[[串鯖]]に [CODE(HTTP)[[[Keep-Alive]]]] を送るかもしれず、
+その時誤って [CODE(HTTP)[Keep-Alive]] が次の[[上り]]鯖に転送され、
+[CODE(HTTP)[Keep-Alive]] 接続が確立されてしまい、 HTTP/1.0
+串は応答が閉じられるのを待って固まってしまう結果になるというものでした。
+結果、 HTTP/1.0 クライアントは串と話す時には [CODE(HTTP)[Keep-Alive]]
+を用いることを防がなければなりません。」
+
+> However, talking to proxies is the most important use of persistent
+connections, so that prohibition is clearly unacceptable. Therefore,
+we need some other mechanism for indicating a persistent connection
+is desired, which is safe to use even when talking to an old proxy
+that ignores Connection. Persistent connections are the default for
+HTTP/1.1 messages; we introduce a new keyword (Connection: close) for
+declaring non-persistence. [INS[See section 14.10.]]
+
+しかし、串と話すことは持続接続の最重要用途であり、それを禁止することは明らかに受け入れられません。
+従って、持続接続を望むことを示す、古い [CODE(HTTP)[Connection]]
+を無視する串と話す時であっても安全な別の方法が必要となります。
+HTTP/1.1 メッセージでは持続接続は既定です。持続でないことを宣言するためには新しい見出し語
+([CODE(HTTP)[Connection: [[close]]]]) を導入します。
+
+[INS[
+> The original HTTP/1.0 form of persistent connections (the Connection:
+Keep-Alive and Keep-Alive header) is documented in RFC 2068. [33]
+
+元の HTTP/1.0 式の持続接続 ([CODE(HTTP)[Conenction: Keep-Alive]] 
+および [CODE(HTTP)[Keep-Alive]] 頭) は [[RFc2068]] に文書化されています。
+]INS]
+
+[DEL[
+> The following describes the original HTTP/1.0 form of persistent connections.
+
+次に、元の HTTP/1.0 式の持続接続を説明します。「
+
+> When it connects to an origin server, an HTTP client MAY send the
+Keep-Alive connection-token in addition to the Persist connection-token:
+
+[[起源鯖]]と接続する時、 HTTP クライアントは [CODE(HTTP)[Persist]]
+[CODE(ABNF)[connection-token]] に加えて [CODE(HTTP)[Keep-Alive]]
+[CODE(ABNF)[connection-token]] を送信して'''構いません'''。
+
+>
+-          Connection: Keep-Alive
+
+> An HTTP/1.0 server would then respond with the Keep-Alive connection
+token and the client may proceed with an HTTP/1.0 (or Keep-Alive) persistent connection.
+
+HTTP/1.0 鯖は、この時 [CODE(HTTP)[Keep-Alive]] 接続字句で応答することとなり、
+クライアントは HTTP/1.0 ([CODE(HTTP)[Keep-Alive]]) 持続接続を進めて構いません。
+
+> An HTTP/1.1 server may also establish persistent connections with
+HTTP/1.0 clients upon receipt of a Keep-Alive connection token.
+However, a persistent connection with an HTTP/1.0 client cannot make
+use of the chunked transfer-coding, and therefore MUST use a
+Content-Length for marking the ending boundary of each message.
+
+HTTP/1.1 鯖は [CODE(HTTP)[Keep-Alive]] 接続字句を受信したら HTTP/1.0 クライアントと持続接続をも確立して構いません。
+しかし、 HTTP/1.0 クライアントとの持続接続は [CODE(HTTP)[[[chunked]]]]
+[CODE(ABNF)[[[transfer-coding]]]] を使用することができませんから、
+各メッセージの終わりの境界を示すために [CODE(HTTP)[[[Content-Length]]]]
+を使用しなければ'''なりません'''。
+
+> A client MUST NOT send the Keep-Alive connection token to a proxy
+server as HTTP/1.0 proxy servers do not obey the rules of HTTP/1.1
+for parsing the Connection header field.
+
+クライアントは [CODE(HTTP)[Keep-Alive]] 接続字句を串鯖に送っては'''なりません'''。
+HTTP/1.0 串鯖は [CODE(HTTP)[Connection]] 頭欄の解析についての HTTP/1.1 の規則に従いません。
+]DEL]
+** RFC の部分の License
+[[RFCのライセンス]]
+* メモ
+@

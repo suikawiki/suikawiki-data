@@ -1,0 +1,265 @@
+head	1.3;
+access;
+symbols
+	suika-20100509:1.2
+	before-graph-20090923:1.2;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.3
+date	2013.11.24.16.09.14;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2009.03.20.09.59.06;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2008.11.10.22.24.45;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.3
+log
+@updated by (anon)
+@
+text
+@[13] [DFN[[RUBYB[エスケープされたマーク付け]@@en[escaped markup]]]]とは、 (主に [[HTML]] を)
+データとして (主に [[XML]] に) 埋め込むことを言います。埋め込まれる前の元の[[マーク付け]]が[[エスケープ]]された状態で埋め込まれることからこのように呼ばれています。
+
+[EG[
+[14] 例えば「こんにちは、<strong>世界</strong>。」という [[HTML]] 片をデータとして [[XML]] に埋め込むと、
+[PRE(XML code)[
+<data>こんにちは、&lt;strong>世界&lt;/strong>。</data>
+]PRE]
+... となります。
+]EG]
+
+* Escaped markup が使われる場所
+
+[15] [[escaped markup]] は次の場所で使われます。
+[FIG[
+- [16] [[RSS 2.0]] [CODE(XMLe)@@en[[[description]]]] [[要素]]
+- [17] [[RSS]] [CODE(XMLe)@@en[[[content:encoded]]]] [[要素]]
+- [18] [[Atom]] [[Text construct]] ([CODE(XML)@@en[[[type]]=[[html]]]])
+- [19] [[HTML]] [CODE(HTMLa)@@en[[[srcdoc]]]] [[属性]]
+]FIG]
+
+* 歴史
+
+[20] [[escaped markup]] は当初[[平文]]か [[HTML]] か曖昧な文脈で使われることが多かったことや、
+[[タグ]]が更に[[エスケープ]]される状況が不自然に思えること、
+テキストデータとしての構文と [[DOM]] のようなデータモデルとの違いの理解が十分なされなかったことなどから批判の対象となってきました。
+
+[21] [[RSS]] の [CODE(HTMLe)@@en[[[description]]]] [[要素]] (>>16) は、[[平文]]と解釈する実装と [[HTML]]
+として解釈する実装が混在しており、現在も混乱した状況にあります。
+
+[22] [[Atom]] (>>18) は [CODE(XMLa)@@en[[[type]]]] によって異なり、 [CODE(XML)@@en[[[html]]]] の時は [[escaped markup]]
+となった [[HTML]] ですが、 [CODE(XML)@@en[[[xhtml]]]] の時は [[Atom]] と同じ[[文書]]における[[要素]]として
+[[XHTML]] が埋め込まれる形になります。
+
+* メモ
+
+[1] Escaped markup considered harmful。
+
+Escaped markup ってのは例えば
+[PRE(XML deprecated example)[
+<[CODE(XMLe)[[VAR[content:]]encoded]]>
+  &lt;p&gt;Escaped markup ってのは要は、
+  タグでも何でも詰め込めるものは詰め込んじゃえば
+  いいってことですな。&lt;/p&gt;
+  &lt;ul>
+  &lt;li>このように、&lt;/li>
+  &lt;li>リストだって&lt;/li>
+  &lt;li>&lt;img src="something" alt="画像"/>だって&lt;/li>
+  &lt;li>&lt;iframe src="something">行内フレーム&lt;/iframe>だって&lt;/li>
+  &lt;li>なんでもありなんですよ!&lt;/li>
+  &lt;li>&lt;font size="7" color="red">
+    すばらしいでしょ!!!&lt;/font>&lt;/li>
+  &gt;/ul>
+</[CODE(XMLe)[[VAR[content:]]encoded]]>
+]PRE]
+
+みたいな感じのやつです。
+
+[CODE(SGML)[[[stago]]]] を一々 escape
+するのが面倒なので全部丸ごと 
+[[[CODE(XML)[CDATA]]区間]]に突っ込んじゃうのが通のやり方。
+だけどうっかり [CODE(XML)[''']'''''']'''>]] 
+を入れてしまうと[[整形式]]じゃなくなっちゃう諸刃の剣。素人には(ry
+
+[2] で、 [[XML]] なんだから素直に名前空間使えばいいのに、
+この escaped markup には [WEAK[(特定の実装者が手抜きできる以外に)]]
+どういう利点があるんですかね?
+
+[3] Escaped markup の内容はちゃんと 
+[[XML宣言]]とか[[文書型宣言]]も入れといたほうがよくないですか?
+[PRE(XML deprecated example)[
+<[CODE(XMLe)[[VAR[content:]]encoded]]>
+  <!'''['''CDATA'''['''
+    <?xml version="1.0"?>
+    <!DOCTYPE p SYSTEM "path/to/dtd">
+    <p>説明。</p>
+  ''']'''''']'''>
+</[CODE(XMLe)[[VAR[content:]]encoded]]>
+]PRE]
+
+みたいに[AA[(w]]
+
+[4] >>3 皮肉になってないって。
+
+[5] そふぃあたんにこてこてにこき下ろして欲しい・・・
+
+[6]
+>>3 それってもろ、 XML data island じゃん[AA[w]]
+[PRE(HTML deprecated example)[
+<[CODE(HTMLe)[XML]] [CODE(HTMLa)[ID]]="XMLDATA">
+    <?[CODE(XML)[xml]] [CODE(XMLa)[version]]="1.0"?>
+    <[CODE(XMLe)[p]]>説明。</[CODE(XMLe)[p]]>
+</[CODE(HTMLe)[XML]]>
+]PRE]
+
+[7]
+[CITE[XML.com: Escaped Markup Considered Harmful]] 
+<http://www.xml.com/pub/a/2003/08/20/embedded.html>
+
+なんかそのまんまなのがありました。
+
+[8]
+[CITE[Escaped Markup: Still Harmful]] <http://norman.walsh.name/2003/09/16/escmarkup>
+([[名無しさん]] [sage])
+
+[9]
+[CITE[Escaped Markup Considered Harmful ...from Robert Hahn: inspired by integration]] <http://www.tenletters.com/rhahn/Internet/Markup/XML/EscapedMarkupHarmful.html>
+([[名無しさん]] [sage])
+
+[10]
+Escaped markup を復号するために (??)、[[[CODE(XML)@@en[CDATA]]区間]]内の[[文字参照]]を[[文字]]に置換する実装があります。
+その結果、[[マーク付け]]の例が実際の[[マーク付け]]であるかのように扱われてしまうことがあります。
+([[名無しさん]] [WEAK[2006-05-21 22:09:25 +00:00]])
+
+
+[11]
+[CODE(XMLe)@@en[[[description]]]] も [CODE(XMLe)@@en[content:[[encoded]]]]
+も、提供元によって escape されていたりいなかったり、
+[[[CODE(XML)@@en[CDATA]]区間]]内なのに更に escape
+されていたり、滅茶苦茶ですねぇ。。。
+
+([[名無しさん]] [WEAK[2006-05-21 22:11:44 +00:00]])
+
+[12] [CITE[XLIFF 1.2 Representation Guide for HTML]] ([TIME[2008-01-03 05:12:05 +09:00]] 版) <http://docs.oasis-open.org/xliff/v1.2/xliff-profile-html/xliff-profile-html-1.2-cd02.html#IncludingEscapedMarkup>@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@d1 35
+@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/65736361706564206D61726B7570.txt>
+@
+text
+@d1 81
+a81 81
+
+[1] Escaped markup considered harmful。
+
+Escaped markup ってのは例えば
+[PRE(XML deprecated example)[
+<[CODE(XMLe)[[VAR[content:]]encoded]]>
+  &lt;p&gt;Escaped markup ってのは要は、
+  タグでも何でも詰め込めるものは詰め込んじゃえば
+  いいってことですな。&lt;/p&gt;
+  &lt;ul>
+  &lt;li>このように、&lt;/li>
+  &lt;li>リストだって&lt;/li>
+  &lt;li>&lt;img src="something" alt="画像"/>だって&lt;/li>
+  &lt;li>&lt;iframe src="something">行内フレーム&lt;/iframe>だって&lt;/li>
+  &lt;li>なんでもありなんですよ!&lt;/li>
+  &lt;li>&lt;font size="7" color="red">
+    すばらしいでしょ!!!&lt;/font>&lt;/li>
+  &gt;/ul>
+</[CODE(XMLe)[[VAR[content:]]encoded]]>
+]PRE]
+
+みたいな感じのやつです。
+
+[CODE(SGML)[[[stago]]]] を一々 escape
+するのが面倒なので全部丸ごと 
+[[[CODE(XML)[CDATA]]区間]]に突っ込んじゃうのが通のやり方。
+だけどうっかり [CODE(XML)[''']'''''']'''>]] 
+を入れてしまうと[[整形式]]じゃなくなっちゃう諸刃の剣。素人には(ry
+
+[2] で、 [[XML]] なんだから素直に名前空間使えばいいのに、
+この escaped markup には [WEAK[(特定の実装者が手抜きできる以外に)]]
+どういう利点があるんですかね?
+
+[3] Escaped markup の内容はちゃんと 
+[[XML宣言]]とか[[文書型宣言]]も入れといたほうがよくないですか?
+[PRE(XML deprecated example)[
+<[CODE(XMLe)[[VAR[content:]]encoded]]>
+  <!'''['''CDATA'''['''
+    <?xml version="1.0"?>
+    <!DOCTYPE p SYSTEM "path/to/dtd">
+    <p>説明。</p>
+  ''']'''''']'''>
+</[CODE(XMLe)[[VAR[content:]]encoded]]>
+]PRE]
+
+みたいに[AA[(w]]
+
+[4] >>3 皮肉になってないって。
+
+[5] そふぃあたんにこてこてにこき下ろして欲しい・・・
+
+[6]
+>>3 それってもろ、 XML data island じゃん[AA[w]]
+[PRE(HTML deprecated example)[
+<[CODE(HTMLe)[XML]] [CODE(HTMLa)[ID]]="XMLDATA">
+    <?[CODE(XML)[xml]] [CODE(XMLa)[version]]="1.0"?>
+    <[CODE(XMLe)[p]]>説明。</[CODE(XMLe)[p]]>
+</[CODE(HTMLe)[XML]]>
+]PRE]
+
+[7]
+[CITE[XML.com: Escaped Markup Considered Harmful]] 
+<http://www.xml.com/pub/a/2003/08/20/embedded.html>
+
+なんかそのまんまなのがありました。
+
+[8]
+[CITE[Escaped Markup: Still Harmful]] <http://norman.walsh.name/2003/09/16/escmarkup>
+([[名無しさん]] [sage])
+
+[9]
+[CITE[Escaped Markup Considered Harmful ...from Robert Hahn: inspired by integration]] <http://www.tenletters.com/rhahn/Internet/Markup/XML/EscapedMarkupHarmful.html>
+([[名無しさん]] [sage])
+
+[10]
+Escaped markup を復号するために (??)、[[[CODE(XML)@@en[CDATA]]区間]]内の[[文字参照]]を[[文字]]に置換する実装があります。
+その結果、[[マーク付け]]の例が実際の[[マーク付け]]であるかのように扱われてしまうことがあります。
+([[名無しさん]] [WEAK[2006-05-21 22:09:25 +00:00]])
+
+
+[11]
+d86 4
+a89 3
+
+([[名無しさん]] [WEAK[2006-05-21 22:11:44 +00:00]])
+
+@
+

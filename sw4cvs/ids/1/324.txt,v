@@ -1,0 +1,370 @@
+head	1.3;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.3
+date	2013.09.25.02.41.44;	author wakaba;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2011.02.19.16.07.28;	author wakaba;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2008.11.11.22.26.30;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.3
+log
+@updated by (anon)
+@
+text
+@[5] [[GB 2312]] (と ASCII) で書かれた文字列の[[符号化方式]]です。
+7ビットで、 ASCII の印字可能図形文字の範囲で中文文字を表現出来ます。
+8ビット目や CL の制御文字を落とす通信路を通っても安心です。
+
+Fung Fung Lee によって考案されました。
+その定義は後に RFC 1843 『HZ - A Data Format for Exchanging 
+Files of Arbitrarily Mixed Chinese and ASCII characters』として
+まとめられています。
+
+更に、RFC 1842 『ASCII Printable Characters-Based 
+Chinese Character Encoding for Internet Messages』で再定義されています。
+
+* 構造
+
+ASCII の "~" (0x7E; TILDE) をエスケープ文字に使います。
+
+,~{	,GB 2312 HZ モードへ
+,~}	,HZ モードから ASCII モードへ
+,~~	,"ASCII TILDE (\"~\"; 0x7E)"
+,"~\\n"	,ASCII モード中で、行継続 ([[軟改行]])
+,~[!-z|]	,将来の HZ モード文字集合に予約
+
+RFC 1842, 1843 を読むと、 "~{" は ASCII モードにおいて
+GB 2312 HZ モードへ移行し、 "~}" は GB 2312 HZ モードにおいて
+ASCII モードに移行するとされてます。また、 GB 2312 文字列は
+"~{" と "~}" で囲まれる、とされてます。
+
+ですから、 [[ISO-2022-JP]] とは違って、 aiueo~}abcde
+とか ~{123456~{567891~} は不正だと思われます。
+
+
+* BNF
+
+;; RFC 1842 より。 RFC 822 メッセージでの使用を想定しているので、
+こういうことになってます。
+
+[PRE[
+   message             = headers 1*( CRLF *single-byte-char *segment
+                         single-byte-seq *single-byte-char )
+                                       ; see also [MIME1] "body-part"
+                                       ; note: must end in ASCII
+]PRE]
+
+= headers             = <see [RFC822] "fields" and [MIME1] "body-part">
+= segment             = single-byte-segment / double-byte-segment
+= single-byte-segment = 1*single-byte-char
+= double-byte-segment = double-byte-seq 1*( one-of-94 one-of-94 )
+= single-byte-seq     = "~}"
+= double-byte-seq     = "~{"
+= CRLF                = CR LF
+= ; ( Octal, Decimal.)
+= CR                  = <ASCII CR, carriage return>; (    15,      13.)
+= LF                  = <ASCII LF, linefeed>       ; (    12,      10.)
+= one-of-94           = <any one of 94 values>     ; (41-176, 33.-126.)
+
+[PRE[
+   single-byte-char    = <any 7BIT, including bare CR & bare LF, but NOT
+                          including CRLF, not including > / "~~">;
+]PRE]
+
+= 7BIT                = <any 7-bit value>          ; ( 0-177,  0.-127.)
+
+single-byte-char がなんかおかしいですし、 ~\n が定義に現れてません。
+
+ASCII "~{" GB ASCII "~}" ASCII みたいのでもいいことになってしまいますが、明らかにおかしいです。
+
+GB 2312 の文字の部分が one-of-94 one-of-94 ですから、たとえば
+"~{" という74区の文字も OK になってしまいます。
+
+GB 2312 文字がない行でも ~} が1つ要るように見えますが、
+これは RFC 1468 ([[ISO-2022-JP]]) などにもある不具合です。
+
+現代風に再定義してみましょう。
+
+= hz = *(hz-line CRLF) hz-line
+= hz-line = *segment
+= segment = ascii / gb2312 / special
+= ascii = %x00-09 / %x0B-0C / %x0E-7D / %x7F
+= gb2312 = "~{" 1*double-byte-char "~}"
+= double-byte-char = %x21-7D %x21-7E
+= special = tilde / soft-linebreak / reserved-sequence
+= tilde = "~~"
+= soft-linebreak = "~" CRLF
+= reserved-sequence = "~" ( %x21-7A / %x7C )
+
+GB 2312 では94区に文字は定義されていませんから、
+94区の文字をどう扱うかは規定されていません。
+
+soft-linebreak は、 RFC 1843 では 0x0A とされていますが、
+RFC 1842 は RFC 822 で使うことを想定しているので 0x0D 0x0A
+です。その辺は、改行コード問題を引き摺らざるをえないってことです。
+
+
+* エラー処理
+
+[1] "~{" で GB 2312 mode になったまま改行で、次の行から
+(そこまで "~}" なしで) ASCII に戻る文書が少なからず
+あるみたいです。復号する実装は option で行頭において
+ASCII に戻るように出来るのが良いでしょう。
+
+[2] >>1 GB mode で制御文字が使えるのかどうか、怪しい BNF
+的には使えないみたいで、その他の部分でも使えるとは一言も
+言ってませんから、行頭で必ず ASCII に戻してしまっても
+いいかもしれません。
+
+
+* 例
+
+[PRE[
+   Example 1:  (Suppose there is no line size limit.)
+               This sentence is in ASCII.
+               The next sentence is in GB.~{<:Ky2;S{#,NpJ)l6HK!#~}Bye.
+]PRE]
+
+[PRE[
+   Example 2:  (Suppose the maximum line size is 42.)
+               This sentence is in ASCII.
+               The next sentence is in GB.~{<:Ky2;S{#,~}~
+               ~{NpJ)l6HK!#~}Bye.
+]PRE]
+
+[PRE[
+   Example 3:  (Suppose a new line is started for every mode switch.)
+               This sentence is in ASCII.
+               The next sentence is in GB.~
+               ~{<:Ky2;S{#,NpJ)l6HK!#~}~
+               Bye.
+]PRE]
+
+
+* 名前と実装
+
+
+** [[MIME]] charset
+
+[[charset]] 名 "HZ-GB-2312" が RFC 1842 で定義されています。
+
+
+** Perl Encode モジュール
+
+[6] Encode::CN::HZ で "hz" に対応しています。
+
+- [7] 2002-10-13 (Sun) 19:25:14 ''[[名無しさん]]'' : [[Encode::HZ]] は HZ の変種にも対応。
+
+* メモ
+
+- [3] 2002-10-19 (土) 13:30 ''[[名無しさん]]'': 考案者である[[李くん]]の Web site は <http://umunhum.stanford.edu/~lee/chicomp/>
+- [4] 2002-10-19 (土) 14:06 ''[[名無しさん]]'': EHZ <http://umunhum.stanford.edu/~lee/chicomp/EHZ-CNS-BIG5_spec.html>
+
+[8] [CITE@@en[Re: Encoding Standard at F2F]]
+( ([[신정식]] 著, [TIME[2012-11-04 04:20:25 +09:00]] 版))
+<http://lists.w3.org/Archives/Public/www-international/2012OctDec/0039.html>@
+
+
+1.2
+log
+@updated by (anon)
+@
+text
+@d148 5
+a152 1
+- [4] 2002-10-19 (土) 14:06 ''[[名無しさん]]'': EHZ <http://umunhum.stanford.edu/~lee/chicomp/EHZ-CNS-BIG5_spec.html>@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/485A.txt>
+@
+text
+@d1 147
+a147 162
+#?SuikaWiki/0.9 page-icon="字β"
+
+[5] [[GB2312]] (と ASCII) で書かれた文字列の[[符号化方式]]です。
+7ビットで、 ASCII の印字可能図形文字の範囲で中文文字を表現出来ます。
+8ビット目や CL の制御文字を落とす通信路を通っても安心です。
+
+Fung Fung Lee によって考案されました。
+その定義は後に RFC 1843 『HZ - A Data Format for Exchanging 
+Files of Arbitrarily Mixed Chinese and ASCII characters』として
+まとめられています。
+
+更に、RFC 1842 『ASCII Printable Characters-Based 
+Chinese Character Encoding for Internet Messages』で再定義されています。
+
+[6]
+MuaVUS  <a href="http://mparwhjqbeza.com/">mparwhjqbeza</a>, [url=http://fefxkwucldic.com/]fefxkwucldic[/url], [link=http://sjiesttazwbc.com/]sjiesttazwbc[/link], http://jemhzqlrslfu.com/
+([[mnnjimlqjpc]] [wxxmen@@ipknme.com] [WEAK[2008-07-11 11:15:28 +00:00]])
+
+
+[7]
+
+<a href= http://svenskapoker.bloggspace.se/>poker</a>
+<a href= http://pokerroom.bloggsida.se/>poker room</a>
+<a href= http://groups.google.fr/group/titanpokerbonus/web/telecharger-titan-poker >telecharger titan poker</a>
+<a href= http://groups.google.fr/group/titanpokerbonus/web/code-bonus-titan-poker >code bonus titan poker</a>
+([[abbylko]] [donkeylko@@gmail.com])
+
+
+[[#comment]]
+
+
+* 構造
+
+ASCII の "~" (0x7E; TILDE) をエスケープ文字に使います。
+
+,~{	,GB 2312 HZ モードへ
+,~}	,HZ モードから ASCII モードへ
+,~~	,"ASCII TILDE (\"~\"; 0x7E)"
+,"~\\n"	,ASCII モード中で、行継続 ([[軟改行]])
+,~[!-z|]	,将来の HZ モード文字集合に予約
+
+RFC 1842, 1843 を読むと、 "~{" は ASCII モードにおいて
+GB 2312 HZ モードへ移行し、 "~}" は GB 2312 HZ モードにおいて
+ASCII モードに移行するとされてます。また、 GB 2312 文字列は
+"~{" と "~}" で囲まれる、とされてます。
+
+ですから、 [[ISO-2022-JP]] とは違って、 aiueo~}abcde
+とか ~{123456~{567891~} は不正だと思われます。
+
+
+* BNF
+
+;; RFC 1842 より。 RFC 822 メッセージでの使用を想定しているので、
+こういうことになってます。
+
+[PRE[
+   message             = headers 1*( CRLF *single-byte-char *segment
+                         single-byte-seq *single-byte-char )
+                                       ; see also [MIME1] "body-part"
+                                       ; note: must end in ASCII
+]PRE]
+
+= headers             = <see [RFC822] "fields" and [MIME1] "body-part">
+= segment             = single-byte-segment / double-byte-segment
+= single-byte-segment = 1*single-byte-char
+= double-byte-segment = double-byte-seq 1*( one-of-94 one-of-94 )
+= single-byte-seq     = "~}"
+= double-byte-seq     = "~{"
+= CRLF                = CR LF
+= ; ( Octal, Decimal.)
+= CR                  = <ASCII CR, carriage return>; (    15,      13.)
+= LF                  = <ASCII LF, linefeed>       ; (    12,      10.)
+= one-of-94           = <any one of 94 values>     ; (41-176, 33.-126.)
+
+[PRE[
+   single-byte-char    = <any 7BIT, including bare CR & bare LF, but NOT
+                          including CRLF, not including > / "~~">;
+]PRE]
+
+= 7BIT                = <any 7-bit value>          ; ( 0-177,  0.-127.)
+
+single-byte-char がなんかおかしいですし、 ~\n が定義に現れてません。
+
+ASCII "~{" GB ASCII "~}" ASCII みたいのでもいいことになってしまいますが、明らかにおかしいです。
+
+GB 2312 の文字の部分が one-of-94 one-of-94 ですから、たとえば
+"~{" という74区の文字も OK になってしまいます。
+
+GB 2312 文字がない行でも ~} が1つ要るように見えますが、
+これは RFC 1468 ([[ISO-2022-JP]]) などにもある不具合です。
+
+現代風に再定義してみましょう。
+
+= hz = *(hz-line CRLF) hz-line
+= hz-line = *segment
+= segment = ascii / gb2312 / special
+= ascii = %x00-09 / %x0B-0C / %x0E-7D / %x7F
+= gb2312 = "~{" 1*double-byte-char "~}"
+= double-byte-char = %x21-7D %x21-7E
+= special = tilde / soft-linebreak / reserved-sequence
+= tilde = "~~"
+= soft-linebreak = "~" CRLF
+= reserved-sequence = "~" ( %x21-7A / %x7C )
+
+GB 2312 では94区に文字は定義されていませんから、
+94区の文字をどう扱うかは規定されていません。
+
+soft-linebreak は、 RFC 1843 では 0x0A とされていますが、
+RFC 1842 は RFC 822 で使うことを想定しているので 0x0D 0x0A
+です。その辺は、改行コード問題を引き摺らざるをえないってことです。
+
+
+* エラー処理
+
+[1] "~{" で GB 2312 mode になったまま改行で、次の行から
+(そこまで "~}" なしで) ASCII に戻る文書が少なからず
+あるみたいです。復号する実装は option で行頭において
+ASCII に戻るように出来るのが良いでしょう。
+
+[2] >>1 GB mode で制御文字が使えるのかどうか、怪しい BNF
+的には使えないみたいで、その他の部分でも使えるとは一言も
+言ってませんから、行頭で必ず ASCII に戻してしまっても
+いいかもしれません。
+
+
+* 例
+
+[PRE[
+   Example 1:  (Suppose there is no line size limit.)
+               This sentence is in ASCII.
+               The next sentence is in GB.~{<:Ky2;S{#,NpJ)l6HK!#~}Bye.
+]PRE]
+
+[PRE[
+   Example 2:  (Suppose the maximum line size is 42.)
+               This sentence is in ASCII.
+               The next sentence is in GB.~{<:Ky2;S{#,~}~
+               ~{NpJ)l6HK!#~}Bye.
+]PRE]
+
+[PRE[
+   Example 3:  (Suppose a new line is started for every mode switch.)
+               This sentence is in ASCII.
+               The next sentence is in GB.~
+               ~{<:Ky2;S{#,NpJ)l6HK!#~}~
+               Bye.
+]PRE]
+
+
+* 名前と実装
+
+
+** [[MIME]] charset
+
+[[charset]] 名 "HZ-GB-2312" が RFC 1842 で定義されています。
+
+
+** Perl Encode モジュール
+
+Encode::CN::HZ で "hz" に対応しています。
+- 2002-10-13 (Sun) 19:25:14 ''[[名無しさん]]'' : [[Encode::HZ]] は HZ の変種にも対応。
+- [3] 2002-10-19 (土) 13:30 ''[[名無しさん]]'': 考案者である[[李くん]]の Web site は <http://umunhum.stanford.edu/~lee/chicomp/>
+@
+

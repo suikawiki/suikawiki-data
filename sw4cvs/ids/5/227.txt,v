@@ -1,0 +1,185 @@
+head	1.1;
+access;
+symbols
+	suika-20100509:1.1
+	before-graph-20090923:1.1;
+locks; strict;
+comment	@# @;
+expand	@b@;
+
+
+1.1
+date	2008.11.14.03.01.20;	author wakaba;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@converted from SuikaWiki3 <http://suika.fam.cx/gate/cvs/suikawiki/wikidata/page/584D4CBBF6BEDD.ns/48544D4CA4ABA4E9A4CEB0DCB9D4.txt>
+@
+text
+@#?SuikaWiki/0.9
+
+[1] ここでは、 [[HTML]] による事象処理から
+[[XML事象]]による処理への移行の仕方を簡単にご説明します。
+
+この移行ガイドは XML 事象がどのようなものであるのか簡単に掴んでおきたい方
+(で、 HTML 4 の事象取扱いの概要を知っている方)
+を対象としています。実際に [[XHTML]] 文書で XML
+事象を使ってしまうことはお勧めしません。
+(対応した[[利用者エージェント]]はあまりありませんし、
+未対応の利用者エージェントで一部誤動作する必要があります。
+それ以前に[[表現と構造の分離]]の原則に反します。)
+
+なお、以後では、
+[CODE(XML)[[[xmlns]]="[[http://www.w3.org/1999/xhtml]]" xmlns:ev="[[http://www.w3.org/2001/xml-events]]"]]
+と仮定しています。
+
+
+* [CODE(HTMLa)[on[VAR[〜]]]] 属性
+
+[2] たとえば、次の例を考えてみましょう。
+
+[PRE(HTML)[
+ちょっと<a href="http://foo.example/"
+           onclick="alert ('例のサイトを開きますよ')"
+>例のサイト</a>を覗いていたら、・・・。
+]PRE]
+
+この場合、利用者が[SAMP[例のサイト]]という部分を[[かちっ]]したら、
+[CODE(HTMLa)[[[onclick]]]] 属性の値が[[スクリプト]]として実行されます。
+
+これを XML 事象では、たとえば次のように書きます。
+
+[PRE(XML)[
+<head>
+<ev:[[listener]] [[event]]="click"
+                 [[observer]]="anchor1"
+                 [[handler]]="#script" />
+<script type="application/x-javascript" id="script">
+alert ('例のサイトを開きますよ');
+</script>
+</head>
+...
+ちょっと<a href="http://foo.example/"
+           id="anchor1"
+>例のサイト</a>を覗いていたら、・・・。
+]PRE]
+
+ここで、 [CODE(XMLa)[handler]] 属性の値を変えれば、
+外部スクリプトを参照させることもできます。
+
+[3] 別の例も見てみましょう。
+
+[PRE(HTML)[
+<img src="image" alt="何かの絵"
+     onclick="alert('中央の人の右手に注目!')"/>
+]PRE]
+
+>>2 と同じように
+[PRE(XML)[
+<head>
+<ev:listener event="click" observer="image1"
+             handler="#script1"/>
+<script type="application/x-javascript" id="script1">
+  alert('中央の人の右手に注目!');
+</script>
+</head>
+...
+<img src="image" alt="何かの絵" id="image1"/>
+]PRE]
+
+と書き替えることもできますが、
+[[大域属性]]を使って
+[PRE(XML)[
+<img src="image" alt="何かの絵">
+  <script type="application/x-javascript"
+          ev:event="click">
+    alert('中央の人の右手に注目!');
+  </script>
+</img>
+]PRE]
+
+のようにも書けます。
+([CODE(XMLa)[[[observer]]]] と [CODE(XMLa)[[[handler]]]]
+は、要素の位置関係で自動的に決定されます。)
+
+[[#comment]]
+
+
+* DOM 0 や DOM 2
+
+[4] >>3 と同じ例を、スクリプトから [[DOM0]] で
+[PRE(HTML)[
+<head>
+<script type="application/x-javascript">
+  image1.onclick = function() {
+    alert('中央の人の右手に注目!');
+  };
+</script>
+</head>
+...
+<img src="image" alt="何かの絵" id="image1"/>
+]PRE]
+
+のように書いたり、 [[DOM2]] で
+[PRE(HTML)[
+<head>
+<script type="application/x-javascript">
+  document.getElementById ('image1')
+          .addEventHandler ('click', function() {
+    alert('中央の人の右手に注目!');
+  }, false);
+</script>
+</head>
+...
+<img src="image" alt="何かの絵" id="image1"/>
+]PRE]
+
+のように書いたりできます。
+
+これと同じことは、 [[WinIE]] の独自拡張で、
+[PRE(HTML)[
+<head>
+<script language="jscript"
+        event="onclick" for="image1">
+  alert('中央の人の右手に注目!');
+</script>
+</head>
+...
+<img src="image" alt="何かの絵" id="image1"/>
+]PRE]
+
+と書くこともできました。
+
+XML 事象では、 >>3 の書き方の他に、
+[PRE(XML)[
+<head>
+<script type="application/x-javascript"
+        ev:event="click" ev:observer="image1">
+  alert('中央の人の右手に注目!');
+</script>
+</head>
+...
+<img src="image" alt="何かの絵" id="image1"/>
+]PRE]
+
+と書くことができます。
+
+[[#comment]]
+
+
+* メモ
+
+[5]
+''XML Events for HTML Authors'' <http://www.w3.org/MarkUp/2004/xmlevents-for-html-authors>
+
+同じような内容の W3C の文書です。
+([[名無しさん]] [WEAK[2004-07-31 01:16:43 +00:00]])
+
+@
