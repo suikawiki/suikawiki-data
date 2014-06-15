@@ -1,3 +1,39 @@
+[23] [[転送符号化]] [DFN[[CODE(HTTP)@en[[[chunked]]]]]] は、
+任意の長さのデータの塊の列を表現できる [[HTTP]] の[[転送符号化]]です。
+[[HTTP/1.1]] では [CODE(HTTP)@en[[[chunked]]]] への対応が義務付けられています。
+
+[24] [CODE(HTTP)@en[[[chunked]]]] [[符号化]]を使うと、
+[[ヘッダー]]の生成の時点で全体のサイズが判明していないデータを送りつつも、
+[[メッセージ本体]]の長さを確定させ、同じ[[接続]]を再利用して次の[[メッセージ]]を送信することができます。
+
+* 仕様書
+
+[REFS[
+- [25] [CITE@en[RFC 7230 - Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing]] ([TIME[2014-06-07 01:59:35 +09:00]] 版) <https://tools.ietf.org/html/rfc7230#page-29>
+]REFS]
+
+* 文脈
+
+[30] [CODE(HTTP)@en[[[chunked]]]] [[転送符号化]]は、
+[CODE(HTTP)@en[[[chunked]]]] という値を [CODE(HTTP)@en[[[Transfer-Encoding:]]]]
+[[ヘッダー]]に指定することにより、[[メッセージ本体]]に適用することができます。
+
+[27] [CODE(HTTP)@en[[[chunked]]]] を同じ[[メッセージ本体]]に複数回適用しては[['''なりません''']]
+[SRC[>>25]]。
+
+[28] 複数の[[転送符号化]]が適用される時は、[CODE(HTTP)@en[[[chunked]]]]
+を最後に適用しなければ[['''なりません''']] [SRC[>>25]]。
+
+[29] [CODE(HTTP)@en[[[chunked]]]] 以外の[[転送符号化]]を適用するときは、
+[[接続]]を閉じることによって[[メッセージ]]を終端するのでなければ、
+最後に [CODE(HTTP)@en[[[chunked]]]] を適用しなければ[['''なりません''']] [SRC[>>25]]。
+
+* 構文解析
+
+[26] [[HTTP/1.1]] [[受信者]]は、 [CODE(HTTP)@en[[[chunked]]]]
+[[転送符号化]]を[[構文解析]]できなければ[['''なりません''']] [SRC[>>25]]。
+
+* 歴史
 
 [1] 塊 (chunked) 符号化は、 [[HTTP/1.1]] で導入された[[転送符号化]]です。
 (転送符号化自体、 [[HTTP/1.1]] で導入されたものです。また現時点で利用出来る唯一の転送符号化でもあります。)
@@ -25,18 +61,10 @@ HTTP/1.1 非対応の [[UA]] も少なくはありません。)
 [4] 塊符号化は、符号化の内容を任意の長さの塊に分け、それぞれの塊の最初に塊の長さを書いておきます。一番最後におまけで長さ
 0 と書いた塊をつけときます。これだけです。実はそんなに厄介でもありません。
 
-[5] この塊符号化に関する部分の実装の不具合が問題になったこともありました。
-([[Apache]] などの古い版を使っている人は新しい版にしましょう。)
-
-[6] [[HTTP]] と似た仕組みを使う [[SIP]] では、この塊符号化の使用は禁止されています。
-
-[[#comment]]
-
-
-* 仕様書から
-
-
-** RFC 2616 より、 3.6.1 Chunked Transfer Coding
+[FIG[
+[FIGCAPTION[
+[21] RFC 2616 より、 3.6.1 Chunked Transfer Coding
+]FIGCAPTION]
 
 > The chunked encoding modifies the body of a message in order to
 transfer it as a series of chunks, each with its own size indicator,
@@ -199,22 +227,36 @@ Remove "chunked" from Transfer-Encoding
        "chunked" を Transfer-Encoding から削除
 ]PRE]
 
+]FIG]
 
-** RFC の部分の LICENSE
+[5] この塊符号化に関する部分の実装の不具合が問題になったこともありました。
+([[Apache]] などの古い版を使っている人は新しい版にしましょう。)
 
-See [[RFCのライセンス]]
-
-
-* メモ
-
-- [7] >>6 [[RTSP]] も禁止。 [CODE[chunked]] は嫌われ者だねぇ
+[REFS[
 - [8] ''HTTP/1.1 Specification Errata'' <http://purl.org/NET/http-errata#chunk-size>
+]REFS]
+
+* 実装
+
 - [9] [[Opera]] 6.05 (Win32) の実装をチェックしてみました。
 - [10] 改行が CR や LF 単独でも、適当に解釈するので大体意図した通りになります。その辺は人に優しくの精神でいいかげんに実装してある模様。 chunked-extension は対応していないみたいで致命的。引数が表示されて、その字数分あとの計算がずれてきます。これはかなりやばいバグ。 [[TE:]] 欄の申告通り、 Trailer にも対応しています。ただし表示しないことを確認しただけで、本当に機能するかは不明です。 (機能していることを可視化する適当な方法がないんで。)
 - [11] [[Apache]] は [[CGI]] [[スクリプト]]の出力を可能ならかってに chunked にしてくれます。しかし、 CGI スクリプトが勝手に chunked したデータを吐くのはちゃんと見逃してくれます。 (うっかり二重 chunked なんてことはないようです。)
 - [12] [WEAK[2003-10-08 07:31:23 +00:00]] ''[[名無しさん]]'': Mozilla は Trailers を正しく無視してくれますが、頭欄としては認識してくれないっぽい。
 
+[22] [CITE@en[IE9 Beta Minor Changes List - EricLaw's IEInternals - Site Home - MSDN Blogs]]
+([TIME[2010-10-05 12:14:43 +09:00]] 版)
+<http://blogs.msdn.com/b/ieinternals/archive/2010/09/15/ie9-beta-minor-change-list.aspx>
+
+* 関連
+
+[6] [[HTTP]] と似た仕組みを使う [[SIP]] では、この塊符号化の使用は禁止されています。
+
+[7] >>6 [[RTSP]] も禁止。 [CODE[chunked]] は嫌われ者だねぇ
+
+* メモ
+
 [19]
 [CITE[TAKESAKO @ Yet another Cybozu Labs: ニコニコ動画勉強会に行ってきました]] ([TIME[2007-09-10 20:25:31 +09:00]] 版) <http://labs.cybozu.co.jp/blog/takesako/2007/04/nicovideo.html>
-([[名無しさん]])
 
+[20] [CITE[Chunked + Gzip | Apache | Users]] (Referenced: [TIME[2009-07-17T20:53:20+09:00]])
+<http://www.gossamer-threads.com/lists/apache/users/356732>
