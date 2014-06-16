@@ -1,16 +1,14 @@
-* [CODE(HTTP)@en[Content-Length:]] ヘッダー (HTTP)
-
 [43] [DFN[[CODE(HTTP)@en[[[Content-Length:]]]]]] [[ヘッダー]]は、
 [[メッセージ本体]]の長さを表します。
 
-** 仕様書
+* 仕様書
 
 [REFS[
 - [38] [CITE@en[RFC 7230 - Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing]] ([TIME[2014-06-07 01:59:35 +09:00]] 版) <https://tools.ietf.org/html/rfc7230#section-3.3>
 -- [44] [CITE@en[RFC 7230 - Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing]] ([TIME[2014-06-07 01:59:35 +09:00]] 版) <https://tools.ietf.org/html/rfc7230#section-3.3.2>
 ]REFS]
 
-** 意味
+* 意味
 
 [45] [CODE(HTTP)@en[[[Content-Length:]]]] [[ヘッダー]]は、
 [CODE(HTTP)@en[[[Transfer-Encoding:]]]] [[ヘッダー]]のない[[メッセージ]]において
@@ -24,7 +22,7 @@
 
 ;; [40] [[要求メソッド]]には依存しません。
 
-** 文脈
+* 文脈
 
 [47] [[送信者]]は、 [CODE(HTTP)@en[[[Transfer-Encoding:]]]] [[ヘッダー]]がある[[メッセージ]]に
 [CODE(HTTP)@en[[[Content-Length:]]]] [[ヘッダー]]を含めては[['''なりません''']] [SRC[>>44]]。
@@ -57,14 +55,14 @@
 [[応答]]に [CODE(HTTP)@en[[[Content-Length:]]]] [[ヘッダー]]を含めては[['''なりません''']]
 [SRC[>>44]]。
 
-** 構文
+* 構文
 
 [46] 1桁以上の[[ASCII数字]]です [sRC[>>44]]。[[オクテット]]単位の[[十進数]]と解釈されます
 [SRC[>>44]]。
 
 ;; [49] [[メッセージ本体]]が空の時は、 [CODE[0]] となります。
 
-** 構文解析
+* 構文解析
 
 [307] [[受信者]]は、大きな数値が指定される場合もありますから、
 [[桁溢れ]]による構文解析エラーを防がなければ[['''なりません''']] [SRC[>>44]]。
@@ -76,7 +74,86 @@
 
 ;; [309] 値が異なる時の動作には言及がありません。
 
-** 歴史
+* 処理モデル
+
+[310] [[メッセージ本体]]の長さの決定方法は、 [[メッセージ本体]]の項を参照してください。
+
+* メタ変数 [CODE(CGI)@en[CONTENT_LENGTH]] (CGI)
+
+[8] [[CGI]] の[[メタ変数]] [DFN[[CODE(CGI)@en[[[CONTENT_LENGTH]]]]]] の値は、
+[[要求]]に付随する[RUBYB[[[メッセージ本体]]]@en[message-body]]のサイズです [SRC[>>20]]。
+
+** 仕様書
+
+[REFS[
+- [20] [CITE@en[RFC 3875 - The Common Gateway Interface (CGI) Version 1.1]] ([TIME[2011-11-20 06:09:05 +09:00]] 版) <http://tools.ietf.org/html/rfc3875#section-4.1.2>
+]REFS]
+
+** 値
+
+[4] [[要求]]に[[メッセージ本体]]が存在している場合、その場合に限り、[[鯖]]は [CODE(CGI)@en[[[CONTENT_LENGTH]]]]
+[[メタ変数]]を設定しなければ[['''なりません''']] [SRC[>>20]]。
+
+[21] 値は[[メッセージ本体]]のサイズを[[オクテット]]単位の[[十進数]]で表したものです [SRC[>>20]]。
+
+[24] サイズは[[鯖]]が[[転送符号化]]や[[内容符号化]]を除去した後の[[メッセージ本体]]の長さでなければなりません
+[SRC[>>20]]。
+
+;; [25] [[転送符号化]]だけでなく[[内容符号化]]も必要に応じて除去しなければならないのですね。
+([[要求データ]]の項を参照。)
+
+[22] [[メッセージ本体]]が付属していない場合は値は [[NULL]] ([[空文字列]] or 未設定) です [SRC[>>20]]。
+
+[FIG[
+[23]
+[PRE(ABNF code)[
+      CONTENT_LENGTH = "" | 1*digit
+]PRE]
+[FIGCAPTION[
+[SRC[>>20]]
+]FIGCAPTION]
+]FIG]
+
+** メモ
+
+[27] [[HTTP]] によりますと HTTP 通信においては [[Content-Length:欄]]
+は必須ではありません。それが無くても長さが特定出来る場合は
+省略出来るのです。ですが、上記のように CGI script
+に渡される際には HTTP サーバーにより補われますので、
+CGI script は安心して CONTENT_LENGTH の長さだけ標準入力を
+読む、という処理が出来ます。
+
+[28] HTTP の [CODE(HTTP)[[[Content-Length]]:]] 欄の値と実際の内容長が一致しない場合のサーバーの動作に注意が必要です。 [[HTTP/1.1]] だと多分問題になるのは与えられた内容長に達する前に接続がぶちぎられた場合ですか。そういう時適切な値に渡して CGI スクリプトに渡さないといけませんね。って普通そういう時は CGI スクリプトは実行しないかも。
+
+[29] あるいは要求で [[chunked]] が使われてるけど [CODE(HTTP)[Content-Length:]] 欄の指定もあって、両者も矛盾している時かな。こういう時に HTTP サーバーが [CODE(CGI)[CONTENT_LENGTH]] をどうするべきかは規定がないと思いますが、実際の実体の長さをちゃんと返さないと駄目ですね。たぶんほとんどの CGI スクリプトは [CODE(CGI)[CONTENT_LENGTH]] を妄信しますから。。。
+
+[30] ほとんど (全て?) の実装では、[[メタ変数]] [CODE(CGI)[HTTP_CONTENT_LENGTH]] は提供されません。この [CODE(CGI)[CONTENT_LENGTH]] で [WEAK[(実際にクライアントが指定した値を知りたいという奇特な場合を除いて)]] 不要ですから。
+
+[31] 本体がないときには値 [CODE(CGI)[0]] ''ではなく'' [CODE(CGI)[NULL]] または空文字列になるのに注意が必要ですね。
+
+[32] 注意しないといけないのは、 [[chunked]] 以外の[[転送符号化]]が使われているときです。 (>>29 が chunked の場合。 CGI には規定はないですが、 HTTP によれば [CODE(HTTP)[Content-Length]] が無視されます。) [CODE(HTTP)[Content-Length]] は転送符号化の結果の含めた長さですから、サーバーがスクリプトに転送符号化を解いた形でデータを渡す時には新しい値を設定しないといけません。 (サーバーがスクリプトに渡す前に転送符号化を解釈するべきかどうかは知らないんですが、ほとんどの CGI スクリプトの実装は転送符号化の存在がないと仮定してますよね。。。)
+
+[33] >>32 今問題になってないのは、[[要求]]で転送符号化が使われることがまだそんなに (全然?) ないからに違いない。
+
+;; [34] [[HTTP]] [[鯖]]は[[メッセージ本体]]を[[CGIスクリプト]]に引き渡す準備が出来る前に
+[[CGIスクリプト]]を起動しても良いとされていますが、 [CODE(CGI)@en[[[CONTENT_LENGTH]]]]
+を設定しなければならないという制約を考えると、起動前に[[メタ変数]]を確定させなければならない実装では、
+本体の長さが確定するまで[[CGIスクリプト]]を起動できないことになります。
+[[HTTP]] [CODE(HTTP)@en[[[Content-Length:]]]] [[欄]]が設定されていて[[転送符号化]]が使われていない場合であっても、
+[[クライアント]]が途中で通信を切断する可能性があるので、最後まで読まないと値を確定できません。
+(本当にそれでいいのでしょうか。実際の[[鯖]]の実装はそうなっていないように思います。)
+
+* [CODE(822)@en[Content-Length:]] 欄 (電子メール)
+
+[1] [WEAK[2002-11-15 (金) 18:10]] ''[[名無しさん]]'': [[HTTP]] ではなく[[電子メイル]]や[[電子ニュース]]でも使われるのがたまに見られます。古い [[MIME]] の draft に書いてあったのではないかと思いますが、確認していません。
+
+** 関連
+
+[2] [WEAK[2002-11-15 (金) 18:11]] ''[[名無しさん]]'': MIME 的には [[Content-Disposition]]:欄の "size" パラメーターが後に用意されました。
+
+[3] [WEAK[2002-11-15 (金) 18:11]] ''2'': また電子ニュースでは伝統的に [[Lines]]:欄という似たものがあります。
+
+* 歴史
 
 [FIG(quotation)[
 [FIGCAPTION[
@@ -90,7 +167,7 @@ would have been sent had the request been a GET.
 
 [CODE(HTTP)[Content-Length]] 実体頭欄は、受信者に送られる [CODE(ABNF)[message-body]],
 又は [CODE(HTTP)[[[HEAD]]]] method の場合には [CODE(HTTP)[[[GET]]]] 
-での要求だったなら送られるであろう [CODE(ABNF)[entity-body]]]] の寸法をオクテット数の十進数表現で示します。
+での要求だったなら送られるであろう [CODE(ABNF)[entity-body]] の寸法をオクテット数の十進数表現で示します。
 
 >
 - Content-Length    = "Content-Length" ":" 1*DIGIT
@@ -276,71 +353,7 @@ HTTP とは違って、メッセージの頭部分を超えた内容を伝える
 これは [H14.14] により解釈します。
 ]FIG]
 
-*** RFC の部分の License
-
-[[RFCのライセンス]]
-
-** メモ
-
-[9]
-[CITE@en[RFC 3143 - Known HTTP Proxy/Caching Problems]] ([TIME[2008-08-30 12:43:01 +09:00]] 版) <http://tools.ietf.org/html/rfc3143#section-2.1.2>
-
-- [6] [WEAK[2002-12-17 (火) 20:49]] ''[[名無しさん]]'': [[iモード]]に対して送るときは Content-Length: 欄は必須となります。 <http://www.nttdocomo.co.jp/mc-user/i/tag/s3.html>
-
-[10]
-[CITE[セキュリティホール memo - 2005.07]] <http://www.st.ryukoku.ac.jp/%7Ekjm/security/memo/2005/07.html#20050707_HRS>
-
-[11] [CITE@en[RFC 3143 - Known HTTP Proxy/Caching Problems]] ([TIME[2008-08-30 12:43:01 +09:00]] 版) <http://tools.ietf.org/html/rfc3143#section-2.3.2>
-
-[35] [CITE@en[RFC 4463 - A Media Resource Control Protocol (MRCP) Developed by Cisco, Nuance, and Speechworks]]
-( ([TIME[2011-12-04 10:31:11 +09:00]] 版))
-<http://tools.ietf.org/html/rfc4463#section-5.4.9>
-
-[36] [CITE@en[draft-wood-dtnrg-http-dtn-delivery-07 - Using HTTP for delivery in Delay/Disruption-Tolerant Networks]]
-( ([TIME[2012-02-26 11:11:35 +09:00]] 版))
-<http://tools.ietf.org/html/draft-wood-dtnrg-http-dtn-delivery-07#page-6>
-
-[37] [CITE@en[RFC 6787 - Media Resource Control Protocol Version 2 (MRCPv2)]]
-( ([TIME[2012-11-13 15:18:40 +09:00]] 版))
-<http://tools.ietf.org/html/rfc6787#section-6.2.11>
-
-* メタ変数 [CODE(CGI)@en[CONTENT_LENGTH]] (CGI)
-
-[8] [[CGI]] の[[メタ変数]] [DFN[[CODE(CGI)@en[[[CONTENT_LENGTH]]]]]] の値は、
-[[要求]]に付随する[RUBYB[[[メッセージ本体]]]@en[message-body]]のサイズです [SRC[>>20]]。
-
-** 仕様書
-
-[REFS[
-- [20] [CITE@en[RFC 3875 - The Common Gateway Interface (CGI) Version 1.1]] ([TIME[2011-11-20 06:09:05 +09:00]] 版) <http://tools.ietf.org/html/rfc3875#section-4.1.2>
-]REFS]
-
-** 値
-
-[4] [[要求]]に[[メッセージ本体]]が存在している場合、その場合に限り、[[鯖]]は [CODE(CGI)@en[[[CONTENT_LENGTH]]]]
-[[メタ変数]]を設定しなければ[['''なりません''']] [SRC[>>20]]。
-
-[21] 値は[[メッセージ本体]]のサイズを[[オクテット]]単位の[[十進数]]で表したものです [SRC[>>20]]。
-
-[24] サイズは[[鯖]]が[[転送符号化]]や[[内容符号化]]を除去した後の[[メッセージ本体]]の長さでなければなりません
-[SRC[>>20]]。
-
-;; [25] [[転送符号化]]だけでなく[[内容符号化]]も必要に応じて除去しなければならないのですね。
-([[要求データ]]の項を参照。)
-
-[22] [[メッセージ本体]]が付属していない場合は値は [[NULL]] ([[空文字列]] or 未設定) です [SRC[>>20]]。
-
-[FIG[
-[23]
-[PRE(ABNF code)[
-      CONTENT_LENGTH = "" | 1*digit
-]PRE]
-[FIGCAPTION[
-[SRC[>>20]]
-]FIGCAPTION]
-]FIG]
-
-** 歴史
+** CGI
 
 [FIG(quotation)[
 [FIGCAPTION[
@@ -369,56 +382,13 @@ request was accompanied by a message-body entity.
 スクリプトに提供し'''なければなりません'''。
 ]FIG]
 
-** メモ
-
-[27] [[HTTP]] によりますと HTTP 通信においては [[Content-Length:欄]]
-は必須ではありません。それが無くても長さが特定出来る場合は
-省略出来るのです。ですが、上記のように CGI script
-に渡される際には HTTP サーバーにより補われますので、
-CGI script は安心して CONTENT_LENGTH の長さだけ標準入力を
-読む、という処理が出来ます。
-
-[28] HTTP の [CODE(HTTP)[[[Content-Length]]:]] 欄の値と実際の内容長が一致しない場合のサーバーの動作に注意が必要です。 [[HTTP/1.1]] だと多分問題になるのは与えられた内容長に達する前に接続がぶちぎられた場合ですか。そういう時適切な値に渡して CGI スクリプトに渡さないといけませんね。って普通そういう時は CGI スクリプトは実行しないかも。
-
-[29] あるいは要求で [[chunked]] が使われてるけど [CODE(HTTP)[Content-Length:]] 欄の指定もあって、両者も矛盾している時かな。こういう時に HTTP サーバーが [CODE(CGI)[CONTENT_LENGTH]] をどうするべきかは規定がないと思いますが、実際の実体の長さをちゃんと返さないと駄目ですね。たぶんほとんどの CGI スクリプトは [CODE(CGI)[CONTENT_LENGTH]] を妄信しますから。。。
-
-[30] ほとんど (全て?) の実装では、[[メタ変数]] [CODE(CGI)[HTTP_CONTENT_LENGTH]] は提供されません。この [CODE(CGI)[CONTENT_LENGTH]] で [WEAK[(実際にクライアントが指定した値を知りたいという奇特な場合を除いて)]] 不要ですから。
-
-[31] 本体がないときには値 [CODE(CGI)[0]] ''ではなく'' [CODE(CGI)[NULL]] または空文字列になるのに注意が必要ですね。
-
-[32] 注意しないといけないのは、 [[chunked]] 以外の[[転送符号化]]が使われているときです。 (>>29 が chunked の場合。 CGI には規定はないですが、 HTTP によれば [CODE(HTTP)[Content-Length]] が無視されます。) [CODE(HTTP)[Content-Length]] は転送符号化の結果の含めた長さですから、サーバーがスクリプトに転送符号化を解いた形でデータを渡す時には新しい値を設定しないといけません。 (サーバーがスクリプトに渡す前に転送符号化を解釈するべきかどうかは知らないんですが、ほとんどの CGI スクリプトの実装は転送符号化の存在がないと仮定してますよね。。。)
-
-[33] >>32 今問題になってないのは、[[要求]]で転送符号化が使われることがまだそんなに (全然?) ないからに違いない。
-
-;; [34] [[HTTP]] [[鯖]]は[[メッセージ本体]]を[[CGIスクリプト]]に引き渡す準備が出来る前に
-[[CGIスクリプト]]を起動しても良いとされていますが、 [CODE(CGI)@en[[[CONTENT_LENGTH]]]]
-を設定しなければならないという制約を考えると、起動前に[[メタ変数]]を確定させなければならない実装では、
-本体の長さが確定するまで[[CGIスクリプト]]を起動できないことになります。
-[[HTTP]] [CODE(HTTP)@en[[[Content-Length:]]]] [[欄]]が設定されていて[[転送符号化]]が使われていない場合であっても、
-[[クライアント]]が途中で通信を切断する可能性があるので、最後まで読まないと値を確定できません。
-(本当にそれでいいのでしょうか。実際の[[鯖]]の実装はそうなっていないように思います。)
-
-* [CODE(822)@en[Content-Length:]] 欄 (電子メール)
-
-[1] [WEAK[2002-11-15 (金) 18:10]] ''[[名無しさん]]'': [[HTTP]] ではなく[[電子メイル]]や[[電子ニュース]]でも使われるのがたまに見られます。古い [[MIME]] の draft に書いてあったのではないかと思いますが、確認していません。
-
-** 関連
-
-[2] [WEAK[2002-11-15 (金) 18:11]] ''[[名無しさん]]'': MIME 的には [[Content-Disposition]]:欄の "size" パラメーターが後に用意されました。
-
-[3] [WEAK[2002-11-15 (金) 18:11]] ''2'': また電子ニュースでは伝統的に [[Lines]]:欄という似たものがあります。
-
-* [CODE(HTMLe)@en[object]] 要素 [CODE(HTMLa)@en[content-length]] 属性 (HTML)
+** [CODE(HTMLe)@en[object]] 要素 [CODE(HTMLa)@en[content-length]] 属性 (HTML)
 
 [12] [[XHTML2]] の [CODE(HTMLe)@en[[[object]]]] [[要素]]には
 [DFN[[CODE(HTMLa)@en[[[content-length]]]] [[属性]]]]が定義されていました。
 
 [41] 参照されている[[オブジェクト]]の[[サイズ]]を表す[[ヒント]]とされていましたが、
 どのように利用されるべきかは定義されていませんでした。
-
-[42] [[XHTML2]] 全体が支持を集められず、この[[属性]]も利用されることはありませんでした。
-
-** 歴史
 
 [13] 最初の[[作業原案]]では、[[属性]]の一覧には載っていましたが、肝心の定義が抜けていました。
 
@@ -431,3 +401,29 @@ CGI script は安心して CONTENT_LENGTH の長さだけ標準入力を
 [REFS[
 - [19] [CITE@en[- XHTML Object Module]] ([TIME[2002-12-12 23:58:38 +09:00]] 版) <http://www.w3.org/TR/2002/WD-xhtml2-20021211/mod-object.html#adef_object_content-length>
 ]REFS]
+
+[42] [[XHTML2]] 全体が支持を集められず、この[[属性]]も利用されることはありませんでした。
+
+* メモ
+
+[9]
+[CITE@en[RFC 3143 - Known HTTP Proxy/Caching Problems]] ([TIME[2008-08-30 12:43:01 +09:00]] 版) <http://tools.ietf.org/html/rfc3143#section-2.1.2>
+
+- [6] [WEAK[2002-12-17 (火) 20:49]] ''[[名無しさん]]'': [[iモード]]に対して送るときは Content-Length: 欄は必須となります。 <http://www.nttdocomo.co.jp/mc-user/i/tag/s3.html>
+
+[10]
+[CITE[セキュリティホール memo - 2005.07]] <http://www.st.ryukoku.ac.jp/%7Ekjm/security/memo/2005/07.html#20050707_HRS>
+
+[11] [CITE@en[RFC 3143 - Known HTTP Proxy/Caching Problems]] ([TIME[2008-08-30 12:43:01 +09:00]] 版) <http://tools.ietf.org/html/rfc3143#section-2.3.2>
+
+[35] [CITE@en[RFC 4463 - A Media Resource Control Protocol (MRCP) Developed by Cisco, Nuance, and Speechworks]]
+( ([TIME[2011-12-04 10:31:11 +09:00]] 版))
+<http://tools.ietf.org/html/rfc4463#section-5.4.9>
+
+[36] [CITE@en[draft-wood-dtnrg-http-dtn-delivery-07 - Using HTTP for delivery in Delay/Disruption-Tolerant Networks]]
+( ([TIME[2012-02-26 11:11:35 +09:00]] 版))
+<http://tools.ietf.org/html/draft-wood-dtnrg-http-dtn-delivery-07#page-6>
+
+[37] [CITE@en[RFC 6787 - Media Resource Control Protocol Version 2 (MRCPv2)]]
+( ([TIME[2012-11-13 15:18:40 +09:00]] 版))
+<http://tools.ietf.org/html/rfc6787#section-6.2.11>
