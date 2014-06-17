@@ -1,19 +1,102 @@
+[16] [DFN[[CODE(HTTP)@en[[[Via:]]]]]] [[ヘッダー]]は、[[鯖]]と[[クライアント]]の間に[[中間器]]が存在することを示すものです。
 
-* Via: 欄 (HTTP)
+[18] [CODE(HTTP)@en[[[Via:]]]] は、[[メッセージ]]の[[転送]]の追跡や、
+[[要求]]のループの防止や、[[中間器]]の[[プロトコル]]能力のチェックに使うことができます
+[SRC[>>17]]。
 
-- [4] ''Comments on AgentGripes'' <http://web.archive.org/web/20011019120517/http://www.dais.is.tohoku.ac.jp/logs/comment.html#via>
+* 仕様書
 
-[12]
-[SAMP(HTTP)[Via: 1.1 cachesv539 (NetCache NetApp/5.5R5D3)]]
-([[名無しさん]] [WEAK[2004-07-12 12:39:09 +00:00]])
+[REFS[
+- [17] '''[CITE@en[RFC 7230 - Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing]] ([TIME[2014-06-07 01:59:35 +09:00]] 版) <https://tools.ietf.org/html/rfc7230#section-5.7.1>'''
+]REFS]
 
-[[#comment]]
+* 文脈
 
+[25] [[串]]は、[[メッセージ]]を[[転送]]する際に [CODE(HTTP)@en[[[Via:]]]]
+[[ヘッダー]]を送信しなければ[['''なりません''']]。 [SRC[>>17]]
 
-** 仕様書から
+[26] [[HTTP]] から [[HTTP]] への[[関門]]は、[[内向き]]の[[要求メッセージ]]を[[転送]]する際に
+[CODE(HTTP)@en[[[Via:]]]] [[ヘッダー]]を送信しなければ[['''なりません''']]。
+また、[[外向き]]の[[応答メッセージ]]を[[転送]]する際に
+[CODE(HTTP)@en[[[Via:]]]] [[ヘッダー]]を送信して構いません。 [SRC[>>17]]
 
+[19] 複数の [CODE(HTTP)@en[[[Via:]]]] [[ヘッダー]]を指定することができます。
 
-*** RFC 2068 (HTTP/1.1) 14.44; RFC 2616 (HTTP/1.1) 14.45  Via
+* 構文
+
+[20] [[欄値]]は、1つ以上の値の[[リスト]] ([CODE[#]]) です [SRC[>>17]]。
+
+[24] 複数の値が記述されている場合、それぞれの値が[[メッセージ]]を[[転送]]したそれぞれの[[串]]や[[関門]]を表します。
+[[中間器]]は自身の情報を末尾に追記していくため、
+[[転送]]が行われた順に並ぶことになります。 [SRC[>>17]]
+
+[21] それぞれの値は、[[プロトコル]]、[[RWS]]、受信者、[[RWS]]、
+[[注釈]]を並べたものです。ただし末尾の [[RWS]] と[[注釈]]は省略できます。 [SRC[>>17]]
+
+[22] [[プロトコル]]は、プロトコル名、[CODE[[[/]]]]、[[プロトコルの版]]を並べたものですが、
+名前と [CODE[[[/]]]] は省略できます。省略された場合は [[HTTP]]
+を表します。 [SRC[>>17]]
+
+[27] [[プロトコル]]は、[[メッセージ]]の[[上流]]の[[送信者]]が使ったものを示します。
+[SRC[>>17]]
+
+[23] 受信者は、 [CODE(HTTP)@en[[[Host:]]]] [[ヘッダー]]の[[欄値]]と同じような値か、
+[RUBYB[ペンネーム]@en[pseudonym]]です。ペンネームは、[[字句]]です。
+通常は転送を行う[[受信者]]の[[ホスト]]と[[ポート]]ですが、
+これを晒したくない場合にはペンネームを使うことができます。
+[[ポート]]が省略された場合には、指定された[[プロトコル]]の[[既定のポート番号]]と解釈して構いません。 [SRC[>>17]]
+
+;; [30] 受信者の部分は[[空文字列]]になることがあります。
+
+;; [31] [[ホスト]]とペンネームは、構文的に完全には区別できません。
+ただ実用上は [[TLD]] が[[串]]になっていることは無いでしょう。
+([[DNS]] 以外のシステムを使っているネットワークではあり得ますが...)
+
+** 注釈
+
+[28] [[注釈]]は、 [CODE(HTTP)@en[[[Server:]]]] や [CODE(HTTP)@en[[[User-Agent:]]]]
+に相当するもので、[[受信者]]のソフトウェアを表します。 [SRC[>>17]]
+
+[36] [[Guidelines for Web Content Transformation Proxies 1.0]] に従う[[串]]は、
+[DFN[[CODE[[[http://www.w3.org/ns/ct]]]]]] という値の[[注釈]]を指定する[['''べきです''']]
+[SRC[>>35]]。
+
+[37] [[受信者]]は、[[注釈]]を削除してから[[転送]]して構いません [SRC[>>17]]。
+
+;; [38] [[Guidelines for Web Content Transformation Proxies 1.0]] は、
+現代の[[串]]でそのような処置は必要ないだろうと指摘し、
+削除する[['''べきではない''']]としています [SRC[>>35]]。
+
+* 処理モデル
+
+[32] [[防火壁]]の出入口となっている[[中間器]]は、
+明示的にそのように設定されている場合を除き、
+[[防火壁]]内の[[ホスト]]や[[ポート]]を[[転送]]する[['''べきではありません''']]。
+その場合には、[[防火壁]]内の「「9ホスト]]は適当なペンネームに置き換える[['''べきです''']]。
+[SRC[>>17]]
+
+[33] [[中間器]]は、同じ[[プロトコル]]の値の列を結合しても構いません。
+しかしそれは同じ組織の管理下にある場合で、既にペンネームに置き換えられている場合のみとする[['''べきです''']]。
+異なる[[プロトコル]]のものを結合しては[['''なりません''']]。 [SRC[>>17]]
+
+[EG[
+[34] 例えば、
+[PRE(HTTP example code)[
+Via: 1.0 ricky, [MARK[1.1 ethel, 1.1 fred]], 1.0 lucy
+]PRE]
+... を
+[PRE(HTTP example code)[
+Via: 1.0 ricky, [MARK[1.1 mertz]], 1.0 lucy
+]PRE]
+... としても構いません [SRC[>>17]]。
+]EG]
+
+* 歴史
+
+[FIG[
+[FIGCAPTION[
+[35] RFC 2068 (HTTP/1.1) 14.44; RFC 2616 (HTTP/1.1) 14.45  Via
+]FIGCAPTION]
 
 > The Via general-header field MUST be used by gateways and proxies to
 indicate the intermediate protocols and recipients between the user
@@ -153,13 +236,33 @@ have different received-protocol values.
 ホストが既に [CODE(ABNF)[pseudonyms]] に置換されているのでない限り、
 複数の項目を結合する'''べきではありません'''。応用は、異なる
 [CODE(ABNF)[received-protocol]] 値の項目を結合しては'''なりません'''。
+]FIG]
 
+[REFS[
+- [15] [CITE@en[Guidelines for Web Content Transformation Proxies 1.0]]
+( ([TIME[2010-10-22 17:20:31 +09:00]] 版))
+<http://www.w3.org/TR/2010/NOTE-ct-guidelines-20101026/#sec-via-headers>
+]REFS]
 
-*** RFC の部分の License
+* 例
 
-[[RFCのライセンス]]
+[EG[
+[29] 例えば [[HTTP/1.0]] [[利用者エージェント]]が「fred」
+という内部[[串]]に[[要求メッセージ]]を送信し、 fred
+が [[HTTP/1.1]] により公開[[串]]「p.example.net」に[[転送]]し、
+そこから更に[[起源鯖]]に[[転送]]された場合、
+[[起源鯖]]が見る [CODE(HTTP)@en[[[Via:]]]] [[ヘッダー]]は、
+[PRE(HTTP example code)[
+Via: 1.0 fred, 1.1 p.example.net
+]PRE]
+... となります [SRC[>>17]]。
+]EG]
 
-** 統計
+[4] ''Comments on AgentGripes'' <http://web.archive.org/web/20011019120517/http://www.dais.is.tohoku.ac.jp/logs/comment.html#via>
+
+[12]
+[SAMP(HTTP)[Via: 1.1 cachesv539 (NetCache NetApp/5.5R5D3)]]
+([[名無しさん]] [WEAK[2004-07-12 12:39:09 +00:00]])
 
 [13] [CITE@en[HTTP/1.1 Via header]] ([TIME[2009-07-19 12:11:49 +09:00]] 版) <http://www.http-stats.com/Via>
 
@@ -175,19 +278,10 @@ have different received-protocol values.
 
 のようにプロトコル名が完全に省略されているもの (仕様違反) もありますね。
 
-
-* Via: 欄 (電子メイル)
+* Via: ヘッダー (電子メイル)
 
 [2] [[電子メイル]]でも大昔に使われていたらしい。
 
-例:
-- [3] [SAMP(822)[Via:  IBM-SJ; 25 Apr 83 19:09-PDT]]
+** 例
 
-[[#comment]]
-
-
-* メモ
-
-[15] [CITE@en[Guidelines for Web Content Transformation Proxies 1.0]]
-( ([TIME[2010-10-22 17:20:31 +09:00]] 版))
-<http://www.w3.org/TR/2010/NOTE-ct-guidelines-20101026/#sec-via-headers>
+[3] [SAMP(822)[Via:  IBM-SJ; 25 Apr 83 19:09-PDT]]
