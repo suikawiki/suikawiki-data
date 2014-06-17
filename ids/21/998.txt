@@ -4,36 +4,60 @@
 * 仕様書
 
 [REFS[
+- [15] '''[CITE@en[RFC 7230 - Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing]] ([TIME[2014-06-07 01:59:35 +09:00]] 版) <https://tools.ietf.org/html/rfc7230#section-5.5>'''
 - [2] [CITE@en[RFC 6797 - HTTP Strict Transport Security (HSTS)]] ([TIME[2014-06-02 05:16:10 +09:00]] 版) <http://tools.ietf.org/html/rfc6797#section-9>
 - [1] [CITE@en[RFC 6797 - HTTP Strict Transport Security (HSTS)]] ([TIME[2014-06-02 05:16:10 +09:00]] 版) <http://tools.ietf.org/html/rfc6797#page-12>
 ]REFS]
 
 * 定義
 
-[4] [[HSTS]] では[RUBYB[実効要求URI]@en[effective request URI]]は次のように定義されています
-[SRC[>>2]]。
+[17] [[利用者エージェント]]においては、[[対象URL]]が[[実効要求URL]]です [SRC[>>15]]。
+
+[4] [[鯖]]では、[RUBYB[実効要求URL]@en[effective request URL]]は次のように決定します。
 [FIG[
-- [5] [[要求行]]に指定されているのが [CODE(ABNF)@en[[[absoluteURI]]]] なら、
-これが[[実効要求URI]]
-- [6] [[要求行]]に指定されているのが [CODE(ABNF)@en[[[abs_form]]]] か [CODE[[[*]]]]
-なら、次のような文字列が[[実効要求URI]]
--= [7] [[TCP]] なら [CODE(URI)@en[[[http:]]//]], [[TCP]] over [[SSL]] or [[TLS]]
-なら [CODE(URI)@en[[[https:]]//]]
--= [8] [CODE(HTTP)@en[[[Host:]]]] に指定された[[ホスト]]と (あれば) [[ポート]]
--= [9] [[要求行]]に指定されていたのが [CODE(HTTP)[[[*]]]] 以外なら、
-それ ([CODE(ABNF)@en[[[abs_form]]]])
--- [10] ただし [CODE(HTTP)@en[[[Host:]]]] がない場合は未定義
-- [11] [[要求行]]に指定されているのが [CODE(ABNF)@en[[[authority]]]] なら、未定義
+- [5] [[要求対象]]が [CODE(ABNF)@en[[[absolute-form]]]] なら、
+それが[[実効要求URL]]です [SRC[>>15, >>2]]。
+- [6] [[要求対象]]がそれ以外なら、次のような [[URL]] が[[実効要求URL]]です [SRC[>>15, >>2]]。
+-= [18] [[URL scheme]] は、
+-== [19] [[鯖]]の設定や[[外向き]]の[[関門]]により決まるなら、その値。 [SRC[>>15]]
+-== [7] それ以外で、 [[TLS]]/[[TCP]] [SRC[>>15, >>2]] や
+[[SSL]]/[[TCP]] [SRC[>>2]] なら [CODE(URI)@en[[[https:]]]]。
+-== [20] それ以外で ([[TCP]] なら [SRC[>>2]]) [CODE(URI)@en[[[http:]]]] [SRC[>>15, >>2]]。
+-= [22] [[authority]] は、
+-== [23] [[鯖]]の設定や[[外向き]]の[[関門]]により決まるなら、その値。 [SRC[>>15]]
+-== [8] それ以外で、 [CODE(HTTP)@en[[[Host:]]]] が空でないなら、その値。 [SRC[>>15, >>2]]
+-== [24] それ以外なら、[[鯖]]の設定による既定の名前と、[[接続]]の[[ポート番号]]が
+[[URL scheme]] の[[既定のポート番号]]と異なるなら、その値。 [SRC[>>15]]
+-= [25] [[path]] と [[query]] は、
+-== [9] [[要求対象]]が [CODE(ABNF)@en[[[authority-form]]]] か
+[CODE(ABNF)@en[[[asterisk-form]]]] なら、空。 [SRC[>>15, >>2]]
+-== [26] それ以外なら、[[要求対象]]。 [SRC[>>15, >>2]]
 ]FIG]
 
-;; [12] >>11 を使うのは [CODE(HTTP)@en[[[CONNECT]]]] の時なので、 [[HSTS]]
-とはあまり関係ありません。
+;; [21] [[HSTS]] と [[RFC 7230]] では、実質的な定義は同じですが、
+定義方法が微妙に異なっています。特に [[RFC 7230]] は、[[鯖]]の設定を用いることが認められています。
+この違いが意図的なのか、それとも出版時期の違いによるものなのかはわかりません。
+
+;; [10] [[HSTS]] では、 [CODE(HTTP)@en[[[Host:]]]] がない場合は未定義 [SRC[>>2]]
+とされていました。
+
+;; [11] [[HSTS]] では、 [CODE(ABNF)@en[[[authority-form]]]] の場合、
+[[実効要求URL]]は未定義 [SRC[>>2]] とされていました。この形を使うのは
+[CODE(HTTP)@en[[[CONNECT]]]] の時なので、 [[HSTS]] では[[実効要求URL]]
+を定義する必要がありませんでした。
 
 [13] [[HTTP/1.1]] 仕様に従わない[[要求]]については定義も言及もされていません。
 例えば[[非ASCII文字]]が含まれる場合は定義されていません。
+
+;; [27] [[RFC 7230]] によればそのような場合 [CODE(HTTP)[[[400]]]]
+を返すことになっていますから、大きな問題ではないのかもしれません。
 
 * 比較
 
 [14] [[比較]]は、 [[RFC 2616]] の定義によるとされています [SRC[>>2]]
 ([[HTTPにおけるURLの比較]]を参照)。ただし [[path]] が無い [[URL]]
 と [CODE[[[/]]]] は異なるものとして扱わなければ[['''なりません''']] [SRC[>>2]]。
+
+* 関連
+
+[16] [[CGI]] では[[実効要求URL]]と実質的に同じものが[[スクリプトURL]]と呼ばれています。
