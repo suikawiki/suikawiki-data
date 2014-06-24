@@ -10,6 +10,7 @@
 -- [49] [CITE@en[RFC 7230 - Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing]] ([TIME[2014-06-07 01:59:35 +09:00]] 版) <https://tools.ietf.org/html/rfc7230#section-3.4>
 -- [514] [CITE@en[RFC 7230 - Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing]] ([TIME[2014-06-07 01:59:35 +09:00]] 版) <https://tools.ietf.org/html/rfc7230#section-3.5>
 - [13] [CITE@en[RFC 7230 - Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing]] ([TIME[2014-06-07 01:59:35 +09:00]] 版) <https://tools.ietf.org/html/rfc7230#section-2.5>
+- [517] [CITE@en[RFC 7230 - Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing]] ([TIME[2014-06-07 01:59:35 +09:00]] 版) <https://tools.ietf.org/html/rfc7230#section-8.3.1>
 ]REFS]
 
 * 構文
@@ -185,6 +186,37 @@
 [6]
 もっとも、 >>5 は今で言う [[HTTP/0.9]] の話なので、影響するのは要求の最初の行の末だけです。
 
+* MIME 型
+
+[519] [[HTTPメッセージ]]に完全に対応する[[MIME型]]はありませんが、
+近い型は2つあります。
+
+[520] [CODE(MIME)@en[[[application/http]]]] は、[[要求メッセージ]]の列、
+または[[応答メッセージ]]の列を表します。
+
+;; 詳しくは [CODE(MIME)@en[[[application/http]]]] を参照してください。
+
+[521] [DFN[[CODE(MIME)@en[[[message/http]]]]]] は、
+[[HTTPメッセージ]]1つを表す[[MIME型]]ですが、 [[MIME]]
+の [CODE(MIME)@en[[[message/*]]]] の制限が課される他、
+いくつかの要件が本来の[[HTTPメッセージ]]と異なっています。
+
+** 関連
+
+[522] [[HTTPメッセージ]]と [[RFC 822]] [[メッセージ]]の類似性から、必然的に
+[CODE(MIME)@en[[[message/http]]]] と [CODE(MIME)@en[[[message/rfc822]]]]
+はよく似ています。
+
+[523] 一般に [[HTTP]] [[メッセージ]]の [[CTE]]
+は [CODE(MIME)@en[[[binary]]]] です。[CODE(MIME)@en[[[7bit]]]] や
+[CODE(MIME)@en[[[8bit]]]] の旧来の [[SMTP]] や [[NNTP]]
+の如き[[転送路]]では転送することができません。他の[[MIME型]]であれば
+[[Base64]] や [[Quoted-Printable]] のような [[CTE]] で[[符号化]]するべきところですが、
+[[MIME]] の規定により、 [CODE(MIME)@en[[[message/[VAR[*]]]]]]
+の[[符号化]]は一切禁止されているので、仕様に従いつつ転送する術はありません。
+[CODE(MIME)@en[[[message/http]]]] の代わりに [CODE(MIME)@en[[[application/http]]]]
+として[[札付け]]することでこの制約を回避できます。
+
 * 歴史
 
 [FIG[
@@ -331,6 +363,87 @@ star-line, 0個以上の頭欄 (「頭達」とも呼ばれる), 頭欄の終わ
 要求の後に生成します。 BNF で明示的に禁止されていることを
 繰り返しますが、 HTTP/1.1 顧客は要求の前や後に余計な
 CRLF をつけては'''いけません'''。
+]FIG]
+
+[FIG[
+[FIGCAPTION[
+[518] RFC 1945 (HTTP/1.0) A.; RFC 2068 (HTTP/1.1) 19.1 Internet Media Type message/http, RFC 2616 (HTTP/1.1) 19.1 Internet Media Type message/http and application/http
+]FIGCAPTION]
+
+> In addition to defining the [DEL[[INS[{1945}]] HTTP/1.0]] [INS[HTTP/1.1]] protocol, this document serves
+as the specification for the Internet media type "message/http" [INS[[INS[{2616}]] and "application/http"]]. [INS[[INS[{2616}]] The message/http type can be used to enclose a single HTTP request or response message, provided that it obeys the MIME restrictions for all "message" types regarding line length and encodings. The application/http type can be used to enclose a pipeline of one or more HTTP request or response messages (not intermixed).]] The
+following is to be registered with IANA [DEL[[INS[{1945}]] [13] ]] [INS[[INS[{2616}]] [17] ]].
+
+この文書は、 HTTP プロトコルを定義するのに加えて、インターネット[[媒体型]]
+[CODE(MIME)[message/http]] [INS[および [CODE(MIME)[[[application/http]]]]]]
+の仕様を給仕します。[INS[[CODE(MIME)[message/http]] 型は、単一の HTTP 要求メッセージまたは応答メッセージを、すべての [CODE(MIME)[message]] 型についての行長と符号化に関する MIME の制限に従うものとして囲むために使うことができます。 [CODE(HTTP)[application/http]] 型は、一つ以上の HTTP 要求メッセージ群または応答メッセージ群 (非混合。) のパイプ線を囲むために使うことができます。]]
+次は、 IANA に登録されます。
+
+>
+:Media Type name:message
+:Media subtype name:http
+:Required parameters:none
+:Optional parameters:version, msgtype
+
+>
+:version:The HTTP-Version number of the enclosed message
+(e.g., [DEL[[INS[{1945}]] "1.0"]] [INS["1.1"]]). If not present, the version can be
+determined from the first line of the body.
+
+囲まれたメッセージの [CODE(ABNF)[[[HTTP-Version]]]] 番号
+(例えば [CODE(HTTP)[1.0]] や [CODE(HTTP)[1.1]]。)
+存在しなければ、版は[[本体]]の最初の行から決定できます。
+
+>
+:msgtype:The message type -- "request" or "response". If not
+present, the type can be determined from the first
+line of the body.
+
+メッセージ型 — [CODE(MIME)[request]] 又は [CODE(MIME)[response]]。
+存在しなければ、型は本体の最初の行から決定できます。
+
+>
+:Encoding considerations:only "7bit", "8bit", or "binary" are permitted
+:Security considerations:none
+
+[INS[
+
+> [INS[{2616}]]
+:Media Type name:application
+:Media subtype name:http
+:Required parameters:none
+:Optional parameters:version, msgtype
+
+>
+:version:The HTTP-Version number of the enclosed messages
+(e.g., "1.1"). If not present, the version can be
+determined from the first line of the body.
+
+囲まれたメッセージの [CODE(ABNF)[HTTP-Version]] 番号
+(例えば [CODE(HTTP)[1.1]]。)
+存在しなければ、版は本体の最初の行から決定できます。
+
+>
+:msgtype:The message type -- "request" or "response". If not
+present, the type can be determined from the first line of the body.
+
+メッセージ型 — [CODE(MIME)[request]] 又は [CODE(MIME)[response]]。
+存在しなければ、型は本体の最初の行から決定できます。
+
+>
+:Encoding considerations:HTTP messages enclosed by this type
+are in "binary" format; use of an appropriate
+Content-Transfer-Encoding is required when
+transmitted via E-mail.
+
+この型で囲まれた HTTP メッセージは [CODE(MIME)[[[binary]]]] 書式です。
+[[電子メイル]]を介して転送するときには適切な [CODE(MIME)[[[Content-Transfer-Encoding]]]]
+が必要です。
+
+>
+:Security considerations:none
+]INS]
+
 ]FIG]
 
 [12] [CITE[Apache HTTP Server Project]]
