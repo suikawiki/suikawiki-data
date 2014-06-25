@@ -1,7 +1,3 @@
-
-
-* [CODE(MIME)[Content-Type:]] 頭欄 (MIME, HTTP, RTSP, SIP)
-
 [14] [CODE(MIME)[Content-Type:]] 欄は、
 その[RUBYB[[[実体]]] [entity]]の型を指定する欄です。
 [DFN[[RUBYB[型] [type]]]]とは文章 ([SAMP(MIME)[[[text/plain]]]]) 
@@ -333,11 +329,6 @@ Content-Type: text/html; charset=Shift_JIS lang=ja
 
 [32]
 [CITE[Bug 385166 &#8211; Gecko applies style sheets with Content-Type:"null" in standards mode]] ([CODE[2008-01-07 19:33:34 +09:00]] 版) <https://bugzilla.mozilla.org/show_bug.cgi?id=385166>
-([[名無しさん]])
-
-[[#comment]]
-
-@@ Content-Type sniffing についての章を書く
 
 [823] <http://www.leviathansecurity.com/pdf/Flirting%20with%20MIME%20Types.pdf>
 
@@ -548,6 +539,594 @@ script.
 
 [849] [[局所リダイレクト応答]]では [CODE(HTTP)@en[[[Content-Type:]]]] 欄を指定できません。
 
+* MIME Sniffing
+
+[876] [[MIME型]]が [CODE(MIME)@en[[[Content-Type:]]]] [[ヘッダー]]によって指定されていない場合や、
+指定されていても特定の条件をみたす場合には、本体データのバイト列を検査して、
+それによって [[MIME型]]を決定することがあります。これを [[MIME Sniffing]]
+といいます。
+
+;; 詳細は [[MIME Sniffing]] の項を参照してください。
+
+* Content-Type メタデータ
+
+** Content-Type メタデータが無視される場面
+
+-
+@@ [[HTML5]] で[[探知型]]が使われる場面
+- [[XSLT]] [CODE(XPathf)@en[[[document()]]]] [[関数]] (常に [[XML]] として解釈される)
+- 
+@@ [[XInclude]]
+
+* 歴史
+
+** RFC 1049
+
+[FIG[
+*3. The Content-type Header Field
+
+   Whatever structuring technique is specified by the Content-type
+   field, it must be known precisely to both the sender and the
+   recipient of the message in order for the message to be properly
+   interpreted.  In general, this means that the allowed parameter
+   values for the Content-type:  field must identify a well-defined,
+   standardized, document structuring technique.  We do not preclude,
+   however, the use of a Content-type:  parameter value to specify a
+   private structuring technique known only to the sender and the
+   recipient.
+
+   More precisely, we propose that the Content-type:  header field
+   consist of up to four parameter values.  The first, or type parameter
+   names the structuring technique; the second, optional, parameter is a
+   version number, ver-num, which indicates a particular version or
+   revision of the standardized structuring technique.  The third
+   parameter is a resource reference, resource-ref, which may indicate a
+   standard database of information to be used in interpreting the
+   structured document.  The last parameter is a comment.
+
+   In the Extended Backus Naur Form of RFC-822, we have:
+
+   Content-Type:= type [";" ver-num [";" 1#resource-ref]] [comment]
+
+**3.1. Type Values
+
+   Initially, the type parameter would be limited to the following set
+   of values:
+
+   type:=           "POSTSCRIPT"/"SCRIBE"/"SGML"/"TEX"/"TROFF"/
+                    "DVI"/"X-"atom
+
+   These values are not case sensitive.  POSTSCRIPT, Postscript, and
+   POStscriPT are all equivalent.
+
+   POSTSCRIPT      Indicates the enclosed document consists of
+                   information encoded using the Postscript Page
+                   Definition Language developed by Adobe Systems,
+                   Inc. [1]
+
+   SCRIBE          Indicates the document contains embedded formatting
+                   information according to the syntax used by the
+                   Scribe document formatting language distributed by
+                   the Unilogic Corporation. [6]
+
+   SGML            Indicates the document contains structuring
+                   information to according the rules specified for
+                   the Standard Generalized Markup Language, IS 8879,
+                   as published by the International Organization for
+                   Standardization. [3] Documents structured according
+                   to the ISO DIS 8613--Office Docment Architecture and
+                   Interchange Format--may also be encoded using SGML
+                   syntax.
+
+   TEX             Indicates the document contains embedded formatting
+                   information according to the syntax of the TEX
+                   document production language. [4]
+
+   TROFF           Indicates the document contains embedded formatting
+                   information according to the syntax specified for the
+                   TROFF formatting package developed by AT&T Bell
+                   Laboratories. [5]
+
+   DVI             Indicates the document contains information according
+                   to the device independent file format produced by
+                   TROFF or TEX.
+
+   "X-"atom        Any type value beginning with the characters "X-" is
+                   a private value.
+
+**3.2. Version Number
+
+   Since standard structuring techniques in fact evolve over time, we
+   leave room for specifying a version number for the content type.
+   Valid values will depend upon the type parameter.
+
+   ver-num:=      local-part
+
+     In particular, we have the following valid values:
+
+     For type=POSTSCRIPT
+
+   ver-num:= "1.0"/"2.0"/"null"
+
+     For type=SCRIBE
+
+   ver-num:= "3"/"4"/"5"/"null"
+
+     For type=SGML
+
+   ver-num:="IS.8879.1986"/"null"
+
+**3.3. Resource Reference
+
+   resource-ref:=  local-part
+
+   As Apple has demonstrated with their implementation of the
+   Laserwriter, a very general document structuring technique can be
+   made more efficient by defining a set of macros or other similar
+   resources to be used in interpreting any transmitted stream.  The
+   Macintosh transmits a LaserPrep file to the Laserwriter containing
+   font and macro definitions which can be called upon by subsequent
+   documents.  The result is that documents as sent to the Laserwriter
+   are considerably more compact than if they had to include the
+   LaserPrep file each time.  The Resource Reference parameter allows
+   specification of a well known resource, such as a LaserPrep file,
+   which should be used by the receiving system when processing the
+   message.
+
+   Resource references could also include macro packages for use with
+   TEX or references to preprocessors such as eqn and tbl for use with
+   troff.  Allowed values will vary according to the type parameter.
+
+     In particular, we propose the following values:
+
+     For type = POSTSCRIPT
+
+   resource-ref:=  "laserprep2.9"/"laserprep3.0"/"laserprep3.1"/
+                   "laserprep4.0"/local-part
+
+     For type = TROFF
+
+   resource-ref:=  "eqn"/"tbl"/"me"/local-part
+
+**3.4. Comment
+
+   The comment field can be any additional comment text the user
+   desires.  Comments are enclosed in parentheses as specified in
+   RFC-822.
+]FIG]
+
+***拡張型
+
+RFC 1049 に定義されていない型は IANA に登録申請できることになっていますが、
+現在 IANA 登録簿でそれらしいものはありません。
+
+***非標準型
+
+「text」型が使われていたようです(CT:省略時の既定値)。 = text/plain
+
+IETF のメイル・サーバー <mailto:mailserv@ietf.org> は、
+未だに Content-Type: text のメッセージを返してきます。
+
+古い [[ML]] の archive とかには、大量の text 型のがあったりします。
+(そういうメッセージは [[Content-Length:欄]]を持ってたりもします。
+RFC 1049 ではないかもしれません。)
+
+「x-uuencode-apple-single」型。中身は uuencoded Macintosh binary
+(未対応読者への注釈つき)っぽい。
+
+「x-be2」。古い版の Andrew System で使われていたと、 RFC 2046 だったかに
+書いてありました。 Google で探してみると、古い archive から幾つか
+実例が見つかります。 Andrew Mail System の古い版とやらもどっか
+探したら出て来ますかね?
+
+この他にも、幾つかの型が使われていたっぽい形跡はありますが、
+まとまった文書は見当りません。
+
+***現行(MIME) Internet 媒体型の対応
+
+[[RFC1049とInternet媒体型の対応]]
+
+ちなみに RFC 2049 によりますと、 MIME の CT: 定義的に不正な
+値は MIME 適合 UA は [[application/octet-stream媒体型]]として
+取り扱います。
+
+** RFC 2045
+
+[866] [[電子メイル]]で使われる [[Content-Type:欄]]の最新の定義は、
+[[MIME]] [[RFC]]s の1つ目、 [[RFC2045]] <urn:ietf:rfc:2045>
+にあります。
+
+[FIG[
+* RFC 2045 5.  Content-Type Header Field
+
+> The purpose of the Content-Type field is to describe the data
+contained in the body fully enough that the receiving user agent can
+pick an appropriate agent or mechanism to present the data to the
+user, or otherwise deal with the data in an appropriate manner. The
+value in this field is called a media type.
+
+Content-Type (内容型) 欄の目的は、受信した[[利用者エージェント]]が適切なエージェントやデータを利用者に提示する方法を選ぶか、その他適切な方法でデータを処理するのに十に分なだけ[[本体]]のデータを説明することにあります。この欄の値は[[媒体型]]と呼びます。
+
+> HISTORICAL NOTE:  The Content-Type header field was first defined in
+RFC 1049.  RFC 1049 used a simpler and less powerful syntax, but one
+that is largely compatible with the mechanism given here.
+
+歴史について: CT 頭欄は最初 RFC 1049 で定義されました。
+RFC 1049 はより簡単であまり強力ではない構文でしたが、これはここに示す仕組みとかなり互換性があります。
+
+[INS[
+
+[868] 訳注: ほんとか? と思ったら、 
+[[RFC1049のContent-Type:領域の定義]]を参照。
+]INS]
+
+> The Content-Type header field specifies the nature of the data in the
+body of an entity by giving media type and subtype identifiers, and
+by providing auxiliary information that may be required for certain
+media types.  After the media type and subtype names, the remainder
+of the header field is simply a set of parameters, specified in an
+attribute=value notation.  The ordering of parameters is not
+significant.
+
+[PRE[
+   In general, the top-level media type is used to declare the general
+   type of data, while the subtype specifies a specific format for that
+   type of data.  Thus, a media type of "image/xyz" is enough to tell a
+   user agent that the data is an image, even if the user agent has no
+   knowledge of the specific image format "xyz".  Such information can
+   be used, for example, to decide whether or not to show a user the raw
+   data from an unrecognized subtype -- such an action might be
+   reasonable for unrecognized subtypes of text, but not for
+   unrecognized subtypes of image or audio.  For this reason, registered
+   subtypes of text, image, audio, and video should not contain embedded
+   information that is really of a different type.  Such compound
+   formats should be represented using the "multipart" or "application"
+   types.
+]PRE]
+
+[PRE[
+   Parameters are modifiers of the media subtype, and as such do not
+   fundamentally affect the nature of the content.  The set of
+   meaningful parameters depends on the media type and subtype.  Most
+   parameters are associated with a single specific subtype.  However, a
+   given top-level media type may define parameters which are applicable
+   to any subtype of that type.  Parameters may be required by their
+   defining content type or subtype or they may be optional. MIME
+   implementations must ignore any parameters whose names they do not
+   recognize.
+]PRE]
+
+[PRE[
+   For example, the "charset" parameter is applicable to any subtype of
+   "text", while the "boundary" parameter is required for any subtype of
+   the "multipart" media type.
+]PRE]
+
+[PRE[
+   There are NO globally-meaningful parameters that apply to all media
+   types.  Truly global mechanisms are best addressed, in the MIME
+   model, by the definition of additional Content-* header fields.
+]PRE]
+
+[PRE[
+   An initial set of seven top-level media types is defined in RFC 2046.
+   Five of these are discrete types whose content is essentially opaque
+   as far as MIME processing is concerned.  The remaining two are
+   composite types whose contents require additional handling by MIME
+   processors.
+]PRE]
+
+[PRE[
+   This set of top-level media types is intended to be substantially
+   complete.  It is expected that additions to the larger set of
+   supported types can generally be accomplished by the creation of new
+   subtypes of these initial types.  In the future, more top-level types
+   may be defined only by a standards-track extension to this standard.
+   If another top-level type is to be used for any reason, it must be
+   given a name starting with "X-" to indicate its non-standard status
+   and to avoid a potential conflict with a future official name.
+]PRE]
+
+
+** 5.1.  Syntax of the Content-Type Header Field
+
+
+** 5.1. Content-Type 頭領域の構文
+
+In the Augmented BNF notation of RFC 822, a Content-Type header field
+value is defined as follows:
+
+RFC 822 の拡張 BNF 記法により、 Content-Type 頭領域値は
+次のように定義します。
+
+[PRE[
+     content := "Content-Type" ":" type "/" subtype
+                *(";" parameter)
+                ; Matching of media type and subtype
+                ; is ALWAYS case-insensitive.
+]PRE]
+
+; 媒体型及び亜型の照合は''常に''大文字・小文字を区別しません。
+
+[PRE[
+     type := discrete-type / composite-type
+]PRE]
+
+[PRE[
+     discrete-type := "text" / "image" / "audio" / "video" /
+                      "application" / extension-token
+]PRE]
+
+[PRE[
+     composite-type := "message" / "multipart" / extension-token
+]PRE]
+
+[PRE[
+     extension-token := ietf-token / x-token
+]PRE]
+
+[PRE[
+     ietf-token := <An extension token defined by a
+                    standards-track RFC and registered
+                    with IANA.>
+]PRE]
+
+; <標準化過程 RFC で定義され、 IANA に登録された拡張 token>
+
+[PRE[
+     x-token := <The two characters "X-" or "x-" followed, with
+                 no intervening white space, by any token>
+]PRE]
+
+; <2文字「X-」または「x-」に、空白間隔を挟まずに続く token>
+
+[PRE[
+     subtype := extension-token / iana-token
+]PRE]
+
+[PRE[
+     iana-token := <A publicly-defined extension token. Tokens
+                    of this form must be registered with IANA
+                    as specified in RFC 2048.>
+]PRE]
+
+; <公式に定義された拡張 token。この形式の token は RFC 2048 で規定された
+通りに IANA に登録されなければならない。>
+
+[PRE[
+     parameter := attribute "=" value
+]PRE]
+
+[PRE[
+     attribute := token
+                  ; Matching of attributes
+                  ; is ALWAYS case-insensitive.
+]PRE]
+
+; 属性の照合は''常に''大文字・小文字を区別しない。
+
+[PRE[
+     value := token / quoted-string
+]PRE]
+
+[PRE[
+     token := 1*<any (US-ASCII) CHAR except SPACE, CTLs,
+                 or tspecials>
+]PRE]
+
+[PRE[
+     tspecials :=  "(" / ")" / "<" / ">" / "@" /
+                   "," / ";" / ":" / "\" / <">
+                   "/" / "[" / "]" / "?" / "="
+                   ; Must be in quoted-string,
+                   ; to use within parameter values
+]PRE]
+
+; parameter value 内で使うには常に quoted-string 内でなければならない
+
+Note that the definition of "tspecials" is the same as the RFC 822
+definition of "specials" with the addition of the three characters
+"/", "?", and "=", and the removal of ".".
+
+なお、「tspecials」の定義は RFC 822 の「specials」定義から
+3文字 "/", "?", "=" を加えて「.」を除いたものです。
+
+Note also that a subtype specification is MANDATORY -- it may not be
+omitted from a Content-Type header field.  As such, there are no
+default subtypes.
+
+また、 subtype 指定は''絶対必要''です。 Content-Type 頭領域から
+省略してはいけません。ですから、規定の亜型はありません。
+
+The type, subtype, and parameter names are not case sensitive.  For
+example, TEXT, Text, and TeXt are all equivalent top-level media
+types.  Parameter values are normally case sensitive, but sometimes
+are interpreted in a case-insensitive fashion, depending on the
+intended use.  (For example, multipart boundaries are case-sensitive,
+but the "access-type" parameter for message/External-body is not
+case-sensitive.)
+
+type, subtype, parameter 名は大文字・小文字を区別しません。
+例えば、 TEXT, Text, TeXt は全て同じ上位媒体型です。
+parameter 値は一般に大文字・小文字を区別しますが、
+その用途により区別せずに解釈されることもあります。
+(例えば、 multipart 区切りは大文字・小文字を区別しますが、
+message/External-body の「access-type」 parameter は
+区別しません。)
+
+Note that the value of a quoted string parameter does not include the
+quotes.  That is, the quotation marks in a quoted-string are not a
+part of the value of the parameter, but are merely used to delimit
+that parameter value.  In addition, comments are allowed in
+accordance with RFC 822 rules for structured header fields.  Thus the
+following two forms
+
+なお、引用符で囲まれた文字列の parameter の値は引用符を含みません。
+これは、 quoted-string の引用符は parameter の value の一部ではなく、
+単に parameter value の区切りとして使われているということです。
+更に、 RFC 822 の構造化頭領域の規則に則り注釈を入れることが出来ます。
+従って次の2例は完全に同等です。
+
+[PRE[
+     Content-type: text/plain; charset=us-ascii (Plain text)
+]PRE]
+
+[PRE[
+     Content-type: text/plain; charset="us-ascii"
+]PRE]
+
+are completely equivalent.
+
+Beyond this syntax, the only syntactic constraint on the definition
+of subtype names is the desire that their uses must not conflict.
+That is, it would be undesirable to have two different communities
+using "Content-Type: application/foobar" to mean two different
+things.  The process of defining new media subtypes, then, is not
+intended to be a mechanism for imposing restrictions, but simply a
+mechanism for publicizing their definition and usage.  There are,
+therefore, two acceptable mechanisms for defining new media subtypes:
+
+[PRE[
+    (1)   Private values (starting with "X-") may be defined
+          bilaterally between two cooperating agents without
+          outside registration or standardization. Such values
+          cannot be registered or standardized.
+]PRE]
+
+[PRE[
+    (2)   New standard values should be registered with IANA as
+          described in RFC 2048.
+]PRE]
+
+[PRE[
+   The second document in this set, RFC 2046, defines the initial set of
+   media types for MIME.
+]PRE]
+
+
+** 5.2.  Content-Type Defaults  Content-Type 既定値
+
+> Default RFC 822 messages without a MIME Content-Type header are taken
+by this protocol to be plain text in the US-ASCII character set,
+which can be explicitly specified as:
+
+MIME CT 頭がない既定の RFC 822 メッセージはこのプロトコルでは
+US-ASCII [[文字集合]]の[[平文]]とみなされ、陽に示すと次のようになります。
+
+>> Content-type: text/plain; charset=us-ascii
+
+> This default is assumed if no Content-Type header field is specified.
+It is also recommend that this default be assumed when a
+syntactically invalid Content-Type header field is encountered. In
+the presence of a MIME-Version header field and the absence of any
+Content-Type header field, a receiving User Agent can also assume
+that plain US-ASCII text was the sender's intent.  Plain US-ASCII
+text may still be assumed in the absence of a MIME-Version or the
+presence of an syntactically invalid Content-Type header field, but
+the sender's intent might have been otherwise.
+
+この既定値は CT 頭欄が指定されていない時に仮定されます。構文的に不正な
+CT 頭欄が現れた時にもこの既定値を仮定することを推奨します。
+MIME-Version 頭欄があって CT 頭欄がない時は、受信した[[利用者エージェント]]は
+US-ASCII の平文が送信者の意図であるとも仮定出来ます。
+MIME-Version 頭欄がないか構文的に不正な CT
+頭欄があるときにも US-ASCII の平文を依然仮定して構いませんが、送信者の意図は違ったかもしれません。
+
+[INS[
+
+[867] 訳注: Draft でない現在の [[MIME]] にとって RFC 1049
+の CT: 欄というのは[CODE[構文的に不正]<urn:ietf:rfc:2045>]なんだけど、それを
+[[US-ASCII]] 平文と解釈するんじゃあ、 >>868
+と言ってることが矛盾していませんか。
+]INS]
+]FIG]
+
+[869] この定義は [[RFC 1521]] の改訂版です。 (でもほとんど同じです。) [[RFC2231]] で更に改訂されています。
+
+** usefor
+
+[FIG[
+[FIGCAPTION[
+[872] draft 05 6.21.2.  Content-Type
+]FIGCAPTION]
+
+The Content-Type: "text/plain" is the default type for any news
+article, but the recommendations and limits on line lengths set out
+in section 4.5 Ought to be observed
+
+The acceptability of other subtypes of Content-Type: "text" (such as
+"text/html") is a matter of policy (see 1.1), and posters Ought Not
+to use them unless established policy or custom in the particular
+hierarchies or groups involved so allows.  Moreover, even in those
+cases, for the benefit of readers who see it only in its transmitted
+form, the material SHOULD be "pretty-printed" (for example by
+restricting its line length as above and by keeping sequences which
+control its layout or style separate from the meaningful text).
+
+Content-Tyoe: 「text」のほかの亜型 (「text/html」など) を認めるか
+は方針の問題 (1.1 参照) で、投稿者は関係する特定の階層や集団で
+確立されている方針あるいは慣習の認めるところでなければ
+使用する''べ''きでは''あ''りません。・・・
+
+[PRE[
+   In the same way, Content-Types requiring special processing for their
+   display, such as "application", "image", "audio", "video" and
+   "multipart/related" are discouraged except in groups specifically
+   intended (by policy or custom) to include them. Exceptionally, those
+   application types defined in [RFC 1847] and [RFC 2015] and/or [RFC
+   2015bis] for use within "multipart/signed" articles, and the type
+   "application/pgp-keys" (or other similar types containing digital
+   certificates) may be used freely.
+]PRE]
+
+[PRE[
+   Reading agents SHOULD NOT, unless explicitly configured otherwise,
+   act automatically on Application types which could change the state
+   of that agent (e.g. by writing or modifying files), except in the
+   case of those prescribed for use in control messages (7.2.1.2 and
+   7.2.4.1).
+]PRE]
+]FIG]
+
+[873] 電子メイルの MIME より厳格で、どこでも適当に comment とか WSP を
+入れてはいけませぬ。
+
+** HTTP
+
+[FIG[
+[FIGCAPTION[
+[874] RFC 1945 (HTTP/1.0) 10.5; RFC 2068 (HTTP/1.1) 14.18; RFC 2616 (HTTP/1.1) 14.17 Content-Type
+]FIGCAPTION]
+
+>The Content-Type entity-header field indicates the media type of the [DEL[[INS[{1945}]] Entity-Body]] [INS[[INS[{2068,2616}]] entity-body]] sent to the recipient or, in the case of the HEAD method,
+the media type that would have been sent had the request been a GET.
+
+[5] Content-Type 実体頭欄は受信者に送られた, 又は [[HEAD]]
+方式の場合では [[GET]] 要求の場合に送られる[[実体本体]]の[[媒体型]]を示します。
+
+-[6]       Content-Type   = "Content-Type" ":" media-type
+
+>Media types are defined in section [DEL[[INS[{1945}]] 3.6]] [INS[[INS[{2068,2616}]] 3.7]]. An example of the field is
+
+-[7]       Content-Type: text/html[INS[; charset=ISO-8859-4 [INS[{2068,2616}]]]]
+
+>Further discussion of methods for identifying the media type of an
+entity is provided in section 7.2.1.
+]FIG]
+
+[FIG[
+[FIGCAPTION[
+[875] RFC 2326 (RTSP) 12.16 Content-Type
+]FIGCAPTION]
+
+>See [H14.18]. Note that the content types suitable for RTSP are
+likely to be restricted in practice to presentation descriptions and
+parameter-value types.
+
+[4] [H14.18] 参照。
+[[RTSP]] に適切な内容型は実際には[[表現記述]]と引数値の型に制限されてしまうであろうことに注意してください。
+]FIG]
+
 * メモ
 
 [833] [CITE@en[Working Group Decision on ISSUE-125 charset-vs-quotes]]
@@ -577,3 +1156,9 @@ script.
 [865] [CITE@en[RFC 2660 - The Secure HyperText Transfer Protocol]]
 ( ([TIME[2013-07-20 22:21:48 +09:00]] 版))
 <http://tools.ietf.org/html/rfc2660#section-2.4.2>
+
+[870] [SAMP(MIME)[Content-Type: text/html;]] みたいなのがたまにありますが、厳密には間違いですね。
+([[名無しさん]] [WEAK[2004-07-11 01:22:18 +00:00]])
+
+[871] >>870 [[spam]] に多い。
+([[名無しさん]] [WEAK[2004-07-11 01:25:03 +00:00]])
