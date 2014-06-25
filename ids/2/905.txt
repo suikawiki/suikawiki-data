@@ -1,41 +1,12 @@
-[2] [DFN[[CODE(MIME)[text/[VAR[*]]]] 媒体型]]は、 [[MIME]]
-によると、 plain text 
-的に表示した時に人間が特別な予備知識なく読むことができる形式に対する[[媒体型]]です。
+[77] [DFN[[CODE(MIME)@en[[[text/*]]]]]] は、[[テキスト]]の [[MIME型]]群です。
 
-しかし実際には、所謂 plain text, つまり[[バイナリ]]ではない、[[テキスト・エディタ]]で開くことが出来る形式全般に誤用されています。
+* 仕様書
 
-[4] [CODE(MIME)[text/[VAR[*]]]] に対する扱いは [[MIME]] と [[HTTP]] 
-で幾分差があるので注意が必要です。
+[REFS[
+- [78] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-3.1.1.3>
+]REFS]
 
-[56]
->>2 とかなんとか信じられてきましたが、 [[Ned Freed]]
-は [Q[[[RFC 2046]] の4.1章のアレは実装的にはこうだよねという話であって [CODE(MIME)[text/[VAR[*]]]] に対する要件ではない]]
-なんて見解を示しています [SRC[Ned 2005]]。
-
-- [Ned 2005] [CITE[Re: Request to review media type in AVT working group last call: draft-ietf-avt-rtp-3gpp-timed-text.txt]]
-<mid:01LOV0PQ4QQS00004T@mauve.mrochek.com>
-
-([[名無しさん]] [WEAK[2005-06-04 05:50:27 +00:00]])
-
-
-[57]
->>56
-
-確かに [[RFC 2046]] を読んでみるとその通りなわけです。
-
-[[XML]] を [CODE(MIME)[[[text/[VAR[*]]]]]]
-に登録できないとかのアレはなんだったわけよ?
-
-[58] 
->>56, 57
-
-本当か?<http://www.imc.org/ietf-xml-mime/mail-archive/msg00203.html>
-を見よ。
-
-[[#comment]]
-
-
-* 既知の text/* 媒体型の一覧
+* [CODE(MIME)@en[text/*]] MIME 型の一覧
 
 [6] 何らかの規格で定義されている、
 あるいは用例・実装例が見つかっている [CODE(MIME)[text/[VAR[*]]]]
@@ -427,7 +398,61 @@ Page updated 11-May-2006
 <https://svn.tools.ietf.org/svn/wg/appsawg/draft-ietf-appsawg-mime-default-charset/latest/draft-ietf-appsawg-mime-default-charset.html>
 ]REFS]
 
-* 仕様書から
+* 改行
+
+[83] [[MIME]] では、 [[text/*]] [[媒体型]]の[[正規化]]方法が規定されています。
+
+[[OS]] などの環境の違いによって、改行は [CODE[0x0D]]
+だったり [CODE[0x0A]] だったり [CODE[0x0D 0x0A]]
+だったりその他だったりします。
+[[電子メイル]]での情報交換ではこれを [CODE[0x0D 0x0A]]
+に統一しよう、というのが正規化の骨子です。
+
+MIME 適合 [[MUA]] は、 [CODE[text/*]] の MIME 
+[[実体]]を送信する前に正規化しなければなりません。
+また、受信して表示する時にはその環境に応じて正規形から
+local form に変換します。
+
+[79] [[HTTP]] においては、[[送信者]]は、 [CODE(MIME)@en[[[text/*]]]] の[[改行]]を、
+[[CRLF]] でも、 [[CR]] のみでも、 [[LF]] のみでも、いずれで[[生成]]しても構いません。
+ただし[[表現]]全体で一貫していないといけません。 [SRC[>>78]]
+
+[80] [[HTTP]] においては、[[送信者]]は、 [CODE(MIME)@en[[[text/*]]]] の[[改行]]を、
+[[CRLF]] でも、 [[CR]] のみでも、 [[LF]] のみでも、いずれであっても構文解析できなければ[['''なりません''']]
+[SRC[>>78]]。
+
+;; [82] これらの [[HTTP]] における規定が、どれだけ実態にあったものなのかは疑問です。
+例えば [CODE(MIME)@en[[[text/html]]]] については[[改行]]として [[CR]]、[[LF]]、
+[[CRLF]] のいずれも認められていますが、 >>78 や >>80 に基づき認められるというよりは、
+[[HTML Standard]] により直接的に認められていると考えるべきでしょう。
+その他の [[MIME型]]も、それぞれが構文や構文解析方法を定義していて、
+厳密にはそれらの解釈は等しくありません。
+
+[81] [[HTTP]] においては、 [CODE(MIME)@en[[[text/*]]]] において [CODE[[[0x0D]]]]
+と [CODE[[[0x0A]]]] を [CODE(charname)@en[[[CR]]]] と [CODE(charname)@en[[[LF]]]]
+にそれぞれ用いる [[charset]] 以外であっても使うことができます [SRC[>>78]]。
+
+[84] 実際には HTTP, [[RTSP]], [[SIP]] で正規化なんてしようものなら何が起こるかわかったもんじゃないです。
+
+;; [85] もっとも、 RTSP や SIP では [CODE[text/[VAR[*]]]] なんてそんな使わないかな。
+
+[88] ほとんど無視されてますが、 HTTP でも CR や LF や CRLF の使用は一つの[[実体本体]]内では一貫していないといけないとされてます。つまりは、改行表現が CR と LF の混合とか、 CRLF だけど一部 LF とか、そういうのは駄目だということですね。
+
+[89] それから、 2616 は各媒体型がそれぞれみな正規形を持っているみたいなことを書いてますが、実際には持っている媒体型もあれば持ってない型もあって、むしろわざわざ規定している方が稀ですね。で、 MIME が絶対的に規定した [CODE[text/[VAR[*]]]] については緩和するなんていうもんですから、実質 HTTP には媒体型の正規化なんて概念はないと見ていいでしょう。[WEAK[(実際、 MIME 的正規化なんて考えずに実装したのを後から標準化したのが HTTP RFC ですから。。。 HTTP RFC は表面的 MIME 互換性[WEAK[(というかつじつまあわせ)]] のために苦心してますよ。。。)]]
+
+[90] >>89 でもこの辻褄合わせは建前みたいなもので、全然役に立たないよねえ。もうちょっと MIME と HTTP と、あとは RTSP とか SIP で共通してれば同じ library を使えただろうけど、これだけ違ってると。。。
+
+[91] [[RFC 2046]] の4章の最初に
+>   The content of these types must be handled by non-MIME mechanisms;
+they are opaque to MIME processors.
+
+という説明があります。にも関わらず、 
+[CODE(MIME)@en[[[text/[VAR[*]]]]]] に対しては[[正準形]]が定義されています。
+これらは直ちに矛盾はしませんが 
+([[実体]]の[[適合性]]と[[利用者エージェント]]の[[要件]]は別)、
+設計方針として整合しているようには思えません。
+
+* 歴史
 
 [FIG[
 [FIGCAPTION[
@@ -482,7 +507,50 @@ opposite writing directions.
 
 * 4.1.1.  Representation of Line Breaks [INS[改行の表現]]
 
-See [[.//正規化]]
+> The canonical form of any MIME "text" subtype MUST always represent a
+line break as a CRLF sequence.  Similarly, any occurrence of CRLF in
+MIME "text" MUST represent a line break.  Use of CR and LF outside of
+line break sequences is also forbidden.
+
+[[MIME]] "text" 亜型の正規形は常に改行を [[CRLF]]
+列で表さなければ'''なりません'''。同様に、 MIME "text" 中の
+CRLF は改行を表さなければ'''なりません'''。
+CR と LF を改行シーケンス以外で使用することも禁止します。
+
+> This rule applies regardless of format or character set or sets involved.
+
+この規則はどんな形式や文字集合であっても適用されます。
+
+> '''NOTE''': The proper interpretation of line breaks when a body is
+displayed depends on the media type. In particular, while it is
+appropriate to treat a line break as a transition to a new line when
+displaying a "text/plain" body, this treatment is actually incorrect
+for other subtypes of "text" like "text/enriched" [RFC-1896].
+Similarly, whether or not line breaks should be added during display
+operations is also a function of the media type. It should not be
+necessary to add any line breaks to display "text/plain" correctly,
+whereas proper display of "text/enriched" requires the appropriate
+addition of line breaks.
+
+'''参考''': 本体が表示される時の改行の適切な解釈は媒体型によります。
+特に、 "text/plain"
+本体を表示する時に改行を新しい行へ移るものとして扱うのは適切ですが、
+"text/enriched" [RFC-1896] のような "text"
+の他の亜型には実際この扱いは間違いです。
+同様に、改行が表示操作により追加されるべきかどうかも媒体型の機能によります。
+"text/plain" を正しく表示するのに改行を追加する必要があるのは望ましくありませんが、
+"text/enriched" の適切な表示には適切に改行を追加する必要があります。
+
+> '''NOTE''': Some protocols defines a maximum line length.  E.g.
+SMTP [RFC-821] allows a maximum of 998 octets before the next CRLF sequence.
+To be transported by such protocols, data which includes too long
+segments without CRLF sequences must be encoded with a suitable
+content-transfer-encoding.
+
+'''参考''': 幾つかの[[プロトコル]]は最大行長を決めています。
+例えば [[SMTP]] は最大で998オクテットがそれに続く CRLF
+シーケンスの前にあることを認めています。このようなプロトコルで転送するには、
+CRLF シーケンスなしの長過ぎる部分を含むデータは適切な内容転送符号化で符号化しなければなりません。
 
 * 4.1.2.  Charset Parameter [INS[Charset パラメーター]]
 
@@ -519,6 +587,213 @@ should be treated as "application/octet-stream".
 >認識出来ない "text" の亜型は、 MIME 実装者が charset をどう扱うか
 知っているなら亜型 "plain" として扱います。認識出来ない charset 
 も指定された認識出来ない亜型は "application/octet-stream" として扱います。
+]FIG]
+
+[2] [DFN[[CODE(MIME)[text/[VAR[*]]]] 媒体型]]は、 [[MIME]]
+によると、 plain text 
+的に表示した時に人間が特別な予備知識なく読むことができる形式に対する[[媒体型]]です。
+
+しかし実際には、所謂 plain text, つまり[[バイナリ]]ではない、[[テキスト・エディタ]]で開くことが出来る形式全般に誤用されています。
+
+[4] [CODE(MIME)[text/[VAR[*]]]] に対する扱いは [[MIME]] と [[HTTP]] 
+で幾分差があるので注意が必要です。
+
+[56]
+>>2 とかなんとか信じられてきましたが、 [[Ned Freed]]
+は [Q[[[RFC 2046]] の4.1章のアレは実装的にはこうだよねという話であって [CODE(MIME)[text/[VAR[*]]]] に対する要件ではない]]
+なんて見解を示しています [SRC[Ned 2005]]。
+
+- [Ned 2005] [CITE[Re: Request to review media type in AVT working group last call: draft-ietf-avt-rtp-3gpp-timed-text.txt]]
+<mid:01LOV0PQ4QQS00004T@mauve.mrochek.com>
+
+([[名無しさん]] [WEAK[2005-06-04 05:50:27 +00:00]])
+
+
+[57]
+>>56
+
+確かに [[RFC 2046]] を読んでみるとその通りなわけです。
+
+[[XML]] を [CODE(MIME)[[[text/[VAR[*]]]]]]
+に登録できないとかのアレはなんだったわけよ?
+
+[58] 
+>>56, 57
+
+本当か?<http://www.imc.org/ietf-xml-mime/mail-archive/msg00203.html>
+を見よ。
+
+[FIG[
+[FIGCAPTION[
+[86] RFC 1945 (HTTP/1.0) 3.6.1; RFC 2068・2616 (HTTP/1.1) 3.7.1 Canonicalization and Text Defaults
+]FIGCAPTION]
+
+> Internet media types are registered with a canonical form. [DEL[[INS[{1945,2068}]] In general, an]] [INS[[INS[{2616}]] An]] [DEL[Entity-Body]] [INS[entity-body]] transferred via HTTP [INS[messages]] [DEL[must]] [INS[MUST]]
+be represented in the appropriate canonical form prior to its transmission [INS[[DEL[; the exception is]] [INS[except for]] "text" types, as defined in the next paragraph]].
+
+Internet 媒体型は正規形とともに登録されます。
+[[HTTP]] [[メッセージ]]で転送される実体本文は、次の段落で定義する
+"text" 型を除いては、転送の前に適切な正規形で表現し'''なければなりません'''。
+
+> [INS[When in canonical form, media]] [DEL[Media]] subtypes of the "text" type use CRLF as
+the text line break [DEL[when in canonical form]]. HTTP [INS[relaxes this requirement and]] allows the
+transport of text media with plain CR or LF alone representing a line
+break when [DEL[used]] [INS[it is done]] consistently [DEL[within the Entity-Body]] [INS[for an entire entity-body]]. HTTP
+applications [DEL[must]] [INS[MUST]] accept CRLF, bare CR, and bare LF as being
+representative of a line break in text media received via HTTP. In
+addition, if the text [DEL[media]] is represented in a character set that does not
+use octets 13 and 10 for CR and LF respectively, as is the case for
+some multi-byte character sets, HTTP allows the use of whatever octet
+sequences are defined by that character set to represent the
+equivalent of CR and LF for line breaks. This flexibility regarding
+line breaks applies only to text media in the [DEL[Entity-Body]] [INS[entity-body]]; a bare CR
+or LF [DEL[should not]] [INS[MUST NOT]] be substituted for CRLF within any of the HTTP control
+structures (such as header fields and multipart boundaries).
+
+正規形では、 "text" 型の媒体亜型は CRLF を文改行に使います。 HTTP
+はこの要件を緩和し、文媒体を生の CR や LF だけを改行の表現に使って
+転送することを、実体本文全体で一貫している場合は認めます。
+HTTP 応用は CRLF, 単独 CR, 単独 LF を HTTP で受け取った文媒体の改行の表現
+であるとして認めなければ'''なりません'''。加えて、文がオクテット 13 および
+10 をそれぞれ CR と LF に使わない、幾つかの多バイト文字集合の場合のような
+文字集合で表現されている場合は、 HTTP haその文字集合で定義されている CR や
+LF と同等のオクテット列を使うことを認めます。この柔軟性は、
+実体本文中の文媒体にのみ適応されます。単独の CR や LF は HTTP
+制御構造 (頭領域や多部分区切りなど) の中では CRLF の代わりに使っては
+'''いけません'''。
+
+> If [DEL[the body has been]] [INS[an entity-body is]] encoded with a [DEL[[INS[{1945,2068}]] Content-Encoding]] [INS[[INS[{2616}]] content-coding]], the underlying data [DEL[should]] [INS[MUST]]
+be in [DEL[canonical form]] [INS[a form defined above]] prior to being encoded.
+
+実体本文が内容符号化で符号化されている時は、中のデータは
+符号化の前に上に定義した形にして'''おかなければなりません'''。
+
+> The "charset" parameter is used with some media types to define the
+character set ([DEL[Section]] [INS[section]] 3.4) of the data. When no explicit charset
+parameter is provided by the sender, media subtypes of the "text"
+type are defined to have a default charset value of "ISO-8859-1" when
+received via HTTP. Data in character sets other than "ISO-8859-1" or
+its subsets [DEL[must]] [INS[MUST]] be label[DEL[l]]ed with an appropriate charset value [DEL[in order to be consistently interpreted by the recipient]]. [INS[[INS[{2616}]] See section 3.4.1 for compatibility problems.]]
+
+"charset" パラメーターを幾つかの媒体型でデータの文字集合を定義するのに
+使います。 HTTP で受信した時に、送信者により明示された charset 
+パラメーターが無い場合は、
+"text" の媒体亜型は既定の charset 値 "ISO-8859-1" を持つものと定義します。
+"ISO-8859-1" かその部分集合でない文字集合のデータは適切な charset
+値で札付けし'''なければなりません'''。互換性問題については3.4.1節を
+参照して下さい。
+
+[DEL[
+
+[DEL[
+
+> [INS[{1945}]] Note: Many current HTTP servers provide data using charsets other
+than "ISO-8859-1" without proper labelling. This situation reduces
+interoperability and is not recommended. To compensate for this,
+some HTTP user agents provide a configuration option to allow the
+user to change the default interpretation of the media type
+character set when no charset parameter is given.
+
+注意 : 多くの現在の HTTP サーバーは、適切に札付けせずに
+[CODE(charset)[[[ISO-8859-1]]]] 以外の charset
+を使ってデータを提供しています。この状況は相互運用性を低下させるので、
+推奨しません。これを補正するために、 HTTP 利用者エージェントの中には設定選択肢を用意して、
+[CODE(HTTP)[charset]] 引数が与えられていない時に利用者が媒体型文字集合の既定の解釈を変更することを可能としているものもあります。
+]DEL]
+
+[INS[
+
+> [INS[{2068}]] Some HTTP/1.0 software has interpreted a Content-Type header without
+charset parameter incorrectly to mean "recipient should guess."
+Senders wishing to defeat this behavior MAY include a charset
+parameter even when the charset is ISO-8859-1 and SHOULD do so when
+it is known that it will not confuse the recipient.
+
+> Unfortunately, some older HTTP/1.0 clients did not deal properly with
+an explicit charset parameter. HTTP/1.1 recipients MUST respect the
+charset label provided by the sender; and those user agents that have
+a provision to "guess" a charset MUST use the charset from the
+content-type field if they support that charset, rather than the
+recipient's preference, when initially displaying a document.
+
+[INS[
+
+注 : RFC 2616 ではこの部分は 3.6.1 節に移動しています。
+[CODE(WikiPage)[[[charset//HTTP]]]] を参照。
+]INS]
+]INS]
+]DEL]
+]FIG]
+
+[FIG[
+[FIGCAPTION[
+[87] RFC 1945 (HTTP/1.0) C.1; RFC 2068 (HTTP/1.1) 19.4.1; RFC 2616 (HTTP/1.1) 19.4.2 Conversion to Canonical Form
+]FIGCAPTION]
+
+> [DEL[[DEL[RFC 1521]] [INS[MIME]]]] [INS[RFC 2045 [7] ]] requires that an Internet mail entity be converted to
+canonical form prior to being transferred[DEL[, [INS[{1945}]] as described in Appendix G of RFC 1521 [5] ]][INS[, [INS[{2616}]] as described in section 4 of RFC 2049 [48] ]]. Section [DEL[[INS[{1945}]] 3.6.1]] [INS[3.7.1]]
+of this document describes the forms allowed for subtypes of the "text" media
+type when transmitted over HTTP. [INS[[DEL[MIME]] [INS[RFC 2046]] requires that content with a type of "text" represent line breaks as CRLF and forbids the use of CR or LF outside of line break sequences.  HTTP allows CRLF, bare CR, and bare LF to indicate a line break within text content when a message is transmitted over HTTP.]]
+
+[7] RFC 2045 では、 Internet メイルの実体は転送される前に
+RFC 2049 の第4章で説明された通り正規形に変換する必要があります。
+この文書の3.7.1節は "text" 媒体型の亜型を HTTP 
+上で転送する時に認められる形式について説明しています。 RFC 2046 
+は "text" の型の内容は [[CRLF]] 
+で[[改行]]を表現することを要求し、改行シーケンス以外で [[CR]] 
+や [[LF]] を使うことを禁止しています。 HTTP は、 HTTP 
+上でメッセージを転送する際に文中で CRLF, 単独の CR, 単独の LF 
+を改行を示すのに使うことを認めています。
+
+[DEL[
+
+> RFC 1521 requires that content with a Content-Type of "text"
+represent line breaks as CRLF and forbids the use of CR or LF outside
+of line break sequences. HTTP allows CRLF, bare CR, and bare LF to
+indicate a line break within text content when a message is
+transmitted over HTTP.
+
+RFC 1521 は、 [CODE(MIME)[[[Content-Type]]]] が [CODE(MIME)[text]]
+の内容が[[改行]]を [CODE(char)[[[CRLF]]]] で表現することを要求し、
+改行列以外での [CODE(char)[[[CR]]]] と [CODE(char)[[[LF]]]]
+の使用を禁止しています。 HTTP は、メッセージが HTTP
+上を転送されるに際して文内容中の改行を示すために
+[CODE(char)[CRLF]], 単独の [CODE(char)[CR]] および単独の [CODE(char)[LF]]
+を認めています。
+]DEL]
+
+> Where it is possible, a proxy or gateway from HTTP to a strict [DEL[RFC 1521]] [INS[MIME]]
+environment [DEL[should]] [INS[SHOULD]] translate all line breaks within the text media
+types described in [DEL[Section 3.6.1]] [INS[section 3.7.1]] of this document to the [DEL[[DEL[RFC 1521]] [INS[MIME]]]] [INS[RFC 2049]]
+canonical form of CRLF. Note, however, that this [DEL[may]] [INS[[INS[{2616}]] might]] be complicated
+by the presence of a Content-Encoding and by the fact that HTTP
+allows the use of some character sets which do not use octets 13 and
+10 to represent CR and LF, as is the case for some multi-byte
+character sets.
+
+[8] 可能であれば、 HTTP から厳密な MIME 
+環境への串や関門はこの文書の3.7.1節で説明した文媒体型中の全ての改行を
+RFC 2049 正規形の CRLF に変換する'''のが良いです'''。しかし、 
+Content-Encoding の出現や, HTTP 
+が幾つかの多バイト[[文字集合]]の場合のように[[オクテット]] 
+[CODE[13]] と [CODE[10]] を CR や LF 
+を表現するのに使わない文字集合の使用を認めているという事実が、これを複雑にしていようことに注意して下さい。
+
+[INS[
+
+> [INS[{2616}]] Implementors should note that conversion will break any cryptographic
+checksums applied to the original content unless the original content
+is already in canonical form. Therefore, the canonical form is
+recommended for any content that uses such checksums in HTTP.
+
+[9] 実装者は、元の内容が既に正規形で無かった時に、元の内容に適応される暗号検査和が壊れようことに注意するのが良いです。
+このため、 HTTP で検査和を使う内容では正規形が推奨されます。
+]INS]
+
+[INS[
+
+注意: 注記のない修正点は RFC 1945 → RFC 2068 もの。
+]INS]
 ]FIG]
 
 * メモ
