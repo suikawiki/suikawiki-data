@@ -1,0 +1,246 @@
+[109] [[HTTP]] の [DFN[[CODE(HTTP)@en[[[Origin:]]]]]] [[欄]]は、[[利用者エージェント]]が当該[[要求]]を発行することとなった元の[[起源]]を表します。
+この[[起源]]が何であるか具体的な決定方法は、当該 [[API]] 等により定義されます。 [SRC[>>21]]
+
+* 仕様書
+
+[REFS[
+- [21] '''[CITE@en[RFC 6454 - The Web Origin Concept]] ([TIME[2011-12-12 09:13:37 +09:00]] 版) <http://tools.ietf.org/html/rfc6454#section-7>'''
+- [125] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2012-02-22 20:11:59 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#fetch>
+- [123] [CITE@en-US[XMLHttpRequest]] ([TIME[2012-02-28 13:24:26 +09:00]] 版) <http://dvcs.w3.org/hg/xhr/raw-file/tip/Overview.html#dom-xmlhttprequest-setrequestheader>
+- [213] [CITE@en-US[Cross-Origin Resource Sharing]] ([TIME[2012-03-03 09:26:46 +09:00]] 版) <http://dvcs.w3.org/hg/cors/raw-file/tip/Overview.html#resource-processing-model>
+- [221] [CITE@en-US[Cross-Origin Resource Sharing]] ([TIME[2012-03-03 09:39:38 +09:00]] 版) <http://dvcs.w3.org/hg/cors/raw-file/tip/Overview.html#resource-sharing-check-0>
+- [212] [CITE@en-US[Cross-Origin Resource Sharing]] ([TIME[2012-03-03 07:13:53 +09:00]] 版) <http://dvcs.w3.org/hg/cors/raw-file/tip/Overview.html#security>
+]REFS]
+
+* 構文
+
+[107] [CODE(HTTP)@en[[[Origin:]]]] 欄の構文は次のように定義されています [SRC[>>21]]。
+
+[FIG[
+[PRE(ABNF code)[
+   origin              = "Origin:" [[OWS]] origin-list-or-null [[OWS]]
+   origin-list-or-null = %x6E %x75 %x6C %x6C / origin-list
+   origin-list         = serialized-origin *( SP serialized-origin )
+   serialized-origin   = [[scheme]] "://" [[host]] [ ":" [[port]] ]
+                       ; <[[scheme]]>, <[[host]]>, <[[port]]> from [[RFC 3986]]
+]PRE]
+]FIG]
+
+[108] つまり、文字列 [CODE(HTTP)[[[null]]]] ([[小文字]]) だけ、または [[ASCII直列化]]した[[起源]]の
+[CODE(char)[[[SP]]]] 区切りのリストとなります。
+
+[113] [[利用者エージェント]]は任意の[[要求]]に [CODE(HTTP)@en[[[Origin:]]]] 欄を含めて[['''構いません''']]。
+[SRC[>>21]]
+
+[114] 一つの[[要求]]に複数の [CODE(HTTP)@en[[[Origin:]]]] 欄を含めては[['''なりません''']]。
+[SRC[>>21]]
+
+;; [115] 複数含まれている場合に[[鯖]]がどう解釈するべきかは規定されていません。
+
+** 複数の値
+
+[110] [[要求]]がなされるまでに複数の[[起源]]が関わっている場合、それをすべて列挙して[['''構いません''']]。
+[SRC[>>21]]
+
+[EG[
+[111] 例えば[[リダイレクト]]が発生した時、大元の[[起源]]と[[リダイレクト]]を行った[[起源]]を列挙して構いません。
+]EG]
+
+;; [112] 列挙の順序や[[鯖]]による解釈の方法については特に規定されていません。
+
+[118] 隣接する[[起源]]が[RUBYB[同じ]@en[identical]]であっては[['''なりません''']]。
+そうなってしまう場合は片方だけ送信しなければ[['''なりません''']]。 [SRC[>>21]]
+
+[191] [[fetch]] (>>126) の定義においては[[リダイレクト]]の際に複数の値を [CODE(HTTP)@en[[[Origin:]]]]
+を入れることは認められていません。ただし明示的に禁じられているわけではなく、
+自然に読むと複数にはならないというだけなので、実際には禁止する意図は無いかもしれません。
+
+[222] [[CORS]] (>>213) でも[[鯖]]側の処理モデルにおいて、
+[[リダイレクト]]の時に複数の値が指定され得ることに言及はされているのですが、
+[[利用者エージェント]]側の処理モデル上はそうなる場合が記述されていません。
+
+* [CODE(HTTP)[null]]
+
+[116] 「[RUBYB[[[プライバシー]]重視]@en[privacy-sensitive]]」な文脈では値 [DFN[[CODE(HTTP)[[[null]]]]]]
+を送信しなければ[['''なりません''']]。具体的に何が「[[プライバシー]]重視」な文脈かは 
+[CODE(HTTP)@en[[[Origin:]]]] 欄の仕様としては決めていませんが、[[応用]]ごとに決めることもできます。 
+[SRC[>>21]]
+
+[117] 値 [CODE(HTTP)[[[null]]]] はその他に[[3項組]]で表せない[[起源]]である時にも使われます。
+
+** 空文字列
+
+[142] [[HTML]] の定義に従えば[[起源]]の[[ASCII直列化]]が[[空文字列]]になることもありますが、
+その場合 [CODE(HTTP)@EN[[[Origin:]]]] の値をどうするべきかは不明確です。
+
+[196] >>195 によれば [[Firefox]] では[[空文字列]]が [CODE[[[null]]]] の変わりに使われることになっています。
+古い仕様ではそうだったのかもしれません。
+
+[REFS[
+- [195] [CITE@en[HTTP access control - MDN]] ([TIME[2012-02-29 23:20:44 +09:00]] 版) <https://developer.mozilla.org/en/http_access_control#Origin>
+]REFS]
+
+** fetch
+
+[126] [[fetch]] 操作においては、[[起源]]が呼び出し元により明示された場合、
+それを [CODE(HTTP)@en[[[Origin:]]]] に使います。そうでない場合は「[[プライバシー]]重視」
+な文脈として扱います。 [SRC[>>125]]
+
+[190] [[HTML]] や [[XHR]] の仕様上定義されたあらゆる [[HTTP]] [[要求]]は [[fetch]]
+操作経由で発行されるので、従ってこれを実装している[[Webブラウザー]]からのあらゆる [[HTTP]]
+[[要求]]は何らかの [CODE(HTTP)@en[[[Origin:]]]] 欄を送出し得ることになります。
+しかしよく読むといつ [CODE(HTTP)@en[[[Origin:]]]] 欄を送出するべきかは [[RFC]] も
+[[HTML]] も [[XHR]] も規定していません。明示的な[[起源]]の指定無しに [[fetch]]
+が呼び出された時は [[null]] を送信しなければならない (>>126 + >>116) ということになっていますが、
+これも無条件に送信することを強制する意図があるのかは怪しいです。
+
+[193] 実際の [[Webブラウザー]]は[[フォーム]]の[[提出]]や [[XHR]] などで [CODE(HTTP)@en[[[Origin:]]]]
+を送出しますが、通常の[[文書]]の [[navigation]] などでは送出しません。
+
+* 処理モデル
+
+[119] [[RFC]] では[[鯖]]による解釈の方法は特に規定されていません。
+
+[214] [[CORS]] では別[[起源]]への[[要求]]に対する[[鯖]] ([[資源]]) での処理モデルが規定されており、
+その中で [CODE(HTTP)@en[[[Origin:]]]] の処理方法も規定されています。 [CODE(HTTP)@en[[[Origin:]]]]
+に関する部分だけを抜き出すと、次の通りです。
+
+- [215] [CODE(HTTP)@en[[[Origin:]]]] 欄がなければ、 [[CORS]] 処理モデルの適用範囲''外''です。 [SRC[>>213]]
+- [216] [CODE(HTTP)@en[[[Origin:]]]] 欄の値は、
+-- [218] [[cross-origin request]]/[[actual request]] では [CODE(char)[[[U+0020]]]] [CODE(charname)@en[[[SPACE]]]]
+で分割し、得られたそれぞれの値が[[大文字・小文字不区別]]で想定している[[起源]]と一致するかを判定します。 [SRC[>>213]]
+-- [220] [[preflight request]] では値を直接[[大文字・小文字不区別]]で想定している[[起源]]と一致するかを判定します。
+([[preflight request]] は[[リダイレクト]]に対応していないので、常に値が1つと想定しています。) [SRC[>>213, >>221]]
+-- [219] なお、ここでいう想定している[[起源]]は有限のリストである必要はありません。
+- [217] [[応答]]の [CODE(HTTP)@en[[[Access-Control-Allow-Origin:]]]] 欄には [CODE(HTTP)@en[[[Origin:]]]]
+欄の値をそのまま使うことができます。  [SRC[>>213]]
+
+*** DNS による攻撃
+
+[210] [[鯖]]側では [CODE(HTTP)@en[[[Origin:]]]] が[[要求]]元として適切な[[起源]]かどうかチェックすることになりますが、
+[CODE(HTTP)@en[[[Host:]]]] をチェックしておかないと攻撃者が不正な[[ドメイン名]]を当該[[鯖]]に結びつけることで意図せぬ[[要求]]を受理させることができるとされています。
+
+[EG[
+[211] 例えば [CODE[corp.example]] と [CODE[corp.invalid]] があるとします。 [CODE[corp.example]]
+が [CODE[corp.example]] に [[cross-origin request]] を行い、 [CODE(HTTP)@en[[[Origin:]] corp.example]]
+と送ります。この時 [CODE[corp.invalid]] または[[ネットワーク]]が不正にこの[[要求]]を 
+[CODE[corp.example]] に送りつけさせることができます。すると [CODE[corp.example]] は自身からの[[要求]]を (意図せず)
+受け取ることになります。 [CODE[corp.example]] 側で [CODE(HTTP)@en[[[Host:]]]] 
+をチェックすれば、[[利用者エージェント]]が本当は [CODE[corp.invalid]] に宛てて送ろうとしていたことを認識でき、
+不適切な[[要求]]として処理できます。 ([[cross-origin request]] には [[HTTPS]] のような安全な接続を使うとより安全になります。)
+[SRC[>>212 4.]]
+]EG]
+
+* 歴史
+
+[22] 例によって [[IETF]] で政治的なごたごたに巻き込まれて必要以上に長くかかっています。
+[[RFC]] になるよりずっと先に [[Webブラウザー]]で実装が進みました。
+
+[1]
+[CITE[Cross-Site Request Forgery]] ([TIME[2008-07-11 00:28:05 +09:00]] 版) <http://crypto.stanford.edu/websec/csrf/>
+
+[2]
+[CITE[Origin Header for CSRF Mitigation]] ([TIME[2008-11-30 15:01:02 +09:00]] 版) <http://crypto.stanford.edu/websec/specs/origin-header/>
+
+[3]
+[[HTML5]] の[[ナビゲーション]]の[[算法]]に組み込まれたみたいです。。。
+
+[4] [CITE@en[(X)HTML5 Tracking]] ([TIME[2009-01-15 07:15:24 +09:00]] 版) <http://html5.org/tools/web-apps-tracker?from=2668&to=2669>
+
+[5] [CITE@en[ACTION-96: Origin removal]] ([[Henri Sivonen]] 著, [TIME[2009-01-19 08:33:27 +09:00]] 版) <http://lists.w3.org/Archives/Public/public-html/2009Jan/0210.html>
+
+[6] [CITE@en[draft-abarth-origin-00 - The HTTP Origin Header]] ([TIME[2009-01-22 10:33:27 +09:00]] 版) <http://tools.ietf.org/html/draft-abarth-origin-00>
+
+[7] [CITE@en[(X)HTML5 Tracking]]
+([TIME[2009-09-29 23:36:58 +09:00]] 版)
+<http://html5.org/tools/web-apps-tracker?from=4010&to=4011>
+
+[8] [CITE[IRC logs: freenode / #whatwg / 20090821]]
+([TIME[2009-10-12 19:18:16 +09:00]] 版)
+<http://krijnhoetmer.nl/irc-logs/whatwg/20090821#l-235>
+
+[9] [CITE@en[Security/Origin - MozillaWiki]]
+([TIME[2009-10-09 22:03:56 +09:00]] 版)
+<https://wiki.mozilla.org/Security/Origin>
+
+[20] [CITE@en[The HTTP Sec-From Header]] draft-abarth-origin-01 の頃は [CODE(HTTP)@en[[[Sec-From:]]]]
+という名前が提案されていました。
+
+[10] [CITE[IRC logs: freenode / #whatwg / 20090929]]
+([TIME[2009-12-02 08:29:55 +09:00]] 版)
+<http://krijnhoetmer.nl/irc-logs/whatwg/20090929>
+
+[11] [CITE[IRC logs: freenode / #whatwg / 20091002]]
+([TIME[2009-12-04 00:35:25 +09:00]] 版)
+<http://krijnhoetmer.nl/irc-logs/whatwg/20091002#l-620>
+
+[12] [CITE[IRC logs: freenode / #whatwg / 20091204]]
+([TIME[2009-12-27 16:46:13 +09:00]] 版)
+<http://krijnhoetmer.nl/irc-logs/whatwg/20091204#l-293>
+
+[13] [CITE@en[Security/Origin - MozillaWiki]]
+([TIME[2010-10-06 06:03:55 +09:00]] 版)
+<https://wiki.mozilla.org/Security/Origin>
+
+[14] [CITE[IRC logs: freenode / #whatwg / 20101109]]
+( ([TIME[2010-11-18 23:22:34 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20101109#l-206>
+
+[15] [CITE[drafts/origin.xml at master from abarth's ietf-websec - GitHub]]
+( ([TIME[2011-02-13 13:01:41 +09:00]] 版))
+<https://github.com/abarth/ietf-websec/blob/master/drafts/origin.xml>
+
+[16] [CITE[IRC logs: freenode / #whatwg / 20110815]]
+( ([TIME[2011-08-27 15:22:54 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20110815#l-134>
+
+[17] [CITE[IRC logs: freenode / #whatwg / 20111022]]
+( ([TIME[2011-10-23 18:08:47 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20111022>
+
+[18] [CITE@en[Web Applications 1.0 r6941 Drop old origin definitions that no longer matter.]]
+( ([TIME[2012-01-31 09:48:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=6940&to=6941>
+
+[19] [CITE[Widget Access Request Policy]]
+( ([TIME[2012-02-04 04:00:27 +09:00]] 版))
+<http://dev.w3.org/2006/waf/widgets-access/#dfn-origin>
+
+[192] [CITE[Origin Header Proposal]]
+( ([TIME[2011-12-28 22:11:55 +09:00]] 版))
+<http://people.mozilla.org/~bsterne/content-security-policy/origin-header-proposal.html>
+
+[194] [CITE[446344 – Implement Origin header CSRF mitigation]]
+( ([TIME[2012-02-29 23:10:51 +09:00]] 版))
+<https://bugzilla.mozilla.org/show_bug.cgi?id=446344>
+
+[197] [CITE[Chromium Blog: Security in Depth: New Security Features]]
+( ([TIME[2012-02-29 23:04:56 +09:00]] 版))
+<http://blog.chromium.org/2010/01/security-in-depth-new-security-features.html>
+
+[198] [CITE[Scheme/Host/Port: RFC 6454 and RFC 6455]]
+( ([TIME[2012-02-16 12:42:54 +09:00]] 版))
+<http://www.schemehostport.com/2011/12/rfc-6454-and-rfc-6465.html>
+
+[199] [CITE[javascript - Force Safari to include Origin header in jQuery GET request - Stack Overflow]]
+( ([TIME[2012-02-29 23:34:42 +09:00]] 版))
+<http://stackoverflow.com/questions/6417219/force-safari-to-include-origin-header-in-jquery-get-request>
+
+[204] [CITE@en-us[AJAX - Introducing Cross-domain Request (XDR)]]
+( ([TIME[2012-02-29 23:41:40 +09:00]] 版))
+<http://msdn.microsoft.com/en-us/library/ie/dd573303(v=vs.85).aspx>
+
+* 実装
+
+[205] [CODE(HTTP)@en[[[Origin:]]]] はまだ十分 [[interoperable]] に実装されていません。
+別の[[起源]]への [[XHR]]+[[CORS]] [[POST]] では [[Chrome]] も [[Firefox]]
+も [CODE(HTTP)@en[[[Origin:]]]] を送りますし、 [[XDR]] では [[IE]]
+も送りますが、[[フォーム]]の [[POST]] で送るのは [[WebKit]] だけです。
+また、同じ[[起源]]の時に送るのも [[Chrome]] だけです。 [TIME[2012-03-01T14:14:48.300Z]]
+
+[289] [[Chrome]] は [[POST]] したページを再読み込みした時に [CODE(HTTP)@en[[[Origin:]]]] を送らない(?)ようです。 [TIME[2014-04-25T11:19:32.000Z]]
+
+* 関連
+
+[124] [CODE(HTTP)@en[[[Origin:]]]] を [CODE(DOMi)@en[[[XMLHttpRequest]]]] で[[著者]]が指定することはできません
+[SRC[>>123]]。
