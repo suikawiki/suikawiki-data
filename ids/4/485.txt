@@ -1,45 +1,58 @@
-[3] [[HTTP]] の [DFN[[CODE(HTTP)@en[[[Max-Forwards:]]]] [[要求頭欄]]]]は、
-[[HTTP要求]]が[[串]]によって転送されてもよい最大の回数を表します。
+[3] [DFN[[CODE(HTTP)@en[[[Max-Forwards:]]]] [[ヘッダー]]]]は、
+[[要求メッセージ]]が[[串]]によって[[転送]]されても良い最大回数を表します。
 
 * 仕様書
 
 [REFS[
+- [9] '''[CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-5.1.2>'''
 - [6] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-4.3.7>
 - [7] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-4.3.8>
 ]REFS]
 
-* [CODE(HTTP)@en[OPTIONS]] 要求
+* 意味
 
-[4] [[クライアント]]は、[CODE(HTTP)@en[[[OPTIONS]]]] [[要求]]を[[要求鎖]]上の特定の[[受信者]]を対象とすべく
-[CODE(HTTP)@en[[[Max-Forwards:]]]] [[ヘッダー]]を送信することができます [SRC[>>6]]。
+[10] [CODE(HTTP)@en[[[Max-Forwards:]]]] [[ヘッダー]]は、
+[[要求]]が[[串]]によって[[転送]]される回数を制限するものです [SRC[>>9]]。
+
+* 文脈
+
+[4] [[クライアント]]は、[CODE(HTTP)@en[[[OPTIONS]]]] [SRC[>>6]] や
+[CODE(HTTP)@en[[[TRACE]]]] の[[要求]]に
+[CODE(HTTP)@en[[[Max-Forwards:]]]] [[ヘッダー]]を含めることができます。
 
 [5] [[串]]は、[CODE(HTTP)@en[[[OPTIONS]]]] [[要求]]に関して、
 [CODE(HTTP)@en[[[Max-Forwards:]]]] を含む[[要求]]を[[転送]]する場合を除き、
 これを[[生成]]しては[['''なりません''']] [SRC[>>6]]。
 
-* [CODE(HTTP)@en[TRACE]] 要求
+* 構文
 
-[8] [[起源鯖]]か、 [CODE(HTTP)@en[[[Max-Forwards:]]]] [[ヘッダー]]の値が [[0]]
-で受信した最初の[[鯖]]が、最終的な[[受信者]]です [SRC[>>7]]。
+[11] 値は、[[非負整数]]です [SRC[>>9]]。
 
-* RFC 2068 → RFC 2616 の仕様変更
+[12] この値は当該[[要求メッセージ]]が[[転送]]されることができる残り回数を示す[[十進整数]]です
+[SRC[>>9]]。
 
-[1] RFC 2068 では、 [CODE(HTTP)[Max-Forwards:]] 頭欄に串・関門が対応することは推奨
-([CODE[[[SHOULD]]]]) でしたが、 RFC 2616 では必須
-([CODE[[[MUST]]]]) になりました。
+* 処理モデル
 
-ですから、 RFC 2068 に従う中継者が要求鎖中に要ると正しく機能しないかもしれません。
-(RFC 2068 に従う中継者ばかりであったら正しく機能する保証がありませんでしたが、 RFC 2616 に従う中継者ばかりなら必ず正しく機能します。[WEAK[もっとも、どちらの RFC に従うか判定する方法はありませんけどね。]])
+[13] [[中間器]]は、 [CODE(HTTP)@en[[[OPTIONS]]]] や [CODE(HTTP)@en[[[TRACE]]]]
+の[[要求]]を受信した時 [CODE(HTTP)@en[[[Max-Forwards:]]]] [[ヘッダー]]が含まれている場合、
+- [14] 値が0なら、これを[[転送]]しては[['''ならず''']]、
+最終[[受信者]]として[[応答]]しなければ[['''なりません''']] [SRC[>>9, >>7]]。
+- [15] 値が[[正]]なら、元の値より1少ない値、または対応している最大値のどちらか小さい方にした
+[CODE(HTTP)@en[[[Max-Forwards:]]]] を[[生成]]して[[転送]]しなければ[['''なりません''']]
+[SRC[>>9]]。
 
-[2] RFC 2068 では、 [CODE(HTTP)[Max-Forwards]] に対応していない[[メソッド]]では無視するべきだと言っていましたが、
-RFC 2616 は無視しても良いと言っています。
+[16] [[受信者]]は、他の[[要求メソッド]]の場合 [CODE(HTTP)@en[[[Max-Forwards:]]]]
+を無視して構いません [SRC[>>9]]。
 
-ですから、どちらに従っていても、 [CODE(HTTP)[Max-Forwards:]] に影響されないはずの[[メソッド]]を使っているときに中継者が数を減らしてしまう可能性があります。 [CODE(HTTP)[0]] に反応して要求鎖の途中で応答が戻ってくる可能性もあります。
+;; [17] ということは適用しても良いということになりますが、
+例えば[[串]]が自身宛でない [CODE(HTTP)@en[[[GET]]]] を処理するとどうなるのでしょうか。。。
 
-* 仕様書から
+* 歴史
 
-
-** RFC 2068・2616 (HTTP/1.1) 14.31 Max-Forwards
+[FIG(quote)[
+[FIGCAPTION[
+[18] RFC 2068・2616 (HTTP/1.1) 14.31 Max-Forwards
+]FIGCAPTION]
 
 > The Max-Forwards request-header field [DEL[may be used]] [INS[provides a mechanism]] with the
 TRACE [DEL[method (section 14.31)]] [INS[(section 9.8) and OPTIONS (section 9.2) methods]] to limit the
@@ -79,8 +92,16 @@ defined by this specification and for any extension methods for which
 it is not explicitly referred to as part of that method definition.
 
 [CODE(HTTP)[Max-Forwards]] 頭欄は、この仕様書で定義されたほかのすべてのメソッドおよびメソッド定義の中で陽に言及していない拡張メソッドでは無視しても'''構いません'''。
+]FIG]
 
+[1] RFC 2068 では、 [CODE(HTTP)[Max-Forwards:]] 頭欄に串・関門が対応することは推奨
+([CODE[[[SHOULD]]]]) でしたが、 RFC 2616 では必須
+([CODE[[[MUST]]]]) になりました。
 
-** RFC の部分の License
+ですから、 RFC 2068 に従う中継者が要求鎖中に要ると正しく機能しないかもしれません。
+(RFC 2068 に従う中継者ばかりであったら正しく機能する保証がありませんでしたが、 RFC 2616 に従う中継者ばかりなら必ず正しく機能します。[WEAK[もっとも、どちらの RFC に従うか判定する方法はありませんけどね。]])
 
-[[RFCのライセンス]]
+[2] RFC 2068 では、 [CODE(HTTP)[Max-Forwards]] に対応していない[[メソッド]]では無視するべきだと言っていましたが、
+RFC 2616 は無視しても良いと言っています。
+
+ですから、どちらに従っていても、 [CODE(HTTP)[Max-Forwards:]] に影響されないはずの[[メソッド]]を使っているときに中継者が数を減らしてしまう可能性があります。 [CODE(HTTP)[0]] に反応して要求鎖の途中で応答が戻ってくる可能性もあります。
