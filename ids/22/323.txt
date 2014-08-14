@@ -1,3 +1,6 @@
+[19] This page describes how source positions of nodes, attributes, tokens, and errors
+are stored and handled in [[manakai]]'s  DOM/HTML related [[Perl]] modules.
+
 * DocumentIndex
 
 [2] A DocumentIndex is a scalar value used to identify a source data stream.  It must be a true value.  A positive integer should be used.
@@ -52,6 +55,9 @@ the IndexedStringSegments, in order.
 
 * DOM [CODE(DOMi)@en[Node]] extensions
 
+[11] Each [CODE(DOMi)@en[Node]] and [CODE(DOMi)@en[Attr]] has associated
+source document index and source character index.  Initially, they are unset.
+
 [FIG[
 [PRE(IDL code)[
 partial interface Node {
@@ -64,6 +70,46 @@ partial interface Attr {
 };
 ]PRE]
 ]FIG]
+
+[12] The [CODE(DOMm)@en[[[manakaiGetSourceLocation]]]] method [['''MUST''']]
+run these steps:
+[FIG(steps)[
+= If the source document index of the [[context object]] is set,
+== Return a new IndexedStringSegment whose character string is the empty string,
+DocumentIndex is the source document index of the [[context object]], and
+CharacterIndex is the source character index of the [[context object]].
+= Otherwise, if the [[context object]] is a [CODE(DOMi)@en[[[CharacterData]]]]
+or [CODE(DOMi)@en[[[Attr]]]] and its data or value consist of one or more
+IndexedStringSegment, 
+== Let [VAR[segment]] be the first IndexedStringSegment of the data or value
+of the [[context object]].
+== Return a new IndexedStringSegment whose character string is the empty string,
+DocumentIndex is the DocumentIndex of [VAR[segment]],
+and CharacterIndex is the CharacterIndex of [VAR[segment]].
+= Otherwise, return a new IndexedStringSegment whose character string is the empty string,
+DocumentIndex is -1, and CharacterIndex is 0.
+]FIG]
+
+[13] The [CODE(DOMm)@en[[[manakaiSetSourceLocation]]]] method [['''MUST''']]
+run these steps:
+[FIG(steps)[
+= If the argument is [[null]], unset the source document index 
+and the source character index of the [[context object]].
+= Otherwise, set the source document index of the [[context object]]
+to the DocumentIndex of the argument and the source character index of the 
+[[context object]] to the CharacterIndex of the argument.
+]FIG]
+
+[14] The data of a [CODE(DOMi)@en[[[CharacterData]]]] node and
+the value of an [CODE(DOMi)@en[[[Attr]]]] object are internally stored
+as IndexedString (or equivalent).
+
+[15] When they are to be modified by a method that does not aware of IndexedString,
+it [['''MUST''']] be performed in a way that does not make DocumentIndex and CharactrIndex
+contained in the IndexedString incorrect.  When it is not desired to preserve
+DocumentIndex and CharacterIndex of affected IndexedStringSegments
+or when a [CODE(DOMi)@en[[[DOMString]]]] is inserted, their DocumentIndex
+and CharacterIndex [['''MUST''']] be set to -1 and 0, respectively.
 
 [FIG[
 [PRE(IDL code)[
@@ -81,3 +127,19 @@ partial interface Attr {
 };
 ]PRE]
 ]FIG]
+
+[16] The [CODE(DOMm)@en[[[manakaiGetIndexedString]]]] method
+[['''MUST''']] return a new IndexedString which represents the same
+string as the [CODE(DOMa)@en[[[textContent]]]] attribute
+of the [[context object]].  DocumentIndex and CharacterIndex contained
+in it [['''MUST''']] be set to appropriate values.
+
+[17] The [CODE(DOMm)@en[[[manakaiAppendIndexedString]]]] method
+[['''MUST''']] act as if the [CODE(DOMm)@en[[[manakaiAppendText]]]]
+method is invoked with the character string of the IndexedString argument.
+In addition, DocumentIndex and CharacterIndex contained in the IndexedString
+argument [['''MUST''']] be used to update the data or value of relevant
+objects.
+
+;; [18] Exactly how DocumentIndex and CharacterIndex is handled by various
+methods defined here or by DOM Standard is a quality of implementation issue.
