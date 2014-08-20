@@ -13,6 +13,31 @@ are stored and handled in [[manakai]]'s  DOM/HTML related [[Perl]] modules.
 
 ;; [5] It is unclear whether "an unknown character index" is necessary or not at the time of writing.  If necessary, the value [CODE[-1]] will be used.
 
+* LineNumber
+
+[43] A LineNumber is a positive integer representing the line in the given source character stream
+in which the character appears.
+
+[47] The LineNumber of the first line in the source character stream is 1.
+
+;; [44] It is unclear whether "an unknown line number" is necessary or not.
+If necessary, the value -1 will be used.
+
+* ColumnNumber
+
+[45] A ColumnNumber is a non-negative integer representing the column in the line
+in the given source character stream at which the character appears.
+
+[46] The ColumnNumber of the first character in the line is 1.
+
+[48] The ColumnNumber of the newline can be 0 (a ColumnNumber in the next line) or
+equal to the number of the characters in the previous line (a ColumnNumber
+in the previous line).
+
+;; [49] It is unclear whether "an unknown line number" is necessary or not.
+If necessary, the value -1 will be used.  Note that it might be possible to
+use -1 for the CR of CRLF sequence...
+
 * IndexedStringSegment
 
 [6] An IndexedStringSegment is an array reference containing a character string,
@@ -46,20 +71,53 @@ IndexIndexMappingSegments.
 [25] The first CharacterIndex in an earlier IndexIndexMappingSegment in the IndexIndexMapping
 must be less than or equal to the first CharacterIndex of a later IndexIndexMappingSegment.
 
-[27] It must be interpreted as if there were the first IndexIndexMappingSegment
-whose items are (0, -1, 0).
+[35] It defines a mapping from the CharacterIndex of a character to
+a pair of DocumentIndex and CharacterIndex.
 
-[26] It represents that if there is a character which is identified by a CharacterIndex [VAR[ci]]
-which is greater than or equal to the CharacterIndex of the [VAR[n]]-th
-IndexIndexMappingSegment [VAR[segment]] and is less than the CharacterIndex of the [VAR[n]]+1-th
-IndexIndexMappingSegment, or which is greater than or equal to the CharacterIndex
-of the last IndexIndexMappingSegment [VAR[segment]], then the character is corresponding to the
-character (the last CharacterIndex of [VAR[segment]]) + [VAR[ci]] - 
-(the first CharacterIndex of [VAR[segment]])
-in the document identified by the DocumentIndex of [VAR[segment]].
+[29] The [DFN[relevant segment]] of a mapping
+for a CharacterIndex is the result of these steps:
+[FIG(steps)[
+= [32] Let [VAR[result]] be a segment (0, -1, 0).
+= [30] For each segments in the mapping, in order:
+== [31] If the first CharacterIndex of the segment is greater than the given CharacterIndex,
+return [VAR[result]] and abort these steps.
+== [33] Otherwise, set the item to [VAR[result]].
+= [34] Return [VAR[result]].
+]FIG]
+
+[26] The [DFN[mapped (DocumentIndex, CharacterIndex) pair]] of a character obtained by an
+IndexIndexMapping is the pair of DocumentIndex and the last CharacterIndex
+of the relevant segment of the IndexIndexMapping for the
+CharacterIndex identifying the character.
 
 ;; [28] Note that if there are more than one IndexIndexMappingSegments whose first
 CharacterIndexes are equal, the earlier IndexIndexMappingSegment is ignored.
+
+* IndexLCMappingSegment
+
+[36] An IndexLCMappingSegment is an array reference whose items are
+a CharacterIndex, a LineNumber, and a ColumnNumber.
+
+[37] It represents that the character at the CharacterIndex has
+LineNumber and ColumnNumber.
+
+* IndexLCMapping
+
+[38] An IndexLCMapping is an array reference whose items are zero or more
+IndexLCMappingSegments.
+
+[39] The CharacterIndex in an earlier IndexLCMappingSegment in the IndexLCMapping
+must be less than or equal to the CharacterIndex of a later IndexLCMappingSegment.
+
+[40] It defines a mapping from the CharacterIndex of a character to
+a pair of LineNumber and ColumnNumber.
+
+[41] The [DFN[mapped (LineNumber, ColumnNumber) pair]] of a character obtained by an
+IndexLCMapping is the pair of LineNumber and the ColumnNumber
+of the relevant segment of the IndexLCMapping for the CharacterIndex identifying the character.
+
+;; [42] Note that if there are more than one IndexLCMappingSegments whose first
+CharacterIndexes are equal, the earlier IndexLCMappingSegment is ignored.
 
 * Web IDL Perl binding extensions
 
