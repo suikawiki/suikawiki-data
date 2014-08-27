@@ -1,10 +1,30 @@
+[445] [DFN[[CODE(HTTP)[[[406]]]]]] ([DFN[[[Not Acceptable]]]])
+は、[[内容折衝]]のために指定された条件を満たす[[応答]]を返せないことを表します。
+
+[446] 一般的には[[内容折衝]]の条件を満たすものがなくても、
+いずれか近いものか、既定のものを [CODE(HTTP)[[[200]]]] などで返した方が便利と思われます。
+この[[状態符号]]は通常使用するべきではありません。
+
+[EG[
+[447] 例えば[[日本語]]しかないサイトに [CODE(HTTP)@en[[[Accept-Language:]] [[en]]]]
+でアクセスした時、 [CODE(HTTP)[[[406]]]] を返すより、[[日本語]]のページを返すべきです。
+[[日本語]]しかないというエラーメッセージはほとんど意味がありません。
+]EG]
+
 * 仕様書
 
 [REFS[
+- [441] '''[CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-08-07 05:54:02 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-6.5.6>'''
 - [416] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-5.3.2>
 - [411] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-5.3.3>
 - [35] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-5.3.5>
 ]REFS]
+
+* 意味
+
+[442] [CODE(HTTP)[[[406]]]] は、[[対象資源]]において [[proactive negotiation]]
+の[[ヘッダー]]によると[[利用者エージェント]]が受け付けられる[[表現]]を持っておらず、
+[[鯖]]は既定の[[表現]]を返すつもりがないことを表します [SRC[>>441]]。
 
 * 文脈
 
@@ -17,7 +37,7 @@
 無視して[[内容折衝]]の対象でないものとして処理することもできます [SRC[>>411]]。
 
 [42] [[起源鯖]]は、利用可能な[[表現]]のいずれの[[言語]]も指定された[[言語範囲]]に[[一致]]しない場合には、
-[CODE(HTTP)@en[[[Accept-Encoding:]]]] [[ヘッダー]]を無視して[[内容折衝]]の対象でないものとして扱うこともできますし、
+[CODE(HTTP)@en[[[Accept-Language:]]]] [[ヘッダー]]を無視して[[内容折衝]]の対象でないものとして扱うこともできますし、
 [CODE(HTTP)[[[406]]]] [[応答]]を送ることもできます [SRC[>>35]]。
 ただし [CODE(HTTP)[[[406]]]] [[応答]]を送ってしまうと、
 ([[翻訳]]ソフトウェアを使うなど) [[利用者]]が何らかの形で使うことができるかもしれない内容にアクセスできなくなってしまいますから、
@@ -26,8 +46,24 @@
 ;; [437] [CODE(HTTP)@en[[[Accept-Encoding:]]]] については [CODE(HTTP)[[[406]]]]
 を返すことは[[起源鯖]]の動作の候補として明記されていません。
 
-* From specifications
-** RFC 2068 & 2616 (HTTP/1.1) 10.4.7 406 Not Acceptable
+* 構文
+
+[443] [[鯖]]は、利用可能な[[表現]]の性質と対応する識別子の一覧を含んだ [[payload]]
+を[[生成]]して、[[利用者]]や[[利用者エージェント]]が最適なものを選べるようにする[['''べきです''']]
+[SRC[>>441]]。
+
+* 処理モデル
+
+[444] [[利用者エージェント]]は、 >>443 のリストから最適なものを自動的に選んで構いません。
+[SRC[>>441]]
+
+* 歴史
+
+[FIG(quote)[
+[FIGCAPTION[
+[440] RFC 2068 & 2616 (HTTP/1.1) 10.4.7 406 Not Acceptable
+]FIGCAPTION]
+
 > The resource identified by the request is only capable of generating
 response entities which have content characteristics not acceptable
 according to the accept headers sent in the request.
@@ -64,8 +100,13 @@ of more data and query the user for a decision on further actions.
 利用者エージェントは、やってくる応答が受入れ可能であるか、その頭を調べることをお勧めします。
 応答が受入れ不能であったなら、利用者エージェントはそれ以上のデータの受入れを一時的に停止し、
 利用者に以後の動作の決定を求める'''べきです'''。
+]FIG]
 
-** RFC 2324 (HTCPCP/1.0) 2.3.1 406 Not Acceptable
+[FIG(quote)[
+[FIGCAPTION[
+[439] RFC 2324 (HTCPCP/1.0) 2.3.1 406 Not Acceptable
+]FIGCAPTION]
+
 >This return code is normally interpreted as "The resource identified
 by the request is only capable of generating response entities which
 have content characteristics not acceptable according to the accept
@@ -88,7 +129,14 @@ additions.
 要求である場合を除いて、応答は受入れ可能な珈琲添加物の一覧を含んだ実体を含める'''べきです'''。
 
 実際には、ほとんどの自動化珈琲ポットは現在の所添加物を提供できません。
+]FIG]
+[REFS[
+- [438] [CITE@en[RFC 7252 - The Constrained Application Protocol (CoAP)]]
+( ([TIME[2014-06-27 00:59:37 +09:00]] 版))
+<http://tools.ietf.org/html/rfc7252#section-5.9.2.7>
+]REFS]
 
-** RFC の部分の License
-[[RFCのライセンス]]参照。
-* メモ
+* 実装
+
+[448] [[Apache]] は[[内容折衝]]で[[クライアント]]が指定した条件を満たせない時、
+[CODE(HTTP)[[[406]]]] を返します。
