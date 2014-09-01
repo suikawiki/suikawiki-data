@@ -2,11 +2,22 @@
 [[URL]] に[[要求]]を送信することを求めること、あるいはそのような[[応答]]のことを、
 [DFN[[RUBYB[[[リダイレクト]]]@en[redirect]]]]といいます。
 
+[FIG(sequence)[
+:C:[[利用者エージェント]]
+:S:[[起源鯖]]
+:S2:[[起源鯖]]'
+:C -> S:[[要求]]
+:S -> C:[CODE(HTTP)[[[3xx]]]] [CODE(HTTP)@en[[[Location:]] [VAR[URL]]]]
+:C -> S2:新 [VAR[URL]] に[[要求]]
+:S2 -> C:[[応答]]
+]FIG]
+
 * 仕様書
 
 [REFS[
 - [306] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-08-07 05:54:02 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-6.4>
 - [518] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-4.3.4>
+- [534] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-08-07 05:54:02 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-7.1.2>
 ]REFS]
 
 * 構成要素
@@ -14,6 +25,12 @@
 [305] [[HTTPリダイレクト]]は、次の[[プロトコル要素]]により構成されます。
 [FIG(short list)[
 - [[状態符号]] [CODE(HTTP)[[[3xx]]]]
+-- [CODE(HTTP)[[[300]]]]
+-- [CODE(HTTP)[[[301]]]]
+-- [CODE(HTTP)[[[302]]]]
+-- [CODE(HTTP)[[[303]]]]
+-- [CODE(HTTP)[[[307]]]]
+-- [CODE(HTTP)[[[308]]]]
 - [CODE(HTTP)@en[[[Location:]]]] [[ヘッダー]]
 ]FIG]
 
@@ -31,7 +48,26 @@
 適切な [CODE(HTTP)[[[3xx]]]] [[応答]]を送信し[['''なければなりません''']]。
 その場合[[利用者エージェント]]は[[リダイレクト]]に従うか選ぶことができます。 [SRC[>>518]]
 
+[539] 新旧の[[要求]]と[[応答]]は、互いに完全に独立したものです。 [[HTTP]]
+プロトコルとしては状態は保持していません。新旧[[要求]]を異なる
+[[HTTP接続]]を使って送信しても何ら問題ありませんし、
+新旧[[要求]]の送信先の[[鯖]]がそもそも異なっているかもしれません。
+
+* 相対 URL
+
+[538] [CODE(HTTP)@en[[[Location:]]]] [[ヘッダー]]には[[相対URL]]
+を指定することもできます。この値は[[実効要求URL]]を[[基底URL]]
+として[[解決]]されます。
+
+;; [CODE(HTTP)@en[[[Location:]]]] を参照。
+
 * リダイレクトループ
+
+[535] [[鯖]]は、[[リダイレクト]]先として[[リダイレクト]]を返す [[URL]]
+を指定しても構いません。
+
+[536] [[利用者エージェント]]は[[リダイレクト]]により[[要求]]を改めて送信した結果が[[リダイレクト]]の場合も、
+更にその[[リダイレクト]]に従うことが期待されています。
 
 [523] [[クライアント]]は、[[リダイレクト]]の循環を検出して対処する[['''べきです''']]
 [SRC[>>518]]。
@@ -41,6 +77,131 @@
 有害でしかありません。
 
 ;; [525] [[RFC 2068]] は最大5回までとしており、注意が必要 [SRC[>>518]] です。
+
+* 素片識別子
+
+[540] [[素片識別子]]が適切で無い場面もあるとして、
+[CODE(HTTP)[[[201]]]] を例に挙げています [SRC[>>534]] が、
+なぜか禁止はされていません。また [CODE(HTTP)[[[201]]]]
+以外にも不適切な場面が存在することを暗示していますが、
+実際に何が該当するのかは不明です。
+
+[537] [[利用者エージェント]]は、[CODE(HTTP)[[[3xx]]]] [[応答]]の
+[CODE(HTTP)@en[[[Location:]]]] に[[素片識別子]]が含まれていない場合、
+[[要求対象]]を[[生成]]するのに使った[[URL]]の[[素片識別子]]を継承するものとして処理しなければ[['''なりません''']]
+[SRC[>>534]]。
+
+[41] <http://foo.example/bar#fragment1> を取り寄せる時に、次のようになったとします。
+
+[PRE[
+C: GET /bar HTTP/1.1
+C: Host: foo.example
+C: 
+S: 302 Found HTTP/1.1
+S: Location: http://foo.example/hoge
+S: 
+]PRE]
+
+この時、 [[UA]] の望ましい動作は、 ([[WWWブラウザ]]であれば)
+<http://foo.example/hoge> を要求し、その #fragment1 を表示することです。
+
+[42] 同じ例で、次のような応答があったとしましょう。
+[PRE[
+S: 302 Found HTTP/1.1
+S: Location: http://foo.example/hoge#fragment2
+S: 
+]PRE]
+
+この時 WWW ブラウザは、 <http://foo.example/hoge#fragment2>
+を表示し、 #fragment1 のことは忘れます。
+
+[44] >>42 で、「アドレス・バー」のような [[UI]] 部分をどうするかという問題がありますね。
+[[301]] なら新しい (#fragment2 の) URI にしてしまえばいいですが、 [[307]]
+の時はどうなんでしょう。元の #fragment1 にしておくのと、 #fragment*
+は削ってしまうのと2種類考えられますが。
+
+[43] 但し実際には、この #fragment の扱いについては仕様・実装がぐちゃぐちゃです。
+できることならば [CODE[Location]] 欄で素片識別子を使わないといけないようなことにならないようによく考えておくべきでしょう。[WEAK[それでも使わざるを得なくなったときは仕方ないですし、 UA の挙動なんて飾りです、偉い人には分からなくて結構と開き直るのも場合によってはありでしょう。]]
+
+
+** 仕様書の類の言及
+
+[24] >>20,>>5 [[RFC2396]] ([[URI]]) によると [CODE(ABNF)[absoluteURI]] は [CODE(ABNF)[fragment]] を含みません。従って [[HTTP/1.1]] と CGI で仕様が不整合な気がします。
+
+実際のところ [CODE[fragment]] つき URI を送っても多くの URI は解釈する気がしますが、仕様的には無理ということでいいですか?
+
+[35] >>24 ''HTTP/1.1 Specification Errata'' 
+[DEL[<http://world.std.com/~lawrence/http_errata.html#location-fragments>]] [INS[<http://purl.org/NET/http-errata#location-fragments>]]
+に載ってました。 (こんなの知らなかった。) >>6 
+の通り、 '''HTTP でも URI の後に #fragment をつけることが出来ます'''。
+
+[36] とはいえ、知らない実装者も居るだろうな。。。要注意ですね。
+
+[37] >>35 の文書から、該当部分の注記。
+
+> There are circumstances in which a fragment identifier in a Location URL would not be appropriate:
+- With a 201 Created response, because in this usage the Location header specifies the URL for the entire created resource.
+- With a 300 Multiple Choices, since the choice decision is intended to be made on resource characteristics and not fragment characteristics.
+- With 305 Use Proxy. 
+
+> At present, the behavior in the case where there was a fragment with the original URI, e.g.: http://host1.example.com/resource1#fragment1 where /resource1 redirects to http://host2.example.com/resource2#fragment2 is 'fragment1' discarded? Do you find fragment2 and then find fragment1 within it? We don't have fragment combination rules.
+
+[CODE[Location]] URL 中での素片識別子が適切でない場面があります。
+- [[201]] Created (作成しますた) 応答。 [CODE[Location]]
+頭を使用して作成された資源全体を URL を指定するものだから。
+- [[300]] Multiple Choices (複数選択肢)。選択決定は資源の性質についてなされるもので素片の性質についてではないから。
+- [[305]] Use Proxy (串使って)。
+
+現在、元の URI に素片がある場合、例えば 
+<http://host1.example.com/resource1#fragment1> で [SAMP[/resource1]]
+が <http://host2.example.com/resource2#fragment2>
+に redirect している時に「fragment1」は捨てられているのでしょうか?
+[SAMP[fragment2]] を探してそれから [SAMP[fragment2]] を探すのでしょうか?
+我々は素片組み合わせ規則は持っていません。
+
+[38] >>37 の後半の問題、実際のところどうなんだろう?
+どっちにしる!とも言いがたいよなあ。
+
+[39] ''Common User Agent Problems: Handle the fragment identifier of a URI when the HTTP request is redirected.'' <http://www.w3.org/TR/cuap#cp-fragment>
+
+この [[W3C]] [[NOTE]] は、 #fragment に対応していない UA
+があるけどちゃんとしる! と言うと共に、 >>37-38 問題について、 #fragment2 
+にしる! と言っています (小文字 must)。
+
+[310] [CITE@en[Web Applications 1.0 r6322     Make Facebook work. See http://blogs.msdn.com/b/ieinternals/archive/2011/05/17/url-fragments-and-redirects-anchor-hash-missing.aspx]]
+( ([TIME[2011-07-24 11:28:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=6321&to=6322>
+
+[311] [CITE@en[URL Fragments and Redirects - EricLaw's IEInternals - Site Home - MSDN Blogs]]
+( ([TIME[2011-07-24 12:07:00 +09:00]] 版))
+<http://blogs.msdn.com/b/ieinternals/archive/2011/05/17/url-fragments-and-redirects-anchor-hash-missing.aspx>
+
+[312] [CITE@en[[[draft-bos-http-redirect-00]] - Handling of fragment identifiers in redirected URLs]]
+([TIME[2011-08-17 18:10:19 +09:00]] 版)
+<http://tools.ietf.org/html/draft-bos-http-redirect-00>
+
+** 実装について
+
+[58]
+[[WinIE 6.0]] (もしかしたら以前の版も。) は redirect された時の [CODE(HTTP)[Location]] URI 参照に素片識別子がついていると直後の再要求時にその素片識別子ごと [CODE(ABNF)[Request-URI]] にして送ってしまうみたいです。
+([[名無しさん]] [WEAK[2004-05-03 04:37:14 +00:00]])
+
+
+* HTTP 以外の URL
+
+@@ ...
+
+* リダイレクトの開始
+
+[309] [[WinIE8]]、[[Opera]]、[[Chrome]]、[[Firefox]] のどの [[Webブラウザー]]も、
+[[リダイレクト]]している [[HTTPメッセージ]]全体が到着するのを待たず、
+[[頭部]]を受け取り次第すぐに[[リダイレクト]]先の [[URL]]
+の取得をはじめるようです。
+
+;; <http://suika.fam.cx/~wakaba/-temp/test/http/redirect/delayed.cgi> ([[頭部]]はすぐに返すものの、[[応答本体]]の生成が終わるまで100秒かかる例)。
+
+;; [CODE(HTTP)@en[[[Location:]]]] [[頭欄]]を受け取り次第すぐに次に進むのか、
+[[頭部]]をすべて受け取り終わるまで進まないのかは未検証です。
 
 * 歴史
 
@@ -84,6 +245,12 @@
 
 ;; [CODE(HTTP)[[[3xx]]]] の項を参照。
 
+[542] [CODE(HTTP)[[[201]]]] でも [CODE(HTTP)@en[[[Location:]]]]
+を使いますが、本項の[[HTTPリダイレクト]]とは異なります。
+
+[541] [[HTTP]] には他に [CODE(HTTP)@en[[[Content-Location:]]]] や
+[CODE(HTTP)@en[[[Link:]]]] もありますが、本項の [[HTTPリダイレクト]]とは異なります。
+
 [526] [[CGI]] には[[局所リダイレクト応答]]と[[クライアントリダイレクト応答]]がありますが、
 [[クライアントリダイレクト応答]]が[[HTTP応答]]における[[リダイレクト]]に相当します。
 
@@ -117,3 +284,17 @@
 [533] [CITE[Bug 60440 – ''''''[''''''Qt'''''']'''''' Redirection of HTTP POST (3xx) incorrectly includes original POST data]]
 ( ([TIME[2014-08-25 14:34:12 +09:00]] 版))
 <https://bugs.webkit.org/show_bug.cgi?id=60440>
+
+[330] [[au]] の[[ガラケー]]だと[[素片識別子]]が入っていると [CODE(HTTP)@en[[[404]]]] になります。
+
+[406] [CITE[Location: javascript:alert(1) が返ってきた時のブラウザの動作 - Qiita ''''''[''''''キータ'''''']'''''']]
+( ([TIME[2013-10-31 03:05:25 +09:00]] 版))
+<http://qiita.com/ooooooo_q/items/1f0c2c64413495c46e6b>
+
+[410] [CITE@en[HTTP - WHATWG Wiki]]
+( ([TIME[2013-12-19 01:12:07 +09:00]] 版))
+<http://wiki.whatwg.org/wiki/HTTP#Location_header>
+
+[423] [CITE@en[URL Fragments and Redirects - IEInternals - Site Home - MSDN Blogs]]
+( ([TIME[2014-08-31 15:42:14 +09:00]] 版))
+<http://blogs.msdn.com/b/ieinternals/archive/2011/05/17/url-fragments-and-redirects-anchor-hash-missing.aspx>
