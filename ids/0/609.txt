@@ -4,9 +4,25 @@
 * 仕様書
 
 [REFS[
+- [509] '''[CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-08-07 05:54:02 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-7.1.3>'''
 - [507] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-08-07 05:54:02 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-6.5.11>
 - [505] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-08-07 05:54:02 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-6.6.4>
 ]REFS]
+
+* 意味
+
+[510] [CODE(HTTP)@en[[[Retry-After:]]]] [[ヘッダー]]は、
+[[利用者エージェント]]が続きの[[要求]]を行う前に待つ[RUBYB[べき]@en[ought to]]長さを示します。
+[SRC[>>509]]
+
+[512] [CODE(HTTP)[[[3xx]]]] [[応答]]では、[[リダイレクト]]先の[[要求]]を発行する前に[[利用者エージェント]]が待つ[RUBYB[べき]@en[ought to]]最低時間を示します。
+[SRC[>>509]]
+
+[5] [CODE(HTTP)[[[503]]]] [[応答]]では、[[サービス]]が利用不能であると思われる時間を示します。
+[SRC[>>509]]
+
+;; [516] それ以外の[[状態符号]]では意味は定義されていませんが、
+なぜか特に禁止もされていません。
 
 * 文脈
 
@@ -20,22 +36,19 @@
 
 * 構文
 
-[506] [CODE(HTTP)@en[[[Retry-After:]]]] [[応答ヘッダー]]の[[欄値]]としては、
+[506] [CODE(HTTP)@en[[[Retry-After:]]]] [[ヘッダー]]の値は、
 その時刻以降に再試行を開始するべき[[絶対時刻]]を[[HTTPの日付形式]]として指定するか、
-または待つべき相対的な[[時間]]を[[デルタ秒]]として[[整数]]で指定するかのいずれかを使えます。
+または待つべき相対的な[[時間]]を[[デルタ秒]]として[[整数]]で指定するかのいずれかです [SRC[>>509]]。
 
-* 503 での用法
-
-[5]
-[[HTTP]] [CODE(HTTP)[[[503]]]] (サービス利用不能) は、過負荷などで一時的にサービスが利用できなくなっているときに鯖が返してもよいことになっている状態符号です。
-
-そして、復旧する (までの) 時間が予測できるのであれば、 [CODE(HTTP)[Retry-After]] 欄を使ってよいことになっています。
-([[名無しさん]])
-
-[[#comment]]
-
+[FIG(railroad)[
+= |
+== [CODE(ABNF)@en[[[HTTP-date]]]]
+== [CODE(ABNF)@en[[[delay-seconds]]]]
+]FIG]
 
 * 3xx での用法
+
+;; >>512
 
 [1] 実際 redirect で2分とか待たされたら嫌かも。
 その間 [[UA]] は、利用者は、何をしてればいいんやねん?
@@ -49,12 +62,12 @@
 [CODE(HTTP)[[[Refresh]]]] で数秒後に飛ばすというのをやってますけど、
 それの標準化された代替として使えるかな??
 
-[[#comment]]
+[515] 実装がこれに対応しているという話は聞いたことがありませんし、
+[[鯖]]で使われているという話も聞いたことがありません。
 
+* 歴史
 
-* 仕様書から
-
-[FIG[
+[FIG(quote)[
 [FIGCAPTION[
 [505] RFC 1945 (HTTP/1.0) D.2.8; RFC 2068 (HTTP/1.1) 14.38; RFC 2616 (HTTP/1.1) 14.37 Retry-After
 ]FIGCAPTION]
@@ -84,15 +97,33 @@ after the time of the response.
 
 後者の例では、間隔は2分です。
 ]INS]
+]FIG]
 
-* RFC の部分の License
+* 例
 
-[[RFCのライセンス]]
+[FIG[
+[FIGCAPTION[
+[513] [[絶対時刻]]を指定した例 [SRC[>>509]]
+]FIGCAPTION]
+
+[PRE(HTTP code)[
+Retry-After: Fri, 31 Dec 1999 23:59:59 GMT
+]PRE]
+]FIG]
+
+[FIG[
+[FIGCAPTION[
+[514] [[相対時刻]]を指定した例 [SRC[>>509]]
+]FIGCAPTION]
+
+[PRE(HTTP code)[
+Retry-After: 120
+]PRE]
 ]FIG]
 
 * メモ
 
-- [3] [CODE(HTTP)[[[423]]]] (固定済) あたりにも [CODE(HTTP)[Retry-After]] が使えてもいい気がするのだけどどうよ?
+[3] [CODE(HTTP)[[[423]]]] (固定済) あたりにも [CODE(HTTP)[Retry-After]] が使えてもいい気がするのだけどどうよ?
 
 [4]
 >>3 Lock は他の処理との相互作用だから、予測がつかない、ってことかもしれませんけど、経験的に予想できることもありますから、使ってもいいかもしれませんね。
