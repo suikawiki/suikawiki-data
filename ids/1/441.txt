@@ -1,28 +1,98 @@
+[17] [DFN[[CODE(HTTP)@en[[[Allow:]]]]]] [[ヘッダー]]は、
+[[対象資源]]で使うことができる[[要求メソッド]]の一覧を表しています。
+
+[18] この[[ヘッダー]]は [CODE(HTTP)[[[405]]]] [[応答]]などで用いられます。
+
 * 仕様書
 
 [REFS[
-- [206] '''[CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-4.3.7>'''
+- [4] '''[CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-08-07 05:54:02 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-7.4.1>'''
+- [206] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-4.3.7>
+- [19] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-08-07 05:54:02 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-6.5.5>
 ]REFS]
 
+* 意味
+
+[5] [CODE(HTTP)@en[[[Allow:]]]] [[ヘッダー]]は、[[対象資源]]が対応していると[[広告]]される[[要求メソッド]]の一覧を表しています
+[SRC[>>4]]。
+
+[9] なお、 [CODE(HTTP)@en[[[Allow:]]]] [[ヘッダー]]の値はその時点で[[鯖]]が認めると考える[[要求メソッド]]の一覧であって、
+その後の任意の時点で同じく認められているという保証はありません。
+認められる[[要求メソッド]]は時間の経過とともに変化しても構いません。
+
+;; [10] また [CODE(HTTP)@en[[[Allow:]]]] の記述と実際に認められる[[要求メソッド]]が違っている可能性もあります。
+もっともそのような実装は [[HTTP]] に適合しているとは言いがたく、
+不具合というべきでしょう。 ([CODE(HTTP)@en[[[Allow:]]]] を返した直後に認められる[[要求メソッド]]が変化したと主張することはできますが、
+常識的にはそのような主張を認めるべきではないでしょう。)
+
+* 構文
+
+[6] この[[ヘッダー]]の値は、[[要求メソッド]]名の0個以上の[[リスト]]
+([CODE[#]]) です [SRC[>>4]]。
+
+[FIG(railroad)[
+= ?
+== [[メソッド名]]
+== *
+=== [[OWS]]
+=== [CODE[[[,]]]]
+=== [[OWS]]
+=== [[メソッド名]]
+]FIG]
+
+[11] 空の [CODE(HTTP)@en[[[Allow:]]]] [[ヘッダー]]は、どの[[要求メソッド]]も認められないことを表します。
+これは設定によって一時的に[[資源]]が無効化されているときに起こり得ます。 [SRC[>>4]]
+
+;; [12] 複数 [CODE(HTTP)@en[[[Allow:]]]] [[ヘッダー]]がある場合、
+そのいずれもが空の場合を指していると推測されます。
+
+;; [13] [[鯖]]は [CODE(HTTP)@en[[[GET]]]] と [CODE(HTTP)@en[[[HEAD]]]]
+の[[実装]]が要求されていますが、[[対象資源]]が対応している必要はなく、
+どの[[要求メソッド]]に対しても [CODE(HTTP)[[[405]]]]
+を返すことはあり得るようです。
+
 * 文脈
+
+[406] [[起源鯖]]は、 [CODE(HTTP)[[[405]]]] [[応答]]で [CODE(HTTP)@en[[[Allow:]]]]
+[[ヘッダー]]を[[生成]]しなければ[['''なりません''']] [SRC[>>4, >>19]]。
+
+;; [20] これは実際には守られていないこともあるようです。
+
+[8] [[起源鯖]]は、それ以外でも [CODE(HTTP)@en[[[Allow:]]]] [[ヘッダー]]を[[生成]]して構いません
+[SRC[>>4]]。
+
+[407] [CODE(HTTP)[[[501]]]] [[応答]]で [CODE(HTTP)@en[[[Allow:]]]] 
+[[ヘッダー]]が使われることがありますが、必須とはされていません。
 
 [212] [[鯖]]は、 [CODE(HTTP)@en[[[OPTIONS]]]] [[要求]]に対して成功の[[応答]]を帰す場合には、
 [[鯖]]が実装していて[[対象資源]]に適用できるオプション機能を示す[[ヘッダー]]
 (例えば [CODE(HTTP)@en[[[Allow:]]]]) を送信する[['''べきです''']]
 [SRC[>>206]]。
 
-* Allow vs Allowed
-- [1] [HTTP92] では、 [CODE(HTTP)[Allow:]] という記述と [CODE(HTTP)[[[Allowed]]:]] という記述が混じっています。
-- [2] 歴史的には [CODE(HTTP)[Allow:]] が正しいです。
+[7] この[[ヘッダー]]は、複数個指定できます。
 
-* 状態符号
+* 処理モデル
 
-[406] [CODE(HTTP)@en[[[Allow:]]]] 欄は [CODE(HTTP)[[[405]]]] [[応答]]に存在しなければ[['''なりません''']]。
+[14] [[串]]は [CODE(HTTP)@en[[[Allow:]]]] [[ヘッダー]]を変更しては[['''なりません''']]
+[SRC[>>4]]。
 
-[407] [CODE(HTTP)[[[501]]]] でも [CODE(HTTP)@en[[[Allow:]]]] [[ヘッダー]]が使われることがあります。
+;; [15] [[串]]は[[要求メソッド]]に関わらない一般的な方法で[[メッセージ]]を処理できますから、
+「対応する[[要求メソッド]]」という概念が存在していません。
 
-* 仕様書から
-** RFC 1945 (HTTP/1.0) 10.1; RFC 2068 (HTTP/1.1) 14.7 Allow
+* 歴史
+
+** [CODE(HTTP)@en[Allowed:]] ヘッダー
+
+[1] [[HTTP92]] では、 [CODE(HTTP)[Allow:]] という記述と 
+[DFN[[CODE(HTTP)@en[[[Allowed:]]]]]] という記述が混じっています。
+
+[2] 歴史的には [CODE(HTTP)[Allow:]] が正しいです。
+
+[FIG(quote)[
+[FIGCAPTION[
+[16] RFC 1945 (HTTP/1.0) 10.1; RFC 2068 (HTTP/1.1) 14.7 Allow
+]FIGCAPTION]
+
 > The Allow entity-header field lists the set of methods supported by
 the resource identified by the Request-URI. The purpose of this field
 is strictly to inform the recipient of valid methods associated with
@@ -85,15 +155,7 @@ other means of communicating with the origin server.
 サーバー全体としてどの method を実装しているかを記述するのに、
 [CODE(HTTP)[[[Public]]]] 応答頭欄を使っても'''構いません'''。
 ]DEL]
-
-** RFC の部分の License
-[[RFCのライセンス]]
-
-* 関連
-
-[3] [CODE(HTTP)@en[[[Allow]]]] に [CODE(HTTP)@en[[[PATCH]]]] が含まれる場合、
-[CODE(HTTP)@en[[[Accept-Patch]]]] [[頭欄]]も[[応答]]に含める[['''べきです''']]
-[SRC[[[RFC 5789]]]]。
+]FIG]
 
 [502] [CITE@en[RFC 3507 - Internet Content Adaptation Protocol (ICAP)]]
 ( ([TIME[2014-06-08 07:17:07 +09:00]] 版))
@@ -102,3 +164,9 @@ other means of communicating with the origin server.
 [503] [CITE@en[RFC 3507 - Internet Content Adaptation Protocol (ICAP)]]
 ( ([TIME[2014-06-08 07:17:07 +09:00]] 版))
 <http://tools.ietf.org/html/rfc3507#section-4.6>
+
+* 関連
+
+[3] [CODE(HTTP)@en[[[Allow]]]] に [CODE(HTTP)@en[[[PATCH]]]] が含まれる場合、
+[CODE(HTTP)@en[[[Accept-Patch]]]] [[頭欄]]も[[応答]]に含める[['''べきです''']]
+[SRC[[[RFC 5789]]]]。
