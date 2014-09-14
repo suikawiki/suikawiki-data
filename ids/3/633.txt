@@ -1,7 +1,74 @@
-* 仕様書から
+[14] [DFN[[CODE(HTTP)@en[[[If-Match:]]]]]] [[ヘッダー]]は、
+[[起源鯖]]の[[資源]]が指定した条件に[[一致]]する場合のみ処理を実行するべきという[[条件付き要求]]であることとその条件を表します。
 
+* 仕様書
 
-** RFC 2068 (HTTP/1.1) 14.25; RFC 2616 (HTTP/1.1) 14.24 If-Match
+[REFS[
+- [3] [CITE@en[RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests]] ([TIME[2014-09-11 10:02:44 +09:00]] 版) <https://tools.ietf.org/html/rfc7232#section-3.1>
+]REFS]
+
+* 意味
+
+[6] [CODE(HTTP)@en[[[If-Match:]]]] [[ヘッダー]]は、
+[[要求メソッド]]を[[条件付き]]とするものです [SRC[>>3]]。
+[[対象資源]]が指定された条件に一致する時に[[要求]]で指定された処理を実行するべきことを表します。
+
+[15] [CODE(HTTP)@en[[[If-Match:]]]] は、複数の[[利用者エージェント]]が同じ[[資源]]を並列に操作するかもしれない場合の上書き事故
+(「[[lost update]]」問題) を防ぐために状態を変更する [CODE(HTTP)@en[[[POST]]]]、
+[CODE(HTTP)@en[[[PUT]]]]、[CODE(HTTP)@en[[[DELETE]]]] のような[[メソッド]]と併用されることが多いです。
+[SRC[>>3]]
+
+[16] [CODE(HTTP)@en[[[If-Match:]]]] は[[安全メソッド]]で、
+[[選択された表現]]の一部または全部が既に蓄積されている時に[[要求]]を中断するために使うこともできます
+[SRC[>>3]]。
+
+* 構文
+
+[9] [CODE(HTTP)@en[[[If-Match:]]]] の値は、 [CODE[[[*]]]] か、
+または1つ以上の[[実体タグ]]の[[リスト]] ([CODE[#]]) です [SRC[>>3]]。
+
+[FIG(railroad)[
+= |
+== [CODE[[[*]]]]
+== =
+=== [[実体タグ]]
+=== *
+==== [[OWS]]
+==== [CODE[[[,]]]]
+==== [[OWS]]
+==== [[実体タグ]]
+]FIG]
+
+* 処理モデル
+
+[17] [[起源鯖]]は、 [CODE(HTTP)@en[[[If-Match:]]]] が指定されていれば、
+[[要求メソッド]]を処理する前に条件を評価しなければ[['''なりません''']] [SRC[>>3]]。
+条件に一致しなければ、[[要求メソッド]]の処理を行っては[['''なりません''']] [SRC[>>3]]。
+
+[7] [CODE(HTTP)[*]] が指定された時は、[[対象資源]]が最低1つ現在の[[表現]]を有していれば、
+条件を満たします [SRC[>>3]]。
+
+[8] [[実体タグ]]が指定された時は、そのいずれかが[[対象資源]]の現在の[[表現]]に一致すれば、
+条件を満たします。[[起源鯖]]は[[強い比較]]を使わなければ[['''なりません''']]。 [SRC[>>3]]
+
+[18] [[起源鯖]]は、条件に一致しなかった場合、 [CODE(HTTP)[[[412]]]]
+[[応答]]を返すか、または [CODE(HTTP)[[[2xx]]]] を返さなければ[['''なりません''']] [SRC[>>3]]。
+
+[19] [CODE(HTTP)[[[2xx]]]] を返せるのは、状態の変更が[[要求]]されており、
+最終的な状態が既に[[対象資源]]の現在の状態に反映されていると[[起源鯖]]が確認できる場合です。
+すなわち、以前の[[応答]]が失われたか互換性のある変更が他の[[利用者エージェント]]により行われたかによって[[利用者エージェント]]の[[要求]]が既に成功していたことに気づいていないような場合です。
+ただしそのような場合には、同じ[[利用者エージェント]]が直前の[[要求]]を繰り返していると確認できる場合を除き、
+[[検証子ヘッダー]]を送っては[['''なりません''']] [SRC[>>3]]。
+
+[20] [CODE(HTTP)@en[[[If-Match:]]]] は蓄積された[[応答]]には適用できないので、
+[[キャッシュ]]や[[中間器]]は無視できます [SRC[>>3]]。
+
+* 歴史
+
+[FIG(quote)[
+[FIGCAPTION[
+[4] RFC 2068 (HTTP/1.1) 14.25; RFC 2616 (HTTP/1.1) 14.24 If-Match
+]FIGCAPTION]
 
 > The If-Match request-header field is used with a method to make it
 conditional. A client that has one or more entities previously
@@ -97,9 +164,12 @@ undefined by this specification.
 [CODE(HTTP)[If-Match]] 頭欄と [CODE(HTTP)[[[If-None-Match]]]]
 頭欄または [CODE(HTTP)[[[If-Modified-Since]]]] 頭欄のいずれかを持っている要求の結果は子の仕様書では未定義とします。
 ]INS]
+]FIG]
 
-
-** RFC 2326 12.22 If-Match
+[FIG(quote)[
+[FIGCAPTION[
+[5] RFC 2326 12.22 If-Match
+]FIGCAPTION]
 
 > See [H14.25].
 
@@ -121,13 +191,18 @@ any particular session description language.
 
 [2] 識別子は[RUBY[不透明] [opaque]]識別子で、従ってどの特定の
 session 記述言語にも依存しません。
-
-
-** RFC の部分の License
-
-[[RFCのライセンス]]
-
+]FIG]
 
 [413] [CITE@en[RFC 7252 - The Constrained Application Protocol (CoAP)]]
 ( ([TIME[2014-06-27 00:59:37 +09:00]] 版))
 <http://tools.ietf.org/html/rfc7252#section-5.10.8.1>
+
+* 例
+
+[10] 次のような例が挙げられています [SRC[>>3]]。
+
+[FIG(list)[
+- [11] [CODE(HTTP)[If-Match: "xyzzy"]]
+- [12] [CODE(HTTP)[If-Match: "xyzzy", "r2d2xxxx", "c3piozzzz"]]
+- [13] [CODE(HTTP)[If-Match: *]]
+]FIG]
