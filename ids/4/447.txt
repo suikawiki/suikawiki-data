@@ -1,1 +1,327 @@
-[[entity tag]]
+[1] [DFN[[RUBYB[[[実体タグ]]]@en[entity-tag]]]]は、[[表現]]の区別のための識別子です。
+
+* 仕様書
+
+[REFS[
+- [11] '''[CITE@en[RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests]] ([TIME[2014-09-11 10:02:44 +09:00]] 版) <https://tools.ietf.org/html/rfc7232#section-2.3>'''
+- [47] [CITE@en[RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests]] ([TIME[2014-09-11 10:02:44 +09:00]] 版) <https://tools.ietf.org/html/rfc7232#section-2.1>
+]REFS]
+
+* 意味
+
+[13] [DFN[[RUBYB[[[実体タグ]]]@en[entity-tag]]]]は、
+同じ[[資源]]の複数の[[表現]]が異なるかどうか、
+[[資源]]の状態が時を経て変化したり、
+[[内容折衝]]によって同時に[[妥当]]な[[表現]]が複数存在していたり、
+その両方が怒ったりしても区別できるような不透明な[[検証子]]です [SRC[>>11]]。
+
+[23] [[実体タグ]]は、修正日時の[[秒]]の精度では不十分だったり、
+修正日時を一貫して維持できなかったりして修正日時では不便な状況で、
+修正日時より信頼できる[[検証子]]として使うことができます [SRC[>>11]]。
+
+[33] [[実体タグ]]は[[強い検証子]]としても[[弱い検証子]]としても用いることができ、
+次に示す通り構文で区別します。
+
+[46] [[起源鯖]]は、以前の[[表現]]が現在の[[表現]]のかわりに使われてしまってはいけない時には弱い[[実体タグ]]を変更する[['''べきです''']]。
+[SRC[>>47]]
+
+* 構文
+
+[17] [[実体タグ]]は、 [CODE["]] で括られた文字列か、
+[CODE[W/]] の後に [CODE["]] で括られた文字列を続けたものです。
+[CODE["]] の間には、 [CODE["]] と [CODE(charname)[[[SPACE]]]]
+以外の[[ASCII文字]]を使うことができます。 [SRC[>>11]]
+
+;; [18] [CODE["]] の間には [[0x80]]-[[0xFF]] も [CODE(ABNF)@en[[[obs-text]]]] 
+として認められています [SRC[>>11]]。明記されていませんが、これらは[[生成]]は禁止しつつ、
+受信者は対応しなければならないという意図と推察されます。
+
+[FIG(railroad)[
+= ?
+== [CODE[W/]]
+= [CODE["]]
+= *
+== |
+=== [CODE(char)[[[U+0021]]]]
+=== [CODE(char)[[[U+0023]]]]-[CODE(char)[[[U+007E]]]]
+= [CODE["]]
+]FIG]
+
+[21] [[RFC 2616]] までは [CODE["]] の部分は[[引用文字列]]だったので、
+受信者によっては [CODE[[[\]]]] の unescape を行います。
+[[鯖]]は [CODE[[[\]]]] を避ける[RUBYB[べき]@en[ought to]]です。 [SRC[>>11]]
+
+[22] [[RFC 2616]] までは [CODE[W]] は[[小文字]]でも構文上構わないことになっていましたが、
+[[RFC 7232]] で特に説明もなく禁止されました。 [CODE["]] で括られた部分での[[空白]]や[[制御文字]]の使用も同じく禁止されています。
+
+;; [28] 元々 (不透明な識別子のはずなのに) なぜ正規化の問題が生じてしまう[[引用文字列]]を採用したのか、
+また他に例を見ない [CODE[W/]] のような奇妙な構文を採用したのか謎です。
+
+[32] 現実には、 [CODE["]] で括られていない文字列が使われることもあります。
+
+[29] [CODE[W/]] から始まるものは[[弱い検証子]]で、そうでないものは[[強い検証子]]です。
+残りの部分は不透明な識別子で、[[起源鯖]]が任意の方法で決定できます。
+
+;; [49] [[実体タグ]]を使って[[表現]]が同じか否かを判断するのは[[起源鯖]]だけです。
+[[クライアント]]や[[串]]は[[実体タグ]]を不透明な識別子としてそのまま送受信するだけです。
+従って[[起源鯖]]はどんな方法で[[実体タグ]]を構成しても構いませんし、
+その方法を明記する必要も手段もありません。
+
+[EG[
+[50] 例えば、版管理システムの版番号と[[内容折衝]]の版の識別子の組み合わせを使ったり、
+[[表現]]に[[ハッシュ関数]]を適用した結果を使ったり、
+秒以下の値も含んだ[[修正日時]]を使ったりできます。 [SRC[>>11]]
+]EG]
+
+;; [45] [[RFC 2295]] は[[透過内容折衝]]を実装する場合に[[鯖]]が用いるべき[DFN[[RUBYB[[[構造化実体タグ]]]@en[structured entity tag]]]]構文を定義していましたが、
+[[透過内容折衝]]は普及しませんでした。
+
+[30] [[起源鯖]]は[[実体タグ]]が[[強い検証子]]の性質を満たさない時は、
+[CODE[W/]] を指定しなければ[['''なりません''']] [SRC[>>11]]。
+
+* 文脈
+
+[35] [[実体タグ]]は [CODE(HTTP)@en[[[ETag:]]]] [[ヘッダー]]の他、
+[CODE(HTTP)@en[[[If-Match:]]]] [[ヘッダー]]や
+[CODE(HTTP)@en[[[If-None-Match:]]]] [[ヘッダー]]や
+[CODE(HTTP)@en[[[If-Range:]]]] [[ヘッダー]]でも使われます。
+
+* 比較
+
+[38] [[実体タグ]]の[[比較]]には、[DFN[[RUBYB[強い比較]@en[strong comparison]]]]と[DFN[[RUBYB[弱い比較]@en[weak comparison]]]]があります。
+[[強い比較]]は両者とも弱くなく、[[文字]]の列として一致する時[[等価]]とします。
+[[弱い比較]]は [CODE[W/]] の有無に関わらず、残りの部分が[[文字]]の列として一致する時[[等価]]とします。
+[SRC[>>11]]
+
+* プライバシー
+
+[15] [[実体タグ]]は[[クッキー]]の代用として濫用されることがあり、
+[[fingerprinting vector]] とみなされています [SRC[>>2624]]。
+
+[REFS[
+- [2624] [CITE[Fingerprinting – WebKit]]
+( ([TIME[2014-07-09 14:39:20 +09:00]] 版))
+<http://trac.webkit.org/wiki/Fingerprinting#v.HTTPETags>
+]REFS]
+
+* 歴史
+
+[FIG(quote)[
+[FIGCAPTION[
+[31] RFC 2068・2616 (HTTP/1.1) 3.11 Entity Tags
+]FIGCAPTION]
+
+> Entity tags are used for comparing two or more entities from the same
+requested resource. HTTP/1.1 uses entity tags in the ETag (section [DEL[14.20]] [INS[14.19]]), If-Match (section [DEL[14.25]] [INS[14.24]]), If-None-Match (section 14.26), and
+If-Range (section 14.27) header fields. The definition of how they
+are used and compared as cache validators is in section 13.3.3. An
+entity tag consists of an opaque quoted string, possibly prefixed by
+a weakness indicator.
+
+[DFN[[[実体札]]]]は、要求された同じ資源からの2つ以上の[[実体]]群を比較するのに使います。
+[[HTTP/1.1]] は実体札を [CODE(HTTP)[[[ETag]]]], [CODE(HTTP)[[[If-Match]]]], [CODE(HTTP)[[[If-None-Match]]]], [CODE(HTTP)[[[If-Range]]]] 各[[頭欄]]で使います。
+これらの頭欄を[[キャッシュ]][[検証子]]としてどう使用・比較するかの定義は13.3.3節にあります。
+一つの実体札は、一つの[[不透明]]な[[引用文字列]]で構成されます。
+頭に弱性指示子がつくこともあります。
+
+>
+- entity-tag = [ weak ] opaque-tag
+- weak       = "W/"
+- opaque-tag = quoted-string
+
+> A "strong entity tag" [DEL[may]] [INS[MAY]] be shared by two entities of a resource
+only if they are equivalent by octet equality.
+
+「[DFN[強い実体札]]」は、一つの資源の二つの実体が[[オクテット]]比較で同等である場合に限って両実体で共有しても'''構いません'''。
+
+> A "weak entity tag," indicated by the "W/" prefix, [DEL[may]] [INS[MAY]] be shared by
+two entities of a resource only if the entities are equivalent and
+could be substituted for each other with no significant change in
+semantics. A weak entity tag can only be used for weak comparison.
+
+「[DFN[弱い実体札]]」は、 [CODE(HTTP)[W/]] という接頭辞で示します。
+一つの資源の二つの実体が同等であり、意味上重大な変更を加えてしまうことなしに互いに代替することができるのであれば、
+両実体で共有しても'''構いません'''。弱い実体札は弱い比較の時だけ使うことができます。
+
+> An entity tag MUST be unique across all versions of all entities
+associated with a particular resource. A given entity tag value [DEL[may]] [INS[MAY]]
+be used for entities obtained by requests on different URIs [DEL[without implying anything about the equivalence of those entities]]. [INS[The use of the same entity tag value in conjunction with entities obtained by requests on different URIs does not imply the equivalence of those entities.]]
+
+実体札は、特定の資源に関連付けられているすべての[[実体]]のすべての版に渡って固有なものでなければ'''なりません'''。
+ある実体札値は、[DEL[それらの実体の同等性について何ら暗示することなしに、]]
+異なる URI についての要求群で得られる実体群について使用しても'''構いません'''。[INS[異なる URI についての要求群で得られる実体に同じ実体札値が使われていても、それらの実体が同等であることを暗示するわけではありません。]]
+]FIG]
+
+[FIG(quote)[
+[FIGCAPTION[
+[41] RFC 2295 (HTTP 透過内容折衝) 9.3 Assigning entity tags to variants
+]FIGCAPTION]
+
+> To allow for correct revalidation of transparently negotiated
+responses by clients, origin servers SHOULD generate all normal
+entity tags for the neighboring variant resources of the negotiable
+resource in such a way that
+
+クライアントが[[透過折衝応答]]を正しく再検証することができるように、
+起源サーバーは折衝可能資源の[[隣接変種資源]]についてのすべての通常の実体札を
+
+>
+- 1. the same tag is never used by two different variants,
+unless this tag labels exactly the same entity on all occasions,
+- 2. if one normal tag "X" is a prefix of another normal tag "XY",
+then "Y" must never be a semicolon followed by a variant list validator.
+
+- 2つの異なる変種について同じ札は絶対に使用しない。
+但しこの札がすべての場合に本当に同じ実体を札付けする場合を除く。
+- 通常の札 [SAMP(HTTP)[X]] が他の通常の札 [SAMP(HTTP)[XY]]
+の接頭辞であるなら、 [SAMP(HTTP)[Y]] はセミコロンとそれに続く[[変種目録検証子]]には決してならない。
+
+となるように生成する'''べきです'''。
+]FIG]
+
+[FIG(quote)[
+[FIGCAPTION[
+[42] RFC 2295 (HTTP 透過内容折衝) 9.2 Structured entity tags
+]FIGCAPTION]
+
+> A structured entity tag consists of a normal entity tag of which the
+opaque string is extended with a semicolon followed by the text
+(without the surrounding quotes) of a variant list validator:
+
+[DFN[構造化実体札]]は、通常の[[実体札]]である不透明文字列の後にセミコロンと[[変種目録検証子]]の文を
+(囲んでいる引用符なしで) 続けたものです。
+
+>
+[PRE[
+        normal      |  variant list  |   structured
+        entity tag  |  validator     |   entity tag
+       -------------+----------------+-----------------
+         "etag"     |     "vlv"      |   "etag;vlv"
+        W/"etag"    |     "vlv"      |  W/"etag;vlv"
+]PRE]
+
+> Note that a structured entity tag is itself also an entity tag.  The
+structured nature of the tag allows caching proxies capable of
+transparent content negotiation to perform some optimizations defined
+in section 10.  When not performing such optimizations, a structured
+tag SHOULD be treated as a single opaque value, according to the
+general rules in HTTP/1.1.  Examples of structured entity tags are:
+
+構造化実体札自体も実体札であることに注意してください。
+札の構造化性により、10章で定義する最適化が行えます。
+その最適化を行わない時は、構造化札は HTTP/1.1
+の一般規則に従った単一の不透明値として扱う'''べきです'''。
+構造化実体札の例 : 
+
+>
+      "xyzzy;1234"  W/"xyzzy;1234"  "gonkxxxx;1234"  "a;b;c;;1234"
+
+> In the last example, the normal entity tag is "a;b;c;" and the
+variant list validator is "1234".
+
+最後の例では、通常の実体札は [CODE(HTTP)[a;b;c;]] で変種目録検証子は
+[CODE(HTTP)[1234]] です。
+
+> If a transparently negotiated response includes an entity tag, it
+MUST be a structured entity tag.  The variant list validator in the
+structured tag MUST act as a validator for the variant list contained
+in the Alternates header.  The normal entity tag in the structured
+tag MUST act as a validator of the entity body in the response and of
+all entity headers except Alternates.
+
+透過折衝可能資源が実体札を含む場合、それは構造化実体札でなければ'''なりません'''。
+構造化札の変種目録検証子は [CODE(HTTP)[[[Alternates]]]]
+頭に含まれる[[変種目録]]の[[検証子]]として働かなければ'''なりません'''。
+構造化札の通常の実体札は応答の[[実体本体]]及び
+[CODE(HTTP)[Alternates]] 以外のすべての実体札の検証子として働かなければ'''なりません'''。
+]FIG]
+
+[7] [[RFC 723x]] 世代では[[HTTP実体]]という概念が消失していますが、
+[[実体タグ]]という用語はそのまま残っています。「実体」とは何なのかの説明はありません。
+
+* 実装
+
+[36] [[Apache]] では実体札の算出に、当該ファイルの [[inode]] 番号, 大きさ, [[mtime]] を使っています。 [SAMP(HTTP)[Etag: "19ebd-86f-a5f83ea5"]] のような値が得られます。この計算方法は 1.[VAR[x]] と 2.[VAR[x]] で微妙に違うようです。
+
+[37] >>36 参考 [Apache-Users 2282], [Apache-Users 2287]
+
+[FIG(quote)[
+[FIGCAPTION[
+[39] [CITE[[modperl:0415] Re: 実体ファイルのないリクエストに対する ETag ヘッダ値について]],
+[[Hiroyuki OYAMA]], 2003年4月
+<mid:200304021116.h32BGS2V051267@iris.glay.ne.jp>
+]FIGCAPTION]
+
+> ETagの文字列はmod_perlのset_etagメソッド内部で呼び出される
+Apacheのap_make_etag()関数で生成されています。この関数はファ
+イルに対するリクエストの場合
+- ファイルのinode番号
+- ファイルのファイルサイズ
+- ファイルの更新時刻
+> の情報を"-"で連結した文字列を生成し、ファイルに対するリクエ
+ストではない場合は
+- ap_set_last_modified()などでセットした更新時刻
+> の文字列を生成します。
+> なのでファイルへのアクセスを処理するコンテンツハンドラであ
+れば、「他のスタティックなコンテンツ」と同じ形式のETagが生
+成されますが、ファイルの実体を持たないコンテンツハンドラの
+場合は最終更新日だけをつかったETagが生成されます。
+と、これはset_etagメソッドでETagを設定する場合で、
+set_etagメソッドを使わずに自分でETagを生成・セットすること
+もできます。
+>
+[PRE[
+  % perl -e 'printf q{"%x-%x-%x"}, (stat("/docs/charset.html"))[1,7,9]'
+>
+;; 詳しくは$APACHE_SRC/main/http_protocol.cのap_set_etag()と
+ap_make_etag()を見てください。
+]PRE]
+]FIG]
+
+* 関連
+
+[57] [CODE(HTTP)@en[[[If-Match:]]]] と [CODE(HTTP)@en[[[If-None-Match:]]]]
+では [CODE[[[*]]]] という値が使われることがありますが、これは[[実体タグ]]ではありません。
+
+[58] [CODE(HTTP)@en[[[If-Range:]]]] では[[HTTPの日時形式]]が使われることがありますが、
+これは[[実体タグ]]ではありません。
+
+* メモ
+
+[2] [[実体タグ]]は[[内容折衝]]によって同じ [[URL]] で複数の[[表現]]が提供されている場合や、
+[[鯖]]の時計が正しくない場合などでも [CODE(HTTP)@en[[[Last-Modified:]]]]
+の値に頼らず[[キャッシュ]]を更新できる仕組みとして [[HTTP/1.1]] 
+で導入されました。
+
+[3] [[内容折衝]]など必要以上に複雑な仕組みが [[HTTP]] に導入されたことで、
+[[実体タグ]]のような本来必要なかった複雑な仕組みを更に導入する必要が生じたと見ることもできます。
+
+[4] [CODE(HTTP)@en[[[ETag:]]]] が現在使われるのは、ほとんどの場合、[[静的]]に[[ファイル]]を提供する形の[[鯖]]だけですが、
+そのような形態なら普通 [CODE(HTTP)@en[[[Last-Modified:]]]] と
+[CODE(HTTP)@en[[[If-Modified-Since:]]]] で十分実用的に動作するので、
+[[実体タグ]]は[[プロトコル]]を複雑化する以外に役に立っていないとすら言えます。
+
+[5] [[ETag:]>>17] のように、[[実体タグ]]の設定の誤りによりキャッシュ効率がむしろ悪化する事例もあります。
+
+[6] また >>15 のように[[実体タグ]]を悪用する例もあります。
+
+
+[2625] [CITE[ETagをどう生成するか - 岩本隆史の日記帳]]
+( ([TIME[2012-04-11 23:38:46 +09:00]] 版))
+<http://d.hatena.ne.jp/IwamotoTakashi/20080826/p2>
+
+[2626] [CITE[ETagを使ってSpringとHibernateの転送量と負荷を削減する]]
+( ([TIME[2014-09-15 10:29:51 +09:00]] 版))
+<http://www.infoq.com/jp/articles/etags>
+
+[2627] [CITE@ja[ricollab Web Tech Blog » Blog Archive » ETagについて]]
+( ([TIME[2014-09-15 10:30:23 +09:00]] 版))
+<http://blogs.ricollab.jp/webtech/2008/02/etag/>
+
+[2628] [CITE@en[2.2.5.4 ETag]]
+( ([TIME[2014-09-15 10:31:25 +09:00]] 版))
+<http://msdn.microsoft.com/en-us/library/dd541486.aspx>
+
+[2629] [CITE@en[ビューの条件付き処理 — Django 1.4 documentation]]
+( ([TIME[2014-01-25 01:32:05 +09:00]] 版))
+<http://docs.djangoproject.jp/en/latest/topics/conditional-view-processing.html>
