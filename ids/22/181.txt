@@ -10,6 +10,10 @@
 [REFS[
 - [3] '''[CITE@en[RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests]] ([TIME[2014-09-11 10:02:44 +09:00]] 版) <https://tools.ietf.org/html/rfc7232>'''
 -- [10] [CITE@en[RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests]] ([TIME[2014-09-11 10:02:44 +09:00]] 版) <https://tools.ietf.org/html/rfc7232#section-3>
+-- [12] [CITE@en[RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests]] ([TIME[2014-09-11 10:02:44 +09:00]] 版) <https://tools.ietf.org/html/rfc7232#section-3.1>
+-- [21] [CITE@en[RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests]] ([TIME[2014-09-11 10:02:44 +09:00]] 版) <https://tools.ietf.org/html/rfc7232#section-3.2>
+-- [14] [CITE@en[RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests]] ([TIME[2014-09-11 10:02:44 +09:00]] 版) <https://tools.ietf.org/html/rfc7232#section-3.3>
+-- [25] [CITE@en[RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests]] ([TIME[2014-09-11 10:02:44 +09:00]] 版) <https://tools.ietf.org/html/rfc7232#section-3.4>
 - [1] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-5.2>
 ]REFS]
 
@@ -42,3 +46,87 @@
 
 ;; [11] これらは [[RFC 7232]] では[DFN[[RUBYB[事前条件]@en[precondition]]]]
 [SRC[>>10]] ヘッダーと呼ばれています。
+
+* 処理モデル
+
+[41] [CODE(HTTP)@en[[[If-Match:]]]] や [CODE(HTTP)@en[[[If-None-Match:]]]]
+や [CODE(HTTP)@en[[[If-Modified-Since:]]]] や [CODE(HTTP)@en[[[If-Unmodified-Since:]]]]
+を実装していない場合どう動作するべきか仕様上明確ではありませんが、
+実際の[[鯖]]はこれらを無視するようです。 ([CODE(HTTP)[[[412]]]]
+や [CODE(HTTP)[[[304]]]] ではありません。)
+
+[20] [CODE(HTTP)@en[[[If-Match:]]]] や [CODE(HTTP)@en[[[If-Unmodified-Since:]]]]
+は、[[キャッシュ]]や[[中間器]]は無視できます [SRC[>>12, >>25]]。
+
+[39] [CODE(HTTP)@en[[[If-None-Match:]]]] は[[起源鯖]]だけでなく、
+[[キャッシュ]]や[[中間器]]が処理することもできます。
+
+[22] [[受信者]]は、[[要求メソッド]]が [CODE(HTTP)@en[[[GET]]]] や
+[CODE(HTTP)@en[[[HEAD]]]] でないとき、 [CODE(HTTP)@en[[[If-Modified-Since:]]]]
+を無視しなければ[['''なりません''']] [SRC[>>14]]。
+
+[15] [[受信者]]は、[[要求]]が [CODE(HTTP)@en[[[If-None-Match:]]]]
+[[ヘッダー]]を含んでいる時 [CODE(HTTP)@en[[[If-Modified-Since:]]]] 
+を無視しなければ[['''なりません''']] [SRC[>>14]]。
+
+[27] [[受信者]]は、[[要求]]が [CODE(HTTP)@en[[[If-Match:]]]]
+[[ヘッダー]]を含んでいる時 [CODE(HTTP)@en[[[If-Unmodified-Since:]]]]
+を無視しなければ[['''なりません''']] [SRC[>>25]]。
+
+[16] [[受信者]]は、 [CODE(HTTP)@en[[[If-Modified-Since:]]]] や
+[CODE(HTTP)@en[[[If-Unmodified-Since:]]]] が妥当な
+[CODE(ABNF)@en[[[HTTP-date]]]] でないとき、これを無視しなければ[['''なりません''']] 
+[SRC[>>14, >>25]]。
+
+;; [32] [CODE(HTTP)@en[[[If-Match:]]]] や [CODE(HTTP)@en[[[If-None-Match:]]]]
+が構文的に正しくない時にどう処理するべきかは、なぜか規定がありません。
+
+[17] [[起源鯖]]は、 [CODE(HTTP)@en[[[If-Match:]]]] や
+[CODE(HTTP)@en[[[If-None-Match:]]]] が指定されていれば、
+次のように処理しなければ[['''なりません''']] [SRC[>>12, >>21]]。
+
+[FIG(steps)[
+= [34] 両[[ヘッダー]]で指定された条件を満たすかどうか判定します。
+= [35] 条件を満たす場合には、[[要求メソッド]]に従って処理します。
+= [36] 条件を満たさない場合、
+== [37] [CODE(HTTP)@en[[[If-Match:]]]] の条件のみを満たさない場合で
+>>19 の場合は [CODE(HTTP)[[[2xx]]]] を返すことができます。
+== [38] [CODE(HTTP)@en[[[If-None-Match:]]]] の条件のみを満たさない場合で
+[CODE(HTTP)@en[[[GET]]]] か [CODE(HTTP)@en[[[HEAD]]]] の場合には、
+[CODE(HTTP)[[[304]]]] を返すことができます。
+== [18] それ以外の場合、 [CODE(HTTP)[[[412]]]] を返します。
+]FIG]
+
+;; [13] 条件を満たすかどうかの判定については、各[[ヘッダー]]の項を参照してください。
+
+[28] [[起源鯖]]は、 [[要求メソッド]]の処理の実行前に
+[CODE(HTTP)@en[[[If-Modified-Since:]]]] を評価する[['''べきです''']]。 [SRC[>>14]]
+
+;; [31] なぜ [['''MUST''']] でないのか謎です。
+
+[24] [[起源鯖]]は、[[要求メソッド]]の処理の実行前に
+[CODE(HTTP)@en[[[If-Unmodified-Since:]]]] を評価しなければ[['''なりません''']]。 [SRC[>>25]]
+
+[26] [[受信者]]は、[CODE(HTTP)@en[[[If-Modified-Since:]]]] や
+[CODE(HTTP)@en[[[If-Unmodified-Since:]]]] 
+の値を[[起源鯖]]の[[時計]]に照らして解釈しなければ[['''なりません''']]
+[SRC[>>14, >>25]]。
+
+[19] ここで、 [CODE(HTTP)[[[2xx]]]] を返せるのは、状態の変更が[[要求]]されており、
+最終的な状態が既に[[対象資源]]の現在の状態に反映されていると[[起源鯖]]が確認できる場合です。
+すなわち、以前の[[応答]]が失われたか互換性のある変更が他の[[利用者エージェント]]により行われたかによって[[利用者エージェント]]の[[要求]]が既に成功していたことに気づいていないような場合です。
+ただしそのような場合には、同じ[[利用者エージェント]]が直前の[[要求]]を繰り返していると確認できる場合を除き、
+[[検証子ヘッダー]]を送っては[['''なりません''']] [SRC[>>12, >>25]]。
+
+[30] [[選択された表現]]の最終変更日時が [CODE(HTTP)@en[[[If-Modified-Since:]]]]
+で指定された値と同じかそれ以前なら、
+[[要求メソッド]]の処理は実行せずに、 [CODE(HTTP)[[[304]]]]
+[[応答]]を[[生成]]する[['''べきです''']]。 [SRC[>>14]]
+
+;; [23] なぜ [['''MUST''']] でないのか謎です。
+
+[33] [[選択された表現]]の最終変更日時が [CODE(HTTP)@en[[[If-Unmodified-Since:]]]]
+で指定された値よりも最近なら、
+[[要求メソッド]]の処理は実行しては[['''なりません''']]。
+その場合 [CODE(HTTP)[[[2xx]]]] (>>19 の場合のみ。) か [CODE(HTTP)[[[412]]]] を返さなければ[['''なりません''']]。
+[SRC[>>25]]
