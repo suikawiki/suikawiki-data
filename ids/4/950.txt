@@ -1,14 +1,21 @@
+[34] [DFN[[CODE(HTTP)@en[[[If-Modified-Since:]]]]]] [[ヘッダー]]や
+[DFN[[CODE(HTTP)@en[[[If-Unmodified-Since:]]]]]] [[ヘッダー]]は、
+[[対象資源]]の最終更新日時が指定した時刻の前後いずれかによって[[要求メソッド]]の処理を実行するか否かを指定するものです。
+
 * 仕様書
 
 [REFS[
-- [12] [CITE@en[RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests]] ([TIME[2014-09-11 10:02:44 +09:00]] 版) <https://tools.ietf.org/html/rfc7232#section-3.3>
+- [12] '''[CITE@en[RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests]] ([TIME[2014-09-11 10:02:44 +09:00]] 版) <https://tools.ietf.org/html/rfc7232#section-3.3>'''
+- [25] '''[CITE@en[RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests]] ([TIME[2014-09-11 10:02:44 +09:00]] 版) <https://tools.ietf.org/html/rfc7232#section-3.4>'''
 ]REFS]
 
 * 意味
 
-[8] [CODE(HTTP)@en[[[If-Modified-Since:]]]] [[ヘッダー]]は、
+[8] [CODE(HTTP)@en[[[If-Modified-Since:]]]] [[ヘッダー]]や
+[CODE(HTTP)@en[[[If-Unmodified-Since:]]]] [[ヘッダー]]は、
 [CODE(HTTP)@en[[[GET]]]] や [CODE(HTTP)@en[[[HEAD]]]]
-の[[要求]]を[[選択された表現]]の最終変更日時に関する[[条件付き要求]]とします [SRC[>>12]]。 
+の[[要求]]を[[選択された表現]]の最終変更日時に関する[[条件付き要求]]とします 
+[SRC[>>12, >>25]]。 
 
 [18] [CODE(HTTP)@en[[[If-Modified-Since:]]]] は、
 [[キャッシュ]]されている[[実体タグ]]を持たない[[表現]]を効率的に更新するために使うことができます
@@ -32,10 +39,24 @@
 
 ;; [22] 完全一致するような[[起源鯖]]は実在するのでしょうか?
 
+[27] [CODE(HTTP)@en[[[If-Unmodified-Since:]]]] は、
+[CODE(HTTP)@en[[[POST]]]]、[CODE(HTTP)@en[[[PUT]]]]、
+[CODE(HTTP)@en[[[DELETE]]]] のような状態を変更する[[要求メソッド]]において、
+別の[[利用者エージェント]]が並列に加えた変更を上書きしてしまう「[[lost update]]」
+問題を避けるために使われます。 [SRC[>>25]]
+
+[28] [CODE(HTTP)@en[[[If-Unmodified-Since:]]]] は、
+[[安全なメソッド]]において、[[選択された表現]]が既に一部または全部が蓄積されているものと一致しない時に要求を中断するために使うこともできます。
+[SRC[>>25]]
+
+;; [29] 例えば既に一部を[[キャッシュ]]している[[資源]]の残りの部分を取得したい時に、
+途中で変更されていたらその処理を中断したいときに使えます。
+
 * 構文
 
-[13] [CODE(HTTP)@en[[[If-Modified-Since:]]]] [[ヘッダー]]の値は、
-[[HTTPの日時形式]] ([CODE(ABNF)@en[[[HTTP-date]]]]) です [SRC[>>12]]。
+[13] [CODE(HTTP)@en[[[If-Modified-Since:]]]] [[ヘッダー]]と
+[CODE(HTTP)@en[[[If-Unmodified-Since:]]]] [[ヘッダー]]の値は、
+[[HTTPの日時形式]] ([CODE(ABNF)@en[[[HTTP-date]]]]) です [SRC[>>12, >>25]]。
 
 [FIG(railroad)[
 = [CODE(ABNF)@en[[[HTTP-date]]]]
@@ -47,16 +68,23 @@
 [CODE(HTTP)@en[[[HEAD]]]] でないとき、 [CODE(HTTP)@en[[[If-Modified-Since:]]]]
 を無視しなければ[['''なりません''']] [SRC[>>12]]。
 
-[15] [[受信者]]は、 [CODE(HTTP)@en[[[If-Modified-Since:]]]] が妥当な
+[15] [[受信者]]は、 [CODE(HTTP)@en[[[If-Modified-Since:]]]] や
+[CODE(HTTP)@en[[[If-Unmodified-Since:]]]] が妥当な
 [CODE(ABNF)@en[[[HTTP-date]]]] でないとき、これを無視しなければ[['''なりません''']] 
-[SRC[>>12]]。
+[SRC[>>12, >>25]]。
 
 [14] [[受信者]]は、[[要求]]が [CODE(HTTP)@en[[[If-None-Match:]]]]
 [[ヘッダー]]を含んでいる時 [CODE(HTTP)@en[[[If-Modified-Since:]]]] 
 を無視しなければ[['''なりません''']] [SRC[>>12]]。
 
-[17] [[受信者]]は、[CODE(HTTP)@en[[[If-Modified-Since:]]]] の値を[[起源鯖]]の[[時計]]に照らして解釈しなければ[['''なりません''']]
-[SRC[>>12]]。
+[26] [[受信者]]は、[[要求]]が [CODE(HTTP)@en[[[If-Match:]]]]
+[[ヘッダー]]を含んでいる時 [CODE(HTTP)@en[[[If-Unmodified-Since:]]]]
+を無視しなければ[['''なりません''']] [SRC[>>25]]。
+
+[17] [[受信者]]は、[CODE(HTTP)@en[[[If-Modified-Since:]]]] や
+[CODE(HTTP)@en[[[If-Unmodified-Since:]]]] 
+の値を[[起源鯖]]の[[時計]]に照らして解釈しなければ[['''なりません''']]
+[SRC[>>12, >>25]]。
 
 [23] [[起源鯖]]は、 [[要求メソッド]]の処理の実行前に
 [CODE(HTTP)@en[[[If-Modified-Since:]]]] を評価する[['''べきです''']]。
@@ -67,6 +95,27 @@
 更新したりするのに有用な[[メタデータ]]のみを含める[['''べきです''']]。 [SRC[>>12]]
 
 ;; [24] なぜ [['''MUST''']] でないのか謎です。
+
+[30] [[起源鯖]]は、[[要求メソッド]]の処理の実行前に
+[CODE(HTTP)@en[[[If-Unmodified-Since:]]]] を評価しなければ[['''なりません''']]。
+[[選択された表現]]の最終変更日時が指定された値よりも最近なら、
+[[要求メソッド]]の処理は実行しては[['''なりません''']]。
+その場合 [CODE(HTTP)[[[2xx]]]] か [CODE(HTTP)[[[412]]]] を返さなければ[['''なりません''']]。
+[SRC[>>25]]
+
+[31] [CODE(HTTP)[[[2xx]]]] を返せるのは、状態の変更が[[要求]]されており、
+最終的な状態が既に[[対象資源]]の現在の状態に反映されていると[[起源鯖]]が確認できる場合です。
+すなわち、以前の[[応答]]が失われたか互換性のある変更が他の[[利用者エージェント]]により行われたかによって[[利用者エージェント]]の[[要求]]が既に成功していたことに気づいていないような場合です。
+ただしそのような場合には、同じ[[利用者エージェント]]が直前の[[要求]]を繰り返していると確認できる場合を除き、
+[[検証子ヘッダー]]を送っては[['''なりません''']] [SRC[>>25]]。
+
+[32] [[キャッシュ]]や[[中間器]]は [CODE(HTTP)@en[[[If-Unmodified-Since:]]]]
+を無視できます [SRC[>>25]]。
+
+[33] [CODE(HTTP)@en[[[If-Modified-Since:]]]] や [CODE(HTTP)@en[[[If-Unmodified-Since:]]]]
+を実装していない場合どう動作するべきか仕様上明確ではありませんが、
+実際の[[鯖]]はこれらを無視するようです。 ([CODE(HTTP)[[[412]]]]
+や [CODE(HTTP)[[[304]]]] ではありません。)
 
 * 歴史
 
