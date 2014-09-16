@@ -14,6 +14,7 @@
 -- [21] [CITE@en[RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests]] ([TIME[2014-09-11 10:02:44 +09:00]] 版) <https://tools.ietf.org/html/rfc7232#section-3.2>
 -- [14] [CITE@en[RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests]] ([TIME[2014-09-11 10:02:44 +09:00]] 版) <https://tools.ietf.org/html/rfc7232#section-3.3>
 -- [25] [CITE@en[RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests]] ([TIME[2014-09-11 10:02:44 +09:00]] 版) <https://tools.ietf.org/html/rfc7232#section-3.4>
+-- [29] [CITE@en[RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests]] ([TIME[2014-09-11 10:02:44 +09:00]] 版) <https://tools.ietf.org/html/rfc7232#section-6>
 - [1] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-5.2>
 ]REFS]
 
@@ -49,30 +50,6 @@
 
 * 処理モデル
 
-[41] [CODE(HTTP)@en[[[If-Match:]]]] や [CODE(HTTP)@en[[[If-None-Match:]]]]
-や [CODE(HTTP)@en[[[If-Modified-Since:]]]] や [CODE(HTTP)@en[[[If-Unmodified-Since:]]]]
-を実装していない場合どう動作するべきか仕様上明確ではありませんが、
-実際の[[鯖]]はこれらを無視するようです。 ([CODE(HTTP)[[[412]]]]
-や [CODE(HTTP)[[[304]]]] ではありません。)
-
-[20] [CODE(HTTP)@en[[[If-Match:]]]] や [CODE(HTTP)@en[[[If-Unmodified-Since:]]]]
-は、[[キャッシュ]]や[[中間器]]は無視できます [SRC[>>12, >>25]]。
-
-[39] [CODE(HTTP)@en[[[If-None-Match:]]]] は[[起源鯖]]だけでなく、
-[[キャッシュ]]や[[中間器]]が処理することもできます。
-
-[22] [[受信者]]は、[[要求メソッド]]が [CODE(HTTP)@en[[[GET]]]] や
-[CODE(HTTP)@en[[[HEAD]]]] でないとき、 [CODE(HTTP)@en[[[If-Modified-Since:]]]]
-を無視しなければ[['''なりません''']] [SRC[>>14]]。
-
-[15] [[受信者]]は、[[要求]]が [CODE(HTTP)@en[[[If-None-Match:]]]]
-[[ヘッダー]]を含んでいる時 [CODE(HTTP)@en[[[If-Modified-Since:]]]] 
-を無視しなければ[['''なりません''']] [SRC[>>14]]。
-
-[27] [[受信者]]は、[[要求]]が [CODE(HTTP)@en[[[If-Match:]]]]
-[[ヘッダー]]を含んでいる時 [CODE(HTTP)@en[[[If-Unmodified-Since:]]]]
-を無視しなければ[['''なりません''']] [SRC[>>25]]。
-
 [16] [[受信者]]は、 [CODE(HTTP)@en[[[If-Modified-Since:]]]] や
 [CODE(HTTP)@en[[[If-Unmodified-Since:]]]] が妥当な
 [CODE(ABNF)@en[[[HTTP-date]]]] でないとき、これを無視しなければ[['''なりません''']] 
@@ -81,31 +58,66 @@
 ;; [32] [CODE(HTTP)@en[[[If-Match:]]]] や [CODE(HTTP)@en[[[If-None-Match:]]]]
 が構文的に正しくない時にどう処理するべきかは、なぜか規定がありません。
 
-[17] [[起源鯖]]は、 [CODE(HTTP)@en[[[If-Match:]]]] や
-[CODE(HTTP)@en[[[If-None-Match:]]]] が指定されていれば、
-次のように処理しなければ[['''なりません''']] [SRC[>>12, >>21]]。
+;; [15] 無視ということは、条件の真偽を判断する以前に存在しないものと扱うのだと思われます。
 
+[45] [[受信者]]である[[キャッシュ]]や[[起源鯖]]は、
+[[要求]]の事前条件を次のように評価しなければ[['''なりません''']] [SRC[>>29]]。
 [FIG(steps)[
-= [34] 両[[ヘッダー]]で指定された条件を満たすかどうか判定します。
-= [35] 条件を満たす場合には、[[要求メソッド]]に従って処理します。
-= [36] 条件を満たさない場合、
-== [37] [CODE(HTTP)@en[[[If-Match:]]]] の条件のみを満たさない場合で
->>19 の場合は [CODE(HTTP)[[[2xx]]]] を返すことができます。
-== [38] [CODE(HTTP)@en[[[If-None-Match:]]]] の条件のみを満たさない場合で
-[CODE(HTTP)@en[[[GET]]]] か [CODE(HTTP)@en[[[HEAD]]]] の場合には、
-[CODE(HTTP)[[[304]]]] を返すことができます。
-== [18] それ以外の場合、 [CODE(HTTP)[[[412]]]] を返します。
+= [46] [[受信者]]が[[起源鯖]]である場合、
+== [52] [[要求]]に [CODE(HTTP)@en[[[If-Match:]]]] [[ヘッダー]]がある場合 [SRC[>>12, >>29]]、
+=== [47] [CODE(HTTP)@en[[[If-Match:]]]] [[ヘッダー]]の評価結果が[[偽]]なら、
+==== [50] >>19 の場合は [CODE(HTTP)[[[2xx]]]] を返して終わっても構いません。
+==== [51] そうしないなら、 [CODE(HTTP)[[[412]]]] を返して終わります。
+== [53] [[要求]]に [CODE(HTTP)@en[[[If-Match:]]]] [[ヘッダー]]がなく、
+[CODE(HTTP)@en[[[If-Unmodified-Since:]]]] [[ヘッダー]]がある場合、 [SRC[>>29, >>25]]
+=== [54] [CODE(HTTP)@en[[[If-Unmatched-Since:]]]] [[ヘッダー]]の評価結果が[[偽]]なら、
+==== [56] >>19 の場合は [CODE(HTTP)[[[2xx]]]] を返して終わっても構いません。
+==== [57] そうしないなら、 [CODE(HTTP)[[[412]]]] を返して終わります。
+= [48] [[要求]]に [CODE(HTTP)@en[[[If-None-Match:]]]] [[ヘッダー]]がある場合 [SRC[>>21, >>29]]、
+== [49] [CODE(HTTP)@en[[[If-None-Match:]]]] の評価結果が[[偽]]なら、
+=== [59] [[要求メソッド]]が [CODE(HTTP)@en[[[GET]]]] か [CODE(HTTP)@en[[[HEAD]]]] なら、
+[CODE(HTTP)[[[304]]]] を返して終わります。
+=== [60] それ以外なら、 [CODE(HTTP)[[[412]]]] を返して終わります。
+= [61] [[要求]]に [CODE(HTTP)@en[[[If-None-Match:]]]] [[ヘッダー]]がなく [SRC[>>29, >>14]]、
+[CODE(HTTP)@en[[[If-Modified-Since:]]]] [[ヘッダー]]がある場合、
+== [62] [CODE(HTTP)@en[[[If-Modified-Since:]]]] の評価結果が[[偽]]なら、
+=== [64] [[要求メソッド]]が [CODE(HTTP)@en[[[GET]]]] か [CODE(HTTP)@en[[[HEAD]]]] なら
+[SRC[>>29, >>14]]、[CODE(HTTP)[[[304]]]] を返して終わります。
+= [55] [[要求]]に [CODE(HTTP)@en[[[Range:]]]] [[ヘッダー]]と
+[CODE(HTTP)@en[[[If-Range:]]]] [[ヘッダー]]があるなら、
+== [58] [CODE(HTTP)@en[[[If-Range:]]]] の[[検証子]]が一致し、
+[[選択された表現]]に [CODE(HTTP)@en[[[Range:]]]] が適用可能なら、
+=== [66] [[要求メソッド]]が [CODE(HTTP)@en[[[GET]]]] なら、
+[CODE(HTTP)[[[206]]]] を返して終わります。
+= [63] 事前条件は一致したので、[[要求]]の他の指定に従って処理し、結果を返します。
 ]FIG]
 
 ;; [13] 条件を満たすかどうかの判定については、各[[ヘッダー]]の項を参照してください。
+
+[40] [[ヘッダー]]の優先順位の根拠は次のように説明されています [SRC[>>29]]。
+[FIG(list)[
+- [42] 「[[lost update]]」の条件は[[キャッシュ]]の[[検証]]よりも厳密な要件である
+- [43] [[検証]]された[[キャッシュ]]は[[部分応答]]よりも効率的である
+- [44] [[実体タグ]]は日時の[[検証子]]よりも正確である
+]FIG]
+
+[FIG(corollary)[
+[20] [CODE(HTTP)@en[[[If-Match:]]]] や [CODE(HTTP)@en[[[If-Unmodified-Since:]]]]
+は[[起源鯖]]のみが処理し、[[キャッシュ]]は無視することになっています [SRC[>>12, >>25]] が、
+[CODE(HTTP)@en[[[If-None-Match:]]]] や [CODE(HTTP)@en[[[If-Modified-Since:]]]]
+は[[起源鯖]]だけでなく[[キャッシュ]]も処理することになっています。
+]FIG]
+
+[41] [CODE(HTTP)@en[[[If-Match:]]]] や [CODE(HTTP)@en[[[If-None-Match:]]]]
+や [CODE(HTTP)@en[[[If-Modified-Since:]]]] や [CODE(HTTP)@en[[[If-Unmodified-Since:]]]]
+を実装していない場合どう動作するべきか仕様上明確ではありませんが、
+実際の[[鯖]]はこれらを無視するようです。 ([CODE(HTTP)[[[412]]]]
+や [CODE(HTTP)[[[304]]]] ではありません。)
 
 [28] [[起源鯖]]は、 [[要求メソッド]]の処理の実行前に
 [CODE(HTTP)@en[[[If-Modified-Since:]]]] を評価する[['''べきです''']]。 [SRC[>>14]]
 
 ;; [31] なぜ [['''MUST''']] でないのか謎です。
-
-[24] [[起源鯖]]は、[[要求メソッド]]の処理の実行前に
-[CODE(HTTP)@en[[[If-Unmodified-Since:]]]] を評価しなければ[['''なりません''']]。 [SRC[>>25]]
 
 [26] [[受信者]]は、[CODE(HTTP)@en[[[If-Modified-Since:]]]] や
 [CODE(HTTP)@en[[[If-Unmodified-Since:]]]] 
