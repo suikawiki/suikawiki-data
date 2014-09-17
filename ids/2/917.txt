@@ -1,7 +1,97 @@
-#?SuikaWiki/0.9 page-icon="HTTP"
-[[#comment]]
-* 仕様書から
-** RFC 2068・2616 (HTTP/1.1) 10.2.7 206 Partial Content
+[15] [DFN[[CODE(HTTP)[[[206]]]]]] は、[[応答]]に含まれるのが[[要求]]された[[資源]]の一部であることを表す[[状態符号]]です。
+
+* 仕様書
+
+[REFS[
+- [1] [CITE@en[RFC 7233 - Hypertext Transfer Protocol (HTTP/1.1): Range Requests]] ([TIME[2014-09-11 09:57:55 +09:00]] 版) <https://tools.ietf.org/html/rfc7233#section-4.1>
+]REFS]
+
+* 意味
+
+[3] [CODE(HTTP)[[[206]]]] は、[[要求]]の [CODE(HTTP)@en[[[Range:]]]] 
+[[ヘッダー]]で指定された各[[範囲]]について、
+[[選択された表現]]に関して[[満足可能]]なものに対応する各部分を転送することにより、
+[[対象資源]]の[[範囲要求]]を満足することに成功していることを表す[[状態符号]]です [SRC[>>1]]。
+
+* 構文
+
+[4] [[鯖]]は、転送する部分が1つだけの時は、
+どの[[範囲]]が含まれるかを指定した [CODE(HTTP)@en[[[Content-Range:]]]]
+[[ヘッダー]]を[[生成]]し、 [[payload]] にはその部分を含めなければ[['''なりません''']]
+[SRC[>>1]]。
+
+[5] [[鯖]]は、転送する部分が複数の時は、
+[[payload]] として [CODE(MIME)@en[[[multipart/byteranges]]]]
+を[[生成]]しなければ[['''なりません''']] [SRC[>>1]]。
+この場合 [CODE(HTTP)@en[[[Content-Range:]]]] を[[HTTPメッセージ]]全体の[[ヘッダー]]に含めて[['''はなりません''']]
+[SRC[>>1]]。
+
+[6] >>5 の場合の各[[本体部分]]には、対応する[[範囲]]を表す
+[CODE(HTTP)@en[[[Content-Range:]]]] [[ヘッダー]]を含めなければ[['''なりません''']]。
+また[[選択された表現]]が [CODE(HTTP)@en[[[200]]]] [[応答]]だった場合の
+[CODE(HTTP)@en[[[Content-Type:]]]] [[ヘッダー]]と同じ値の
+[CODE(HTTP)@en[[[Content-Type:]]]] [[ヘッダー]]も含める[['''べきです''']]。 [SRC[>>1]]
+
+[7] [[鯖]]は、複数の範囲が指定されていた場合に、範囲の指定の順序に関わらず、
+重なり合う範囲をまとめたり、 [[multipart]] による[[オーバーヘッド]]より隙間が小さいときにまとめたりしても構いません。
+一般的には [CODE(MIME)@en[[[multipart/byteranges]]]] の[[オーバーヘッド]]は
+80バイト程度です。 [SRC[>>1]]
+
+[9] [[鯖]]は、[[満足不能]]な[[範囲]]や他の[[範囲]]とまとめた場合を除き、
+[CODE(HTTP)@en[[[Range:]]]] に指定された順序で[[本体部分]]を並べる[['''べきです''']] [SRC[>>1]]。
+
+[8] 指定された範囲が1つだけの時は、 [CODE(MIME)@en[[[multipart/byteranges]]]]
+を[[生成]]しては[['''なりません''']]。指定された範囲が複数で、
+[[満足可能]]な範囲が1つだけの時や、まとめた結果1つだけになった時は、
+[CODE(MIME)@en[[[multipart/byteranges]]]] を使っても構いません。 [SRC[>>1]]
+
+[11] [CODE(HTTP)[[[206]]]] [[応答]]では、 [CODE(HTTP)[[[200]]]]
+[[応答]]だったら送っていたであろう次の[[ヘッダー]]を[[生成]]しなければ[['''なりません''']]
+[SRC[>>1]]。
+[FIG(short list)[
+- [CODE(HTTP)@en[[[Date:]]]]
+- [CODE(HTTP)@en[[[Cache-Control:]]]]
+- [CODE(HTTP)@en[[[ETag:]]]]
+- [CODE(HTTP)@en[[[Expires:]]]]
+- [CODE(HTTP)@en[[[Content-Location:]]]]
+- [CODE(HTTP)@en[[[Vary:]]]]
+]FIG]
+
+;; [16] [CODE(HTTP)[[[200]]]] の時送らないものは、送る必要はありません。
+
+;; [17] [CODE(HTTP)[[[304]]]] でも同様の規定があります。
+
+[12] [[要求]]に [CODE(HTTP)@en[[[If-Range:]]]] [[ヘッダー]]が指定されていた場合には、
+[[鯖]]は他の[[表現ヘッダー]]を[[生成]]する[['''べきではありません''']]。
+[[クライアント]]は既に以前の[[要求]]で受け取っているはずだからです。
+[CODE(HTTP)@en[[[If-Range:]]]] [[ヘッダー]]が指定されていない場合には、
+[CODE(HTTP)[[[200]]]] [[応答]]だったら送っていたであろう[[表現ヘッダー]]をすべて[[生成]]しなければ[['''なりません''']]。
+[SRC[>>1]]
+
+;; [13] [[表現ヘッダー]] (「[[representation header fields]]」) は [[HTTP]]
+仕様書で定義されていない用語なので、何を指しているのか不明です。
+[[表現メタデータ]]が近そうですが...
+
+;; [18] [CODE(HTTP)[[[304]]]] は[[キャッシュ]]に関して有用な[[ヘッダー]]であれば指定しても良いとしていますが、
+[CODE(HTTP)@en[[[If-Range:]]]] は[[キャッシュ]]の更新のためのものではありませんから、
+相当する規定がないものと思われます。
+
+* 処理モデル
+
+[10] [[クライアント]]は、 [CODE(MIME)@en[[[multipart/byteranges]]]] 
+の[[本体部分]]が [CODE(HTTP)@en[[[Range:]]]] に指定した範囲の順序であると仮定できません。
+[[クライアント]]は各[[本体部分]]の [CODE(HTTP)@en[[[Content-Range:]]]]
+[[ヘッダー]]を調べなければ[['''なりません''']] [SRC[>>1]]。
+
+[14] [CODE(HTTP)[[[206]]]] [[応答]]は、[[キャッシュ可能]]です [SRC[>>1]]。
+
+* 歴史
+
+[FIG(quote)[
+[FIGCAPTION[
+[2] RFC 2068・2616 (HTTP/1.1) 10.2.7 206 Partial Content
+]FIGCAPTION]
+
 >  The server has fulfilled the partial GET request for the resource.
 The request [DEL[must]] [INS[MUST]] have included a Range header field (section [DEL[14.36]] [INS[14.35]])
 indicating the desired range[INS[, and MAY have included an If-Range header field (section 14.27) to make the request conditional]].
@@ -69,8 +159,4 @@ MUST NOT cache 206 (Partial) responses.
 
 [CODE(HTTP)[Range]] 頭や [CODE(HTTP)[Content-Range]]
 頭に対応していないキャッシュは [CODE(HTTP)[206]] (部分) 応答をキャッシュしては'''なりません'''。
-
-** RFC の部分の License
-[[RFCのライセンス]]
-* メモ
-
+]FIG]
