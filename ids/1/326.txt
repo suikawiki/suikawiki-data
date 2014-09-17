@@ -1,7 +1,3 @@
-
-
-* [CODE(HTTP)[Range:]] 要求頭欄
-
 [9] [[HTTP]] などで使われている [DFN[[CODE(HTTP)[Range:]] 要求頭欄]]は、
 ある[[資源]]の一部分を[[要求]]することを表します。
 同時に、要求する部分も指定します。
@@ -12,16 +8,20 @@ HTTP では[[バイト]]単位で[[実体]]の一部を取得する方法が、
 HTTP のバイト範囲指定を使うと、大きなファイルの転送を分割して行ったり、
 分割再生可能に設計された[[音声]]や[[動画]]を部分ごとにデータ転送しながら再生するなどの大規模データ転送の工夫が可能になります。
 
-[[#comment]]
+* 仕様書
 
+[REFS[
+- [14] [CITE@en[RFC 7233 - Hypertext Transfer Protocol (HTTP/1.1): Range Requests]] ([TIME[2014-09-11 09:57:55 +09:00]] 版) <https://tools.ietf.org/html/rfc7233#section-3.1>
+]REFS]
 
-** 仕様書から
+* 歴史
 
+[FIG(quote)[
+[FIGCAPTION[
+[15] RFC 2068 (HTTP/1.1) 14.36・RFC 2616 (HTTP/1.1) 14.35 Range
+]FIGCAPTION]
 
-*** RFC 2068 (HTTP/1.1) 14.36・RFC 2616 (HTTP/1.1) 14.35 Range
-
-
-**** RFC 2068 14.36.1・RFC 2616 14.35.1 Byte Ranges
+* RFC 2068 14.36.1・RFC 2616 14.35.1 Byte Ranges
 
 > Since all HTTP entities are represented in HTTP messages as sequences
 of bytes, the concept of a byte range is meaningful for any HTTP
@@ -140,8 +140,7 @@ bytes (byte offsets 500-999, inclusive):
 -- bytes=500-600,601-999
 -- bytes=500-700,601-999
 
-
-**** RFC 2068 14.36.2・RFC 2616 14.35.2 Range Retrieval Requests
+* RFC 2068 14.36.2・RFC 2616 14.35.2 Range Retrieval Requests
 
 > HTTP retrieval requests using conditional or unconditional GET
 methods [DEL[may]] [INS[MAY]] request one or more sub-ranges of the entity, instead of
@@ -211,9 +210,89 @@ consistent with its cache allocation policies.
 クライアントには要求された範囲だけを返す'''べきです'''。
 受信した応答が[[キャッシュ]]割当て方針に沿っているなら、
 受信した応答全体をキャッシュに蓄積する'''べきです'''。
+]FIG]
 
+** 地理的座標を指定する実装例
 
-*** RFC 2326 (RTSP/1.0) 12.29 Range
+[7] [SAMP(HTTP)[Range: lats=; lons=100-120 "10.0N 20.0S 100.1E 120W"]] : ''Met-cast HTTP'' <http://zowie.metnet.navy.mil/~spawar/JMV-TNG/Met-Cast-HTTP.html#req.header.accept>。データを要求する地域を表すらしい。 HTTP/1.1 の一応用なんだけど、これじゃあ不適合じゃないのかね?
+
+[FIG(quote)[
+[FIGCAPTION[
+[17] [CITE[Met-cast HTTP]] ([[oleg-at-pobox.com]] 著, [TIME[2003-10-07 04:24:02 +09:00]] 版) <http://okmij.org/JMV-TNG/Met-Cast-HTTP.html>
+]FIGCAPTION]
+
+>This header will be mandatory in version 2.0. It should tell the bounding box for an area on the globe for which data are requested.
+]FIG]
+
+[8] >>7 最後の[[引用文字列]]の部分が引数にしてあれば、
+「HTTP/1.1 には不適合だけど RTSP を考慮しても整合性のある拡張だ」
+とかなんとか好意的に評価することも可能だけど。。。
+
+** XPointer や RDQL を指定する実装例
+
+[10]
+[CITE[A Semantic Web Resource Protocol: XPointer and HTTP]]
+<http://www.mindswap.org/papers/swrp-iswc04.pdf>
+
+この論文では [[XPointer]] を使って資源の一部分を取り出す方法を提案しています。
+
+[PRE(HTTP example)[
+Range: xpointer=element(a12)
+]PRE]
+
+結果は [CODE(MIME)[[[multipart/mixed]]]]
+で複数の XML 実体として返します。
+
+XPointer scheme として [[RDF]]
+のグラフに照会するようなものを使う場合には単一の
+[CODE(MIME)[[[application/rdf+xml]]]]
+実体として返す使い方もできます。
+
+大変面白いアイデアですが、技術的問題点を指摘しておくなら、
+- もっと [[822]] や [[HTTP]] の全体と整合的であるように細かいところを詰める必要がある。
+- HTTP 頭欄では実質 [[US-ASCII]] しか安全に転送できない。
+[[XPointer]] は [CODE(char)[[[U+0000]]]]〜[CODE(char)[[[U+10FFFF]]]] の任意の文字を扱えるので、
+どう折り合いをつけるのか。
+
+などの問題を解決する必要があります。
+
+[11]
+>>10 の論文の別の例は [Q[xpointer=]] が抜けた構文になっていて、 HTTP 的には最悪な状況になっています。
+
+[12]
+[CITE[search.cpan.org: Apache::XPointer - mod_perl handler to address XML fragments.]] <http://search.cpan.org/~ascope/Apache-XPointer-1.1/lib/Apache/XPointer.pm>
+
+これは [[mod_perl]] を使った >>10-11 の実装です。 [WEAK[(まさに >>11 を使った最悪な。)]]
+
+[CODE(perl)[[[Apache::XPointer::XPath]]]]
+は [CODE(XPointerScheme)[[[xpointer]]()]]
+を使って [[XML実体]]の一部を [CODE(MIME)[[[multipart/mixed]]]] で送ったり、独自の[[封筒]]でまとめて一つの
+XML 実体として送ったりできます。
+
+[CODE(perl)[[[Apache::XPointer::RDQL]]]]
+は [[RDF]] のデータベースから [[RDQL]]
+による照会を使って [[RDF/XML]]
+実体を取り出すことができます。
+([CODE(HTTP)[Range]] の構文は更にひどくて、 XPointer ですらなく、単なる RDQL
+直書きになってしまっています。)
+結果は複数の [CODE(MIME)[[[application/rdf+xml]]]]
+の [CODE(MIME)[[[multipart/mixed]]]]
+にしたり、一つにまとめて順序情報の RDF 文付きで得たりできます。
+([[名無しさん]])
+
+[13]
+[CITE[Index of /javascript/xpointerhttprequest]] <http://aaronland.info/javascript/xpointerhttprequest/>
+
+こちらは >>12 に対応する [[JavaScript]] の実装。
+
+** 媒体向け
+
+[18] [[RTSP]] では[[媒体]]の時間を指定することになっています。
+
+[FIG(quote)[
+[FIGCAPTION[
+[16] RFC 2326 (RTSP/1.0) 12.29 Range
+]FIGCAPTION]
 
 > This request and response header field specifies a range of time.
 The range can be specified in a number of units. This specification
@@ -282,88 +361,16 @@ to keep server resources for extended idle periods.
 範囲頭に使われているものと似ています。
 これによりクライアントが媒体物体からの除外を選択出来、指定点から演奏して指定点で終えることや現在位置から指定点まで演奏することが出来ます。
 録音再生の開始は将来のどの時刻にも予定出来ますが、サーバーは待機期間を延ばすためのサーバー資源の確保を拒むかもしれません。
+]FIG]
 
+[19] [[HTTP]] でも同様の指定を使う提案がありました。
 
-** メモ
-
-[7] [SAMP(HTTP)[Range: lats=; lons=100-120 "10.0N 20.0S 100.1E 120W"]] : ''Met-cast HTTP'' <http://zowie.metnet.navy.mil/~spawar/JMV-TNG/Met-Cast-HTTP.html#req.header.accept>。データを要求する地域を表すらしい。 HTTP/1.1 の一応用なんだけど、これじゃあ不適合じゃないのかね?
-
-[8] >>7 最後の[[引用文字列]]の部分が引数にしてあれば、
-「HTTP/1.1 には不適合だけど RTSP を考慮しても整合性のある拡張だ」
-とかなんとか好意的に評価することも可能だけど。。。
-
-[10]
-[CITE[A Semantic Web Resource Protocol: XPointer and HTTP]]
-<http://www.mindswap.org/papers/swrp-iswc04.pdf>
-
-この論文では [[XPointer]] を使って資源の一部分を取り出す方法を提案しています。
-
-[PRE(HTTP example)[
-Range: xpointer=element(a12)
-]PRE]
-
-結果は [CODE(MIME)[[[multipart/mixed]]]]
-で複数の XML 実体として返します。
-
-XPointer scheme として [[RDF]]
-のグラフに照会するようなものを使う場合には単一の
-[CODE(MIME)[[[application/rdf+xml]]]]
-実体として返す使い方もできます。
-
-大変面白いアイデアですが、技術的問題点を指摘しておくなら、
-- もっと [[822]] や [[HTTP]] の全体と整合的であるように細かいところを詰める必要がある。
-- HTTP 頭欄では実質 [[US-ASCII]] しか安全に転送できない。
-[[XPointer]] は [CODE(char)[[[U+0000]]]]〜[CODE(char)[[[U+10FFFF]]]] の任意の文字を扱えるので、
-どう折り合いをつけるのか。
-
-などの問題を解決する必要があります。
-([[名無しさん]])
-
-[11]
->>10 の論文の別の例は [Q[xpointer=]] が抜けた構文になっていて、 HTTP 的には最悪な状況になっています。
-([[名無しさん]])
-
-[12]
-[CITE[search.cpan.org: Apache::XPointer - mod_perl handler to address XML fragments.]] <http://search.cpan.org/~ascope/Apache-XPointer-1.1/lib/Apache/XPointer.pm>
-
-これは [[mod_perl]] を使った >>10-11 の実装です。 [WEAK[(まさに >>11 を使った最悪な。)]]
-
-[CODE(perl)[[[Apache::XPointer::XPath]]]]
-は [CODE(XPointerScheme)[[[xpointer]]()]]
-を使って [[XML実体]]の一部を [CODE(MIME)[[[multipart/mixed]]]] で送ったり、独自の[[封筒]]でまとめて一つの
-XML 実体として送ったりできます。
-
-[CODE(perl)[[[Apache::XPointer::RDQL]]]]
-は [[RDF]] のデータベースから [[RDQL]]
-による照会を使って [[RDF/XML]]
-実体を取り出すことができます。
-([CODE(HTTP)[Range]] の構文は更にひどくて、 XPointer ですらなく、単なる RDQL
-直書きになってしまっています。)
-結果は複数の [CODE(MIME)[[[application/rdf+xml]]]]
-の [CODE(MIME)[[[multipart/mixed]]]]
-にしたり、一つにまとめて順序情報の RDF 文付きで得たりできます。
-([[名無しさん]])
-
-[13]
-[CITE[Index of /javascript/xpointerhttprequest]] <http://aaronland.info/javascript/xpointerhttprequest/>
-
-こちらは >>12 に対応する [[JavaScript]] の実装。
-([[名無しさん]])
-
-[[#comment]]
-
-
-* メモ
-
-[14]
-[CITE[Jorgen’s weblog about me - my thoughts - work &#187; Blog Archive &#187; W3c Range in Internet Explorer]] ([TIME[2008-10-07 14:18:43 +09:00]] 版) <http://jorgenhorstink.nl/2006/03/11/w3c-range-in-internet-explorer/>
-
-[823] [CITE@ja[RangeつきリクエストによるApacheのDoSとApache Killerの実力 | 水無月ばけらのえび日記]] ([TIME[2012-03-11 16:19:14 +09:00]] 版) <http://bakera.jp/ebi/topic/4512>
-
-[824] [CITE[Add constructor for Range. · cac920a · whatwg/dom]]
-( ([TIME[2013-02-16 12:40:25 +09:00]] 版))
-<https://github.com/whatwg/dom/commit/cac920a64a578dcc84de83777a9332fe04a01d6a>
-
-[825] [CITE@en-us[Protocol for Media Fragments 1.0 Resolution in HTTP]]
+[REFS[
+- [825] [CITE@en-us[Protocol for Media Fragments 1.0 Resolution in HTTP]]
 ( ([TIME[2011-12-01 08:49:26 +09:00]] 版))
 <http://www.w3.org/TR/media-frags-recipes/#rangerequestheaderdef>
+]REFS]
+
+* 実装
+
+[823] [CITE@ja[RangeつきリクエストによるApacheのDoSとApache Killerの実力 | 水無月ばけらのえび日記]] ([TIME[2012-03-11 16:19:14 +09:00]] 版) <http://bakera.jp/ebi/topic/4512>
