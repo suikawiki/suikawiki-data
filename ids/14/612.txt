@@ -313,68 +313,6 @@
 [[セッション履歴イベントループ]]はこれを避けるために導入されました [SRC[>>137]]。
 [[イベントループ]]が全体で1つしかない実装では、[[セッション履歴イベントループ]]も必要なく単一の[[イベントループ]]で処理できます。
 
-* 非同期的に実行される算法
-
-[43] [[Webブラウザー]]では次の算法がそれぞれ非同期的に実行されます。
-
-[FIG(list)[
-- イベントループ
--- メインの[[イベントループ]] (>>13)
--- [[run a worker]] (ワーカーのイベントループ >>42)
--- [[セッション履歴イベントループ]] (>>129)
--- [[スピン]] (>>17)
--- [[タスク]]
--- [[マイクロタスク]]
--- [[大域スクリプト片付けジョブ]]
-- 同期区間がある算法
--- 一覧は[[同期区間]]の項を参照
---- [CODE(HTMLe)@en[[[img]]]] や [CODE(HTMLe)@en[[[audio]]]] などにおける[[資源]]の扱いに関する算法
-- その他の算法 (仕様上、「asynchronously」または「in the background」、「in parallel」と記されているもの)
--- [[fetch]] に関わるいくつかのアルゴリズム
--- [CODE(JS)@en[[[document.load]]]] (途中から)
--- [CODE(HTMLe)@en[[[canvas]]]] の [CODE(DOMm)@en[[[toBlob]]]] (途中から)
--- [[downloading hyperlinks]] (途中から)
--- [[navigate]] (途中から)
--- [[application cache download process]]
--- [CODE(DOMm)@en[[[setTimeout]]]]、[CODE(DOMm)@en[[[setInterval]]]] (途中から)
--- [CODE(DOMi)@en[[[Worker]]]] [[構築子]] (途中から)
--- [CODE(DOMi)@en[[[SharedWorker]]]] [[構築子]] (途中から)
--- [CODE(DOMi)@en[[[EventSource]]]] の [[reestablish the connection]]
--- [CODE(DOMm)@en[[[postMessage]]]] (途中から)
--- [CODE(HTMLa)@en[[[ping]]]] の送信
--- [CODE(DOMi)@en[[[EventSource]]]] [[構築子]] (途中から)
--- [CODE(DOMi)@en[[[WebSocket]]]] [[構築子]] (途中から)
--- [[cache failure steps]] (一部)
--- [[kill a worker]]
--- [[terminate a worker]]
--- [CODE(HTML)@en[[[<input type=file>]]]] [CODE(DOMm)@en[[[click]]]] 時のファイル選択ダイアログの表示
--- [[File API]] についての[[ファイル・システム]]からの読み込み
--- [CODE(DOMm)@en[[[getRecordedData]]]]
--- [CODE(DOMm)@en[[[createImageBitmap]]]]
-]FIG]
-
-[47] 実際にはこの他に更に[[利用者インターフェイス]]など色々な要素が絡んできます。
-
-[105] [CODE(DOMi)@en[[[ApplicationCache]]]] の [CODE(DOMm)@en[[[abort]]]] [[メソッド]]は[RUBYB[裏で動いている]@en[in the background]]処理に対して[DFN[[RUBYB[信号を送信]@en[send a signal]]]]します。
-
-** 停止
-
-[72] ある[[算法]]が同時に実行中の他の[[算法]]を[RUBYB[停止]@en[abort]]させることがあります。 
-
-[FIG(list)[
-- [73] [[fetch]] はしばしば停止させられることがあります。
--- [74] [[update the image data]]
--- [78] [[[CODE(HTMLe)@en[track]]処理モデルの開始]]
--- [80] [CODE(DOMi)@en[[[EventSource]]]] の [CODE(DOMm)@en[[[close]]]]
--- [81] [CODE(DOMi)@en[[[EventSource]]]] の [[forcibly close]]
--- [82] [CODE(DOMi)@en[[[EventSource]]]] が[[ごみ収集]]された場合
-- [75] [[媒体要素読込算法]]が[[資源選択算法]]を停止させることがあります。
-- [76] [[seek]] が同時に実行中の [[seek]] を停止させることがあります。
-- [79] [[ワーカーを殺す]][[算法]]、[[ワーカーを終端させる]][[算法]]は実行中の[[スクリプト]]を停止させます。
-- [77] [[[CODE(HTMLe)@en[track]]処理モデルの開始]]は他の[[算法]]は停止させませんが、
-その代わりに動作中の同じ[[算法]]に処理を委ねて自身が停止します。
-]FIG]
-
 * 待ち
 
 [70] 仕様上、特定の条件が満たされるまで[RUBY[待つ]@en[wait]]ことが求められている場合があります。
@@ -498,6 +436,16 @@
 [203] これによって[[著者]]は[[スレッド]]間のアクセス制御など複雑な処理を書かなくても済みます。
 [[Webブラウザー]]は[[スクリプト]]が同時実行されないことを前提とした最適化を行えます
 (がそれが制約となるケースもあるかもしれません)。
+
+* 並列実行との関係
+
+[43] いくつかの[[アルゴリズム]]は[[並列実行]]されます。すなわち、
+[[イベントループ]]の動作中に同時に他の[[アルゴリズム]]が実行されていることがあります。
+
+[47] [[並列実行]]されている[[アルゴリズム]]と[[イベントループ]]は、
+[[同期区間]]により “[[join]]” されることがあります。
+
+;; [72] 詳しくは[[並列実行]]と[[安定状態]]を参照してください。
 
 * イベント・ループとの相互作用が不明なもの
 
