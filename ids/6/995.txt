@@ -1,4 +1,6 @@
-[8] [[満期時刻]]までの[[時間]]を[DFN[[RUBYB[[[新鮮寿命]]]@en[freshness lifetime]]]]といいます。[[新鮮寿命]]を過ぎていない[[応答]]を[DFN[[RUBYB[[[新鮮応答]]]@en[freshness response]]]]といいます。
+[8] [[キャッシュ]]が有効であるとただちに確認できる期限を[DFN[[RUBYB[[[満期時刻]]]@en[expiration time]]]]といいます。
+[[満期時刻]]までの[[時間]]を[DFN[[RUBYB[[[新鮮寿命]]]@en[freshness lifetime]]]]といいます。[[新鮮寿命]]を過ぎていない[[応答]]を[DFN[[RUBYB[[[新鮮応答]]]@en[freshness response]]]]、
+過ぎている[[応答]]を[DFN[[RUBYB[[[腐敗応答]]]@en[stale response]]]]といいます。
 
 * 仕様書
 
@@ -6,6 +8,27 @@
 - [2] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-4.2>
 -- [9] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-4.2.1>
 ]REFS]
+
+* 満期時刻
+
+[27] [DFN[[RUBYB[[[明示的満期時刻]]]@en[explicit expiration time]]]]は、
+[[キャッシュ]]がそれ以降は[[蓄積]]された[[応答]]を[[検証]]なしで利用できなくなると[[起源鯖]]が意図する[[時刻]]です
+[SRC[>>2]]。
+
+;; [[明示的満期時刻]]は [CODE(HTTP)@en[[[Expires:]]]] [[ヘッダー]]や
+[CODE(HTTP)@en[[[Cache-Control:]]]] [[ヘッダー]]の [CODE(HTTP)@en[[[max-age]]]]
+[[指示子]]で指定できます。
+
+[29] 通常は[[起源鯖]]は[[表現]]がそれまでは[[意味的]]に大きく変わらないだろうという将来の[[明示的満期時刻]]を指定しますが、
+[[要求]]があるたびに[[キャッシュ]]に[[検証]]させたい時は過去の[[明示的満期時刻]]を指定することもできます [SRC[>>2]]。
+
+[28] [DFN[[RUBYB[[[発見的満期時刻]]]@en[heuristic expiration time]]]]は、
+[[明示的満期時刻]]が利用できない ([[鯖]]が指定していない)
+ときに[[キャッシュ]]が割り当てるものです [SRC[>>2]]。
+
+;; [17] [[満期]]でもただちに[[蓄積]]された[[応答]]を破棄する必要はありません。
+[[キャッシュ]]が[[検証]]を実装していれば、[[満期]]後の[[応答]]
+([[腐敗応答]]) を[[検証]]して有効であれば[[応答]]として再利用できます。
 
 * 新鮮寿命
 
@@ -29,12 +52,13 @@
 [CODE(HTTP)@en[[[Expires:]]]] が複数ある場合は、値は[[非妥当]]とみなします。
 その場合[[腐敗]]とみなすことが[RUBYB[推奨]@en[encouraged]]されています。 [SRC[>>9]]
 
-* 新鮮応答
+* 新鮮応答と腐敗応答
 
 [3] [DFN[[RUBYB[[[新鮮応答]]]@en[fresh response]]]]は、
 [[齢]]が[[新鮮寿命]]をまだ超えていない[[応答]]です [SRC[>>2]]。
 
-;; [4] 超えたものを[[腐敗応答]]といいます。
+[4] [DFN[[RUBYB[[[腐敗応答]]]@en[stale response]]]]は、
+[[齢]]が[[新鮮寿命]]を超えた[[応答]]です [SRC[>>2]]。
 
 ;; [7] [[新鮮]]か[[腐敗]]かは、[[キャッシュ]]操作にのみ適用されるものです。
 [[利用者エージェント]]は[[腐敗]]していても表示し続けて何ら問題ありません。 [SRC[>>2]]
@@ -60,4 +84,14 @@
 expiration time.
 
 :新鮮寿命:[[応答]]の生成からその[[満期時刻]]までの間の時間の長さ。
+]FIG]
+
+[FIG(quote)[
+[FIGCAPTION[
+[16] [[HTTP]] ([[RFC2068]] 1.3, [[RFC2616]] 1.3)
+]FIGCAPTION]
+>
+:stale: A response is stale if its age has passed its freshness lifetime.
+
+:[RUBYB[腐敗]@en[stale]]:[[応答]]は、その[[齢]]が[[新鮮寿命]]を過ぎていれば腐っています。
 ]FIG]
