@@ -1,15 +1,66 @@
 [8] [DFN[[RUBY[[[齢]]][よわい]@en[age]]]]は、[[応答]]が[[起源鯖]]で[[生成]]されてからの[[時間]]です。
+[DFN[[CODE(HTTP)@en[[[Age:]]]]]] [[ヘッダー]]は[[応答]]の[[齢]]を表します。
 
 * 仕様書
 
 [REFS[
 - [7] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-4.2>
+-- [11] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-4.2.3>
 ]REFS]
 
 * 齢
 
 [10] [[応答]]の[DFN[[RUBY[[[齢]]][よわい]@en[age]]]]は、
 [[起源鯖]]で[[生成]]されたか、[[検証]]が[[成功]]したかのいずれかからの経過時間です [SRC[>>7]]。
+[[齢]] [CODE(math)[current_age]] は次の通り計算します。
+
+[13] [DFN[[[apparent_age]]]] は、手元の[[時計]]が十分よく[[起源鯖]]の[[時計]]と同期されている場合、
+[FIG(list)[
+- [CODE(math)[date_value]] は [CODE(HTTP)@en[[[Date:]]]] [[ヘッダー]]の値
+- [CODE(math)[apparent_age := max (response_time - date_value, 0)]] 
+]FIG]
+... と定義されます [SRC[>>11]]。
+
+[14] [DFN[[[corrected_age_value]]]] は、[[応答]]の経路上の[[キャッシュ]]がすべて [[HTTP/1.1]]
+を実装する場合に
+[FIG(list)[
+- [CODE(math)[age_value]] は [CODE(HTTP)@en[[[Age:]]]] [[ヘッダー]]の値か、なければ 0
+- [CODE(math)[request_time]] は[[蓄積]]された[[応答]]の元の[[要求]]を行った際の[[時計]]の現在値
+- [CODE(math)[response_time]] は[[応答]]を受信した際の[[時計]]の現在値
+- [CODE(math)[response_delay := response_time - request_time]]
+- [CODE(math)[corrected_age_value := age_value + response_delay]]
+]FIG]
+... と定義されます。なおこの値は[[応答]]の受信の[[時刻]]ではなく、
+[[要求]]が開始された[[時刻]]からの相対値と解釈します。 [SRC[>>11]]
+
+[15] [DFN[[[corrected_initial_age]]]] は、原則として
+[FIG(list)[
+- [CODE(math)[corrected_initial_age := max (apparent_age, corrected_age_value)]]
+]FIG]
+... と定義されます。ただし [CODE(HTTP)@en[[[Via:]]]] [[ヘッダー]]に [[HTTP/1.0]]
+[[ホップ]]が含まれないなど [CODE(HTTP)@en[[[Age:]]]] [[ヘッダー]]の値が信頼できると思われる場合は、
+[FIG(list)[
+- [CODE(math)[corrected_initial_age := corrected_age_value]]
+]FIG]
+... としても構いません。 [SRC[>>11]]
+
+[16] [DFN[[[current_age]]]] は
+[FIG(list)[
+- [CODE(math)[now]] は[[時計]]の現在値
+- [CODE(math)[resident_time := now - response_time]]
+- [CODE(math)[current_age := corrected_initial_age + resident_time]]
+]FIG]
+... と定義されます [SRC[>>11]]。
+
+;; [17] [[齢]]の計算には[[時計]]が必要です。[[キャッシュ]]は[[蓄積]]した[[応答]]を[[検証]]なしに再利用する場合の前提として[[時計]]を持たなければなりません。
+[[時計]]を持たない[[キャッシュ]]は、毎回[[検証]]しなければなりません。
+([[キャッシュ可能性]]参照。)
+
+* [CODE(HTTP)@en[Age:]] ヘッダー
+
+[12] [CODE(HTTP)@en[[[Age:]]]] [[ヘッダー]]は[[応答]]を[[キャッシュ]]から取得した時の[[齢]]の見積もりを示すものです。
+その値は、[[応答]]を[[起源鯖]]が[[生成]]または[[検証]]してからの経過[[秒]]数を[[キャッシュ]]が見積もったものです。
+[SRC[>>11]]
 
 * 歴史
 
