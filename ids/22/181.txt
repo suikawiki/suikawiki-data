@@ -14,12 +14,14 @@
 -- [21] [CITE@en[RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests]] ([TIME[2014-09-11 10:02:44 +09:00]] 版) <https://tools.ietf.org/html/rfc7232#section-3.2>
 -- [14] [CITE@en[RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests]] ([TIME[2014-09-11 10:02:44 +09:00]] 版) <https://tools.ietf.org/html/rfc7232#section-3.3>
 -- [25] [CITE@en[RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests]] ([TIME[2014-09-11 10:02:44 +09:00]] 版) <https://tools.ietf.org/html/rfc7232#section-3.4>
+-- [79] [CITE@en[RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests]] ([TIME[2014-09-11 10:02:44 +09:00]] 版) <https://tools.ietf.org/html/rfc7232#section-4.1>
 -- [18] [CITE@en[RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests]] ([TIME[2014-09-11 10:02:44 +09:00]] 版) <https://tools.ietf.org/html/rfc7232#section-5>
 -- [29] [CITE@en[RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests]] ([TIME[2014-09-11 10:02:44 +09:00]] 版) <https://tools.ietf.org/html/rfc7232#section-6>
 - [1] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-5.2>
 - [28] [CITE@en[RFC 7233 - Hypertext Transfer Protocol (HTTP/1.1): Range Requests]] ([TIME[2014-09-11 09:57:55 +09:00]] 版) <https://tools.ietf.org/html/rfc7233#section-3.2>
 - [35] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-4.3.2>
 - [73] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-4.3.3>
+- [83] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-4.3.4>
 ]REFS]
 
 * 意味
@@ -61,7 +63,7 @@
 [[クライアント]]は条件が無視されて通常の[[応答]]が返された場合にも対処できる必要があります。
 
 [69] [[検証]]のために[[キャッシュ]]が[[条件付き要求]]を行う場合は、
-次のようにします。
+次のように処理します。
 
 [FIG(steps)[
 = [70] [[要求]]を[[転送]]します。
@@ -79,6 +81,40 @@
 == [76] [[蓄積]]された[[応答]]を新しいもので置換して構いません。
 == [77] 新しい[[応答]]を再利用します。
 ]FIG]
+
+[78] [[キャッシュ]]が [CODE(HTTP)[[[304]]]] [[応答]]を受信した場合
+([[検証]]以外も含みます。) には、次のように処理します。
+
+[FIG(steps)[
+= [84] 新しい[[応答]]が[[強い検証子]]を含む場合は、
+== [85] 同じ[[強い検証子]]を持つ[[蓄積された応答]]すべてを (あれば) 選択します [SRC[>>83]]。
+= [86] そうでなく新しい[[応答]]が[[弱い検証子]]を含む場合で、
+同じ[[弱い検証子]]を持つ[[蓄積された応答]]がある場合は、
+== [87] そのうち最新のもののみを選択します [SRC[>>83]]。
+= [88] そうでない場合で、[[蓄積された応答]]が1つだけあり、
+[[検証子]]が含まれない場合には、
+== [89] その[[蓄積された応答]]を選択します [SRC[>>83]]。
+= [90] 選択した[[蓄積された応答]]があれば、それぞれについて、
+== [91] [[警告符号]] [CODE(HTTP)[[[1xx]]]] の [CODE(HTTP)@en[[[Warning:]]]]
+[[ヘッダー]]を[[蓄積された応答]]から削除します [SRC[>>83]]。
+== [92] [CODE(HTTP)[[[304]]]] [[応答]]に含まれるその他の[[ヘッダー]]について、
+[[蓄積された応答]]の対応する[[ヘッダー]]を置き換えます [SRC[>>83]]。
+= [80] [[外向き]]の[[クライアント]]が[[条件付き要求]]を作成した場合、
+例えば[[キャッシュ]]を持つ[[利用者エージェント]]が[[共有串]]に[[条件付きGET]]
+を送信した場合には、[[串]]は [CODE(HTTP)[[[304]]]] 
+[[応答]]をその[[クライアント]]に[[転送]]する[['''べきです''']]
+[SRC[>>79]]。
+= [82] そうでない場合は、更新した[[蓄積された応答]]を[[転送]]します。
+]FIG]
+
+;; [81] なぜ >>80 が [['''SHOULD''']] でしかないのかは不明です。
+
+;; [93] その他の[[ヘッダー]]を置き換えるということなので、 [CODE(HTTP)[[[304]]]]
+[[応答]]に [CODE(HTTP)@en[[[Warning:]]]] が含まれていても無視するようです。
+
+;; [94] 元の[[蓄積された応答]]に含まれない[[ヘッダー]]が [CODE(HTTP)[[[304]]]]
+[[応答]]に含まれる場合の処理は明記されていませんが、
+[[蓄積された応答]]に追加するべきと思われます。
 
 * 鯖の処理モデル
 
