@@ -9,6 +9,7 @@
 -- [8] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-4.2.2>
 -- [9] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-4.2.3>
 - [5] [CITE@en[RFC 7230 - Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing]] ([TIME[2014-06-07 01:59:35 +09:00]] 版) <https://tools.ietf.org/html/rfc7230#section-3.3>
+- [27] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-4.3.5>
 - [1] [CITE@en[RFC 3875 - The Common Gateway Interface (CGI) Version 1.1]] ([TIME[2011-11-20 06:09:05 +09:00]] 版) <http://tools.ietf.org/html/rfc3875#section-4.3.3>
 ]REFS]
 
@@ -17,6 +18,12 @@
 [14] [CODE(HTTP)@en[[[HEAD]]]] [[要求]]の [[payload]] の意味は定義されていません [SRC[>>11]]。
 
 [15] 実装によっては [[payload]] がある[[要求]]を拒絶することがあります [SRC[>>11]]。
+
+[16] [CODE(HTTP)@en[[[Content-Length:]]]] [[ヘッダー]]を指定することができますが、
+[[メッセージ本体]]の長さではなく、 [CODE(HTTP)@en[[[GET]]]] [[要求]]だった場合に含まれるであろう
+[[payload body]] の長さを表します。
+
+;; [CODE(HTTP)@en[[[Content-Length:]]]] を参照。
 
 * 性質
 
@@ -27,9 +34,6 @@
 [[冪等なメソッド]]です [SRC[>>8]]。
 
 [10] [CODE(HTTP)@en[[[HEAD]]]] は、[[キャッシュ可能]]です [SRC[>>9, >>11]]。
-[16] [[キャッシュ]]は、[CODE(HTTP)@en[[[Cache-Control:]]]] [[ヘッダー]]によって指定がある場合を除き、
-[CODE(HTTP)@en[[[HEAD]]]] [[要求]]に対する[[応答]]を以後の [CODE(HTTP)@en[[[HEAD]]]]
-[[要求]]の処理に用いて構いません。 [SRC[>>11]]
 
 * 処理モデル
 
@@ -43,11 +47,27 @@
 [13] [[鯖]]は、 [CODE(HTTP)@en[[[GET]]]] [[要求]]だったとした場合に送られるのと同じ[[ヘッダー]]を[[応答]]に含めて送信する[['''べきです''']]。
 ただし、 [[payload header]] は、省略して構いません。 [SRC[>>11]]
 
-[17] [CODE(HTTP)@en[[[HEAD]]]] への[[応答]]は、以前の [CODE(HTTP)@en[[[GET]]]]
-への[[応答]]の[[キャッシュ]]にも影響します [SRC[>>11]]。
-
 [18] [CODE(HTTP)@en[[[GET]]]] への[[応答]]の[[キャッシュ]]を [CODE(HTTP)@en[[[HEAD]]]]
 への[[応答]]のために用いることもできます。
+
+[28] [[キャッシュ]]が [CODE(HTTP)@en[[[HEAD]]]] [[要求]]に対して
+[CODE(HTTP)[[[200]]]] [[応答]]を受信した場合は、次のようにする[['''べきです''']] 
+[SRC[>>27]]。
+
+[FIG(steps)[
+= [29] 相当する [CODE(HTTP)@en[[[GET]]]] [[要求]]に対する[[蓄積された応答]]を選択します。
+= [32] 各[[応答]]について、
+== [30] [[検証子]]が新しい[[応答]]と一致するもので、
+[CODE(HTTP)@en[[[Content-Length:]]]] [[ヘッダー]]が新しい[[応答]]一致するもの
+(またはどちらも同[[ヘッダー]]がない場合) について、
+=== [33] [[蓄積された応答]]から[[警告符号]] [CODE(HTTP)[[[1xx]]]] の 
+[CODE(HTTP)@en[[[Warning:]]]] [[ヘッダー]]があれば削除します。
+=== [34] [CODE(HTTP)[[[304]]]] [[応答]]に含まれる[CODE(HTTP)@en[[[Warning:]]]]
+以外の[[ヘッダー]]について、
+[[蓄積された応答]]の対応する[[ヘッダー]]を置き換えます。
+===- [35] ただし [CODE(HTTP)@en[[[Cache-Control:]]]] で制限されている場合を除きます。
+== [31] それ以外の場合、[[蓄積された応答]]を[[腐敗]]とします。
+]FIG]
 
 * 歴史
 
