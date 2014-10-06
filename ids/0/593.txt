@@ -5,6 +5,7 @@
 
 [REFS[
 - [19] '''[CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-5.2>'''
+-- [40] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-5.2.3>
 ]REFS]
 
 * 意味
@@ -21,6 +22,8 @@
 しかしいずれにせよ[[指令]]は一方向的なものですから、
 [[要求]]で指定されていたとしても、[[応答]]でも同じ[[指令]]が適用されることを意味しません
 [SRC[>>19]]。
+
+;; [45] 同じ[[キャッシュ指令]]でも[[要求]]と[[応答]]で[[引数]]の構文が異なることがあります。
 
 * 構文
 
@@ -82,7 +85,19 @@
 [24] [[串]]は、[[キャッシュ]]を有しているかどうかに関わらず、
 [[キャッシュ指令]]をそのまま[[転送]]しなければ[['''なりません''']] [SRC[>>19]]。
 
-[18] 同じ[[指令]]が複数ある場合については、[[新鮮寿命]]を参照。
+[41] [[キャッシュ]]は、未知の[[キャッシュ指令]]を無視しなければ[['''なりません''']] [SRC[>>40]]。
+
+[18] 同じ[[指令]]が複数ある場合について一般的な規定はありません。
+一部の[[キャッシュ指令]]では規定があります ([[新鮮寿命]]を参照)。
+
+[43] 各[[キャッシュ指令]]の処理モデルについては、それぞれの項を参照。
+
+[42] なお、[[キャッシュ指令]]の中には [CODE(HTTP)@en[[[no-transform]]]]
+のように[[キャッシュ]]を持たない[[中間器]]にも適用されるものもあります。
+また、[[AppCache]] や独自の[[キャッシュ]]システムなど [[HTTPキャッシュ]]以外の仕組みでも
+[CODE(HTTP)@en[[[Cache-Control:]]]] の一部の[[キャッシュ指令]]に従うものがあります。
+
+;; 各[[キャッシュ指令]]の項を参照。
 
 * キャッシュ指令
 
@@ -117,6 +132,9 @@
 ,[CODE(HTTP)@en[[[s-maxage]]]],,○,"[[RFC 2616]]"
 ,[CODE(HTTP)@en[[[stale-if-error]]]],,○,[[RFC 5861]]
 ,[CODE(HTTP)@en[[[stale-while-revalidate]]]],,○,[[RFC 5861]]
+
+[44] [[RFC 7234]] は「[CODE(HTTP)@en[community]]」という架空の[[キャッシュ指令]]の例を示しています
+[SRC[>>40]]。
 
 * 歴史
 
@@ -346,55 +364,7 @@ of the rest of the response.
 
 * 14.9.2 What May be Stored by Caches [INS[キャッシュは何を蓄積してもよいか]]
 
->
-:[INS[no-store]]:
-The purpose of the no-store directive is to prevent the inadvertent
-release or retention of sensitive information (for example, on backup
-tapes). The no-store directive applies to the entire message, and [DEL[may]] [INS[MAY]]
-be sent either in a response or in a request. If sent in a request, a
-cache MUST NOT store any part of either this request or any response
-to it. If sent in a response, a cache MUST NOT store any part of
-either this response or the request that elicited it. This directive
-applies to both non-shared and shared caches. "MUST NOT store" in
-this context means that the cache MUST NOT intentionally store the
-information in non-volatile storage, and MUST make a best-effort
-attempt to remove the information from volatile storage as promptly
-as possible after forwarding it.
-
-[CODE(HTTP)[no-store]] 指令の目的は、 (例えば、バックアップ・テープ上に)
-繊細な情報が不注意で放出・記憶されるのを防ぐことです。
-[CODE(HTTP)[no-store]] 指令はメッセージ全体に適用され、
-応答中でも要求中でも送信して'''構いません'''。要求中で送る場合、
-キャッシュはこの要求及びそれに対する応答のどの部分も蓄積しては'''なりません'''。
-この指令は、非共有キャッシュにも共有キャッシュにも適用されます。
-この文脈で、「蓄積'''してはならない'''」とは。
-キャッシュが情報を非揮発性記憶装置に意図的に蓄積しては'''ならず'''、
-その情報を送信した後に可及的速やかに揮発性の蓄積装置からも消去する最善の努力を行わなければ'''ならない'''ことを意味します。
-
-> Even when this directive is associated with a response, users [DEL[may]] [INS[might]]
-explicitly store such a response outside of the caching system (e.g.,
-with a "Save As" dialog). History buffers [DEL[may]] [INS[MAY]] store such responses as
-part of their normal operation.
-
-この指令が応答に関連付けられている時であっても、利用者はそのような応答をキャッシュ・システムの外部で
-(例えば「名前をつけて保存」対話によって)
-陽に蓄積しても構いません。記憶バッファーはそのような応答を通常の操作で蓄積して構いません。
-
-> The purpose of this directive is to meet the stated requirements of
-certain users and service authors who are concerned about accidental
-releases of information via unanticipated accesses to cache data
-structures. While the use of this directive [DEL[may]] [INS[might]] improve privacy in
-some cases, we caution that it is NOT in any way a reliable or
-sufficient mechanism for ensuring privacy. In particular, malicious
-or compromised caches [DEL[may]] [INS[might]] not recognize or obey this directive[DEL[;]][INS[,]] and
-communications networks [DEL[may]] [INS[might]] be vulnerable to eavesdropping.
-
-この指令に目的は、キャッシュのデータ構造に対する予想外の接続によって情報が偶発的に放出されることを心配する利用者やサービス著者の要求に応えることです。
-この指令の使用は幾つかの場合に個人情報の扱いを改善するかもしれませんが、
-プライバシーの確保には信頼可能で十分な仕組みでは'''ない'''ことを警告します。
-特に、悪意のあるキャッシュや怪しげなキャッシュは、
-この指令を認識したりしたがったりしないかもしれず、
-通信網には盗聴の危険があるかもしれません。
+;; [CODE(HTTP)@en[[[no-store]]]] 参照。
 
 * 14.9.3 Modifications of the Basic Expiration Mechanism [INS[基本満期機構の修正]]
 
@@ -620,28 +590,9 @@ allow them to be cached at all.
 
 * 14.9.5 No-Transform Directive [INS[非変換指令]]
 
->
-:[INS[no-transform]]:
-Implementers of intermediate caches (proxies) have found it useful to
-convert the media type of certain entity bodies. A [INS[non-transparent]]
-proxy might, for example, convert between image formats in order to save cache space
-or to reduce the amount of traffic on a slow link. [DEL[HTTP has to date been silent on these transformations.]]
+;; [CODE(HTTP)@en[[[no-transform]]]] 参照。
 
-> Serious operational problems [DEL[have already occurred]] [INS[occur]], however, when
-these transformations [DEL[have been]] [INS[are]] applied to entity bodies intended for
-certain kinds of applications. For example, applications for medical
-imaging, scientific data analysis and those using end-to-end
-authentication, all depend on receiving an entity body that is bit
-for bit identical to the original entity-body.
-
-> Therefore, if a response includes the no-transform directive, an
-intermediate cache or proxy MUST NOT change those headers that are
-listed in section 13.5.2 as being subject to the no-transform
-directive.  This implies that the cache or proxy [DEL[must not]] [INS[MUST NOT]]
-change any aspect of the entity-body that is specified by these headers[DEL[.]][INS[,]] including the value of the entity-body itself.
-
-
-*** 14.9.6 Cache Control Extensions [INS[キャッシュ制御拡張]]
+* 14.9.6 Cache Control Extensions [INS[キャッシュ制御拡張]]
 
 > The Cache-Control header field can be extended through the use of one
 or more cache-extension tokens, each with an optional assigned value.
