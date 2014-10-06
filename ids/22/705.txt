@@ -31,10 +31,23 @@
 [[再利用]]のために[[検証]]が必要です。保存すら認めたくない場合には、
 [CODE(HTTP)@en[[[no-store]]]] を使うことができます。
 
+[27] [[応答]]における [CODE(HTTP)@en[[[Pragma:]] [[no-cache]]]] の意味は定義されていません
+[SRC[>>20]] から、構文上[[応答]]に含めても問題ないとは言え、
+[CODE(HTTP)@en[[[Cache-Control:]] [[no-cache]]]] のかわりとはできません。
+
+[28] 一部の [[Webブラウザー]]は、 [[HTML文書]]中の
+[CODE(HTML)@en[<[[meta]] [[http-equiv]]=[[Pragma]] [[content]]=[[no-cache]]>]]
+のような指定に対応しています。
+
 * 構文
 
 [4] [[要求]]の [CODE(HTTP)@en[[[Cache-Control:]]]] [[ヘッダー]]では、
 [[引数]]は指定できません [SRC[>>3]]。
+
+[21] [[要求]]の [CODE(HTTP)@en[[[Pragma:]]]] [[ヘッダー]]では、
+[[引数]]は指定できません [SRC[>>20]]。
+
+;; [22] 仕様上明記されていませんが、 [[ABNF]] 構文の意図を推測すると[[引数]]を指定することは認められていないようです。
 
 [7] [[応答]]の [CODE(HTTP)@en[[[Cache-Control:]]]] [[ヘッダー]]では、
 [[引数]]を指定してもしなくても構いません。
@@ -57,9 +70,37 @@
 [[字句]]とする[['''べきではありません''']] [SRC[>>6]]。
 [[受信者]]はどちらにも対応する[RUBYB[べき]@en[ought to]]です [SRC[>>3]]。
 
+* 文脈
+
+[24] [[要求]]で [CODE(HTTP)@en[[[Pragma:]] [[no-cache]]]] を指定する時は、
+[CODE(HTTP)@en[[[Cache-Control:]] [[no-cache]]]] も指定する[RUBYB[べき]@en[ought to]]です。
+ただし [CODE(HTTP)@en[[[Cache-Control:]]]] で他の[[キャッシュ指令]]を指定する時はその限りではありません。
+[SRC[>>20]]
+
+[EG[
+[25] 例えば
+[PRE(HTTP code)[
+Cache-Control: max-age=30
+Pragma: no-cache
+]PRE]
+... のようにして [CODE(HTTP)@en[[[Cache-Control:]]]] に対応している[[キャッシュ]]には
+[CODE(HTTP)@en[[[max-age]]]] を適用させ、古い[[キャッシュ]]には
+[CODE(HTTP)@en[[[no-cache]]]] を適用させることができます。
+]EG]
+
+;; [26] ただし [CODE(HTTP)@en[[[Cache-Control:]]]] に対応していない古い[[キャッシュ]]がどれだけ現存しているのかは不明です。
+現在では [CODE(HTTP)@en[[[Pragma:]]]] なしで [CODE(HTTP)@en[[[Cache-Control:]]]]
+のみが指定されることが多いですから、 [CODE(HTTP)@en[[[Pragma:]]]]
+にしか対応できない[[キャッシュ]]は[[Web互換]]とはいえません。
+
 * 処理モデル
 
 [5] [[キャッシュ再利用]]参照。
+
+[23] [[要求]]に [CODE(HTTP)@en[[[Cache-Control:]]]] [[ヘッダー]]が無い場合、
+[[キャッシュ]]は [CODE(HTTP)@en[[[Pragma:]]]] [[ヘッダー]]の
+[CODE(HTTP)@en[[[no-cache]]]] [[指令]]を [CODE(HTTP)@en[[[Cache-Control:]] [[no-cache]]]]
+が指定されたものとして処理しなければ[['''なりません''']] [SRC[>>20]]。
 
 [11] [[応答]]の [CODE(HTTP)@en[[[Cache-Control:]]]] [[ヘッダー]]において[[ヘッダー名]]が指定されていない場合は、
 [[再利用]]の前に必ず[[検証]]しなければなりません。
@@ -81,3 +122,74 @@
 
 [19] [[Webブラウザー]]の[[スーパーリロード]]では [CODE(HTTP)@en[[[Cache-Control:]] [[no-cache]]]] 付きの[[要求]]が[[生成]]されるのが普通です。通常の[[再読み込み]]でも
 [CODE(HTTP)@en[[[Cache-Control:]] [[no-cache]]]] が付されることもあります。
+
+** IE における [CODE(HTML)@en[<meta http-equiv=Pragma content=no-cache>]]
+
+[29] [[WinIE]] 3.02〜4.01 には、[CODE(HTML)[<[CODE(HTMLe)[meta]] [CODE(HTMLa)[http-equiv]]="pragma" [CODE(HTMLa)[content]]="no-cache">]]
+が最初の方にあるとキャッシュにきっちり保存してしまい、
+M$ はこれを不具合と認識していました。
+
+''Q222064 - "Pragma: No-cache" Tag May Not Prevent Page from Being Cached'' <http://web.archive.org/web/20010808174139/support.microsoft.com/support/kb/articles/Q222/0/64.ASP>
+
+対策として、この文書では [CODE(HTMLe)[[[body]]]] 要素の後に2つめの
+[CODE(HTMLe)[[[head]]]] 要素を置き、その中に [CODE(HTMLe)[meta]]
+要素のタグを書けとものすごいことを言っています。例:
+[PRE[
+<HTML>
+<HEAD>
+    <META HTTP-EQUIV="REFRESH" CONTENT="5">
+    <TITLE> Pragma No-cache </TITLE>
+</HEAD>
+<BODY>
+    This is an example of where to place the second header section<br>
+    so that the "Pragama, No-Cache" metatag will work as it is supposed to.<br>
+</BODY>
+<HEAD>
+    <META HTTP-EQUIV="PRAGMA" CONTENT="NO-CACHE">
+</HEAD>
+</HTML>
+]PRE]
+
+M$ は一体何を考えているのでしょう。英語の意味もついに分からなくなりましたか。
+
+[30] [[WinIE4]] (4.01 SP2 まで) には、 [CODE(HTML)[<[CODE(HTMLe)[meta]] [CODE(HTMLa)[http-equiv]]="pragma" [CODE(HTMLa)[content]]="no-cache">]]
+が含まれている文書について、その大きさが64キロオクテット以下なら[[キャッシュ]]から削除、それより大きければ普通に削除しないという挙動を取っていました。
+[[M$]] はこれを不具合と認識し、修正パッチを出しています。
+
+''Q234247 - Web Page with "Pragma: No-Cache" Tag Stored in Cache Not Deleted'' <http://web.archive.org/web/20010816054645/http://support.microsoft.com/support/kb/articles/Q234/2/47.ASP>
+
+[31] ''Q234067 - HOWTO: Prevent Caching in Internet Explorer'' <http://web.archive.org/web/20010810040821/support.microsoft.com/support/kb/articles/Q234/0/67.ASP>
+によれば、 WinIE4 と [[WinIE5]] で [CODE(HTTP)[Pragma: no-cache]] (と HTML 形)
+を処理してくれるのは over [[SSL]] の時だけだそうです。
+
+仕様書に従うなら [CODE(HTTP)[Pragma: no-cache]] が使えるのは要求のときで応答のときは駄目なんだ、ほんとは、なーんて珍しくまともなことを言っています。
+
+[32] [CITE@ja-JP[''''''[''''''HOWTO'''''']'''''' Internet Explorer でキャッシュを無効にする]]
+( ([TIME[2014-09-23 13:01:18 +09:00]] 版))
+<http://support.microsoft.com/kb/234067>
+
+* 応答における [CODE(HTTP)@en[Pragma: no-cache]]
+
+[33] [[HTTP]] [[RFC]] は[[応答]]における [CODE(HTTP)@en[[[Pragma:]] [[no-cache]]]]
+は意味が定義されておらず、効果は当てにできないしています (>>27)。
+
+[REFS[
+- [36] [CITE[ブラウザキャッシュとレスポンスヘッダ - murankの日記]] ([TIME[2014-10-06 08:57:05 +09:00]] 版) <http://d.hatena.ne.jp/murank/20090714/1247828669>
+]REFS]
+
+[37] >>36 によれば[[応答]]の [CODE(HTTP)@en[[[Pragma:]] [[no-cache]]]]
+に [[Firefox]]、[[Opera]]、[[Chrome]] が対応しているものの、 [[IE]]
+は対応していないようです。対応している場合、 [CODE(HTTP)@en[[[Cache-Control:]]]]
+[[ヘッダー]]の有無に関わらず、 [CODE(HTTP)@en[[[Cache-Control:]] [[no-cache]]]]
+と同じ効果を持つようです。
+
+[34] 次のサイトは [CODE(HTTP)@en[[[Cache-Control:]] [[no-cache]]]] などと併用して
+[CODE(HTTP)@en[[[Pragma:]] [[no-cache]]]] を[[応答]]に含めることで[[キャッシュ]]を無効化できると説明していますが、
+他の解説サイト等の[[コピペ]]なのか実際に動作を確認したのかは不明です。
+
+[REFS[
+- [38] [CITE[キャッシュされないようにするには?]] ([TIME[2013-01-05 10:50:45 +09:00]] 版) <http://www.tohoho-web.com/wwwxx008.htm>
+- [35] [CITE@ja[ブラウザ のキャッシュを制御する/no-cache]] ([TIME[2012-05-20 02:41:43 +09:00]] 版) <http://tech.bayashi.net/pdmemo/browsercache.html>
+- [40] [CITE@en[PHP: header - Manual]] ([TIME[2014-10-03 10:18:46 +09:00]] 版) <http://php.net/manual/en/function.header.php>
+- [39] [CITE@en-US[A Beginner's Guide to HTTP Cache Headers | Mobify]] ([[Mobify]] 著, [TIME[2014-10-04 17:06:17 +09:00]] 版) <http://www.mobify.com/blog/beginners-guide-to-http-cache-headers/>
+]REFS]
