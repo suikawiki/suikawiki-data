@@ -1,27 +1,6 @@
-[1] [CODE(HTTP)[Pragma]] 頭欄を使って、要求・応答鎖の中継者・最終受信者に
-pragma 指令を与えることができます。
-
-例えば、 [CODE(HTTP)[Pragma: no-cache]] を''要求''で使うと、
-要求鎖の途中で[[キャッシュ]]の複製を使わずに、[[起源サーバー]]の応答を得たいと主張できます。
-
-[2] [CODE(HTTP)[Pragma]] 頭欄は [[HTTP/1.0]] で使われていましたが、
-[[HTTP/1.1]] では互換性のためにのみ使用し、新たな pragma 指令は追加しないことになりました。
-
-[CODE(HTTP)[[[no-cache]]]] は [CODE(HTTP)[[[Cache-Control]]: no-cache]] 
-で代替できます。
-受信者が HTTP/1.0 か HTTP/1.1 か分からない時には [CODE(HTTP)[Pragma]]
-と [CODE(HTTP)[Cache-Control]] の両方を使うのが良いとされています。
-
-[3] [[応答]]の受信者 ([[WWWブラウザ]]など) が [[CGIスクリプト]]の出力のような動的に生成された応答をキャッシュしないように、
-''応答で'' [CODE(HTTP)[Pragma: no-cache]] が使われることがよくあります。
-([[HTML]] 形の [CODE(HTML)[<[CODE(HTMLe)[[[meta]]]] [CODE(HTMLa)[[[http-equiv]]]]="pragma" [CODE(HTMLa)[[[content]]]]="no-cache">]]
-として使われることが特に多いようです。)
-しかし、この使い方は実は RFC では規定されていません。 RFC 2616
-の注記にあるように、正しく解釈される可能性は低いでしょう。
-[WEAK[(現実には要求で使われることよりも応答で、しかも HTML 形で使われることが圧倒的に多いのでしょうけどねぇ。)]]
-
-正しく理解されることを望む時は、 [CODE(HTTP)[Cache-Control: no-cache]] 
-を使わないといけません。
+[1] [DFN[[CODE(HTTP)@en[[[Pragma:]]]]]] [[ヘッダー]]は、
+[[キャッシュ]]に関する指示を記述するものでした。 [CODE(HTTP)@en[[[Cache-Control:]]]]
+[[ヘッダー]]の導入以前に使われていました。
 
 * 仕様書
 
@@ -29,16 +8,77 @@ pragma 指令を与えることができます。
 - [14] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-5.4>
 ]REFS]
 
-* [CODE(ABNF)@en[pragma-directive]]
+* 意味
 
-[7] 
-,[CODE(ABNF)@en[pragma-directive]],出典
-,[CODE(HTTP)@en[[[for]]]],>>4
-,[CODE(HTTP)@en[[[no-cache]]]],"[DEL[[[HTTP92]]]], [[RFC 1945]], [DEL[[[RFC 2068]]]], [[RFC 2616]]"
+[16] [CODE(HTTP)@en[[[Pragma:]]]] [[ヘッダー]]は、 [[HTTP/1.0]]
+時代に[[受信者]]に対する[[実装規定]]の[[指令]]を記述するためのものとして導入されました。
+[[HTTP/1.1]] 時代になって[[相互運用性]]を損ねるものとして[[非推奨]]とされています。 [SRC[>>14]]
+
+[17] 現在は [CODE(HTTP)@en[[[Pragma:]]]] [[ヘッダー]]は
+[[HTTP/1.0]] [[キャッシュ]]との[[後方互換性]]のために
+[CODE(HTTP)@en[[[no-cache]]]] [[指令]]を記述するためのものとされています [SRC[>>14]]。
+
+* 構文
+
+[21] [CODE(HTTP)@en[[[Pragma:]]]] [[ヘッダー]]の値は、1つ以上の
+[CODE(ABNF)@en[pragma-directive]] の[[リスト]] ([CODE(HTTP)[#]]) です [SRC[>>14]]。
+
+[FIG(railroad)[
+= [CODE(ABNF)@en[pragma-directive]]
+= *
+== [[OWS]]
+== [CODE(HTTP)[[[,]]]]
+== [[OWS]]
+== [CODE(ABNF)@en[pragma-directive]]
+]FIG]
+
+[22] [CODE(ABNF)@en[pragma-directive]] は、名前と値を [CODE(HTTP)[[[=]]]]
+で連結したものです。ただし [CODE(HTTP)[=]] と値は省略できます。 [SRC[>>14]]
+
+[23] 名前は[[字句]]です [SRC[>>14]]。[[大文字・小文字不区別]]です。
+
+;; [28] 仕様上は [[ABNF]] により [CODE(HTTP)@en[[[no-cache]]]] が[[大文字・小文字不区別]]と明確になっていますが、それ以外がそうなのかどうかは明言されていません。
+
+[24] 値は[[字句]]または[[引用文字列]]です。 [SRC[>>14]]
+
+[FIG(railroad)[
+= [[字句]]
+= ?
+== [CODE(HTTP)[[[=]]]]
+== |
+=== [[字句]]
+=== [[引用文字列]]
+]FIG]
+
+[26] 値の有無やその解釈は [CODE(ABNF)@en[pragma-directive]] によって異なります。
+
+;; [25] [CODE(HTTP)[[[=]]]] の前後に [[BWS]] は無いようです。
 
 * 文脈
 
+[18] [[クライアント]]は、 [[HTTP/1.0]] [[キャッシュ]]との[[後方互換性]]のために必要なら
+[CODE(HTTP)@en[[[Pragma:]] [[no-cache]]]] を指定できます [SRC[>>14]]。
+
 [13] 明記されていませんが、 [CODE(HTTP)[[[304]]]] でも使って良いと推測されます。
+
+* 処理モデル
+
+[19] [[要求]]に [CODE(HTTP)@en[[[Cache-Control:]]]] [[ヘッダー]]が含まれる場合、
+[CODE(HTTP)@en[[[Pragma:]]]] [[ヘッダー]]は無視されます [SRC[>>14]]。
+
+;; [20] [CODE(HTTP)@en[[[Cache-Control:]] [[no-cache]]]] が含まれなくても、
+[CODE(HTTP)@en[[[Cache-Control:]]]] [[ヘッダー]]があれば無視されるようです。
+
+* [CODE(ABNF)@en[pragma-directive]]
+
+[7] [CODE(ABNF)@en[[[pragma-directive]]]] としては次のものがあります。
+[FIG(short list)[
+- [CODE(HTTP)@en[[[no-cache]]]]
+- [CODE(HTTP)@en[[[for]]]]
+]FIG]
+
+;; [27] [CODE(HTTP)@en[[[no-cache]]]] 以外は[[非推奨]]とされているようですが (>>16)、
+他の値も特に禁止はされていません。
 
 * 歴史
 
