@@ -1,12 +1,41 @@
+[44] [DFN[[CODE(HTTP)@en[[[Expires:]]]]]] [[ヘッダー]]は[[応答]]が[[腐敗]]する[[日時]]を指定します。
+
 * 仕様書
 
 [REFS[
+- [28] '''[CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-5.3>'''
 - [26] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-4.2>
 ]REFS]
+
+* 意味
+
+[29] [CODE(HTTP)@en[[[Expires:]]]] [[ヘッダー]]は、
+それ以後[[応答]]を[[腐敗]]と考えるべき[[日時]]を指定するものです [SRC[>>28]]。
+
+[30] なお、 [CODE(HTTP)@en[[[Expires:]]]] [[ヘッダー]]があるからといって、
+その[[時刻]]の前後に[[対象資源]]が変化したり、消滅したりするとは限りません [SRC[>>28]]。
+
+[43] また、この[[ヘッダー]]を指定したとしても、[[キャッシュ]]がその[[時刻]]まで[[応答]]を[[蓄積]]し続けることは保証されません。[[キャッシュ]]はいつでも[[蓄積された応答]]を破棄できます。
+
+[45] 逆に[[キャッシュ]]が[[蓄積された応答]]を破棄することも保証されません。
+[[キャッシュ]]は指定された[[日時]]に至った後も、[[検証]]することで[[腐敗応答]]を[[再利用]]できます。
+
+* 構文
+
+[32] [CODE(HTTP)@en[[[Expires:]]]] [[ヘッダー]]の値は、 [CODE(ABNF)@en[[[HTTP-date]]]]
+です [SRC[>>28]]。
+
+[FIG(railroad)[
+= [[HTTPの日時形式]]
+]FIG]
 
 * 文脈
 
 [11] [CODE(HTTP)[[[304]]]] の項も参照。
+
+[40] [[時計]]を持たない[[起源鯖]]は、過去の固定の日時を指定する場合か、
+信頼できる[[時計]]を持ったシステムや[[利用者]]が設定した日時である場合を除き、
+[CODE(HTTP)@en[[[Expires:]]]] [[ヘッダー]]を[[生成]]しては[['''なりません''']] [SRC[>>28]]。
 
 * 処理モデル
 
@@ -22,12 +51,19 @@
 より扱える[[時刻]]の精度が低い場合、指定された[[時刻]]と同じかそれより前の直近の[[時刻]]を内部的に用いるべきです
 [SRC[>>26]]。
 
+[34] [[キャッシュ]]である[[受信者]]は、「[CODE(HTTP)[0]]」を含む構文的に正しくない値を過去の日付が指定されたものと解釈しなければ[['''なりません''']]
+[SRC[>>28]]。
+
 [33] 複数[[ヘッダー]]がある場合については、[[新鮮寿命]]を参照。
 
-** 仕様書から
+* 歴史
 
+** ネットニュース
 
-*** RFC 1036 (電子ニュース) 2.2.4.  Expires
+[FIG(quote)[
+[FIGCAPTION[
+[35] RFC 1036 2.2.4.  Expires
+]FIGCAPTION]
 
 > This line, if present, is in a legal USENET date format.  It
 specifies a suggested expiration date for the message.  If not
@@ -56,9 +92,14 @@ Local ホストはニュースの期限に関して local の方針
 処理系ソフトウェアは既定の [CODE(ABNF)["Expires"]] (期限切れ)
 行をほとんど絶対に用意しておかないのが良いです。
 この行を適切な理由が無い限り使わずに、 local の方針が使われるようにして下さい。
+]FIG]
 
+** HTTP
 
-*** RFC 1945 (HTTP/1.0) 10.7; RFC 2068 (HTTP/1.1) 14.21 Expires
+[FIG(quote)[
+[FIGCAPTION[
+[36] RFC 1945 (HTTP/1.0) 10.7; RFC 2068 (HTTP/1.1) 14.21 Expires
+]FIGCAPTION]
 
 [INS[
 
@@ -174,9 +215,12 @@ indicated otherwise by a Cache-Control header field (section 14.9).
 その応答が [CODE(HTTP)[[[Cache-Control]]]] 頭欄で別途示されていない限り、
 その応答がキャッシュ可能であることを示します。
 ]INS]
+]FIG]
 
-
-*** RFC 2326 (RTSP/1.0) 12.19 Expires
+[FIG(quote)[
+[FIGCAPTION[
+[37] RFC 2326 (RTSP/1.0) 12.19 Expires
+]FIGCAPTION]
 
 > The Expires entity-header field gives a date and time after which the
 description or media-stream should be considered stale. The
@@ -254,9 +298,12 @@ indicated otherwise by a Cache-Control header field (Section 12.8).
 頭欄が、これが存在しなければ既定ではキャッシュ不能である媒体 stream
 に存在すれば、この媒体 stream は Cache-Control
 頭欄で別段の指定がない限りはキャッシュ可能であることを示します。
+]FIG]
 
-
-*** RFC 2295 (HTTP 透過内容折衝) 10.7 Adding an Expires header for HTTP/1.0 compatibility
+[FIG(quote)[
+[FIGCAPTION[
+[38] RFC 2295 (HTTP 透過内容折衝) 10.7 Adding an Expires header for HTTP/1.0 compatibility
+]FIGCAPTION]
 
 [13]
 
@@ -301,9 +348,23 @@ HTTP/1.0 プロトコル版番号を返す遺産的串キャッシュの中に�
 [[RFC 1945]] で規定されている HTTP/1.0 [CODE(HTTP)[Expires]] 
 頭を尊重しないものもあります。
 そのような串キャッシュとの後方互換性の達成の方法はこの仕様書の適用範囲外です。
+]FIG]
 
+[41] かつては [CODE(HTTP)@en[[[Expires:]]]] [[ヘッダー]]の値は1年以内であることが求められていましたが、 [[RFC 7234]]
+では撤廃されています [SRC[>>28]]。
 
-** メモ
+;; [42] 実際には以前から1年より先の日付、例えば2033年などが指定されることはよくありました。
+
+* 関連
+
+[39] [CODE(HTTP)@en[[[Cache-Control:]]]] [[ヘッダー]]の
+[CODE(HTTP)@en[[[max-age]]]] [[キャッシュ指令]]や
+[CODE(HTTP)@en[[[s-maxage]]]] [[キャッシュ指令]]がある場合、
+そちらが優先します [SRC[>>28]]。
+
+;; [[満期時刻]]を参照。
+
+* メモ
 
 [10] >>7 なら仕様に ([CODE(ABNF)[obs-Expires]] とでもして)
 入れとけ、と思うな。
@@ -348,16 +409,6 @@ Expires: -1
 
 [[読点]]のあとに[[空白]]がない例は珍しいかなと思いまして。
 ([[名無しさん]])
-
-[[#comment]]
-
-
-* RFC の部分の License
-
-[[RFCのライセンス]]
-
-
-* メモ
 
 [20] [CITE[Apache HTTP Server Project]]
 ( ([TIME[2011-05-28 00:58:55 +09:00]] 版))
