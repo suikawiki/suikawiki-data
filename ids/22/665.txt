@@ -3,7 +3,10 @@
 * 仕様書
 
 [REFS[
-- [1] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-2>
+- [1] '''[CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-2>'''
+- [93] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-5.2>
+-- [101] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-5.2.2.1>
+-- [104] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-5.2.2.7>
 ]REFS]
 
 * 構成
@@ -27,4 +30,30 @@
 
 * 処理モデル
 
-[8] [[キャッシュ可能性]]、[[検証]]、[[条件付き要求]]を参照。
+[8] [[キャッシュ可能性]]、[[検証]]、[[条件付き要求]]、[[部分要求]]も参照。
+
+[10] [[キャッシュ]]からの[[応答]]の決定は、次のように行います。
+
+[FIG(steps)[
+= [12] エラーその他の[[応答]]を返す場合や、[[キャッシュ]]を使わない[[要求メソッド]]の場合などは、そちらの方法で処理し、ここで終わります。
+= [67] [[キャッシュ項目]]として[[蓄積]]された[[応答]]から[[キャッシュ再利用]]可能なものを探します。
+= [68] 該当する[[蓄積された応答]]がなかった場合は、
+== [96] [[要求]]に [CODE(HTTP)@en[[[Cache-Control:]] [[only-if-cached]]]]
+があれば、 [CODE(HTTP)[[[504]]]] [[応答]]を返してここで終わります [SRC[>>93]]。
+== [95] [[要求]]を[[転送]]し、その[[応答]]を[[転送]]します。ここで終わります。
+= [47] [[検証]]が必要な場合、
+== [97] [[要求]]に [CODE(HTTP)@en[[[Cache-Control:]] [[only-if-cached]]]]
+があれば、 [CODE(HTTP)[[[504]]]] [[応答]]を返してここで終わります [SRC[>>93]]。
+== [98] [[検証]]します。
+== [100] [[検証]]できなかった場合、
+=== [102] [[蓄積された応答]]に
+[CODE(HTTP)@en[[[Cache-Control:]] [[must-revalidate]]]] があれば、
+[CODE(HTTP)[[[504]]]] [[応答]]を返してここで終わります [SRC[>>101]]。
+=== [103] [[共有キャッシュ]]であって、[[蓄積された応答]]に
+[CODE(HTTP)@en[[[Cache-Control:]] [[proxy-revalidate]]]] があれば、
+[CODE(HTTP)[[[504]]]] [[応答]]を返してここで終わります [SRC[>>104, >>101]]。
+= [99] エラーの[[応答]]や[[リダイレクト]]の[[応答]]の場合、
+それを返してここで終わります。 [SRC[>>18]]
+= [11] [[事前条件]]をあれば適用します。真なら、あるいは事前条件がなければ、
+[[応答]]を返します。詳しくは[[条件付き要求]]を参照。
+]FIG]
