@@ -12,6 +12,7 @@
 - [54] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-5.2.1.1>
 - [50] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-5.2.1.2>
 - [53] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-5.2.1.3>
+- [71] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-5.2.1.4>
 - [46] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-5.5.1>
 - [43] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-5.5.2>
 - [49] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-5.5.3>
@@ -53,6 +54,8 @@
 = [28] 複数の候補が見つかった時は、次のいずれかとします [SRC[>>23]]。
 =- [29] [CODE(HTTP)@en[[[Date:]]]] が最新のものを選びます。
 =- [30] 候補がなかったこととし、かわりに次のようにします。
+=-= [67] [[要求]]に [CODE(HTTP)@en[[[Cache-Control:]] [[only-if-cached]]]]
+があれば、 [CODE(HTTP)[[[504]]]] [[応答]]を返してここで終わります [SRC[>>93]]。
 =-= [31] 転送要求を[[要求]]の複製とします。
 =-= [32] 転送要求に [CODE(HTTP)@en[[[Cache-Control:]] [[max-age]]=0]]
 または [CODE(HTTP)@en[[[Cache-Control:]] [[no-cache]]]] を追加します。
@@ -60,25 +63,28 @@
 == [96] [[要求]]に [CODE(HTTP)@en[[[Cache-Control:]] [[only-if-cached]]]]
 があれば、 [CODE(HTTP)[[[504]]]] [[応答]]を返してここで終わります [SRC[>>93]]。
 == [95] 転送要求を[[要求]]の複製とします。
-= [13] 候補があった場合で、[[時計]]がある場合 [SRC[>>23]]、
-== [18] 候補の複製を[[応答]]とします。
-== [19] [[齢]]を計算し、その結果を[[応答]]に [CODE(HTTP)@en[[[Age:]]]]
+= [70] 候補があった場合、
+== [69] [[時計]]がない場合、[[検証]]必要フラグを設定します [SRC[>>23]]。
+== [13] それ以外の場合、
+=== [18] 候補の複製を[[応答]]とします。
+=== [19] [[齢]]を計算し、その結果を[[応答]]に [CODE(HTTP)@en[[[Age:]]]]
 [[ヘッダー]]として追加 (既にあれば置換) します ([[齢]]参照)。
-== [14] [[明示的満期時刻]]がある場合、これを使って[[新鮮寿命]]を決定します。
-== [15] そうでない場合、
-=== [16] [[発見的満期時刻]]を使って[[新鮮寿命]]を決定します。
-=== [17] [[新鮮寿命]]が24時間を超えていて、[[応答]]に[[警告符号]] [CODE(HTTP)[[[113]]]] の
+=== [14] [[明示的満期時刻]]がある場合、これを使って[[新鮮寿命]]を決定します。
+=== [15] そうでない場合、
+==== [16] [[発見的満期時刻]]を使って[[新鮮寿命]]を決定します。
+==== [17] [[新鮮寿命]]が24時間を超えていて、[[応答]]に[[警告符号]] [CODE(HTTP)[[[113]]]] の
 [CODE(HTTP)@en[[[Warning:]]]] [[ヘッダー]]がなければ、追加します
 ([[新鮮寿命]]参照)。
-== [20] 次のいずれかを満たす場合には、[[検証]]必要フラグを設定します。
-==- [60] [[齢]]が[[新鮮寿命]][[以上]]の場合。
-==- [61] [[要求]]に [CODE(HTTP)@en[[[Cache-Control:]] [[max-age]]]] が指定されていれば、
+=== [20] 次のいずれかを満たす場合には、[[検証]]必要フラグを設定します。
+===- [60] [[齢]]が[[新鮮寿命]][[以上]]の場合。
+===- [61] [[要求]]に [CODE(HTTP)@en[[[Cache-Control:]] [[max-age]]]] が指定されていれば、
 その[[秒]]数より[[齢]]が大きい場合 [SRC[>>54]]。
-==- [62] [[要求]]に [CODE(HTTP)@en[[[Cache-Control:]] [[min-fresh]]]] が指定されていれば、
+===- [62] [[要求]]に [CODE(HTTP)@en[[[Cache-Control:]] [[min-fresh]]]] が指定されていれば、
 その[[秒]]数と[[齢]]の[[和]]の方が[[新鮮寿命]]より大きい場合 [SRC[>>53]]。
-==- [63] [[応答]]に [CODE(HTTP)@en[[[Cache-Control:]] [[must-revalidate]]]] 
+===- [72] [[要求]]に [CODE(HTTP)@en[[[Cache-Control:]] [[no-cache]]]] がある場合 [SRC[>>71]]。
+===- [63] [[応答]]に [CODE(HTTP)@en[[[Cache-Control:]] [[must-revalidate]]]] 
 がある場合 [SRC[>>101]]。
-==- [64] [[共有キャッシュ]]であって、[[応答]]に
+===- [64] [[共有キャッシュ]]であって、[[応答]]に
 [CODE(HTTP)@en[[[Cache-Control:]] [[proxy-revalidate]]]] がある場合 [SRC[>>104, >>101]]。
 == [22] 
 @@
