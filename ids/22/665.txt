@@ -24,8 +24,11 @@
 -- [46] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-5.5.1>
 -- [43] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-5.5.2>
 -- [49] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-5.5.3>
+- [136] [CITE@en[RFC 7230 - Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing]] ([TIME[2014-09-11 10:00:03 +09:00]] 版) <https://tools.ietf.org/html/rfc7230#section-2.6>
+- [139] [CITE@en[RFC 7230 - Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing]] ([TIME[2014-09-11 10:00:03 +09:00]] 版) <https://tools.ietf.org/html/rfc7230#section-3.2.4>
 - [85] [CITE@en[RFC 7230 - Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing]] ([TIME[2014-09-11 10:00:03 +09:00]] 版) <https://tools.ietf.org/html/rfc7230#section-5.7.2>
 - [121] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-09-11 09:52:09 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-6.6.3>
+- [131] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-09-11 09:52:09 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-7.1.1.2>
 - [127] [CITE@en[RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests]] ([TIME[2014-09-11 10:02:44 +09:00]] 版) <https://tools.ietf.org/html/rfc7232#section-2.3>
 ]REFS]
 
@@ -104,6 +107,15 @@
 があれば、使う応答を「エラー応答」とします [SRC[>>93, >>38]]。
 == [91] それ以外の場合、
 === [108] [[要求]]の複製を転送要求とします。
+=== [142] [[要求]]の[[プロトコルの版]]を自身が対応する最高の版に書き換えます [SRC[>>136]]。
+版の変更による書き換えが必要なら、適宜行います。
+=== [145] [[ヘッダー名]]と [CODE(HTTP)[[[:]]]] の間に[[空白]]があれば、除去します
+[SRC[>>139]]。
+=== [146] [CODE(ABNF)@en[[[obs-fold]]]] があれば置換します [SRC[>>139]]。
+=== [150] 同値の [CODE(HTTP)@en[[[Content-Length:]]]] が複数あるか、
+同じ[[ヘッダー]]内に同値で複数指定されているなら、正しいもので置換します [SRC[>>139]]。
+=== [151] [CODE(HTTP)@en[[[Transfer-Encoding:]]]] があるなら、
+[CODE(HTTP)@en[[[Content-Length:]]]] は削除します [SRC[>>139]]。
 === [128] [[応答]]に [CODE(HTTP)@en[[[ETag:]]]] が含まれていれば、
 [CODE(HTTP)@en[[[If-None-Match:]]]] か [CODE(HTTP)@en[[[If-Match:]]]]
 にその[[実体タグ]]を指定します [SRC[>>127]]。
@@ -125,7 +137,10 @@
 ==== [117] [CODE(HTTP)[[[5xx]]]] [[応答]]なら、[[応答]]を得られなかったとして構いません
 [SRC[>>107]]。
 === [118] [[上流]]からの[[応答]]がある場合、
-==== [119] [[蓄積された応答]]を[[上流]]からの[[応答]]により置換して構いません [SRC[>>107]]。
+==== [132] [[時計]]があり、[[上流]]からの[[応答]]に [CODE(HTTP)@en[[[Date:]]]] がないなら、
+[CODE(HTTP)@en[[[Date:]]]] [[ヘッダー]]を追加します [SRC[>>131]]。
+==== [119] [[上流]]からの[[応答]]が[[キャッシュ可能]]で[[要求]]によって禁止されていないなら、
+[[蓄積された応答]]を[[上流]]からの[[応答]]により置換して構いません [SRC[>>107]]。
 ==== [120] [[上流]]からの[[応答]]を[[応答]]とします [SRC[>>107]]。
 ==== [100] 使う応答を「検証済み応答」に設定します。
 ==== [105] [[応答]]に[[警告符号]]が [CODE(HTTP)[[[1xx]]]] の [CODE(HTTP)@en[[[Warning:]]]]
@@ -162,20 +177,50 @@
 があれば、使う応答を「エラー応答」とします [SRC[>>93, >>38]]。
 == [94] それ以外の場合、
 === [68] 転送要求を要求の複製とします。
+=== [147] [[要求]]の[[プロトコルの版]]を自身が対応する最高の版に書き換えます [SRC[>>136]]。
+版の変更による書き換えが必要なら、適宜行います。
+=== [148] [[ヘッダー名]]と [CODE(HTTP)[[[:]]]] の間に[[空白]]があれば、除去します
+[SRC[>>139]]。
+=== [149] [CODE(ABNF)@en[[[obs-fold]]]] があれば置換します [SRC[>>139]]。
+=== [152] 同値の [CODE(HTTP)@en[[[Content-Length:]]]] が複数あるか、
+同じ[[ヘッダー]]内に同値で複数指定されているなら、正しいもので置換します [SRC[>>139]]。
+=== [153] [CODE(HTTP)@en[[[Transfer-Encoding:]]]] があるなら、
+[CODE(HTTP)@en[[[Content-Length:]]]] は削除します [SRC[>>139]]。
 === [88] 使う応答が「無キャッシュ上流の応答」なら、転送要求に 
 [CODE(HTTP)@en[[[Cache-Control:]] [[max-age]]=0]]
 または [CODE(HTTP)@en[[[Cache-Control:]] [[no-cache]]]] を追加します [SRC[>>23]]。
 === [65] 転送要求を[[要求]]として[[上流]]に[[転送]]します。
 === [66] [[上流]]からの応答を受信したら、
 ==== [123] 不正な[[応答]]の場合、使う応答を「エラー応答」に設定します。
-==== [124] それ以外の場合、[[上流]]からの応答を[[応答]]に設定します。
-また、[[応答]]が[[キャッシュ可能]]で[[要求]]によって禁止されていないなら、
+==== [124] それ以外の場合、
+===== [135] [[時計]]があり、[[上流]]からの[[応答]]に [CODE(HTTP)@en[[[Date:]]]] がないなら、
+[CODE(HTTP)@en[[[Date:]]]] [[ヘッダー]]を追加します [SRC[>>131]]。
+===== [134] [[上流]]からの[[応答]]が[[キャッシュ可能]]で[[要求]]によって禁止されていないなら、
 [[蓄積された応答]]を更新したり、新規に[[蓄積]]したりして構いません。
+===== [133] [[上流]]からの応答を[[応答]]に設定します。
 === [33] 受信できなかった場合は、使う応答を「エラー応答」に設定します。
-= [34] 使う応答が「検証済み応答」の場合、
-== 
-@@ ...
+= [34] 使う応答が「上流からの応答」か「検証済み応答」の場合、
+== [137] [[応答]]の[[プロトコルの版]]を、[[要求]]と自身が対応する最高の版に書き換えます
+[SRC[>>136]]。
+版の変更による書き換えが必要なら、適宜行います。
+== [140] [[ヘッダー名]]と [CODE(HTTP)[[[:]]]] の間に[[空白]]があれば、除去します
+[SRC[>>139]]。
+== [143] [CODE(ABNF)@en[[[obs-fold]]]] があれば置換します [SRC[>>139]]。
+== [154] 同値の [CODE(HTTP)@en[[[Content-Length:]]]] が複数あるか、
+同じ[[ヘッダー]]内に同値で複数指定されているなら、正しいもので置換します [SRC[>>139]]。
+== [155] [CODE(HTTP)@en[[[Transfer-Encoding:]]]] があるなら、
+[CODE(HTTP)@en[[[Content-Length:]]]] は削除します [SRC[>>139]]。
 = [79] 使う応答が「キャッシュ応答」または「腐敗応答」の場合、
+== [138] [[応答]]の[[プロトコルの版]]を、[[要求]]と自身が対応する最高の版に書き換えます
+[SRC[>>136]]。
+版の変更による書き換えが必要なら、適宜行います。
+== [141] [[ヘッダー名]]と [CODE(HTTP)[[[:]]]] の間に[[空白]]があれば、除去します
+[SRC[>>139]]。
+== [144] [CODE(ABNF)@en[[[obs-fold]]]] があれば置換します [SRC[>>139]]。
+== [156] 同値の [CODE(HTTP)@en[[[Content-Length:]]]] が複数あるか、
+同じ[[ヘッダー]]内に同値で複数指定されているなら、正しいもので置換します [SRC[>>139]]。
+== [157] [CODE(HTTP)@en[[[Transfer-Encoding:]]]] があるなら、
+[CODE(HTTP)@en[[[Content-Length:]]]] は削除します [SRC[>>139]]。
 == [76] [[応答]]に [CODE(HTTP)@en[[[Cache-Control:]] [[no-cache]]]] があって、
 [[ヘッダー名]]が指定されている場合、
 === [77] [[応答]]から指定されている[[ヘッダー]]をすべて削除します [SRC[>>73]]。
