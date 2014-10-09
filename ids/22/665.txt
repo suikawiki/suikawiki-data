@@ -4,8 +4,11 @@
 
 [REFS[
 - [1] '''[CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-2>'''
+- [125] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-3.1>
 - [23] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-4>
 -- [36] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-4.2.4>
+-- [106] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-4.3.2>
+-- [107] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-4.3.3>
 - [93] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-5.2>
 -- [54] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-5.2.1.1>
 -- [50] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-5.2.1.2>
@@ -22,6 +25,8 @@
 -- [43] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-5.5.2>
 -- [49] [CITE@en[RFC 7234 - Hypertext Transfer Protocol (HTTP/1.1): Caching]] ([TIME[2014-09-11 10:19:59 +09:00]] 版) <https://tools.ietf.org/html/rfc7234#section-5.5.3>
 - [85] [CITE@en[RFC 7230 - Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing]] ([TIME[2014-09-11 10:00:03 +09:00]] 版) <https://tools.ietf.org/html/rfc7230#section-5.7.2>
+- [121] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-09-11 09:52:09 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-6.6.3>
+- [127] [CITE@en[RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests]] ([TIME[2014-09-11 10:02:44 +09:00]] 版) <https://tools.ietf.org/html/rfc7232#section-2.3>
 ]REFS]
 
 * 構成
@@ -58,6 +63,8 @@
 == [25] [CODE(HTTP)@en[[[Vary:]]]] [[ヘッダー]]の条件が一致するもの
 ([CODE(HTTP)@en[[[Vary:]]]] 参照。) のみに限定します [SRC[>>23]]。
 == [26] [[蓄積された応答]]の[[要求メソッド]]が現在の[[要求]]の[[要求メソッド]]に再利用できるものに限定します [SRC[>>23]]。
+== [126] 現在の[[要求]]が求めている[[範囲]]をカバーできない[[不完全な応答]]や
+[CODE(HTTP)[[[206]]]] [[応答]]は除外します [SRC[>>125]]。
 == [27] 候補が複数ある場合は、次のいずれかとします [SRC[>>23]]。
 ==- [29] [CODE(HTTP)@en[[[Date:]]]] が最新のものを選びます。
 ==- [28] 使う応答を「無キャッシュの上流の応答」とします。
@@ -96,12 +103,34 @@
 == [97] [[要求]]に [CODE(HTTP)@en[[[Cache-Control:]] [[only-if-cached]]]]
 があれば、使う応答を「エラー応答」とします [SRC[>>93, >>38]]。
 == [91] それ以外の場合、
-=== [98] [[検証]]します。
-=== [70] [[検証]]できた場合、
+=== [108] [[要求]]の複製を転送要求とします。
+=== [128] [[応答]]に [CODE(HTTP)@en[[[ETag:]]]] が含まれていれば、
+[CODE(HTTP)@en[[[If-None-Match:]]]] か [CODE(HTTP)@en[[[If-Match:]]]]
+にその[[実体タグ]]を指定します [SRC[>>127]]。
+===- [114] このとき、[[要求]]に既に [CODE(HTTP)@en[[[If-None-Match:]]]]
+が指定されているなら、[[要求]]が求めている[[範囲]]が[[応答]]に含まれている場合のみ、
+[[応答]]の[[実体タグ]]を [CODE(HTTP)@en[[[If-None-Match:]]]]
+に付け加えて構いません [SRC[>>106]]。
+=== [109] [[応答]]に [CODE(HTTP)@en[[[Last-Modified:]]]] が含まれていれば、
+==== [130] [[範囲要求]]で[[応答]]が [[HTTP/1.0]] なら、 
+[CODE(HTTP)@en[[[If-Unmodified-Since:]]]]
+に [CODE(HTTP)@en[[[Last-Modified:]]]] の値を設定します [SRC[>>106]]。
+==== [129] それ以外なら、 [CODE(HTTP)@en[[[If-Modified-Since:]]]]
+に [CODE(HTTP)@en[[[Last-Modified:]]]] の値を設定します [SRC[>>106]]。
+=== [115] 転送要求を[[上流]]に[[転送]]します。
+=== [98] [[上流]]からの[[応答]]を得られた場合、
+==== [122] 不正な[[応答]]なら、[[応答]]を得られなかったとします。
+==== [116] [CODE(HTTP)[[[304]]]] [[応答]]なら、[[蓄積された応答]]を更新し [SRC[>>106]]
+([[条件付き要求]]参照。)、その結果を上流からの[[応答]]とします [SRC[>>106, >>107]]。
+==== [117] [CODE(HTTP)[[[5xx]]]] [[応答]]なら、[[応答]]を得られなかったとして構いません
+[SRC[>>107]]。
+=== [118] [[上流]]からの[[応答]]がある場合、
+==== [119] [[蓄積された応答]]を[[上流]]からの[[応答]]により置換して構いません [SRC[>>107]]。
+==== [120] [[上流]]からの[[応答]]を[[応答]]とします [SRC[>>107]]。
 ==== [100] 使う応答を「検証済み応答」に設定します。
 ==== [105] [[応答]]に[[警告符号]]が [CODE(HTTP)[[[1xx]]]] の [CODE(HTTP)@en[[[Warning:]]]]
 [[ヘッダー]]があれば、削除します [SRC[>>96]]。
-=== [21] [[検証]]できなかった場合、
+=== [21] それ以外の場合、
 ==== [58] 次のいずれかを満たす場合には、使う応答を「エラー応答」に設定します。
 ====- [102] [[応答]]に
 [CODE(HTTP)@en[[[Cache-Control:]] [[must-revalidate]]]] がある場合 [SRC[>>101]]。
@@ -137,7 +166,11 @@
 [CODE(HTTP)@en[[[Cache-Control:]] [[max-age]]=0]]
 または [CODE(HTTP)@en[[[Cache-Control:]] [[no-cache]]]] を追加します [SRC[>>23]]。
 === [65] 転送要求を[[要求]]として[[上流]]に[[転送]]します。
-=== [66] [[上流]]から応答を受信したら、これを応答に設定します。
+=== [66] [[上流]]からの応答を受信したら、
+==== [123] 不正な[[応答]]の場合、使う応答を「エラー応答」に設定します。
+==== [124] それ以外の場合、[[上流]]からの応答を[[応答]]に設定します。
+また、[[応答]]が[[キャッシュ可能]]で[[要求]]によって禁止されていないなら、
+[[蓄積された応答]]を更新したり、新規に[[蓄積]]したりして構いません。
 === [33] 受信できなかった場合は、使う応答を「エラー応答」に設定します。
 = [34] 使う応答が「検証済み応答」の場合、
 == 
@@ -156,7 +189,9 @@
 [[応答]]に[[警告符号]] [CODE(HTTP)[[[111]]]] の 
 [CODE(HTTP)@en[[[Warning:]]]] [[ヘッダー]]を追加します [SRC[>>43, >>36]]。
 = [59] 使う応答が「エラー応答」の場合、
-== [18] 新しい [CODE(HTTP)[[[504]]]] [[応答]]を[[応答]]とします [SRC[>>104, >>101]]。
+== [70] [[上流]]から不正な[[応答]]を受信して「エラー応答」に設定された場合、
+新しい [CODE(HTTP)[[[502]]]] [[応答]]を[[応答]]とします [SRC[>>121]]。
+== [18] それ以外の場合、新しい [CODE(HTTP)[[[504]]]] [[応答]]を[[応答]]とします [SRC[>>104, >>101]]。
 = [37] [[要求]]または[[応答]]に [CODE(HTTP)@en[[[Cache-Control:]] [[no-transform]]]]
 が含まれない場合で、[[変形]]を適用したい場合、
 == [86] [[変形]]を適用します [SRC[>>85]]。
