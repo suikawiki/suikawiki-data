@@ -1,88 +1,75 @@
 [7] [[誰何]]や [[credentials]] における[[引数]]は [DFN[[CODE(ABNF)[[[auth-param]]]]]] と呼ばれています。
 
-;; [8] [[RFC 1945]] と [[RFC 2068]] では [[ABNF]] 構文上 [CODE(HTTP)@en[[[realm]]]] [[引数]]は
-[CODE(ABNF)@en[[[auth-param]]]] に含まれないことになっていました。 [[RFC 2069]] と
-[[RFC 2617]] では [CODE(HTTP)@en[[[realm]]]] も [CODE(ABNF)@en[[[auth-param]]]] の部分に含まれています。
-
 * 仕様書
 
 [REFS[
-- [32] '''[CITE@en[RFC 2617 - HTTP Authentication: Basic and Digest Access Authentication]] ([TIME[2012-01-09 21:04:30 +09:00]] 版) <http://tools.ietf.org/html/rfc2617#section-1.2>'''
-- [39] [CITE@en[RFC 2617 - HTTP Authentication: Basic and Digest Access Authentication]] ([TIME[2012-01-09 21:04:30 +09:00]] 版) <http://tools.ietf.org/html/rfc2617#page-11>
-- [42] [CITE@en[RFC 2617 - HTTP Authentication: Basic and Digest Access Authentication]] ([TIME[2012-01-09 21:04:30 +09:00]] 版) <http://tools.ietf.org/html/rfc2617#page-12>
+- [3] '''[CITE@en[RFC 7235 - Hypertext Transfer Protocol (HTTP/1.1): Authentication]] ([TIME[2014-09-11 10:01:28 +09:00]] 版) <https://tools.ietf.org/html/rfc7235#section-2.1>'''
 - [50] [CITE@en[RFC 5849 - The OAuth 1.0 Protocol]] ([TIME[2012-03-04 10:51:49 +09:00]] 版) <http://tools.ietf.org/html/rfc5849#section-3.5.1>
 ]REFS]
 
 * 構文
 
-[FIG[
-[FIGCAPTION[
-[34] [[RFC 2617]] における [CODE(ABNF)[[[auth-param]]]] の構文
-]FIGCAPTION]
+[5] [CODE(ABNF)@en[[[auth-param]]]] は、名前と値の組を [CODE[[[=]]]]
+で連結したものです。 [CODE[[[=]]]] の前後には [[BWS]] が挟まります。 [SRC[>>3]]
 
-[PRE(ABNF code)[
-      auth-param     = token "=" ( token | quoted-string )
-]PRE]
+[33] 名前は[[字句]]です。[[大文字・小文字不区別]]です。 [SRC[>>3]]
+
+;; [14] [[RFC 1945]] / [[RFC 2068]] は [CODE(HTTP)@en[[[realm]]]] [[属性]]以外について[[大文字]]と[[小文字]]の解釈を明記していませんでした。
+
+[63] 値は[[字句]]または[[引用文字列]]です。 [SRC[>>3]]
+
+[FIG(railroad)[
+= [[字句]]
+= [CODE[[[=]]]]
+= |
+== [[字句]]
+== [[引用文字列]]
 ]FIG]
 
-;;
-[FIG[
-[FIGCAPTION[
-[2] [[RFC 1945]] / [[RFC 2068]] における [CODE(ABNF)[[[auth-param]]]] の構文
-]FIGCAPTION]
+;; [34] [[引数]]も参照。
 
-[PRE(ABNF code)[
-       auth-param     = token "=" quoted-string
-]PRE]
-]FIG]
+;; [2] [[RFC 1945]] と [[RFC 2068]] では値は[[引用文字列]]とされていました。
+[[RFC 2617]] 以後[[字句]]も認められています。
 
-** 区切子
-
-[6] [[MIME]] や [[HTTP]] の他の[[ヘッダー]]では[[引数]]は [CODE(char)[[[;]]]]
-で区切るのが普通ですが、 [[誰何]]や [[credentials]] では [CODE(char)[[[,]]]] で区切ります。
-
-;; [9] そのため [CODE(HTTP)@en[[[WWW-Authenticate:]]]] や [CODE(HTTP)@en[[[Proxy-Authenticate:]]]]
-や [CODE(HTTP)@en[[[Authorization:]]]] は[[HTTPヘッダーの連結]]の処理の際に注意が必要です。
-
-** 名前
-
-[13] [[引数]]の名前は[[ASCII大文字・小文字不区別]]です。
-
-;; [14] [[RFC 1945]] / [[RFC 2068]] は [CODE(HTTP)@en[[[realm]]]] [[属性]]以外について[[大文字]]と[[小文字]]の解釈を明記していません。
-
-[15] 同じ名前の[[引数]]を複数回使うことは認められていません。
-
-;; [16] [[RFC 1945]] / [[RFC 2068]] 仕様上はこれが明記されていません。
+;; [22] [[RFC 1945]] と [[RFC 2068]] の定義では必ず[[引用文字列]]とすることになっていましたが、 
+[[RFC 2069]] ではそうなっていない構文が定義されており、矛盾していました。
 
 ** 値
-
-[35] [[RFC 2617]] の定義では値は [[HTTP]] の [[token]] または [[quoted-string]]
-として指定することになっています。
-
-;; [22] [[RFC 1945]] と [[RFC 2068]] の定義では必ず [CODE(ABNF)@en[[[quoted-string]]]]
-とすることになっていましたが、 [[RFC 2069]] ではそうなっていない構文が定義されており、
-矛盾していました。
 
 [36] 更に、各[[引数]]について個別の値の構文が定義されています。例によって[[引数]]ごとの個別の [[ABNF]]
 構文は [[quoted-string]] の[[引用符]]まで含めて特定の構文を決める形になっていますが、
 現実にはまず [[token]] または [[quoted-string]] として構文解析した後にその値の部分を取り出して処理するのが一般的だと思われます。
 
-** OAuth 用の表現
+* [CODE(ABNF)@en[auth-param]] のリスト
 
-[51] [[OAuth 1.0]] では[[プロトコル引数]]を [CODE(HTTP)@en[[Authorization:]]]] 欄で
-[[auth-param]] として指定することができ、その場合の構文が [[HTTP]] 本体よりも厳密に規定されています。
-[SRC[>>50]]
+[13] [CODE(ABNF)@en[[[auth-param]]]] は[[引数]]の1対ですが、実際には[[リスト]]
+([CODE(HTTP)[#]]) として用いられます。
 
-- [55] [[引数]]の名前と値はまず [[UTF-8]] で[[パーセント符号化]]しておきます。
-- [52] [[引数]]の名前と値の間に [[LWS]] を入れることはできません。
-- [53] [[引数]]の値は [[quoted-string]] としなければなりません。
-- [54] [[引数]]の値で [[quoted-pair]] は使いません。
-- [56] [[引数]]の区切りには [CODE(HTTP)[[[,]]]] と [CODE(charname)@en[[[SP]]]]、
-または [CODE(HTTP)[[[,]]]] だけを使います。
+[FIG(railroad)[
+= [CODE(ABNF)@en[[[auth-param]]]]
+= *
+== [[FWS]]
+== [CODE(HTTP)[[[,]]]]
+== [[FWS]]
+== [CODE(ABNF)@en[[[auth-param]]]]
+]FIG]
 
-* 順序
+[6] [[MIME]] や [[HTTP]] の他の[[ヘッダー]]では[[引数]]は [CODE(char)[[[;]]]]
+で区切るのが普通ですが、 [CODE(ABNF)@en[[[auth-param]]]] のリストでは
+[CODE(char)[[[,]]]] で区切ります。
 
-[12] 引数の順序は特に規定されていないようです。
+;; [9] そのため [CODE(HTTP)@en[[[WWW-Authenticate:]]]] や [CODE(HTTP)@en[[[Proxy-Authenticate:]]]]
+や [CODE(HTTP)@en[[[Authorization:]]]] は[[HTTPヘッダーの連結]]の処理の際に注意が必要です。
+
+;; [35] 古くは [[HTTP]] では[[引数]]の区切りは [CODE(HTTP)[[[,]]]] でしたが、
+[[MIME]] に揃えるため [[RFC 1945]] 時代より前に [CODE(HTTP)[[[;]]]] に変更されました。
+なぜ [CODE(ABNF)@en[[[auth-param]]]] だけ [CODE(HTTP)[[[,]]]] のまま残ったのかは不明ですが、
+他の[[引数]]を値とする[[ヘッダー]]は理論上存在しても実際には使われていなかった一方、
+[[認証]]は早くからしばしば用いられていたため変更できなかったのかもしれません。
+
+[15] [[challenge]] では [SRC[>>3]] 同じ名前の[[引数]]を複数回使うことは認められていません。
+
+[12] [[credentials]] では順序は特に規定されていないようです。
 
 ;; [11] [[RFC 1945]]/[[RFC 2068]] の定義では、
 [[誰何]]においては [CODE(HTTP)@en[[[realm]]]] [[引数]]は唯一、 [CODE(HTTP)@en[[[auth-scheme]]]] 
@@ -90,9 +77,22 @@
 ただ最初の[[引数]]でなければならないのが [[ABNF]] 構文の定義上のものなのか、
 現実にそうでなければならない要件なのかははっきりしませんでした。
 
-[20] [CODE(HTTP)@en[[[auth-param]]]] の順序に意味はありません。
+* OAuth 用の表現
 
-;; [21] [[RFC 1945]] / [[RFC 2068]] 仕様上はこれが明記されていません。
+[51] [[OAuth 1.0]] では[[プロトコル引数]]を [CODE(HTTP)@en[[[Authorization:]]]] 
+[[ヘッダー]]で [CODE(ABNF)@en[[[auth-param]]]] として指定することができ、
+その場合の構文が [[HTTP]] 本体よりも厳密に規定されています。 [SRC[>>50]]
+
+[FIG(list)[
+- [55] [[引数]]の名前と値はまず [[UTF-8]] で[[パーセント符号化]]しておきます。
+- [52] [[引数]]の名前と値の間に [[LWS]] を入れることはできません。
+- [53] [[引数]]の値は[[引用文字列]]としなければなりません。
+- [54] [[引数]]の値で [[quoted-pair]] は使いません。
+- [56] [[引数]]の区切りには [CODE(HTTP)[[[,]]]] と [CODE(charname)@en[[[SP]]]]、
+または [CODE(HTTP)[[[,]]]] だけを使います。
+]FIG]
+
+;; [16] [[引数]]の名前は[[字句]]なので、 [CODE[[[%]]]] を含めることができます。
 
 * 文脈
 
@@ -137,12 +137,34 @@
 - [28] [CODE(HTTP)@en[[[username]]]] ([[Digest]] [[credentials]])
 ]FIG]
 
+;; [8] [[RFC 1945]] と [[RFC 2068]] では [[ABNF]] 構文上 [CODE(HTTP)@en[[[realm]]]] [[引数]]は
+[CODE(ABNF)@en[[[auth-param]]]] に含まれないことになっていました。 [[RFC 2069]] と
+[[RFC 2617]] では [CODE(HTTP)@en[[[realm]]]] も [CODE(ABNF)@en[[[auth-param]]]] の部分に含まれています。
+
 * 歴史
 
-** RFC
+** RFC 第1世代 (RFC 1945)
 
 [REFS[
 - [1] [CITE@en[RFC 1945 - Hypertext Transfer Protocol -- HTTP/1.0]] ([TIME[2012-02-18 23:25:56 +09:00]] 版) <http://tools.ietf.org/html/rfc1945#section-11>
+]REFS]
+
+** RFC 第2世代 (RFC 2068)
+
+[REFS[
 - [19] [CITE@en[RFC 2068 - Hypertext Transfer Protocol -- HTTP/1.1]] ([TIME[2012-02-18 23:30:14 +09:00]] 版) <http://tools.ietf.org/html/rfc2068#section-11>
-- [33] [CITE@en[RFC 2617 - HTTP Authentication: Basic and Digest Access Authentication]] ([TIME[2012-01-09 21:04:30 +09:00]] 版) <http://tools.ietf.org/html/rfc2617#section-1.2>
+]REFS]
+
+** RFC 第3世代 (RFC 2617)
+
+[REFS[
+- [32] '''[CITE@en[RFC 2617 - HTTP Authentication: Basic and Digest Access Authentication]] ([TIME[2012-01-09 21:04:30 +09:00]] 版) <http://tools.ietf.org/html/rfc2617#section-1.2>'''
+- [39] [CITE@en[RFC 2617 - HTTP Authentication: Basic and Digest Access Authentication]] ([TIME[2012-01-09 21:04:30 +09:00]] 版) <http://tools.ietf.org/html/rfc2617#page-11>
+- [42] [CITE@en[RFC 2617 - HTTP Authentication: Basic and Digest Access Authentication]] ([TIME[2012-01-09 21:04:30 +09:00]] 版) <http://tools.ietf.org/html/rfc2617#page-12>
+]REFS]
+
+** RFC 第4世代 (RFC 7235)
+
+[REFS[
+- [4] '''[CITE@en[RFC 7235 - Hypertext Transfer Protocol (HTTP/1.1): Authentication]] ([TIME[2014-09-11 10:01:28 +09:00]] 版) <https://tools.ietf.org/html/rfc7235#section-2.1>'''
 ]REFS]
