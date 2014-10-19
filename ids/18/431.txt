@@ -1,38 +1,39 @@
+[20] [DFN[[[challenge]]]] ([DFN[[RUBY[[[誰何]]][すいか]]]]) は、
+[[HTTP認証]]において[[認証]]の方式と追加情報を記述し、
+[[認証]]情報の送信を求めるものです。 [CODE(HTTP)@en[[[WWW-Authenticate:]]]]
+[[ヘッダー]]で用いられています。
+
 * 仕様書
 
 [REFS[
-- [15] '''[CITE@en[RFC 2617 - HTTP Authentication: Basic and Digest Access Authentication]] ([TIME[2012-01-09 21:04:30 +09:00]] 版) <http://tools.ietf.org/html/rfc2617#section-1.2>'''
-- [16] [CITE@en[RFC 2617 - HTTP Authentication: Basic and Digest Access Authentication]] ([TIME[2012-01-09 21:04:30 +09:00]] 版) <http://tools.ietf.org/html/rfc2617#section-4.6>
+- [6] '''[CITE@en[RFC 7235 - Hypertext Transfer Protocol (HTTP/1.1): Authentication]] ([TIME[2014-09-11 10:01:28 +09:00]] 版) <https://tools.ietf.org/html/rfc7235#section-2.1>'''
 - [17] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-08-07 05:54:02 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-7.3>
 ]REFS]
 
 * 構文
 
-[3] [[誰何]]は [CODE(ABNF)@en[[[auth-scheme]]]] と [CODE(ABNF)@en[[[auth-param]]]] で構成されます。
+[3] [[challenge]] は、 [CODE(ABNF)@en[[[auth-scheme]]]] のみか、
+その後に [CODE(ABNF)@en[[[auth-param]]]] の[[リスト]] ([CODE(HTTP)[#]])
+または [CODE(ABNF)@en[[[token68]]]] を続けたものです。 [SRC[>>6]]
 
-[4] 両者の間は1文字以上の [CODE(ABNF)[[[SP]]]] で分離します。
+[4] [CODE(ABNF)@en[[[auth-scheme]]]] のみの場合を除き、その後ろに1文字以上の
+[CODE(charname)[[[SP]]]] が必要です。 [SRC[>>6]]
 
-;; [5] [CODE(ABNF)[[[LWS]]]] ではなく [CODE(ABNF)[[[SP]]]] とされています。
-従って[[タブ]]や[[折り畳み]]はできません。
+;; [[HTTPにおける空白]]も参照。
 
-[FIG[
-[FIGCAPTION[
-[2] [[RFC 1945]] / [[RFC 2068]] における [CODE(ABNF)[[[challenge]]]] の構文
-]FIGCAPTION]
-
-[PRE(ABNF code)[
-       challenge      = [[auth-scheme]] 1*[[SP]] [[realm]] *( "," [[auth-param]] )
-]PRE]
+[FIG(railroad)[
+= [CODE(ABNF)@en[[[auth-scheme]]]]
+= ?
+== +
+=== [CODE(charname)@en[[[SP]]]]
+== |
+=== [CODE(ABNF)@en[[[auth-param]]]] の[[リスト]] ([CODE(HTTP)[#]])
+=== [CODE(ABNF)@en[[[token68]]]]
 ]FIG]
 
-* 引数
-
-[7] [[誰何]]における[[引数]]は [CODE(ABNF)[[[auth-param]]]] と呼ばれています。
-
-;; [8] ただし [[ABNF]] 構文上 [CODE(HTTP)@en[[[realm]]]] は [CODE(ABNF)@en[[[auth-param]]]]
-に含まれないことになっています。
-
-詳しくは [[auth-param]] の項を参照してください。
+;; [2] [[RFC 1945]] と [[RFC 2068]] では [CODE(HTTP)@en[[[realm]]]] 
+[[引数]]が最初の[[引数]]かつ必須とされていましたが、その後この制限はなくなっているようです。
+更に [[RFC 7235]] で [CODE(ABNF)@en[[[token68]]]] も認められるようになりました。
 
 * 誰何の選択
 
@@ -43,12 +44,18 @@
 な方法を最初に持ってくるべきです。
 [SRC[>>10]]
 
-[12] また[[利用者エージェント]]は提示された[[誰何]]のうち対応している最も「安全」な方法を選択し[['''なければなりません''']]
-[SRC[>>16]]
+[12] また[[利用者エージェント]]は提示された[[誰何]]のうち対応している最も「安全」な方法を選択する[RUBYB[べき]@en[ought to]]です
+[SRC[>>6]]。
 
 ;; [14] [[RFC 2068]] では、[[利用者エージェント]]は、対応しているより最初のものを使うべき、
 かつ最も安全な方法を選択するべき [SRC[>>10]]、と2つの矛盾する方針を同時に勧められていました。
-[[RFC 2617]] では >>12 だけを要求しており、しかもおすすめではなく、要件になっています。
+[[RFC 2617]] では >>12 だけを要求しており、しかもおすすめではなく、
+[['''必須''']] [SRC[>>16]] となっていました。 [[RFC 7235]] では [[ought to]]
+になっています。
+
+;; [5] [[RFC 7235]] は、多くの[[クライアント]]で未知の [CODE(ABNF)@en[[[auth-scheme]]]]
+が含まれている時構文解析に失敗するため、最初に [CODE(HTTP)@en[[[Basic]]]]
+のような広く対応されている方式を指定して対処できると指摘しています。 [SRC[>>6]]
 
 * authentication challenge
 
@@ -61,10 +68,28 @@
 
 * 歴史
 
-** RFC
+** RFC 第1世代 (RFC 1945)
 
 [REFS[
 - [1] [CITE@en[RFC 1945 - Hypertext Transfer Protocol -- HTTP/1.0]] ([TIME[2012-02-18 23:25:56 +09:00]] 版) <http://tools.ietf.org/html/rfc1945#section-11>
+]REFS]
+
+** RFC 第2世代 (RFC 2068)
+
+[REFS[
 - [9] [CITE@en[RFC 2068 - Hypertext Transfer Protocol -- HTTP/1.1]] ([TIME[2012-02-18 23:30:14 +09:00]] 版) <http://tools.ietf.org/html/rfc2068#section-11>
 - [10] [CITE@en[RFC 2068 - Hypertext Transfer Protocol -- HTTP/1.1]] ([TIME[2012-02-18 23:30:14 +09:00]] 版) <http://tools.ietf.org/html/rfc2068#section-15.2>
+]REFS]
+
+** RFC 第3世代 (RFC 2617)
+
+[REFS[
+- [15] '''[CITE@en[RFC 2617 - HTTP Authentication: Basic and Digest Access Authentication]] ([TIME[2012-01-09 21:04:30 +09:00]] 版) <http://tools.ietf.org/html/rfc2617#section-1.2>'''
+- [16] [CITE@en[RFC 2617 - HTTP Authentication: Basic and Digest Access Authentication]] ([TIME[2012-01-09 21:04:30 +09:00]] 版) <http://tools.ietf.org/html/rfc2617#section-4.6>
+]REFS]
+
+** RFC 第4世代 (RFC 7235)
+
+[REFS[
+- [19] '''[CITE@en[RFC 7235 - Hypertext Transfer Protocol (HTTP/1.1): Authentication]] ([TIME[2014-09-11 10:01:28 +09:00]] 版) <https://tools.ietf.org/html/rfc7235#section-2.1>'''
 ]REFS]
