@@ -1,3 +1,7 @@
+[11] [DFN[[CODE(HTTP)@en[[[WWW-Authenticate:]]]]]] [[ヘッダー]]は、
+当該[[対象資源]]へのアクセスに必要な[[認証]]についての情報を含む [[challenge]]
+を指定するものです。
+
 * 仕様書
 
 [REFS[
@@ -5,18 +9,24 @@
 - [420] [CITE@en[RFC 5849 - The OAuth 1.0 Protocol]] ([TIME[2012-03-04 10:51:49 +09:00]] 版) <http://tools.ietf.org/html/rfc5849#section-3.5.1>
 ]REFS]
 
-* 文脈
+* 意味
 
-[407] [CODE(HTTP)@en[[[WWW-Authenticate:]]]] 欄は [CODE(HTTP)@en[[[401]]]] [[応答]]に含められなければなりません
-[SRC[>>406, >>413, >>417]]。また [CODE(HTTP)@en[[[401]]]] [[応答]]は [CODE(HTTP)@en[[[WWW-Authenticate:]]]]
-欄を含まなければなりません [SRC[>>408, >>409, >>411, >>416]]。
-
-[424] [[RFC 4559]] は [CODE(HTTP)[[[200]]]] でも [CODE(HTTP)@en[[[WWW-Authenticate:]]]]
-[[ヘッダー]]を用いるとしています。 ([CODE(HTTP)@en[[[Negotiate]]]] の項を参照。)
+[5] [CODE(HTTP)@en[[[WWW-Authenticate:]]]] [[ヘッダー]]は、
+[[対象資源]]に適用できる[[認証方式]](群)と[[認証引数]]を示します [SRC[>>3]]。
 
 * 構文
 
-[414] この欄の値は [CODE(HTTP)@en[1[['''#''']][[challenge]]]] です [SRC[>>413, >>417]]。
+[414] [CODE(HTTP)@en[[[WWW-Authenticate:]]]] [[ヘッダー]]の値は、
+1つ[[以上]]の [[challenge]] の[[リスト]] ([CODE(HTTP)[#]]) です [SRC[>>3, >>413, >>417]]。
+
+[FIG(railroad)[
+= [[challenge]]
+= *
+== [[FWS]]
+== [CODE(HTTP)[[[,]]]]
+== [[FWS]]
+== [[challenge]]
+]FIG]
 
 ** 読点
 
@@ -27,9 +37,34 @@
 
 おそらくこのような困った仕様になった原因は太古の HTTP では読点とセミコロンが曖昧に使われていたときの名残でしょう。
 
-* 串とキャッシュの処理モデル
+[8] 実装によっては、複数の [[challenge]] の指定に対応していないことがあります。
+[[鯖]]は複数の [[challenge]] の指定を避けるべきでしょう。
 
-[410] [[串]]は [CODE(HTTP)@en[[[WWW-Authenticate:]]]] 欄をいじってはなりません [SRC[>>409, >>412, >>419]]。
+* 文脈
+
+[407] [[鯖]]は、 [CODE(HTTP)@en[[[401]]]] [[応答]]を[[生成]]する場合、
+1つ[[以上]]の [[challenge]] を含む
+[CODE(HTTP)@en[[[WWW-Authenticate:]]]] [[ヘッダー]]を[[送信]]しなければなりません。
+[SRC[>>3, >>406, >>413, >>417, >>408, >>409, >>411, >>416]]。
+
+[6] [[鯖]]は、[[credentials]] を指定すると (あるいは他の [[credentials]]
+に変更すると) [[応答]]に影響するかもしれないことを示すため、
+他の[[応答]]でも [CODE(HTTP)@en[[[WWW-Authenticate:]]]]
+[[ヘッダー]]を[[生成]]して構いません [SRC[>>3]]。
+
+[424] [[RFC 4559]] は [CODE(HTTP)[[[200]]]] でも [CODE(HTTP)@en[[[WWW-Authenticate:]]]]
+[[ヘッダー]]を用いるとしています。
+
+;; [CODE(HTTP)@en[[[Negotiate]]]] の項を参照。
+
+[7] [CODE(HTTP)@en[[[WWW-Authenticate:]]]] [[ヘッダー]]は複数指定できます [SRC[>>3]]。
+
+* 処理モデル
+
+[10] [[HTTP認証]]も参照。
+
+[410] [[串]]は、[[転送]]の際に [CODE(HTTP)@en[[[WWW-Authenticate:]]]] 
+[[ヘッダー]]を変更しては[['''なりません''']] [SRC[>>3, >>409, >>412, >>419]]。
 
 * OAuth
 
@@ -39,9 +74,9 @@
 ;; [422] [[OAuth]] の場合は事前に [[OAuth]] を使うと分かっていて[[要求]]を発行するのが一般的なので、
 [CODE(HTTP)@en[[[WWW-Authenticate:]]]] 欄の必要性はあまりなく、実際に必須とはされていません。
 
-[423] [[auth-param]]:
-- [CODE(HTTP)@en[[[realm]]]]
-- [CODE(HTTP)@en[[[oauth_problem]]]]
+;; [12] [CODE(HTTP)[[[401]]]] [[応答]]では [CODE(HTTP)@en[[[WWW-Authenticate:]]]]
+[[ヘッダー]]が必須ですから (>>407)、[[OAuth]] のみを使う場合で [CODE(HTTP)[[[401]]]]
+を返すなら、 >>421 は [['''MAY''']] ではなく [['''MUST''']] ということになります。
 
 * 歴史
 
@@ -69,7 +104,7 @@
 - [419] [CITE@en[RFC 2617 - HTTP Authentication: Basic and Digest Access Authentication]] ([TIME[2012-01-09 21:04:30 +09:00]] 版) <http://tools.ietf.org/html/rfc2617#page-5>
 ]REFS]
 
-[FIG[
+[FIG(quote)[
 [FIGCAPTION(quote)[
 [403] RFC 1945 (HTTP/1.0) 10.16; RFC 2068 (HTTP/1.1) 14.46; RFC 2616 (HTTP/1.1) 14.47 WWW-Authenticate
 
@@ -127,6 +162,18 @@ HTTP 接続認証処理は [[RFC2617]] で説明されています。
 [[Firefox]] だと最初の1回目だけ変なことがあって次からはうまくいくみたいですが。
 リンク先が違う[[ディレクトリ]]だったりとかも関係してるっぽ。
 [[Safari]] と [[Chrome]] の間でもなんかちがうな。。。
+
+* 例
+
+[EG[
+[9] [[HTTP]] 仕様書 [SRC[>>3]] 
+では次のような架空の[[認証方式]]と[[基本認証]]を併用した例が示されています。
+
+[PRE(HTTP code)[
+WWW-Authenticate: Newauth realm="apps", type=1,
+                  title="Login to \"apps\"", Basic realm="simple"
+]PRE]
+]EG]
 
 * 関連
 
