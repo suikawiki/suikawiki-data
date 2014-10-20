@@ -1,19 +1,34 @@
-[403] [[HTTP]] の[[状態符号]] [DFN[[CODE(HTTP)@en[[[401]]]]]] は、[[認証]]が必要であって、
-[[HTTP要求]]に適当な認証情報が含まれていなかったことを表します。
+[403] [DFN[[CODE(HTTP)@en[[[401]]]]]] ([DFN[[[Unauthorized]]]]) は、[[HTTP認証]]が必要であって、
+[[要求]]に適切な [[credentials]] が含まれていなかったことを示す[[状態符号]]です。
 
 * 仕様書
 
 [REFS[
-- [417] [CITE@en[RFC 2616 - Hypertext Transfer Protocol -- HTTP/1.1]] ([TIME[2012-01-09 20:55:20 +09:00]] 版) <http://tools.ietf.org/html/rfc2616#section-10.4.2>
+- [3] '''[CITE@en[RFC 7235 - Hypertext Transfer Protocol (HTTP/1.1): Authentication]] ([TIME[2014-09-11 10:01:28 +09:00]] 版) <https://tools.ietf.org/html/rfc7235#section-3.1>'''
 - [1] [CITE@en[RFC 7235 - Hypertext Transfer Protocol (HTTP/1.1): Authentication]] ([TIME[2014-09-11 10:01:28 +09:00]] 版) <https://tools.ietf.org/html/rfc7235#section-2.1>
-- [419] [CITE@en[RFC 2617 - HTTP Authentication: Basic and Digest Access Authentication]] ([TIME[2012-01-09 21:04:30 +09:00]] 版) <http://tools.ietf.org/html/rfc2617#section-1.2>
-- [420] [CITE@en[RFC 2617 - HTTP Authentication: Basic and Digest Access Authentication]] ([TIME[2012-01-09 21:04:30 +09:00]] 版) <http://tools.ietf.org/html/rfc2617#page-4>
 ]REFS]
 
-* ヘッダー
+* 意味
 
-[410] [CODE(HTTP)@en[[[401]]]] [[応答]]は [CODE(HTTP)@en[[[WWW-Authenticate:]]]]
-欄を含まなければなりません [SRC[>>408, >>411, >>412, >>415, >>417, >>419, >>420]]。
+[5] [CODE(HTTP)[[[401]]]] は、[[要求]]に[[対象資源]]に対して妥当な[[認証]]の
+[[credentials]] が含まれていなかったために[[要求]]を適用しなかったことを示す[[状態符号]]です
+[SRC[>>3]]。
+
+[6] [[要求]]が [[credentials]] を含んでいた場合には、 [CODE(HTTP)[[[401]]]]
+[[応答]]はその [[credentials]] に対する[[認可]]を拒んでいることを示します [SRC[>>3]]。
+
+* 構文
+
+[410] [CODE(HTTP)@en[[[401]]]] [[応答]]を[[生成]]する[[鯖]]は、
+[[対象資源]]に適用される [[challenge]] を最低1つは含んだ
+[CODE(HTTP)@en[[[WWW-Authenticate:]]]] [[ヘッダー]]を送信し[['''なければなりません''']]
+[SRC[>>3, >>408, >>411, >>412, >>415, >>416, >>419, >>420]]。
+
+[14] [CODE(HTTP)[[[401]]]] [[応答]]の [[payload]] は、[[認証]]に失敗した理由などを記述した簡単な
+[[HTML]] [[文書]]とするのが一般的です。会員制サイトなどでは登録ページへのリンクを含めたりします。
+
+;; [15] 現在の一般的な [[Webブラウザー]]では、 [[payload]] の[[文書]]が表示されるのは、
+[[認証]]ダイアログを[[キャンセル]]した時です。[[認証]]前に[[利用者]]に伝えたい内容を記述するには不適切です。
 
 * 文脈
 
@@ -24,16 +39,13 @@
 [[challenge]] が指定された [CODE(HTTP)@en[[[WWW-Authenticate:]]]]
 [[ヘッダー]]を含む [CODE(HTTP)[[[401]]]] [[応答]]を送信する[['''べきです''']] [SRC[>>1]]。
 
+;; [8] [[HTTP認証]]も参照。
+
 * 処理モデル
 
-[404] [[Webブラウザー]]をはじめとする[[対話的]]な [[HTTP]] [[利用者エージェント]]は、普通、
-[[HTTP要求]]に対して [CODE(HTTP)@en[[[401]]]] [[応答]]が返されると、
-[[利用者]]に[[名前]]と[[合言葉]]のような認証情報を問い合わせ、
-それを含めて再度 [[HTTP要求]]を送信するようになっています。
-
-[405] 入力された認証情報が不適当であった場合には再度 [CODE(HTTP)[[[401]]]] が返されますから、
-[[Webブラウザー]]も再度[[利用者]]に入力を求め、以後これを繰り返します。
-[[利用者]]が断念すると、 [CODE(HTTP)[[[401]]]] [[メッセージ]]の内容を[[レンダリング]]します。
+[7] [[利用者エージェント]]は、 [[credentials]] を含む[[要求]]に対して [CODE(HTTP)[[[401]]]]
+[[応答]]が返された時、新しい [CODE(HTTP)@en[[[Authorization:]]]] 
+[[ヘッダー]]を指定した[[要求]]を再度試みても構いません [SRC[>>3]]。
 
 [406] [[認証]]を通って [CODE(HTTP)[[[202]]]] などの成功を表す[[応答]]が返されると、
 以後、[[HTTP]] [[URL]] が同じ[[階層]] ([[ディレクトリー]]) 
@@ -45,12 +57,37 @@
 一般的な [[Webブラウザー]]は認証情報を[[セッション]]を越えて保存しますが、
 自動的には送信せず、必ず[[セッション]]の最初の1回は明示的に[[利用者]]に問い合わせる仕組みになっています。
 
+;; [9] [CODE(HTTP)@en[[[realm]]]] も参照。
+
 * レンダリング
 
-[418] [CODE(HTTP)@en[[[401]]]] [[応答]]が以前と同じ[[誰何]]を含んでいる場合で、
-[[利用者エージェント]]が少なくても1回は既に[[認証]]を試みている場合には、
-[[実体]]に診断情報が含まれているかもしれませんから、これを[[利用者]]に提示する[['''べきです''']]
-[SRC[>>416]]。
+[404] [[Webブラウザー]]をはじめとする[[対話的]]な [[HTTP]] [[利用者エージェント]]は、普通、
+[[HTTP要求]]に対して [CODE(HTTP)@en[[[401]]]] [[応答]]が返されると、
+[[利用者]]に[[名前]]と[[合言葉]]のような認証情報を問い合わせ、
+それを含めて再度 [[HTTP要求]]を送信するようになっています。
+
+[405] 入力された認証情報が不適当であった場合には再度 [CODE(HTTP)[[[401]]]] が返されますから、
+[[Webブラウザー]]も再度[[利用者]]に入力を求め、以後これを繰り返します。
+[[利用者]]が断念すると、 [CODE(HTTP)[[[401]]]] [[メッセージ]]の内容を[[レンダリング]]します。
+
+[418] [CODE(HTTP)@en[[[401]]]] [[応答]]が以前の[[応答]]と同じ [[challenge]]
+を含んでいる場合で、[[利用者エージェント]]が既に何度か[[認証]]を試みていた場合には、
+[[応答]]に含まれている[[表現]]に診断情報があるのが普通ですから、
+これを[[利用者]]に提示する[['''べきです''']] [SRC[>>3, >>416]]。
+
+;; [11] と仕様上はされていますが、実際には >>405 のような実装方法が一般的です。
+
+[10] かつては [CODE(HTTP)[[[401]]]] による[[認証]]情報の入力は[[モーダルダイアログ]]として実装するのが普通でした。そのために表示中のあるページで
+[CODE(HTTP)[[[401]]]] が返されると[[Webブラウザー]]のすべての機能が一旦使えなくなるという不便な状態でした。
+
+[12] [CODE(JS)@en[[[alert]]]] などの[[モーダルダイアログ]]に少し遅れて10年代半ばには[[タブ]]に対して[[モーダル]]となり、
+他の[[タブ]]の操作は妨害しないように改善されています。
+
+[13] 素朴な実装方法だと [[XHR]] で次々に [CODE(HTTP)[[[401]]]] を返す [[URL]] 
+を開き続ける方法で[[利用者]]を妨害し続ける[[ブラクラ]]を作ることができてしまいます。
+[CODE(HTTP)@en[[[alert]]]] などの[[モーダルダイアログ]]と同様に、
+[[キャンセル]]時に以後その[[タブ]]ないし[[起源]]の [CODE(HTTP)[[[401]]]]
+による[[認証]]ダイアログの表示を抑制するオプションが必要でしょう。
 
 * 実装
 
@@ -61,16 +98,30 @@
 
 * 歴史
 
+** RFC 第1世代
+
 [REFS[
 - [408] '''[CITE@en[RFC 1945 - Hypertext Transfer Protocol -- HTTP/1.0]] ([TIME[2012-02-18 23:25:56 +09:00]] 版) <http://tools.ietf.org/html/rfc1945#page-36>'''
 - [409] [CITE@en[RFC 1945 - Hypertext Transfer Protocol -- HTTP/1.0]] ([TIME[2012-02-18 23:25:56 +09:00]] 版) <http://tools.ietf.org/html/rfc1945#page-36>
 - [411] [CITE@en[RFC 1945 - Hypertext Transfer Protocol -- HTTP/1.0]] ([TIME[2012-02-18 23:25:56 +09:00]] 版) <http://tools.ietf.org/html/rfc1945#section-11>
-- [412] '''[CITE@en[RFC 2068 - Hypertext Transfer Protocol -- HTTP/1.1]] ([TIME[2012-02-18 23:30:14 +09:00]] 版) <http://tools.ietf.org/html/rfc2068#section-10.4.2>'''
-- [415] [CITE@en[RFC 2068 - Hypertext Transfer Protocol -- HTTP/1.1]] ([TIME[2012-02-18 23:30:14 +09:00]] 版) <http://tools.ietf.org/html/rfc2068#section-11>
-- [416] '''[CITE@en[RFC 2616 - Hypertext Transfer Protocol -- HTTP/1.1]] ([TIME[2012-01-09 20:55:20 +09:00]] 版) <http://tools.ietf.org/html/rfc2616#section-10.4.2>'''
 ]REFS]
 
-[FIG[
+** RFC 第2世代
+
+[REFS[
+- [412] '''[CITE@en[RFC 2068 - Hypertext Transfer Protocol -- HTTP/1.1]] ([TIME[2012-02-18 23:30:14 +09:00]] 版) <http://tools.ietf.org/html/rfc2068#section-10.4.2>'''
+- [415] [CITE@en[RFC 2068 - Hypertext Transfer Protocol -- HTTP/1.1]] ([TIME[2012-02-18 23:30:14 +09:00]] 版) <http://tools.ietf.org/html/rfc2068#section-11>
+]REFS]
+
+** RFC 第3世代
+
+[REFS[
+- [416] '''[CITE@en[RFC 2616 - Hypertext Transfer Protocol -- HTTP/1.1]] ([TIME[2012-01-09 20:55:20 +09:00]] 版) <http://tools.ietf.org/html/rfc2616#section-10.4.2>'''
+- [419] [CITE@en[RFC 2617 - HTTP Authentication: Basic and Digest Access Authentication]] ([TIME[2012-01-09 21:04:30 +09:00]] 版) <http://tools.ietf.org/html/rfc2617#section-1.2>
+- [420] [CITE@en[RFC 2617 - HTTP Authentication: Basic and Digest Access Authentication]] ([TIME[2012-01-09 21:04:30 +09:00]] 版) <http://tools.ietf.org/html/rfc2617#page-4>
+]REFS]
+
+[FIG(quote)[
 [FIGCAPTION[
 [413] RFC 1945 (HTTP/1.0); RFC 2068 & 2616 (HTTP/1.1) 10.4.2 401 Unauthorized
 ]FIGCAPTION]
@@ -97,16 +148,19 @@ in [DEL[[DEL[[INS[{1945}]] Section 11]] [INS[[INS[{2068}]] section 11]]]] [INS[[
 応答はその証明書について認証が拒否されたことを示します。 [CODE(HTTP)[401]]
 応答が前の応答と同じ誰何を含んでおり、利用者エージェントが既に最低一度は認証を試みている時は、
 応答に含まれている実体には関係する診断情報が含まれているかもしれませんから、 [INS[[INS[(訳注)]]利用者エージェントは]]これを利用者に提示する'''べきです'''。
-
-* License
-[[RFCのライセンス]]
 ]FIG]
+
+[421] [CITE@en[RFC 7252 - The Constrained Application Protocol (CoAP)]]
+( ([TIME[2014-06-27 00:59:37 +09:00]] 版))
+<http://tools.ietf.org/html/rfc7252#section-5.9.2.2>
+
+** RFC 第4世代
+
+[REFS[
+- [4] '''[CITE@en[RFC 7235 - Hypertext Transfer Protocol (HTTP/1.1): Authentication]] ([TIME[2014-09-11 10:01:28 +09:00]] 版) <https://tools.ietf.org/html/rfc7235#section-3.1>'''
+]REFS]
 
 * 関連
 
 [414] [[起源鯖]]によって使われる [CODE(HTTP)[[[401]]]] に対して、[[串]]によって使われる
 [CODE(HTTP)[[[407]]]] もあります。
-
-[421] [CITE@en[RFC 7252 - The Constrained Application Protocol (CoAP)]]
-( ([TIME[2014-06-27 00:59:37 +09:00]] 版))
-<http://tools.ietf.org/html/rfc7252#section-5.9.2.2>
