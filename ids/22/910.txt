@@ -6,6 +6,41 @@
 - [1] [CITE@en[RFC 2295 - Transparent Content Negotiation in HTTP]] ([TIME[2014-08-31 19:36:42 +09:00]] 版) <http://tools.ietf.org/html/rfc2295#section-9.2>
 ]REFS]
 
+* 構文
+
+[3] [[構造化実体タグ]]は、最後の [CODE(HTTP)[[[;]]]] とそれ以降末尾の [CODE(HTTP)[[["]]]]
+の直前までを除去する (とともに [CODE(HTTP)[[[W/]]]] を無視する) 
+と[[異体リスト検証子]]となるような[[実体タグ]]です。
+
+[EG[
+[4] 例えば次の表のように整理できます [SRC[>>1]]。
+,通常の[[実体タグ]]    ,[[異体リスト検証子]]  ,[[構造化実体タグ]]
+,[CODE(HTTP)["etag"]]  ,[CODE(HTTP)["vlv"]]   ,[CODE(HTTP)["etag;vlv"]]
+,[CODE(HTTP)[W/"etag"]],[CODE(HTTP)["vlv"]]   ,[CODE(HTTP)[W/"etag;vlv"]]
+,[CODE(HTTP)["a;b;c;"]],[CODE(HTTP)["a;b;c;"]],[CODE(HTTP)["a;b;c;;1234"]]
+]EG]
+
+[8] [[起源鯖]]は通常の[[実体タグ]]を次のように[[生成]]する[['''べきです''']] [SRC[>>1]]。
+[FIG(list)[
+- [9] 異なる[[隣接異体資源]]に同じ通常の[[実体タグ]]を使わないこと
+- [10] 通常の[[実体タグ]]が[[隣接異体資源]]の通常の[[実体タグ]]と[[異体リスト検証子]]から構成される[[構造化実体タグ]]と一致しないこと
+]FIG]
+
+* 文脈
+
+[7] 透過的に折衝された[[応答]]が[[実体タグ]]を含む場合は、
+[[構造化実体タグ]]でなければ[['''なりません''']] [SRC[>>1]]。
+またその[[異体リスト検証子]]部分は当該[[応答]]の [CODE(HTTP)@en[[[Alternates:]]]]
+[[ヘッダー]]の[[キャッシュ検証子]]となるものでなければ[['''なりません''']]。
+通常の[[実体タグ]]の部分は[[応答]]の [[payload body]] および [CODE(HTTP)@en[[[Alternates:]]]]
+以外の[[実体ヘッダー]]の[[キャッシュ検証子]]となるものでなければ[['''なりません''']] [SRC[>>1]]。
+
+* 処理モデル
+
+[5] [[透過内容折衝]]に対応した[[串]]は、[[構造化実体タグ]]の構造を使って[[キャッシュ]]を最適化できます [SRC[>>1]]。
+
+[6] 構造を使った最適化を行わない時は、通常の[[実体タグ]]として処理する[['''べきです''']] [SRC[>>1]]。
+
 * 歴史
 
 [FIG(quote)[
@@ -63,4 +98,31 @@ all entity headers except Alternates.
 頭に含まれる[[変種目録]]の[[検証子]]として働かなければ'''なりません'''。
 構造化札の通常の実体札は応答の[[実体本体]]及び
 [CODE(HTTP)[Alternates]] 以外のすべての実体札の検証子として働かなければ'''なりません'''。
+]FIG]
+
+[FIG(quote)[
+[FIGCAPTION[
+[41] RFC 2295 (HTTP 透過内容折衝) 9.3 Assigning entity tags to variants
+]FIGCAPTION]
+
+> To allow for correct revalidation of transparently negotiated
+responses by clients, origin servers SHOULD generate all normal
+entity tags for the neighboring variant resources of the negotiable
+resource in such a way that
+
+クライアントが[[透過折衝応答]]を正しく再検証することができるように、
+起源サーバーは折衝可能資源の[[隣接変種資源]]についてのすべての通常の実体札を
+
+>
+- 1. the same tag is never used by two different variants,
+unless this tag labels exactly the same entity on all occasions,
+- 2. if one normal tag "X" is a prefix of another normal tag "XY",
+then "Y" must never be a semicolon followed by a variant list validator.
+
+- 2つの異なる変種について同じ札は絶対に使用しない。
+但しこの札がすべての場合に本当に同じ実体を札付けする場合を除く。
+- 通常の札 [SAMP(HTTP)[X]] が他の通常の札 [SAMP(HTTP)[XY]]
+の接頭辞であるなら、 [SAMP(HTTP)[Y]] はセミコロンとそれに続く[[変種目録検証子]]には決してならない。
+
+となるように生成する'''べきです'''。
 ]FIG]
