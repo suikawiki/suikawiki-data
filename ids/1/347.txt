@@ -6,6 +6,7 @@
 [REFS[
 - [13] [CITE@en[RFC 7230 - Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing]] ([TIME[2014-06-07 01:59:35 +09:00]] 版) <https://tools.ietf.org/html/rfc7230#section-2.1>
 - [20] [CITE@en[RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests]] ([TIME[2014-09-11 10:02:44 +09:00]] 版) <https://tools.ietf.org/html/rfc7232#section-5>
+- [30] [CITE@en[RFC 3229 - Delta encoding in HTTP]] ([TIME[2014-10-26 21:15:25 +09:00]] 版) <http://tools.ietf.org/html/rfc3229#section-4>
 - [9] [CITE@en[RFC 3875 - The Common Gateway Interface (CGI) Version 1.1]] 
 -- [3] '''<http://tools.ietf.org/html/rfc3875#section-3.1>'''
 -- [8] <http://tools.ietf.org/html/rfc3875#section-8.1>
@@ -53,13 +54,16 @@ service requests from the client.
 (詳細は[[キャッシュ項目]]を参照。)
 == [29] [[起源鯖]]で、[[対象資源]]に関する[[内容折衝]]が適用される場合、
 [[内容折衝]]により返す[[表現]]を選択します。
+== [32] 必要に応じて[[内容符号化]]を適用します [SRC[>>30]]。
+== [37] [[実体タグ]]を決定します [SRC[>>30]]。
 == [26] [[条件付き要求]]が適用される場合で、[[要求]]に事前条件が指定されていれば、
 [[起源鯖]]であり[[要求メソッド]]が[[条件付き要求]]として適切である場合、
 その条件を確認します [SRC[>>20]]。 ([[条件付き要求]]を参照。)
-== [33] [[範囲要求]]なら、結果の適切な部分を [CODE(HTTP)[[[206]]]] [[応答]]として返します。
+== [31] [[要求メソッド]]で指定された操作を実行します。
+== [35] 必要なら[[実現値操作]]を適用します [SRC[>>30]] ([[実現値操作]]を参照)。
+=== [33] [[範囲要求]]なら、結果の適切な部分を [CODE(HTTP)[[[206]]]] [[応答]]として返します。
 ([[範囲要求]]を参照。)
-== [31] そうでないなら、[[要求メソッド]]で指定された操作を実行し、
-結果を[[応答]]として返します。
+= [36] 必要なら[[転送符号化]]を適用します [SRC[>>30]]。
 ]FIG]
 
 * CGI に関する要件
@@ -97,6 +101,336 @@ service requests by sending back responses. Any given program may be capable of 
 >
 :サーバー: [[応答]]を送り返すことで[[要求]]を service するために[[接続]]を受け入れる応用プログラム。
 任意のプログラムが[[クライアント]]と[[サーバー]]のどちらにもなることができます。これらの用語を使用するときには、一般的なそのプログラムの能力ではなく、特定の接続についてのプログラムの施す役割にのみ言及します。同様に、サーバーは各要求の性質による動作の切り替えで[[起源サーバー]]、[[串]]、[[関門]]あるいは[[トンネル]]として動作するかもしれません。
+]FIG]
+
+[FIG(quote)[
+[FIGCAPTION[
+[38] RFC 3229 (差分符号化) 4 The HTTP message-generation sequence
+]FIGCAPTION]
+
+> HTTP/1.1 supports a number of different transformations on the body of a value:
+
+[[HTTP/1.1]] は値の本体についての数々の異なる変形に対応しています。
+
+>
+:Content-coding:
+According to the specification, "Content coding
+values indicate an encoding transformation that has
+been or can be applied to an entity.  Content codings
+are primarily used to allow a document to be
+compressed or otherwise usefully transformed without
+losing the identity of its underlying media type and
+without loss of information.  Frequently, the entity
+is stored in coded form, transmitted directly, and
+only decoded by the recipient."  Content-codings are
+normally end-to-end transformations; i.e., once
+applied at the sender, they are not removed except at
+the ultimate recipient.  An intermediate server may
+apply a content-coding, in appropriate circumstances.
+
+:内容符号化:仕様書によれば、「内容符号化値は[[実体]]に適用されている、またはすることのできる符号化変形を示します。内容符号化は主として中の[[媒体型]]の同一性を失ったり情報を損失したりすることなしに、文書を圧縮したり、その他有用に変形することを認めるために使用します。よく、実体は符号化形で蓄積され、直接転送され、[[受信者]]によってのみ復号されます」。
+内容符号化は通常[[末端対末端]]変形です。すなわち、ひとたび[[送信者]]のところで適用したら、最後の受信者以外では取り除きません。中間[[鯖]]は適切な場面においては内容符号化を適用しても構いません。
+
+>
+:Transfer-coding:
+According to the specification, "Transfer coding
+values are used to indicate an encoding
+transformation that has been, can be, or may need to
+be applied to an entity-body in order to ensure "safe
+transport" through the network.  This differs from a
+content coding in that the transfer coding is a
+property of the message, not of the original entity."
+Transfer-codings are explicitly hop-by-hop
+transformations (although, as an optimization, an
+intermediate proxy may store the transfer-coded
+version of a message if this behavior is not
+inconsistent with its externally visible function.)
+
+:転送符号化:仕様書によれば、「転送符号化値はネットワークを通じた『安全な転送』を確保するために  [CODE(ABNF)[[[entity-body]]]] に適用されている、または適用することのできる、または適用する必要があるかもしれない符号化変形を示すために使用します。これは内容符号化とは異なり、転送符号化はメッセージの特性であってもとの[[実体]]の特性ではありません」。
+転送符号化は陽に[[ホップ毎]]変形です (が、最適化として、中間[[串]]はその振る舞いが外部から可視の関数と不整合でなければ、メッセージの転送符号化版を蓄積しても構いません)。
+
+>
+:Ranges:
+An HTTP client, using the Range header, may request
+that the server return one or more subranges of the
+instance, rather than the entire instance value.
+HTTP/1.1 only supports byte-ranges, although there is
+some possibility that future extensions will allow
+for other kinds of range-specifiers (such as chapters of a document).
+
+:範囲:HTTP [[クライアント]]は、 [CODE(HTTP)[[[Range]]]]
+頭を使用して、[[鯖]]に実現値の全体ではなく、実現値の部分範囲を一つ以上返すように要求することができます。
+HTTP/1.1 は[[バイト]]範囲のみに対応していますが、
+将来の拡張が他の種類の範囲指定子を (この文書の後の章のように)
+認める余地があります。
+
+> A client signals its willingness to receive a content-coding by
+sending an "Accept-Encoding" header, listing the set of content-codings that it understands.  It may optionally include information
+about which content-codings it prefers.  If a server uses any non-identity content-coding(s), it includes a "Content-Encoding" header
+field in the response, listing these content-codings in their order of application.
+
+クライアントは内容符号化を受信する意志を [CODE(HTTP)[[[Accept-Encoding]]]]
+頭に自分の理解する内容符号化の集合を列挙することによって通知します。
+クライアントは任意でどの内容符号化を好むかについての情報を含めることもできます。[[鯖]]が非[[同一]]内容符号化(群)を使用する場合は、応答で
+[CODE(HTTP)[[[Content-Encoding]]]] 頭欄を使用して、
+内容符号化を適用した順に列挙します。
+
+> RFC 2068 [9] did not include an analogous mechanism for negotiating
+the use of transfer-codings, although it does include an analogous
+"Transfer-Encoding" header for marking the response.  A new "TE"
+header has since been added to HTTP/1.1 [10], analogous to the
+"Accept-Encoding" header.
+
+[[RFC 2068]] は同様に転送符号化の使用について応答に印をつける [CODE(HTTP)[[[Transfer-Encoding]]]]
+頭を含んでいましたが、折衝のための相当する仕組みは含んでいませんでした。
+その後 [CODE(HTTP)[Accept-Encoding]] 頭欄に相当する新しい [CODE(HTTP)[[[TE]]]]
+頭が HTTP/1.1 に追加されています。
+
+> In this document, we add new, optional message headers to support the
+use of instance manipulations.  A client signals its willingness to
+receive an instance-manipulation by sending an "A-IM" header (short
+for "Accept-Instance-Manipulation", which is far too long to spell
+out), analogous to the "Accept-Encoding" header.  Similarly, a server
+lists the set of instance-manipulations it has applied using an "IM" header.
+
+この文書では、[[実現値操作]]の使用に対応するための新しい任意のメッセージ頭を追加します。
+クライアントは、実現値操作を受信する意志を
+[CODE(HTTP)[[[A-IM]]]] 頭 ([CODE[Accept-Instance-Manipulation]] では綴るのが長すぎるので、その省略)
+を送信することによって通知できます。同様に、[[鯖]]は
+[CODE(HTTP)[[[IM]]]] 頭を使用して適用している実現値操作の集合を列挙します。
+
+> One must understand the relationship between these transformations in
+order to see how delta encoding applies to HTTP responses.
+
+差分符号化が HTTP 応答にどう適用されるのかを見るためにはこれらの変形の関係を理解しなければなりません。
+
+> Conceptually, the various transformations are applied in the
+following sequence:
+
+概念的には、種々の変形は次の順序で適用します。
+
+>
+= 1. Upon receiving a GET request, the server uses the URI in the
+request to identify the requested resource.
+= 2. Optionally, it uses information from the request (and perhaps
+additional information) to select a variant of that resource.
+= 3. At this point, the server may apply a non-identity content-coding to the instance, or one might have been inherent in its
+generation.  This also results in a Content-Encoding header.
+= 4. The result of the first three steps, at the time when the
+request is processed, is an instance.  The instance includes a
+body (possibly empty) and possibly some instance headers.  The
+entity tag, if any, is assigned at this point.  That is, an
+entity tag is associated with an instance, NOT an entity.
+= 5. The server may then apply an instance-manipulation.  For
+example, if the request included a Range header, the server may
+optionally produce a range response, consisting of the original
+set of headers, a Content-Range header, and the appropriate
+range(s) from the (possibly encoded) body.  Delta encodings are
+instance-manipulations, and are computed at this stage.
+= 6. The result of the fifth step becomes the entity, consisting of
+entity headers and an entity body.
+= 7. The server may then apply a non-identity transfer-coding; on-the-fly compression could be done in this step.  If so, a
+Transfer-Encoding header is added to the message.
+= 8. The results of the seventh step is the message, consisting of a
+message body (the transfer-coded version of the entity body),
+the entity headers, and additional response and general headers.
+
+= [CODE(HTTP)[[[GET]]]] 要求の受信に際して、[[鯖]]は要求された[[資源]]の識別のために[[要求]]中の [[URI]] を使用する。
+= 任意で、要求からの情報 (とおそらく追加情報) をその資源の[[変体]]の選択のために使用する。
+= この時点で、鯖は非[[同一]]内容符号化を[[実現値]]に適用してもよいし、そもそも生成の時から適用されているかもしれない。これは [CODE(HTTP)[[[Content-Encoding]]]] 頭欄に反映する。
+= 要求が処理される時点で、最初の三段階の結果は[[実現値]]である。
+実現値は本体 (空のこともある。) と場合によってはいくつかの実現値頭を含む。
+[[実体札]]は、あれば、この時点で割り当てる。つまり、
+実体札は実現値に関連付けられるのであり、[[実体]]に関連付けられるのでは'''ない'''。
+= 鯖はそれから[[実現値操作]]を適用してもよい。
+例えば、要求が [CODE(HTTP)[[[Range]]]] 頭を含むなら、
+鯖は任意選択でもとの頭の集合と [CODE(HTTP)[[[Content-Range]]]]
+頭と (符号化されているかもしれない) 本体からの適切な範囲(群)を含んだ範囲応答を生産してもよい。[[差分符号化]]は実現値操作であり、この段階で計算する。
+= 五番目の段階の結果は実体となり、実体頭と[[実体本体]]を含む。
+= 鯖はそれから非同一転送符号化を適用してもよい。
+その場での圧縮はこの段階で行うことができる。その場合、
+[CODE(HTTP)[[[Transfer-Encoding]]]] 頭がメッセージに加えられる。
+= 七番目の坦懐の結果はメッセージであり、[[メッセージ本体]]
+(実体本体の転送符号化版) と実体頭と追加の応答頭および一般頭を含む。
+
+> Note: Section 14.13 of the HTTP/1.1 specification [10] says "The
+Content-Length entity-header field indicates the size of the
+entity-body."  In other words, Content-Length measures the length
+of an entity, not of an instance or of a variant.  For example, if
+the message is a delta encoding, Content-Length gives the length
+of the delta encoding, not the length of the current instance.
+
+注意: HTTP/1.1 仕様書の 14.13 節は「[CODE(HTTP)[[[Content-Length]]]]
+[[実体頭欄]]は [CODE(ABNF)[[[entity-body]]]] の寸法を示します」
+と述べています。言い換えれば、 [CODE(HTTP)[Content-Length]]
+は[[実現値]]や[[変体]]の長さではなく、[[実体]]の長さを測ります。
+例えば、メッセージが[[差分符号化]]されているなら、
+[CODE(HTTP)[Content-Length]] は現在実現値の長さではなく、
+差分符号化の長さを与えます。
+
+> Diagrammatically, the sequence is:
+
+図にすると次のようになります。
+
+>
+[PRE[
+       datatype        operation leading to next datatype
+       ========        ==================================
+       resource
+                   |   choose acceptable variant, if needed
+                   v
+       variant
+                   |   apply content-coding, if any
+                   v
+                   |   compute/assign entity tag
+                   v
+       instance
+                   |   apply instance manipulation, if any
+                   v      (delta encoding, range selection, etc.)
+       entity-body
+                   |   apply transfer-coding, if any
+                   v
+       message-body
+]PRE]
+
+[PRE[
+       データ型        次のデータ型への演算
+       ========        ==================================
+       資源
+                   |   必要なら、受入れ可能変体を選択
+                   v
+       変体
+                   |   あれば、内容符号化を適用
+                   v
+                   |   実体札を計算・割当て
+                   v
+       実現値
+                   |   あれば、実現値操作を適用
+                   v      (差分符号化、範囲選択、その他)
+       実体本体
+                   |   あれば、転送符号化を適用
+                   v
+       メッセージ本体
+]PRE]
+
+> This formalization of the HTTP message generation sequence has not
+previously been described.  However, it is clear that Range selection
+needs to be done after the entity tag has been assigned and after any
+content-coding has been applied, and before any transfer-coding is
+applied.  Therefore, this formalization is fully consistent with
+previous practice and specification.
+
+この HTTP メッセージ生成列はこれまで記述されていませんでした。
+しかし、 [CODE(HTTP)[Range]] 選択を実体札を割当てた後で内容符号化を適用した後で転送符号化は適用する前に行う必要があることは明らかです。
+従って、この公式かは完全に従来の慣習および仕様と整合します。
+
+* 4.1 Relationship between deltas and ranges
+
+> If both Ranges and delta encodings are forms of instance
+manipulation, which should be applied first?  This depends on how the
+Range is being used.
+
+[CODE(HTTP)[[[Range]]]] と差分符号化の両方が実現値操作を形成する時は、
+どちらを先に適用するべきでしょうか。
+これはどう [CODE(HTTP)[Range]] を使用するのかによります。
+
+> Ranges are used for two main purposes, at the discretion of the
+requesting client:
+
+[CODE(HTTP)[Range]] は要求する[[クライアント]]の裁量により、
+二つの目的で使用されます。
+
+>
+- 1. to complete a partial response after a premature termination of
+a message transmission.
+- 2. to obtain just selected sections of an instance.
+
+- メッセージ転送の早すぎる終端の後に部分応答を完了するため
+- [[実現値]]の選択した節をただ得るため
+
+> In the first use of Range, it would have to be applied after any
+delta encoding, since the intended use is to recover an intact copy
+of the delta-encoded instance.  In the second use of Range, it would
+have to be applied before any delta encoding, because otherwise the
+offsets specified in the Range request would be meaningless (the
+client generally cannot know how a server's delta encoding maps
+instance byte offsets to entity byte offsets).
+
+最初の [CODE(HTTP)[Range]] の用法では、
+意図した使用法が差分符号化実現値の完全な複製の回復のためですから、
+差分符号化の後に適用しなければならないでしょう。
+二番目の [CODE(HTTP)[Range]] の用法では、
+差分符号化の前に適用しなければ [CODE(HTTP)[Range]]
+要求での位置指定は意味が無い物となるでしょう
+(クライアントは通常鯖の差分符号化が実現値のバイト位置を実体のバイト位置にどう写像するかを知ることができません)。
+
+> Therefore, we need a mechanism to allow the client to specify the
+order in which two or more instance-manipulations should be applied.
+This is easily provided as part of the specification of the "A-IM"
+header (see section 10.5.3), where we require that the server apply
+instance-manipulations in the order that they are listed in the "A-IM" header.  We also include a "range" literal in the set of
+registered instance-manipulations, to allow the client to specify (by
+its ordering with respect to other instance-manipulations) whether
+range selection is done before or after delta encoding.
+
+従って、クライアントが二つ以上の実現値操作をどの順番で適用するかを指定するための仕組みが必要です。
+これは [CODE(HTTP)[[[A-IM]]]] 頭の指定の位置部として簡単に提供します。
+鯖は実現値操作を [CODE(HTTP)[A-IM]] 頭に列挙された順序で適用する必要があります。また、実現値操作の登録集合に [CODE(HTTP)[[[range]]]]
+表記も含めることで、クライアントが (他の実現値操作との順序により)
+差分符号化の前後いずれに範囲選択を行うのかを指定することができます。
+
+> We also need a mechanism for the server to indicate in which order
+two or more instance-manipulations have been applied; this is part of
+the specification of the "IM" header (see section 10.5.2), where we
+follow the same practice used for the "Content-Encoding" header:  the
+"IM" header lists the instance-manipulations in the order that were
+applied (including, perhaps, the special "range" literal).
+
+また、鯖がどの順序で二つ以上の実現値操作を適用しているのかを示す仕組みも必要です。これは [CODE(HTTP)[[[IM]]]] 頭の指定の一部とし、
+[CODE(HTTP)[[[Content-Encoding]]]] 頭で使用しているのと同じ方法を使います。
+[CODE(HTTP)[IM]] 頭は実現値操作を適用した順に
+(おそらく特別な [CODE(HTTP)[range]] 表記も含めて) 列挙します。
+
+> A similar issue arises when Ranges are combined with compression.  If
+the client is using a Range to complete a partial response after a
+premature termination of a compressed message, then the Range would
+have to be applied after the compression.  This is feasible in
+unmodified HTTP/1.1, because the compression can be done as a
+content-coding.  However, if the client is using a Range to obtain
+selected sections of an instance, it would normally be able to
+specify offsets only in terms of the uncompressed variant.  If the
+selected portion was large enough to warrant compression, the client
+could request a compressed transfer-coding, but this is a hop-by-hop
+transformation and is not the most efficient approach (especially if
+an HTTP/1.0 proxy is in the path).
+
+同様の問題が [CODE(HTTP)[Range]] を圧縮と組み合わせる時にも起こります。
+クライアントが圧縮メッセージの早すぎる終端の後に部分応答を完了するために
+[CODE(HTTP)[Range]] を使用するとき、 [CODE(HTTP)[Range]]
+は圧縮の後に適用しなければなりません。これは、
+圧縮が内容符号化として行われるのですから無修正の HTTP/1.1
+で可能です。しかし、クライアントが実現値の選択した節を得るために
+[CODE(HTTP)[Range]] を使用するなら、通常は非圧縮変体においてのみ位置を指定することができます。選択された部分が圧縮する根拠として十分な大きさなら、
+クライアントは圧縮転送符号化を要求することができるのですが、
+これはホップ毎転送であり、 (特に経路上に HTTP/1.0 串があると)
+もっとも効率的なほうほうではありません。
+
+> We can resolve this issue by supporting the use of compression as an
+instance-manipulation (as well as as a content-coding or transfer-coding), and by using the new mechanism that allows the client to
+specify that the compression instance-manipulation is done after the
+Range instance-manipulation.
+
+この問題は、 (内容符号化としてや転送符号化としてと同様に)
+実現値操作として圧縮を使用することに対応し、
+クライアントが [CODE(HTTP)[Range]] 実現値操作を行った後に圧縮実現値操作を行うように指定できるようにする新しい機構を用いることで解決できます。
+
+> This also allows the client to control whether compression is done
+before or after delta encoding, since some simple differencing
+algorithms (such as the UNIX "diff" command) require post-compression
+of their output to yield the best results.
+
+これは、 ([[UNIX]] [KBD[[[diff]]]] 命令のような) 単純差異算法は最善の結果を得るために出力を後から圧縮することが必要ですので、
+クライアントが差分符号化の前後いずれで圧縮を行うのかを制御することも認めます。
 ]FIG]
 
 * 関連
