@@ -90,7 +90,7 @@
 = [182] [[イベントループ]]が [[storage mutex]] を所有していれば、これを[[解放]]します。
 = [183] 実行した[[タスク]]を[[タスクキュー]]から削除します。
 = [184] [[マイクロタスクチェックポイントを行います]]。
-= [186] [[ワーカー]]でなく、必要があれば、 [CODE(DOMi)@en[[[Document]]]] や[[閲覧文脈]]の[[レンダリング]]や[[利用者インターフェイス]]を更新して現在の状態を反映させます。
+= [186] [[レンダリングの更新]]を実行します。
 = [187] [[ワーカー]]で、[CODE(DOMi)@en[[[WorkerGlobalScope]]]] の[RUBYB[[[閉じ中]]]@en[closing]][[フラグ]]が[[真]]なら、
 [[イベントループ]]を[RUBYB[破棄]@en[destroy]]して本手順群を停止します。
 = [188] >>178 に戻ります。
@@ -393,30 +393,6 @@
 -- 実装上は、指定されたタイムアウトまで[[ミリ秒]]単位で待って[[マイクロタスク]]を[[キュー]]に入れる形にできそうです。
 ]FIG]
 
-* レンダリングの更新
-
-[52] [[ワーカー]]でないメインの[[イベントループ]]では、レンダリングの更新は1回の繰り返しの最後のステップです。
-このタイミングで具体的に何を行うかは明確に定義されているわけではありませんが、次のものが含まれています。
-[FIG(list)[
-- [53] [[canvas]] における[[利用者へ通知]]
-([[タスク]]内で同期的に行なって良いしこのタイミングで行なっても良いし、行わなくても良い)
--- [204] <http://www.whatwg.org/specs/web-apps/current-work/#inform>
-- [113] 外部参照を含む[[スタイルシート]]に[[スクリプト]]がアクセスできるようになるのは、
-最初のレンダリング更新のタイミング以降です。
--- <http://www.whatwg.org/specs/web-apps/current-work/#style-sheet-ready>
-]FIG]
-
-[124] [[イベントループ]]で毎回[[レンダリング]]の更新を行う必要はなく、
-いつ更新するかの正確なタイミングは実装に任されています [SRC[>>20]]。
-
-
-;; [205] [[レンダリング]]の更新は[[一時停止]]でも行われますが、 >>52 
-は[[イベントループ]]における更新 (>>28) を指しています。
-
-[REFS[
-- [20] [CITE@en[Web Applications 1.0 r8782 Reframe the 'update the rendering' step so we can add substeps.]] ([TIME[2014-09-18 05:42:00 +09:00]] 版) <https://html5.org/r/8782>
-]REFS]
-
 * 構文解析器との関係
 
 [61] [[HTML]] の[[構文解析器]] [WEAK[(や、ちゃんと規定した仕様書が存在していませんが、 [[XML]] の[[構文解析器]])]]
@@ -463,30 +439,14 @@
 - [[コールバック]]は[[タスク]]として追加されます (どの[[タスクキュー]]?)
 - [CODE(DOMm)@en[[[watchPosition]]]] は非同期的に実行されているアルゴリズムを停止させます
 
-[193] [[レンダリング]]を行うタイミングは[[イベントループ]]で定義されていますので、
-[[レンダリング]]の変化はその時に発生するのでしょうが、
-[[ハードウェア]]に[[動画]]の再生を任せている場合など、
-独自のタイミングで更新が発生するかもしれません。
-
-[63] [[fetch]] が[[画像]]や [[XML]] の[[タスク]]を複数生成する時に、
-それを[[インクリメンタル・レンダリング]]する処理モデルは定義されていません。
-
-[194] [CODE(HTMLe)@en[[[blink]]]] [[要素]]や [[CSS]] の [CODE(CSS)@en[[[text-decoration]]: [[blink]]]]
-では[[点滅]]が発生します。
-
-[195] [CODE(HTMLe)@en[[[marquee]]]] の[[アニメーション]]は [[HTML Standard]] で定義されていますが、
-[[イベントループ]]との関係には言及がありません。
-
-[64] [[アニメーションGIF]]の[[レンダリング]]との関係は定義されていません。
-ただし同じ[[URL]]の[[アニメーションGIF]]は、最初に読み込まれたものの再生と同期する、
-と [[HTML]] により規定されています。
-
 [67] [CODE(HTMLe)@en[[[video]]]] や [CODE(HTMLe)@en[[[audio]]]] の再生の具体的なタイミングは規定されていません。
 なお [CODE(HTMLe)@en[[[track]]]] の[[レンダリング]]は[[媒体要素]]の[[レンダリング]]に合わせて更新しなければならないと規定されています。
 
-@@ [197] [[CSS Animations]], [[CSS Transitions]], [[SMIL Animations]], [[SVG]] [CODE(XMLe)@en[[[video]]]]/[CODE(XMLe)@en[[[audio]]]]
+@@ [197] CODE(XMLe)@en[[[video]]]]/[CODE(XMLe)@en[[[audio]]]]
 
 [196] [CODE(CSS)@en[[[aural]]]] や [CODE(CSS)@en[[[speech]]]] の[[レンダリング]]との関係は定義されていません。
+
+[20] [[レンダリング]]に関わるものは、[[レンダリングの更新]]を参照。
 
 * 原子的に実行されるべきもの
 
@@ -544,22 +504,7 @@
 - [198] [CITE@en[Web Applications 1.0 r8620     Remove the 'stable state' logic from the 'pause' algorithm. Also, remove some examples that may soon become irrelevant.]] ([TIME[2014-05-09 03:12:00 +09:00]] 版) <http://html5.org/tools/web-apps-tracker?from=8619&to=8620>
 ]REFS]
 
-* 関連
-
-[12] [[イベント・ループ]]は、[[ストレージ・ミューテックス]]を所有することができます。
-
-;; [39] [[ストレージ・ミューテックス]]は[[利用者エージェント]]全体で1つなので、
-[[ストレージ・ミューテックス]]の解放待ちのために[[イベント・ループ]]全体がブロックされることがあります。
-
-[55] [[イベント・ループ]]は [[termination nesting level]] を持ちます。
-
-[54] [CODE(JS)@en[[[window.length]]]] は同じ[[イベント・ループ]]で動作しているかどうかによって挙動が変わり得ます。
-
-* メモ
-
-[1] [CITE@en[Timing and Synchronization in JavaScript - Opera Developer Community]] ([TIME[2009-06-07 11:12:38 +09:00]] 版) <http://dev.opera.com/articles/view/timing-and-synchronization-in-javascript/>
-
-@@ [83] [[IndexedDB]]
+**  
 
 [106] [CITE@en[Web Applications 1.0 r7980 Lay the groundwork for DOM Core to handle reentrant mutation observers.]]
 ( ([TIME[2013-06-15 07:32:00 +09:00]] 版))
@@ -612,3 +557,24 @@
 [216] [CITE[IRC logs: freenode / #whatwg / 20141119]]
 ( ([TIME[2014-11-21 01:14:19 +09:00]] 版))
 <http://krijnhoetmer.nl/irc-logs/whatwg/20141119#l-819>
+
+[52] 2014年11月には、[[レンダリングの更新]]処理と[[イベントループ]]との関係が明確化されました。
+
+;; [[レンダリングの更新]]を参照。
+
+* 関連
+
+[12] [[イベント・ループ]]は、[[ストレージ・ミューテックス]]を所有することができます。
+
+;; [39] [[ストレージ・ミューテックス]]は[[利用者エージェント]]全体で1つなので、
+[[ストレージ・ミューテックス]]の解放待ちのために[[イベント・ループ]]全体がブロックされることがあります。
+
+[55] [[イベント・ループ]]は [[termination nesting level]] を持ちます。
+
+[54] [CODE(JS)@en[[[window.length]]]] は同じ[[イベント・ループ]]で動作しているかどうかによって挙動が変わり得ます。
+
+* メモ
+
+[1] [CITE@en[Timing and Synchronization in JavaScript - Opera Developer Community]] ([TIME[2009-06-07 11:12:38 +09:00]] 版) <http://dev.opera.com/articles/view/timing-and-synchronization-in-javascript/>
+
+@@ [83] [[IndexedDB]]
