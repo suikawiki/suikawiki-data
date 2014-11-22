@@ -1,10 +1,11 @@
 * 仕様書
 
 [REFS[
-- [10] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2014-11-21 03:08:35 +09:00]] 版) <https://html.spec.whatwg.org/#processing-model-9>
+- [10] '''[CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2014-11-21 03:08:35 +09:00]] 版) <https://html.spec.whatwg.org/#processing-model-9>'''
+- [23] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2014-11-21 03:08:35 +09:00]] 版) <https://html.spec.whatwg.org/#pause>
 ]REFS]
 
-* 処理モデル
+* レンダリングの更新
 
 [8] [[イベントループ]]は、[[ワーカー]]でなく[[閲覧文脈]]に関するものであるなら、
 ループ各回の最後に[RUBYB[[[レンダリングの更新]]]@en[update the rendering]]処理を行います
@@ -24,13 +25,43 @@
 特定の更新頻度よりも多く実行しないように間引いても構いませんし、
 表示されていない[[最上位閲覧文脈]]の更新を著しく低頻度にすることもできます。
 ある[[最上位閲覧文脈]]の更新を行わない場合、その[[最上位閲覧文脈]]に属する[[閲覧文脈]]の
-[CODE(DOMi)@en[[[Document]]]] を >>12 のリストから除去します。 [SRC[>>20]]
+[CODE(DOMi)@en[[[Document]]]] を >>12 のリストから除去します。 [SRC[>>10]]
 
 ;; [205] [[レンダリング]]の更新は[[一時停止]]でも行われますが、 >>52 
-は[[イベントループ]]における更新 (>>28) を指しています。
+は[[イベントループ]]における更新 ([[イベントループ]>>28]) を指しています。
 
-[52] [[ワーカー]]でないメインの[[イベントループ]]では、レンダリングの更新は1回の繰り返しの最後のステップです。
-このタイミングで具体的に何を行うかは明確に定義されているわけではありませんが、次のものが含まれています。
+[13] 具体的には次のように処理しなければ[['''なりません''']] [SRC[>>10]]。
+[FIG(steps)[
+= [14] リスト中の [CODE(DOMi)@en[[[Document]]]] のうち[[完全に活性]]なものそれぞれについて、
+[[サイズ変更手順を実行]]します。
+= [15] リスト中の [CODE(DOMi)@en[[[Document]]]] のうち[[完全に活性]]なものそれぞれについて、
+[[スクロール手順を実行]]します。
+= [16] リスト中の [CODE(DOMi)@en[[[Document]]]] のうち[[完全に活性]]なものそれぞれについて、
+[[媒体クエリーを評価して報告する手順を実行]]します。
+= [17] リスト中の [CODE(DOMi)@en[[[Document]]]] のうち[[完全に活性]]なものそれぞれについて、
+[[CSSアニメーションを実行してイベントを送信]]します。
+= [18] リスト中の [CODE(DOMi)@en[[[Document]]]] のうち[[完全に活性]]なものそれぞれについて、
+[[全画面レンダリング手順を実行]]します。
+= [19] リスト中の [CODE(DOMi)@en[[[Document]]]] のうち[[完全に活性]]なものそれぞれについて、
+[[アニメーションフレームコールバックを実行]]します。
+= [21] リスト中の [CODE(DOMi)@en[[[Document]]]] のうち[[完全に活性]]なものそれぞれについて、
+[[レンダリングや利用者インターフェイスを更新]]します。
+]FIG]
+
+[25] ここで各手順において用いる[[時刻印]] (現在時刻) は、[[レンダリングの更新]]手順の最初の時点で
+[CODE(JS)@en[[[performance.now]]]] が返すであろう値です [SRC[>>10]]。各手順の実行途中では変化しません。
+([CODE(JS)@en[[[performance.now]]]] 自体は実行途中で変化する可能性がありそうです。)
+
+[26] [[文書]]が[[完全に活性]]かどうかの判断は、それぞれの時点で行われます。
+前の方の手順で[[完全に活性]]の基準を満たさなくなることがあると、後の方の手順は実行されないこともあります。
+
+* レンダリングや利用者インターフェイスの更新
+
+[24] [[レンダリングの更新]]の最後 (>>21) や[[一時停止]] [SRC[>>23]]
+では、「[RUBYB[[[レンダリングや利用者インターフェイスの更新]]]@en[update the rendering or user interface]]」
+を行います。
+
+[52] 具体的に何を行うかは明確に定義されているわけではありませんが、次のものが含まれています。
 [FIG(list)[
 - [53] [[canvas]] における[[利用者へ通知]]
 ([[タスク]]内で同期的に行なって良いしこのタイミングで行なっても良いし、行わなくても良い)
@@ -39,10 +70,6 @@
 最初のレンダリング更新のタイミング以降です。
 -- <http://www.whatwg.org/specs/web-apps/current-work/#style-sheet-ready>
 ]FIG]
-
-[REFS[
-- [20] [CITE@en[Web Applications 1.0 r8782 Reframe the 'update the rendering' step so we can add substeps.]] ([TIME[2014-09-18 05:42:00 +09:00]] 版) <https://html5.org/r/8782>
-]REFS]
 
 * 関係が不明瞭なもの
 
@@ -70,30 +97,36 @@
 
 * 歴史
 
-[1] [CITE[Define fullscreen in terms of "animation frame tasks" and reduce the amo... · 5187282 · whatwg/fullscreen]]
+[22] [[レンダリング]]に関する諸々の処理は従来[[イベントループ]]において
+(このタイミングで実行してもよいという以上には) 明確には規定されていませんでした。
+しかし個々の規定が詳細化され、相互作用も明確にする必要が生じてきたことから、
+2014年11月に [[HTML Standard]] の[[イベントループ]]の規定が各仕様の処理を呼び出す形に詳細化されました。
+
+[REFS[
+- [1] [CITE[Define fullscreen in terms of "animation frame tasks" and reduce the amo... · 5187282 · whatwg/fullscreen]]
 ( ([TIME[2014-07-31 07:28:54 +09:00]] 版))
 <https://github.com/whatwg/fullscreen/commit/5187282e5fd24a1c4ff0164d444e1bfc2bdf44ef>
-
-[2] [CITE@en[Animation frame task]]
+- [2] [CITE@en[Animation frame task]]
 ( ([[Anne van Kesteren]] 著, [TIME[2014-07-31 00:29:07 +09:00]] 版))
 <http://lists.w3.org/Archives/Public/www-style/2014Jul/0586.html>
-
-[3] [CITE@en[Bug 26440 – Allow fullscreenchange events to be synchronized with animation frames]]
+- [3] [CITE@en[Bug 26440 – Allow fullscreenchange events to be synchronized with animation frames]]
 ( ([TIME[2014-07-31 14:28:12 +09:00]] 版))
 <https://www.w3.org/Bugs/Public/show_bug.cgi?id=26440>
-
-[4] [CITE@en[Re: Animation frame task]]
+- [4] [CITE@en[Re: Animation frame task]]
 ( ([[Elliott Sprehn]] 著, [TIME[2014-08-22 12:37:46 +09:00]] 版))
 <http://lists.w3.org/Archives/Public/www-style/2014Aug/0365.html>
-
-[5] [CITE@en[Bug 26636 – We need to flush out step 8 of the event loop processing model per http://lists.w3.org/Archives/Public/www-dom/2014JulSep/0091.html and other emails in that thread]]
+- [5] [CITE@en[Bug 26636 – We need to flush out step 8 of the event loop processing model per http://lists.w3.org/Archives/Public/www-dom/2014JulSep/0091.html and other emails in that thread]]
 ( ([TIME[2014-08-24 02:30:54 +09:00]] 版))
 <https://www.w3.org/Bugs/Public/show_bug.cgi?id=26636>
-
-[6] [CITE@en[Make list of fullscreenElements during animation frame task https://www.... · 13e267c · whatwg/fullscreen]]
+- [20] [CITE@en[Web Applications 1.0 r8782 Reframe the 'update the rendering' step so we can add substeps.]] ([TIME[2014-09-18 05:42:00 +09:00]] 版) <https://html5.org/r/8782>
+- [6] [CITE@en[Make list of fullscreenElements during animation frame task https://www.... · 13e267c · whatwg/fullscreen]]
 ( ([TIME[2014-08-27 02:50:42 +09:00]] 版))
 <https://github.com/whatwg/fullscreen/commit/13e267c9bf275b645d4e7652e3acbc16f3dc5efb>
-
-[7] [CITE@en[Bug 26839 – Integrate "Timing control for script-based animations" spec into HTML]]
+- [7] [CITE@en[Bug 26839 – Integrate "Timing control for script-based animations" spec into HTML]]
 ( ([TIME[2014-11-22 00:51:57 +09:00]] 版))
 <https://www.w3.org/Bugs/Public/show_bug.cgi?id=26839>
+- [27] [CITE@en[Web Applications 1.0 r8849  Flesh out how rendering happens in the event loop. This also defines requestAnimationFrame() and obsoletes the 'Timing control for script-based animations' spec (by request of that spec's editors)]] ([TIME[2014-11-20 06:56:00 +09:00]] 版) <https://html5.org/r/8849>
+- [28] [CITE@en[Web Applications 1.0 r8850 Teach the event loop that it might not have a task to run]] ([TIME[2014-11-20 07:20:00 +09:00]] 版) <https://html5.org/r/8850>
+- [29] [CITE@en[Web Applications 1.0 r8851  Handle the case of a 'resize' handler removing the Document from the rendering]] ([TIME[2014-11-20 07:42:00 +09:00]] 版) <https://html5.org/r/8851>
+- [30] [CITE@en-US[csswg: changeset 14799:1e907e3ac50c]] ([TIME[2014-11-22 14:34:29 +09:00]] 版) <https://dvcs.w3.org/hg/csswg/rev/1e907e3ac50cf28bb21750d49d1229195e79d33c>
+]REFS]
