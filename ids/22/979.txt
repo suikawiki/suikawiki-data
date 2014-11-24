@@ -5,6 +5,7 @@
 -- [1] [CITE@en[RFC 4918 - HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV)]] ([TIME[2014-09-21 17:04:59 +09:00]] 版) <http://tools.ietf.org/html/rfc4918#section-6.7>
 -- [2] [CITE@en[RFC 4918 - HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV)]] ([TIME[2014-09-21 17:04:59 +09:00]] 版) <http://tools.ietf.org/html/rfc4918#section-6.8>
 - [3] [CITE@en[RFC 4918 - HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV)]] ([TIME[2014-09-21 17:04:59 +09:00]] 版) <http://tools.ietf.org/html/rfc4918#section-7>
+-- [7] [CITE@en[RFC 4918 - HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV)]] ([TIME[2014-09-21 17:04:59 +09:00]] 版) <http://tools.ietf.org/html/rfc4918#section-7.3>
 ]REFS]
 
 * 性質
@@ -14,9 +15,7 @@
 * 処理
 
 [10] ある[[資源]]の [[URL]] に対する [CODE(HTTP)@en[[[LOCK]]]]
-[[要求]]で新しい[[ロック]]が作られるなら、その[[資源]]は直接[[ロック]]されます。
-なお [CODE(HTTP)@en[[[LOCK]]]] [[要求]]の時点で [[URL]] が[[資源]]に[[写像]]されていなければ、
-新しい空の[[資源]]が作られて直接[[ロック]]されます。 [SRC[>>6]]
+[[要求]]で新しい[[ロック]]が作られるなら、その[[資源]]は直接[[ロック]]されます。 [SRC[>>6]]
 
 [11] 深さ無限の[[ロック]]により[[ロック]]されている[[コレクション]]は、
 その[[メンバー]]である[[資源]]すべてが間接的に[[ロック]]されます。 [SRC[>>6]]
@@ -36,6 +35,49 @@
 [[ヘッダー]]と[[本体]]で[[クライアント]]に通知されます。
 
 [24] [[ロック]]を作成すると、[[鯖]]は[[ロックタイムアウト]]の値を決めて計測を開始します。
+
+** 空の資源の作成
+
+[12] [[資源]]への[[写像]]が無い [[URL]] に [CODE(HTTP)@en[[[LOCK]]]]
+[[要求]]を送信することにより、名前 ([[URL]]) を予約できます。
+これにより[[資源]]の作成時の [[lost update問題]]を回避できます。 [SRC[>>7]]
+
+;; [13] なお、これ以外に [CODE(HTTP)@en[[[If-None-Match:]]]] [[ヘッダー]]を使っても回避できます [SRC[>>7]]。
+
+[14] [[写像]]がない [[URL]] を[[ロック]]した場合、新たな[[資源]]を新たに作ります [SRC[>>6, >>7]]。
+
+[16] この資源は空の[[資源]] (「locked empty resource」 [SRC[>>7]]) で、次の条件を満たすものです。
+[FIG(list)[
+- [17] [[コレクション]]でない[[資源]]でなければなりません [SRC[>>7]]。
+- [18] [CODE(HTTP)@en[[[Content-Type:]]]] や [CODE(HTTP)@en[[[Content-Language:]]]]
+は既定値を使うか、空の値とします [SRC[>>7]]。
+- [20] 読み取り、削除、移動、複製その他通常の[[コレクション]]でない[[資源]]のように扱えます [SRC[>>7]]。
+- [26] [CODE(HTTP)@en[[[PUT]]]] により更新できます [SRC[>>7]]。
+- [21] 親[[コレクション]]の[[メンバー]]となります [SRC[>>7]]。
+- [22] [[ロック]]が破棄された時に消滅する[['''べきではありません''']] [SRC[>>7]]。
+- [25] [CODE(URI)[[[DAV:getcontentlanguage]]]] その他指定されていない[[特性]]の値を持ちません
+[SRC[>>7]]。
+- [27] [[コレクション]]に変換しては[['''なりません''']] [SRC[>>7]]。
+- [28] [CODE(URI)[[[DAV:lockdiscovery]]]] や [CODE(URI)[[[DAV:supportedlock]]]]
+の[[特性]]の値を持たなければ[['''なりません''']] [SRC[>>7]]。
+]FIG]
+
+;; [15] [[コレクション]]を作る [CODE(HTTP)@en[[[MKCOL]]]] [[メソッド]]は既存の[[資源]]を上書きしないので、
+[[lost update問題]]は置きません [SRC[>>7]]。 
+
+[31] [[鯖]]は、 [[RFC 2518]] との互換性のため、空の[[資源]]でなく
+[[LNR]]s (Lock-Null Resources) を実装しても構いません [SRC[>>7]]。
+
+;; [32] [[クライアント]]は、 [[LNR]] と [[locked empty resource]]
+のどちらを[[鯖]]が実装していても、[[写像]]のない [[URL]] を[[ロック]]したら直ちに
+[CODE(HTTP)@en[[[PUT]]]] することや、 [[LNR]] 特有の特性に依存しないことで、
+[[相互運用]]できます [SRC[>>7]]。
+
+[29] [[応答]]は、 [CODE(HTTP)[[[201]]]] [[応答]]によって[[資源]]の作成を示すものでなければ[['''なりません''']] [SRC[>>7]]。
+既存の[[資源]]の場合と同じく、 [CODE(URI)[[[DAV:lockdiscovery]]]] [[特性]]を含める必要があります [SRC[>>7]]。
+
+[30] [[クライアント]]は[[応答]]の後すぐに [CODE(HTTP)@en[[[PUT]]]] や
+[CODE(HTTP)@en[[[PROPPATCH]]]] で[[ロック]]した[[資源]]を更新することが期待されています [SRC[>>7]]。
 
 * 関連
 
