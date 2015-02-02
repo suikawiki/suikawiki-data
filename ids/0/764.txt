@@ -6,7 +6,8 @@ HTML にフォームが導入された際に開発され、 HTML
 * 仕様書
 
 [REFS[
-- [68] [CITE@en-US[URL Standard]] ([TIME[2014-06-23 18:56:37 +09:00]] 版) <http://url.spec.whatwg.org/#application/x-www-form-urlencoded>
+- [68] '''[CITE@en-US[URL Standard]] ([TIME[2014-06-23 18:56:37 +09:00]] 版) <http://url.spec.whatwg.org/#application/x-www-form-urlencoded>'''
+- [121] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-01-30 08:05:01 +09:00]] 版) <https://html.spec.whatwg.org/#url-encoded-form-data>
 ]REFS]
 
 [67] 歴史的には明確な仕様が存在せず、様々な仕様書がそれぞれの立場の規定を含めていました。
@@ -60,13 +61,18 @@ HTML にフォームが導入された際に開発され、 HTML
 
 [77] [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]] 自体は
 [[ASCII]] によって表現されますが、その[[パーセント符号化]]を[[復号]]した結果は、
-何らかの[[文字コード]]の[[文字列]]のいずれかとなっています。
+何らかの[[文字コード]]の[[文字列]]となっています。
 
 ;; [83] 仕様上は認められていませんが、[[文字列]]ではなく[[バイト列]]になっていたり、
 複数の[[文字コード]]が混在したりすることも現実にはあるようです。
 
 [107] [[[CODE(MIME)@en[application/x-www-form-urlencoded]]直列化器]]は、
 特に指定がない限り [[UTF-8]] を使います [SRC[>>68]]。
+
+;; [123] [[HTML]] の[[フォームの提出]]では、 [CODE(HTMLa)@en[[[accept-charset]]]]
+の指定や[[文書]]の[[文字符号化]]が使われます [SRC[>>121]]。
+
+;; [125] [[HTML]] では必ず[[ASCII互換文字符号化]]が選ばれます [SRC[>>121]]。
 
 [78] [[[CODE(MIME)@en[application/x-www-form-urlencoded]]構文解析器]]は、
 次のように[[文字コード]]を決定します [SRC[>>68]]。
@@ -80,10 +86,29 @@ HTML にフォームが導入された際に開発され、 HTML
 = [81] [[UTF-8]]
 ]FIG]
 
+[129] [[HTML Standard]] が示す[[復号]]アルゴリズムは、
+[CODE[[[_charset_]]]] が含まれない場合[[文字コード]]はケースバイケースで決めるしかないとしつつも、
+一般には[[フォーム]]が含まれる[[文書]]の[[文字コード]]を既定値とするのがよく、
+適当な既定値がなければ [[UTF-8]] とするのがよさそうだ [SRC[>>121]] だとしています。
+
+[133] [[HTML]] の[[フォーム]]では、 [CODE(HTML)@en[<input type=hidden name=_charset_>]]
+という[[要素]]を含めることで、使用した[[文字コード]]を[[フォームデータ集合]]の一部として[[提出]]させることができます。
+
+;; [[[CODE[_charset_]] hack]] を参照。
+
 [84] 歴史的には [[_charset_ hack]] の他、 [CODE[[[ie]]]] のような名前の組で[[文字コード]]を指定したり、
 固定の文字を指定した組を含めてその符号化された値により[[文字コード]]を推定したり、
 自動判別を用いたり、[[フォーム]]が含まれる[[文書]]の[[文字コード]]と推定したりと色々な方法が用いられてきました。
 しかし現在では専ら [[UTF-8]] が使われているとみなすことが多くなってきています。
+
+[124] なお、選択した[[文字コード]]で表現できない文字を [[URL Standard]]
+や [[HTML Standard]] の[[アルゴリズム]]は[[十進数文字参照]]によって表現します
+[SRC[>>68, >>121]]。[[十進数文字参照]]は [CODE[[[&]]]] から始まりますが、
+後から[[パーセント符号化]]されるので区切り文字と誤認されることはありません。
+しかしただの [CODE[[[&]]]] はそのまま送信されるので、元のデータが [CODE[&]]
+だったのか[[符号化]]によって[[十進数文字参照]]となったのかは区別できません。
+
+;; この点からも、すべての[[文字]]をそのまま表現できる [[UTF-8]] を使うべきです。
 
 * パーセント符号化
 
@@ -92,7 +117,7 @@ HTML にフォームが導入された際に開発され、 HTML
 [86] [[[CODE(MIME)@en[application/x-www-form-urlencoded]]直列化器]]は、
 [DFN[[RUBYB[[[[CODE(MIME)@en[application/x-www-form-urlencoded]]バイト直列化器]]]@en[[CODE(MIME)@en[application/x-www-form-urlencoded]] byte serializer]]]]によって[[パーセント符号化]]します。具体的には、次の[[バイト]]はそのままとし、
 0x20 は [CODE[[[+]]]] とし、
-それ以外は[[パーセント符号化]]します。 [SRC[>>68]]
+それ以外は[[パーセント符号化]]します。 [[HTML]] の[[フォーム]]でも同様です。 [SRC[>>68, >>121]]
 [FIG(list short)[
 - 0x2A (*)
 - 0x2D (-)
@@ -132,7 +157,8 @@ HTML にフォームが導入された際に開発され、 HTML
 [CODE[[[;]]]] をも認識する[[鯖]]側の実装が少なくありませんから、
 0x3B ([CODE[[[;]]]]) も[[パーセント符号化]]するべきでしょう。
 
-[91] [[[CODE(MIME)@en[application/x-www-form-urlencoded]]直列化器]]による[[パーセント符号化]]では、[[大文字]]の[[十六進数字]]を使います [SRC[>>68]]。
+[91] [[[CODE(MIME)@en[application/x-www-form-urlencoded]]直列化器]]や
+[[HTML]] [[フォーム]]による[[パーセント符号化]]では、[[大文字]]の[[十六進数字]]を使います [SRC[>>68, >>121]]。
 
 [97] [[[CODE(MIME)@en[application/x-www-form-urlencoded]]構文解析器]]は、
 [[パーセント符号化]]が[[大文字]]でも[[小文字]]でも[[復号]]します [SRC[>>68]]。
@@ -145,20 +171,27 @@ HTML にフォームが導入された際に開発され、 HTML
 [[[CODE(MIME)@en[application/x-www-form-urlencoded]]構文解析器]]は処理方法を規定しています。
 
 [99] それによると、原則としてその部分全体を名前として扱い、値は[[空文字列]]とします
-[SRC[>>68]]。
+[SRC[>>68, >>121]]。
 
 [100] ただし [CODE[[[isindex]]]] 対応で構文解析する場合であって、
 最初の名前と値の組の部分に [CODE[[[=]]]] が含まれない場合に限り、
-名前は[[空文字列]]とし、その部分全体を値として扱います [SRC[>>68]]。
+名前は[[空文字列]]とし、その部分全体を値として扱います [SRC[>>68, >>121]]。
 
 ;; [101] しかし [[[CODE(MIME)@en[application/x-www-form-urlencoded]]構文解析器]]を使って解釈される保証はありませんし、
 [CODE[[[isindex]]]] 対応で構文解析されるかどうかもわかりませんから、
 [CODE[[[=]]]] は必ず含めるべきでしょう。
 
-* [CODE(MIME)@en[charset]] 引数
+[126] [[HTML]] の[[フォーム]]から生成する際、[[フォームデータ集合]]の最初の項目の名前が
+[CODE(HTML)@en[[[isindex]]]] で種別が [CODE(HTML)@en[[[text]]]] なら、
+値を[[パーセント符号化]]したもののみを結果に含め、名前や [CODE[[[=]]]]
+は省略します [SRC[>>121]]。
+
+;; [127] これは [CODE(HTMLe)@en[[[isindex]]]] [[要素]]との互換性のための規定です。
+
+* MIME 型の引数
 
 [93] [CODE(HTTP)@en[[[Content-Type:]]]] に [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]]
-が指定される際に、 [CODE(MIME)@en[[[charset]]]] [[引数]]も指定されることがあります。
+が指定される際に、[[引数]]も指定されることがあります。
 
 [94] かつては[[引数]]に対応していない実装も少なくありませんでしたが、
 その後 [CODE(MIME)@en[[[charset]]]] [[引数]]を指定する実装が出てきたことから、
@@ -166,6 +199,7 @@ HTML にフォームが導入された際に開発され、 HTML
 
 [95] [[URL Standard]] や [[HTML Standard]] は [CODE(MIME)@en[[[charset]]]]
 [[引数]]を規定しておらず、解釈の際にも用いないことになっています。
+[[HTML Standard]] には無視すると明記されています [SRC[>>121]]。
 しかしかつて標準不在だった時代に[[文字コード]]を明記するために
 [CODE(MIME)@en[[[charset]]]] [[引数]]を使った実装や、
 意味もなく見よう見まねで [CODE(MIME)@cn[[[charset]]]] [[引数]]を使った実装や使用例もありました。
@@ -188,6 +222,25 @@ HTML にフォームが導入された際に開発され、 HTML
 
 * 演算
 
+[105] [[URL Standard]] は、 [DFN[[RUBYB[[CODE(MIME)@en[application/x-www-form-urlencoded]]直列化器]@en[[CODE(MIME)@en[application/x-www-form-urlencoded]] serializer]]]]を規定しています
+[SRC[>>68]]。この[[アルゴリズム]]は、名前 (文字列) と値 (文字列)
+の組の列を入力とし、[[バイト列]]を出力とします。また[[文字符号化]]をオプション入力として持ちます。
+
+;; [106] 本項の他の部分で説明している通り、
+[CODE(MIME)@en[[[application/x-www-form-urlencoded]]]] の一般的な構文を示すものとなっています。
+しかし [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]] をこの方法で生成しなければならないとは規定されておらず、
+実際これに従わない [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]]
+のデータも存在します。 [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]]
+のデータの適合性の規定は存在していないので、そのようなデータに問題があるとはいえません。
+しかし[[相互運用性]]のためには、 [[Webブラウザー]]が実装している
+[[[CODE(MIME)@en[application/x-www-form-urlencoded]]直列化器]]の動作に倣うべきでしょう。
+
+[122] [[HTML Standard]] は、
+[DFN[[RUBYB[[CODE(MIME)@en[application/x-www-form-urlencoded]]符号化アルゴリズム]@en[[CODE(MIME)@en[application/x-www-form-urlencoded]] encoding algorithm]]]]として[[フォームデータ集合]]から生成する方法を規定しています [SRC[>>121]]。
+[CODE(HTML)@en[[[isindex]]]] への対応を除けば [[URL Standard]] のアルゴリズムとほぼ同じですが、
+[[HTML]] の[[フォーム]]に特化した形で規定されています。
+入力は[[フォーム]]と[[フォームデータ集合]]で、出力は[[バイト列]]です。
+
 [102] [[URL Standard]] は、 [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]]
 を解釈する方法として[DFN[[RUBYB[[CODE(MIME)@en[application/x-www-form-urlencoded]]構文解析器]@en[[CODE(MIME)@en[application/x-www-form-urlencoded]] parser]]]]を規定しています
 [SRC[>>68]]。この[[アルゴリズム]]は、[[バイト列]]を入力とし、
@@ -206,18 +259,11 @@ HTML にフォームが導入された際に開発され、 HTML
 
 ;; [CODE(DOMi)@en[[[URLSearchParams]]]] 関連 [[API]] で使われています。
 
-[105] [[URL Standard]] は、 [DFN[[RUBYB[[CODE(MIME)@en[application/x-www-form-urlencoded]]直列化器]@en[[CODE(MIME)@en[application/x-www-form-urlencoded]] serializer]]]]を規定しています
-[SRC[>>68]]。この[[アルゴリズム]]は、名前 (文字列) と値 (文字列)
-の組の列を入力とし、[[バイト列]]を出力とします。また[[文字符号化]]をオプション入力として持ちます。
-
-;; [106] 本項の他の部分で説明している通り、
-[CODE(MIME)@en[[[application/x-www-form-urlencoded]]]] の一般的な構文を示すものとなっています。
-しかし [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]] をこの方法で生成しなければならないとは規定されておらず、
-実際これに従わない [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]]
-のデータも存在します。 [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]]
-のデータの適合性の規定は存在していないので、そのようなデータに問題があるとはいえません。
-しかし[[相互運用性]]のためには、 [[Webブラウザー]]が実装している
-[[[CODE(MIME)@en[application/x-www-form-urlencoded]]直列化器]]の動作に倣うべきでしょう。
+[128] [[HTML Standard]] は、 [DFN[[RUBYB[[CODE(MIME)@en[application/x-www-form-urlencoded]] payloadの復号]@en[decode [CODE(MIME)@en[application/x-www-form-urlencoded]] payloads]]]]]の方法も規定しています [SRC[>>121]]。
+この[[アルゴリズム]]は [[U+0000]]-[[U+007F]] の範囲の[[文字列]]および[[文字符号化]]と
+[CODE(HTML)@en[[[isindex]]]] 対応の有無を入力とし、
+名前 (文字列) と値 (文字列) の組の[[整列]]リストを出力とします [SRC[>>121]]。
+この[[アルゴリズム]]は、入出力のデータ型を除けば[RUBYB[[CODE(MIME)@en[application/x-www-form-urlencoded]]構文解析器]@en[[CODE(MIME)@en[application/x-www-form-urlencoded]] parser]]と同じです。
 
 * フォーム・データ集合からの生成
 
@@ -406,7 +452,6 @@ CTE は [CODE(MIME)[[[Quoted-Printable]]]] が適当です。
 - [CITE[ボーダフォンライブ!向けウェブコンテンツ開発ガイド [HTML 編] 2.4.2.2. 端末⇒Web サーバ]]
 - [[RFC 3875]] ([[CGI/1.1]])
 -- [CODE[4.1.7 QUERY_STRING]]
-- [CITE@en-GB-x-Hixie[Web Forms 2.0]] ([TIME[2009-01-05 20:07:15 +09:00]] 版) <http://www.whatwg.org/specs/web-forms/current-work/#x-www-form-urlencoded>
 -The application/www-form-urlencoded format draft-hoehrmann-urlencoded-01 <http://tools.ietf.org/html/draft-hoehrmann-urlencoded-01>
 - [[RFC 5849]] ([[OAuth 1.0]]) <http://tools.ietf.org/html/rfc5849>
 
@@ -657,6 +702,37 @@ A: たまたまです。相性が良かったのです。
 できればこんな時代遅れの形式は使わずに、 [CODE(MIME)[[[multipart/form-data]]]] 
 なり [CODE(MIME)[[[application/xml]]]] なり、
 他のきちんと標準化された[[媒体型]]を使うべきです。
+
+** RFC 6749 (OAuth 2.0)
+
+[135] [[RFC 6749]] は、 [[HTML 4.01]] を [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]]
+の定義であるとしつつ、 [[非ASCII文字]]に対応しない不完全な定義だと述べています
+[SRC[>>134]]。
+
+[136] [[RFC 6749]] はまず名前と値を [[RFC 3629]] [[UTF-8]] で[[符号化]]してから[[パーセント符号化]]しなければ[['''ならない''']]
+[SRC[>>134]] と規定していました。
+
+[REFS[
+- [134] [CITE@en[RFC 6749 - The OAuth 2.0 Authorization Framework]] ([TIME[2014-12-15 14:15:35 +09:00]] 版) <http://tools.ietf.org/html/rfc6749#appendix-B>
+]REFS]
+
+** HTML5
+
+[131] [[HTML]] の[[フォームの提出]]における [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]]
+の生成方法は、 [[HTML5]] によってようやく近代的な厳密な定義を得ることとなりました。
+ようやくはじめて公式に [[HTML]] の[[フォーム]]から[[非ASCII文字]]を
+[CODE(MIME)@en[[[application/x-www-form-urlencoded]]]] で[[提出]]できるようになりました。
+
+[132] それから更に数年遅れて [[URL Standard]] によって [[URL]] 関連の規定の整備が進み、
+[[HTML]] の[[フォーム]]と切り離した [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]]
+の規定も [[URL Standard]] に含まれることとなりました。それまで [[Webブラウザー]]は
+[CODE(MIME)@en[[[application/x-www-form-urlencoded]]]] の生成のみで、
+解釈は専ら[[鯖]]側で行われていましたが、 [[URL Standard]] が新たに規定する
+[CODE(DOMi)@en[[[URLSearchParams]]]] 関連 [[API]] により[[スクリプト]]でも解釈が行われるようになりました。
+
+[REFS[
+- [130] [CITE@en-GB-x-Hixie[Web Forms 2.0]] ([TIME[2009-01-05 20:07:15 +09:00]] 版) <http://www.whatwg.org/specs/web-forms/current-work/#x-www-form-urlencoded>
+]REFS]
 
 * 実装
 
