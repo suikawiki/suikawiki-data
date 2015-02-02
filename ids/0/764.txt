@@ -65,6 +65,9 @@ HTML にフォームが導入された際に開発され、 HTML
 ;; [83] 仕様上は認められていませんが、[[文字列]]ではなく[[バイト列]]になっていたり、
 複数の[[文字コード]]が混在したりすることも現実にはあるようです。
 
+[107] [[[CODE(MIME)@en[application/x-www-form-urlencoded]]直列化器]]は、
+特に指定がない限り [[UTF-8]] を使います [SRC[>>68]]。
+
 [78] [[[CODE(MIME)@en[application/x-www-form-urlencoded]]構文解析器]]は、
 次のように[[文字コード]]を決定します [SRC[>>68]]。
 [FIG(steps)[
@@ -127,6 +130,24 @@ HTML にフォームが導入された際に開発され、 HTML
 [97] [[[CODE(MIME)@en[application/x-www-form-urlencoded]]構文解析器]]は、
 [[パーセント符号化]]が[[大文字]]でも[[小文字]]でも[[復号]]します [SRC[>>68]]。
 
+* [CODE[=]] のない組
+
+[98] [[[CODE(MIME)@en[application/x-www-form-urlencoded]]直列化器]]は 
+[CODE[[[=]]]] が含まれない名前と値の組を生成することはありませんが、
+実際には含まれないこともあるので、
+[[[CODE(MIME)@en[application/x-www-form-urlencoded]]構文解析器]]は処理方法を規定しています。
+
+[99] それによると、原則としてその部分全体を名前として扱い、値は[[空文字列]]とします
+[SRC[>>68]]。
+
+[100] ただし [CODE[[[isindex]]]] 対応で構文解析する場合であって、
+最初の名前と値の組の部分に [CODE[[[=]]]] が含まれない場合に限り、
+名前は[[空文字列]]とし、その部分全体を値として扱います [SRC[>>68]]。
+
+;; [101] しかし [[[CODE(MIME)@en[application/x-www-form-urlencoded]]構文解析器]]を使って解釈される保証はありませんし、
+[CODE[[[isindex]]]] 対応で構文解析されるかどうかもわかりませんから、
+[CODE[[[=]]]] は必ず含めるべきでしょう。
+
 * [CODE(MIME)@en[charset]] 引数
 
 [93] [CODE(HTTP)@en[[[Content-Type:]]]] に [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]]
@@ -157,6 +178,39 @@ HTML にフォームが導入された際に開発され、 HTML
 [50] [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]] は、
 [[OAuth 1.0]] で[[鯖]]から[[クライアント]]への[[HTTP応答]]の [[payload body]]
 で使われています。
+
+* 演算
+
+[102] [[URL Standard]] は、 [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]]
+を解釈する方法として[DFN[[RUBYB[[CODE(MIME)@en[application/x-www-form-urlencoded]]構文解析器]@en[[CODE(MIME)@en[application/x-www-form-urlencoded]] parser]]]]を規定しています
+[SRC[>>68]]。この[[アルゴリズム]]は、[[バイト列]]を入力とし、
+名前 (文字列) と値 (文字列) の組の列または失敗を出力とします。また、
+[[文字符号化]]、[CODE[[[_charset_]]]] を使うか否か、 [CODE[[[isindex]]]] を使うか否かをオプション入力として持ちます。
+
+;; [103] 本項の他の部分で説明している通り、
+[CODE(MIME)@en[[[application/x-www-form-urlencoded]]]] の汎用的な構文解析の方法を示すものとなっています。
+
+[104] [[URL Standard]] は、 [DFN[[RUBYB[[CODE(MIME)@en[application/x-www-form-urlencoded]]文字列構文解析器]@en[[CODE(MIME)@en[application/x-www-form-urlencoded]] string parser]]]]も規定しています
+[SRC[>>68]]。この[[アルゴリズム]]は、[[文字列]]を入力とし、
+名前 (文字列) と値 (文字列) の組の列を出力とします
+(失敗はしません)。これは入力を [[UTF-8符号化]]してから
+[DFN[[CODE(MIME)@en[application/x-www-form-urlencoded]]構文解析器]]を呼び出す
+[SRC[>>68]] というものになっています。
+
+;; [CODE(DOMi)@en[[[URLSearchParams]]]] 関連 [[API]] で使われています。
+
+[105] [[URL Standard]] は、 [DFN[[RUBYB[[CODE(MIME)@en[application/x-www-form-urlencoded]]直列化器]@en[[CODE(MIME)@en[application/x-www-form-urlencoded]] serializer]]]]を規定しています
+[SRC[>>68]]。この[[アルゴリズム]]は、名前 (文字列) と値 (文字列)
+の組の列を入力とし、[[バイト列]]を出力とします。また[[文字符号化]]をオプション入力として持ちます。
+
+;; [106] 本項の他の部分で説明している通り、
+[CODE(MIME)@en[[[application/x-www-form-urlencoded]]]] の一般的な構文を示すものとなっています。
+しかし [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]] をこの方法で生成しなければならないとは規定されておらず、
+実際これに従わない [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]]
+のデータも存在します。 [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]]
+のデータの適合性の規定は存在していないので、そのようなデータに問題があるとはいえません。
+しかし[[相互運用性]]のためには、 [[Webブラウザー]]が実装している
+[[[CODE(MIME)@en[application/x-www-form-urlencoded]]直列化器]]の動作に倣うべきでしょう。
 
 * フォーム・データ集合からの生成
 
