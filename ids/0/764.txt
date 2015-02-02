@@ -322,6 +322,7 @@ CTE は [CODE(MIME)[[[Quoted-Printable]]]] が適当です。
 
 [REFS[
 - [110] [CITE@en[Forms in HTML documents]] ([TIME[1999-12-25 08:25:52 +09:00]] 版) <http://www.w3.org/TR/html4/interact/forms.html#h-17.13.4.1>
+- [119] [CITE@en[Performance, Implementation, and Design Notes]] ([TIME[1999-12-25 08:26:00 +09:00]] 版) <http://www.w3.org/TR/html4/appendix/notes.html#ampersands-in-uris>
 ]REFS]
 
 [19] [[HTML4]] は[[改行]]を [CODE[%0D%0A]] と表現するとの規定を持っていました [SRC[>>110]] 
@@ -330,6 +331,54 @@ CTE は [CODE(MIME)[[[Quoted-Printable]]]] が適当です。
 
 ;; [112] [[OAuth 1.0]] は [[HTML4]] を参照しており、厳密に解釈すると [[OAuth]]
 にもこれが適用されることになりますが、一般的にはそうは解釈されていないように思われます。
+
+[113] [[パーセント符号化]]を大文字にするか小文字にするかについて、 [[HTML4]]
+は言及していませんでした。
+
+[114] [[HTML4]] は[[ASCII]]以外に [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]]
+は不適切で、 [CODE(MIME)@en[[[multipart/form-data]]]] を使うべきである [SRC[>>110]] とし、
+[[非ASCII文字]]が [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]]
+でどう表現されるべきかに一切言及していませんでした。
+
+[115] 当時の時代的限界とはいえ、実際に既に広く使われていた[[非ASCII文字]]の[[フォーム]]と
+[[Webブラウザー]]の存在 (と世界の大多数の[[非ASCII文字]]利用者の存在) 
+を無視して規定を怠ったため、[[文字コード]]の解釈に関する混乱はその後も数年継続することとなってしまいました。
+
+;; [116] [[[CODE[_charset_]] hack]] は当時まだありませんでした。
+[CODE(MIME)@en[[[charset]]]] [[引数]]もまだ見られませんでした。
+
+;; [117] [CODE(MIME)@en[[[multipart/form-data]]]] は [CODE(HTTP)@en[[[GET]]]]
+では使えませんし、 [CODE(HTTP)@en[[[POST]]]] でもサイズが増えることが多いですし
+([[HTML4]] は[[非ASCII文字]]に [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]]
+は非効率的と言っており、それは正しいですが、[[フォームデータ]]のように短いデータの場合は
+[CODE(MIME)@en[[[multipart/form-data]]]] の方がずっと大きくなります。)、
+[CODE(MIME)@en[[[multipart/form-data]]]] の構文解析は数倍面倒になりますから、
+(一応は現に動作している) [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]]
+から移行する動機はほとんど無く、 [[HTML4]] のこの記述は現実には無視されていました。
+
+;; [118] 理論上は [CODE(MIME)@en[[[multipart/form-data]]]] は [CODE(MIME)@en[[[charset]]]]
+により[[文字コード]]を明記できますが、実際には現在に至るまで [[Webブラウザー]]は
+[CODE(MIME)@en[[[charset]]]] [[引数]]を使っていないので、実は
+[CODE(MIME)@en[[[multipart/form-data]]]] にすれば[[文字コード]]の問題が解決するわけではありません。
+
+[13] 名前と値の組の区切りは [CODE[[[&]]]] ですが、 [[HTML4]]
+は [[URL query]] に [CODE[[[&]]]] が含まれると[[属性値]]として指定するときに[[escape]]
+が必要になるため、かわりに [CODE[[[;]]]] も認めるべき [SRC[>>119]]
+としており、 [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]]
+の実装がそのような配慮を行うことを暗に求めています [SRC[>>110]]。
+
+[14] [[HTML4]] はあまり明確に説明していませんが、行間によると、
+[[鯖]]は[[フォームの提出]] (特に [CODE(HTTP)@en[[[GET]]]] の場合) と [[URL query]]
+をしばしば同一のコードにより処理されるため、 [[URL query]] で [CODE[[[;]]]]
+を区切りとして用いることを促進するべくそのような説明になっていると思われます。
+
+[33] これに従い [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]]
+でも [CODE[[[;]]]] を区切りとみなす実装が多々あります。
+
+[120] しかし [CODE(HTTP)@en[[[GET]]]] で[[フォームの提出]]を行うと
+[CODE[[[&]]]] を生成する [[Webブラウザー]]の動作は変更するわけにはいかず、
+その [[URL]] をコピペして[[リンク]]の [[URL]] に使うのも一般的なので、
+[[HTML4]] が狙っていた [CODE[[[;]]]] への移行ははじめから無理な話でした。
 
 ** 
 
@@ -401,51 +450,6 @@ XForms はバイナリ内容には他の直列化方式を使うことを推奨�
 = obs-value = *uchar
 = obs-uchar = "'" / "(" / ")" / ";" / "$" / "@" / "*" / "!"
 
-
-** 分離子 &
-
-[13]
-区切文字は "&" です。
-
-一方、 HTML4 は、 CGI などの URI で x-www-form-urlencoded
-同様の形式の query-part を使うときに、 "&" でなくて
-";" を使うのが望ましい、としています。
-<http://www.w3.org/TR/html401/appendix/notes.html#h-B.2.2>
-
-もちろんこれは URI での話であって、 x-www-form-urlencoded
-の話は無いのですが、元々は同じ物ですし、 ";"
-に対応した CGI script では、両者(の復号処理)を一緒くたにして
-いるものが少なくありません。
-
-ですから、復号側は必要に応じて ";" も区切り文字として扱うようにし、
-符号化側は ";" を必ず URI escape して "%3B" とするのが
-望ましいと考えられます。
-
-また、幾つかの CGI script で区切り文字に使われている "$"
-も、同様に URI escape しておくのが望ましいでしょう。
-
-[33] '''Q: HTML 4 では [CODE(char)[&]] の代わりに [CODE(char)[;]] を使えと言っているが?'''
-
-A: [CODE(char)[;]] の使用を薦めているのは [[URI参照]]の中の[[照会]]の部分での話で、
-[CODE(MIME)[application/x-www-form-urlencoded]] とは [WEAK[(根は同じとは言え)]]
-別の問題です。
-
-関連: >>13-, [[照会]], [[文字実体参照]], [CODE(MIME)[[[application/sgml-form-urlencoded]]]]
-
-** 文字の表現
-
-[14] 名前と値の部分は、任意の文字列 (あるいはオクテット列)
-が使用されています。
-
-HTML 4 は [[ASCII]] 文字だけが使用できると述べています
-[SRC[HTML 4 17.13.1 Note]]。しかし、現実には 
-[CODE(MIME)[application/x-www-form-urlencoded]] が使われ始めてすぐに、
-HTML で使われていたあらゆる文字・[[文字コード]]が使用されるようになっています。
-HTML 4 が勧告された当時は既に混乱が収拾のつかない状態に達していましたから、
-安全に使用できる ASCII に限定したのでしょうが、焼け石に水とでも申しましょうか、
-手軽に実装できる [CODE(MIME)[application/x-www-form-urlencoded]]
-がその後も使われ続けています。
-
 [15] HTML フォームの提出に際して [[UA]] が使用する charset
 は、 >>14 の通り、 HTML 4 は規定していません。
 実装は、
@@ -460,9 +464,6 @@ HTML 4 が勧告された当時は既に混乱が収拾のつかない状態に�
 [[WinIE 3]]。)
 
 [[XForms]] は、 [[UTF-8]] を使用すると規定しています [SRC[XForms 1.0 11.6]]。
-
-[[#comment]]
-
 
 *** 百分率符号化
 
