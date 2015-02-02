@@ -113,6 +113,9 @@ HTML にフォームが導入された際に開発され、 HTML
 [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]]
 独特の方式で、通常の[[パーセント符号化]]では行われていません。
 
+;; [58] 通常の[[パーセント符号化]]を流用した実装では、 0x20 が [CODE[[[+]]]]
+ではなく [CODE[%20]] と表現されているかもしれません。
+
 [90] [[URL Standard]] は [[[CODE(MIME)@en[application/x-www-form-urlencoded]]直列化器]]によって生成される
 [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]] においてこのように[[パーセント符号化]]することを求めていますが、
 その他の方法で [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]]
@@ -124,6 +127,10 @@ HTML にフォームが導入された際に開発され、 HTML
 [[UTF-8]] 以外の[[文字コード]]の時に 0x80-0xFF が入力に含まれていると、
 [[構文解析]]せずに停止することになっています [SRC[>>68]]。
 [[相互運用性]]のために最低でも 0x80-0xFF は[[パーセント符号化]]するべきでしょう。
+
+[108] [[HTML4]] のあまり意味がなかった規定 (>>13) の影響で区切り文字として
+[CODE[[[;]]]] をも認識する[[鯖]]側の実装が少なくありませんから、
+0x3B ([CODE[[[;]]]]) も[[パーセント符号化]]するべきでしょう。
 
 [91] [[[CODE(MIME)@en[application/x-www-form-urlencoded]]直列化器]]による[[パーセント符号化]]では、[[大文字]]の[[十六進数字]]を使います [SRC[>>68]]。
 
@@ -296,13 +303,25 @@ CTE は [CODE(MIME)[[[Quoted-Printable]]]] が適当です。
 
 * 歴史
 
+** 誕生
+
+[109] [CODE(MIME)[[[application/x-www-form-urlencoded]]]] は [[HTML2]]
+で[[フォーム]]が導入された時に、その(唯一の)表現方法として規定されました。
+
+;; [CODE(HTMLa)@en[[[enctype]]]] も参照。
+
+[REFS[
+- [[RFC 1866]] - [[HTML 2.0]]
+- [[RFC 2070]] - [[HTML 2.x]]
+]REFS]
+
+** 
+
 [10] 独立して [CODE(MIME)[application/x-www-form-urlencoded]]
-を規定する仕様書はまだ存在しません。 HTML や [[XForms]]
+を規定する仕様書は長らく存在しませんでした。 HTML や [[XForms]]
 など、採用する規格の仕様書が個々に定義しています。
 なお、定義しようという Internet-Draft がでているので後述。
 
-- [[HTML 2.0]] ([[RFC 1866]]) ☆
-- [[HTML 2.x]] ([[RFC 2070]])
 - [[HTML 4]] ([[Web Forms 1.0]]) ☆
 -- [CITE[application/x-www-form-urlencoded]]
 <IW:HTML4:"interact/forms.html#didx-applicationx-www-form-urlencoded">
@@ -392,8 +411,13 @@ XForms はバイナリ内容には他の直列化方式を使うことを推奨�
 また、幾つかの CGI script で区切り文字に使われている "$"
 も、同様に URI escape しておくのが望ましいでしょう。
 
-[[#comment]]
+[33] '''Q: HTML 4 では [CODE(char)[&]] の代わりに [CODE(char)[;]] を使えと言っているが?'''
 
+A: [CODE(char)[;]] の使用を薦めているのは [[URI参照]]の中の[[照会]]の部分での話で、
+[CODE(MIME)[application/x-www-form-urlencoded]] とは [WEAK[(根は同じとは言え)]]
+別の問題です。
+
+関連: >>13-, [[照会]], [[文字実体参照]], [CODE(MIME)[[[application/sgml-form-urlencoded]]]]
 
 ** 文字の表現
 
@@ -579,6 +603,53 @@ UA が提出する際に charset 名を [SAMP(URI)[_charset_=ISO-2022-JP]]
 [ABBR[[[CTE]]] [[CODE(MIME)[[[Content-Transfer-Encoding]]]]]] 
 のようなものと考えれば問題なかろうという見解を示しています。)
 
+[29] '''Q: [CODE(MIME)[application/x-www-form-urlencoded]] で使う文字コードは何ですか?'''
+
+A: [CODE(MIME)[application/x-www-form-urlencoded]] 実体自体は [[US-ASCII]]
+で記述します。符号化されている内容の文字コードは不定です。
+(使用する場面の仕様や実装に依存します。)
+
+詳細: >>11, >>14-15, >>22-, [[提出]], [CODE(HTMLa)[[[accept-charset]]]]
+
+[30] '''Q: HTTP の [CODE(HTTP)[[[Content-Type]]:]] に [CODE(MIME)[[[charset]]]] を指定すればよいのではありませんか?'''
+
+A: そのような実装も存在しますが、標準化されてはいません。また、
+MIME の [CODE(MIME)[charset]] 
+の仕様と意味的に異なるので望ましくないという考え方もあります。
+
+詳細: >>7-, >>1-, [[[CODE(MIME)[charset]]パラメーター]]
+
+[31] '''Q: 非 ASCII 文字を使う時は [CODE(MIME)[[[multipart/form-data]]]] を使えと言うが、そんなブラウザはないのでは。'''
+
+A: 現代の実用的な Web ブラウザで [CODE(MIME)[multipart/form-data]]
+に対応していないなんて考えられません。 HTML の場合は [CODE(HTMLa)[[[enctype]]]]
+を [CODE(MIME)[multipart/form-data]] と''著者が''明示しておかないと
+[CODE(MIME)[multipart/form-data]] は使われませんよ。
+
+詳細: [CODE(MIME)[[[multipart/form-data]]]], [CODE(HTMLa)[[[enctype]]]], [[提出]]
+
+[32] '''Q: TrackBack は [CODE(MIME)[application/x-www-form-urlencoded]] を使っているが、文字コードを指定できないではないか。欠陥だ。'''
+
+A: そうですね。 [CODE(MIME)[application/x-www-form-urlencoded]]
+なんて使うからいけないのです。
+
+関連: [[TrackBack]]
+
+[34] '''Q: 鯖とやり取りするプログラムで、 [CODE(MIME)[application/x-www-form-urlencoded]] と書いてあった部分を [CODE(MIME)[application/x-www-form-urlencoded; charset=UTF-8]] にしたら文字化けが起こらなくなりましたよ。'''
+
+A: たまたまです。相性が良かったのです。
+次のときもうまくいくとは限らないこと、
+いつまでもうまく動き続けるとは限らないことを肝に銘じておいてください。
+
+関連: >>11, >>14-15, >>22-, [[提出]], [CODE(HTMLa)[[[accept-charset]]]],
+[[[CODE(MIME)[charset]]パラメーター]], 
+[CODE(MIME)[[[multipart/form-data]]]]
+
+[4] 過去のしがらみが無い HTTP [CODE(HTTP)[[[POST]]]] を使うプロトコル・応用は、
+できればこんな時代遅れの形式は使わずに、 [CODE(MIME)[[[multipart/form-data]]]] 
+なり [CODE(MIME)[[[application/xml]]]] なり、
+他のきちんと標準化された[[媒体型]]を使うべきです。
+
 * 実装
 
 [1] <http://openlab.ring.gr.jp/k16/htmllint/faq.html> によると、古い [[Lynx]] 
@@ -617,57 +688,7 @@ UA が提出する際に charset 名を [SAMP(URI)[_charset_=ISO-2022-JP]]
 [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]] と類似した構文を採用していますが、
 [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]] とはされていません。
 
-* Q & A
-
-[29] '''Q: [CODE(MIME)[application/x-www-form-urlencoded]] で使う文字コードは何ですか?'''
-
-A: [CODE(MIME)[application/x-www-form-urlencoded]] 実体自体は [[US-ASCII]]
-で記述します。符号化されている内容の文字コードは不定です。
-(使用する場面の仕様や実装に依存します。)
-
-詳細: >>11, >>14-15, >>22-, [[提出]], [CODE(HTMLa)[[[accept-charset]]]]
-
-[30] '''Q: HTTP の [CODE(HTTP)[[[Content-Type]]:]] に [CODE(MIME)[[[charset]]]] を指定すればよいのではありませんか?'''
-
-A: そのような実装も存在しますが、標準化されてはいません。また、
-MIME の [CODE(MIME)[charset]] 
-の仕様と意味的に異なるので望ましくないという考え方もあります。
-
-詳細: >>7-, >>1-, [[[CODE(MIME)[charset]]パラメーター]]
-
-[31] '''Q: 非 ASCII 文字を使う時は [CODE(MIME)[[[multipart/form-data]]]] を使えと言うが、そんなブラウザはないのでは。'''
-
-A: 現代の実用的な Web ブラウザで [CODE(MIME)[multipart/form-data]]
-に対応していないなんて考えられません。 HTML の場合は [CODE(HTMLa)[[[enctype]]]]
-を [CODE(MIME)[multipart/form-data]] と''著者が''明示しておかないと
-[CODE(MIME)[multipart/form-data]] は使われませんよ。
-
-詳細: [CODE(MIME)[[[multipart/form-data]]]], [CODE(HTMLa)[[[enctype]]]], [[提出]]
-
-[32] '''Q: TrackBack は [CODE(MIME)[application/x-www-form-urlencoded]] を使っているが、文字コードを指定できないではないか。欠陥だ。'''
-
-A: そうですね。 [CODE(MIME)[application/x-www-form-urlencoded]]
-なんて使うからいけないのです。
-
-関連: [[TrackBack]]
-
-[33] '''Q: HTML 4 では [CODE(char)[&]] の代わりに [CODE(char)[;]] を使えと言っているが?'''
-
-A: [CODE(char)[;]] の使用を薦めているのは [[URI参照]]の中の[[照会]]の部分での話で、
-[CODE(MIME)[application/x-www-form-urlencoded]] とは [WEAK[(根は同じとは言え)]]
-別の問題です。
-
-関連: >>13-, [[照会]], [[文字実体参照]], [CODE(MIME)[[[application/sgml-form-urlencoded]]]]
-
-[34] '''Q: 鯖とやり取りするプログラムで、 [CODE(MIME)[application/x-www-form-urlencoded]] と書いてあった部分を [CODE(MIME)[application/x-www-form-urlencoded; charset=UTF-8]] にしたら文字化けが起こらなくなりましたよ。'''
-
-A: たまたまです。相性が良かったのです。
-次のときもうまくいくとは限らないこと、
-いつまでもうまく動き続けるとは限らないことを肝に銘じておいてください。
-
-関連: >>11, >>14-15, >>22-, [[提出]], [CODE(HTMLa)[[[accept-charset]]]],
-[[[CODE(MIME)[charset]]パラメーター]], 
-[CODE(MIME)[[[multipart/form-data]]]]
+* メモ
 
 [35] '''Q: ファイルをうpできません。ファイル名しか取得できません。'''
 
@@ -677,16 +698,6 @@ A: HTML のフォームでは、ファイルをうpするためには
 
 関連: [[[CODE(HTMLe)[input]]//[CODE(HTML)[file]]]],
 [CODE(HTMLa)[[[enctype]]]], [CODE(MIME)[[[multipart/form-data]]]]
-
-[[#comment]]
-
-
-* メモ
-
-[4] 過去のしがらみが無い HTTP [CODE(HTTP)[[[POST]]]] を使うプロトコル・応用は、
-できればこんな時代遅れの形式は使わずに、 [CODE(MIME)[[[multipart/form-data]]]] 
-なり [CODE(MIME)[[[application/xml]]]] なり、
-他のきちんと標準化された[[媒体型]]を使うべきです。
 
 [55] [CITE@EN[XForms 1.1]]
 ([TIME[2009-10-20 22:51:54 +09:00]] 版)
@@ -699,9 +710,6 @@ A: HTML のフォームでは、ファイルをうpするためには
 [57] [CITE[XProc: An XML Pipeline Language]]
 ([TIME[2010-05-11 22:38:07 +09:00]] 版)
 <http://www.w3.org/TR/2010/REC-xproc-20100511/#c.www-form-urldecode>
-
-[58] [[OAuth 1.0]] ([[RFC 5849]]) は、 [[OAuth]] の認証という限られた条件においてですが、
-[CODE(MIME)@en[[[application/x-www-form-urlencoded]]]] の解釈の仕方や正規形といえる定義を含んでいます。
 
 [59] [CITE[IRC logs: freenode / #whatwg / 20100926]]
 ( ([TIME[2010-10-10 13:13:29 +09:00]] 版))
