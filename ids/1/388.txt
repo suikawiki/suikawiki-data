@@ -3,10 +3,27 @@
 [REFS[
 - [19] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2013-05-05 06:42:10 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#fire-a-click-event>
 - [29] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-01-30 08:05:01 +09:00]] 版) <https://html.spec.whatwg.org/#run-synthetic-click-activation-steps>
+- [33] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-01-30 08:05:01 +09:00]] 版) <https://html.spec.whatwg.org/#run-authentic-click-activation-steps>
 - [8] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-01-30 08:05:01 +09:00]] 版) <https://html.spec.whatwg.org/#dom-click>
 ]REFS]
 
 * クリック操作
+
+** 入力装置のクリック
+
+;; [38] [RUBYB[[[クリック]]によって[[フォーカス]]を与える動作]@en[click-focusing behavior]]は、
+通常は[[クリック]]より前 ([[マウスボタン]]を最初に押下した時) に発生します [SRC[>>33]]。
+
+[35] [DFN[[RUBYB[[[指示装置]]]@en[pointing device]]]]が[[クリック]]された時には、
+[[真正クリック活性化手順]]を走らせなければ[['''なりません''']] [SRAC[>>33]]。
+
+[37] 通常は[[指示装置]]によって指示されていた位置の[[要素]]が[[対象要素]]となります。
+
+;; [[hit testing]] を参照。
+
+[36] ただし、[[対象要素]]となるのが [CODE(HTMLe)@en[[[canvas]]]] [[要素]]なら、
+[[画布[CODE(DOMi)@en[MouseEvent]]再経路付け手順]]によって[[対象要素]]を決定しなければ[['''なりません''']]
+[SRC[>>33]]。
 
 ** [CODE(DOMi)@en[HTMLElement]] [[インターフェイス]] [CODE(DOMm)@en[click]] メソッド
 
@@ -30,27 +47,45 @@
 
 * 活性化
 
-[6] ある[[要素]]における[DFN[[RUBYB[合成クリック活性化手順]@en[run synthetic click activation steps]]]]とは、
+[6] ある[[要素]]における[DFN[[RUBYB[合成クリック活性化手順を走らせる]@en[run synthetic click activation steps]]]]とは、
 当該[[要素]]の[[クリック前活性化手順]]、
 [[[CODE(DOMe)@en[click]]イベントの発火]]、
 [[クリック後活性化手順]]を順に実行することです [SRC[>>29]]。
 
-[30] ただし、同じ[[要素]]でこの手順を同時に (入れ子に) 実行することはできず、
-その場合には何もせずに終わらなければ[['''なりません''']] [SRC[>>29]]。
+;; [[イベントオブジェクト]]の [CODE(DOMm)@en[[[isTrusted]]]] の値は呼び出し元により変わります。
+
+[34] ある[[対象要素]]における[DFN[[RUBYB[真正クリック活性化手順を走らせる]@en[run authentic click activation steps]]]]とは、
+[[クリック前活性化手順]]、
+[CODE(DOMe)@en[[[click]]]] [[イベント]]の [[dispatch]]、
+[[クリック後活性化手順]]を順に実行することです [SRC[>>33]]。
+ただし [[dispatch]] は[[対象要素]]において、
+その前後の手順は[[直近活性化可能要素]]において 
+([[直近活性化可能要素]]があれば) 実行します [SRC[>>33]]。
+
+;; [39] この2つの手順は、 [CODE(HTMLe)@en[[[canvas]]]] [[要素]]の動作 (>>36)
+と[[活性化動作]]の対象となる[[要素]]が異なります。
+[CODE(DOMe)@en[[[click]]]] [[イベント]]の発火方法が違っているのは、
+[[HTML Standard]] が規定するか [[UI Events]] が規定するかの編集上の違いです。
 
 [31] [CODE(DOMe)@en[[[click]]]] [[イベント]]が[[取り消し]]された場合には、
-[[クリック後活性化手順]]のかわりに[[取り消しされた活性化の手順]]を実行しなければ[['''なりません''']] [SRC[>>29]]。
+[[クリック後活性化手順]]のかわりに[[取り消しされた活性化の手順]]を実行しなければ[['''なりません''']] [SRC[>>29, >>33]]。
 
-[32] [CODE(DOMe)@en[[[click]]]] [[イベント]]の[[イベントオブジェクト]]の
-[CODE(DOMm)@en[[[isTrusted]]]] [[属性]]は、
-本手順が [CODE(DOMm)@en[[[click]]]] [[メソッド]]によって呼び出された場合には、
-[[偽]]としなければ[['''なりません''']] [SRC[>>29]]。
+[30] 同じ[[要素]]で[[合成クリック活性化手順]]や[[真正クリック活性化手順]]を同時に 
+(入れ子に) 実行することはできず、
+その場合には何もせずに終わらなければ[['''なりません''']] [SRC[>>29, >>33]]。
 
 * [CODE(DOMe)@en[click]] イベント
 
 [25] [DFN[[RUBYB[[CODE(DOMe)@en[click]] イベントを発火]@en[fire a [CODE(DOMe)@en[click]] event]]]]とは、
 [[イベント型]] [CODE(DOMe)@en[[[click]]]] で [[bubble]] し、
 [[キャンセル可能]]な[[合成マウスイベントを発火]]することをいいます [SRC[>>19]]。
+
+[32] [[発火]]する [CODE(DOMe)@en[[[click]]]] [[イベント]]の[[イベントオブジェクト]]の
+[CODE(DOMm)@en[[[isTrusted]]]] [[属性]]は、
+[[合成クリック活性化手順]]が [CODE(DOMm)@en[[[click]]]] 
+[[メソッド]]によって呼び出された場合には、
+[[偽]]としなければ[['''なりません''']] [SRC[>>29]]。
+それ以外の時は[[真]]とします。
 
 ** [CODE(HTMLa)@en[onclick]] イベントハンドラー属性
 
