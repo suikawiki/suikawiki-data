@@ -5,6 +5,7 @@
 [REFS[
 - [1] '''[CITE@en[RFC 7009 - OAuth 2.0 Token Revocation]] ([TIME[2014-12-21 18:10:21 +09:00]] 版) <http://tools.ietf.org/html/rfc7009>'''
 - [10] [CITE@en[RFC 6749 - The OAuth 2.0 Authorization Framework]] ([TIME[2014-12-15 14:15:35 +09:00]] 版) <http://tools.ietf.org/html/rfc6749#section-3.1>
+- [30] [CITE@en[RFC 6749 - The OAuth 2.0 Authorization Framework]] ([TIME[2014-12-15 14:15:35 +09:00]] 版) <http://tools.ietf.org/html/rfc6749#section-5.2>
 ]REFS]
 
 * 意味
@@ -45,6 +46,7 @@
 * クライアントの要求
 
 [9] [[クライアント]]は、 [CODE(HTTP)@en[[[POST]]]] [[要求]]を使います [SRC[>>1]]。
+[[JSONP]] を使う場合には [CODE(HTTP)@en[[[GET]]]] [[要求]]でも構いません [SRC[>>1]]。
 
 [13] [[クライアント]]が [[revokeエンドポイント]]の [[URL]]
 を得る方法は、 [[OAuth]] 仕様の範囲外です。[[鯖]]のドキュメントから調べても構いませんし、
@@ -70,16 +72,18 @@
 [12] [[URL]] に[[引数]]を追加する時は、元の [[query]] を残さなければ[['''なりません''']]
 [SRC[>>1, >>10]]。
 
-[17] [[クライアント]]は [[payload body]] に
+[17] [[クライアント]]は [CODE(HTTP)@en[[[POST]]]] [[要求]]の [[payload body]] または
+[[JSONP]] [CODE(HTTP)@en[[[GET]]]] [[要求]]の [[URL query]] に
 [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]] 
 形式で次の[[引数]]を指定します [SRC[>>1]]。
 [FIG(list members)[
 [FIGCAPTION[
-[[payload body]] ([CODE(MIME)@en[[[application/x-www-form-urlencoded]]]])
+[[payload body]] または [[URL query]] ([CODE(MIME)@en[[[application/x-www-form-urlencoded]]]])
 ]FIGCAPTION]
 :[18] [CODE(URI)@en[[[token]]]]:[[revoke]] したい[[トークン]]を指定しなければ[['''なりません''']] [SRC[>>1]]。
 :[19] [CODE(URI)@en[[[token_type_hint]]]]:[CODE(URI)@en[[[token]]]] の種別のヒントです。
-[[クライアント]]はこれを指定しても構いません。
+[[クライアント]]はこれを指定しても構いません。 [SRC[>>1]]
+:[33] [CODE(URI)@en[[[callback]]]]:[[JSONP]] の場合に、 [[JavaScript]] [[関数]]の[[修飾名]]を指定します [SRC[>>1]]。
 ]FIG]
 
 [20] [[クライアント]]は、[[クライアント認証]]も含めます [SRC[>>1]]。
@@ -88,6 +92,9 @@
 [CODE(URI)@en[[[refresh_token]]]] が[[更新トークン]]を表します。
 
 * 認可鯖の処理
+
+[32] [[認可鯖]]は、 [[利用者エージェントベースのアプリケーション]]で使われるかもしれない場合には、
+[[CORS]] に対応して構いません [SRC[>>1]]。
 
 [21] [[認可鯖]]は、まず ([[機密]]の[[クライアント]]なら)
 [[クライアントcredentials]]を[RUBYB[検証]@en[validate]]します [SRC[>>1]]。
@@ -101,6 +108,10 @@
 以後[[トークン]]は使えなくなります。実際には伝播遅延があるかもしれませんが、
 できるだけ短期間で反映されるようにするべきです。 [SRC[>>1]]
 
+[29] [CODE(URI)@en[[[token_type_hint]]]] の指定は、あまり意味がありません。
+
+;; [CODE(URI)@en[[[token_type_hint]]]] 参照。
+
 [25] [[認可鯖]]は、 [[revoke]] に関する方針次第で、
 関連するトークンや元になった[[認可承諾]]をも [[revoke]]
 して構いません。 [[更新トークン]]の [[revoke]] においては、
@@ -109,3 +120,40 @@
 [[revoke]] する[['''べき''']]です。
 [[アクセストークン]]の [[revoke]] においては、
 対応する[[更新トークン]]も [[revoke]] して構いません。 [SRC[>>1]]
+
+[27] [[認可鯖]]は、 [[revoke]] に成功したい場合や、
+非妥当な[[トークン]]が指定されていた場合は、 [CODE(HTTP)[[[200]]]]
+[[応答]]を返します [SRC[>>1]]。
+
+[88] [[認可鯖]]は、誤りの場合には、 [CODE(HTTP)[[[400]]]] [[応答]]で次の[[引数]]を
+[[JSON]] ([CODE(MIME)@en[[[application/json]]]]) [[payload body]] の 
+[[JSONオブジェクト]]の名前と値 ([[文字列]]なら [[JSON文字列]]、
+[[数値]]なら [[JSON数値]]) に含めます [SRC[>>1, >>30]]。
+[FIG(list members)[
+[FIGCAPTION[
+[[payload body]] ([[JSONオブジェクト]])
+]FIGCAPTION]
+:[84] [CODE(URI)@en[[[error]]]]:[[誤り符号]]を指定しなければ[['''なりません''']] [SRC[>>30]]。
+:[85] [CODE(URI)@en[[[error_description]]]]:[[人間可読]]な[[誤り]]の説明を指定して構いません
+[SRC[>>30]]。
+:[86] [CODE(URI)@en[[[error_uri]]]]:[[人間可読]]な[[誤り]]の説明を含む[[Webページ]]の [[URL]]
+を指定して構いません [SRC[>>30]]。
+]FIG]
+
+[28] [[クライアント]]は、 [CODE(HTTP)[[[200]]]] [[応答]]の [[payload body]] を無視します 
+[SRC[>>1]]。
+
+[31] [[クライアント]]は、 [CODE(HTTP)[[[503]]]] [[応答]]を受信したらトークンはまだ有効と判断しなければならず、
+適当な間を置いて再試行して構いません。[[鯖]]は [CODE(HTTP)@en[[[Retry-After:]]]]
+で利用できないと思われる期間を示すことができます。 [SRC[>>1]]
+
+[34] [[クライアント]]は、 [[JSONP]] の場合不正な [[revokeエンドポイント]]が不正なコードを注入する危険性があることに注意するべきです [SRC[>>1]]。
+
+;; [35] そんなレベルで[[認可鯖]]が信用できない状況では [[OAuth]] 関連の処理がすべて危険そうですが...
+
+* メモ
+
+[36] [[RFC 7009]] は [[OAuth]] 関連仕様の中でも特に品質が低いようです。
+他の [[RFC]] を参照している箇所は章番号だけでどの規定が引用されているのか自明ではなかったりしますし、
+[[事実の文]]による状況の説明ばかりで[[助動詞]]が含まれる規定の文は少なく、
+前世紀レベルです。 [[JSONP]] に関する部分に至っては規定がほとんどなく例示に頼っています。
