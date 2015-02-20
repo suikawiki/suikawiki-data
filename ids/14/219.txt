@@ -7,17 +7,6 @@
 [[セキュリティーホール]]の温床であることもあり、現在ではあまり使われず、
 [[CORS]] を利用するのが一般的となっています。
 
-* JSON との互換性
-
-[14] [[JSON]] と [[JavaScript]] の[[オブジェクトリテラル]]は、
-厳密には構文的に違いがあります。 ([[JSON]] の項を参照。)
-ですからただ単に [[JSON]] の前後に[[関数名]]と[[括弧]]を連結するだけでは、
-正しい [[JavaScript]] コードとならず、構文エラーになる可能性があります。
-
-[15] これを避けるためには、 [[JSON]] の生成時、または [[JSON]] から [[JSONP]]
-への変換時にいくつかの[[文字]]を[[エスケープ]]しなければなりません。
-しかしそれをしていない実装もあり、ある種の[[脆弱性]]となるかもしれません。
-
 * [CODE(URI)@en[callback]] 引数
 
 [10] [[JavaScript]] の[[関数名]]は、 [[URL]] の [[query]] 部
@@ -34,10 +23,29 @@
 コードの注入を許してしまうことになり、[[脆弱性]]となります。
 [[JSONP]] の生成者は[[関数名]]として使える[[文字]]を限定し、
 使えない[[文字]]が含まれていると[[エラー]]の[[応答]]を返したり、
-既定の[[関数名]]で返したりする必要があります。
+既定の[[関数名]]で返したりする必要があります。実装によっては通常の [[JSON]]
+を返すかもしれません。
+
+;; [26] その範囲は実装により異なります。 [[JavaScript]] 側のライブラリーの仕様にもよります。
+[[オブジェクト]]の階層の深いところにある[[関数]]を呼び出すために [CODE[.]] を、
+[[配列]]内の[[関数]]を呼び出すために [CODE[''['']] や [CODE['']'']]
+を認めることもあります。
 
 [13] [CODE(URI)@en[[[callback]]]] [[引数]]やそれに相当する指定がない場合の動作は実装により異なります。
-エラーの[[応答]]を返すこともあれば、既定の[[関数名]]で返すこともあります。
+通常の [[JSON]] で返すことやエラーの[[応答]]を返すこともあれば、既定の[[関数名]]で返すこともあります。
+
+* JSON との互換性
+
+[14] [[JSON]] と [[JavaScript]] の[[オブジェクトリテラル]]は、
+厳密には構文的に違いがあります。 ([[JSON]] の項を参照。)
+ですからただ単に [[JSON]] の前後に[[関数名]]と[[括弧]]を連結するだけでは、
+正しい [[JavaScript]] コードとならず、構文エラーになる可能性があります。
+
+[15] これを避けるためには、 [[JSON]] の生成時、または [[JSON]] から [[JSONP]]
+への変換時にいくつかの[[文字]]を[[エスケープ]]しなければなりません。
+しかしそれをしていない実装もあり、ある種の[[脆弱性]]となるかもしれません。
+
+;; [27] 実際に [[JSONP]] を使った [[Webアプリケーション]]には特定の[[文字]]を入力として与えると誤動作するものがあります。
 
 * MIME 型
 
@@ -47,9 +55,18 @@
 [8] [[JSONP]] は [[JSON]] の変種であるとして、 [CODE(MIME)@en[[[application/json]]]]
 が指定されることもあります。
 
+;; [29] この指定は必ずしも正しいとは言えませんが、 [CODE(MIME)@en[[[application/json]]]]
+を表示するビューアーの類の中には [[JSONP]] に対応しているものもあり、
+有用なこともあるかもしれません。
+
 [9] また [CODE(MIME)@en[[[text/html]]]] や
 [CODE(MIME)@en[[[text/plain]]]]、 [CODE(HTTP)@en[[[Content-Type:]]]]
 なしなどで送信されることもあります。
+
+;; [28] [CODE(MIME)@en[[[text/html]]]] や [CODE(MIME)@en[[[text/plain]]]]
+を使うのは明らかに誤りであり、避けるべきです。
+
+[30] いずれにせよ、 [CODE(MIME)@en[[[charset]]]] [[引数]]が指定されることもあります。
 
 * JSONP による情報漏洩
 
@@ -83,14 +100,29 @@
 
 * 歴史
 
-[3] [CITE@en[JSONP: JSON With Padding - Ajaxian]]
+[21] [[JSONP]] は、2005年12月5日に [[Bob Ippolito]] が[[ブログ]]で提案 [SRC[>>4]]
+しました。呼称の由来は「JSON with Padding」[SRC[>>4]] だといいます。
+
+[23] なお [[query引数]]の名前は [CODE[jsonp]] [SRC[>>4]] とされていました。
+後に普及することになる [CODE[callback]] はまだ使われていませんでした。
+
+[REFS[
+- [4] [CITE@en[Remote JSON - JSONP]]
+([[Bob Ippolito]] 著, [TIME[2013-09-18 23:18:57 +09:00]] 版)
+<http://bob.ippoli.to/archives/2005/12/05/remote-json-jsonp/>
+-- [22] 元の [[URL]] は <http://bob.pythonmac.org/archives/2005/12/05/remote-json-jsonp>
+だったようです。
+- [3] [CITE@en[JSONP: JSON With Padding - Ajaxian]]
 ( ([TIME[2011-12-03 15:06:37 +09:00]] 版))
 <http://ajaxian.com/archives/jsonp-json-with-padding>
+- [1] [CITE[TAKESAKO @ Yet another Cybozu Labs: Operaでも非同期リクエストが並列処理できる img-JSONP]] ([TIME[2008-11-26 11:37:10 +09:00]] 版) <http://labs.cybozu.co.jp/blog/takesako/2007/06/opera_img-jsonp.html>
+- [2] [CITE[JSONP が Opera だと非同期処理できない - 川o・-・)<2nd life]] ([TIME[2009-02-09 18:00:12 +09:00]] 版) <http://d.hatena.ne.jp/secondlife/20060906/1157515075>
+]REFS]
 
-[4] [CITE@en[Remote JSON - JSONP]]
-( ([[Bob Ippolito]] 著, [TIME[2013-09-18 23:18:57 +09:00]] 版))
-<http://bob.ippoli.to/archives/2005/12/05/remote-json-jsonp/>
+[24] [[JSONP]] は[[デファクト標準]]であり、仕様書と呼べるものは存在していません。
 
-[1] [CITE[TAKESAKO @ Yet another Cybozu Labs: Operaでも非同期リクエストが並列処理できる img-JSONP]] ([TIME[2008-11-26 11:37:10 +09:00]] 版) <http://labs.cybozu.co.jp/blog/takesako/2007/06/opera_img-jsonp.html>
-
-[2] [CITE[JSONP が Opera だと非同期処理できない - 川o・-・)<2nd life]] ([TIME[2009-02-09 18:00:12 +09:00]] 版) <http://d.hatena.ne.jp/secondlife/20060906/1157515075>
+[25] 個別の [[Web API]] の実装仕様の類を除けば、 [[JSONP]]
+を採用している仕様には次のものがあります。
+[FIG(short list)[
+- [[revokeエンドポイント]] ([[RFC 7009]])
+]FIG]
