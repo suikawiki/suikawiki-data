@@ -22,14 +22,34 @@
 [RUBYB[[[TLS接続状態]]]@en[TLS connection state]]といい、
 次のもので構成されます [SRC[>>2]]。
 [FIG(list members)[
-:[RUBYB[[[接続端]]]@en[connection end]]:自身が[[クライアント]]か[[鯖]]か。
-:[[PRFアルゴリズム]]:[[master secret]] から[[鍵]]を生成するのに使う[[アルゴリズム]]。
-:[[bulk encryption algorithm]]:
-:[[MACアルゴリズム]]:
-:[[圧縮アルゴリズム]]:
-:[[master secret]]:
-:[[client random]]:
-:[[server random]]:
+:[RUBYB[[[セキュリティー引数]]]@en[security parameter]] ([CODE[[[SecurityParameters]]]]):
+[FIG(list members)[
+:[RUBYB[[[接続端]]]@en[connection end]] ([CODE[[[entity]]]]):自身が[[クライアント]]か[[鯖]]か。
+:[[PRFアルゴリズム]] ([CODE[[[prf_algorithm]]]]):[[master secret]] から[[鍵]]を生成するのに使う[[アルゴリズム]]。
+:[[bulk encryption algorithm]]:[[bulk encryption]] に使う[[アルゴリズム]]
+([CODE[[[bulk_cipher_algorithm]]]])。
+鍵サイズ ([CODE[[[enc_key_length]]]])、
+ブロック・ストリーム・[[AEAD]] のいずれであるか ([CODE[[[cipher_type]]]])、
+[[cipher]] のブロック長 ([CODE[[[block_length]]]])、
+明示的および暗示的な初期化ベクトル ([[nonce]]) ([CODE[[[fixed_iv_length]]]], [CODE[[[record_iv_length]]]])。
+:[[MACアルゴリズム]]:[[メッセージ認証]]に使う[[アルゴリズム]] ([CODE[[[mac_algorithm]]]])。
+アルゴリズムが返す値の長さ ([CODE[[[mac_length]]]])。
+鍵の長さ ([CODE[[[mac_key_length]]]])。
+:[[圧縮アルゴリズム]] ([CODE[[[compression_algorithm]]]]):[[データ圧縮]]に使う[[アルゴリズム]]。
+:[[master secret]] ([CODE[[[master_secret]]]]):48バイト秘密。
+:[[client random]] ([CODE[[[client_random]]]]):[[クライアント]]による32バイト値。
+:[[server random]] ([CODE[[[server_random]]]]):[[鯖]]による32バイト値。
+]FIG]
+:[[client write MAC key]]:
+:[[server write MAC key]]:
+:[[client write encryption key]]:
+:[[server write encryption key]]:
+:[[client write IV]]:
+:[[server write IV]]:
+:[[圧縮状態]]:
+:[[cipher state]]:
+:[[MAC鍵]]:
+:[[シーケンス番号]]:
 ]FIG]
 
 [5] [[接続状態]]は、現在の読み取り用状態、書き込み用状態と、
@@ -40,6 +60,21 @@ pending の読み取り用状態、書き込み用状態の4つがあります [
 
 [6] 現在の接続状態の初期値は、暗号化、圧縮、MAC のいずれも使用しないものです [SRC[>>2]]。
 
-[7] pending の接続状態の構成値は [[TLS Handshake Protocol]] により設定されます。
-pending の接続状態は [[ChangeCipherSpec]] によって現在の接続状態と置き換えられます。
-その場合 pending の接続状態は改めて空にされます。 [SRC[>>2]]
+[7] [[TLS Handshake Protocol]] は pending [[接続状態]]の[[セキュリティー引数]]を設定します。
+[[ChangeCipherSpec]] は pending [[接続状態]]を現在の[[接続状態]]とします。 [SRC[>>2]]
+
+[9] [[記録層]]では、 2[SUP[14]] [[バイト]][[以下]]のデータに分割して
+[CODE[[[TLSPlaintext]]]] として扱います。[[クライアントメッセージ]]の境界は意味を持たず、
+同じ[[記録内容型]]の[[クライアントメッセージ]]を1つの [CODE[[[TLSPlaintext]]]]
+に結合したり、分解したりできます。 [SRC[>>2]]
+
+[10] [CODE[[[TLSPlaintext]]]] は、次のもので構成されます [SRC[>>2]]。
+[FIG(list members)[
+:[CODE[[[type]]]]:含まれているデータを処理する上位層プロトコル ([[記録内容型]])。
+:[CODE[[[version]]]]:プロトコルの版。 3.3 なら [[TLS/1.2]], 3.2 なら [[TLS/1.1]],
+3.1 なら [[TLS/1.0]]。
+:[CODE[[[length]]]]:データの長さ。
+:[CODE[[[fragment]]]]:データ。
+]FIG]
+
+
