@@ -1,0 +1,83 @@
+[12] [DFN[[[error alert]]]] は、 [[TLS]] における[RUBY[[[誤り]]][エラー]]を通知する[[メッセージ]]です。
+
+* 仕様書
+
+[REFS[
+- [1] '''[CITE@en[RFC 5246 - The Transport Layer Security (TLS) Protocol Version 1.2]] ([TIME[2015-02-19 08:58:15 +09:00]] 版) <http://tools.ietf.org/html/rfc5246#section-7.2.2>'''
+- [9] [CITE[Transport Layer Security (TLS) Parameters]] ([TIME[2015-02-27 12:03:35 +09:00]] 版) <http://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml#tls-parameters-6>
+]REFS]
+
+* プロトコル
+
+[2] [[TLS Handshake protocol]] では、[[誤り]]を検出したら、相手に対して[[メッセージ]]を送信します
+[SRC[>>1]]。[[誤り]]には[RUBYB[致死的]@en[fatal]]なものと、そうでないものがあります。
+[[fatal alert]] と定義されている条件に遭遇したら、[[接続]]を閉じる前に適切な [[alert]]
+を送信しなければ[['''なりません''']] [SRC[>>1]]。 [[alert]] level が明示的に規定されていない[[誤り]]については、
+[[誤り]]の送信者が [[fatal]] か否かを決定できます [SRC[>>1]]。 [[alert]] を送信する場合で、
+その直後に[[接続]]を閉じるつもりの場合は、 [[fatal alert]] level で [[alert]] を送信しなければ[['''なりません''']] [SRC[>>1]]。
+
+[3] [[fatal alert message]] を送信または受信したら、直ちに[[接続]]を閉じます。
+[[鯖]]および[[クライアント]]は、失敗した[[接続]]に関する[[セッション識別子]]、[[鍵]]、[[秘密]]をすべて忘れなければ[['''なりません''']]。
+よって [[fatal alert]] によって終了した[[接続]]を[[再開]]しては[['''なりません''']]。 [SRC[>>1]]
+
+;; [11] [[closure alert]] とは違って [[alert]] を返送する必要は無いようです。
+
+[4] [[alert level]] が[[警告]]の [[alert]] を送信または受信したら、通常は[[接続]]は通常通り継続できます。
+受信者が[[接続]]を継続しないことにした場合は、[[接続]]を終える [[fatal alert]] を送信する[['''べきです''']]。
+[SRC[>>1]]
+
+;; [5] 警告の後受信者がどうするか送信者は事前に予測できませんから、送信者が[[接続]]を継続したい時に[[警告]]を送信するのは好ましくないこともあり、
+そのため省略される場合もあります。例えば[[証明書]]が[[満期]]していても[[接続]]を継続したい場合、
+[CODE[[[certificate_expired]]]] [[alert]] は送信しません。 [SRC[>>1]]
+
+* alert の種類
+
+[6] [[error alert]] の種類には次のものがあります。
+
+[FIG(short list)[
+- [CODE[[[unexpected_message]]]] ([CODE[[[10]]]])
+- [CODE[[[bad_record_mac]]]] ([CODE[[[20]]]])
+- [CODE[[[decryption_failed_RESERVED]]]] ([CODE[[[21]]]])
+- [CODE[[[record_overflow]]]] ([CODE[[[22]]]])
+- [CODE[[[decompression_failure]]]] ([CODE[[[30]]]])
+- [CODE[[[handshake_failure]]]] ([CODE[[[40]]]])
+- [CODE[[[no_certificate_RESERVED]]]] ([CODE[[[41]]]])
+- [CODE[[[bad_certificate]]]] ([CODE[[[42]]]])
+- [CODE[[[unsupported_certificate]]]] ([CODE[[[43]]]])
+- [CODE[[[certificate_revoked]]]] ([CODE[[[44]]]])
+- [CODE[[[certificate_expired]]]] ([CODE[[[45]]]])
+- [CODE[[[certificate_unknown]]]] ([CODE[[[46]]]])
+- [CODE[[[illegal_parameter]]]] ([CODE[[[47]]]])
+- [CODE[[[unknown_ca]]]] ([CODE[[[48]]]])
+- [CODE[[[access_denied]]]] ([CODE[[[49]]]])
+- [CODE[[[decode_error]]]] ([CODE[[[50]]]])
+- [CODE[[[decrypt_error]]]] ([CODE[[[51]]]])
+- [CODE[[[export_restriction_RESERVED]]]] ([CODE[[[60]]]])
+- [CODE[[[protocol_version]]]] ([CODE[[[70]]]])
+- [CODE[[[insufficient_security]]]] ([CODE[[[71]]]])
+- [CODE[[[internal_error]]]] ([CODE[[[80]]]])
+- [CODE[[[user_canceled]]]] ([CODE[[[90]]]])
+- [CODE[[[no_renegotiation]]]] ([CODE[[[100]]]])
+- [CODE[[[unsupported_extension]]]] ([CODE[[[110]]]])
+- [CODE[[[inappropriate_fallback]]]] ([CODE[[[86]]]])
+- [CODE[[[user_canceled]]]] ([CODE[[[90]]]])
+- [CODE[[[certificate_unobtainable]]]] ([CODE[[[111]]]])
+- [CODE[[[unrecognized_name]]]] ([CODE[[[112]]]])
+- [CODE[[[bad_certificate_status_response]]]] ([CODE[[[113]]]])
+- [CODE[[[bad_certificate_hash_value]]]] ([CODE[[[114]]]])
+- [CODE[[[unknown_psk_identity]]]] ([CODE[[[115]]]])
+]FIG]
+
+[7] [[IANA登録簿]]も用意されています。
+
+[8] [CODE[[[close_notify]]]] ([CODE[[[0]]]]) は [[closure alert]] に分類されていて、
+[[error alert]] とは別の処理が規定されています。
+
+* 応用
+
+[13] [[TLS]] を使う[[アプリケーション層プロトコル]]は、 [[TLS]] の[[接続]]が[[誤り]]により閉じられた際の処理
+(何らかの方法で復帰する、更に上位の層に誤りを通知するなど) を規定する必要があります。
+
+[EG[
+[14] 例えば [[RFC 2818]] は [[HTTPS]] に関する処理を規定しています。
+]EG]
