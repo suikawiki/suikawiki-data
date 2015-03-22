@@ -1,16 +1,80 @@
 * 仕様書
 
 [REFS[
+- [4] [CITE@en[RFC 4517 - Lightweight Directory Access Protocol (LDAP): Syntaxes and Matching Rules]]
+([TIME[2015-03-08 19:15:43 +09:00]] 版)
+<http://tools.ietf.org/html/rfc4517#section-3.3.15>
+- [6] [CITE@en[RFC 4517 - Lightweight Directory Access Protocol (LDAP): Syntaxes and Matching Rules]] ([TIME[2015-03-08 19:15:43 +09:00]] 版) <http://tools.ietf.org/html/rfc4517#section-4.2>
 - [1] '''[CITE@en[RFC 5280 - Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile]] ([TIME[2015-02-22 15:44:10 +09:00]] 版) <http://tools.ietf.org/html/rfc5280#section-4.1.2.4>'''
 - [20] [CITE@en[RFC 5280 - Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile]] ([TIME[2015-02-22 15:44:10 +09:00]] 版) <http://tools.ietf.org/html/rfc5280#section-4.1.2.6>
 - [27] [CITE@en[RFC 5280 - Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile]] ([TIME[2015-02-22 15:44:10 +09:00]] 版) <http://tools.ietf.org/html/rfc5280#section-7.1>
 ]REFS]
 
-* 文字列
+* [CODE[IA5String]]
+
+[FIG(quote)[
+[FIGCAPTION[
+[5] >>4
+]FIGCAPTION]
+
+> A value of the IA5 String syntax is a string of zero, one, or more
+characters from International Alphabet 5 (IA5) [T.50], the
+international version of the ASCII character set.  The LDAP-specific
+encoding of a value of this syntax is the unconverted string of
+characters, which conforms to the <IA5String> rule in Section 3.2.
+>   The LDAP definition for the IA5 String syntax is:
+[PRE[
+      ( 1.3.6.1.4.1.1466.115.121.1.26 DESC 'IA5 String' )
+]PRE]
+>   This syntax corresponds to the IA5String ASN.1 type from [ASN.1].
+]FIG]
+
+* [CODE[PrintableString]]
+
+[3] RFC 987, RFC 1138, RFC 1148,
+RFC 1327 <urn:ietf:rfc:1327>, RFC 2156 <urn:ietf:rfc:2156>
+で定義されています。
+
+** 構文
+
+ printable-string   = *(ps-delim / ps-restricted-char)
+ ps-restricted-char = DIGIT / ALPHA / " " / "'" / "+"
+                    / "," / "-" / "." / "/" / ":" / "=" / "?"
+ ps-delim           = "(" / ")"
+
+ ps-encoded       = *( ps-restricted-char / ps-encoded-char )
+ ps-encoded-char  = "(a)"               ; (@)
+                  / "(p)"               ; (%)
+                  / "(b)"               ; (!)
+                  / "(q)"               ; (")
+                  / "(u)"               ; (_)
+                  / "(l)"               ; "("
+                  / "(r)"               ; ")"
+                  / "(" 3DIGIT ")"      ; 000 - 127 (= ASCII %x00-7E)
+
+大文字・小文字は区別しませんが、常に小文字で生成します。
+
+(l), (r) は RFC 987 では定義されていませんでした。
+
+**例
+
+         'a demo.'         <->   'a demo.'
+         foo(a)bar         <->   foo@bar
+         (q)(u)(p)(q)      <->   "_%"
+         (a)               <->   @
+         (A)               ->    @
+         (l)a(r)           <->   (a)
+         (126)             <->   ~
+         (                 ->    (
+         (l)               <->   (
+
+* [CODE[DirectoryString]]
 
 [11] [DFN[[CODE[[[DirectoryString]]]]]] は、 [CODE[[[TeletexString]]]],
 [CODE[[[PrintableString]]]], [CODE[[[UniversalString]]]],
 [CODE[[[UTF8String]]]], [CODE[[[BMPString]]]] のいずれかによる空でない列です [SRC[>>1]]。
+
+;; [2] [CODE[[[IA5String]]]] は含まれていません。
 
 [14] [[RFC 5280]] [[プロファイル]]に適合する [[CA]] は、
 原則として [CODE[[[PrintableString]]]] か [CODE[[[UTF8String]]]]
@@ -38,3 +102,29 @@
 
 [25] [[証明書]]の[[利用者]]は、 [CODE[[[TeletexString]]]], [CODE[[[BMPString]]]],
 [CODE[[[UniversalString]]]] の [CODE[[[subject]]]] の受信にも備える[['''べきです''']] [SRC[>>20]]。しかし対応は義務ではありません [SRC[>>27]]。
+
+* 比較
+
+[7] [[RFC 4517]] は、[[文字列]]に関する次の[[比較]]演算を規定しています [SRC[>>6]]。
+
+[FIG(short list)[
+- [CODE[[[numericStringMatch]]]]
+- [CODE[[[numericStringSubstringsMatch]]]]
+- [CODE[[[caseExactMatch]]]]
+- [CODE[[[caseExactOrderingMatch]]]]
+- [CODE[[[caseExactSubstringsMatch]]]]
+- [CODE[[[caseExactIA5Match]]]]
+- [CODE[[[caseIgnoreIA5Match]]]]
+- [CODE[[[caseIgnoreIA5SubstringsMatch]]]]
+- [CODE[[[caseIgnoreListMatch]]]]
+- [CODE[[[caseIgnoreListSubstringsMatch]]]]
+- [CODE[[[caseIgnoreMatch]]]]
+- [CODE[[[caseIgnoreOrderingMatch]]]]
+- [CODE[[[caseIgnoreSubstringsMatch]]]]
+- [CODE[[[directoryStringFirstComponentMatch]]]]
+- [CODE[[[telephoneNumberMatch]]]]
+- [CODE[[[telephoneNumberSubstringsMatch]]]]
+- [CODE[[[wordMatch]]]]
+]FIG]
+
+[8] これらは [[RFC 4518]] の [[Stringprep]] 変種を使って[[正規化]]して[[比較]]します。
