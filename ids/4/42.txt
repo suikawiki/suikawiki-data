@@ -6,6 +6,7 @@
 [REFS[
 - [2] '''[CITE@en[RFC 3454 - Preparation of Internationalized Strings ("stringprep")]]
 <http://tools.ietf.org/html/rfc3454>'''
+- [176] [CITE[RFC Errata Report]] ([TIME[2015-03-23 14:53:37 +09:00]] 版) <http://www.rfc-editor.org/errata_search.php?rfc=3454>
 - [124] [CITE[Stringprep Profiles]] 
 <http://www.iana.org/assignments/stringprep-profiles/stringprep-profiles.xml#stringprep-profiles-1>
 ]REFS]
@@ -413,7 +414,15 @@ RFC 3454 は新しい版の Unicode
 [157] [DFN[[[RFC 4518]]]] は [[LDAP]] 用の[[プロファイル]]を定義しています。
 この[[プロファイル]]は [[stringprep]] の前や後の処理を含めて規定しています。
 
-[159] そのためか [[IANA登録簿]]には[[プロファイル]]として登録されていません。
+;; [159] そのためか [[IANA登録簿]]には[[プロファイル]]として登録されていません。
+
+;; [175] [[LDAP]] 自体のみならず、 [[証明書]]の [[distinguished name]]
+の[[比較]]でも用いられます。
+
+[REFS[
+- [158] [CITE@en[RFC 4518 - Lightweight Directory Access Protocol (LDAP): Internationalized String Preparation]] ([TIME[2014-12-29 00:45:51 +09:00]] 版) <http://tools.ietf.org/html/rfc4518>
+- [171] [CITE[RFC Errata Report]] ([TIME[2015-03-23 14:45:37 +09:00]] 版) <http://www.rfc-editor.org/errata_search.php?rfc=4518>
+]REFS]
 
 [161] [[Map]] より前に[RUBYB[[[転符号化]]]@en[Transcoding]]を行います。これは [[Unicode]]
 [[文字列]]へと変換する操作です。
@@ -424,6 +433,10 @@ RFC 3454 は新しい版の Unicode
 の表と若干の出入りがある他、 [[RFC 3454]] で禁止に分類されている[[文字]]が除去されたり、
 [CODE(char)[[[U+0020]]]] に[[写像]]されたりします。
 
+[REFS[
+- [163] [CITE@en[Character mapping "rfc4518:map:common"]] ([TIME[2015-03-23 01:47:39 +09:00]] 版) <http://chars.suikawiki.org/map/rfc4518%3Amap%3Acommon>
+]REFS]
+
 [165] [[Map]] に [[case folding]] ([[RFC 3454]] 表 B.2) が含まれるか否かは、
 [[比較]]方法により変わります。
 
@@ -431,16 +444,52 @@ RFC 3454 は新しい版の Unicode
 
 [164] [[Prohibit]] は、 [[RFC 3454]] の表の他に [CODE[[[U+FFFD]]]] も含まれています。
 また [[RFC 3454]] の表A.1 ([[Unicode 3.2]] 時点での[[未定義符号位置]]) も含まれています
-(つまり[[蓄積文字列]] (>>110) に相当します)。
-
-[166] 処理の最後に [DFN[[[Insignificant Character Handling]]]] [SRC[>>163]] を行います。
+(つまり[[蓄積文字列]] (>>110) に相当します)。 >>167 は禁止される[[符号位置]]の一覧です。
 
 [REFS[
-- [163] [CITE@en[Character mapping "rfc4518:map:common"]] ([TIME[2015-03-23 01:47:39 +09:00]] 版) <http://chars.suikawiki.org/map/rfc4518%3Amap%3Acommon>
+- [167] [CITE@en[Character set "$rfc4518:prohibited"]] ([TIME[2015-03-23 14:29:24 +09:00]] 版) <http://chars.suikawiki.org/set/%24rfc4518%3Aprohibited>
 ]REFS]
 
+[166] 処理の最後に [DFN[[[Insignificant Character Handling]]]] [SRC[>>163, >>171]] を行います。
+これには次の3種類があり、[[比較]]方法によりいずれかを選択します。
+
+[FIG(steps)[
+= [172] [DFN[[[Insignificant Space Handling]]]]
+== 入力が[[属性値]]または非部分文字列 assertion value なら、
+=== 入力に[[間隔]]以外の[[文字]]が含まれないなら、[[文字列]] [CODE(charname)@en[[[SPACE]]]] [CODE(charname)@en[[[SPACE]]]] を返します。
+=== そうでないなら、
+==== [[間隔]]の連続をすべて[[文字列]] [CODE(charname)@en[[[SPACE]]]] [CODE(charname)@en[[[SPACE]]]] に置き換えます。
+==== 先頭と末尾に[[文字列]] [CODE(charname)@en[[[SPACE]]]] [CODE(charname)@en[[[SPACE]]]] 
+があれば除去します。
+==== 先頭と末尾に [CODE(charname)@en[[[SPACE]]]] を挿入します。
+== 入力が部分文字列 assertion value なら、
+=== 入力に[[間隔]]以外の[[文字]]が含まれないなら、 [CODE(charname)@en[[[SPACE]]]]
+を返します。
+=== そうでないなら、
+==== [[間隔]]の連続をすべて[[文字列]] [CODE(charname)@en[[[SPACE]]]] [CODE(charname)@en[[[SPACE]]]] に置き換えます。
+==== 入力が initial substring なら、先頭の[[間隔]]列を除去し、 [CODE(charname)@en[[[SPACE]]]]
+を挿入します。
+==== 入力が initial substring か any substring で[[間隔]]で終わるなら、
+末尾の[[間隔]]列を除去し、 [CODE(charname)@en[[[SPACE]]]] を挿入します。
+==== 入力が any substring か final substring で[[間隔]]で始まるなら、
+先頭の[[間隔]]列を除去し、 [CODE(charname)@en[[[SPACE]]]] を挿入します。
+==== 入力が final substring なら、末尾の[[間隔]]列を除去し、 [CODE(charname)@en[[[SPACE]]]]
+を挿入します。
+= [173] [DFN[[[numericString Insignificant Character Handling]]]]
+== [[間隔]]をすべて削除します。
+= [174] [DFN[[[telephoneNumber Insignificant Character Handling]]]]
+== [[間隔]]をすべて削除します。
+== [[ハイフン]]をすべて削除します。
+]FIG]
+
+[168] ここで[RUBYB[[[間隔]]]@en[space]]とは、 [CODE(charname)@en[[[SPACE]]]]
+であって直後に[[結合文字]]がないものをいいます。 [SRC[>>158]]
+
+[169] ここで[RUBYB[[[ハイフン]]]@en[hyphen]]とは、いくつかの[[文字]] (>>170)
+の直後に[[結合文字]]が来ないものをいいます [SRC[>>158]]。
+
 [REFS[
-- [158] [CITE@en[RFC 4518 - Lightweight Directory Access Protocol (LDAP): Internationalized String Preparation]] ([TIME[2014-12-29 00:45:51 +09:00]] 版) <http://tools.ietf.org/html/rfc4518>
+- [170] [CITE@en[Character set "$rfc4518:hyphen-char"]] ([TIME[2015-03-23 14:44:20 +09:00]] 版) <http://chars.suikawiki.org/set/%24rfc4518%3Ahyphen-char>
 ]REFS]
 
 [155] >>19 は [[GNU Libidn]] で実装されています。 >>19 は >>153、>>154 を経て
