@@ -3,6 +3,7 @@
 [REFS[
 - [1] '''[CITE@en[RFC 6125 - Representation and Verification of Domain-Based Application Service Identity within Internet Public Key Infrastructure Using X.509 (PKIX) Certificates in the Context of Transport Layer Security (TLS)]] ([TIME[2015-03-13 22:27:53 +09:00]] 版) <https://tools.ietf.org/html/rfc6125>'''
 -- [4] [CITE@en[RFC 6125 - Representation and Verification of Domain-Based Application Service Identity within Internet Public Key Infrastructure Using X.509 (PKIX) Certificates in the Context of Transport Layer Security (TLS)]] ([TIME[2015-03-13 22:27:53 +09:00]] 版) <https://tools.ietf.org/html/rfc6125#section-3>
+-- [11] [CITE@en[RFC 6125 - Representation and Verification of Domain-Based Application Service Identity within Internet Public Key Infrastructure Using X.509 (PKIX) Certificates in the Context of Transport Layer Security (TLS)]] ([TIME[2015-03-13 22:27:53 +09:00]] 版) <https://tools.ietf.org/html/rfc6125#section-4>
 - [2] [CITE[RFC Errata Report]] ([TIME[2015-03-24 22:54:51 +09:00]] 版) <http://www.rfc-editor.org/errata_search.php?rfc=6125>
 ]REFS]
 
@@ -12,21 +13,61 @@
 ほぼ同じで細部が異なるものでした。 [[RFC 6125]] はそれを踏まえて新たに標準的な方法を規定するものです。
 ただし従来の各プロトコルの規定を廃止するものではなく、新プロトコルや既存プロトコルの改訂版で明示的に参照される場合にのみ適用する [SRC[>>1]] とされています。
 
+* ドメイン名
+
+[24] [[証明書]]には[[ドメイン名]]は色々な形で記述され得ます。そのうち
+[[RFC 6125]] に従う仕様で [[service identity]] を表すものとして解釈されるのは、
+[FIG(short list)[
+- [[CN-ID]]
+- [[DNS-ID]]
+- [[SRV-ID]]
+- [[URI-ID]]
+]FIG]
+... の4つの[[識別子型]]の識別子です。 (それ以外も用いることも排除はされていません。)
+
+[25] これらの形式の値の一部または全部が [[DNSドメイン名]]とみなされます。
+[[IDN]] は [[Aラベル]]を使った [[ASCII]] のみの形に変換されてから[[証明書]]に記述されます。
+
 * アプリケーションプロトコル
 
 [5] [[アプリケーションプロトコル]]の設計では、次の点を考慮するべきです [SRC[>>4]]。
 [FIG(list)[
 - [6] [[DNS]] [CODE[[[SRV]]]] [[レコード]]を使って[[ドメイン名]]の[[解決]]を行うなら、
-[[証明書]]で [[SRV-ID]] [[識別子型]]への対応を要求または推奨することを検討するべきです。
+[[証明書]]で [[SRV-ID]] [[識別子型]]への対応を要求または推奨することを検討するべきです [SRC[>>4]]。
 - [7] [[URI]] を使って応用サービスを識別するなら、[[証明書]]で [[URI-ID]] 
-[[識別子型]]への対応を要求または推奨することを検討するべきです。
+[[識別子型]]への対応を要求または推奨することを検討するべきです [SRC[>>4]]。
+-- [18] [[URI-ID]] の [[URL scheme]] を規定しなければ[['''なりません''']] [SRC[>>11]]。
 - [8] [[後方互換性]]のために[[証明書]]の [CODE[[[CN]]]]
 欄の[[DNSドメイン名]]を使う必要があるなら [[CN-ID]]
-[[識別子型]]にフォールバックとして対応することを推奨することを検討するべきです。
+[[識別子型]]にフォールバックとして対応することを推奨することを検討するべきです [SRC[>>4]]。
 - [9] [[DNSドメイン名]]で[[ワイルドカード]]に対応する必要があるなら、
 [[ワイルドカード証明書]]への対応を推奨すること、
-[[DNSドメイン名]]のどこに[[ワイルドカード]]文字が認められるか規定することを検討するべきです。
+[[DNSドメイン名]]のどこに[[ワイルドカード]]文字が認められるか規定することを検討するべきです
+[SRC[>>4]]。
 ]FIG]
 
 ;; [10] しかし既存のアプリケーションは [[SRV-ID]] や [[URI-ID]] に対応していないものが多い
 [SRC[>>4]] です。
+
+* 証明書
+
+[12] [[CA]] が[[完全修飾DNSドメイン名]]に基づく[[証明書]]を発行する時は、
+次の規則が適用されます [SRC[>>11]]。
+[FIG(list)[
+- [13] [[証明書]]は [[DNS-ID]] を含む[['''べきです''']]。
+- [14] [[証明書]]を使うサービスに関する仕様が要求しているなら、
+[[SRV-ID]] を含む[['''べきです''']]。
+- [15] [[証明書]]を使うサービスに関する仕様が要求しているなら、
+[[URI-ID]] を含む[['''べきです''']]。
+-- [16] [[URI-ID]] の [[scheme]] は当該サービスのプロトコルの [[scheme]] でなければ[['''なりません''']]。
+-- [17] [[URI-ID]] の [[host]] (またはそれに相当するもの) は当該サービスの[[完全修飾DNSドメイン名]]でなければ[['''なりません''']]。
+- [19] [[証明書]]は [CODE[[[XmppAddr]]]] など応用依存の識別子も含んで構いません。
+- [20] [[証明書]]を使うサービスが明示的に[RUBYB[推奨]@en[encourage]]する場合を除き、
+[[CN-ID]] を含む[['''べきではありません''']]。
+- [21] [[DNS-ID]]、[[SRV-ID]]、[[URI-ID]] は複数あっても構いません。
+- [23] [[証明書]]を使うサービスの仕様で認められる場合を除き、
+[[DNSドメイン名]]に[[ワイルドカード]]を含める[['''べきではありません''']]。
+]FIG]
+
+;; [22] [[CN-ID]] が複数ある[['''べきではない''']] [SRC[>>11]] とされていますが、
+定義上複数あるものは [[CN-ID]] ではありません。
