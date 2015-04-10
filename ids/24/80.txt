@@ -16,6 +16,13 @@
 [[MIME]] より前の時代に (まだ名前がなかった) [[Base64]] のことを「[[PEM]]」
 と呼んでいても不思議ではありません。
 
+[22] [[PEM]] 版 [[Base64]] は、 [[RFC 1421]] [SRC[>>21]] が最新の定義です。
+(ただしこの [[RFC]] は既に [[HISTORIC]] となっています。)
+
+[REFS[
+- [21] [CITE@en[RFC 1421 - Privacy Enhancement for Internet Electronic Mail: Part I: Message Encryption and Authentication Procedures]] ([TIME[2015-02-22 14:28:36 +09:00]] 版) <https://tools.ietf.org/html/rfc1421#section-4.3.2.4>
+]REFS]
+
 * 構文
 
 [11] [CODE[[[.pem]]]] 形式のファイルは、 [[ASCII]] 文字列で構成される[[テキストファイル]]です。
@@ -33,12 +40,72 @@
 を表す一連の[[証明書]]を表す場合や[[ルート証明書]]として使われる[[証明書]]群を表す場合、
 [[秘密鍵]]と[[証明書]]を含めた場合など、複数の[[メッセージ]]が含まれることがあります。
 
+;; [19] [[メッセージ]]の前後に[[空行]]が含まれることがあるかもしれませんが、
+どの実装でも問題ないのかは定かではありません。
+
 [15] [[メッセージ]]は、 [[pre-EB]]、データ、 [[post-EB]] で構成されます。
 
 [FIG(railroad)[
 = [[pre-EB]]
 = データ
 = [[post-EB]]
+]FIG]
+
+;; [31] [[OpenSSL]] は [[EB]] を header line、footer line とそれぞれ呼んでいるようです。
+
+[16] [[pre-EB]] は [CODE[-----BEGIN ]] の後にメッセージ種別が入り、
+[CODE[-----]] が続きます。最後に[[改行]]が入ります。
+
+[FIG(railroad)[
+= [CODE[[[-----BEGIN ]]]]
+= メッセージ種別
+= [CODE[[[-----]]
+]FIG]
+
+[17] [[post-EB]] は [CODE[-----END ]] の後にメッセージ種別が入り、
+[CODE[-----]] が続きます。最後に[[改行]]が入ります。
+
+[FIG(railroad)[
+= [CODE[[[-----END ]]]]
+= メッセージ種別
+= [CODE[[[-----]]
+]FIG]
+
+;; [27] [CODE[BEGIN]] と [CODE[END]] の後には [CODE(char)[[[U+0020]]]] が入ります。
+
+;; [18] 最後の[[メッセージ]]の後に[[改行]]が省略できるのかどうかは定かではありません。
+
+[20] データは、[[オクテット列]]を [[Base64]] で[[符号化]]したものです。
+[[PEM]] 版 [[Base64]] [SRC[>>21]] は1行を丁度64文字とすることを求めています。
+
+;; [23] すべての [CODE[[[.pem]]]] ファイルがこれに従っているかは定かではありません。
+
+;; [28] 元々の [[PEM]] の暗号化メールでは、データの部分は [[RFC 822]] 風の[[ヘッダー]]、
+[[空行]]、[[本体]]で構成される[[メッセージ]]で、 [[Base64]] はそのうちの[[本体]]の部分だけでした。
+
+[24] [[改行]]は、 [[LF]] のものと [[CRLF]] のものがあります。
+
+;; [25] [[CR]] だけのものがあるかどうかは定かではありません。すべての実装がこれらの[[改行]]
+(やその混在) を扱えるのかは不明です。
+
+;; [32] 構文的に正しくないファイルを与えられた時どう解釈するのかは定かではありません。
+
+* メッセージ種別
+
+[26] [[メッセージ種別]]には、次のものがあります。
+
+[FIG(list)[
+- [CODE[[[PRIVACY-ENHANCED MESSAGE]]]] - [[PEM]] [[暗号化]]メールの「内側」
+- [CODE[[[CERTIFICATE]]]] - [[証明書]] ([[DER]])
+- [CODE[[[CERTIFICATE]]]] - [[証明書]] ([[PKCS #7]]) [SRC[>>29]]
+- [CODE[[[PKCS7]]]] - [[証明書]] ([[PKCS #7]]) [SRC[>>29]]
+- [CODE[[[RSA PRIVATE KEY]]]] - [[RSA]] [[秘密鍵]] ([[PKCS #1]]) [SRC[>>30]]
+- [CODE[[[RSA PUBLIC KEY]]]] - [[RSA]] [[公開鍵]] ([[PKCS #1]]) [SRC[>>30]]
+- [CODE[[[PRIVATE KEY]]]] - [[秘密鍵]] ([[PKCS #8]]) [SRC[>>4]]
+- [CODE[[[PUBLIC KEY]]]] - [[公開鍵]] [SRC[>>30]]
+- [CODE[[[ENCRYPTED PRIVATE KEY]]]] - [[暗号化]]された[[秘密鍵]] ([[PKCS #8]]) [SRC[>>4]]
+- [CODE[[[CERTIFICATE REQUEST]]]] - [[CSR]] ([[PKCS #10]])
+- [CODE[[[NEW CERTIFICATE REQUEST]]]] - [[CSR]] ([[PKCS #10]])
 ]FIG]
 
 * メモ
@@ -80,3 +147,7 @@
 [5] [CITE[java - what is the differences between "BEGIN RSA PRIVATE KEY" and "BEGIN PRIVATE KEY" - Stack Overflow]]
 ([TIME[2015-04-08 01:00:10 +09:00]] 版)
 <http://stackoverflow.com/questions/20065304/what-is-the-differences-between-begin-rsa-private-key-and-begin-private-key>
+
+[30] [CITE[rsa - RSA key processing tool]] ([TIME[2015-04-11 00:09:25 +09:00]] 版) <https://www.openssl.org/docs/apps/rsa.html>
+
+[29] [CITE[pkcs7 - PKCS#7 utility]] ([TIME[2015-04-11 00:07:16 +09:00]] 版) <https://www.openssl.org/docs/apps/pkcs7.html>
