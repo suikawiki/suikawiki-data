@@ -2,26 +2,16 @@
 
 * 仕様書
 
-[7] [CODE[[[.pem]]]] ファイル形式を規定した[[仕様書]]はなさそうです。
-
-[8] [[PEM]] は[[電子メール]]における[[暗号化]]の仕様を指すとされていますが、
-[[PEM]] に (少なくても [[RFC]] として出版されたものには) 
-本ファイル形式の規定はなく、なぜ [CODE[[[.pem]]]] ファイルと呼ばれているかは定かではありません。
-
-[9] [[PEM]] の実装が使っていたファイル形式なのかもしれません。あるいは [[PEM]]
-の記憶が濃い時代に [[PEM]] 風のファイル形式として名付けられたのかもしれません。
-(現在でいう) [[Base64]] のことを [[PEM]] と呼んでいたのかもしれません。
-
-;; [10] [[MIME]] の一機能に過ぎない [[Base64]] のことを「[[MIME]]」と呼ぶ風習がかつて一部にありました。
-[[MIME]] より前の時代に (まだ名前がなかった) [[Base64]] のことを「[[PEM]]」
-と呼んでいても不思議ではありません。
-
-[22] [[PEM]] 版 [[Base64]] は、 [[RFC 1421]] [SRC[>>21]] が最新の定義です。
-(ただしこの [[RFC]] は既に [[HISTORIC]] となっています。)
-
 [REFS[
-- [21] [CITE@en[RFC 1421 - Privacy Enhancement for Internet Electronic Mail: Part I: Message Encryption and Authentication Procedures]] ([TIME[2015-02-22 14:28:36 +09:00]] 版) <https://tools.ietf.org/html/rfc1421#section-4.3.2.4>
+- [42] [CITE@en-US[NSS Certificate Download Specification - Mozilla | MDN]] ([TIME[2014-05-07 16:41:21 +09:00]] 版) <https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS/Certificate_Download_Specification>
 ]REFS]
+
+[43] [[証明書ダウンロード]]仕様書 [SRC[>>42]] は[[証明書]]や[[証明書]]鎖に関する
+[CODE[[[.pem]]]] ファイル形式を定義しています。
+
+[7] それ以外の [CODE[[[.pem]]]] ファイル形式一般を規定した[[仕様書]]はなさそうです。
+
+;; [44] 歴史の項も参照。
 
 * 構文
 
@@ -53,6 +43,8 @@
 ]FIG]
 
 ;; [31] [[OpenSSL]] は [[EB]] を header line、footer line とそれぞれ呼んでいるようです。
+
+;; [51] [[pre-EB]] の前や [[post-EB]] の後に何らかのデータがあっても、無視します [SRC[>>42]]。
 
 [16] [[pre-EB]] は [CODE[-----BEGIN ]] の後にメッセージ種別が入り、
 [CODE[-----]] が続きます。最後に[[改行]]が入ります。
@@ -96,11 +88,12 @@
 [26] [[メッセージ種別]]には、次のものがあります。
 
 [FIG(list)[
-- [CODE[[[CERTIFICATE]]]] - [[証明書]] ([[DER]])
-- [CODE[[[CERTIFICATE]]]] - [[証明書]] ([[PKCS #7]]) [SRC[>>29]]
+- [CODE[[[CERTIFICATE]]]] - [[証明書]] ([[DER]]) [SRC[>>42]]
+- [CODE[[[CERTIFICATE]]]] - [[PKCS #7証明書鎖]] [SRC[>>42, >>29]]
+- [CODE[[[CERTIFICATE]]]] - [[Netscape Certificate Sequence]] [SRC[>>42]]
 - [CODE[[[X509 CERTIFICATE]]]]
 - [CODE[[[TRUSTED CERTIFICATE]]]]
-- [CODE[[[PKCS7]]]] - [[証明書]] ([[PKCS #7]]) [SRC[>>29]]
+- [CODE[[[PKCS7]]]] - [[PKCS #7証明書鎖]] [SRC[>>29]]
 - [CODE[[[RSA PRIVATE KEY]]]] - [[RSA]] [[秘密鍵]] ([[PKCS #1]]) [SRC[>>30]]
 - [CODE[[[RSA PUBLIC KEY]]]] - [[RSA]] [[公開鍵]] ([[PKCS #1]]) [SRC[>>30]]
 - [CODE[[[DSA PRIVATE KEY]]]] - [[DSA]] [[秘密鍵]] [SRC[>>35]]
@@ -126,9 +119,25 @@
 - [CODE[[[SSH2 ENCRYPTED PRIVATE KEY]]]] - [[SSH]]
 ]FIG]
 
+* 処理
+
+[52] [CODE[[[.pem]]]] ファイルとして構文解析して [[Base64]] [[符号化]]されたバイナリーデータを取り出した後の処理方法は、
+利用する場面によって異なります。
+
+[54] [CODE[[[.pem]]]] ファイルの内容が意図したものと異なる場合もあります。
+[[EB]] の記述が想定と異なる場合もありますし、 [[EB]] の記述と実際の内容が異なる場合もあります。
+[CODE[[[.pem]]]] ファイルを送信したプロトコルにおける [[MIME型]]と内容が異なる場合もあります。
+こうした場合にどう処理するべきなのか、どう処理されているのかは定かではありません。
+
+[53] [[Webブラウザー]]で[[ダウンロード]]した場合の処理は、[[証明書ダウンロード]]を参照。
+
 * MIME 型
 
 [41] [[MIME型]]としては [CODE(MIME)@en[[[application/x-pem-file]]]] が使われます。
+
+[55] 内容により異なる [[MIME型]]が使われることもあります。
+
+;; [56] [[証明書ダウンロード]]も参照。
 
 * 拡張子
 
@@ -138,6 +147,45 @@
 などが用いられることもあります。
 これらは [CODE[[[.pem]]]] 形式でない元のバイナリーファイルでも使われることがあり、
 [[拡張子]]だけではファイル形式を判定できません。
+
+* 歴史
+
+[8] 本ファイル形式名の [[PEM]] は[[電子メール]]における[[暗号化]]の仕様を指すとされていますが、
+[[PEM]] に (少なくても [[RFC]] として出版されたものには) 
+本ファイル形式の規定はなく、なぜ [CODE[[[.pem]]]] ファイルと呼ばれているかは定かではありません。
+本ファイル形式は [[PEM]] の影響を受けているようですが、 [[PEM]]
+で規定されるメッセージ形式とは明らかに違いがあります。
+
+[9] [[PEM]] の実装が使っていたファイル形式なのかもしれません。あるいは [[PEM]]
+の記憶が濃い時代に [[PEM]] 風のファイル形式として名付けられたのかもしれません。
+(現在でいう) [[Base64]] のことを [[PEM]] と呼んでいたのかもしれません。
+
+;; [10] [[MIME]] の一機能に過ぎない [[Base64]] のことを「[[MIME]]」と呼ぶ風習がかつて一部にありました。
+[[MIME]] より前の時代に [[Base64]] のことを「[[PEM]]」と呼んでいても不思議ではありません。
+
+[50] 本ファイル形式を明確に規定する仕様書として現時点で唯一発見できているのが、
+[[証明書ダウンロード]]です。
+
+[46] [[証明書ダウンロード]]仕様書 [SRC[>>42]] の最も初期と思われる1996年版 [SRC[>>45]]
+の定義は、 [[PEM]] という語は登場しませんが、当時の [[PEM]] の [[RFC]] である
+[[RFC 1113]] の [[Base64]] [SRC[>>47]] を参照しています。
+
+;; [48] ちなみに [[Base64]] という名称も [[PEM]] の [[RFC]] には登場していません。
+[[RFC]] としての初出は [[MIME]] ですが、それ以前から [[Base64]] という呼称があったのかは不明です。
+いずれにしても1996年には既に [[MIME]] と [[Base64]] は有名になっていました。
+[[Base64]] と呼びつつも [[PEM]] の [[RFC]] を参照しているのは興味深いところです。
+
+;; [49] [[証明書ダウンロード]]仕様書が最初の定義で [[Netscape]] 社が本形式を考案したのか、
+より以前からあった形式を [[Netscape]] が実装したのかは不明です。
+
+[22] [[PEM]] 版 [[Base64]] は、 [[RFC 1421]] [SRC[>>21]] が最新の定義です。
+(ただしこの [[RFC]] は既に [[HISTORIC]] となっています。)
+
+[REFS[
+- [45] [CITE[Netscape Certificate Download Specification]] ([TIME[2015-04-12 12:43:10 +09:00]] 版) <http://web.archive.org/web/19970709163955/http://home.netscape.com/eng/security/downloadcert.html>
+- [47] [CITE@en[RFC 1113 - Privacy enhancement for Internet electronic mail: Part I - message encipherment and authentication procedures]] ([TIME[2015-03-22 21:14:51 +09:00]] 版) <http://tools.ietf.org/html/rfc1113#section-4.3>
+- [21] [CITE@en[RFC 1421 - Privacy Enhancement for Internet Electronic Mail: Part I: Message Encryption and Authentication Procedures]] ([TIME[2015-02-22 14:28:36 +09:00]] 版) <https://tools.ietf.org/html/rfc1421#section-4.3.2.4>
+]REFS]
 
 * 関連
 
