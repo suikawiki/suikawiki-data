@@ -19,6 +19,148 @@
 
 * 歴史
 
+[53]
+[CODE(CSS)@en[@[[charset]]]] [[規則]]を書ける場所にはいくつかの制約があります。
+また、[[利用者エージェント]]は[[スタイル・シート]]の先頭以外にある
+[CODE(CSS)@en[@[[charset]]]] [[規則]]を[[無視]]しなければならないことになっています。
+ですが、 [[Firefox]] 2 も [[Opera]] 9 も、
+少なくても [[CSSOM]] に [CODE(CSS)@en[@[[charset]]]]
+に対応する [CODE(DOMi)@en[[[CSSRule]]]] を追加するかに関しては、
+ほとんどの制約をチェックしていないようです。
+
+;; ほとんどの制約は [[charset]] の自動検出を容易にするためのもので、
+[[CSSOM]] の構築にはそもそも関係ないからでしょう。
+
+;; [[WinIE 6]] はまったく [CODE(CSS)@en[@[[charset]]]]
+を [[CSSOM]] に反映させません。 [CODE(DOMa)@en[[[cssText]]]]
+にも出てきません。
+
+[54]
+
+- 適切な例 <http://suika.fam.cx/gate/2007/cssom/viewer?c=%40charset%20%22US-ASCII%22%3B;h=;p=n;x=style-element>
+- Preferred MIME name でない例
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%40charset%20%22ascii%22%3B;h=;p=n;x=style-element>
+- IANA 名でない例
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%40charset%20%22x-sjis%22%3B;h=;p=n;x=style-element>
+- 構文的にも IANA 名でない例
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%40charset%20%22%E3%82%B7%E3%83%95%E3%83%88%E7%AC%A6%E5%8F%B7%E5%8C%96%E8%A1%A8%E7%8F%BE%22%3B;h=;p=n;x=style-element>
+- [CODE(char)[[[U+0020]]]] が2つ
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%40charset%20%20%22US-ASCII%22%3B;h=;p=n;x=style-element>
+- [CODE(char)[[[U+0020]]]] の代わりに[[改行]]
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%40charset%0A%22US-ASCII%22%3B;h=;p=n;x=style-element>
+- [CODE(CSS)[[[;]]]] の前に [CODE(char)[[[U+0020]]]]
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%40charset%20%22US-ASCII%22%20%3B;h=;p=n;x=style-element>
+- [CODE(CSS)[[[;]]]] の前に[[注釈]]
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%40charset%20%22US-ASCII%22%2F**%2F%3B;h=;p=n;x=style-element>
+- [CODE(CSS)[[["]]]] の代わりに [CODE(CSS)[[[']]]]
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%40charset%20'US-ASCII'%3B;h=;p=n;x=style-element>
+- [[charset]] 名に [[escape]]
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%40charset%20%22US-%5C41SCII%22%3B;h=;p=n;x=style-element>
+- [CODE(CSS)@en[@[[charset]]]] の部分に [[escape]]
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%40ch%5C61%20rset%20%22US-ASCII%22%3B;h=;p=n;x=style-element>
+- [CODE(CSS)@en[@[[charset]]]] が[[大文字]]
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%40CHARSET%20%22US-ASCII%22%3B;h=;p=n;x=style-element>
+- [CODE(CSS)@en[@[[charset]]]] の前に[[空白]]
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%20%40charset%20%22US-ASCII%22%3B;h=;p=n;x=style-element>
+- [CODE(CSS)@en[@[[charset]]]] の前に[[改行]]
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%0D%0A%40charset%20%22US-ASCII%22%2F**%2F%3B;h=;p=n;x=style-element>
+- [CODE(CSS)@en[@[[charset]]]] の前に[[注釈]]
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%2F**%2F%40charset%20%22US-ASCII%22%2F**%2F%3B;h=;p=n;x=style-element>
+
+[55]
+
+- [CODE(CSS)@en[@[[charset]]]] の前に [CODE(CSS)[[[CDO]]]]
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%3C!--%40charset%20%22US-ASCII%22%3B%0A;h=%3Cp%3EXXXXXX;p=n;x=style-element>
+- [CODE(CSS)@en[@[[charset]]]] の後に [CODE(CSS)[[[CDC]]]]
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=--%3E%40charset%20%22US-ASCII%22%3B;h=%3Cp%3EXXXXXX;p=n;x=style-element>
+([[名無しさん]])
+
+[56]
+[CODE(CSS)@en[[[;]]]] がない:
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%40charset%20%22US-ASCII%22;h=%3Cp%3EXXXXXX;p=n;x=style-element>
+は [[Firefox]] 2 でも [[Opera]] でも無視して空の[[スタイル・シート]]と同じに扱うようです。
+([[名無しさん]])
+
+[57]
+[CODE(char)[[[U+0020]]]] なし:
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%40charset%22US-ASCII%22%3B;h=%3Cp%3EXXXXXX;p=n;x=style-element>
+でも [[Firefox]] 2、[[Opera]] 9 とも [[CSSOM]]
+に現れます。
+([[名無しさん]])
+
+[58]
+[CODE(CSS)@en[@[[charset]]]] の前に未知の [[@規則]]
+- <http://suika.fam.cx/gate/2007/cssom/viewer?c=%40a%3B%40charset%22US-ASCII%22%3B;h=%3Cp%3EXXXXXX;p=n;x=style-element>
+- <http://suika.fam.cx/gate/2007/cssom/viewer?c=%40a%7B%7D%40charset%22US-ASCII%22%3B;h=%3Cp%3EXXXXXX;p=n;x=style-element>
+
+[[Firefox]] 2、[[Opera]] 9 とも [[CSSOM]] 上に
+[CODE(CSS)@en[@[[charset]]]] が ([[Opera]] 9 では
+[CODE(CSS)@en[@a]] も) 現れます。
+([[名無しさん]])
+
+[59]
+以下のように [CODE(CSS)@en[@[[charset]]]] を[[無視]]するべき場合に、
+[[Firefox]] 2 は [[CSSOM]] 上に [CODE(DOMi)@en[[[CSSCharsetRule]]]]
+を追加しませんが、 [[Opera]] 9 はします:
+- [CODE(CSS)@en[@[[media]]]] がある
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%40media%20all%7B%7D%40charset%20%22US-ASCII%22%3B%0D%0A;h=%3Cp%3EXXXXXX;p=n;x=style-element>
+- [CODE(CSS)@en[@[[charset]]]] がある
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%40charset%20%22US-ASCII%22%3B%40charset%20%22US-ASCII%22%3B;h=%3Cp%3EXXXXXX;p=n;x=style-element>
+- [CODE(CSS)@en[@[[namespace]]]] がある
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%40namespace%20''%3B%40charset%20%22US-ASCII%22%3B;h=%3Cp%3EXXXXXX;p=n;x=style-element>
+- [CODE(CSS)@en[@[[import]]]] がある
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%40import%20'style'%3B%40charset%20%22US-ASCII%22%3B;h=%3Cp%3EXXXXXX;p=n;x=style-element>
+- [[規則集合]]がある
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=p%7B%7D%40charset%20%22US-ASCII%22%3B;h=%3Cp%3EXXXXXX;p=n;x=style-element>
+
+([[名無しさん]])
+
+[60]
+
+- <http://suika.fam.cx/gate/2007/cssom/viewer?c=%40charset%3B%40charset%20%22US-ASCII%22%3B;h=%3Cp%3EXXXXXX;p=n;x=style-element>
+
+([[CSSOM]] 的に)
+[[Firefox]] は全部無視、 [[Opera]] 9 は1つ目だけ無視。
+
+([[名無しさん]])
+
+[61]
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%40charset%20%22%0D%0A%40charset%20%22US-ASCII%22%3B;h=%3Cp%3EXXXXXX;p=n;x=style-element>
+
+([[CSSOM]] 的に) [[Firefox]] 2 も [[Opera]] 9 も全部無視。
+([[名無しさん]])
+
+[62]
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%40charset%20%22%0A%3B%40charset%20%22US-ASCII%22%3B;h=%3Cp%3EXXXXXX;p=n;x=style-element>
+
+([[CSSOM]] 的に)
+[[Firefox]] 2 も [[Opera]] 9 も、1つ目''だけ''無視。
+([[名無しさん]])
+
+[63]
+[[charset]] 名の閉じ[[引用符]]がない:
+- <http://suika.fam.cx/gate/2007/cssom/viewer?c=%40charset%20%22xxxx;h=%3Cp%3EXXXXXX;p=n;x=style-element>
+- <http://suika.fam.cx/gate/2007/cssom/viewer?c=%40charset%20%22US-ASCII%0A%3B%0A;h=%3Cp%3EXXXXXX;p=n;x=style-element>
+
+[[Firefox]] 2、[[Opera]] 9 のどちらも、全部無視。
+([[名無しさん]])
+
+[64]
+>>54 
+[CODE(CSS)@en[@[[charset]]]] の部分に [[escape]]
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%40ch%5C61%20rset%20%22US-ASCII%22%3B;h=;p=n;x=style-element>
+は、 [[Opera]] 9 では [CODE(DOM&#169;)@en[[[UNKNOWN_RULE]]]]
+扱いでした。
+
+;; そもそも [[Opera]] 9 は [CODE(CSS)@en[[[ATKEYWORD]]]]
+中の [[escape]] に ([CODE(CSS)[[[\0]]]] も含めて) 対応していませんでした。
+
+([[名無しさん]])
+
+[65]
+>>59 壊れた [CODE(CSS)@en[@[[namespace]]]] が前にある
+<http://suika.fam.cx/gate/2007/cssom/viewer?c=%40namespace%3B%40charset%20%22US-ASCII%22%3B;h=%3Cp%3EXXXXXX;p=n;x=style-element>
+
 [REFS[
 -[1] [CITE[IRC logs: freenode / #whatwg / 20121108]]
 ( ([TIME[2012-11-25 23:14:53 +09:00]] 版))
