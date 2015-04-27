@@ -1,8 +1,12 @@
+[44] [DFN[[CODE(JS)@en[[[document.domain]]]]]] [[IDL属性]]は、
+[[実効スクリプト起源]]の[[ホスト名]]部分を表すものです。
+
 * 仕様書
 
 [REFS[
 - [17] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-04-25 04:40:19 +09:00]] 版) <https://html.spec.whatwg.org/#dom-document-domain>
 -- [20] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-04-25 04:40:19 +09:00]] 版) <https://html.spec.whatwg.org/#the-document's-domain>
+- [47] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-04-25 04:40:19 +09:00]] 版) <https://html.spec.whatwg.org/#sandboxed-document.domain-browsing-context-flag>
 ]REFS]
 
 * 意味
@@ -48,6 +52,61 @@
 
 [19] [CODE(JS)@en[[[document.domain]]]] [[IDL属性]]には、
 [CODE(DOMi)@en[[[DOMString]]]] を設定できます [SRC[>>17]]。
+
+[28] [CODE(JS)@en[[[document.domain]]]] [[IDL属性]]に値を設定した際は、
+次の場合に [CODE(DOMe)@en[[[SecurityError]]]] [[例外]]を投げなければ[['''なりません''']]
+[SRC[>>17]]。
+[FIG(list)[
+- [29] [[文書]]が[[閲覧文脈]]を持たない場合
+- [30] [[文書]]の [[active sandboxing flag set]] の 
+[DFN[[RUBYB[[[砂箱化[CODE(JS)@en[document.domain]]閲覧文脈フラグ]]]@en[[[sandboxed [CODE(JS)@en[document.domain]] browsing context flag]]]]]] [SRC[>>47]] が設定されている場合
+- [31] 現在値が [[IPv4アドレス]]か [[IPv6アドレス]]の場合 (ただし新しい値が現在値と完全に同じ場合を除く)
+- [34] 新しい値に [[domain to ASCII]] を適用すると失敗する場合
+- [35] 正規化した新しい値と現在値が異なる場合で、
+-- [32] [CODE[.]] の後に正規化した新しい値を連結したものが、現在値に末尾一致しない場合
+-- [33] 正規化した新しい値が [[PSL]] に含まれているか、 [CODE[.]] の後に正規化した新しい値を連結したものが
+[[PSL]] のいずれかに末尾一致する場合
+]FIG]
+
+[38] ここでいう正規化とは、 [[domain to ASCII]] 演算をいいます [SRC[>>17]]。
+なお [[PSL]] との比較でも、 [[PSL]] の接尾辞に [[domain to ASCII]]
+を適用して [[ASCII大文字・小文字不区別]]にします [SRC[>>17]]。
+
+;; [36] [[IPアドレス]]は、正規化前の新しい値が完全に現在値と一致していないと
+[CODE(DOMe)@en[[[SecurityError]]]] になります。
+
+;; [37] >>32 の制限より、 [CODE(JS)@en[[[document.domain]]]] を何度も新しい値に変えていく場合は、
+どんどん短くしていかなければなりません。 (そしていつか変えれなくなります。)
+
+[39] [[例外]]を投げなかった場合には、[[ストレージミューテックス]]を解放してから、
+正規化された新しい値を [CODE(JS)@en[[[document.domain]]]] [[IDL属性]]の新しい値とし、
+[[実効スクリプト起源]]も更新しなければ[['''なりません''']] [SRC[>>17]]。
+
+[40] [[実効スクリプト起源]]は、[[別名]]であれば参照先の値を複製して参照で無くした上で、
+[[ホスト]]部分を正規化された新しい値に、
+[[ポート]]部分を「手動上書き」値に設定します。
+ただし新しい値が[[空文字列]]の場合 (= [[実効スクリプト起源]]が[[三項組]]でない場合)
+には、参照で無くすだけで済みます。 [SRC[>>17]]
+
+;; [[URL scheme]] 部は変更されません。
+
+[41] ここで「[DFN[[RUBYB[手動上書き]@en[manual override]]]]」
+は、[[起源の比較]]において「手動上書き」と同じで、
+それ以外のどの値とも同じでないような値です [SRC[>>17]]。
+
+;; [42] ですから、 [CODE(JS)@en[document.domain = document.domain]] と同じ値を設定すると、
+元の[[実効スクリプト起源]]とは異なる[[起源]]になりますから、元の[[実効スクリプト起源]]の別の[[文書]]にはアクセスできなくなります。
+
+;; [43] 「手動上書き」値は[[直列化]]できませんが、
+[[実効スクリプト起源]]が[[直列化]]されることは無いはずなので、問題ありません。
+
+* 関連
+
+[45] [[実効スクリプト起源]]は、 [CODE(JS)@en[[[document.domain]]]]
+に相当する仕様書上の概念です。
+
+[46] [[関連類似起源閲覧文脈の単位]]は、 [CODE(JS)@en[[[document.domain]]]]
+の用法を考慮した[[閲覧文脈]]群の単位です。
 
 * 歴史
 
