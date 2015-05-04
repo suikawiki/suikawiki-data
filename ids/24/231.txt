@@ -11,6 +11,7 @@
 - [1] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-04-25 04:40:19 +09:00]] 版) <https://html.spec.whatwg.org/#dom-history-go>
 - [12] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-04-25 04:40:19 +09:00]] 版) <https://html.spec.whatwg.org/#dom-history-back>
 - [13] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-04-25 04:40:19 +09:00]] 版) <https://html.spec.whatwg.org/#dom-history-forward>
+- [21] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-04-25 04:40:19 +09:00]] 版) <https://html.spec.whatwg.org/#traverse-the-history-by-a-delta>
 ]REFS]
 
 * 処理
@@ -25,7 +26,7 @@
 [CODE(DOMe)@en[[[SecurityError]]]] [[例外]]を投げます。
 = [5] そうでなければ、
 == [6] 第1引数が 0 なら、 [CODE(JS)@en[[[location.reload]]]] [[メソッド]]のように処理します。
-== [7] それ以外なら、第1引数の値を⊿として[[履歴を探索]]します。
+== [7] それ以外なら、第1引数の値を⊿として [[traverse the history by a delta]] を実行します。
 ]FIG]
 
 [14] [CODE(DOMi)@en[[[History]]]] [[インターフェイス]]の 
@@ -35,7 +36,7 @@
 [FIG(steps)[
 = [15] [[文脈オブジェクト]]の関連付けられた[[文書]]が[[完全に活性]]でなければ、
 [CODE(DOMe)@en[[[SecurityError]]]] [[例外]]を投げます。
-= [16] そうでなければ、⊿ = -1 として[[履歴を探索]]します。
+= [16] そうでなければ、⊿ = -1 として [[traverse the history by a delta]] を実行します。
 ]FIG]
 
 [17] [CODE(DOMi)@en[[[History]]]] [[インターフェイス]]の 
@@ -45,7 +46,39 @@
 [FIG(steps)[
 = [18] [[文脈オブジェクト]]の関連付けられた[[文書]]が[[完全に活性]]でなければ、
 [CODE(DOMe)@en[[[SecurityError]]]] [[例外]]を投げます。
-= [19] そうでなければ、⊿ = +1 として[[履歴を探索]]します。
+= [19] そうでなければ、⊿ = +1 として [[traverse the history by a delta]] を実行します。
+]FIG]
+
+[35] [[利用者インターフェイス]]から[[利用者]]が履歴上の移動を指示したら、
+[[traverse the history by a delta]] を適切な ⊿ の値で実行しなければ[['''なりません''']]
+[SRC[>>21]]。
+
+;; [36] 多くの [[Webブラウザー]]には[[メニューバー]]等で「[DFN[[[戻る]]]]」
+や「[DFN[[[進む]]]]」の機能が実装されています。直前や直後だけでなく、
+[[結合セッション履歴]]上の離れた位置に移動できるものもあります。
+
+[22] [DFN[traverse the history by a delta]] は、[RUBYB[差分]@en[delta]] ⊿
+について処理を行う[[タスク]]を当該[[最上位閲覧文脈]]の[[セッション履歴探索キュー]]の末尾に追加することをいいます [SRC[>>21]]。
+
+[FIG(steps)[
+= [23] [[結合セッション履歴]]において[[現在エントリー]]の索引に ⊿ を加えた値が
+0 [[未満]]か[[エントリー]]数[[以上]]となる時は、ここで停止します。
+= [24] [[結合セッション履歴]]において[[現在エントリー]]の索引に ⊿ を加えた値が索引となる[[セッション履歴エントリー]]を得ます。
+= [25] その[[セッション履歴エントリー]]の[[閲覧文脈]]を得ます。
+= [26] その[[閲覧文脈]]の[[活性文書]]の [[unload a document]] を現在実行中なら、
+ここで停止します。
+= [27] その[[閲覧文脈]]の[[活性文書]]の[[イベントループ]]において、
+[[履歴探索タスク源]]で次のような[[タスク]]を[[タスクキュー]]に入れます。
+== [28] その[[閲覧文脈]]を [VAR[[[navigate]] する[[閲覧文脈]]]]とする [[navigate]]
+が実行中で [VAR[[[mature]]]] フラグが設定されていないなら、その [[navigate]]
+を取り消します。
+== [29] その[[閲覧文脈]]の[[活性文書]]が[[セッション履歴エントリー]]の[[文書]]と同じ[[文書]]でなければ、
+=== [30] [[全画面を完全に終了]]します。
+=== [31] その[[閲覧文脈]]の[[活性文書]]の [[prompt to unload a document]] を実行します。
+=== [32] [[refused to allow the document to be unloaded]] なら、停止します。
+=== [33] その[[閲覧文脈]]の[[活性文書]]の [[unload a document]] を実行します。
+[VAR[recycle]] は[[偽]]とします。
+== [34] その[[閲覧文脈]]において、[[セッション履歴エントリー]]へと[[履歴を探索]]します。
 ]FIG]
 
 * 関連
@@ -67,7 +100,3 @@
 <http://krijnhoetmer.nl/irc-logs/whatwg/20130923>
 
 * メモ
-
-[11] [CITE[history.back()の入力データ保持について #HTML - Qiita]]
-( ([TIME[2013-03-13 01:44:48 +09:00]] 版))
-<http://qiita.com/items/c2de591b4eaff59d3e07>
