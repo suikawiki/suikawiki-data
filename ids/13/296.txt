@@ -4,6 +4,63 @@
 - [6] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-04-25 04:40:19 +09:00]] 版) <https://html.spec.whatwg.org/#prompt-to-unload-a-document>
 ]REFS]
 
+* 処理
+
+[7] [DFN[[[prompt to unload a document]]]] は、次のようにしなければ[['''なりません''']]
+[SRC[>>6]]。
+[FIG(steps)[
+= [[文書]]の[[イベントループ]]の [[termination nesting level]] を一度[[インクリメント]]します。
+= [[文書]]の [[ignore-opens-during-unload counter]] を一度[[インクリメント]]します。
+= [[イベント]]を[[発火]]します。
+[FIG(list members short)[
+[FIGCAPTION[
+[[イベント]]
+]FIGCAPTION]
+:[[インターフェイス]]:[CODE(DOMi)@en[[[BeforeUnloadEvent]]]]
+:[[イベント名]]:[CODE(DOMe)@en[[[beforeunload]]]]
+:[[trusted]]:[[真]]
+:[[bubbles]]:[[偽]]
+:[[取り消し可能]]:[[真]]
+:[[対象]]:[[文書]]の [CODE(DOMi)@en[[[Window]]]]
+]FIG]
+= [[文書]]の[[イベントループ]]の [[termination nesting level]] を一度[[デクリメント]]します。
+= [[ストレージミューテックス]]を解放します。
+= 先の[[イベント]]の[[発火]]でいずれかの[[イベントリスナー]]が実行されていたらなら、
+[[文書]]の [[''salvageable'']] を[[偽]]に設定します。
+= 先の[[イベント]]オブジェクトの [CODE(DOMa)@en[[[returnValue]]]]
+が[[空文字列]]以外であるか、先の[[イベント]]が[[取り消し]]されていたなら、
+[[利用者]]に対して unload を望むか確認する[['''べきです''']]。
+== この確認時に、 [CODE(DOMa)@en[[[returnValue]]]] の値、またはその先頭 (例えば1024文字分)
+を示して構いません。
+== [[利用者]]の応答があるまで、 [[pause]] します。
+== [[利用者]]が unload を望まないと応答したら、
+[DFN[[[refused to allow the document to be unloaded]]]] フラグを設定します。
+= これが再帰呼び出しでないなら、
+== [[文書]]の[[子孫閲覧文脈のリスト]]の各[[閲覧文脈]]について、
+=== [[閲覧文脈]]の[[活性文書]]について [[prompt to unload a document]] を再帰的に呼び出します。
+=== その結果が [[refused to allow the document to be unloaded]] なら、
+[[refused to allow the document to be unloaded]] フラグを設定し、
+各[[閲覧文脈]]についての処理を終えて次に進みます。
+=== [[閲覧文脈]]の[[活性文書]]の [[''salvageable'']] が[[偽]]なら、
+[[文書]]の [[''salvageable'']] も[[偽]]に設定します。
+= [[文書]]の [[ignore-opens-during-unload counter]] を一度[[デクリメント]]します。
+= [[refused to allow the document to be unloaded]] かどうかを返します。
+]FIG]
+
+[8] [[prompt to unload a document]] は [[navigate]] から呼び出されます。
+
+;; [10] [[素片識別子へのスクロール]]しかしない場合は呼び出されませんが、
+[[fetch]] を行う場合などは (最終的に[[ダウンロード]]などに至るとしても、
+それが決まる前に) 呼び出されます。詳しくは [[navigate]] を参照。
+
+[9] [[prompt to unload a document]] の実行中は、 [[navigate]] は何もしません。
+つまり [CODE(DOMe)@en[[[beforeunload]]]] [[イベント]]内ではページ遷移の開始が抑制されます。
+
+;; [[navigate]] を参照。
+
+[11] [[prompt to unload a document]] は ⊿ を指定した[[履歴の探索]]や、
+[CODE(JS)@en[[[window.open]]]] や、[[閲覧文脈を閉じる]]際にも呼び出されます。
+
 * 歴史
 
 [1] [CITE[Re: salvaging work while navigating away from a web app -- onunload="confirm('save before quitting?')]] ([[Ian Hickson]] 著, [TIME[2008-12-12 08:55:08 +09:00]] 版) <http://permalink.gmane.org/gmane.org.w3c.whatwg.discuss/17107>
