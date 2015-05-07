@@ -51,13 +51,13 @@
 ここで[[資源]]は次のものによって表されます。
 [FIG(list)[
 - [[URL]] ([[絶対URL]])
-- [[ソース]]
+- [[fetch]]
+- [[応答]]
 - 非文書として[[行内]]に表示するべきエラーページ
 - [[要求メソッド]]
 - [[フォーム提出アルゴリズム]]からの呼び出しか否か
 - [[fetch]] 時の [[referrer]]
 - その他 [[fetch]] に必要な引数
-- [[fetch]] やそこから得られた[[応答]]
 - [[AppCache]] から [[fetch]] したか否か
 - 失敗 ([[DNS]] エラー、 [CODE(HTTP)[[[4xx]]]] や [CODE(HTTP)[[[5xx]]]]
 など) か否か
@@ -101,6 +101,8 @@
 :[179] 再読込時にキャッシュを上書きするか:[[利用者]]による[[再読込]]時に指定されます。
 (その場合の動作は正確には規定されていません。)
 :[190] [VAR[[[reload override flag]]]]:[CODE(JS)@en[[[document.open]]]] により破棄された[[文書]]を再表示するために使います。
+:[195] [VAR[[[[CODE(HTMLe)@en[iframe]] [CODE(HTMLa)@en[srcdoc]]文書]]]]:
+[[[CODE(HTMLe)@en[iframe]] [CODE(HTMLa)@en[srcdoc]]文書]]かどうかを表します。
 ]FIG]
 
 [116] [VAR[[[navigate]] する[[閲覧文脈]]]]や[VAR[新しい[[資源]]]]はアルゴリズム内で変更されることがあります。
@@ -206,18 +208,10 @@
 
 [FIG(steps)[
 = [146] [VAR[新しい[[資源]]]]に[[応答]]が含まれているなら、
-[[process response]] を実行します [SRC[>>12]]。
-= [195] それ以外で、[VAR[新しい[[資源]]]]にソースが含まれているなら、
-== [197] 次の[[応答]]で [[process response]] を実行します。
-[FIG(list members)[
-[FIGCAPTION[
-[[応答]]
-]FIGCAPTION]
-:[[MIME型]]:[CODE(MIME)@en[[[text/html]]]]
-:本体 ([[文字列]]):[VAR[新しい[[資源]]]]のソース
-]FIG]
-== [198] [[process response body]] を実行します。
-== [199] [[process response end-of-file]] を実行します。
+== [201] [[process response]] を実行します [SRC[>>12]]。
+== [202] [VAR[新しい[[資源]]]]に [[fetch]] が含まれていないなら、
+=== [198] [[process response body]] を実行します。
+=== [199] [[process response end-of-file]] を実行します。
 = [147] それ以外で、 [VAR[新しい[[資源]]]]の [[URL]] の [[URL scheme]]
 が [CODE(URI)@en[[[javascript:]]]] なら、
 == [148] [CODE(URI)@en[[[javascript:]]]] [[URL]] の [[navigate]] を実行します [SRC[>>12]]。
@@ -255,8 +249,8 @@
 [VAR[gone async]] は[[真]]に設定します。 [SRC[>>12]]
 ]FIG]
 
-;; [196] ソースが指定されている場合 (>>195) は [[HTML Standard]] では明確な規定がありません。
-同期的に実行するべきか、[[非同期的]]に実行するべきか不明です。
+;; [196] ソースが指定されている場合 (>>202) は [[HTML Standard]] では明確な規定がありません。
+すべてを同期的に実行するべきか、[[非同期的]]に実行するべきか不明です。
 
 [156] [[process response]] は、次のようにしなければ[['''なりません''']]。
 [FIG(steps)[
@@ -437,7 +431,9 @@
 == [184] [[文書の番地]]を[VAR[新しい[[資源]]]]の [[URL]] に設定します [SRC[>>12]]。
 = [192] [VAR[[[reload override flag]]]] が[[真]]なら、
 == [193] [[文書]]の [[reload override flag]] を、[[真]]に設定します [SRC[>>191]]。
-== [194] [[文書]]の [[reload override buffer]] を、[VAR[新しい[[資源]]]]のソースに設定します [SRC[>>191]]。
+== [194] [[文書]]の [[reload override buffer]] を、[VAR[新しい[[資源]]]]の[[応答]]の[[本体]]の[[文字列]]に設定します [SRC[>>191]]。
+= [197] [VAR[[[[CODE(HTMLe)@en[iframe]] [CODE(HTMLa)@en[srcdoc]]文書]]]]が設定されていれば、
+[[文書]]を[[[CODE(HTMLe)@en[iframe]] [CODE(HTMLa)@en[srcdoc]]文書]]とします。
 = [106] これより後、[[スクリプト]]の実行や [[stop parsing]] よりも前に、
 (他のモードに移行 (>>33) したり[VAR[取り消し]]されたりしていなければ)
 [[update the session history with the new page]] (>>95) を実行します [SRC[>>12]]。
@@ -638,7 +634,7 @@
 [[セッション履歴エントリー]]
 ]FIGCAPTION]
 :[[URL]]:[[上書きURL]]か[VAR[新しい[[資源]]]]の [[URL]]
-:[[navigate]] の引数のソース:[VAR[新しい[[資源]]]]のソース (あれば)
+:[[navigate]] の引数の新しい[[資源]]の[[応答]]:[VAR[新しい[[資源]]]]の[[応答]] (あれば)
 :[[文書]]:[VAR[新しい[[文書]]]] [SRC[>>12]]
 :その他:関係する状態 [SRC[>>12]]
 ]FIG]
