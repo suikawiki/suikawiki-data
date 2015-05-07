@@ -7,13 +7,48 @@
 * 処理
 
 [62] [CODE(DOMi)@en[[[Document]]]] [[インターフェイス]]の
+[DFN[[CODE(DOMm)@en[[[write]]]]]] [[メソッド]]と
 [DFN[[CODE(DOMm)@en[[[writeln]]]]]] [[メソッド]]は、
-すべての[[引数]]と [CODE(char)[[[U+000A]]]] が順に
-[CODE(DOMm)@en[[[write]]]] [[メソッド]]に指定されたかのように処理しなければ[['''なりません''']]
+次のように処理しなければ[['''なりません''']]。
+
+[FIG(steps)[
+= [64] すべての[[引数]]を [CODE(IDL)@en[[[DOMString]]]] として解釈します [SRC[>>10]]。
+= [65] [[文書]]が [[XML文書]]なら、 [CODE(DOMe)@en[[[InvalidStateError]]]]
+[[例外]]を投げて停止します [SRC[>>10]]。
+= [66] [[文書]]が[[活性文書]]でなければ、停止します [SRC[>>10]]。
+= [67] [[文書]]の[[構文解析器]]が無いか、[[文書]]の[[構文解析器]]の[[挿入点]]が未定義なら、
+== [68] [[文書]]の [[ignore-opens-during-unload counter]] が[[正]]か、
+[[文書]]の [[ignore-destructive-writes counter]] が[[正]]なら、停止します [SRC[>>10]]。
+== [69] [CODE(JS)@en[[[document.open]]]] が[[引数]]無しで呼び出されたように処理します
 [SRC[>>10]]。
+== [70] [[refused to allow the document to be unloaded]] が返されたら、停止します [SRC[>>10]]。
+== [71] [[文書]]の[[構文解析器]]の[[入力ストリーム]]の末尾を[[挿入点]]とします [SRC[>>10]]。
+= [72] [[挿入点]]の直前に、すべての[[引数]]を順に挿入します [SRC[>>10]]。
+= [73] [CODE(JS)@en[[[document.writeln]]]] なら、 
+[[挿入点]]の直前に、[CODE[[[U+000A]]]] を挿入します [SRC[>>10]]。
+= [74] [[文書]]の [[reload override flag]] が設定されていれば、
+== [75] [[文書]]の [[reload override buffer]] の末尾に、すべての[[引数]]を順に挿入します
+[SRC[>>10]]。
+== [76] [CODE(JS)@en[[[document.writeln]]]] なら、 
+[[文書]]の [[reload override buffer]] の末尾に、[CODE(char)[[[U+000A]]]] を挿入します
+[SRC[>>10]]。
+= [77] [[pending parsing-blocking script]] がなければ、
+== [78] [[字句化器]]が[[挿入点]]に達するか、[[木構築段階]]が[[構文解析器]]を [[abort]]
+するまで、[[構文解析器]]を動作させます。
+([CODE(HTMLe)@en[[[script]]]] [[終了タグ]]があると、 [[abort]] することがあります。)
+[SRC[>>10]]
+]FIG]
+
+;; [63] [[文書]]が[[構文解析]]中なら、ここで[[構文解析器]]が再帰的に動作させられることがあります。
 
 [9] [[文書]]は [DFN[[[ignore-destructive-writes counter]]]] を持ちます。
 その初期値は0です。 [SRC[>>10]]
+
+;; [79] 実際の [[Webブラウザー]]は、 [[script nesting level]] が[[正]]なら
+([[スクリプト]]内からの [CODE(JS)@en[[[document.write]]]] 呼び出しなら)
+[[reload override buffer]] に追記しないようです。
+(そうしないと[[再読込]]後に [CODE(JS)@en[[[document.write]]]] された部分が二重になってしまいます。)
+[TIME[2015-05-07T03:21:43.200Z]]
 
 * 歴史
 
