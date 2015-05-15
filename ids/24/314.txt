@@ -7,17 +7,33 @@
 * クライアントの動作
 
 [2] [[クライアント]]は、[DFN[[RUBYB[WebSocket接続の確立]@en[Establish a WebSocket Connection]]]]で、
-次のようにします [SRC[>>1]]。
+次のようにしなければ[['''なりません''']] [SRC[>>1]]。
 
-[8] この手順は、入力として [[URL]] を受け取ります。
+[8] この手順は、入力として [[URL]] (必須)、[[起源]]、[[部分プロトコル]]群、
+プロトコル拡張を受け取ります。
 
-[7] この手順は、[DFN[[RUBYB[WebSocket接続失敗]@en[Fail the WebSocket Connection]]]] [SRC[>>1]]
-を返すことがあります。
+[10] [[Webブラウザー]]は、[[起源]]を指定しなければ[['''なりません''']]。
+これは接続を開いた元を表すものです。
+それ以外の[[クライアント]]は、[[起源]]を指定しても構いません。 [SRC[>>1]]
+
+[11] [[部分プロトコル]]群は、[[クライアント]]が通信したい[[部分プロトコル]]を優先順に指定したものです。
+各[[部分プロトコル]]は、 [CODE[[[,]]]] や [CODE(charname)@en[[[SPACE]]]]
+を除く[[ASCII印字可能文字]]の1文字以上の列で表さなければ[['''なりません''']]。
+同じ[[部分プロトコル]]を複数指定しては[['''なりません''']]。 [SRC[>>1]]
+
+[12] プロトコル拡張は、[[クライアント]]が利用したいプロトコル拡張を指定したものです [SRC[>>1]]。
+
+[7] この手順は、
+[DFN[[RUBYB[WebSocket接続確立]@en[The WebSocket Connection is Established]]]]か
+[DFN[[RUBYB[WebSocket接続失敗]@en[Fail the WebSocket Connection]]]] [SRC[>>1]]
+を返します。
 
 [FIG(steps)[
 = 入力として与えられた [[URL]] を [CODE(URI)@en[[[ws:]]]]/[CODE(URI)@en[[[wss:]]]] [[URL]]
 として解釈し、[[ホスト]]、[[ポート]]、[[資源名]]、[[「保安」]]フラグを得ます。
 = 前項が失敗したら、[[WebSocket接続失敗]]を返し、停止します。
+= 新しい [[WebSocket接続]]を作成します。
+= [[WebSocket接続]]の状態を、 [CODE[[[CONNECTING]]]] に設定します。
 = 他の接続を待ちます (>>3)。
 = [[プロキシ]]を使うかどうかを決定します。[[ホスト]]、[[ポート]]、[[資源名]]、[[「保安」]]フラグを使います。
 = [[プロキシ]]を使う場合は、
@@ -27,8 +43,66 @@
 = [[TCP接続]]を開くのに失敗したり、[[プロキシ]]がエラーを返したりした時は、
 [[WebSocket接続失敗]]を返し、停止します。
 = [[「保安」]]フラグが設定されていれば、
-== [[RFC 2818]] [[HTTPS]] の方法で [[TLS handshake]] を行います。[[SNI]] を使わなければ[['''なりません''']]。
+== [[RFC 2818]] [[HTTPS]] の方法で [[TLS handshake]] を行います。[[SNI]] を使います。
 == 失敗したら、[[WebSocket接続失敗]]を返し、停止します。
+= [[RFC 2616]] [[HTTP要求]]を送信します。
+[FIG(list members)[
+[FIGCAPTION[
+[[HTTP要求]]
+]FIGCAPTION]
+:[[要求メソッド]]:[CODE(HTTP)@en[[[GET]]]]
+:[[要求対象]]:[[資源名]]、または[[ホスト]]、[[ポート]]、[[資源名]]を使った [CODE(URI)@en[[[http:]]]]/[CODE(URI)@en[[[https:]]]] [[URL]] のいずれか
+:[[プロトコルの版]]:[[HTTP/1.1]] [[以上]]
+:[CODE(HTTP)@en[[[Host]]]]:[[ホスト]]と、[[既定のポート番号]]で無い場合、
+[CODE(HTTP)[[[:]]]] と[[ポート]]
+:[CODE(HTTP)@en[[[Upgrade]]]]:[CODE(HTTP)@en[[[websocket]]]]
+:[CODE(HTTP)@en[[[Connection]]]]:[CODE(HTTP)@en[[[Upgrade]]]]
+:[CODE(HTTP)@en[[[Sec-WebSocket-Key]]]]:[[接続]]毎に[[無作為]]に選択した
+16バイトの [[nonce]] を [[RFC 4648]] [[Base64]] 符号化したもの
+:[CODE(HTTP)@en[[[Origin]]]]:([[起源]]の指定がある場合のみ) [[起源]]の[[ASCII直列化]]
+:[CODE(HTTP)@en[[[Sec-WebSocket-Version]]]]:[CODE(HTTP)[[[13]]]]
+:[CODE(HTTP)@en[[[Sec-WebSocket-Protocol]]]]:(部分プロトコル群の指定がある場合のみ)
+1つ[[以上]]の[[部分プロトコル]]の[[リスト (HTTP)]] ([CODE(HTTP)[#]])。
+:[CODE(HTTP)@en[[[Sec-WebSocket-Extensions]]]]:(拡張の指定がある場合のみ)
+プロトコル拡張の指定。
+:その他:[[クッキー]]、[[HTTP認証]]その他の[[HTTPヘッダー]]を含めて構いません。
+]FIG]
+= [[応答]]を待ちます。
+= [[応答]]の[[状態符号]]が [CODE(HTTP)[[[101]]]] 以外なら、
+== [[HTTP]] に従い処理します。例えば [CODE(HTTP)[[[401]]]] なら[[HTTP認証]]したり、
+[CODE(HTTP)[[[3xx]]]] なら[[HTTPリダイレクト]]したりできます。
+== ここで停止します。
+= [[応答]]の [CODE(HTTP)@en[[[Upgrade:]]]] [[ヘッダー]]が無いか、
+[CODE(HTTP)@en[[[websocket]]]] ([[ASCII大文字・小文字不区別]]) が含まれていないなら、
+[[WebSocket接続失敗]]を返し、停止します。
+= [[応答]]の [CODE(HTTP)@en[[[Connection:]]]] [[ヘッダー]]が無いか、
+[CODE(HTTP)@en[[[Upgrade]]]] ([[ASCII大文字・小文字不区別]]) が含まれていないなら、
+[[WebSocket接続失敗]]を返し、停止します。
+= [[応答]]の [CODE(HTTP)@en[[[Sec-WebSocket-Accept:]]]] [[ヘッダー]]が無いか、
+値が[[要求]]の [CODE(HTTP)@en[[[Sec-WebSocket-Key]]]] の値に
+[DFN[[CODE[[[258EAFA5-E914-47DA-95CA-C5AB0DC85B11]]]]]]
+を連結した値の [[SHA-1]] を [[Base64]] 符号化したものでなければ
+(前後に[[空白]]があっても構いません。)、
+[[WebSocket接続失敗]]を返し、停止します。
+= [[応答]]の [CODE(HTTP)@en[[[Sec-WebSocket-Extensions:]]]] 
+[[ヘッダー]]に[[要求]]で指定しなかった拡張が指定されていれば、
+[[WebSocket接続失敗]]を返し、停止します。
+= [[応答]]の [CODE(HTTP)@en[[[Sec-WebSocket-Protocol:]]]] 
+[[ヘッダー]]に[[要求]]で指定しなかった[[部分プロトコル]]が指定されていれば、
+[[WebSocket接続失敗]]を返し、停止します。
+=
+@@ 仕様書 4.2.2 の要件を満たさなければ、
+[[WebSocket接続失敗]]を返し、停止します。
+= [[WebSocket接続]]の状態を、 [CODE[[[OPEN]]]] に設定します。
+= [DFN[[RUBYB[利用中拡張群]@en[Extensions In Use]]]]を、[[応答]]の
+[CODE(HTTP)@en[[[Sec-WebSocket-Extensions:]]]] [[ヘッダー]]の値
+(なければ [[null]]) に設定します。
+= [DFN[[RUBYB[利用中部分プロトコル]@en[Subprotocol In Use]]]]を、[[応答]]の
+[CODE(HTTP)@en[[[Sec-WebSocket-Protocol:]]]] [[ヘッダー]]の値
+(なければ [[null]]) に設定します。
+= [[応答]]の [CODE(HTTP)@en[[[Set-Cookie:]]]] [[ヘッダー]]で[[クッキー]]の設定が指示されていれば、
+これを[DFN[[[Cookies Set During the Server's Opening Handshake]]]]とします。
+= [[WebSocket接続確立]]を返します。
 ]FIG]
 
 [3] 他の接続を待つ場合は、次のようにしなければ[['''なりません''']] [SRC[>>1]]。
@@ -40,7 +114,8 @@
 = それ以外の場合、
 == [VAR[host]] を、[[IPアドレス]]に設定します。
 == [VAR[n]] を、1 に設定します。
-= 同じ [VAR[host]] と[[ポート]]への[[WebSocket接続]]があるか調べます。
+= 同じ [VAR[host]] と[[ポート]]への状態が [CODE[[[CONNECTING]]]]
+である[[WebSocket接続]]があるか調べます。
 = その数が [VAR[n]] [[未満]]となるまで、待ちます。
 ]FIG]
 
@@ -55,3 +130,9 @@
 [[SOCKS5]]、[[HTTPS]] 用、[[HTTP]] 用の優先順で[[プロキシ]]を選択することが[RUBYB[推奨]@en[encourage]]されています [SRC[>>1]]。
 
 [9] [[TLS]] を使う場合 [[SNI]] が必須とされていますが、[[ホスト]]が [[IPアドレス]]で指定された時どうしなければならないのかは不明です。
+
+[14] [[要求対象]]は、直接接続なら[[資源名]]のみ、 [[プロキシ]]接続なら
+[[HTTP]] [[URL]] と思われますが、明記されていません。どちらでも良いということでしょうか
+(それは一般的な慣習とは異なります)。また [CODE(URI)@en[[[ws:]]]]/[CODE(URI)@en[[[wss:]]]]
+がそれぞれ [CODE(URI)@en[[[http:]]]]/[CODE(URI)@en[[[https:]]]] に変換されるものと思われますが、
+明記されていません。
