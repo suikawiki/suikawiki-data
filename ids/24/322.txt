@@ -20,6 +20,8 @@
 [[デバッグ]]などに有用かもしれません。[[クライアント]]はこれを[[末端利用者]]に示しては[['''なりません''']]。
 [SRC[>>1]]
 
+;; [22] この部分は「[DFN[[[close reason]]]]」[SRC[>>12]] と呼ばれています。
+
 * 文脈
 
 [10] 次の各項を参照。
@@ -29,6 +31,22 @@
 
 ;; [11] [[WebSocket接続の確立]]の途中での切断では、 [CODE[[[Close]]]]
 [[フレーム]]は使いません。
+
+* 状態符号
+
+[30] [DFN[[RUBYB[WebSocket接続閉じ符号]@en[The WebSocket Connection Close Code]]]]は、
+[[応用]]が最初に受信した [[[CODE[Close]]フレーム]]に含まれていた[[状態符号]]です。
+当該[[フレーム]]が[[状態符号]]を含まない時は、 [CODE[[[1005]]]] です。
+そのような[[フレーム]]が無いまま [[The WebSocket Connection is Closed]]
+となった場合は、 [CODE[[[1006]]]] です。 [SRC[>>12]]
+
+[31] [[サーバー]]と[[クライアント]]はそれぞれ[[状態符号]]を送ったり送らなかったりしますが、
+両者の認識する[[WebSocket接続閉じ符号]]は同じかもしれませんし、違うかもしれません。
+
+[32] [DFN[[RUBYB[WebSocket接続閉じ理由]@en[The WebSocket Connection Close Reason]]]]は、
+[[応用]]が最初に受信した [[[CODE[Close]]フレーム]]に含まれていた閉じる理由
+([[UTF-8]] として[[復号]]した[[文字列]]) です。そのようなものが無ければ、
+[[空文字列]]です。 [SRC[>>12]]
 
 * 処理
 
@@ -49,6 +67,31 @@
 直ちに閉じなければ[['''なりません''']]。[[クライアント]]は、
 [[サーバー]]が閉じるのを待つ[['''べき''']]ですが、いつでも (適当な[[タイムアウト]]時間後などに)
 閉じて構いません。 [SRC[>>1]]
+
+* 閉じ handshake
+
+[20] [DFN[[[Start the WebSocket Closing Handshake]]]] とは、
+次のようにしなければ[['''なりません''']] [SRC[>>12]]。
+[FIG(steps)[
+= [21] [[フレーム]]を送信します。
+[FIG(list members)[
+[FIGCAPTION[
+[[フレーム]]
+]FIGCAPTION]
+:[CODE[[[opcode]]]]:[CODE[[[Close]]]]
+:[[状態符号]]:指定された値
+:[[close reason]]:あれば、指定された値
+]FIG]
+= [24] [[WebSocket接続]]の状態を [CODE[[[CLOSING]]]] とします。
+= [23] [[[CODE[Close]]フレーム]]を受信し(てい)たら、
+[[WebSocket接続を閉じる]][['''べき''']]です。
+]FIG]
+
+[25] [[[CODE[Close]]フレーム]]を受信したら、
+[[WebSocket接続]]の状態を [CODE[[[CLOSING]]]] とします [SRC[>>12]]。
+
+[26] [[WebSocket接続]]の状態が [CODE[[[CLOSING]]]] となる時、
+[DFN[[[The WebSocket Closing Handshake is Started]]]] といいます [SRC[>>12]]。
 
 * 接続を閉じる
 
@@ -79,3 +122,14 @@
 
 [18] 十分な時間[[サーバー]]から [[TCP]] Close を受信しない場合などには[[クライアント]]から
 [[TCP]] を閉じて構いません [SRC[>>12]]。
+
+[27] [[TCP接続]]が閉じられた時、
+[DFN[[[The WebSocket Connection is Closed]]]] といいます [SRC[>>12]]。
+この時、 [[WebSocket接続]]の状態は [CODE[[[CLOSED]]]] となります [SRC[>>12]]。
+
+;; [29] [[WebSocket接続]]が確立できなかった時も、
+[[The WebSocket Connection is Closed]] といいます。 [[cleanly]] ではありません。 [SRC[>>12]]
+
+[28] [[WebSocket接続]]の閉じ handshake が完了してから [[TCP接続]]が閉じられたなら、
+「[DFN[[[cleanly]]]]」に閉じられたといいます [SRC[>>12]]。
+そうでなければ [[cleanly]] ではありません。
