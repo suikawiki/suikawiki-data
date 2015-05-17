@@ -11,6 +11,7 @@
 - [58] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#dom-websocket-close>
 - [62] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#feedback-from-the-protocol>
 - [77] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#closeevent>
+- [84] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#garbage-collection-3>
 ]REFS]
 
 * [CODE(DOMi)@en[WebSocket]] インターフェイス [CODE(DOMm)@en[close]] メソッド
@@ -177,6 +178,17 @@
 ([[UTF-8]] として[[復号]]した[[文字列]]) です。そのようなものが無ければ、
 [[空文字列]]です。 [SRC[>>12]]
 
+[80] [CODE(DOMi)@en[[[CloseEvent]]]] [[インターフェイス]]の
+[DFN[[CODE(DOMa)@en[[[code]]]]]] [[属性]]は、[[WebSocket接続閉じ符号]]を表します。
+
+[81] この[[属性]]は、その[[属性値]]として設定された値を返さなければ[['''なりません''']] [SRC[>>77]]。[[データ型]]は [CODE(IDL)@en[[[unsigned short]]]] で、初期値は
+[CODE[[[0]]]] です [SRC[>>77]]。
+
+[82] [CODE(DOMi)@en[[[CloseEvent]]]] [[インターフェイス]]の
+[DFN[[CODE(DOMa)@en[[[reason]]]]]] [[属性]]は、[[WebSocket接続閉じ理由]]を表します。
+
+[83] この[[属性]]は、その[[属性値]]として設定された値を返さなければ[['''なりません''']] [SRC[>>77]]。[[データ型]]は [CODE(IDL)@en[[[DOMString]]]] で、初期値は[[空文字列]]です [SRC[>>77]]。
+
 * 閉じ handshake
 
 [20] [DFN[[[Start the WebSocket Closing Handshake]]]] とは、
@@ -188,7 +200,7 @@
 [[フレーム]]
 ]FIGCAPTION]
 :[CODE[[[opcode]]]]:[CODE[[[Close]]]]
-:[[状態符号]]:指定された値
+:[[状態符号]]:あれば、指定された値
 :[[close reason]]:あれば、指定された値
 ]FIG]
 = [24] [[WebSocket接続]]の状態を [CODE[[[CLOSING]]]] とします。
@@ -366,3 +378,52 @@
 
 [38] [[サーバー]]が [DFN[[[Abort the WebSocket Connection]]]] するとは、
 [[WebSocket接続を閉じる]]処理を実行しなければ[['''なりません''']] [SRC[>>12]]。
+
+* 文書の破棄
+
+[90] [CODE(DOMi)@en[[[WebSocket]]]] [[オブジェクト]]の [DFN[[[make disappear]]]]
+は、次のようにしなければ[['''なりません''']] [SRC[>>84]]。
+
+[FIG(steps)[
+= 接続の状態が [CODE[[[CONNECTING]]]] なら、
+== [[WebSocket接続失敗]]を実行します。
+= 接続の状態が [CODE[[[OPEN]]]] なら、
+== [[Start the WebSocket Closing Handshake]] を実行します。
+[[状態符号]]は [CODE[[[1001]]]] とします。
+]FIG]
+
+;; [91] これは [[unloading document cleanup steps]] から呼び出されます。
+
+* ごみ収集
+
+[87] [CODE(DOMi)@en[[[WebSocket]]]] [[オブジェクト]]の[[ごみ収集]]は、
+次のように規定されています。
+
+[85] [[event loop step 1]] 時点での [CODE(DOMa)@en[[[readyState]]]] が、
+[FIG(list)[
+- [CODE(DOM)[[[CONNECTING]]]] なら、
+[CODE(DOMe)@en[[[open]]]], [CODE(DOMe)@en[[[message]]]], [CODE(DOMe)@en[[[error]]]],
+[CODE(DOMe)@en[[[close]]]] のいずれかの[[イベントリスナー]]が登録されているなら、
+[[ごみ収集]]しては[['''なりません''']]。 [SRC[>>84]]
+- [CODE(DOM)[[[OPEN]]]] なら、
+[CODE(DOMe)@en[[[message]]]], [CODE(DOMe)@en[[[error]]]],
+[CODE(DOMe)@en[[[close]]]] のいずれかの[[イベントリスナー]]が登録されているなら、
+[[ごみ収集]]しては[['''なりません''']]。 [SRC[>>84]]
+- [CODE(DOM)[[[CLOSING]]]] なら、
+[CODE(DOMe)@en[[[error]]]], [CODE(DOMe)@en[[[close]]]] 
+のいずれかの[[イベントリスナー]]が登録されているなら、
+[[ごみ収集]]しては[['''なりません''']]。 [SRC[>>84]]
+]FIG]
+
+[86] 送信[[バッファー]]が空でないなら、[[ごみ収集]]しては[['''なりません''']] [SRC[>>84]]。
+
+;; [88] この[[バッファー]]は [CODE(DOMi)@en[[[WebSocket]]]] [[オブジェクト]]に関連付けられた[[アプリケーション]]層のものであり、[[OS]] ([[ソケット]]) 側の[[バッファー]]とは異なります。
+
+[89] [[ごみ収集]]の時点で接続の状態が [CODE[[[OPEN]]]] なら、
+[[Start the WebSocket Closing Handshake]] を[[状態符号]]なしで実行しなければ[['''なりません''']] [SRC[>>84]]。
+
+* 歴史
+
+[REFS[
+- [92] [CITE@en[Web Applications 1.0 r2870 Drop <eventsource>. Replace the API with an EventSource object. Rename onclosed to onclose on WebSocket. Remove the mostly worthless event definitions. I'll add more useful intro text to replace them later. Defined garbage collection specialness for WebSocket and EventSource.]] ([TIME[2009-02-26 17:33:00 +09:00]] 版) <http://html5.org/tools/web-apps-tracker?from=2869&to=2870>
+]REFS]
