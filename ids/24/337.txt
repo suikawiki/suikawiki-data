@@ -3,6 +3,7 @@
 [REFS[
 - [10] [CITE@en[RFC 6455 - The WebSocket Protocol]] ([TIME[2015-03-11 20:42:50 +09:00]] 版) <http://tools.ietf.org/html/rfc6455#section-5>
 - [54] [CITE@en[RFC 6455 - The WebSocket Protocol]] ([TIME[2015-03-11 20:42:50 +09:00]] 版) <http://tools.ietf.org/html/rfc6455#section-6.2>
+- [21] [CITE@en[RFC 6455 - The WebSocket Protocol]] ([TIME[2015-03-11 20:42:50 +09:00]] 版) <http://tools.ietf.org/html/rfc6455#section-8>
 - [50] [CITE@en[RFC 6455 - The WebSocket Protocol]] ([TIME[2015-03-11 20:42:50 +09:00]] 版) <http://tools.ietf.org/html/rfc6455#section-10.4>
 - [59] [CITE@en[RFC 6455 - The WebSocket Protocol]] ([TIME[2015-03-11 20:42:50 +09:00]] 版) <http://tools.ietf.org/html/rfc6455#section-10.7>
 - [1] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#feedback-from-the-protocol>
@@ -36,16 +37,32 @@
 自身が[[クライアント]]であり、[[フレーム]]が[[マスク]]されているなら、
 == [19] [[[CODE[Close]]フレーム]]を[[状態符号]] [CODE(HTTP)[[[1002]]]] で送信して構いません
 [SRC[>>10]]。
-== [18] [[接続]]を閉じます [SRC[>>10]]。 ([[WebSocket接続を閉じる]]べきと思われます。)
+== [18] [[接続]]を閉じます [SRC[>>10]]。
 = [58] 自身が[[サーバー]]なら、[[マスク]]を除去します [SRC[>>54]]。
 = [55] [[制御フレーム]]なら、その規定により処理します [SRC[>>54]]。
-= [56] [[データフレーム]]なら、
-その [CODE[[[opcode]]]] を種別、[[応用データ]]をデータとする
-[DFN[[RUBYB[WebSocketメッセージを受信]@en[A WebSocket Message Has Been Received]]]]したといいます。
-ただし[[断片化]]されている場合には、以後の断片の[[応用データ]]もデータに連結してゆき、
-最後の[[フレーム]]分まで連結した時をいいます。
-[[拡張]]により別途規定がある場合は、それに拠ります。 [SRC[>>54]]
+([[[CODE[Close]]フレーム]], [[[CODE[Ping]]フレーム]], [[[CODE[Pong]]フレーム]]を参照。)
+= [22] [[継続フレーム]]なら、
+== [23] [VAR[不完全なメッセージ]]が無いなら、
+[[WebSocket接続失敗]]を実行し停止するべきと思われます。
+== [24] [VAR[不完全なメッセージ]]の [[payloadデータ]]に[[フレーム]]の[[payloadデータ]]を連結します。
+[[拡張]]により規定がある場合は、その方法によります [SRC[>>54]]。
+= [25] [[テキストフレーム]]か[[バイナリーフレーム]]なら、
+== [26] [VAR[不完全なメッセージ]]があるなら、
+[[WebSocket接続失敗]]を実行し停止するべきと思われます。
+== [27] [VAR[不完全なメッセージ]]を、本[[フレーム]]に設定します。
+= [28] [[フレーム]]の[CODE[[[FIN]]]] が [CODE[[[1]]]] なら、
+== [29] [VAR[不完全なメッセージ]]の[[payloadデータ]]を[[拡張]]の規定 (あれば) により処理します [SRC[>>54]]。
+== [30] [VAR[不完全なメッセージ]]が[[テキストフレーム]]なら、
+=== [31] [[応用データ]]を [[UTF-8]] として[[復号]]します。
+=== [32] [[復号]]に失敗したら、[[WebSocket接続失敗]]を実行し、停止します [SRC[>>21]]。
+== [56] [DFN[[RUBYB[WebSocketメッセージを受信]@en[A WebSocket Message Has Been Received]]]]を実行します。[[テキストフレーム]]なら[[復号]]した[[文字列]]を、[[バイナリーフレーム]]なら[[応用データ]]を引き渡します。 [SRC[>>54]]
+== [33] [VAR[不完全なメッセージ]]を、 [[null]] に設定します。
 ]FIG]
+
+;; [20] [[RFC]] はエラー処理を曖昧にしか規定していません。 ([[IETF]] ではよくあることです。)
+
+;; [35] [[RFC]] は閉じ方が規定毎に違う説明になっていますが、何か意図的なのか、
+すべて[[WebSocket接続失敗]]と同じとみなして良いのか不明です。
 
 [52] 扱える[[フレーム]]のサイズや[[断片化]]を結合した[[メッセージ]]のサイズに上限がある実装は、
 それを超えないよう自身を保護しなければ[['''なりません''']] [SRC[>>50]]。
@@ -61,30 +78,31 @@
 [FIG(steps)[
 = [CODE(DOMa)@en[[[readyState]]]] が [CODE(DOM)[[[OPEN]]]] ([CODE[[[1]]]])
 でなければ、停止します。
-= [[イベント]]を作成します。
+= 受信したデータが[[テキスト]]なら、
+== [VAR[data]] を、受信したデータに設定します。
+= 受信したデータが[[バイナリー]]なら、
+== [CODE(DOMa)@en[[[binaryType]]]] が [CODE[[[blob]]]] なら、
+=== [VAR[data]] を、生データが受信したデータである新しい
+[CODE(DOMi)@en[[[Blob]]]] に設定します。
+== [CODE(DOMa)@en[[[binaryType]]]] が [CODE[[[arraybuffer]]]] なら、
+=== [VAR[data]] を、生データが受信したデータを内容として持つ新しい
+[CODE(DOMi)@en[[[Blob]]]] に設定します。
+= [[イベント]]を[[発火]]します。
 [FIG(list members short)[
 [FIGCAPTION[
 [[イベント]]
 ]FIGCAPTION]
 :[[インターフェイス]]:[CODE(DOMi)@en[[[MessageEvent]]]]
 :[[イベント型]]:[CODE(DOMe)@en[[[message]]]]
+:[[イベント対象]]:[CODE(DOMi)@en[[[WebSocket]]]] [[オブジェクト]]
 :[[trusted]]:[[真]]
 :[[bubbles]]:[[偽]]
 :[[取り消し可能]]:[[偽]]
 :[[既定動作]]:なし
 :[CODE(DOMa)@en[[[origin]]]]:[COCDE(DOMi)@en[[[WebSocket]]]] の [CODE(DOMa)@en[[[url]]]]
 の[[URLの起源]]の[[Unicode直列化]]
+:[CODE(DOMa)@en[[[data]]]]:[VAR[data]]
 ]FIG]
-= 受信したデータが[[テキスト]]なら、[[イベント]]の [CODE(DOMa)@en[[[data]]]] を、
-受信したデータに設定します。
-= 受信したデータが[[バイナリー]]なら、
-== [CODE(DOMa)@en[[[binaryType]]]] が [CODE[[[blob]]]] なら、
-[[イベント]]の [CODE(DOMa)@en[[[data]]]] を、生データが受信したデータである新しい
-[CODE(DOMi)@en[[[Blob]]]] に設定します。
-== [CODE(DOMa)@en[[[binaryType]]]] が [CODE[[[arraybuffer]]]] なら、
-[[イベント]]の [CODE(DOMa)@en[[[data]]]] を、生データが受信したデータを内容として持つ新しい
-[CODE(DOMi)@en[[[Blob]]]] に設定します。
-= [[イベント]]を [CODE(DOMi)@en[[[WebSocket]]]] [[オブジェクト]]において[[dispatch]]します。
 ]FIG]
 ]FIG]
 
@@ -95,3 +113,5 @@
 [CODE(DOMa)@en[[[binaryType]]]] が [CODE[[[arraybuffer]]]] になっていれば、
 データを[[メモリー]]に読み込む処理を実行し、その完了まで他の[[タスク]]を実行していることができます。 [SRC[>>1]]
 ]EG]
+
+[34] [[サーバー]]は、[[WebSocketメッセージを受信]]したら、適宜必要な処理を実行できます。
