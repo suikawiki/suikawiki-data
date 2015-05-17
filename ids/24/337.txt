@@ -1,0 +1,78 @@
+* 仕様書
+
+[REFS[
+- [54] [CITE@en[RFC 6455 - The WebSocket Protocol]] ([TIME[2015-03-11 20:42:50 +09:00]] 版) <http://tools.ietf.org/html/rfc6455#section-6.2>
+- [50] [CITE@en[RFC 6455 - The WebSocket Protocol]] ([TIME[2015-03-11 20:42:50 +09:00]] 版) <http://tools.ietf.org/html/rfc6455#section-10.4>
+- [59] [CITE@en[RFC 6455 - The WebSocket Protocol]] ([TIME[2015-03-11 20:42:50 +09:00]] 版) <http://tools.ietf.org/html/rfc6455#section-10.7>
+- [1] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#feedback-from-the-protocol>
+]REFS]
+
+* 処理
+
+[53] 受信したデータは、[[WebSocketフレーム]]として構文解析しなければ[['''なりません''']]
+[SRC[>>54]]。
+
+[55] [[制御フレーム]]なら、そのように処理しなければ[['''なりません''']] [SRC[>>54]]。
+
+[56] [[データフレーム]]なら、
+その [CODE[[[opcode]]]] を種別、[[応用データ]]をデータとする
+[DFN[[RUBYB[WebSocketメッセージを受信]@en[A WebSocket Message Has Been Received]]]]したといいます。
+ただし[[断片化]]されている場合には、以後の断片の[[応用データ]]もデータに連結してゆき、
+最後の[[フレーム]]分まで連結した時をいいます。 [SRC[>>54]]
+
+[58] [[サーバー]]は、[[マスク]]を除去しなければ[['''なりません''']] [SRC[>>54]]。
+
+[57] ただし、[[拡張]]により別途規定がある場合は、それに拠ります [SRC[>>54]]。
+
+[52] 扱える[[フレーム]]のサイズや[[断片化]]を結合した[[メッセージ]]のサイズに上限がある実装は、
+それを超えないよう自身を保護しなければ[['''なりません''']] [SRC[>>50]]。
+
+[60] 不正なデータを受信した時は、[[TCP接続]]を切断して構いません。
+その場合は[[[CODE[Close]]フレーム]]を送信してから、
+[[Close the WebSocket Connection]] する[['''べきです''']]。 [SRC[>>59]]
+
+[2] [[利用者エージェント]]は、[[WebSocketメッセージを受信]]したら、
+次の[[タスク]]を[[タスクキュー]]に追加しなければ[['''なりません''']] [SRC[>>1]]。
+[FIG(list members)[
+[FIGCAPTION[
+[[タスク]]
+]FIGCAPTION]
+:[[タスク源]]:[[WebSocketタスク源]]
+:処理:
+[FIG(steps)[
+= [CODE(DOMa)@en[[[readyState]]]] が [CODE(DOM)[[[OPEN]]]] ([CODE[[[1]]]])
+でなければ、停止します。
+= [[イベント]]を作成します。
+[FIG(list members short)[
+[FIGCAPTION[
+[[イベント]]
+]FIGCAPTION]
+:[[インターフェイス]]:[CODE(DOMi)@en[[[MessageEvent]]]]
+:[[イベント型]]:[CODE(DOMe)@en[[[message]]]]
+:[[trusted]]:[[真]]
+:[[bubbles]]:[[偽]]
+:[[取り消し可能]]:[[偽]]
+:[[既定動作]]:なし
+:[CODE(DOMa)@en[[[origin]]]]:[COCDE(DOMi)@en[[[WebSocket]]]] の [CODE(DOMa)@en[[[url]]]]
+の[[URLの起源]]の[[Unicode直列化]]
+]FIG]
+= 受信したデータが[[テキスト]]なら、[[イベント]]の [CODE(DOMa)@en[[[data]]]] を、
+受信したデータに設定します。
+= 受信したデータが[[バイナリー]]なら、
+== [CODE(DOMa)@en[[[binaryType]]]] が [CODE[[[blob]]]] なら、
+[[イベント]]の [CODE(DOMa)@en[[[data]]]] を、生データが受信したデータである新しい
+[CODE(DOMi)@en[[[Blob]]]] に設定します。
+== [CODE(DOMa)@en[[[binaryType]]]] が [CODE[[[arraybuffer]]]] なら、
+[[イベント]]の [CODE(DOMa)@en[[[data]]]] を、生データが受信したデータを内容として持つ新しい
+[CODE(DOMi)@en[[[Blob]]]] に設定します。
+= [[イベント]]を [CODE(DOMi)@en[[[WebSocket]]]] [[オブジェクト]]において[[dispatch]]します。
+]FIG]
+]FIG]
+
+[3] [[利用者エージェント]]は、本[[タスク]]の実行の時に効率的に実行する条件が満たされていなければ、実行を遅延させて他の[[タスクキュー]]の[[タスク]]を実行することが[RUBYB[推奨]@en[encouraged]]されています。 [SRC[>>1]]
+
+[EG[
+[4] 例えば、受信したデータが[[ディスク]]にあり、[[タスク]]実行時点で
+[CODE(DOMa)@en[[[binaryType]]]] が [CODE[[[arraybuffer]]]] になっていれば、
+データを[[メモリー]]に読み込む処理を実行し、その完了まで他の[[タスク]]を実行していることができます。 [SRC[>>1]]
+]EG]
