@@ -1,0 +1,47 @@
+* 仕様書
+
+[REFS[
+- [11] [CITE@en[RFC 6455 - The WebSocket Protocol]] ([TIME[2015-03-11 20:42:50 +09:00]] 版) <http://tools.ietf.org/html/rfc6455#section-6>
+- [1] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#dom-websocket-send>
+]REFS]
+
+* [CODE(DOMi)@en[WebSocket]] インターフェイス [CODE(DOMm)@en[send]] メソッド
+
+[2] [CODE(DOMi)@en[[[WebSocket]]]] [[インターフェイス]]の
+[DFN[[CODE(DOMm)@en[[[send]]]]]] [[メソッド]]は、次のようにしなければ[['''なりません''']]
+[SRC[>>1]]。
+
+[FIG(steps)[
+= 第1引数を [CODE(DOMi)@en[[[USVString]]]], [CODE(DOMi)@en[[[Blob]]]],
+[CODE(DOMi)@en[[[ArrayBuffer]]]], [CODE(DOMi)@en[[[ArrayBufferView]]]]
+のいずれかとして解釈します。
+= [CODE(DOMa)@en[[[readyState]]]] が [CODE(DOM)@en[[[CONNECTING]]]] なら、
+[CODE(DOMe)@en[[[InvalidStateError]]]] [[例外]]を投げます。
+= 第1引数が[[文字列]]なら、
+== 接続の状態が [CODE[[[OPEN]]]] なら、
+=== 第1引数の[[文字列]]をデータとして、[[テキストフレーム]]で
+[[WebSocketメッセージ送信]]を行います。
+=== 失敗したら (例えば[[バッファー]]が満杯なら)、
+==== [[flagged as full]] フラグを設定します。
+==== [[WebSocket接続を閉じる]]処理を実行します。
+=== [CODE(DOMa)@en[[[bufferedAmount]]]] に第1引数の[[文字列]]を [[UTF-8]]
+符号化したバイト数を追加します。
+=
+@@ 
+]FIG]
+
+* 処理
+
+[12] [[WebSocket接続]]において[DFN[[RUBYB[WebSocketメッセージ送信]@en[Send a WebSocket Message]]]]するには、
+次のようにしなければ[['''なりません''']] [SRC[>>11]]。
+[FIG(steps)[
+= 送信するデータを含む単一の[[フレーム]]または[[断片化]]された[[フレーム]]群を作成します
+([[WebSocketフレーム]]参照)。最初の[[フレーム]]の [CODE[[[opcode]]]] は、
+データの種別により、[[テキストフレーム]]または[[バイナリーフレーム]]とします。
+= 送信元が[[クライアント]]であれば、[[マスク]]します ([[WebSocketフレーム]]参照)。
+= [[WebSocket拡張]]を用いる場合は、その規定に従い適宜処理します。
+= [[フレーム]](群)を転送します。
+]FIG]
+
+[13] [[WebSocket接続]]の状態が [CODE[[[OPEN]]]] でなければ (なくなれば)、
+この手順は停止しなければ[['''なりません''']] [SRC[>>11]]。
