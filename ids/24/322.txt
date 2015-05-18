@@ -18,17 +18,26 @@
 [FIG(list)[
 - [45] [CODE(DOMi)@en[[[WebSocket]]]] [[オブジェクト]]の [CODE(DOMm)@en[[[close]]]] 
 メソッド (>>59) や、それに相当する操作
+- [105] 相手からの [[[CODE[Close]]フレーム]]の受信 (>>25)
 - [47] [CODE(DOMi)@en[[[WebSocket]]]] [[オブジェクト]]の [[make disappear]] (>>90)
 - [48] [CODE(DOMi)@en[[[WebSocket]]]] [[オブジェクト]]の[[ごみ収集]] (>>89)
 - [46] [[WebSocket handshake]] や [[WebSocketメッセージ受信]]による[[WebSocket接続失敗]]
 - [55] [[WebSocket handshake]] による [[Abort the WebSocket Connection]] (>>38)
 - [56] 下位層の接続が切断されることによる[[WebSocket接続失敗]] (>>37)
+- [104] その他の理由での [[Start the WebSocket Closing Handshake]] (>>36, >>40)
 ]FIG]
 
 [37] [[クライアント]]は、[[トランスポート層]]の[[接続]]が失われたら、
 [[WebSocket接続失敗]]を実行しなければ[['''なりません''']] [SRC[>>12]]。
 
 ;; [57] なぜか[[サーバー]]に関する規定はありません。
+
+[36] [[クライアント]]は、[[応用]]から指示された場合や[[プロトコル]]で規定されている場合を除き、
+[[接続]]を閉じる[['''べきではありません''']] [SRC[>>12]]。
+閉じる場合は、 [[Start the WebSocket Closing Handshake]] を実行します [SRC[>>12]]。
+
+[40] [[サーバー]]は、適宜接続を閉じて構いません [SRC[>>12]]。
+閉じる場合は、 [[Start the WebSocket Closing Handshake]] を実行します [SRC[>>12]]。
 
 * [CODE(DOMi)@en[WebSocket]] インターフェイス [CODE(DOMm)@en[close]] メソッド
 
@@ -66,10 +75,10 @@
 * 閉じ handshake
 
 [20] [DFN[[[Start the WebSocket Closing Handshake]]]] とは、
-次のようにしなければ[['''なりません''']] [SRC[>>12]]。
+次のようにしなければ[['''なりません''']]。
 [FIG(steps)[
-= [21] [[フレーム]]を送信します。
-[FIG(list members)[
+= [21] [[フレーム]]を送信します [SRC[>>12]]。
+[FIG(list members short)[
 [FIGCAPTION[
 [[フレーム]]
 ]FIGCAPTION]
@@ -77,19 +86,37 @@
 :[[状態符号]]:あれば、指定された値
 :[[close reason]]:あれば、指定された値
 ]FIG]
-= [24] [[WebSocket接続]]の状態を [CODE[[[CLOSING]]]] とします。
-= [23] [[[CODE[Close]]フレーム]]を受信し(てい)たら、
-[[WebSocket接続を閉じる]][['''べき''']]です。
+= [10] [[[CODE[Close]]フレーム]]送信済みフラグを設定します。
+= [24] [[WebSocket接続]]の状態を [CODE[[[CLOSING]]]] とします [SRC[>>12]]。
+= [11] [[The WebSocket Closing Handshake is Started]] を実行します [SRC[>>12]]。
+= [26] [[[CODE[Close]]フレーム]]受信済みフラグが設定されていれば、
+== [23] [[WebSocket接続を閉じる]]を実行します [SRC[>>1, >>12]]。
 ]FIG]
 
-[25] [[[CODE[Close]]フレーム]]を受信したら、
-[[WebSocket接続]]の状態を [CODE[[[CLOSING]]]] とします [SRC[>>12]]。
+[25] [[[CODE[Close]]フレーム]]を受信したら、次のようにします。
+[FIG(steps)[
+= [98] [[WebSocket接続]]の状態を [CODE[[[CLOSING]]]] とします [SRC[>>12]]。
+= [99] [[The WebSocket Closing Handshake is Started]] を実行します [SRC[>>12]]。
+= [100] [[[CODE[Close]]フレーム]]送信済みフラグが設定されていれば、
+== [101] [[WebSocket接続を閉じる]]を実行します [SRC[>>1, >>12]]。
+= [108] そうでなければ、
+== [8] [[WebSocket接続失敗]]フラグが設定されていなければ、[SRC[>>12]]
+=== [7] [[フレーム]]を送信します [SRC[>>1]]。
+これはできるだけすぐに行う[['''べきです''']]が、
+現在のメッセージをすべて送り終えるまで遅延させても構いません [SRC[>>1]]。
+[FIG(list members short)[
+[FIGCAPTION[
+[[フレーム]]
+]FIGCAPTION]
+:[CODE[[[opcode]]]]:[CODE[[[Close]]]]
+:[[状態符号]]:あれば、受信した値とするのが普通です [SRC[>>1]]。
+]FIG]
+]FIG]
 
-[26] [[WebSocket接続]]の状態が [CODE[[[CLOSING]]]] となる時、
-[DFN[[[The WebSocket Closing Handshake is Started]]]] といいます [SRC[>>12]]。
-
-[61] [[the WebSocket closing handshake is started]] の際、
-次の[[タスク]]を[[タスクキュー]]に追加しなければ[['''なりません''']] [SRC[>>62]]。
+[61] [[利用者エージェント]]は、[DFN[[[the WebSocket closing handshake is started]]]] の際、
+次のようにしなければ[['''なりません''']]。
+[FIG(steps)[
+= [102] 次の[[タスク]]を[[タスクキュー]]に追加します [SRC[>>62]]。
 [FIG(list members)[
 [FIGCAPTION[
 [[タスク]]
@@ -97,19 +124,12 @@
 :[[タスク源]]:[[WebSocketタスク源]]
 :処理:
 [FIG(steps)[
-= [CODE(DOMa)@en[[[readyState]]]] を、 [DFN[[CODE(DOM)@en[[[CLOSING]]]]]] ([CODE[[[2]]]])
+= [103] [CODE(DOMa)@en[[[readyState]]]] を、 [DFN[[CODE(DOM)@en[[[CLOSING]]]]]] ([CODE[[[2]]]])
 に設定します。
-]FIG]
-]FIG]
-
 ;; [63] 既に [CODE(DOM)@en[[[CLOSING]]]] になっている場合もあります。
-
-[36] [[クライアント]]は、[[応用]]から指示された場合や[[プロトコル]]で規定されている場合を除き、
-[[接続]]を閉じる[['''べきではありません''']] [SRC[>>12]]。
-閉じる場合は、 [[Start the WebSocket Closing Handshake]] を実行します [SRC[>>12]]。
-
-[40] [[サーバー]]は、適宜接続を閉じて構いません [SRC[>>12]]。
-閉じる場合は、 [[Start the WebSocket Closing Handshake]] を実行します [SRC[>>12]]。
+]FIG]
+]FIG]
+]FIG]
 
 * 接続失敗
 
@@ -132,6 +152,9 @@
 [[サーバー]]には[[WebSocket接続確立]]が無く、また [CODE[[[CLOSING]]]]
 になった後で再度 [[[CODE[Close]]フレーム]]を送るのは不適切と思われます。
 
+;; [109] 接続の状態を [CODE[[[OPEN]]]] から [CODE[[[CLOSING]]]]
+に変更するべきかもしれません。
+
 [35] [[WebSocket接続失敗]]以後、受信したデータを処理し続けようとしては[['''なりません''']]。
 これには、 [[[CODE[Close]]フレーム]]への返信も含まれます。 [SRC[>>12]]
 
@@ -142,8 +165,9 @@
 
 [13] [DFN[[RUBYB[WebSocket接続を閉じる]@en[Close the WebSocket Connection]]]]時には、
 下位[[TCP接続]]を閉じます [SRC[>>12]]。[[サーバー]]は、直ちに [[TCP]]
-を閉じる[['''べきです''']] [SRC[>>12]]。[[クライアント]]は、
-[[サーバー]]から [[TCP]] が閉じられるのを待つ[['''べきです''']] [SRC[>>12]]。
+を閉じる[['''べきです''']] [SRC[>>12, >>1]]。[[クライアント]]は、
+[[サーバー]]から [[TCP]] が閉じられるのを待つ[['''べきです''']] [SRC[>>12, >>1]]。
+が適当なタイムアウトの後閉じて構いません [SRC[>>1]]。
 
 [14] [[TCP接続]]と[[TLSセッション]]を綺麗に閉じる方法を使い、
 受信したかもしれない[[バイト]]は捨てる[['''べきです''']] [SRC[>>12]]。
@@ -329,26 +353,16 @@
 === [[Unicode文字]]
 ]FIG]
 
+** 文脈
+
+[106] >>20 参照。
+
 ** 処理
+
+[107] >>25 参照。
 
 [6] [[応用]]は、 [CODE[[[Close]]]] [[フレーム]]より後に[[データフレーム]]を送っては[['''なりません''']]
 [SRC[>>1]]。
-
-[7] [[応用]]は、 [CODE[[[Close]]]] [[フレーム]]を受信した場合で、自身が前に送っていない場合は、
-[CODE[[[Close]]]] [[フレーム]]を返送しなければ[['''なりません''']] [SRC[>>1]]。
-これはできるだけすぐに行う[['''べきです''']]が、
-現在のメッセージをすべて送り終えるまで遅延させても構いません [SRC[>>1]]。
-返送する場合は、受信した[[状態符号]]をそのまま返すのが普通です [SRC[>>1]]。
-ただし[[WebSocket接続失敗]]後は送信しては[['''なりません''']] [SRC[>>12]]。
-
-;; [8] もっとも、 [CODE[[[Close]]]] が送られたということは、
-その相手がそれ以後受信したデータを処理する保証はありません [SRC[>>1]]。
-
-[9] [CODE[[[Close]]]] の送受信の後、[[WebSocket接続]]は閉じられたものとし、
-[[TCP接続]]も閉じなければ[['''なりません''']]。[[サーバー]]は、
-直ちに閉じなければ[['''なりません''']]。[[クライアント]]は、
-[[サーバー]]が閉じるのを待つ[['''べき''']]ですが、いつでも (適当な[[タイムアウト]]時間後などに)
-閉じて構いません。 [SRC[>>1]]
 
 [31] [[応用データ]]が1バイトのみしかない場合にどう解釈するべきかは不明です。
 非妥当なデータを受信した場合は[[WebSocket接続を閉じる]]ことが認められており [SRC[>>42]]、
@@ -384,3 +398,10 @@
 [REFS[
 - [92] [CITE@en[Web Applications 1.0 r2870 Drop <eventsource>. Replace the API with an EventSource object. Rename onclosed to onclose on WebSocket. Remove the mostly worthless event definitions. I'll add more useful intro text to replace them later. Defined garbage collection specialness for WebSocket and EventSource.]] ([TIME[2009-02-26 17:33:00 +09:00]] 版) <http://html5.org/tools/web-apps-tracker?from=2869&to=2870>
 ]REFS]
+
+* メモ
+
+[9] [[RFC]] には同じようにみえる規定が複数あり、[[助動詞]]が [[MUST]] だったり [[SHOULD]]
+だり無かったりしていたり、しかし微妙に条件が違っていて矛盾しているのかどうか判断が難しかったりします。
+[[IETF]] の仕様書ではよくあることですが、[[RFC]] の細部は信頼せず、
+[[相互運用性]]が高いと思われる方法を推測して実装する必要がありそうです。
