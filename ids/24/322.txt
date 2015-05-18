@@ -72,6 +72,58 @@
 ;; [60] 接続の状態と [CODE(DOMa)@en[[[readyState]]]] は異なることがあります。
 [[WebSocket接続]]を参照。
 
+
+* 文書の破棄
+
+[90] [CODE(DOMi)@en[[[WebSocket]]]] [[オブジェクト]]の [DFN[[[make disappear]]]]
+は、次のようにしなければ[['''なりません''']] [SRC[>>84]]。
+
+[FIG(steps)[
+= 接続の状態が [CODE[[[CONNECTING]]]] なら、
+== [[WebSocket接続失敗]]を実行します。
+= 接続の状態が [CODE[[[OPEN]]]] なら、
+== [[Start the WebSocket Closing Handshake]] を実行します。
+[[状態符号]]は [CODE[[[1001]]]] とします。
+]FIG]
+
+;; [91] これは [[unloading document cleanup steps]] から呼び出されます。
+
+* ごみ収集
+
+[87] [CODE(DOMi)@en[[[WebSocket]]]] [[オブジェクト]]の[[ごみ収集]]は、
+次のように規定されています。
+
+[85] [[event loop step 1]] 時点での [CODE(DOMa)@en[[[readyState]]]] が、
+[FIG(list)[
+- [CODE(DOM)[[[CONNECTING]]]] なら、
+[CODE(DOMe)@en[[[open]]]], [CODE(DOMe)@en[[[message]]]], [CODE(DOMe)@en[[[error]]]],
+[CODE(DOMe)@en[[[close]]]] のいずれかの[[イベントリスナー]]が登録されているなら、
+[[ごみ収集]]しては[['''なりません''']]。 [SRC[>>84]]
+- [CODE(DOM)[[[OPEN]]]] なら、
+[CODE(DOMe)@en[[[message]]]], [CODE(DOMe)@en[[[error]]]],
+[CODE(DOMe)@en[[[close]]]] のいずれかの[[イベントリスナー]]が登録されているなら、
+[[ごみ収集]]しては[['''なりません''']]。 [SRC[>>84]]
+- [CODE(DOM)[[[CLOSING]]]] なら、
+[CODE(DOMe)@en[[[error]]]], [CODE(DOMe)@en[[[close]]]] 
+のいずれかの[[イベントリスナー]]が登録されているなら、
+[[ごみ収集]]しては[['''なりません''']]。 [SRC[>>84]]
+]FIG]
+
+;; [116] 言い換えると、まだ実行される可能性のある[[イベントリスナー]]が存在している間は、
+[[強い参照]]を保持し続ける必要があります。 [[event loop step 1]]
+時点でそのような[[イベントリスナー]]が存在しなくなっていれば、
+[[強い参照]]を破棄できます。
+
+[86] 送信[[バッファー]]が空でないなら、[[ごみ収集]]しては[['''なりません''']] [SRC[>>84]]。
+
+;; [88] この[[バッファー]]は [CODE(DOMi)@en[[[WebSocket]]]] [[オブジェクト]]に関連付けられた[[アプリケーション]]層のものであり、[[OS]] ([[ソケット]]) 側の[[バッファー]]とは異なります。
+
+[89] [[ごみ収集]]により破棄する直前に、次の処理を実行しなければ[['''なりません''']]。
+[FIG(steps)[
+= [52] 接続の状態が [CODE[[[OPEN]]]] なら、
+== [53] [[Start the WebSocket Closing Handshake]] を[[状態符号]]なしで実行します [SRC[>>84]]。
+]FIG]
+
 * 閉じ handshake
 
 [20] [DFN[[[Start the WebSocket Closing Handshake]]]] とは、
@@ -91,6 +143,8 @@
 = [11] [[The WebSocket Closing Handshake is Started]] を実行します [SRC[>>12]]。
 = [26] [[[CODE[Close]]フレーム]]受信済みフラグが設定されていれば、
 == [23] [[WebSocket接続を閉じる]]を実行します [SRC[>>1, >>12]]。
+[VAR[cleanly]] は[[真]]に設定します [SRC[>>12]]。
+[[状態符号]]と [[close reason]] を引き渡します。
 ]FIG]
 
 [25] [[[CODE[Close]]フレーム]]を受信したら、次のようにします。
@@ -99,6 +153,8 @@
 = [99] [[The WebSocket Closing Handshake is Started]] を実行します [SRC[>>12]]。
 = [100] [[[CODE[Close]]フレーム]]送信済みフラグが設定されていれば、
 == [101] [[WebSocket接続を閉じる]]を実行します [SRC[>>1, >>12]]。
+[VAR[cleanly]] は[[真]]に設定します [SRC[>>12]]。
+[[状態符号]]と [[close reason]] を引き渡します。
 = [108] そうでなければ、
 == [8] [[WebSocket接続失敗]]フラグが設定されていなければ、[SRC[>>12]]
 === [7] [[フレーム]]を送信します [SRC[>>1]]。
@@ -164,16 +220,15 @@
 * 接続を閉じる
 
 [13] [DFN[[RUBYB[WebSocket接続を閉じる]@en[Close the WebSocket Connection]]]]時には、
-下位[[TCP接続]]を閉じます [SRC[>>12]]。[[サーバー]]は、直ちに [[TCP]]
-を閉じる[['''べきです''']] [SRC[>>12, >>1]]。[[クライアント]]は、
-[[サーバー]]から [[TCP]] が閉じられるのを待つ[['''べきです''']] [SRC[>>12, >>1]]。
-が適当なタイムアウトの後閉じて構いません [SRC[>>1]]。
+下位の[[TCP接続]]を閉じます [SRC[>>12]]。
 
 [14] [[TCP接続]]と[[TLSセッション]]を綺麗に閉じる方法を使い、
 受信したかもしれない[[バイト]]は捨てる[['''べきです''']] [SRC[>>12]]。
 
 [16] 最も通常な場合には、まず ([[クライアント]]からではなく)
 [[サーバー]]から [[TCP接続]]を閉じる[['''べきです''']] [SRC[>>12]]。
+[[サーバー]]は、直ちに [[TCP]] を閉じる[['''べきです''']] [SRC[>>12, >>1]]。
+[[クライアント]]は、[[サーバー]]から [[TCP]] が閉じられるのを待つ[['''べきです''']] [SRC[>>12, >>1]]。
 
 ;; [17] そうすることで、[[クライアント]]ではなく[[サーバー]]の [[TCP]]
 が [CODE[[[TIME_WAIT]]]] 状態となります。 [CODE[[[TIME_WAIT]]]] 状態である
@@ -187,24 +242,22 @@
 最後に [CODE[[[close]]]] を呼ぶことでこれを実装できます [SRC[>>12]]。
 ]EG]
 
+[18] 十分な時間[[サーバー]]から [[TCP]] Close を受信しない場合などには[[クライアント]]から
+[[TCP]] を閉じて構いません [SRC[>>12, >>1]]。
+
 [15] 攻撃されている時など、必要に応じて他の方法で閉じても構いません [SRC[>>12]]。
 
-[18] 十分な時間[[サーバー]]から [[TCP]] Close を受信しない場合などには[[クライアント]]から
-[[TCP]] を閉じて構いません [SRC[>>12]]。
+[27] [[TCP接続]]が閉じられた時、次のようにしなければなりません。
+[FIG(steps)[
+= [29] [[WebSocket接続]]の状態を、 [CODE[[[CLOSED]]]] に設定します [SRC[>>12]]。
+= [110] [[The WebSocket Connection is Closed]] を実行します [SRC[>>12]]。
+[VAR[[[cleanly]]]] フラグを引き継ぎます。
+]FIG]
 
-[27] [[TCP接続]]が閉じられた時、
-[DFN[[[The WebSocket Connection is Closed]]]] といいます [SRC[>>12]]。
-この時、 [[WebSocket接続]]の状態は [DFN[[CODE[[[CLOSED]]]]]]
-([CODE[[[3]]]]) となります [SRC[>>12]]。
-
-;; [29] [[WebSocket接続]]が確立できなかった時も、
-[[The WebSocket Connection is Closed]] といいます。 [[cleanly]] ではありません。 [SRC[>>12]]
-
-[28] [[WebSocket接続]]の閉じ handshake が完了してから [[TCP接続]]が閉じられたなら、
-「[DFN[[[cleanly]]]]」に閉じられたといいます [SRC[>>12]]。
-そうでなければ [[cleanly]] ではありません。
-
-[64] [[the WebSocket connection is closed]] なら、次の[[タスク]]を[[タスクキュー]]に追加しなければ[['''なりません''']] [SRC[>>62]]。
+[64] [[利用者エージェント]]は [DFN[[[The WebSocket Connection is Closed]]]] の際、
+次のようにしなければ[['''なりません''']]。
+[FIG(steps)[
+= [111] 次の[[タスク]]を[[タスクキュー]]に追加します [SRC[>>62]]。
 [FIG(list members)[
 [FIGCAPTION[
 [[タスク]]
@@ -212,9 +265,9 @@
 :[[タスク源]]:[[WebSocketタスク源]]
 :処理:
 [FIG(steps)[
-= [CODE(DOMa)@en[[[readyState]]]] を、 [CODE(DOM)@en[[[CLOSED]]]] ([CODE[[[3]]]])
+= [112] [CODE(DOMa)@en[[[readyState]]]] を、 [DFN[[CODE(DOM)@en[[[CLOSED]]]]]] ([CODE[[[3]]]])
 に設定します。
-= [[WebSocket接続失敗]]の場合や、 [[flagged as full]] が設定されてから
+= [113] [[WebSocket接続失敗]]フラグが設定されているか、 [[flagged as full]] が設定されてから
 [[the WebSocket connection is closed]] となったなら、
 [[単純イベントを発火]]します。
 [FIG(list members short)[
@@ -224,7 +277,7 @@
 :[[イベント型]]:[CODE(DOMe)@en[[[error]]]]
 :[[対象オブジェクト]]:[CODE(DOMi)@en[[[WebSocket]]]] [[オブジェクト]]
 ]FIG]
-= [[イベント]]を[[発火]]します。
+= [114] [[イベント]]を[[発火]]します。
 [FIG(list members short)[
 [FIGCAPTION[
 [[イベント]]
@@ -239,8 +292,15 @@
 :[CODE(DOMa)@en[[[code]]]]:[[WebSocket接続閉じ符号]]
 :[CODE(DOMa)@en[[[reason]]]]:[[WebSocket接続閉じ理由]]
 ]FIG]
+;; [115] [[WebSocket接続閉じ符号]]と [[WebSocket接続閉じ理由]]は、
+(あれば) 指定された[[状態符号]]と [[close reason]] から決まります。
 ]FIG]
 ]FIG]
+]FIG]
+
+[28] [DFN[[VAR[[[cleanly]]]]]] フラグは、
+[[WebSocket接続]]の閉じ handshake が完了してから [[TCP接続]]が閉じられた [SRC[>>12]]
+かどうかを表します。
 
 [78] [CODE(DOMi)@en[[[CloseEvent]]]] [[インターフェイス]]の
 [DFN[[CODE(DOMa)@en[[[wasClean]]]]]] [[属性]]は、 [VAR[cleanly]]
@@ -262,52 +322,6 @@
 [74] このような場合の[[WebSocket接続閉じ符号]]はいずれも [CODE[[[1006]]]] となります [SRC[>>62]]。
 
 ;; [75] こうした状況を区別できるとすると、[[スクリプト]]が[[利用者]]の属するネットワークの状態を調べるために使えてしまいます [SRC[>>62]]。
-
-* 文書の破棄
-
-[90] [CODE(DOMi)@en[[[WebSocket]]]] [[オブジェクト]]の [DFN[[[make disappear]]]]
-は、次のようにしなければ[['''なりません''']] [SRC[>>84]]。
-
-[FIG(steps)[
-= 接続の状態が [CODE[[[CONNECTING]]]] なら、
-== [[WebSocket接続失敗]]を実行します。
-= 接続の状態が [CODE[[[OPEN]]]] なら、
-== [[Start the WebSocket Closing Handshake]] を実行します。
-[[状態符号]]は [CODE[[[1001]]]] とします。
-]FIG]
-
-;; [91] これは [[unloading document cleanup steps]] から呼び出されます。
-
-* ごみ収集
-
-[87] [CODE(DOMi)@en[[[WebSocket]]]] [[オブジェクト]]の[[ごみ収集]]は、
-次のように規定されています。
-
-[85] [[event loop step 1]] 時点での [CODE(DOMa)@en[[[readyState]]]] が、
-[FIG(list)[
-- [CODE(DOM)[[[CONNECTING]]]] なら、
-[CODE(DOMe)@en[[[open]]]], [CODE(DOMe)@en[[[message]]]], [CODE(DOMe)@en[[[error]]]],
-[CODE(DOMe)@en[[[close]]]] のいずれかの[[イベントリスナー]]が登録されているなら、
-[[ごみ収集]]しては[['''なりません''']]。 [SRC[>>84]]
-- [CODE(DOM)[[[OPEN]]]] なら、
-[CODE(DOMe)@en[[[message]]]], [CODE(DOMe)@en[[[error]]]],
-[CODE(DOMe)@en[[[close]]]] のいずれかの[[イベントリスナー]]が登録されているなら、
-[[ごみ収集]]しては[['''なりません''']]。 [SRC[>>84]]
-- [CODE(DOM)[[[CLOSING]]]] なら、
-[CODE(DOMe)@en[[[error]]]], [CODE(DOMe)@en[[[close]]]] 
-のいずれかの[[イベントリスナー]]が登録されているなら、
-[[ごみ収集]]しては[['''なりません''']]。 [SRC[>>84]]
-]FIG]
-
-[86] 送信[[バッファー]]が空でないなら、[[ごみ収集]]しては[['''なりません''']] [SRC[>>84]]。
-
-;; [88] この[[バッファー]]は [CODE(DOMi)@en[[[WebSocket]]]] [[オブジェクト]]に関連付けられた[[アプリケーション]]層のものであり、[[OS]] ([[ソケット]]) 側の[[バッファー]]とは異なります。
-
-[89] [[ごみ収集]]により破棄する直前に、次の処理を実行しなければ[['''なりません''']]。
-[FIG(steps)[
-= [52] 接続の状態が [CODE[[[OPEN]]]] なら、
-== [53] [[Start the WebSocket Closing Handshake]] を[[状態符号]]なしで実行します [SRC[>>84]]。
-]FIG]
 
 * 再接続待ち
 
@@ -385,13 +399,18 @@
 
 [32] [DFN[[RUBYB[WebSocket接続閉じ理由]@en[The WebSocket Connection Close Reason]]]]は、
 [[応用]]が最初に受信した [[[CODE[Close]]フレーム]]に含まれていた閉じる理由
-([[UTF-8]] として[[復号]]した[[文字列]]) です。そのようなものが無ければ、
+([[UTF-8復号]] [SRC[>>62]] した[[文字列]]) です。そのようなものが無ければ、
 [[空文字列]]です。 [SRC[>>12]]
 
 [82] [CODE(DOMi)@en[[[CloseEvent]]]] [[インターフェイス]]の
 [DFN[[CODE(DOMa)@en[[[reason]]]]]] [[属性]]は、[[WebSocket接続閉じ理由]]を表します。
 
 [83] この[[属性]]は、その[[属性値]]として設定された値を返さなければ[['''なりません''']] [SRC[>>77]]。[[データ型]]は [CODE(IDL)@en[[[DOMString]]]] で、初期値は[[空文字列]]です [SRC[>>77]]。
+
+* [CODE(DOMe)@en[close]] イベント
+
+[117] [CODE(DOMe)@en[[[close]]]], [CODE(DOMa)@en[[[onclose]]]],
+[CODE(DOMi)@en[[[CloseEvent]]]] を参照。
 
 * 歴史
 
