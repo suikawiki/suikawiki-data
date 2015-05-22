@@ -1,0 +1,60 @@
+* 仕様書
+
+[REFS[
+- [1] [CITE@en[RFC 7540 - Hypertext Transfer Protocol Version 2 (HTTP/2)]] ([TIME[2015-05-15 10:14:54 +09:00]] 版) <https://tools.ietf.org/html/rfc7540#section-6.10>
+]REFS]
+
+* 意味
+
+[2] [CODE[[[CONTINUATION]]]] [[フレーム]] ([[フレーム型]] [CODE[[[0x9]]]])
+は、続きの [[header block fragment]] を送るために使います [SRC[>>1]]。
+
+* 構文
+
+[10] [[ストリーム]]と関連付けなければ[['''なりません''']] [SRC[>>1]]。
+[[ストリーム識別子]]は [CODE[[[0x0]]]] にはできません。
+
+[5] 次の[[フラグ]]があります。
+
+[6] [CODE[[[END_HEADERS]]]] ([CODE[[[0x4]]]] = 第2ビット) は、
+設定されていれば、 [[header block]] の終わりであることを表します [SRC[>>1]]。
+
+[7] [CODE[[[END_HEADERS]]]] が設定されていなければ、
+[CODE[[[CONTINUATION]]]] [[フレーム]]が次に来なければ[['''なりません''']]
+[SRC[>>1]]。
+
+[4] [[payload]] は、 [[header block fragment]] です [SRC[>>1]]。
+
+[FIG(packet)[
+:width:32
+
+= 32... [[header block fragment]]
+]FIG]
+
+* 文脈
+
+[3] [CODE[[[CONTINUATION]]]] [[フレーム]]は、
+[CODE[[[END_HEADERS]]]] フラグが設定されていない
+[CODE[[[HEADERS]]]]、
+[CODE[[[PUSH_PROMISE]]]]、
+[CODE[[[CONTINUATION]]]]
+[[フレーム]]の後に何個でも送信できます。
+前にこれらの[[フレーム]]がなければ[['''なりません''']]。 [SRC[>>1]]
+
+* 処理
+
+[12] [CODE[[[END_HEADERS]]]] フラグが設定されていない
+[CODE[[[HEADERS]]]]、
+[CODE[[[PUSH_PROMISE]]]]、
+[CODE[[[CONTINUATION]]]] [[フレーム]]の後でなければ、
+[[接続エラー]] [CODE[[[PROTOCOL_ERROR]]]] としなければ[['''なりません''']] [SRC[>>1]]。
+
+[11] [[受信者]]は、[[ストリーム識別子]]が [CODE[[[0x0]]]] なら、
+[[接続エラー]] [CODE[[[PROTOCOL_ERROR]]]] としなければ[['''なりません''']] [SRC[>>1]]。
+
+[9] [[ストリーム]]の状態遷移の項も変更。
+
+[8] [[受信者]]は、 [CODE[[[END_HEADERS]]]] [[フレーム]]が設定されていない場合、
+次が [CODE[[[CONTINUATION]]]] 以外の[[フレーム]]だったり、
+違う[[ストリーム]]だったりした場合、[[接続エラー]] [CODE[[[PROTOCOL_ERROR]]]]
+としなければ[['''なりません''']] [SRC[>>1]]。
