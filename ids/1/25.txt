@@ -1,5 +1,5 @@
 [27] [DFN[[RUBYB[[[メッセージ]]]@en[message]]]]は、 [[HTTP]] における情報伝達の単位
-([[パケット]]) です。
+([[アプリケーション層]]の[[パケット]]) です。
 
 [28] [[メッセージ]]には、[[要求メッセージ]]と[[応答メッセージ]]があります。
 
@@ -14,17 +14,15 @@
 - [2052] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-4.3.8>
 - [58] [CITE@en[RFC 1945 - Hypertext Transfer Protocol -- HTTP/1.0]] ([TIME[2014-09-07 13:12:32 +09:00]] 版) <http://tools.ietf.org/html/rfc1945#section-6.1>
 - [61] [CITE[UPnP Device Architecture 2.0]] ([TIME[2014-09-05 02:24:48 +09:00]] 版) <http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v2.0.pdf#page=23>
+- [66] [CITE@en[RFC 7540 - Hypertext Transfer Protocol Version 2 (HTTP/2)]] ([TIME[2015-05-15 10:14:54 +09:00]] 版) <https://tools.ietf.org/html/rfc7540#section-8.1>
 ]REFS]
 
-* 文脈
+* テキスト形式メッセージ (HTTP/0.9, HTTP/1.0, HTTP/1.1)
 
-[2053] [[メッセージ]]には[[要求メッセージ]]と[[応答メッセージ]]があり、
-それぞれ定義されている文脈で用いられます。 (それぞれの項と[[HTTP接続]]の項を参照してください。)
+[65] [[HTTP/1.0]] と [[HTTP/1.1]] は、 [[RFC 822]] に由来するテキスト形式の[[メッセージ]]構文を採用していました。
+[[HTTP/0.9]] はそれよりも更に単純な形式でした。
 
-[2054] [[メッセージ]]の一部又は全部のデータが送信されるタイミングについては、
-[[HTTP接続]]の項を参照してください。
-
-* 構文
+** 構文
 
 [29] [[メッセージ]]は、[[開始行]]、[[ヘッダー]]、[[メッセージ本体]]の3つの部分で構成されます
 [SRC[>>30]]。
@@ -70,7 +68,7 @@
 
 [62] [[SSDP]] は [[HTTP/1.1]] と同じ[[メッセージ]]の構文を採用しています [SRC[>>61]]。
 
-* 構文解析
+** 構文解析
 
 [42] [[HTTPメッセージ]]は[[ストリーム]]として[[構文解析]]して[[漸進的処理]]に供したり、
 [[下流]]へ[[転送]]したりできます。しかし、[[実装]]によっては[[転送]]する[[メッセージ]]を[[バッファリング]]したり遅延させたりして調整したり何らかの処理を行ったりすることがありますから、
@@ -126,6 +124,39 @@
 
 ;; [[HTTP/0.9]] も参照。
 
+** 改行
+
+[33] [[HTTPメッセージ]]のうち、[[メッセージ本体]]よりも前の部分で区切りに使われる[[改行]]は、
+[[CRLF]] です。 [[CR]] 単体や [[LF]] 単体ではありません。
+
+[515] [[開始行]]や[[ヘッダー]]の後の[[改行]]である [[CRLF]] について、
+[[LF]] を[[改行]]とみなし、直前に [[CR]] があれば無視することとしても構いません [SRC[>>514]]。
+
+- [1] [[HTTP]] メッセージの頭の改行は [[CRLF]] で'''なければなりません'''が、 [CODE[Server: Fujitsu-InfoProvider-Pro/V12L10 (UXP/DS)]] というサーバーは [CODE[LF]] で出力します。 Mozilla や WinIE を含めた多くの [[UA]] はこれでも扱えるようですが、問題が出ることもあるみたいです。
+- [2] >>1 例えば: ''Libraries of Kanazawa City'' <http://www.lib.kanazawa.ishikawa.jp/>
+- [3] >>1-2 互換モードを作って対応するとしたら、 [[HTTP]] [[RFC]]s によると応答の最初の行には単独の [[CR]], [[LF]] が含まれることはありませんから、もし出現したら buggy UA という方向で...
+
+[4] [[W3C]] の古い記述 (''Note: Client tolerance of bad HTTP servers'' 
+<http://www.w3.org/Protocols/HTTP/OldServers.html>)
+は、クライアントは改行を [[LF]] と考えて、その前の [[CR]]
+を無視しなさい、と言っています。
+
+まあ [HTTP92] でも改行は [[CRLF]] と規定しているのですが...
+
+[5]
+>>4 もっと昔の TimBL が (たぶん) 最初に書いた仕様書には LF で、 CR を無視と書いてありましたです。
+
+[6]
+もっとも、 >>5 は今で言う [[HTTP/0.9]] の話なので、影響するのは要求の最初の行の末だけです。
+
+* 文脈
+
+[2053] [[メッセージ]]には[[要求メッセージ]]と[[応答メッセージ]]があり、
+それぞれ定義されている文脈で用いられます。 (それぞれの項と[[HTTP接続]]の項を参照してください。)
+
+[2054] [[メッセージ]]の一部又は全部のデータが送信されるタイミングについては、
+[[HTTP接続]]の項を参照してください。
+
 * 適合性
 
 [16] [[送信者]]は、 [[ABNF]] [[生成規則]]により定義される[[文法]]に[[一致]]しない[[プロトコル要素]]を[[生成]]しては[['''なりません''']]
@@ -176,34 +207,9 @@
 として受け取って処理できる必要があります [SRC[>>13]]。
 ]EG]
 
-* 改行
-
-[33] [[HTTPメッセージ]]のうち、[[メッセージ本体]]よりも前の部分で区切りに使われる[[改行]]は、
-[[CRLF]] です。 [[CR]] 単体や [[LF]] 単体ではありません。
-
-[515] [[開始行]]や[[ヘッダー]]の後の[[改行]]である [[CRLF]] について、
-[[LF]] を[[改行]]とみなし、直前に [[CR]] があれば無視することとしても構いません [SRC[>>514]]。
-
-- [1] [[HTTP]] メッセージの頭の改行は [[CRLF]] で'''なければなりません'''が、 [CODE[Server: Fujitsu-InfoProvider-Pro/V12L10 (UXP/DS)]] というサーバーは [CODE[LF]] で出力します。 Mozilla や WinIE を含めた多くの [[UA]] はこれでも扱えるようですが、問題が出ることもあるみたいです。
-- [2] >>1 例えば: ''Libraries of Kanazawa City'' <http://www.lib.kanazawa.ishikawa.jp/>
-- [3] >>1-2 互換モードを作って対応するとしたら、 [[HTTP]] [[RFC]]s によると応答の最初の行には単独の [[CR]], [[LF]] が含まれることはありませんから、もし出現したら buggy UA という方向で...
-
-[4] [[W3C]] の古い記述 (''Note: Client tolerance of bad HTTP servers'' 
-<http://www.w3.org/Protocols/HTTP/OldServers.html>)
-は、クライアントは改行を [[LF]] と考えて、その前の [[CR]]
-を無視しなさい、と言っています。
-
-まあ [HTTP92] でも改行は [[CRLF]] と規定しているのですが...
-
-[5]
->>4 もっと昔の TimBL が (たぶん) 最初に書いた仕様書には LF で、 CR を無視と書いてありましたです。
-
-[6]
-もっとも、 >>5 は今で言う [[HTTP/0.9]] の話なので、影響するのは要求の最初の行の末だけです。
-
 * MIME 型
 
-[519] [[HTTPメッセージ]]に完全に対応する[[MIME型]]はありませんが、
+[519] テキスト形式の[[HTTPメッセージ]]に完全に対応する[[MIME型]]はありませんが、
 近い型は2つあります。
 
 [520] [CODE(MIME)@en[[[application/http]]]] は、[[要求メッセージ]]の列、
@@ -285,7 +291,7 @@
 
 * 歴史
 
-[FIG[
+[FIG(quote)[
 [FIGCAPTION[
 [14] [[HTTP]] ([[RFC 1945]] 1.2, [[RFC 2068]] 1.3, [[RFC 2616]] 1.3)
 ]FIGCAPTION]
@@ -298,7 +304,7 @@
 [[接続]]を介して転送される。
 ]FIG]
 
-[FIG[
+[FIG(quote)[
 [FIGCAPTION[
 [10] RFC 1945 4.1  Message Types
 ]FIGCAPTION]
@@ -431,7 +437,7 @@ star-line, 0個以上の頭欄 (「頭達」とも呼ばれる), 頭欄の終わ
 CRLF をつけては'''いけません'''。
 ]FIG]
 
-[FIG[
+[FIG(quote)[
 [FIGCAPTION[
 [518] RFC 1945 (HTTP/1.0) A.; RFC 2068 (HTTP/1.1) 19.1 Internet Media Type message/http, RFC 2616 (HTTP/1.1) 19.1 Internet Media Type message/http and application/http
 ]FIGCAPTION]
@@ -512,7 +518,7 @@ transmitted via E-mail.
 
 ]FIG]
 
-[FIG[
+[FIG(quote)[
 [FIGCAPTION[
 [2048] RFC 1945 (HTTP/1.0) 4.; RFC 2068・2616 (HTTP/1.1) 4 HTTP Message
 ]FIGCAPTION]
@@ -637,7 +643,7 @@ HTTP/1.1 クライアントは要求の前や後に余分な CRLF を入れて�
 →[CODE(WikiPage)[[[一般頭欄]]]]
 ]FIG]
 
-[FIG[
+[FIG(quote)[
 [FIGCAPTION[
 [2049] RFC 1945 (HTTP/1.0); RFC 2068・2616 (HTTP/1.1) 2.2 Basic Rules
 ]FIGCAPTION]
@@ -798,7 +804,7 @@ mechanism only within quoted-string and comment constructs.
 ]INS]
 ]FIG]
 
-[FIG[
+[FIG(quote)[
 [FIGCAPTION[
 [2050] RFC 2326 (RTSP/1.0) 15 Syntax
 ]FIGCAPTION]
@@ -860,7 +866,7 @@ as used in RFC 2068 [2].
 ]INS]
 ]FIG]
 
-[FIG[
+[FIG(quote)[
 [FIGCAPTION[
 [2051] RFC 2543 C.1; RFC 3261 25.1 (SIP/2.0) Basic Rules
 ]FIGCAPTION]
@@ -1089,7 +1095,6 @@ quoting mechanism only within quoted-string and comment constructs. [INS[Unlike 
 > Request or a response between an OpenID Relying Party and an OpenID Provider.
 
 ]FIG]
-
 
 [FIG(quote)[
 [FIGCAPTION[
