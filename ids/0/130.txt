@@ -8,6 +8,7 @@
 -- [34] [CITE@en[RFC 7230 - Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing]] ([TIME[2014-06-07 01:59:35 +09:00]] 版) <https://tools.ietf.org/html/rfc7230#section-3.3.1>
 - [315] [CITE@en[RFC 7230 - Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing]] ([TIME[2014-06-07 01:59:35 +09:00]] 版) <https://tools.ietf.org/html/rfc7230#page-50>
 - [316] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-4.3.6>
+- [1] [CITE@en[RFC 7540 - Hypertext Transfer Protocol Version 2 (HTTP/2)]] ([TIME[2015-05-15 10:14:54 +09:00]] 版) <https://tools.ietf.org/html/rfc7540#section-8.1.2.2>
 ]REFS]
 
 * 意味
@@ -24,6 +25,35 @@
 
 ;; [305] そのような場合に [CODE(HTTP)@en[[[Transfer-Encoding:]]]]
 を明示しなければならないわけではありません [SRC[>>34]]。
+
+* 構文
+
+[35] [[欄値]]は、1つ以上の[[転送符号化]]の[[リスト]] ([CODE[#]]) です [SRC[>>34]]。
+
+[FIG(railroad)[
+= [[転送符号化]]
+= *
+== [[OWS]]
+== [CODE[,]]
+== [[OWS]]
+== [[転送符号化]]
+]FIG]
+
+;; [314] [[転送符号化]]は、名前の他、[[引数]]が指定されることもあります。
+詳しくは[[転送符号化]]の項を参照してください。
+
+[42] これは[[メッセージ本体]]に適用されている[[転送符号化]]を表します。
+複数指定されている場合は、元々のデータが前の[[転送符号化]]から順に[[符号化]]されていることを表します。
+元のデータを取り出すためには、[[メッセージ本体]]に対して後の[[転送符号化]]から順に[[復号]]していけば良いことになります。
+
+[EG[
+[43] 例えば
+[PRE(HTTP example code)[
+Transfer-Encoding: gzip, chunked
+]PRE]
+... は、元のデータが [[gzip]] [[圧縮]]されてから、 [[chunked]]
+[[符号化]]されていることを表しています。
+]EG]
 
 * 文脈
 
@@ -59,36 +89,18 @@
 が優先されます [SRC[>>30 3.3.3.]]。[[送信者]]は[[転送]]前に [CODE(HTTP)@en[[[Content-Length:]]]]
 を削除しなければ[['''なりません''']] [SRC[>>30 3.3.3.]]。
 
-* 構文
+[3] [[RFC 723x]] には [CODE(HTTP)@en[[[Transfer-Encoding]]]] を 
+[CODE(HTTP)@en[[[Connection:]]]] [[ヘッダー]]に指定しなければならないとの規定はなく、
+実際にも指定するのは一般的では無いようです。意味的には、
+指定するべきようにも思われます。 [[RFC 7540]] は [CODE(HTTP)@en[[[Transfer-Encoding:]]]]
+[[ヘッダー]]は [[connection-specific header]] であると述べており [SRC[>>1]]、
+暗に [CODE(HTTP)@en[[[Connection:]]]] に示されるべきとの見解を示しています。
 
-[35] [[欄値]]は、1つ以上の[[転送符号化]]の[[リスト]] ([CODE[#]]) です [SRC[>>34]]。
+;; [4] しかしもし [CODE(HTTP)@en[[[Connection:]]]] に従い
+[CODE(HTTP)@en[[[Transfer-Encoding:]]]] を削除し、しかし[[転送符号化]]は無変更で[[転送]]するような[[プロキシ]]があると、
+困りそうです。
 
-[FIG(railroad)[
-= [[転送符号化]]
-= *
-== [[OWS]]
-== [CODE[,]]
-== [[OWS]]
-== [[転送符号化]]
-]FIG]
-
-;; [314] [[転送符号化]]は、名前の他、[[引数]]が指定されることもあります。
-詳しくは[[転送符号化]]の項を参照してください。
-
-[42] これは[[メッセージ本体]]に適用されている[[転送符号化]]を表します。
-複数指定されている場合は、元々のデータが前の[[転送符号化]]から順に[[符号化]]されていることを表します。
-元のデータを取り出すためには、[[メッセージ本体]]に対して後の[[転送符号化]]から順に[[復号]]していけば良いことになります。
-
-[EG[
-[43] 例えば
-[PRE(HTTP example code)[
-Transfer-Encoding: gzip, chunked
-]PRE]
-... は、元のデータが [[gzip]] [[圧縮]]されてから、 [[chunked]]
-[[符号化]]されていることを表しています。
-]EG]
-
-* 処理モデル
+* 処理
 
 [44] [[串]]や[[関門]]は、[[メッセージ本体]]の[[転送符号化]]を[[復号]]して
 [CODE(HTTP)@en[[[Transfer-Encoding:]]]] から削除したり、
@@ -97,6 +109,11 @@ Transfer-Encoding: gzip, chunked
 
 [317] [[HTTP/1.0]] [[メッセージ]]に [CODE(HTTP)@en[[[Transfer-Encoding:]]]]
 が使われている場合について特に言及はなく、 [[HTTP/1.1]] の場合と変わらず処理するべきと思われます。
+
+[2] [[HTTP/1.0]]/[[HTTP/1.1]] から [[HTTP/2]] に変換する[[中間器]]は、
+[CODE(HTTP)@en[[[Connection:]]]] に [CODE(HTTP)@en[[[Transfer-Encoding]]]]
+が明示されているか否かに関わらず、 [CODE(HTTP)@en[[[Transfer-Encoding:]]]]
+[[ヘッダー]]があれば削除する[['''べきです''']] [SRC[>>1]]。
 
 * 転送符号化の一覧
 
