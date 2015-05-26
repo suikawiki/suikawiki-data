@@ -6,11 +6,8 @@
 - [73] '''[CITE@en[RFC 7540 - Hypertext Transfer Protocol Version 2 (HTTP/2)]] ([TIME[2015-05-15 10:14:54 +09:00]] 版) <https://tools.ietf.org/html/rfc7540#section-4.3>'''
 - [82] [CITE@en[RFC 7540 - Hypertext Transfer Protocol Version 2 (HTTP/2)]] ([TIME[2015-05-15 10:14:54 +09:00]] 版) <https://tools.ietf.org/html/rfc7540#section-5.5>
 - [84] [CITE@en[RFC 7540 - Hypertext Transfer Protocol Version 2 (HTTP/2)]] ([TIME[2015-05-15 10:14:54 +09:00]] 版) <https://tools.ietf.org/html/rfc7540#section-6.5.2>
-- [90] [CITE@en[RFC 7540 - Hypertext Transfer Protocol Version 2 (HTTP/2)]] ([TIME[2015-05-15 10:14:54 +09:00]] 版) <https://tools.ietf.org/html/rfc7540#section-7>
 - [92] [CITE@en[RFC 7540 - Hypertext Transfer Protocol Version 2 (HTTP/2)]] ([TIME[2015-05-15 10:14:54 +09:00]] 版) <https://tools.ietf.org/html/rfc7540#section-8.1.2>
-- [101] [CITE@en[RFC 7540 - Hypertext Transfer Protocol Version 2 (HTTP/2)]] ([TIME[2015-05-15 10:14:54 +09:00]] 版) <https://tools.ietf.org/html/rfc7540#section-10.3>
 - [104] [CITE@en[RFC 7540 - Hypertext Transfer Protocol Version 2 (HTTP/2)]] ([TIME[2015-05-15 10:14:54 +09:00]] 版) <https://tools.ietf.org/html/rfc7540#section-10.5>
-- [111] [CITE@en[RFC 7540 - Hypertext Transfer Protocol Version 2 (HTTP/2)]] ([TIME[2015-05-15 10:14:54 +09:00]] 版) <https://tools.ietf.org/html/rfc7540#section-10.6>
 - [4] [CITE@en[RFC 7541 - HPACK: Header Compression for HTTP/2]] ([TIME[2015-05-15 10:13:02 +09:00]] 版) <https://tools.ietf.org/html/rfc7541#section-1.3>
 - [3] [CITE@en-US[Fetch Standard]] ([TIME[2015-05-07 18:42:14 +09:00]] 版) <https://fetch.spec.whatwg.org/#concept-header-list>
 ]REFS]
@@ -77,6 +74,15 @@
 [[サーバープッシュ]]の[[要求]]の[[ヘッダー部]]では、
 [CODE(HTTP)@en[[[PUSH_PROMISE]]]] [[フレーム]]を使います。
 
+[19] [[ヘッダーリスト]]は、 [[HPACK]] によって[[圧縮]]します。
+その[[符号化]]と[[復号]]に使う[[動的表]]は、[[接続]]単位で[[符号化]]用、
+[[復号]]用に1つずつ存在します [SRC[>>73]]。
+
+;; [[HPACK]] を参照。
+
+;; [20] 同じ [[HTTP接続]]を使う[[HTTPメッセージ]]は、[[要求]]と[[応答]]の組以外は互いに意味的に無関係です。
+しかしそれを表現する[[フレーム]]列は、[[動的表]]を介して依存関係にあります。
+
 ** 符号化
 
 [75] [[ヘッダーリスト]]は、 [[HTTPヘッダー圧縮]]により[RUBYB[[[ヘッダーブロック]]]@en[header block]]として[[直列化]]されます [SRC[>>73]]。
@@ -96,15 +102,8 @@
 
 [18] [CODE(HTTP)@en[[[CONTINUATION]]]] [[フレーム]]ではなく未知の[[フレーム型]]の[[フレーム]]が現れた場合、[[接続エラー]] [CODE[[[PROTOCOL_ERROR]]]] としなければ[['''なりません''']] [SRC[>>82]]。
 
-[78] [[ヘッダー圧縮]]は状態を持ちます。[[接続]]毎に、
-[[接続]]全体の[[圧縮文脈]]と[[展開文脈]]を1つずつ持ちます。 [SRC[>>73]]
-
-[112] 機密データと攻撃者が制御できるデータを (同じ圧縮辞書で)
-一緒に[[圧縮]]しては[['''なりません''']]。データの出所が不明なら、
-[[圧縮]]しては[['''なりません''']]。 [SRC[>>111]]
-
 [79] [[ヘッダーブロック]]の[[復号エラー]]は、[[接続エラー]]
-[DFN[[CODE[[[COMPRESSION_ERROR]]]]]] としなければ[['''なりません''']] [SRC[>>73]]。
+[CODE[[[COMPRESSION_ERROR]]]] としなければ[['''なりません''']] [SRC[>>73]]。
 
 [81] [[受信者]]は、[[フレーム]]群が捨てられる場合であっても、
 その[[フレーム]]群から[[ヘッダーブロック]]を結合し展開する必要があります。
@@ -112,15 +111,11 @@
 [[展開]]しない場合は、[[接続エラー]]
 [CODE[[[COMPRESSION_ERROR]]]] としなければ[['''なりません''']] [SRC[>>73]]。
 
-[91] [[誤り符号]] [DFN[[CODE[[[COMPRESSION_ERROR]]]]]] ([CODE[[[0x9]]]])
-は、[[接続]]の[[ヘッダー圧縮文脈]]を維持できないことを示します [SRC[>>90]]。
+[21] [[ヘッダー名]]や[[ヘッダー値]]も、エラーを含む場合があります。
 
-[85] [[設定]] [DFN[[CODE[[[SETTINGS_HEADER_TABLE_SIZE]]]]]] ([CODE[[[0x1]]]])
-は、[[header block]] の[[復号]]に使う[[ヘッダー圧縮表]]の最大長を[[バイト]]単位で通知するものです。
-[[符号化器]]は、[[header block]] 内の[[ヘッダー圧縮形式]]に依存した方法により、
-この値[[以下]]の大きさを選ぶことができます。 [SRC[>>84]]
+;; それぞれの項を参照。
 
-[87] 初期値は、 4096 [[バイト]]です。 [SRC[>>84]]
+** サイズ制限
 
 [86] [[設定]] [DFN[[CODE[[[SETTINGS_MAX_HEADER_LIST_SIZE]]]]]] ([CODE[[[0x6]]]]) は、
 [[送信者]]が受け付ける準備のできている [[header list]] の最大長を知らせる[[ヒント]]です。
@@ -130,18 +125,6 @@
 [89] 各[[要求]]で、この値よりも小さな制限を課しても構いません [SRC[>>84]]。
 
 [88] 初期値は、無制限です [SRC[>>84]]。
-
-[102] 構文上認められない[[ヘッダー]]の値を含む[[メッセージ]]は、[[奇形]]です [SRC[>>101]]。
-具体的には [CODE[0x00]]-[CODE[0x08]], [CODE[0x0D]], [CODE[0x0C]], 
-[CODE[0x0E]]-[CODE[0x1F]], [CODE[0x7F]] が含まれる場合や、
-先頭や末尾に [CODE[0x20]], [CODE[0x09]], [CODE[0x0A]], [CODE[0x0D]] がある場合、
-[CODE[0x0D]] [CODE[0x0A]] の後に [CODE[0x09]] または [CODE[0x0A]]
-という形以外で [CODE[0x0D]], [CODE[0x0A]] が含まれる場合が該当するとみられます。
-[CODE[0x80]]-[CODE[0xFF]] は該当しません。
-
-[103] [[ヘッダー圧縮]]は、無駄な処理をさせるために濫用できます。
-[[エンドポイント]]は利用状況を監視して制限する[['''べきです''']]。
-[[接続エラー]] [CODE[[[ENHANCE_YOUR_CALM]]]] としても構いません。 [SRC[>>104]]
 
 [105] [[header block]] が大きいと、大量のデータを保持する必要が生じ、
 不都合が生じるかもしれません。 [[header block]] の大きさに厳密な上限は設けていませんが、
@@ -162,9 +145,7 @@
 [SRC[>>104]]
 
 [109] いずれにせよ、 [[header block]] は、接続の状態の一貫性を保つため、
-[[接続]]を閉じる場合以外は処理しなければ[['''なりません''']] [SRC[>>104]]。
-
-;; [110] ということは本当に大きすぎて無視したい時は[[接続エラー]]にしなければならないのでしょう。
+[[接続]]を閉じる場合以外は処理しなければ[['''なりません''']] [SRC[>>104]] (>>81)。
 
 * 歴史
 
