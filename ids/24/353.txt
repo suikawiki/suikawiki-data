@@ -1,6 +1,8 @@
 * 仕様書
 
 [REFS[
+- [36] [CITE@en[RFC 7540 - Hypertext Transfer Protocol Version 2 (HTTP/2)]] ([TIME[2015-05-15 10:14:54 +09:00]] 版) <https://tools.ietf.org/html/rfc7540#section-3.2>
+- [37] [CITE@en[RFC 7540 - Hypertext Transfer Protocol Version 2 (HTTP/2)]] ([TIME[2015-05-15 10:14:54 +09:00]] 版) <https://tools.ietf.org/html/rfc7540#section-3.5>
 - [1] [CITE@en[RFC 7540 - Hypertext Transfer Protocol Version 2 (HTTP/2)]] ([TIME[2015-05-15 10:14:54 +09:00]] 版) <https://tools.ietf.org/html/rfc7540#section-5.5>
 - [4] '''[CITE@en[RFC 7540 - Hypertext Transfer Protocol Version 2 (HTTP/2)]] ([TIME[2015-05-15 10:14:54 +09:00]] 版) <https://tools.ietf.org/html/rfc7540#section-6.5>'''
 - [28] [CITE@en[RFC 7540 - Hypertext Transfer Protocol Version 2 (HTTP/2)]] ([TIME[2015-05-15 10:14:54 +09:00]] 版) <https://tools.ietf.org/html/rfc7540#section-7>
@@ -57,15 +59,20 @@
 
 [14] [CODE[[[ACK]]]] フラグが設定されている場合は、 [[payload]] は空でなければ[['''なりません''']] [SRC[>>4]]。
 
+;; [39] フラグが設定されていなくても空でも構いません。通常は意味がありませんが、
+[[接続序文]]や [CODE(HTTP)@en[[[HTTP2-Settings:]]]] [[ヘッダー]]では空であっても
+[CODE(HTTP)@en[[[SETTINGS]]]] [[フレーム]]が必須となっています。
+
 * 文脈
 
-[8] [CODE[[[SETTINGS]]]] [[フレーム]]は、
-接続の開始時に両[[エンドポイント]]が送信しなければ[['''なりません''']] [SRC[>>4]]。
+[8] [CODE[[[SETTINGS]]]] [[フレーム]]は、[[接続]]の確立直後に両[[エンドポイント]]が[[接続序文]]の一部として送信しなければ[['''なりません''']] [SRC[>>37, >>4]]。
 
-;; [[HTTP/2接続]]、[[HTTPS]] も参照。
+;; [[HTTP/2接続]]、[[HTTPS]]、[[接続序文]]も参照。
 
-[36] これは [[HTTP/2]] [[ストリーム]]で送られる場合もあれば、
-[[HTTP/1.1]] [CODE(HTTP)@en[[[HTTP2-Settings:]]]] [[ヘッダー]]で送られることもあります。
+[38] [CODE(HTTP)@en[[[Upgrade: h2c]]]] [[要求メッセージ]]は、
+[CODE(HTTP)@en[[[HTTP2-Settings:]]]] [[ヘッダー]]の値として
+[CODE(HTTP)@en[[[SETTINGS]]]] [[フレーム]]をちょうど1つ送信しなければ[['''なりません''']]
+[SRC[>>36]]。
 
 [9] [CODE[[[SETTINGS]]]] [[フレーム]]は、
 [[接続]]中必要に応じて送ることができます [SRC[>>4]]。
@@ -124,15 +131,29 @@
 [24] すべての[[設定]]の処理を終えたら、直ちに [CODE[[[ACK]]]] フラグを設定した
 [CODE[[[SETTINGS]]]] [[フレーム]]を送信しなければ[['''なりません''']] [SRC[>>4]]。
 
+;; [40] [[接続序文]]の一部である [CODE(HTTP)@en[[[SETTINGS]]]]
+[[フレーム]]でも必要です [SRC[>>37]]。
+
+;; [41] [CODE(HTTP)@en[[[HTTP2-Settings:]]]] [[ヘッダー]]の [CODE(HTTP)@en[[[SETTINGS]]]]
+[[フレーム]]に対しては、 [CODE(HTTP)@en[[[Upgrade: h2c]]]] に対する
+[CODE(HTTP)[[[101]]]] [[応答]]をもって暗示的な [[acknowledgement]]
+とみなされるため、送信しなくて構いません。送信は禁止されていませんが、
+送信すると次の[[接続序文]]の [CODE(HTTP)@en[[[SETTINGS]]]]
+[[フレーム]]に対する [[acknowledgement]] と解釈されてしまうと思われます。
+
 [25] [CODE[[[ACK]]]] フラグが設定された [CODE[[[SETTINGS]]]] [[フレーム]]を受信したら、
 設定が適用されたことに依存できるようになります [SRC[>>4]]。
+
+[42] どの [CODE(HTTP)@en[[[SETTINGS]]]] [[フレーム]]に対する [[acknowledgement]]
+かを明示する方法はありません。[[送信者]]は、送信したことを覚えておき、
+どれが [[acknowledge]] されたか判断する確認する必要があります。
 
 [26] 十分な時間内に [[acknowledgement]] を受信しなければ、
 [[接続エラー]] [DFN[[CODE[[[SETTINGS_TIMEOUT]]]]]] ([CODE[[[0x4]]]])
 としても構いません [SRC[>>4, >>28]]。
 
 [30] [CODE[[[SETTINGS]]]] [[フレーム]]は、
-意味もなく[[引数]]を変更したり、未定義の[[引数」」を設定したり、
+意味もなく[[引数]]を変更したり、未定義の[[引数]]を設定したり、
 同じ[[引数]]を何度も変更したりして無駄な処理をさせるために濫用できます。
 [[エンドポイント]]は利用状況を監視して制限する[['''べきです''']]。
 [[接続エラー]] [CODE[[[ENHANCE_YOUR_CALM]]]] としても構いません。 [SRC[>>29]]
