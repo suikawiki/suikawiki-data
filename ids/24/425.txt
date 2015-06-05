@@ -3,6 +3,8 @@
 [REFS[
 - [1] '''[CITE@en[RFC 7469 - Public Key Pinning Extension for HTTP]] ([TIME[2015-05-05 21:00:37 +09:00]] 版) <https://tools.ietf.org/html/rfc7469#section-2.1.4>'''
 - [20] [CITE@en[RFC 7469 - Public Key Pinning Extension for HTTP]] ([TIME[2015-05-05 21:00:37 +09:00]] 版) <https://tools.ietf.org/html/rfc7469#section-2.5>
+- [22] [CITE@en[RFC 7469 - Public Key Pinning Extension for HTTP]] ([TIME[2015-05-05 21:00:37 +09:00]] 版) <https://tools.ietf.org/html/rfc7469#section-3>
+- [31] [CITE[RFC Errata Report]] ([TIME[2015-06-05 21:00:41 +09:00]] 版) <http://www.rfc-editor.org/errata_search.php?rfc=7469>
 ]REFS]
 
 * 意味
@@ -23,7 +25,7 @@
 * 処理
 
 [6] [[URL]] が指定されている場合で [[Pin Validation]] に失敗した時は、
-報告を指定された [[URL]] に送信する[['''べきです''']] [SRC[>>1]]。
+報告を指定された [[URL]] に送信する[['''べきです''']] [SRC[>>1, >>22]]。
 [[利用者エージェント]]は報告するよう最善の努力を尽くすべきですが、
 例外的状況で報告できなくても構いません [SRC[>>1]]。
 
@@ -33,7 +35,10 @@
 ]EG]
 
 [5] [[利用者エージェント]]は、指定された [[URL]] に報告を [CODE(HTTP)[[[POST]]]]
-します [SRC[>>1]]。
+します [SRC[>>1, >>22]]。
+
+;; [24] [[RFC]] では、「POST」と書かれているだけで、その意味はなぜか明記されていません。
+[[要求メソッド]] [CODE(HTTP)@en[[[POST]]]] により送信することを意味すると推測されます。
 
 [7] [[利用者エージェント]]は、指定された [[URL scheme]] が [[TLS]]
 を使うものなら、[[ホスト]]が [[Known Pinned Host]] であるなら [[Pinning Validation]] 
@@ -64,6 +69,102 @@
 ;; [21] [[PKP-RO]] は当該[[応答]]の処理後は検証のために情報を保持しないことになってはいますが、
 報告の重複チェックのために保持することは禁止されていない (むしろ求められている)
 ようです。
+
+[23] [[POST]] するデータは、次のような [[JSONオブジェクト]]です [SRC[>>22]]。
+[FIG(list members)[
+[FIGCAPTION[
+[[JSONオブジェクト]]
+]FIGCAPTION]
+:[CODE[[[date-time]]]]:
+[[Pin Validation]] に失敗した時刻を、 [[RFC 3339の日時形式]]で表したものです [SRC[>>22]]。
+:[CODE[[[hostname]]]]:
+[[Pin Validation]] に失敗した[[要求]]の[[ホスト名]]を表す[[文字列]]です [SRC[>>22]]。
+:[CODE[[[port]]]]:
+[[Pin Validation]] に失敗した[[要求]]の[[ポート]]を表す[[整数]]です [SRC[>>22]]。
+:[CODE[[[effective-expiration-date]]]]:
+[[ピン]]の[[実効満期日付]]を、 [[RFC 3339の日時形式]]で表したものです [SRC[>>22]]。
+:[CODE[[[include-subdomains]]]]:
+[CODE[[[includeSubDomains]]]] [[指令]]が指定されていたかどうかを [[boolean]]
+で表したものです [SRC[>>22]]。
+:[CODE[[[noted-hostname]]]]:
+[[既知ピン付きホスト]]として記録された時の[[ホスト名]]です [SRC[>>22]]。
+[CODE[[[includeSubDomains]]]] が指定されていた時は [CODE[[[hostname]]]]
+と異なる値になるかもしれません。
+:[CODE[[[served-certificate-chain]]]]:
+[[TLSセッション]]の設定の時点で[[サーバー]]から提供された[[証明書鎖]]を、
+各 [[X.509証明書]]の [[.pem]] 形式の文字列の[[配列]]としたものです [SRC[>>22]]。
+:[CODE[[[validated-certificate-chain]]]]:
+[[証明書鎖]]の[RUBYB[検証]@en[verification]]の過程で[[利用者エージェント]]が構築した[[証明書鎖]]を、
+各 [[X.509証明書]]の [[.pem]] 形式の文字列の[[配列]]としたものです [SRC[>>22]]。
+検証の過程で複数組の[[証明書鎖]]を構築した場合は、最後のものとする[['''べきです''']] [SRC[>>22]]。
+:[CODE[[[known-pins]]]]:
+[[既知ピン付きホスト]]に関して記録されている[[ピン]]の[[配列]]です。
+各[[ピン]]は、[[ハッシュアルゴリズム]]名、
+[CODE[[[=]]]]、[[引用文字列]]の形にした[[文字列]]です。[[引用文字列]]は、
+[[SPKI Fingerprint]] を [[base64]] 符号化したものです。 [SRC[>>22]]
+]FIG]
+
+[25] 同じ名前と値の組が複数あっては[['''なりません''']] [SRC[>>22]]。
+
+[27] [[証明書鎖]]は、含まれる[[証明書]]の順序をそのまま[[配列]]内の[[文字列]]の順序とするべきと思われます。
+(自明と考えられたためか、明記されていません。)
+
+[28] [CODE[[[known-pins]]]] の各[[ピン]]の値は、 [CODE[[[pin-*]]]]
+[[指令]]と同じ構文となっています。
+値は[[引用文字列]]でなければならず、[[字句]]ではいけないようです。
+
+[29] [[アルゴリズム]]の名前は、[CODE[[[pin-*]]]] [[指令]]の名前と同じものとされていることから、
+[[大文字・小文字不区別]]と思われますが、明記はされていません。
+
+[30] [[RFC]] は[[引用文字列]]に [CODE["]] が含まれることからその [[JSON]]
+[[文字列]]では [CODE[\]] により[[エスケープ]]するか、 [CODE[']]
+で括るかのいずれかとしなければ[['''ならない''']]としています。例 (>>26)
+も [CODE[']] を使っています。しかし、 [[JSON]] では [CODE[']]
+で文字列を括ることは認められていませんから、本 [[RFC]] と [[JSON]]
+の両方の規定を満たすためには、 [CODE[']] は使えませんし、 [[RFC]]
+の例は正しくありません。[[RFC正誤表]]はこれを修正しています [SRC[>>31]]。
+
+;; [32] 本 [[RFC]] は[[提案標準]]であり、[[IESG]] の承認を含め多くの人の目を経て出版されているはずですが、
+このような初歩的かつ致命的な誤りが含まれたまま [[RFC]] として出版されるとは、
+[[IETF]] の手続きは何とも杜撰なもののようです。
+
+[EG[
+[26] 例えば次のようにします [SRC[>>22, >>31]]。
+
+[PRE(JSON code)[
+  {
+    "date-time": "2014-04-06T13:00:50Z",
+    "hostname": "www.example.com",
+    "port": 443,
+    "effective-expiration-date": "2014-05-01T12:40:50Z"
+    "include-subdomains": false,
+    "served-certificate-chain": [
+      "-----BEGIN CERTIFICATE-----\n
+      MIIEBDCCAuygAwIBAgIDAjppMA0GCSqGSIb3DQEBBQUAMEIxCzAJBgNVBAYTAlVT\n
+      ...
+      HFa9llF7b1cq26KqltyMdMKVvvBulRP/F/A8rLIQjcxz++iPAsbw+zOzlTvjwsto\n
+      WHPbqCRiOwY1nQ2pM714A5AuTHhdUDqB1O6gyHA43LL5Z/qHQF1hwFGPa4NrzQU6\n
+      yuGnBXj8ytqU0CwIPX4WecigUCAkVDNx\n
+      -----END CERTIFICATE-----",
+      ...
+    ],
+    "validated-certificate-chain": [
+      "-----BEGIN CERTIFICATE-----\n
+      MIIEBDCCAuygAwIBAgIDAjppMA0GCSqGSIb3DQEBBQUAMEIxCzAJBgNVBAYTAlVT\n
+      ...
+      HFa9llF7b1cq26KqltyMdMKVvvBulRP/F/A8rLIQjcxz++iPAsbw+zOzlTvjwsto\n
+      WHPbqCRiOwY1nQ2pM714A5AuTHhdUDqB1O6gyHA43LL5Z/qHQF1hwFGPa4NrzQU6\n
+      yuGnBXj8ytqU0CwIPX4WecigUCAkVDNx\n
+      -----END CERTIFICATE-----",
+      ...
+    ],
+    "known-pins": [
+      "pin-sha256=\"d6qzRu9zOECb90Uez27xWltNsj0e1Md7GkYYkVoZWmM=\"",
+      "pin-sha256=\"E9CZ9INDbd+2eRQozYqqbQ2yXLVKB9+xcprMF+44U1g=\""
+    ]
+  }
+]PRE]
+]EG]
 
 * メモ
 
