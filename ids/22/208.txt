@@ -17,7 +17,7 @@
 
 [4] [[HTML構文解析器]]には、次の[[挿入モード]]があります。
 
-[FIG(list)[
+[FIG(list short)[
 - [["before html"]]
 - [["before head"]]
 - [["in head"]]
@@ -80,3 +80,168 @@
 [[要素]]では[[現在節点]]だけから[[挿入モード]]を決められないので、
 [[stack of template insertion modes]] に[[挿入モード]]が保存されていて、
 適宜ここから復元されます。
+
+[14] [[挿入モード]]の状態遷移を図示すると、次のようになります。
+(主要な遷移と[[挿入モード]]のみ表示。)
+
+[FIG(flow)[
+:initial:[[initial]]
+:->:before html
+
+:before html:[[before html]]
+:->:before head
+
+[FIG[
+:in template:[[in template]]
+:>>:5
+:->:in head noscript
+:->:in body
+:->:in table
+:->:in table body
+:->:in row
+:->:in column group
+]FIG]
+
+:before head:[[before head]]
+:->:in head
+
+:in head:[[in head]]
+:->:after head
+:->:in head noscript
+:->:text
+
+:in head noscript: [[in head noscript]]
+:v:
+:>>:1
+:->:in head
+:->:in template
+
+:after head:[[after head]]
+:->:in body
+:->:in frameset
+:->:text
+
+:in body:[[in body]]
+:v:
+:->:in table
+:->:in template
+:->:in select
+:->:after body
+:->:text
+
+:in frameset:[[in frameset]]
+:>>:4
+:->:text
+:->:after frameset
+
+:in select: [[in select]]
+:v:
+:>>:1
+:->:in body
+:#->:in cell
+:#->:in caption
+:->:text
+:->:in template
+
+[FIG[
+:in select in table: [[in select in table]]
+:>>:5
+:->:in table
+:->:in table body
+:->:in row
+:->:text
+:->:in template
+]FIG]
+
+:in table:[[in table]]
+:v:
+:>>:2
+:->:in caption
+:->:in column group
+:->:in table body
+:->:in body
+:->:in select in table
+:->:in template
+:->:text
+:->:in table text
+
+[FIG[
+:in table text:[[in table text]]
+:v:
+:>>:4
+:->:in table
+:->:in table body
+:->:in row
+:#->:in body
+]FIG]
+
+:in caption:[[in caption]]
+:v:
+:>>:1
+:->:in table
+:#->:in body
+:#->:in select
+:->:in template
+:->:text
+
+:in column group:[[in column group]]
+:>>:3
+:->:in table
+:#->:in body
+:->:in template
+
+:in table body:[[in table body]]
+:v:
+:>>:2
+:#->:in body
+:->:in table
+:->:in row
+:->:in table text
+:->:in select in table
+:->:in template
+:->:text
+
+:in row: [[in row]]
+:v:
+:>>:2
+:#->:in body
+:->:in table body
+:->:in cell
+:->:in table text
+:->:in select in table
+:->:in template
+:->:text
+
+:in cell:[[in cell]]
+:v:
+:>>:2
+:#->:in body
+:->:in row
+:#->:in select
+:->:in template
+:->:text
+
+[FIG[
+:text:[[text]]
+:v:
+:>>:9
+:->:in head
+:->:after head
+:->:in body
+:->:in table
+]FIG]
+
+:after body: [[after body]]
+:->:after after body
+
+:after frameset: [[after frameset]]
+:>>:4
+:->:after after frameset
+
+:after after body: [[after after body]]
+:->:in body
+
+:after after frameset: [[after after frameset]]
+:>>:4
+
+]FIG]
