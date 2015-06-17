@@ -33,6 +33,73 @@
 - [104] その他の理由での [[Start the WebSocket Closing Handshake]] (>>36, >>40)
 ]FIG]
 
+[FIG(flow)[
+:handshake: 接続確立
+:->:failed
+:->:abort
+:->:normal
+:v:
+:>>:3
+
+:normal:送受信
+:v:
+:->:failed
+:->:Close received
+:>>:6
+
+:disconnected:下位層の切断
+:v:
+:->:failed
+:>>:3
+
+:make disappear:disappear
+:->:failed
+:->:abort
+:>>:1
+
+:close method:[CODE(DOMm)@en[[[close]]]]
+:->:start closing
+:>>:4
+
+:gc:[[ごみ収集]]
+:->:start closing
+:>>:5
+
+:abort:Abort
+:->:close
+:v:
+
+:failed:接続失敗
+:->:send Close 1
+:>>:2
+
+:start closing:Closing
+:->:send Close 1
+:>>:4
+
+:send Close 1:[CODE[[[Close]]]] 送信
+:->:close
+:->:Close received
+:>>:2
+:v:
+
+:Close received:[CODE[[[Close]]]] 受信
+:->:send Close 2
+:->:close
+:v:
+:>>:6
+
+:send Close 2:[CODE[[[Close]]]] 送信
+:v:
+:>>:6
+:->:close
+
+:close:接続を閉じる
+:v:
+:>>:1
+
+]FIG]
+
 [37] [[クライアント]]は、[[トランスポート層]]の[[接続]]が失われたら、
 [[WebSocket接続失敗]]を実行しなければ[['''なりません''']] [SRC[>>12]]。
 
@@ -173,6 +240,9 @@
 :[CODE[[[opcode]]]]:[CODE[[[Close]]]]
 :[[状態符号]]:あれば、受信した値とするのが普通です [SRC[>>1]]。
 ]FIG]
+=== [126] [[[CODE[Close]]フレーム]]送信済みフラグを設定します。
+=== [127] 下位層の接続を閉じます [SRC[>>1]]。[[WebSocket接続を閉じる]]処理 (>>13)
+を実行するので良いと思われます。
 ]FIG]
 
 [61] [[利用者エージェント]]は、[DFN[[[the WebSocket closing handshake is started]]]] の際、
