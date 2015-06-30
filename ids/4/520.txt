@@ -1,39 +1,15 @@
-
-* object 要素型 (HTML, XHTML 1)
-
 [4] [[HTML]] の [DFN[[CODE(HTMLe)[object]] 要素型]]は、
 HTML 文書に[RUBY[[[物体]]] [オブジェクト]]を埋込むための一般的な仕組みを提供しています。
 
-[5] 仕様書:
-- [[HTML 4]]
--- 13.1 Introduction to objects, images, and applets
-<IW:HTML4:"struct/objects.html#h-13.1">
--- 13.3 Generic inclusion: the [CODE(HTMLe)[OBJECT]] element
-<IW:HTML4:"objects.html#edef-OBJECT">
--- 13.5 Notes on embedded documents
-<IW:HTML4:"struct/objects.html#embedded-documents">
+* 仕様書
 
-[9] 多くの [[WWWブラウザ]]は自前で HTML や画像などを解釈することができますし、
-そうでない形式では他のプログラムを起動して処理させるなどすることができます。
-[CODE(HTMLe)[object]] 
-を使うと外部のプログラムを起動するか著者の指定したプログラムを使うか、
-といったようなことを記述できます。 [HTML 4]
+[REFS[
+- [3] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#the-object-element>
+]REFS]
 
-ほとんどの場合著者は次の3種類の情報を指定する必要があります。
-常に3種類とも必要ではなく、場合によっていろいろです。 [HTML 4]
 
-- 取込む物体の実装。例えば、時計アプレットであればアプレットの実行可能符号の場所。
-- レンダリングするデータ。例えば、フォント・データをレンダリングするプログラムなら、
-フォント・データの場所。
-- 実行時の追加の引数。例えば、アプレットの初期値。
-
-前2者は属性、引数は子 [CODE(HTMLe)[[[param]]]] 要素を使います。
 
 [6]
-:状態:[[W3C]] [[勧告]]
-:[[局所名]]:[CODE(HTMLe)@en[object]]
-([Q@en[object]] ([Q[[[物体]]]]) より)
-:[[名前空間名]]:[CODE(URI)[[[http://www.w3.org/1999/xhtml]]]]
 :[[開始タグ]]:必須
 :[[終了タグ]]:必須
 :[[内容模型]]:[CODE(SGML)[[CODE(HTMLe)[[[param]]]]*]] の後に [CODE(SGML)[(%[[flow]])*]]
@@ -258,8 +234,104 @@ as form control にまったく言及がないわけですが、
 [27] 自分自身を埋込んだ場合の UA の挙動は未定義です [SUP[ [HTML 4] ]]。
 最低でも、無限循環に陥って利用者が手を出せなくなる事態は避けるべきでしょう。
 
-[[#comment]]
+* 処理
 
+[18] 次の''いずれか''が発生した時、[[タスク]]を[[タスクキューに追加]]しなければなりません。[[キュー]]に[[タスク]]がある間および実行中には、
+[[節点文書]]について [[delay the load event]] しなければ[['''なりません''']]。 [SRC[>>17]]
+[FIG(list)[
+- [19] [[要素]]が作成された時
+- [20] [[要素]]が[[開いている要素のスタック]]から [[pop]] された時
+- [21] [[要素]]が[[文書に挿入]]または[[文書から削除]]された時で、
+[[開いている要素のスタック]]上には無い場合
+- [22] [[節点文書]]が[[完全に活性]]かどうかが変わった時
+- [23] [[祖先]]の [CODE(HTMLe)@en[[[object]]]] [[要素]]が[[フォールバック内容]]を表示するかしないか変化した時
+- [24] [CODE(HTMLa)@en[[[classid]]]] [[属性]]が設定、変化、削除された時
+- [32] [CODE(HTMLa)@en[[[classid]]]] [[属性]]が無い時で、
+[CODE(HTMLa)@en[[[data]]]] [[属性]]が設定、変化、削除された時
+- [37] [CODE(HTMLa)@en[[[classid]]]] [[属性]]も
+[CODE(HTMLa)@en[[[data]]]] [[属性]]も無い時で、
+[CODE(HTMLa)@en[[[type]]]] [[属性]]が設定、変化、削除された時
+- [76] [[レンダリング中]]かどうかが変化した時
+]FIG]
+
+;; [80] [[祖先]]に[[媒体要素]]があるかどうかが変化した時は条件に入っていません。
+
+[77] [[タスク]]は、次のようにしなければ[['''なりません''']] [SRC[>>17]]。
+[FIG(steps)[
+= [78] [[利用者]]が[[フォールバック内容]]を表示するべきと設定している時は、
+[[フォールバック内容]]としての処理を行います。
+例えばその方がより[[アクセス可能]]となると[[利用者]]が判断すれば、
+そのようにできます。 
+= [79] それ以外の場合で、
+[FIG(list)[
+- [81] [[祖先]]に[[媒体要素]]がある場合
+- [82] [[祖先]]に[[フォールバック内容]]を表示''しない'' [CODE(HTMLe)@en[[[object]]]]
+[[要素]]がある場合
+- [83] [[閲覧文脈]]を持つ[[文書中]]に''ない''場合
+- [84] [[節点文書]]が[[完全に活性]]で''ない''場合
+- [85] [[開いている要素のスタック]]上にある場合
+- [86] [[レンダリング中]]で''ない''場合
+]FIG]
+... [[フォールバック内容]]としての処理を行います。
+= [87] それ以外の場合で、
+[CODE(HTMLa)@en[[[classid]]]] [[属性]]が[[空文字列]]以外の値を持つ場合は、
+== [88] 
+[FIG(list)[
+- [CODE(HTMLa)@en[[[classid]]]] [[属性]]に基づき適切な[[プラグイン]]を見つけた場合で、
+- [[プラグインが砂箱化]]されていない場合か、[[保安プラグイン]]とできる場合
+]FIG]
+... には、その[[プラグイン]]を使う[['''べきです''']]。 [CODE(HTMLa)@en[[[data]]]]
+[[属性]]があれば、値を[[プラグイン]]に引き渡す[['''べきです''']]。
+== [89] それ以外や[[プラグイン]]がエラーを報告した場合は、
+[[フォールバック内容]]としての処理を行います。
+]FIG]
+
+* 安全性
+
+[34] [CODE(HTMLe)[[[img]]]] 要素型の安全性の項もご覧下さい。
+
+[36]
+[CITE[スラッシュドット ジャパン | IEのobjectタグにクラッシュや任意コード実行可能な脆弱性]] <http://slashdot.jp/security/05/07/01/2355213.shtml?topic=41>
+([[名無しさん]] [WEAK[2005-07-07 14:21:21 +00:00]])
+
+* 歴史
+
+** HTML4
+
+[5] 仕様書:
+- [[HTML 4]]
+-- 13.1 Introduction to objects, images, and applets
+<IW:HTML4:"struct/objects.html#h-13.1">
+-- 13.3 Generic inclusion: the [CODE(HTMLe)[OBJECT]] element
+<IW:HTML4:"objects.html#edef-OBJECT">
+-- 13.5 Notes on embedded documents
+<IW:HTML4:"struct/objects.html#embedded-documents">
+
+[9] 多くの [[WWWブラウザ]]は自前で HTML や画像などを解釈することができますし、
+そうでない形式では他のプログラムを起動して処理させるなどすることができます。
+[CODE(HTMLe)[object]] 
+を使うと外部のプログラムを起動するか著者の指定したプログラムを使うか、
+といったようなことを記述できます。 [HTML 4]
+
+ほとんどの場合著者は次の3種類の情報を指定する必要があります。
+常に3種類とも必要ではなく、場合によっていろいろです。 [HTML 4]
+
+- 取込む物体の実装。例えば、時計アプレットであればアプレットの実行可能符号の場所。
+- レンダリングするデータ。例えば、フォント・データをレンダリングするプログラムなら、
+フォント・データの場所。
+- 実行時の追加の引数。例えば、アプレットの初期値。
+
+前2者は属性、引数は子 [CODE(HTMLe)[[[param]]]] 要素を使います。
+
+** XHTML2 と画像の埋め込み
+
+[63] 遅れてきた春、 [[XHTML2]] の最初の[[作業原案]]では [CODE(HTMLe)@en[[[object]]]]
+[[要素]]が[[画像]]の埋め込みに使える唯一の[[要素]]でした。
+
+;; [CITE@en[- XHTML Object Module]] ([TIME[2002-08-06 00:20:43 +09:00]] 版) <http://www.w3.org/TR/2002/WD-xhtml2-20020805/mod-object.html>
+
+[64] しかしそれもつかの間、すべての[[要素]]に [CODE(HTMLa)@en[[[src]]]]
+[[属性]]が追加され、更になぜか [CODE(HTMLe)@en[[[img]]]] [[要素]]まで復活しました。
 
 ** 不思議解釈
 
@@ -275,32 +347,71 @@ as form control にまったく言及がないわけですが、
 [[RDF/XML]]を[[HTML]]に埋め込むために[CODE(HTMLe)@en[[[object]]]]を使えばよいとの意見もありますが、
 [[[CODE(HTMLe)@en[object]] hack]]同様に濫用であって望ましくないです。
 
-([[名無しさん]] [sage])
+* 実装
 
-[[#comment]]
+** <OBJECT> 宣言 (ASP)
 
+[50]
+[CITE[Global.asa ??????]] ([CODE[2007-02-18 11:36:39 +09:00]] 版) <http://msdn.microsoft.com/library/ja/default.asp?url=/library/ja/jpiis/iishelp/iis/htm/asp/glob822b.asp>
 
-** 安全性
+[38] >>50 より:
+> <OBJECT> 宣言
+>
+拡張 <OBJECT> タグを使用して、セッション スコープまたはアプリケーション スコープを持つオブジェクトを Global.asa ファイルに作成できます。このタグは独立していて、すべての <SCRIPT> タグの外側にあります。
+>
+Global.asa ファイルで宣言されたオブジェクトは、そのオブジェクトを呼び出すスクリプトをサーバーが処理するまで作成されません。必要なオブジェクトだけしか作成されないため、リソースの節約になります。
+>
+構文
+>
+[PRE(example code)[
+<OBJECT RUNAT=Server SCOPE=Scope ID=Identifier {PROGID="progID"|CLASSID="ClassID"}>
+. . .
+</OBJECT>
+]PRE]
+>
+パラメータ
+>
+:Scope:    オブジェクトのスコープを指定します。Global.asa ファイルで、Scope は「Session」または「Application」に設定されます。
+:Identifier:    オブジェクト インスタンスの名前を指定します。
+:progID:    クラス識別子に関連付けられた識別子です。<OBJECT> タグには ProgID または ClassID を指定する必要があります。ProgID の形式は [Vendor.]Component[.Version] です。
+:ClassID:    COM クラス オブジェクトに対して一意の識別子を指定します。<OBJECT> タグには ProgID または ClassID を指定する必要があります。
+>
+例
+>
+以下の例のうち、最初の例では ProgID パラメータを使用して、セッション スコープの MyConnection というオブジェクトを作成します。2 番目の例では、ClassID を使用します。
+>
+[PRE(example code)[
+<OBJECT RUNAT=Server SCOPE=Session ID=MyConnection
+PROGID="ADODB.Connection">
+REM Object Script
+</OBJECT>
+]PRE]
+>
+[PRE(example code)[
+<OBJECT RUNAT=Server SCOPE=Session ID=MyConnection
+CLASSID="Clsid:8AD3067A-B3FC-11CF-A560-00A0C9081C21">
+REM Object Script
+</OBJECT>
+]PRE] 
+>
+解説
+>
+Global.asa で宣言されたオブジェクトは、アプリケーションの任意のスクリプトで使用できます。たとえば、次のオブジェクトを宣言したとします。
+>
+[PRE(example code)[
+---GLOBAL.ASA---
+<OBJECT RUNAT=Server SCOPE=Session ID=MyAd PROGID="MSWC.AdRotator">
+</OBJECT>
+]PRE] 
+>
+この場合、MyAd オブジェクトはアプリケーションの任意のページから参照できます。
+>
+[PRE(example code)[
+---SOME.ASP---
+<%= MyAd.GetAdvertisement("/ads/adrot.txt") %>
+]PRE]
 
-[34] [CODE(HTMLe)[[[img]]]] 要素型の安全性の項もご覧下さい。
-
-[36]
-[CITE[スラッシュドット ジャパン | IEのobjectタグにクラッシュや任意コード実行可能な脆弱性]] <http://slashdot.jp/security/05/07/01/2355213.shtml?topic=41>
-([[名無しさん]] [WEAK[2005-07-07 14:21:21 +00:00]])
-
-** 歴史
-
-*** XHTML2 と画像の埋め込み
-
-[63] 遅れてきた春、 [[XHTML2]] の最初の[[作業原案]]では [CODE(HTMLe)@en[[[object]]]]
-[[要素]]が[[画像]]の埋め込みに使える唯一の[[要素]]でした。
-
-;; [CITE@en[- XHTML Object Module]] ([TIME[2002-08-06 00:20:43 +09:00]] 版) <http://www.w3.org/TR/2002/WD-xhtml2-20020805/mod-object.html>
-
-[64] しかしそれもつかの間、すべての[[要素]]に [CODE(HTMLa)@en[[[src]]]]
-[[属性]]が追加され、更になぜか [CODE(HTMLe)@en[[[img]]]] [[要素]]まで復活しました。
-
-** 例
+* 例
 
 [16] 時計アプレットの例
 [PRE(HTML)[
@@ -459,73 +570,6 @@ It is described in
 
 [62]
 [CITE@en[Re: <object> content-type sniffing (detailed review of Semantics)]] ([[Ian Hickson]] 著, [TIME[2008-07-25 07:33:05 +09:00]] 版) <http://lists.w3.org/Archives/Public/public-html/2008Jul/0326.html>
-
-* <OBJECT> 宣言 (ASP)
-
-[50]
-[CITE[Global.asa ??????]] ([CODE[2007-02-18 11:36:39 +09:00]] 版) <http://msdn.microsoft.com/library/ja/default.asp?url=/library/ja/jpiis/iishelp/iis/htm/asp/glob822b.asp>
-
-[38] >>50 より:
->
- <OBJECT> 宣言
->
-拡張 <OBJECT> タグを使用して、セッション スコープまたはアプリケーション スコープを持つオブジェクトを Global.asa ファイルに作成できます。このタグは独立していて、すべての <SCRIPT> タグの外側にあります。
->
-Global.asa ファイルで宣言されたオブジェクトは、そのオブジェクトを呼び出すスクリプトをサーバーが処理するまで作成されません。必要なオブジェクトだけしか作成されないため、リソースの節約になります。
->
-構文
->
-[PRE(example code)[
-<OBJECT RUNAT=Server SCOPE=Scope ID=Identifier {PROGID="progID"|CLASSID="ClassID"}>
-. . .
-
- 
-
-</OBJECT>
-]PRE]
->
-パラメータ
->
-:Scope:    オブジェクトのスコープを指定します。Global.asa ファイルで、Scope は「Session」または「Application」に設定されます。
-:Identifier:    オブジェクト インスタンスの名前を指定します。
-:progID:    クラス識別子に関連付けられた識別子です。<OBJECT> タグには ProgID または ClassID を指定する必要があります。ProgID の形式は [Vendor.]Component[.Version] です。
-:ClassID:    COM クラス オブジェクトに対して一意の識別子を指定します。<OBJECT> タグには ProgID または ClassID を指定する必要があります。
->
-例
->
-以下の例のうち、最初の例では ProgID パラメータを使用して、セッション スコープの MyConnection というオブジェクトを作成します。2 番目の例では、ClassID を使用します。
->
-[PRE(example code)[
-<OBJECT RUNAT=Server SCOPE=Session ID=MyConnection
-PROGID="ADODB.Connection">
-REM Object Script
-</OBJECT>
-]PRE]
->
-[PRE(example code)[
-<OBJECT RUNAT=Server SCOPE=Session ID=MyConnection
-CLASSID="Clsid:8AD3067A-B3FC-11CF-A560-00A0C9081C21">
-REM Object Script
-</OBJECT>
-]PRE] 
->
-解説
->
-Global.asa で宣言されたオブジェクトは、アプリケーションの任意のスクリプトで使用できます。たとえば、次のオブジェクトを宣言したとします。
->
-[PRE(example code)[
----GLOBAL.ASA---
-<OBJECT RUNAT=Server SCOPE=Session ID=MyAd PROGID="MSWC.AdRotator">
-</OBJECT>
-]PRE] 
->
-この場合、MyAd オブジェクトはアプリケーションの任意のページから参照できます。
->
-[PRE(example code)[
----SOME.ASP---
-<%= MyAd.GetAdvertisement("/ads/adrot.txt") %>
-]PRE]
-
 
 [65] [CITE['''['''whatwg''']''' <object> behavior]]
 ([TIME[2009-09-14 16:29:33 +09:00]] 版)
