@@ -32,12 +32,6 @@
 = [7] [[開いている要素のスタック]]の[[節点]]をすべて [[pop]] します。
 ]FIG]
 
-;; [8] [[挿入点]]が未定義になると、以後の [CODE(JS)@en[[[document.write]]]]
-は [CODE(JS)@en[[[document.open]]]] を伴うようになります。
-
-;; [9] [[開いている要素のスタック]]から[[節点]]を [[pop]] すると、
-副作用で何らかの動作が行われることがあります。[[開いている要素のスタック]]を参照。
-
 [10] 次に、 [[list of scripts that will execute when the document has finished parsing]]
 の処理を行います。
 
@@ -82,11 +76,6 @@
 ]FIG]
 ]FIG]
 ]FIG]
-
-[33] [[Webブラウザー]]によっては、 [CODE(DOMe)@en[[[DOMContentLoaded]]]]
-の時点で[[ブラウザー拡張]]の[[内容スクリプト]]を実行することがあります。
-
-;; [40] [CODE(DOMe)@en[[[DOMContentLoaded]]]] も参照。
 
 [17] 現在の[[タスク]]はこれで終了します。更に、
 [FIG(list)[
@@ -167,16 +156,6 @@
 
 ;; [42] [[printing steps]] は[[イベントループ]]の[[一時停止]]を呼び出すことがあります。
 
-;; [41] [[ready for post-load tasks]] や [[completely loaded]] は、
-[[構文解析]]中と後で動作が異なるものの判断や、[[閲覧文脈包含子]]の [CODE(DOMe)@en[[[load]]]]
-の遅延に使われます。 [CODE(DOMe)@en[[[load]]]] の項を参照。
-
-[44] [[stops parsing]] は、更に次のものに影響します。
-[FIG(list)[
-- [[活性構文解析器]]であるか否か
-- [[素片識別子へのスクロール]]
-]FIG]
-
 ;; [11] [[HTML Standard]] は [[stops parsing]] を[[イベントループのスピン]]を使って記述していますが、
 次の性質から、ここで示したように[[スピン]]を使わないで説明できます。
 [FIG(list)[
@@ -210,6 +189,49 @@
 
 ;; [39] 仕様通り解釈すると >>37 の[[スピン]]は必ず発生することになりますが、
 実際には必要ないはずです。
+
+* 副作用
+
+[48] [[stops parsing]] は[[構文解析器]]の処理を終える作業であり、
+[[構文解析器]]の動作中と動作後で異なる動きをする処理の分岐フラグが立てられるタイミングです。
+
+[47] [[stops parsing]] 開始段階:
+[FIG(list)[
+- [49] [CODE(JS)@en[[[document.write]]]]/[CODE(JS)@en[[[document.writeln]]]] 
+は以後 [CODE(JS)@en[[[document.open]]]] を伴うようになります。
+- [9] [[開いている要素のスタック]]から[[節点]]を [[pop]] すると、
+副作用で何らかの動作が行われることがあります。[[開いている要素のスタック]]を参照。
+]FIG]
+
+[8] [CODE(DOMe)@en[[[DOMContentLoaded]]]] 段階:
+[FIG(list)[
+- [33] [[Webブラウザー]]によっては、 [CODE(DOMe)@en[[[DOMContentLoaded]]]]
+の時点で[[ブラウザー拡張]]の[[内容スクリプト]]を実行することがあります。
+([CODE(DOMe)@en[[[DOMContentLoaded]]]] も参照。)
+]FIG]
+
+[50] [DFN[[[ready for post-load tasks]]]] ([[stops parsing]] 自体の実行完了):
+[FIG(list)[
+- [52] [[閲覧文脈包含子]]たる [CODE(HTMLe)@en[[[iframe]]]]/[CODE(HTMLe)@en[[[object]]]]/[CODE(HTMLe)@en[[[embed]]]]/[CODE(HTMLe)@en[[[frame]]]] の [[delay the load event]] が終わります。
+- [40] [[queue a post-load task]] ([[AppCache]] の処理の実行) が遅延されていたのが解除されます。
+- [53] [CODE(JS)@en[[[window.open]]]] が遅延されていたのが解除されます。
+- [41] 以後の [CODE(JS)@en[[[document.open]]]] が新しいソースコードを使うものだとみなされるようになります。
+]FIG]
+
+[51] [DFN[[[completely loaded]]]] ([[stops parsing]] により追加された[[DOM操作タスク源]]の[[タスク]]の実行完了):
+[FIG(list)[
+- [54] [CODE(HTTP)@en[[[Refresh]]]] の計測開始が遅延されていたのが解除されます。
+- [55] 以後 [CODE(HTMLe)@en[[[iframe]]]]/[CODE(HTMLe)@en[[[frame]]]]、[[フォームの提出]]、[CODE(DOMi)@en[[[Location]]]]
+の [[navigate]] で暗黙裡に[[置換有効]]とされなくなります。
+- [56] [[閲覧文脈包含子]]たる [CODE(HTMLe)@en[[[iframe]]]]/[CODE(HTMLe)@en[[[frame]]]] [[要素]]で
+[CODE(DOMe)@en[[[load]]]] [[イベント]]が[[発火]]されることがあります。
+]FIG]
+
+[44] [[stops parsing]] は、更に次のものに影響します。
+[FIG(list)[
+- [[活性構文解析器]]であるか否か
+- [[素片識別子へのスクロール]]
+]FIG]
 
 * 関連
 
