@@ -1,8 +1,82 @@
+[18] [CODE(DOMi)@en[[[XMLDocument]]]] [[インターフェイス]]の
+[DFN[[CODE(DOMm)@en[[[load]]]]]] [[メソッド]]は、
+[[fetch]] を行い、[[文書]]の[[内容]]を得られた [[XML文書]]によって置き換えられるものです。
+
 * 仕様書
 
 [REFS[
-- [17] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#dom-xmldocument-load>
+- [17] '''[CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#dom-xmldocument-load>'''
+- [30] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#current-document-readiness>
 ]REFS]
+
+* 処理
+
+[19] 次のようにしなければ[['''なりません''']] [SRC[>>17]]。
+[FIG(steps)[
+= [20] 必須の第1引数を [CODE(IDL)@en[[[DOMString]]]] として解釈します。
+= [21] [[入口設定群オブジェクト]]の[[API基底URL]]に対して最初の[[引数]]の
+[[URLの解決]]を行います。
+= [22] [[解決]]に失敗したら、
+== [23] [CODE(DOMe)@en[[[SyntaxError]]]] [[例外]]を[[投げて]]停止します。
+= [24] 得られた[[URL]]が[[文脈オブジェクト]]と[[同じ起源]]でなければ、
+== [25] [CODE(DOMe)@en[[[SecurityError]]]] [[例外]]を[[投げて]]停止します。
+= [28] [[文脈オブジェクト]]の[[子供]]をすべて削除します。
+= [29] [[文脈オブジェクト]]の[[現在文書準備度]]を、 [CODE[[[loading]]]]
+に設定します。
+= [72] [[単純イベントを発火]]します。 [SRC[>>30]]
+[FIG(list members)[
+[FIGCAPTION[
+[[単純イベント]]
+]FIGCAPTION]
+:[[イベント型]]:[CODE(DOMe)@en[[[readystatechange]]]]
+:[[対象]]:[[文脈オブジェクト]]
+]FIG]
+= [31] [[真]]を返して停止します。
+]FIG]
+
+[32] 引き続き、[[並列に]]、 [[fetch]] しなければ[['''なりません''']]。
+[[文脈オブジェクト]]の[[起源]]からとし、
+[[referrer source]] は[[入口設定群オブジェクト]]によるものとし、
+[[blocking flag]] と [[force same-origin flag]] を設定します。
+[SRC[>>17]]
+
+[33] [[fetch]] が成功し [[Content-Typeメタデータ]]が [[XML MIME型]]である[[資源]]が得られた場合は、
+新しい[[XML構文解析器]]を作成し、新しい [CODE(DOMi)@en[[[Document]]]]
+と関連付け、[[資源]]をこの[[XML構文解析器]]により[[構文解析]]しなければ[['''なりません''']]。
+[[XML]] の[[整形式]]かつ[[名前空間整形式]]でない場合には、
+新しい[[文書]]からすべての[[子供]]を削除しなければ[['''なりません''']]。 [SRC[>>17]]
+
+[34] [[fetch]] 後、次のような[[タスク]]を[[タスクキューに追加]]しなければ[['''なりません''']] [SRC[>>17]]。
+[FIG(list members)[
+[FIGCAPTION[
+[[タスク]]
+]FIGCAPTION]
+:[[タスク源]]:?
+:処理:
+[FIG(steps)[
+= [35] [[文脈オブジェクト]]の[[現在文書準備度]]を、 [CODE[[[complete]]]]
+に設定します。
+= [36] [[単純イベントを発火]]します。 [SRC[>>30]]
+[FIG(list members)[
+[FIGCAPTION[
+[[単純イベント]]
+]FIGCAPTION]
+:[[イベント型]]:[CODE(DOMe)@en[[[readystatechange]]]]
+:[[対象]]:[[文脈オブジェクト]]
+]FIG]
+= [37] 新しい[[文書]]の[[子供]]を、すべて新しい [CODE(DOMi)@en[[[DocumentFragment]]]]
+の[[子供]]とします。
+= [38] [CODE(DOMi)@en[[[DocumentFragment]]]] を[[文脈オブジェクト]]に[[挿入]]します。
+= [39] [[単純イベントを発火]]します。 [SRC[>>30]]
+[FIG(list members)[
+[FIGCAPTION[
+[[単純イベント]]
+]FIGCAPTION]
+:[[イベント型]]:[CODE(DOMe)@en[[[load]]]]
+:[[対象]]:[[文脈オブジェクト]]
+]FIG]
+]FIG]
+]FIG]
 
 * 歴史
 
@@ -57,6 +131,15 @@
 なんで実装済みのこいつらを削除して、かわりに[[Webブラウザー]]でまったく実装されていない
 [CODE(DOMi)@en[[[LSParser]]]] だけ[[勧告]]にしたのかまったく謎ですねwwwwwwww
 
+[26] [[同一起源方針]]に関する仕様はありませんでした。
+
+** HTML5
+
+[27] [[Web互換性]]のために本メソッドは必要と言わざるをえないとして、
+[[HTML5]] (現 [[HTML Standard]]) で改めて標準化されました。
+動作の詳細はこの時初めて規定されてました。
+
+;; 非同期モードのみで、同期モードはコメントアウトされていました。
 
 [8] [CITE[IRC logs: freenode / #whatwg / 20091009]]
 ([TIME[2009-12-08 00:45:57 +09:00]] 版)
