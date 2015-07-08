@@ -6,7 +6,10 @@
 [REFS[
 - [2] '''[CITE[File API]] ([TIME[2011-05-18 03:16:07 +09:00]] 版) <http://dev.w3.org/2006/webapi/FileAPI/#url>'''
 - [30] [CITE@en[URL Standard]] ([TIME[2015-07-07 17:17:42 +09:00]] 版) <https://url.spec.whatwg.org/#concept-url-object>
+- [35] [CITE@en[URL Standard]] ([TIME[2015-07-07 17:17:42 +09:00]] 版) <https://url.spec.whatwg.org/#local-scheme>
 - [32] [CITE@en[URL Standard]] ([TIME[2015-07-07 17:17:42 +09:00]] 版) <https://url.spec.whatwg.org/#concept-url-parser>
+- [34] [CITE@en[URL Standard]] ([TIME[2015-07-07 17:17:42 +09:00]] 版) <https://url.spec.whatwg.org/#concept-url-origin>
+- [37] [CITE@en-US[Fetch Standard]] ([TIME[2015-07-07 18:54:30 +09:00]] 版) <https://fetch.spec.whatwg.org/#concept-basic-fetch>
 ]REFS]
 
 * 構文
@@ -45,6 +48,8 @@
 
 * 起源
 
+** Blob URL の生成時
+
 [17] [[Blob URL]] の [[URLの起源]]は、作成する[[メソッド]]が呼び出された時の[[現職設定群オブジェクト]]の[[実効スクリプト起源]]と同じでなければ[['''なりません''']] [SRC[>>2]]。
 
 [18] 直列化した [[Blob URL]] の[[起源]]は、[[起源]]の [[Unicode直列化]]でなければ[['''なりません''']] [SRC[>>2]]。
@@ -57,8 +62,15 @@
 
 [19] [[Blob URL]] に対する [[cross-origin]] の[[要求]]は、[[ネットワークエラー]]としなければ[['''なりません''']] [SRC[>>2]]。
 
-[26] [[Blob URL]] が[[Webブラウザー]]以外から与えられた場合など、不正な [[URL]]
-である時の[[起源]]は規定されていません。[[大域的に固有な識別子]]と解釈するべきと思われます。
+** Blob URL の利用時
+
+[26] [CODE(URI)@en[[[blob:]]]] [[URL]] の[[起源]]は、 [[scheme data]]
+を[[URLの構文解析]]した結果得られる [[URLの起源]]です。
+[[構文解析]]に失敗する場合は、新しい[[大域的に固有な識別子]]です。 [SRC[>>34]]
+
+* 分類
+
+[36] [CODE(URI)@en[[[blob:]]]] [[URL scheme]] は、[[局所スキーム]]です [SRC[>>35]]。
 
 * URL のオブジェクト
 
@@ -67,7 +79,12 @@
 
 [33] 通常は [[null]] です [SRC[>>30]] が、
 [[Blob URL Store]] に [[Blob URL]] が登録されていれば、その
-[CODE(DOMi)@en[[[Blob]]]] となります [SRC[>>32]]。
+[CODE(DOMi)@en[[[Blob]]]] の[[構造化クローン]]となります [SRC[>>32]]。
+
+[41] [[URLの構文解析]]の時点で [CODE(DOMi)@en[[[Blob]]]] との関連付けが行われることになりますから、
+[[自動revoke]]や手動の [CODE(DOMm)@en[[[revokeObjectURL]]]] で [[Blob URL Store]]
+から削除されたとしても、既に [[fetch]] が始まっていれば、その [[fetch]]
+は成功するはずです。
 
 * 作成
 
@@ -75,6 +92,49 @@
 [FIG(list short)[
 - [CODE(JS)@en[[[URL.createObjectURL]]]]
 - [CODE(JS)@en[[[URL.createFor]]]]
+]FIG]
+
+* fetch
+
+[38] [CODE(URI)@en[[[blob:]]]] [[URL]] の[[基本fetch]]は、次のようにしなければ[['''なりません''']] [SRC[>>37]]。
+[FIG(steps)[
+= [39] 構文解析した [[URL]] の[[オブジェクト]]が [[null]] なら、[[ネットワークエラー]]を返し、停止します。
+= [40] 新しい[[応答]]を作成し、返します。
+[FIG(list members)[
+[FIGCAPTION[
+[[応答]]
+]FIGCAPTION]
+:[[ヘッダーリスト]]:
+[FIG(list)[
+= [CODE(HTTP)@en[[[Content-Length]]]]: [[URL]] の[[オブジェクト]]である
+[CODE(DOMi)@en[[[Blob]]]] の [CODE(DOMa)@en[[[size]]]]
+= [CODE(HTTP)@en[[[Content-Type]]]]: [[URL]] の[[オブジェクト]]である
+[CODE(DOMi)@en[[[Blob]]]] の [CODE(DOMa)@en[[[type]]]]
+]FIG]
+:[[HTTPS状態]]:[[要求]]の[[クライアント]]が [[null]] でなければ、その [[HTTPS状態]]
+:[[本体]]:[[URL]] の[[オブジェクト]]である
+[CODE(DOMi)@en[[[Blob]]]] の[[読み取り操作]]の結果
+]FIG]
+]FIG]
+
+;; [48] 実際には[[読み取り操作]]は[[非同期的]]に結果を返すものですから、
+[[応答]]も一度に返されるものではなく、[[非同期的]]に[[本体]]が完成してゆくものと考えるべきでしょう。
+
+;; [46] [[読み取り操作]]はエラーになるかもしれません。 [[Fetch Standard]]
+には明記されていませんが、他のプロトコルで[[応答]]の途中でエラーとなった場合同様に取り扱うべきと思われます。
+
+;; [42] [[File API]] が[[参考]]として述べている [SRC[>>2]] 次の点は、 [[Fetch Standard]]
+には反映されていないようです。これが意図的なものなのかどうか、実装はどうなっているのかは不明です。
+[TIME[2015-07-08T12:32:12.00Z]]
+[FIG(list)[
+- [43] [CODE(HTTP)@en[[[GET]]]] 以外の[[要求メソッド]]は、[[ネットワークエラー]]
+- [45] [[異なる起源]]への要求なら[[ネットワークエラー]]
+([CODE(JS)@en[[[document.domain]]]] により[[実効スクリプト起源]]が変化した場合)
+- [44] [CODE(DOMi)@en[[[File]]]] の [CODE(DOMa)@en[[[name]]]] が
+[CODE(HTTP)@en[[[Content-Disposition:]]]] [[ヘッダー]]の [CODE(MIME)@en[[[filename]]]]
+[[引数]]となる
+- [47] [[読み取り操作]]を行う前に [CODE(DOMi)@en[[[Blob]]]]
+の[[読み取り可能性状態]]が [[closed]] なら、[[ネットワークエラー]]
 ]FIG]
 
 * 破棄
