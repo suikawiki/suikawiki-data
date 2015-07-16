@@ -32,6 +32,10 @@
 [[CSP]] では[[閲覧文脈]]ではなく、[[閲覧文脈]]内の[[文書]]単位で制限を適用します。
 [[最上位閲覧文脈]]でも使うことができます。
 
+[73] [[祖先]]すべての[[閲覧文脈]]を含めた [[HTML]]
+[CODE(HTMLa)@en[[[sandbox]]]] [[属性]]と [[CSP]] [CODE(HTTP)@en[[[sandbox]]]]
+[[指令]]の最も厳しい制限が適用されます。
+
 * 属性名
 
 [51] [CODE(HTMLe)@en[[[iframe]]]] [[要素]]の[[属性名]] [SRC[>>31]] も、
@@ -132,14 +136,18 @@
 :context:[[入れ子閲覧文脈]]
 :populated:>>40, >>41, >>42
 
-:name:[DFN[[[active sandboxing flag set]]]]
+:name:[DFN[[RUBYB[[[活性砂箱化フラグ集合]]]@en[[[active sandboxing flag set]]]]]]
 :context:[[文書]]
-:populated:[[砂箱化を実装]] (ひいては [[navigate]])
+:populated:[[砂箱化を実装]] (>>67)
 
 :name:[DFN[[[forced sandboxing flag set]]]]
-:context:[[navigate]] の[[資源]]
+:context:[[navigate]] の[[資源]] ([[応答]])
 :populated:[[CSP]] の [[enforce]]
 ]FIG]
+
+[76] [[文書]]の色々な処理で実際に参照されるのは、このうちの
+[[active sandboxing flag set]] です。それ以外は、[[砂箱化の実装]]で
+[[active sandboxing flag set]] を決定するための入力として使われます。
 
 * 処理
 
@@ -170,17 +178,36 @@
 し、結果を保護対象[[資源]]の [[forced sandboxing flag set]] としなければ[['''なりません''']]
 [SRC[>>48]]。
 
-;; [[navigate]] から間接的に呼び出されます。
-
 [58] [CODE(HTTP)@en[[[frame-ancestor]]]] [[指令]]の制限対象となる場合には、
 [[空文字列]]が指定された場合と同様に [[parse a sandboxing directive]]
 し、結果を保護対象[[資源]]の [[forced sandboxing flag set]] としなければ[['''なりません''']]
 [SRC[>>57]]。
 
+;; [74] [[CSP]] の処理は、 [[navigate]] から間接的に呼び出されます。
+
+[67] [[navigate]] は、[[文書オブジェクトの初期化]]時に、[[砂箱化を実装]]します。
+[[閲覧文脈の作成]]でも、[[初期[CODE(URI)@en[about:blank]]文書]]に[[砂箱化を実装]]します。
+[DFN[[RUBYB[[[砂箱化の実装]]]@en[implement the sandboxing]]]]とは、
+その時点で次の[[砂箱化フラグ集合]]に含まれるフラグの[[合同]]を得て、
+それを[[文書]]の [[active sandboxing flag set]] とすることをいいます [SRC[>>31]]。
+[FIG(list)[
+- [68] [[閲覧文脈]]が[[最上位閲覧文脈]]である場合、その [[popup sandboxing flag set]]
+- [69] [[閲覧文脈]]が[[入れ子閲覧文脈]]である場合、その [[[CODE(HTMLe)@en[iframe]] sandboxing flag set]]
+- [70] [[閲覧文脈]]が[[入れ子閲覧文脈]]である場合、[[親閲覧文脈]]の[[活性文書]]の
+[[active sandboxing flag set]]
+- [71] [[応答]]の [[forced sandboxing flag set]]
+]FIG]
+
+;; [72] [[親閲覧文脈]]と[[同じ起源]]でない場合、ほんの数ビット分ですが、
+[[起源]]を超えて情報が「漏れる」ことになります。
+
 [56] [[navigate]] ではなく [[run a Worker]] 時に [[enforce]] される場合は、
 [CODE(HTTP)@en[[[sandbox]]]] [[指令]]が指定され [CODE(HTTP)@en[[[allow-scripts]]]] が指定されていない時や、
 [CODE(HTTP)@en[[[sandbox]]]] [[指令]]が指定され [CODE(HTTP)@en[[[allow-same-origin]]]] が指定されておらず新しい実行文脈が[[同じ起源]]であることを求めている時には、
 [[ネットワークエラー]]が返されたものとして扱わなければ[['''なりません''']] [SRC[>>48]]。
+
+;; [75] [CODE(HTMLe)@en[[[script]]]] や [CODE(DOMm)@en[[[importScripts]]]]
+で既存の実行文脈内で[[スクリプト]]を読み込むときには、この処理は行われません。
 
 * セキュリティー
 
