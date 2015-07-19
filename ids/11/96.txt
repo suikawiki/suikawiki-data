@@ -6,6 +6,9 @@
 - [42] '''[CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#workers>'''
 -- [44] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#dom-workerglobalscope-close>
 -- [48] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#run-a-worker>
+-- [77] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#kill-a-worker>
+-- [78] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#terminate-a-worker>
+-- [95] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#dom-worker-terminate>
 ]REFS]
 
 * 分類
@@ -21,6 +24,9 @@
 
 [FIG(short list)[
 - [[ワーカー環境]]
+-- [[専用ワーカー環境]]
+-- [[共有ワーカー環境]]
+-- [[サービスワーカー環境]]
 ]FIG]
 
 [39] [[ワーカー]]が持つ状態については [CODE(DOMi)@en[[[WorkerGlobalScope]]]] を参照。
@@ -128,6 +134,52 @@
 = [46] [[文脈オブジェクト]]の[[イベントループ]]の[[タスクキュー]]の[[タスク]]をすべて捨てます。
 = [47] [[文脈オブジェクト]]の [[closing flag]] を[[真]]に設定します。
 ]FIG]
+
+[84] [[利用者エージェント]]は、いつでも[[ワーカーを殺す]]処理を実行して構いません。
+例えば次の時に実行できます。 [SRC[>>77]]
+[FIG(list)[
+- [85] [[利用者]]に要求された時
+- [86] [[CPU]] の [[quota]] 超過時
+- [87] [[active needed worker]] でなくなり [[closing flag]] が[[真]]に設定されてもなお走り続ける時
+]FIG]
+
+[79] [DFN[[RUBYB[ワーカーを殺す]@en[kill a worker]]]]には、
+[[並列に]]次のようにしなければ[['''なりません''']] [SRC[>>77]]。
+[FIG(steps)[
+= [80] [[ワーカー]]の [CODE(DOMi)@en[[[WorkerGlobalScope]]]]
+の [[closing flag]] を[[真]]に設定します。
+= [81] [[ワーカー]]の [CODE(DOMi)@en[[[WorkerGlobalScope]]]] 
+の[[イベントループ]]の[[タスクキュー]]の[[タスク]]をすべて捨てます。
+= [82] [[利用者エージェント]]定義の時間、待ちます。
+= [83] [[ワーカー]]で動作中の[[スクリプト]]を停止します。
+]FIG]
+
+;; [93] [[run a worker]] のメインの[[スクリプト]]や [CODE(DOMm)@en[[[importScripts]]]]
+の[[スクリプト]]が実行停止されることがあります。
+
+[96] [CODE(DOMi)@en[[[Worker]]]] [[インターフェイス]]の 
+[DFN[[CODE(DOMm)@en[[[terminate]]]]]] [[メソッド]]は、
+関連付けられた[[ワーカー]]について[[ワーカーを停止]]しなければ[['''なりません''']]
+[SRC[>>95]]。
+
+;; [97] [CODE(DOMi)@en[[[SharedWorker]]]] にはありません。
+
+[88] [DFN[[RUBYB[ワーカーを停止]@en[terminate a worker]]]]するには、
+[[並列に]]次のようにしなければ[['''なりません''']] [SRC[>>78]]。
+[FIG(steps)[
+= [89] [[ワーカー]]の [CODE(DOMi)@en[[[WorkerGlobalScope]]]]
+の [[closing flag]] を[[真]]に設定します。
+= [90] [[ワーカー]]の [CODE(DOMi)@en[[[WorkerGlobalScope]]]] 
+の[[イベントループ]]の[[タスクキュー]]の[[タスク]]をすべて捨てます。
+= [91] [[ワーカー]]で動作中の[[スクリプト]]を停止します。
+= [92] [[ワーカー]]の [CODE(DOMi)@en[[[WorkerGlobalScope]]]]
+が [CODE(DOMi)@en[[[DedicatedWorkerGlobalScope]]]] なら、
+[[ワーカー]]の暗示的なポートが [[entangle]] されている [[port message queue]]
+を空にします。
+]FIG]
+
+;; [94] [[run a worker]] のメインの[[スクリプト]]や [CODE(DOMm)@en[[[importScripts]]]]
+の[[スクリプト]]が実行停止されることがあります。
 
 [73] 破棄の処理 (>>72 から呼び出されます。) は、次のようにしなければ[['''なりません''']]
 [SRC[>>48]]。
