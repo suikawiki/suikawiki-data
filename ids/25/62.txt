@@ -1,0 +1,119 @@
+[1] 2015年8月にいろいろな [[Webアプリケーション]]の通知メールやいろいろな企業等が配信する[[メールマガジン]]などの[[HTMLメール]]の状況を目視で調べた結果です。
+
+[2] [[利用者]]相互の通常の[[メール]]は含まれません。
+
+[3] 調査対象に偏りがあるかもしれません。多い、少ないの判断は主観的なものです。
+
+* 全体構造
+
+- 古くからあるサービスはテキスト形式のことが多いが、新しいサービスは HTML 形式のことがほとんど。
+- HTML メールの多数は、全体として multipart/alternative で、 text/plain と text/html が含まれている。
+- たまに、 multipart/mixed や multipart/related の中に multipart/alternative が含まれていることがある。添付ファイル等を想定した構造なのだろうが、実際には使われていないので、無駄な構造になっている。
+- たまに、 text/html だけのことがある。
+
+* MIME
+
+- メール全体のヘッダーや本体部分のヘッダーの `Content-Type:` の引数は、値が `"` で括られていることもあれば、括られていないこともある。
+- `Content-Type: multipart/...` に `charset` 引数が指定されることがある。 (本体部分のヘッダーにも指定されるので、無視して良い。)
+- multipart/* の最初の本体部分の前の前書き (preamble) に「MIME multipart です」という内容の短い英文が書かれることがたまにあるが、何もないのが主流。
+- CTE は無指定、 `7bit`、 `8bit`、`binary`、`quoted-printable`、`base64` がいずれも見られた。
+-- メール全体のヘッダーでも本体部分のヘッダーでも。
+-- メール全体か本体部分の少なくても一方には CTE が指定されていることが多い。
+-- charset や MIME 型や実際の内容と CTE の選択に強い関係性はなさそうに見える。
+-- 同じメールで multipart の本体部分ごとに異なる CTE のことも多い。
+-- 無指定でも `7bit` (仕様上の既定値) とは限らない。
+- `Content-Disposition: inline` (既定値) が明示されることもたまにある。
+- HTMLメールの全体のヘッダーには `MIME-Version: 1.0` が必ず含まれている。
+- 本体部分のヘッダーに `MIME-Version: 1.0` が含まれることがたまにある。
+- 本体部分のヘッダーになぜか `Date:` や `X-Mailer:` が含まれることが稀にある (壊れたライブラリーを使っているらしい)。
+- [CODE(MIME)@en[[[Content-Location:]]]], [CODE(MIME)@en[[[Content-Base:]]]],
+[CODE(MIME)@en[[[Content-ID:]]]], [CODE(MIME)@en[[[Content-Description:]]]]
+の利用例はなかった。
+
+* 文字コード
+
+- UTF-8 が多い。
+- 日本国内のサービスではまだ ISO-2022-JP が多い。
+- multipart の各本体部分がすべて同じ文字コードとは限らない。
+- メール全体のヘッダーの encoded-word の文字コードと本体の文字コードは一致しているのがほとんど。
+- 非 ASCII 文字を含まなくても、 charset の値は UTF-8 だったりする。
+- charset の指定は必ず含まれている。
+- HTML の meta 要素 (<meta charset> または <meta http-equiv=Content-Type>) で文字コードが指定されることもある (が、ヘッダーに charset の指定があるので、あまり意味はない)。
+- HTML 中の非 ASCII 文字がすべて文字参照になっている例もある。
+
+* 代替 text/plain の内容
+
+multipart/alternative で text/plain も含まれる場合、
+- HTML 版と同等の内容の文章が含まれることがほとんど。
+- Web サイトに誘導する短い文章と URL のみが含まれる例もいくつかある。
+- (おそらく HTML 版の生成に使った) Markdown 版が含まれた例がある (が HTML タグ混じり可読性が低かった)。
+- HTML 版から機械的に生成されたらしく意味が通じなかったり、無駄に空白や改行が含まれたりする例がある。
+- format=flowed; delsp=yes が指定されている場合もある。
+
+* HTML の構文
+
+- HTML 4.0 や HTML 4.01、Strict や Transitional の DOCTYPE 宣言が含まれていることが多い。
+- XHTML 1.0 の DOCTYPE 宣言が含まれていることもある。
+- `<!DOCTYPE HTML>` が含まれていることもある。
+- DOCTYPE 宣言が含まれないこともある。
+- DOCTYPE 宣言と実際の内容には、強い関係はなさそう。記載された仕様に無い要素や属性が使われるのは普通。
+
+* HTML メタデータ
+
+[4] 題名:
+- title 要素は含まれることもあるし含まれないこともある。
+- 含まれてもサービス名や空文字列などのことも多い。
+- メール全体のヘッダー `Subject:` の値とは異なることが多い。
+
+[5] [[言語]]:
+- `html` 要素の属性で `lang` や `dir` が指定されることもある。
+- `<meta http-equiv=Content-Language>` が指定される例もある。
+- `Content-Language:` ヘッダーが使われる例はない。
+- いずれにせよ言語が明示されることは多くない。
+
+[6] その他、次のような meta 要素が指定されることがある。
+- `<meta name=viewport>`
+- `<meta name=apple-mobile-web-app-capable>`
+- `<meta name=format-detection>`
+- `<meta name=twitter:title>`
+- `<meta http-equiv=Content-Script-Type>`
+- `<meta http-equiv=Content-Style-Type>`
+- `<meta http-equiv=Imagetoolbar>`
+- `<meta property=og:title>`
+
+[7] [CODE(HTMLe)@en[[[head]]]] [[要素]]がまったく含まれないこともままある。
+
+* 視覚表現
+
+- 90年代末頃の HTML の表現記述方法を使ったものが多い。
+-- [CODE(HTMLe)@en[[[center]]]] 要素、 [CODE(HTMLe)@en[[[font]]]] [[要素]]、
+[CODE(HTMLa)@en[[[align]]]] 属性、[CODE(HTMLa)@en[[[b]]]] 要素、
+[CODE(HTMLa)@en[[[br]]]] 要素など
+-- テーブルレイアウト
+- [CODE(HTMLa)@en[[[style]]]] 属性を使ったものも多い。
+- (海外サービスでは特に) [CODE(HTMLe)@en[[[style]]]] 要素を使ったものも少なくないが、他の方法と併用している。
+- [CODE(HTMLe)@en[[[link]]]] 要素を使った例もあったが、他の方法と併用している。
+
+* HTML の内容
+
+- 画像が表示されない場合に Web サイトを見るよう誘導するリンクが含まれることがたまにある。
+- text/html のみのメールで、 HTML のコメントで「HTML形式です」という内容の文が書かれている例がある。 (現代の HTML 未対応の MUA がソースを表示するとは思えないので、意味があるかは怪しい。)
+
+* 画像
+
+- 何らかの画像が含まれるものがほとんど。
+- img 要素で `http:` や `https:` の画像を参照するものが多い。
+- CSS `background-image` で `http:` や `https:` の画像を参照するものもある。
+- `alt` 属性は指定されているものもあるが、指定されていないものが多い。
+- `alt` 属性が指定されていても、画像の内容ではなく「ロゴ (黒色)」のような短い説明のこともある。
+- 本文の大部分が画像で `alt` 属性が無いこともある。 (`text/plain` 版には本文が含まれていたりもする。)
+- 多くの HTML メールが `width=1 height=1` の `img` 要素を含んでいる。開封確認を仕込んでいるのだろう。
+- 画像の参照はすべて [[Web]] 上のもので、[[添付ファイル]]を指しているものはなかった。
+
+* その他のデータ
+
+- テキスト、画像以外のもの (動画、フレームなど) を埋め込んだ例はない。
+- `script` 要素を使った例もない。
+- `<body oncontextmenu="return false">` を指定した例があった (効果があるのかは謎い)。
+- schema.org マイクロデータ (`itemscope itemtype="http://schema.org/EmailMessage"`) を埋め込んだ例はある。
+- その他使われることがある[[要素]]は [CODE(HTML)@en[[[div]]]], [CODE(HTMLe)@en[[[p]]]] など。
