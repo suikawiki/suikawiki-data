@@ -50,7 +50,18 @@
 [CODE(HTMLa)[[[name]]]] 属性の値が指定されるのが
 [CODE(MIME)[[[Content-Disposition]]]] 欄の
 [DFN[[CODE(MIME)[name]] 引数]]です。 
-[CODE(MIME)[[[[form-data]]]] 配置型と共に使います。
+[CODE(MIME)[[[form-data]]]] 配置型と共に使います。
+
+[28] 詳しくは [CODE(MIME)@en[[[multipart/form-data]]]] の項を参照してください。
+
+** 構文
+
+[44] 主要ブラウザはどれも [[quoted-string]] を使いますが、
+[CODE(char)[[[\]]]] や [CODE(char)[[["]]]] をきちんと [[quoted-pair]] にするのは
+[[Opera]] だけです。他のブラウザはそのまま放置します。
+[[Opera]] も含めてどのブラウザも、 [CODE(HTMLa)@en[[[name]]]] に [CODE(charname)@en[[[LF]]]]
+が含まれているとそのまま出力します。なので、 [[頭欄]]としては壊れてしまいます。
+[SRC@en[>>66]]
 
 [23] [[HTML 4]] 仕様書によると、 [CODE(MIME)[name]] 属性値に 
 [CODE(charset)[[[US-ASCII]]]] 以外の文字が使われる場合、 
@@ -67,9 +78,38 @@ RFC 2045 探しても方法なんてのってないとおもうんですが・�
 で生で符号化するようです。
 一部実装では [CODE(HTML)[[[_charset_]]]] hack が使えます。
 
-[28] 詳しくは [CODE(MIME)@en[[[multipart/form-data]]]] の項を参照してください。
+[42] 非 [[ASCII]] 文字を含むときには、
+[[RFC 2045]] で説明されている方法で符号化して構いません
+[SRC[HTML 4 17.13.4.2]]。と書いてはあるのですが、
+[Q[構いません]]ではなくて何らかの方法で符号化しなければ'''なりません'''
+(MIME 頭欄は ASCII と定義されています)。さて、 RFC 2045
+の一体どこで [CODE(MIME)[Content-Disposition]] [CODE(MIME)[name]]
+を符号化する方法が説明されているのでしょうか? されていません。
+詳しくは [CODE(MIME)[[[name]]]] 引数の説明をご覧ください。
 
-[[#comment]]
+相当する部分は、 RFC 2388 では [[RFC 2047]] を参照しています
+[SRC[RFC 2388 3., 5.4]]。 RFC 2047 と言うからには [CODE(ABNF)[[[encoded-word]]]]
+を使うのでしょう。普通 [CODE(ABNF)[[[quoted-string]]]] でが
+[CODE(ABNF)[encoded-word]] は使わない (使えない) ものですが、
+明示的に 2047 を参照しているのですから [CODE(MIME)[name]]
+引数では特別に使えるのでしょう。
+
+[43] 主要ブラウザでは、通常の[[制御子]]の[[本体]]に使われるのと同じ [[charset]]
+でそのまま[[符号化]]されるようです。表現できない[[文字]]が[[十進数文字参照]]になるのも[[本体]]と同じです。
+([[HTTP]] で[[提出]]する場合のみ調べています。) 
+[SRC@en[[[Firefox]] 3.0.4、[[Opera]] 9.61、[[Safari]] 3.2、[[WinIE 7]]]]
+
+[EG[
+[41] 
+例 [SRC[HTML 4 17.13.4.2]]
+[PRE(MIME)[
+Content-Disposition: form-data; name="mycontrol"
+]PRE]
+
+この例では、制御子名 [SAMP[mycontrol]] を表します。
+この欄を含む本体部分の[[本体]]は、この名前の制御子の[[現在値]]
+(またはファイル内容) になります。
+]EG]
 
 * 制御子名
 
