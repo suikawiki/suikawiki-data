@@ -1,4 +1,4 @@
-[1] [DFN[[[TLS Record Protocol]]]] は、 [[TLS]] の下位側の[[プロトコル階層]]です。
+[1] [DFN[[[TLS Record Protocol]]]] ([DFN[[RUBYB[[[記録層]]]@en[record layer]]]]) は、 [[TLS]] の下位側の[[プロトコル階層]]です。
 
 * 仕様書
 
@@ -8,20 +8,39 @@
 - [18] [CITE@en[RFC 6066 - Transport Layer Security (TLS) Extensions: Extension Definitions]] ([TIME[2015-02-01 18:07:52 +09:00]] 版) <http://tools.ietf.org/html/rfc6066#section-4>
 ]REFS]
 
-* プロトコル
+* 記録層データ構造
 
-[3] [[TLS Record Protocol]] を使って規定される[[プロトコル]]はいくつかあり、
-その区別を表す値を[RUBYB[[[記録内容型]]]@en[record content type]]といいます [SRC[>>2]]。
+[9] [[記録層]]では、 2[SUP[14]] [[バイト]][[以下]]のデータに分割して
+[CODE[[[TLSPlaintext]]]] として扱います。[[記録層]]データ構造間で分割した境界は意味を持たず、
+同じ[[記録内容型]]なら1つの [CODE[[[TLSPlaintext]]]] に結合したり、分解したりできます。 
+[SRC[>>2]]
 
-[16] [[IANA登録簿]] (>>17) もあります [SRC[>>2]]。
+[11] [CODE[[[TLSPlaintext]]]] に[[圧縮アルゴリズム]]を適用した結果が
+[CODE[[[TLSCompressed]]]] です。 (ここでいう[[圧縮アルゴリズム]]には、無変換の
+「[[null]]」も含まれます。)
 
-[FIG(short list)[
-- [[handshake protocol]]
-- [[alert protocol]]
-- [[change cipher spec protocol]]
-- [[application data protocol]]
-- [[Heartbeat protocol]]
+[12] [CODE[[[TLSCompressed]]]] に [[MACアルゴリズム]]と[[暗号化アルゴリズム]]を適用した結果が
+[CODE[[[TLSCiphertext]]]] です。
+
+[10] [CODE[[[TLSPlaintext]]]] や [CODE[[[TLSCompressed]]]] や
+[CODE[[[TLSCiphertext]]]] は、次のもので構成されます [SRC[>>2]]。
+
+;; [20] 含まれるデータの意味 (処理状態) が異なるだけで、[[欄]]の構成は同じです。
+
+[FIG(list members)[
+:[CODE[[[type]]]]:含まれているデータを処理する上位層プロトコル ([[記録内容型]] 1バイト)。
+:[CODE[[[version]]]]:プロトコルの版 (2バイト)。 3.3 なら [[TLS/1.2]], 3.2 なら [[TLS/1.1]],
+3.1 なら [[TLS/1.0]]。
+:[CODE[[[length]]]]:データの長さ ([CODE[[[uint16]]]])。
+:[CODE[[[fragment]]]]:データ ([CODE[[[length]]]] [[欄]]の値の長さ)。
 ]FIG]
+
+;; [13] [[TLS]] のプロトコルの版は[[記録層]]のメッセージに記述されるだけでなく、
+[[TLS Handshake Protocol]] の [CODE[[[ClientHello]]]] や [CODE[[[ServerHello]]]]
+にも記述されます。そちらとこちらの値は異なるかもしれません。
+
+[19] データ ([CODE[[[fragment]]]]) の長さは、
+[[TLS拡張]] [CODE[[[max_fragment_length]]]] [SRC[>>18]] により最大値を折衝できます。
 
 [15] [[TLS]] で送受信されるデータはすべて [[TLS Record Protocol]] のメッセージという形で送信されます。
 [[TLS]] が開始された当初は暗号化、圧縮などを行わない[[接続状態]]なので、
@@ -30,7 +49,43 @@
 のメッセージに暗号化、圧縮などが適用された状態になります。これで上位層プロトコルとして[[TLS応用データプロトコル]]を用い、上位[[アプリケーション層プロトコル]]のデータの送受信が行えるようになります。
 その後も [[alert protocol]] 等 [[TLS]] の[[メッセージ]]が送受信されることがあります。
 
-** 接続状態
+* 内容型
+
+[3] [[TLS Record Protocol]] を使って規定される[[プロトコル]]はいくつかあり、
+その区別を表す値を[DFN[[RUBYB[[[記録内容型]]]@en[record content type]]]]
+([DFN[[CODE[[[ContentType]]]]]]) といいます [SRC[>>2]]。
+
+[16] 値は1バイトの数値で表されます。
+
+[FIG(table)[
+:n:数値
+:name:名称
+:desc:プロトコル名
+
+:n:[CODE[[[22]]]]
+:name:[CODE[[[handshake]]]]
+:desc:[[handshake protocol]]
+
+:n:[CODE[[[21]]]]
+:name:[CODE[[[alert]]]]
+:desc:[[alert protocol]]
+
+:n:[CODE[[[20]]]]
+:name:[CODE[[[change_cipher_spec]]]]
+:desc:[[change cipher spec protocol]]
+
+:n:[CODE[[[23]]]]
+:name:[CODE[[[application_data]]]]
+:desc:[[application data protocol]]
+
+:n:[CODE[[[24]]]]
+:name:[CODE[[[heartbeat]]]]
+:desc:[[Heartbeat protocol]]
+]FIG]
+
+[21] [[IANA登録簿]] (>>17) もあります [SRC[>>2]]。
+
+* 接続状態
 
 [4] [[TLS Record Protocol]] の[RUBYB[運用環境]@en[operating environment]]のことを
 [RUBYB[[[TLS接続状態]]]@en[TLS connection state]]といい、
@@ -76,32 +131,3 @@ pending の読み取り用状態、書き込み用状態の4つがあります [
 
 [7] [[TLS Handshake Protocol]] は pending [[接続状態]]の[[セキュリティー引数]]を設定します。
 [[ChangeCipherSpec]] は pending [[接続状態]]を現在の[[接続状態]]とします。 [SRC[>>2]]
-
-[9] [[記録層]]では、 2[SUP[14]] [[バイト]][[以下]]のデータに分割して
-[CODE[[[TLSPlaintext]]]] として扱います。[[クライアントメッセージ]]の境界は意味を持たず、
-同じ[[記録内容型]]の[[クライアントメッセージ]]を1つの [CODE[[[TLSPlaintext]]]]
-に結合したり、分解したりできます。 [SRC[>>2]]
-
-[11] [CODE[[[TLSPlaintext]]]] に[[圧縮アルゴリズム]]を適用した結果が
-[CODE[[[TLSCompressed]]]] です。 (ここでいう[[圧縮アルゴリズム]]には、無変換の
-「[[null]]」も含まれます。)
-
-[12] [CODE[[[TLSCompressed]]]] に [[MACアルゴリズム]]と[[暗号化アルゴリズム]]を適用した結果が
-[CODE[[[TLSCiphertext]]]] です。
-
-[10] [CODE[[[TLSPlaintext]]]] や [CODE[[[TLSCompressed]]]] や
-[CODE[[[TLSCiphertext]]]] は、次のもので構成されます [SRC[>>2]]。
-[FIG(list members)[
-:[CODE[[[type]]]]:含まれているデータを処理する上位層プロトコル ([[記録内容型]])。
-:[CODE[[[version]]]]:プロトコルの版。 3.3 なら [[TLS/1.2]], 3.2 なら [[TLS/1.1]],
-3.1 なら [[TLS/1.0]]。
-:[CODE[[[length]]]]:データの長さ。
-:[CODE[[[fragment]]]]:データ。
-]FIG]
-
-;; [13] [[TLS]] のプロトコルの版は[[記録層]]のメッセージに記述されるだけでなく、
-[[TLS Handshake Protocol]] の [CODE[[[ClientHello]]]] や [CODE[[[ServerHello]]]]
-にも記述されます。
-
-[19] データ ([CODE[[[fragment]]]]) の長さは、
-[[TLS拡張]] [CODE[[[max_fragment_length]]]] [SRC[>>18]] により最大値を折衝できます。
