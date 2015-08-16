@@ -570,7 +570,7 @@
 [TIME[2015-06-14T09:24:37.200Z]]
 
 [154] [[応答]]の受信後に次の[[要求]]を送信するため保持した状態の[[接続]]について、
-[[Chrome]] は約300s、 [[Firefox]] は115s [SRC[>>143]] 未使用なら、閉じるようです。
+[[Chrome]] は約300s、 [[Firefox]] は115s [SRC[>>159]] 未使用なら、閉じるようです。
 [[IE]] は60s未使用なら、 [CODE[[[RST]]]] するようです [SRC[>>141]]。
 
 [155] [[IE]] は、[[要求]]の送信があった後 3600s [[サーバー]]から送信がなければ、 
@@ -920,3 +920,45 @@ programs for the purpose of communication.
 [151] [CITE@en[542401 – set TCP_NODELAY for all SocketTransport sockets (not just SSL)]]
 ([TIME[2015-08-16 13:45:59 +09:00]] 版)
 <https://bugzilla.mozilla.org/show_bug.cgi?id=542401>
+
+[FIG(quote)[
+[FIGCAPTION[
+[157] [CITE[IE9、IE10のリクエストタイムアウト時間]]
+([TIME[2015-08-16 15:25:48 +09:00]] 版)
+<https://social.technet.microsoft.com/Forums/ja-JP/5d64ea16-39cc-4f30-8077-ebf65a52f298/ie9ie10?forum=internetexplorerja>
+]FIGCAPTION]
+
+> 手元の次環境で、SleepするだけのCGIにリクエストした所、ともに受信タイムアウトは60分ちょうどでした。
+> Win8 & IE10
+> Win7 & IE9
+> HTTPレスポンス受信に無通信のまま60分経つと、IE側から切断していました。(最初の受信データかによらず)
+> レジストリにタイムアウト値(ReceiveTimeout)は設定していません。
+> # 「切断する」とは、FINパケットを先にどちらが送出したかで確認を行いました。
+>  
+> 上記リンク先のIE9が5分後にリクエストをリトライする事象は、
+> 最初、私もこれに引っかかってしまいましたが、
+> サーバにApache2.2をデフォルト設定のままで使用していると発生すると思います。
+> CGIがいつまでも応答がない場合に、Apacheがコネクションを切断してしまうためでした。(Timeoutの第3項も参照)
+> このときIE側からは、すぐに別コネクションで接続が行われ、同一のリクエストを送信していました。
+> (よーするに、1TCPコネクション内の再送ではなく、アプリレベルの再送)
+> 設定変更すると5分以上経ってもIEは受信し続けてくれました。
+
+]FIG]
+
+
+[FIG(quote)[
+[FIGCAPTION[
+[158] [CITE@en[HTTPS and Keep-Alive Connections - IEInternals - Site Home - MSDN Blogs]]
+([TIME[2015-08-16 15:34:10 +09:00]] 版)
+<http://blogs.msdn.com/b/ieinternals/archive/2011/03/26/https-and-connection-close-is-your-apache-modssl-server-configuration-set-to-slow.aspx>
+]FIGCAPTION]
+
+> In the first, a thoughtful web developer or operations team reasons: “Hey, HTTPS connections are expensive to maintain on the server. Let’s be sure to tear those down as soon as possible to free up the server to accept new connections.”  That, of course, completely misses the point that if the server wasn’t tearing down the connections, the server would be under significantly lighter load to begin with! Sites that were deliberately written with this bad pattern load slowly in all browsers.
+> We also found another root cause—ancient advice for the configuration of Apache+OpenSSL. Prior to IE6, ancient and unpatched versions of IE sometimes encountered connection failures when interacting with HTTPS servers when Keep-Alive is used. That problem was fixed nearly a decade ago, but outdated 1999-era configuration advice continues to harm performance for unaware server administrators:
+
+]FIG]
+
+
+[159] [CITE@en[Network.http.keep-alive.timeout - MozillaZine Knowledge Base]]
+([TIME[2011-09-29 04:13:03 +09:00]] 版)
+<http://kb.mozillazine.org/Network.http.keep-alive.timeout>
