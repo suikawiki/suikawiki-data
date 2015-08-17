@@ -13,6 +13,8 @@
 :[VAR[残り長さ]]:[[非負整数]]か null か「chunked」かエラー。
 :[VAR[応答受信済み]]:[[boolean]]。初期値は[[偽]]。
 :[VAR[要求の処理完了]]:[[Promise]] か null。初期値は null。
+:[VAR[WebSocket接続の状態]]:[CODE[CONNECTING]]、[CODE[OPEN]]、
+[CODE[CLOSING]]、[CODE[CLOSED]]、null のいずれか。初期値は null。
 ]FIG]
 
 [62] [[要求]]は、次のようなデータ構造です。
@@ -355,6 +357,35 @@
 == [VAR[要求]]について[[応答]]のヘッダー受信完了を通知します。
 == [VAR[要求締め切り]]フラグを設定します。
 == [VAR[状態]]を、「トンネル」に設定します。
+= [143] それ以外で、[VAR[WebSocket接続の状態]]が [CODE[CONNECTING]] で、
+[VAR[応答]]の[[状態符号]]が [CODE(HTTP)[[[101]]]] なら、
+== [145] [VAR[要求]]について[[応答]]のヘッダー受信完了を通知します。
+== [144] 
+[FIG(list)[
+- [VAR[応答]]に [CODE(HTTP)@en[[[Upgrade:]]]] [[ヘッダー]]が無いか、 
+[CODE(HTTP)@en[[[websocket]]]] ([[ASCII大文字・小文字不区別]]) が含まれていない
+- [VAR[応答]]に [CODE(HTTP)@en[[[Connection:]]]] [[ヘッダー]]が無いか、 
+[CODE(HTTP)@en[[[Upgrade]]]] ([[ASCII大文字・小文字不区別]]) が含まれていない
+- [VAR[応答]]に [CODE(HTTP)@en[[[Sec-WebSocket-Accept:]]]] [[ヘッダー]]が無いか、 
+値が[VAR[要求]]の [CODE(HTTP)@en[[[Sec-WebSocket-Key:]]]] の値に 
+[CODE(HTTP)[[[258EAFA5-E914-47DA-95CA-C5AB0DC85B11]]]] を連結した値の 
+[[SHA-1]] を [[Base64]] [[符号化]]したものでない
+- [VAR[応答]]の [CODE(HTTP)@en[[[Sec-WebSocket-Extensions:]]]] 
+[[ヘッダー]]が存在する
+- [VAR[応答]]の [CODE(HTTP)@en[[[Sec-WebSocket-Protocol:]]]] [[ヘッダー]]が[VAR[要求]]の
+[CODE(HTTP)@en[[[Sec-WebSocket-Protocol:]]]] [[ヘッダー]]の値と一致しない
+(一方が存在しない場合は、他方が存在している)
+]FIG]
+... のいずれかであれば、
+=== [VAR[要求]]について[[WebSocket接続失敗]]を通知します。
+=== [VAR[要求締め切り]]フラグを設定します。
+=== [VAR[要求の送信状態]]を送信済みに設定します。
+=== 次の要求に進みます。
+== [146] それ以外なら、
+=== [VAR[WebSocket接続の状態]]を、 [CODE[OPEN]] に設定します。
+=== [VAR[要求]]について[[WebSocket接続確立]]を通知します。
+=== [VAR[要求締め切り]]フラグを設定します。
+=== [VAR[状態]]を、「WebSocketフレーム前」に設定します。
 = [106] それ以外で、 [VAR[応答]]の[[状態符号]]が [CODE(HTTP)[[[1xx]]]] なら、
 == [VAR[要求]]の[[要求メソッド]]が [CODE(HTTP)[[[CONNECT]]]] なら、
 === [VAR[要求]]について応答エラーを通知します。
