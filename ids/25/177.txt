@@ -11,3 +11,56 @@
 [REFS[
 - [3] [CITE[Getting Started with Amazon ECS - Amazon EC2 Container Service]] ([TIME[2015-08-19 02:30:40 +09:00]] 版) <http://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_GetStarted.html>
 ]REFS]
+
+** Docker image の更新時に新しい方に差し替えたい
+
+[4] 更新完了後に [[aws CLI]] を使う。
+
+[5] register-task-definition で新しいイメージを使う task definition (の revision) を登録する。
+
+[6] update-service で service が使う task definition を新しいものに差し替える。このとき --task-definition で revision 番号なしで指定しておけば、最新のものになる。
+
+[7] 後は新しい方の container が起動して安定したら、古い方は自動的に停止する。
+
+;; [13] 新しい方に完全に切り替わるまで、すこし時間がかかります。
+
+[21] インスタンスが1つしかないと、新しい方が起動できずに切り替わらないかもしれません。
+
+** 認証付き Docker image を使いたい
+
+[9] 動作させるインスタンスの [CODE[/etc/ecs/ecs.config]] に認証情報を書いておく必要があります
+[SRC[>>8]]。
+
+[11] [[インスタンス]]の ([[Auto Scaling]] 起動設定の) [[ユーザーデータ]]として、
+[CODE[/etc/ecs/ecs.config]] を作成する過程を書いておけばOK [SRC[>>10]]。
+
+[12] これをしておかないと Web の management console ではなぜか起動しないように見えます。 (当該インスタンスでログを見たら認証エラーとわかります。)
+
+[REFS[
+- [8] [CITE[Private Registry Authentication - Amazon EC2 Container Service]] ([TIME[2015-08-19 02:30:40 +09:00]] 版) <http://docs.aws.amazon.com/AmazonECS/latest/developerguide/private-auth.html>
+- [10] [CITE[Amazon ECS Container Agent Configuration - Amazon EC2 Container Service]] ([TIME[2015-08-19 02:30:40 +09:00]] 版) <http://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-agent-config.html#ecs-config-s3>
+]REFS]
+
+** Cluster にインスタンスを紐付けるには?
+
+[14] [[Web]] の management console にはインスタンスと Cluster を直接紐付ける UI
+はなくて、動作させるインスタンスの [CODE[/etc/ecs/ecs.config]]
+で cluster の名前を指定する必要があります。
+
+[15] [[インスタンス]]の ([[Auto Scaling]] 起動設定の) [[ユーザーデータ]]として、
+[CODE[/etc/ecs/ecs.config]] を作成する過程を書いておけばOK [SRC[>>10]]。
+
+** なぜか動かない、動いてすぐ止まる
+
+[16] Docker image の取得に失敗しているか、サーバーが正常に動作していないか、
+ELB のヘルスチェックに失敗しているかもしれません。
+
+[17] 動作するはずのインスタンスで /var/log/ecs/ に何か出ていないか調べてみましょう。 (認証エラー → >>9) (メモリー不足 → インスタンスの種類を変えてみる)
+
+[18] docker コマンドが使えるはずなので、手動で動かして試してみましょう。
+
+[19] 手動で正常にサーバーが動いているのに ELB を通して外部からアクセスできる状態にならないなら、死活検査でエラーになっている可能性もあります。
+
+[22] [[ELB]] からインスタンスにアクセスできるかセキュリティグループをチェックしましょう。
+
+[20] 検査する URL は存在するか、[[認証]]や[[リダイレクト]]になっていないか確認しましょう。 [CODE(HTTP)@en[[[Host:]]]] がサーバーにとって想定外だったときに正しい[[ホスト]]に[[リダイレクト]]する仕組みにしていないかもチェック。
