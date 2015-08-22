@@ -19,6 +19,7 @@
 [CODE[CLOSING]]、[CODE[CLOSED]]、null のいずれか。初期値は null。
 :[VAR[フレーム]]:[[WebSocketフレーム]]または null。初期値は null。
 :[VAR[先頭フレーム]]:[[WebSocketフレーム]]または null。初期値は null。
+:[VAR[送信待ちフレーム]]:[[WebSocketフレーム]]または null。初期値は null。
 :[VAR[終了]]:終了または null。初期値は null。
 ]FIG]
 
@@ -92,7 +93,7 @@
 [42] 要求の送信は、次のようにします。この処理は、[[要求]]である[VAR[送信する要求]]と、
 [VAR[WebSocket]] フラグを入力として受け取ります。
 [FIG(steps)[
-= [90] 前提条件として、[VAR[送信する要求]]は次の条件を満たす必要があります。
+= [90] 前提として、[VAR[送信する要求]]は次の条件を満たす必要があります。
 [FIG(list)[
 - [93] [[要求メソッド]]が空ではない。
 - [94] [[要求メソッド]]に 0x09, 0x0A, 0x0D, 0x20 が含まれない。
@@ -106,12 +107,13 @@
 -- [102] 名前の先頭と末尾が 0x09, 0x20 でない。
 -- [104] 値に 0x0A, 0x0D が含まれない。
 -- [105] 値の先頭と末尾が 0x09, 0x20 でない。
+- [298] [CODE(HTTP)@en[[[Transfer-Encoding:]]]] [[ヘッダー]]がない。
 - [91] [VAR[WebSocket]] フラグが設定されていれば、
--- [92] [[本体]]が空である
+-- [92] [[本体]]が空である。
 - [261] [[本体]]が空の場合、
--- [262] [CODE(HTTP)@en[[[Content-Length:]]]] [[ヘッダー]]がないか、値が [CODE[0]] である
+-- [262] [CODE(HTTP)@en[[[Content-Length:]]]] [[ヘッダー]]がないか、値が [CODE[0]] である。
 - [267] [[本体]]が空でない場合、
--- [263] [CODE(HTTP)@en[[[Content-Length:]]]] [[ヘッダー]]があって、値が[[本体]]のバイト数である
+-- [263] [CODE(HTTP)@en[[[Content-Length:]]]] [[ヘッダー]]があって、値が[[本体]]のバイト数である。
 ]FIG]
 = [74] [VAR[要求締め切り]]フラグが設定されているなら、
 == [75] エラーを返し、ここで停止します。
@@ -230,7 +232,7 @@
 - [283] [VAR[理由]]の長さは 2[SUP[63]] [[未満]]かつ実装の扱える範囲内である
 - [276] [VAR[状態符号]]が null なら、[VAR[理由]]は空である
 ]FIG]
-= [279] [VAR[WebSocket接続の状態]]が [CODE[[[OPEN]]]] なら、
+= [279] [VAR[WebSocket接続の状態]]が [CODE[[[OPEN]]]] か [CODE[[[CONNECTING]]]] なら、
 == [281] [[WebSocketフレーム]]を作成します。
 [FIG(list members)[
 :[[FIN]]:1
@@ -249,10 +251,11 @@
 先頭から [VAR[i]] バイト目 (先頭が0バイト) であれば、
 [[マスクキー]]の [VAR[i]] [[mod]] 4 バイト目 (先頭が0バイト)
 と [[XOR]] した結果に差し替えます。
-== [284] [VAR[接続]]で [[WebSocketフレーム]]のバイト列を送信することとします。
-= [280] [VAR[WebSocket接続の状態]]が [CODE[[[CONNECTING]]]] なら、
-==
-@@
+== [280] [VAR[WebSocket接続の状態]]が [CODE[[[CONNECTING]]]] なら、
+=== [277] [VAR[送信待ちフレーム]]が null なら、[VAR[送信待ちフレーム]]を作成した[[WebSocketフレーム]]に設定します。
+== [290] それ以外なら、
+=== [297] [VAR[WebSocket接続の状態]]を、 [CODE[[[CLOSING]]]] に設定します。
+=== [284] [VAR[接続]]で、作成した [[WebSocketフレーム]]のバイト列を送信することとします。
 = [72] [VAR[要求締め切り]]フラグを設定します。
 = [66] [VAR[状態]]が「初期」か「要求待ち」か「トンネル」なら、
 == [55] [VAR[接続]]で正常終了の送信を指示します。
@@ -522,18 +525,18 @@ ping の受信を表します。
 [VAR[応答]]の[[状態符号]]が [CODE(HTTP)[[[101]]]] なら、
 == [144] 
 [FIG(list)[
-- [VAR[応答]]に [CODE(HTTP)@en[[[Upgrade:]]]] [[ヘッダー]]が無いか、 
+- [299] [VAR[応答]]に [CODE(HTTP)@en[[[Upgrade:]]]] [[ヘッダー]]が無いか、 
 [CODE(HTTP)@en[[[websocket]]]] ([[ASCII大文字・小文字不区別]]) が含まれていない
-- [VAR[応答]]に [CODE(HTTP)@en[[[Connection:]]]] [[ヘッダー]]が無いか、 
+- [300] [VAR[応答]]に [CODE(HTTP)@en[[[Connection:]]]] [[ヘッダー]]が無いか、 
 [CODE(HTTP)@en[[[Upgrade]]]] ([[ASCII大文字・小文字不区別]]) が含まれていない
-- [VAR[応答]]に [CODE(HTTP)@en[[[Sec-WebSocket-Accept:]]]] [[ヘッダー]]が無いか、 
+- [301] [VAR[応答]]に [CODE(HTTP)@en[[[Sec-WebSocket-Accept:]]]] [[ヘッダー]]が無いか、 
 値が[VAR[要求]]の [CODE(HTTP)@en[[[Sec-WebSocket-Key:]]]] の値に 
 [CODE(HTTP)[[[258EAFA5-E914-47DA-95CA-C5AB0DC85B11]]]] を連結した値の 
 [[SHA-1]] を [[Base64]] [[符号化]]したものでない
-- [VAR[応答]]の [CODE(HTTP)@en[[[Sec-WebSocket-Extensions:]]]] 
+- [302] [VAR[応答]]の [CODE(HTTP)@en[[[Sec-WebSocket-Extensions:]]]] 
 [[ヘッダー]]が存在する
-- [VAR[応答]]の [CODE(HTTP)@en[[[Sec-WebSocket-Protocol:]]]] [[ヘッダー]]が[VAR[要求]]の
-[CODE(HTTP)@en[[[Sec-WebSocket-Protocol:]]]] [[ヘッダー]]の値と一致しない
+- [303] [VAR[応答]]の [CODE(HTTP)@en[[[Sec-WebSocket-Protocol:]]]] [[ヘッダー]]が[VAR[要求]]の
+[CODE(HTTP)@en[[[Sec-WebSocket-Protocol:]]]] [[ヘッダー]]の値のいずれかと一致しない
 (一方が存在しない場合は、他方が存在している)
 ]FIG]
 ... のいずれかであれば、
@@ -550,12 +553,15 @@ ping の受信を表します。
 === [246] [VAR[要求の送信状態]]を送信済みに設定します。
 === [247] 次の要求に進みます。
 == [146] それ以外なら、
-=== [VAR[WebSocket接続の状態]]を、 [CODE[OPEN]] に設定します。
+=== [291] [VAR[WebSocket接続の状態]]を、 [CODE[OPEN]] に設定します。
 === [256] [VAR[要求]]について[[応答]]のヘッダー受信完了を通知します。
 [[WebSocket接続確立]]を[[真]]にします。
-=== [VAR[要求締め切り]]フラグを設定します。
-=== [VAR[状態]]を、「WebSocketフレーム前」に設定します。
+=== [292] [VAR[要求締め切り]]フラグを設定します。
+=== [293] [VAR[状態]]を、「WebSocketフレーム前」に設定します。
 === [147] [VAR[一時バッファー]]を、空に設定します。
+=== [294] [VAR[送信待ちフレーム]]が null 以外なら、
+==== [296] [VAR[WebSocket接続の状態]]を、 [CODE[[[CLOSING]]]] に設定します。
+==== [295] [VAR[接続]]で、[VAR[送信待ちフレーム]]のバイト列を送信することにします。
 = [106] それ以外で、 [VAR[応答]]の[[状態符号]]が [CODE(HTTP)[[[1xx]]]] なら、
 == [VAR[要求]]の[[要求メソッド]]が [CODE(HTTP)[[[CONNECT]]]] か、
 [VAR[WebSocket接続の状態]]が [CODE[CONNECTING]] なら、
