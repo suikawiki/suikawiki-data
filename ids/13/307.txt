@@ -5,6 +5,7 @@
 
 [REFS[
 - [2] '''[CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#dom-workerglobalscope-importscripts>'''
+- [28] [CITE@en[Service Workers]] ([TIME[2015-09-03 15:00:35 +09:00]] 版) <https://slightlyoff.github.io/ServiceWorker/spec/service_worker/#service-worker-global-scope-importscripts-allowed-flag>
 - [22] [CITE@en[Service Workers]] ([TIME[2015-09-03 15:00:35 +09:00]] 版) <https://slightlyoff.github.io/ServiceWorker/spec/service_worker/#importscripts>
 ]REFS]
 
@@ -20,14 +21,9 @@
 = [6] 各[[引数]]の[[URLの解決]]を行います [SRC[>>2]]。
 [[現職設定群オブジェクト]]の[[API基底URL]]を使うと思われますが、明記されていません。
 = [7] 失敗があれば、 [CODE(DOMe)@en[[[SyntaxError]]]] [[例外]]を[[投げ]]て停止します。
-= [8] 各[[解決]]結果の [[URL]] について [[fetch]] します。
-[[起源]]と [[referrer origin]] は[[現職設定群オブジェクト]]によります。
-[[blocking flag]] も設定します。
-= [9] 各[[引数]]について順番に、
-== [10] [[fetch]] の完了を待ちます。
-== [11] [[ネットワークエラー]]や [CODE(HTTP)[[[4xx]]]] や [CODE(HTTP)[[[5xx]]]]
-なら、
-=== [12] [CODE(DOMe)@en[[[NetworkError]]]] [[例外]]を[[投げ]]、ここで停止します。
+= [9] 各[[引数]]の[[解決]]結果について順番に、
+== [10] [[fetch結果を取得]]します。
+== [25] [[fetch結果を後処理]]します。
 == [15] [[応答]]の[[本体]]を [[UTF-8復号]]します。
 == [16] その結果を、
 指定された[[環境設定群オブジェクト]]の [[JavaScript]] [[スクリプト実行環境]]により、
@@ -51,6 +47,69 @@
 
 ;; [19] 本[[メソッド]]は [[fetch]] の結果を[[同期的]]に待っています。ただし
 [[fetch]] の開始は同時なので、[[スクリプト]]実行中に[[ネットワーク]]から取得されることを期待できます。
+後の[[スクリプト]]は、前の[[スクリプト]]が実行完了していることを前提にできます。
+
+[26] [DFN[[RUBYB[状態の検証]@en[validate the state]]]] [SRC[>>2]] は、
+[[現職設定群オブジェクト]]の[[大域オブジェクト]]が
+[CODE(DOMi)@en[[[ServiceWorkerGlobalScope]]]] で、
+その [[importscripts allowed flag]] が未設定なら、
+[CODE(DOMe)@en[[[InvalidStateError]]]] [[例外]]を[[投げます]] [SRC[>>22]]。
+
+[27] [CODE(DOMi)@en[[[ServiceWorkerGlobalScope]]]] [[オブジェクト]]は
+[[importscripts allowed flag]] を持ちます。初期状態では未設定です [SRC[>>28]]。
+
+[8] [DFN[[RUBYB[fetch結果の取得]@en[get a fetch result]]]]は、
+[FIG(steps)[
+= [29] [[現職設定群オブジェクト]]の[[大域オブジェクト]]が
+[CODE(DOMi)@en[[[ServiceWorkerGlobalScope]]]] なら、 [SRC[>>22]]
+== [32] [[現職設定群オブジェクト]]の[[大域オブジェクト]]の[[サービスワーカー]]の
+[[imported scripts updated flag]] が未設定なら、
+=== [33] [[解決]]結果の [[URL]] について [[fetch]] します。
+[[起源]]と [[referrer origin]] は[[現職設定群オブジェクト]]によります。
+[[blocking flag]] も設定します。
+== [34] それ以外なら、
+=== [35] [[現職設定群オブジェクト]]の[[大域オブジェクト]]の[[サービスワーカー]]の[[スクリプト資源写像]]に[[解決]]結果の [[URL]] についての[[記録]]があれば、
+==== [36] その[[記録]]の[[値]]を使います。
+=== [37] それ以外なら、
+==== [38] [[null]] を使います。
+= [30] それ以外なら、
+== [31] [[解決]]結果の [[URL]] について [[fetch]] します。
+[[起源]]と [[referrer origin]] は[[現職設定群オブジェクト]]によります。
+[[blocking flag]] も設定します。 [SRC[>>2]]
+]FIG]
+
+[11] [DFN[[RUBYB[fetch結果の前処理]@en[postprocess the fetch result]]]]は、
+[FIG(steps)[
+= [39] [[現職設定群オブジェクト]]の[[大域オブジェクト]]が
+[CODE(DOMi)@en[[[ServiceWorkerGlobalScope]]]] なら、 [SRC[>>22]]
+== [42] [[現職設定群オブジェクト]]の[[大域オブジェクト]]の[[サービスワーカー]]の
+[[imported scripts updated flag]] が未設定なら、
+=== [43] [[ネットワークエラー]]や [CODE(HTTP)[[[4xx]]]] や [CODE(HTTP)[[[5xx]]]]
+なら、
+==== [44] [CODE(DOMe)@en[[[NetworkError]]]] [[例外]]を[[投げ]]、停止します。 [SRC[>>2]]
+=== [45] それ以外なら、
+==== [49] [[現職設定群オブジェクト]]の[[大域オブジェクト]]の[[サービスワーカー]]の[[スクリプト資源写像]]に[[解決]]結果の [[URL]] についての[[記録]]があれば、
+===== [50] その[[記録]]の[[値]]を、 [[fetch]] で得られた[[資源]]とします。
+==== [51] それ以外なら、
+===== [52] [[現職設定群オブジェクト]]の[[大域オブジェクト]]の[[サービスワーカー]]の[[スクリプト資源写像]]に[[記録]]を追加します。
+[FIG(list members)[
+[FIGCAPTION[
+[[記録]]
+]FIGCAPTION]
+:[[鍵]]:[[解決]]結果の [[URL]]
+:[[値]]:[[fetch]] で得られた[[資源]]
+]FIG]
+== [46] それ以外なら、
+=== [47] [[null]] を使う場合 (>>38)、
+==== [48] [CODE(DOMe)@en[[[NetworkError]]]] [[例外]]を[[投げ]]、停止します。
+= [40] それ以外なら、
+== [41] [[ネットワークエラー]]や [CODE(HTTP)[[[4xx]]]] や [CODE(HTTP)[[[5xx]]]]
+なら、
+=== [12] [CODE(DOMe)@en[[[NetworkError]]]] [[例外]]を[[投げ]]、停止します。 [SRC[>>2]]
+]FIG]
+
+;; [53] [[サービスワーカー]]への保存時には、[[リダイレクト]]があっても元の [[URL]]
+で[[記録]]が作られるようです。
 
 ;; [20] [[HTML Standard]] 仕様上は[[スクリプトの作成]]を使って規定されていますが、
 [[スクリプトの作成]]と本[[メソッド]]のエラー処理の規定が矛盾しており、
