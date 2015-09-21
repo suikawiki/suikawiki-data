@@ -12,8 +12,6 @@
 - [7] [CITE[RFC Errata Report]] ([TIME[2015-09-11 18:57:28 +09:00]] 版) <https://www.rfc-editor.org/errata_search.php?rfc=1928>
 - [76] [CITE[Service Name and Transport Protocol Port Number Registry]] ([TIME[2015-09-17 07:18:22 +09:00]] 版) <https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml?search=socks>
 - [75] [CITE[SOCKS Methods]] ([TIME[2014-01-31 02:45:14 +09:00]] 版) <https://www.iana.org/assignments/socks-methods/socks-methods.xhtml>
-- [8] [CITE@en[RFC 1929 - Username/Password Authentication for SOCKS V5]] ([TIME[2015-07-26 16:21:40 +09:00]] 版) <https://tools.ietf.org/html/rfc1929>
-- [10] [CITE@en[RFC 1961 - GSS-API Authentication Method for SOCKS Version 5]] ([TIME[2015-06-21 17:56:54 +09:00]] 版) <https://tools.ietf.org/html/rfc1961>
 ]REFS]
 
 * 版
@@ -122,6 +120,13 @@
 [139] [[SOCKS]] 5 には [CODE[[[CONNECT]]]] と [CODE[[[BIND]]]] と
 [CODE[[[UDP ASSOCIATE]]]] の3つの[RUBYB[命令]@en[command]]があります。
 
+[151] [[SOCKS]] 4 では操作と認証を同じメッセージでまとめて行います。
+[CODE[[[CONNECT]]]] の場合、一往復で [[SOCKS]] としての必要手続きは完了します。
+
+[152] [[SOCKS]] 5 では版と認証方式の折衝、認証、命令の3段階があり、
+最低でも二往復しないといけません。 (ただし認証を行わないなら、
+メッセージを連続して送信することで実質的に一往復で処理することはできます。)
+
 * SOCKS 4 / 4A
 
 [21] [[要求]]には次の欄があります。
@@ -199,7 +204,7 @@
 
 [48] 明記されていませんが、[[ネットワークバイト順]]と思われます。
 
-[53] [CODE[[[VN]]]] や [CODE[[[CD]]]] が未知の値や相対外の文脈だった時にどう扱うべきかは定かではありません。
+[53] [CODE[[[VN]]]] や [CODE[[[CD]]]] が未知の値や想定外の文脈だった時にどう扱うべきかは定かではありません。
 
 ** [CODE[CONNECT]] 操作
 
@@ -292,15 +297,25 @@
 
 ** 認証方式
 
+[153] [[SOCKS]] 5 では最初に[[クライアント]]と[[サーバー]]の間で[[認証方式]]を折衝し、
+それに応じて[[認証]]します。
+
+[154] 更に[[認証]]後の[[メッセージ]]その他の送受信におけるデータのカプセル化の方法は[[認証方式]]によって規定できます。
+例えば[[認証方式]]によっては暗号化や署名の方法と構文を規定できます。
+
 [99] 方式識別子 ([CODE[METHOD]]) には次の値があります。
 [FIG(list)[
+,* [CODE[METHOD]],* 意味
 ,* [CODE[0x00]] , 認証不要 [SRC[>>6]]
 ,* [CODE[0x01]] , [[GSSAPI]] [SRC[>>6]]
 ,* [CODE[0x02]] , USERNAME/PASSWORD [SRC[>>6]]
-,* [CODE[0x03]]-[CODE[0x7F]] , [[IANA登録簿]]対象 [SRC[>>6]]
+,* [CODE[0x03]] , Challenge-Handshake Authentication Protocol [SRC[>>75]]
+,* [CODE[0x05]] , Challenge-Response Authentication Method [SRC[>>75]]
+,* [CODE[0x06]] , [[SSL]] [SRC[>>75]]
+,* [CODE[0x07]] , NDS Authentication [SRC[>>75]]
+,* [CODE[0x08]] , Multi-Authentication Framework [SRC[>>75]]
 ,* [CODE[0x80]]-[CODE[0xFE]] , 私的な方式に予約 [SRC[>>6]]
 ,* [CODE[0xFF]] , 認められる方式なし [SRC[>>6]]
-
 ]FIG]
 
 [101] [CODE[METHOD]] の開発者は、 [[IANA登録簿]]に登録するべきです [SRC[>>6]]。
@@ -308,6 +323,31 @@
 [102] [[GSSAPI]] を実装しなければ[['''なりません''']] [SRC[>>6]]。
 
 [103] USERNAME/PASSWORD を実装する[['''べきです''']] [SRC[>>6]]。
+
+[156] [CODE[0x03]]-[CODE[0x7F]] は[[IANA登録簿]] [SRC[>>75]] の登録対象 [SRC[>>6]]
+とされています。
+
+[155] 実際幾つかの認証方式が開発され、 [[IANA登録簿]] [SRC[>>75]] に登録されています。
+実装も存在していたようです。しかしいずれも [[I-D]] のまま放置されています。
+
+[158] [[Webブラウザー]]は、認証方式なし ([CODE[0x00]]) にしか対応していないようです。
+現在の [[SOCKS]] の利用の多くは同一環境で動作している [[SOCKSプロキシ]]を使うものでしょうから、
+[[認証]]は不要なのだと思われます。
+
+[REFS[
+- [8] [CITE@en[RFC 1929 - Username/Password Authentication for SOCKS V5]] ([TIME[2015-07-26 16:21:40 +09:00]] 版) <https://tools.ietf.org/html/rfc1929>
+- [10] [CITE@en[RFC 1961 - GSS-API Authentication Method for SOCKS Version 5]] ([TIME[2015-06-21 17:56:54 +09:00]] 版) <https://tools.ietf.org/html/rfc1961>
+- [12] [CITE@en[draft-ietf-aft-socks-chap-01 - Challenge-Handshake Authentication Protocol for SOCKS V5]] ([TIME[2015-07-20 00:36:46 +09:00]] 版) <https://tools.ietf.org/html/draft-ietf-aft-socks-chap-01>
+- [79] [CITE@en[draft-ietf-aft-socks-cram-00 - Challenge-Response Authentication Method for SOCKS V5]]
+([TIME[2015-07-23 13:33:45 +09:00]] 版)
+<https://tools.ietf.org/html/draft-ietf-aft-socks-cram-00>
+- [80] [CITE@en[draft-ietf-aft-socks-ssl-00 - Secure Sockets Layer for SOCKS Version 5]]
+([TIME[2015-07-20 17:44:24 +09:00]] 版)
+<https://tools.ietf.org/html/draft-ietf-aft-socks-ssl-00>
+- [81] [CITE@en[draft-ietf-aft-socks-maf-01 - Multi-Authentication Framework Method for SOCKS V5]]
+([TIME[2015-07-20 17:49:20 +09:00]] 版)
+<https://tools.ietf.org/html/draft-ietf-aft-socks-maf-01>
+]REFS]
 
 ** アドレス型
 
@@ -366,6 +406,8 @@
 
 [100] その後、[[クライアント]]と[[サーバー]]の間で方式依存の折衝を行います [SRC[>>6]]。
 
+[157] 認証方式が [CODE[0x00]] の場合は、何もしないと思われます。
+
 [104] それが済んだら、[[クライアント]]は、
 [FIG(steps)[
 = [105] 要求を作成します。
@@ -417,6 +459,20 @@
 - [CODE[0x09]]-[CODE[0xFF]] - 未割当
 ]FIG]
 
+[123] 返答が失敗の時 ([CODE[[[REP]]]] ≠ [CODE[[[0x00]]]])、
+[[サーバー]]は[[返答]]の送信のすぐ後に [[TCP接続]]を閉じなければ[['''なりません''']]。
+これは失敗検出の後10s[[以下]]でなければなりません。 [SRC[>>6]]
+
+[124] 返答が成功の時 ([CODE[[[REP]]]] = [CODE[[[0x00]]]]) で[[要求]]が
+[CODE[[[BIND]]]] や [CODE[[[CONNECT]]]] なら、
+[[クライアント]]はデータを送信できるようになります [SRC[>>6]]。
+[[サーバー]]は受信したデータを[[クライアント]]に送信します。
+
+[125] [[認証方式]]が規定する場合は、[[クライアント]]や[[サーバー]]は送信するデータを適当にカプセル化しなければ[['''なりません''']]
+[SRC[>>6]]。
+
+** [CODE[CONNECT]] 要求
+
 [114] [CODE[[[CONNECT]]]] [[要求]]に対する返答の場合、
 [CODE[[[BND.PORT]]]] は[[サーバー]]が対象ホストへの接続に割り当てた[[ポート番号]]、
 [CODE[[[BND.ADDR]]]] は関連付けられた [[IPアドレス]]です [SRC[>>6]]。
@@ -425,6 +481,8 @@
 [CODE[[[CONNECT]]]] [[要求]]により確立された主たる[[接続]]の後に二次的な接続を確立するために使うことを想定しています。
 [CODE[[[BIND]]]] [[要求]]の評価には[[要求]]の [CODE[DST.ADDR]]
 と [CODE[DST.PORT]] っを使うことが想定されています。 [SRC[>>6]]
+
+** [CODE[BIND]] 要求
 
 [115] [CODE[[[BIND]]]] [[要求]]によって[[サーバー]]が新しい[[ソケット]]を作成、
 [[束縛]]したら、[[クライアント]]に最初の返答を送信します。
@@ -436,6 +494,8 @@
 次の返答を送信します。
 [CODE[[[BND.PORT]]]] と [CODE[[[BND.ADDR]]]]
 は、接続してきたホストの[[ポート番号]]と[[アドレス]]とします。 [SRC[>>6]]
+
+** [CODE[UDP ASSOCIATE]] 要求
 
 [118] [CODE[[[UDP ASSOCIATE]]]] [[要求]]は、
 [[UDP]] [[データグラム]]の中継を確立するものです。 [SRC[>>6]]
@@ -457,19 +517,6 @@
 [CODE[[[BND.PORT]]]] と [CODE[[[BND.ADDR]]]]
 には(中継されることとなる) [[UDP]] の宛先として[[クライアント]]が使うべき[[ポート番号]]と[[アドレス]]を指定します。
 [SRC[>>6]]
-
-
-[123] 返答が失敗の時 ([CODE[[[REP]]]] ≠ [CODE[[[0x00]]]])、
-[[サーバー]]は[[返答]]の送信のすぐ後に [[TCP接続]]を閉じなければ[['''なりません''']]。
-これは失敗検出の後10s[[以下]]でなければなりません。 [SRC[>>6]]
-
-[124] 返答が成功の時 ([CODE[[[REP]]]] = [CODE[[[0x00]]]]) で[[要求]]が
-[CODE[[[BIND]]]] や [CODE[[[CONNECT]]]] なら、
-[[クライアント]]はデータを送信できるようになります [SRC[>>6]]。
-[[サーバー]]は受信したデータを[[クライアント]]に送信します。
-
-[125] [[認証方式]]が規定する場合は、[[クライアント]]や[[サーバー]]は送信するデータを適当にカプセル化しなければ[['''なりません''']]
-[SRC[>>6]]。
 
 [129] [[UDP]] を使う[[クライアント]]は、
 [CODE[[[UDP ASSOCIATE]]]] [[要求]]に対する返答の [[UDP]] 中継サーバーの
@@ -627,8 +674,6 @@ socks://socks.ssh.com:1080/203.123.0.0/16,198.74.23.0/24
 
 [11] [CITE@en[RFC 3089 - A SOCKS-based IPv6/IPv4 Gateway Mechanism]] ([TIME[2015-07-26 16:11:34 +09:00]] 版) <https://tools.ietf.org/html/rfc3089>
 
-[12] [CITE@en[draft-ietf-aft-socks-chap-01 - Challenge-Handshake Authentication Protocol for SOCKS V5]] ([TIME[2015-07-20 00:36:46 +09:00]] 版) <https://tools.ietf.org/html/draft-ietf-aft-socks-chap-01>
-
 [15] [CITE[IO::Socket::Socks - search.cpan.org]]
 ([TIME[2015-09-11 19:05:59 +09:00]] 版)
 <http://search.cpan.org/dist/IO-Socket-Socks/lib/IO/Socket/Socks.pm>
@@ -666,11 +711,6 @@ socks://socks.ssh.com:1080/203.123.0.0/16,198.74.23.0/24
 > As part of the GSS-API negotiation a protection mode is negotiated. RFC 1961 says in section 4.3/4.4 it should be protected, but the NEC reference implementation does not. The option --socks5-gssapi-nec allows the unprotected exchange of the protection mode negotiation. (Added in 7.19.4).
 
 ]FIG]
-
-
-[57] [CITE@en[122752 – SOCKS: Username/Password Authentication (V5)]]
-([TIME[2015-09-14 23:33:41 +09:00]] 版)
-<https://bugzilla.mozilla.org/show_bug.cgi?id=122752>
 
 [58] [CITE@en[280661 – SOCKS proxy server connection timeout hard-coded]]
 ([TIME[2015-09-14 23:34:24 +09:00]] 版)
@@ -743,17 +783,9 @@ socks://socks.ssh.com:1080/203.123.0.0/16,198.74.23.0/24
 
 ]FIG]
 
-[79] [CITE@en[draft-ietf-aft-socks-cram-00 - Challenge-Response Authentication Method for SOCKS V5]]
-([TIME[2015-07-23 13:33:45 +09:00]] 版)
-<https://tools.ietf.org/html/draft-ietf-aft-socks-cram-00>
-
-[80] [CITE@en[draft-ietf-aft-socks-ssl-00 - Secure Sockets Layer for SOCKS Version 5]]
-([TIME[2015-07-20 17:44:24 +09:00]] 版)
-<https://tools.ietf.org/html/draft-ietf-aft-socks-ssl-00>
-
-[81] [CITE@en[draft-ietf-aft-socks-maf-01 - Multi-Authentication Framework Method for SOCKS V5]]
-([TIME[2015-07-20 17:49:20 +09:00]] 版)
-<https://tools.ietf.org/html/draft-ietf-aft-socks-maf-01>
+[57] [CITE@en[122752 – SOCKS: Username/Password Authentication (V5)]]
+([TIME[2015-09-14 23:33:41 +09:00]] 版)
+<https://bugzilla.mozilla.org/show_bug.cgi?id=122752>
 
 [82] [CITE[Dante - Documentation]]
 ([TIME[2015-08-27 23:18:16 +09:00]] 版)
