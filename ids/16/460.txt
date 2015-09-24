@@ -9,6 +9,7 @@
 [REFS[
 - [4] '''[CITE@en[RFC 7301 - Transport Layer Security (TLS) Application-Layer Protocol Negotiation Extension]] ( ([TIME[2014-07-12 02:05:37 +09:00]] 版)) <http://tools.ietf.org/html/rfc7301>'''
 - [5] [CITE[Transport Layer Security (TLS) Extensions]] ([TIME[2014-12-12 17:25:31 +09:00]] 版) <http://www.iana.org/assignments/tls-extensiontype-values/tls-extensiontype-values.xhtml#alpn-protocol-ids>
+- [53] [CITE@en[RFC 7639 - The ALPN HTTP Header Field]] ([TIME[2015-08-27 14:11:50 +09:00]] 版) <https://tools.ietf.org/html/rfc7639>
 ]REFS]
 
 * 構文
@@ -128,6 +129,75 @@
 - [27] [CITE@en[data-web-defs/tls.txt at master · manakai/data-web-defs]] ([TIME[2015-05-28 13:20:43 +09:00]] 版) <https://github.com/manakai/data-web-defs/blob/master/doc/tls.txt>
 ]REFS]
 
+* [CODE(HTTP)@en[ALPN:]] ヘッダー (HTTP)
+
+[54] [[HTTP]] の [DFN[[CODE(HTTP)@en[[[ALPN:]]]]]] [[ヘッダー]]は、
+[CODE(HTTP)@en[[[CONNECT]]]] [[トンネル]]内の[[プロトコル]]の[[ヒント]]を示すものです。
+
+** 意味
+
+[55] [[クライアント]]が [CODE(HTTP)@en[[[CONNECT]]]] [[要求]]により確立する[[トンネル]]内で使う[[プロトコル]](群)を示すものです
+[SRC[>>53]]。
+
+[57] 複数あり得る時は、すべてを示します [SRC[>>53]]。
+
+[58] この[[ヘッダー]]は[[クライアント]]の意思を示すためだけのものであり、
+[[折衝]]に使うことを目的とはしていません [SRC[>>53]]。
+
+** 構文
+
+[61] [CODE(HTTP)@en[[[ALPN:]]]] [[ヘッダー]]の値は、
+1つ以上の値の[[リスト]] ([CODE(HTTP)[#]]) です [SRC[>>53]]。
+
+[FIG(railroad)[
+= 値
+= *
+== [[OWS]]
+== [CODE(HTTP)[[[,]]]]
+== [[OWS]]
+== 値
+]FIG]
+
+[60] 値は、 [[ALPN]] の[[プロトコル]]識別子を使います [SRC[>>53]]。
+ただし [[HTTP]] の[[字句]]で表せない[[オクテット]]および [CODE(HTTP)[[[%]]]]
+は、 [[RFC 3986]] [[パーセント符号化]]しなければ[['''なりません''']] [SRC[>>53]]。
+それ以外の[[字句]で表せる[[オクテット]]は、[[パーセント符号化]]しては[['''なりません''']]
+[SRC[>>53]]。[[パーセント符号化]]の[[十六進数]]は、[[大文字]]でなければ[['''なりません''']]
+[SRC[>>53]]。
+
+;; [62] 値の大文字と小文字は、区別されます。
+
+[56] [[トンネル]]内で [[TLS]] を使う時は、 [[TLS handshake]] の [CODE@en[[[ClientHello]]]]
+で [[ALPN]] によって示す[[プロトコル]]のリストと同じものとします [SRC[>>53]]。
+
+[63] [[TLS]] を使わない場合など[[折衝]]しないと思われる場合は、
+利用するプロトコルを1つ指定します。その他何らかの方法で折衝できる場合は、
+折衝対象のプロトコルを指定します。 [SRC[>>53]]
+
+** 文脈
+
+[66] [CODE(HTTP)@en[[[CONNECT]]]] [[要求]]で指定できます。
+この[[ヘッダー]]は必須ではありません [SRC[>>53]]。
+
+[68] この[[ヘッダー]]は、[[fingerprinting vector]] です。
+機密や繊細な情報を晒してしまうことになるときは、
+送信する[['''べきではありません''']] [SRC[>>53]]。
+
+** 処理
+
+[59] [[プロキシ]]は、示された[[プロトコル]]を見て[[トンネル]]の拒絶や優先度制御、
+その他の決定を行うことができます [SRC[>>53]]。
+
+;; [64] しかし [CODE(HTTP)@en[[[ALPN:]]]] [[ヘッダー]]の値が正しいとは限らないので、
+アクセス制御に直ちに用いられるわけではありません [SRC[>>53]]。
+
+[65] [[プロキシ]]は、[[トンネル]]のプロトコルを認識できなかったというだけの理由で[[トンネル]]を切断する[['''べきではありません''']]
+[SRC[>>53]]。
+
+* 関連
+
+[17] [[HTTPS]] も参照。
+
 * 歴史
 
 ** NPN
@@ -174,14 +244,6 @@
 ([TIME[2015-01-23 14:56:59 +09:00]] 版)
 <https://tools.ietf.org/html/rfc7443>
 
-* 関連
-
-[17] [[HTTPS]] も参照。
-
-[41] [CITE@en[draft-ietf-httpbis-tunnel-protocol-05 - The ALPN HTTP Header Field]]
-([TIME[2015-07-09 12:21:49 +09:00]] 版)
-<https://tools.ietf.org/html/draft-ietf-httpbis-tunnel-protocol-05>
-
 [46] [CITE@en[861266 – Implement TLS 1.2 (RFC 5246) in Gecko (Firefox, Thunderbird), on by default]]
 ([TIME[2015-08-28 11:49:39 +09:00]] 版)
 <https://bugzilla.mozilla.org/show_bug.cgi?id=861266>
@@ -198,10 +260,6 @@
 ([TIME[2015-08-28 11:58:39 +09:00]] 版)
 <https://bugzilla.mozilla.org/show_bug.cgi?id=1047698>
 
-[50] [CITE@en[1125292 – Support Tunnel-Protocol for WebRTC]]
-([TIME[2015-09-24 20:36:41 +09:00]] 版)
-<https://bugzilla.mozilla.org/show_bug.cgi?id=1125292>
-
 [51] [CITE[Issue 497770 - chromium - BoringSSL ALPN callback cannot send SSL ALERT 120 (no application protocol found) - An open-source project to help move the web forward. - Google Project Hosting]]
 ([TIME[2015-09-24 20:45:48 +09:00]] 版)
 <https://code.google.com/p/chromium/issues/detail?id=497770>
@@ -216,3 +274,24 @@
 > Note that some client implementations deal very poorly if a server sends both ALPN and NPN in the ServerHello. When a server responds negotiating a protocol via ALPN in the ServerHello, it must not also send a list of protocols for NPN negotiation as well.
 
 ]FIG]
+
+** [CODE(HTTP)@en[ALPN:]] ヘッダー
+
+[41] [CITE@en[draft-ietf-httpbis-tunnel-protocol-05 - The ALPN HTTP Header Field]]
+([TIME[2015-07-09 12:21:49 +09:00]] 版)
+<https://tools.ietf.org/html/draft-ietf-httpbis-tunnel-protocol-05>
+
+[50] [CITE@en[1125292 – Support Tunnel-Protocol for WebRTC]]
+([TIME[2015-09-24 20:36:41 +09:00]] 版)
+<https://bugzilla.mozilla.org/show_bug.cgi?id=1125292>
+
+* 実装
+
+[67] [[HTTPS]] において [[Chrome]] も [[Firefox]] も [[ALPN]]
+を使って [[HTTP/1]] と [[HTTP/2]] を選択しています。
+
+;; [[HTTPS]] も参照。
+
+[69] [[HTTPS]] のための [CODE(HTTP)@en[[[CONNECT]]]] [[要求]]には、
+[[Firefox]] も [[Chrome]] も [CODE(HTTP)@en[[[ALPN:]]]]
+[[ヘッダー]]を使わないようです。 [TIME[2015-09-24T13:53:06.500Z]]
