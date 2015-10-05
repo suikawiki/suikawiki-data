@@ -59,7 +59,11 @@
 = [VAR[継続ストリーム識別子]]を、 null に設定します。
 = [VAR[自身のフロー制御窓差分]]と[VAR[peerのフロー制御窓差分]]を、 0 に設定します。
 = [VAR[符号化用動的表]]を、空のリストに設定します。
+= [VAR[符号化用動的表サイズ]]を、[VAR[peerの設定]]の欄 [CODE[[[SETTINGS_HEADER_TABLE_SIZE]]]]
+の値に設定します。
 = [VAR[復号用動的表]]を、空のリストに設定します。
+= [VAR[復号用動的表サイズ]]を、[VAR[自身の設定]]の欄 [CODE[[[SETTINGS_HEADER_TABLE_SIZE]]]]
+の値に設定します。
 ]FIG]
 
 [15] [VAR[接続]]のバイト受信の通知は、次のように処理します [SRC[仕様なし]]。
@@ -118,7 +122,7 @@
 = [VAR[R]] を、[VAR[ヘッダー]][5] を符号無し8ビット整数として解釈した結果 & 128 とします。
 = [VAR[R]] が 1 なら、不正な [VAR[R]] として警告します [SRC[仕様なし]]。
 = [VAR[フレーム]]のストリーム識別子を、[VAR[ヘッダー]][6..9] を符号無し32ビット整数として解釈した結果 & (2[SUP[31]]-1) とします。
-= [VAR[フレーム]]の長さが[VAR[自身の設定]]の [CODE[[[SETTINGS_MAX_FRAME_SIZE]]]]
+= [VAR[フレーム]]の長さが[VAR[自身の設定]]の欄 [CODE[[[SETTINGS_MAX_FRAME_SIZE]]]]
 の値より大きければ、
 == [[接続エラー]] [WEAK[[VAR[フレーム]]の型が [CODE[DATA]] と未知の場合 [[RFC]] ではストリームエラーでも可]] [CODE[[[FRAME_SIZE_ERROR]]]] を投げます。
 ]FIG]
@@ -314,7 +318,7 @@ payload[8..([VAR[フレーム]]の長さ -1)] に設定します。
 == [VAR[フレーム]]のストリーム識別子が0なら、
 === [VAR[フレーム]]の窓サイズ増分が0なら、
 ==== [[接続エラー]] [CODE[[[PROTOCOL_ERROR]]]] を投げます。
-=== [VAR[peerの設定]]の [CODE[[[SETTINGS_INITIAL_WINDOW_SIZE]]]] +
+=== [VAR[peerの設定]]の欄 [CODE[[[SETTINGS_INITIAL_WINDOW_SIZE]]]] +
 [VAR[peerのフロー制御窓差分]] + [VAR[フレーム]]の窓サイズ増分が 2[SUP[31]]-1
 より大きければ、
 ==== [[接続エラー]] [CODE[[[FLOW_CONTROL_ERROR]]]] を投げます。
@@ -322,8 +326,7 @@ payload[8..([VAR[フレーム]]の長さ -1)] に設定します。
 == それ以外なら、
 === ストリームフレームの処理を実行します。引数[VAR[フレーム]]は、[VAR[フレーム]]とします。
 = [VAR[フレーム]]の型が [CODE[[[CONTINUATION]]]] なら、
-==
-@@
+== ストリームフレームの処理を実行します。引数[VAR[フレーム]]は、[VAR[フレーム]]とします。
 ]FIG]
 
 [22] ストリームの作成は、[VAR[ストリーム識別子]]を引数とし、次のようにします。
@@ -356,7 +359,7 @@ payload[8..([VAR[フレーム]]の長さ -1)] に設定します。
 [10] ストリームフレームの処理は、[VAR[フレーム]]を引数とし、
 次のようにします。エラーが投げられたらそこで停止し、伝播させます。
 [FIG(steps)[
-= [VAR[ストリーム]]を、[VAR[ストリーム群]]のうちストリーム識別子が[VAR[フレーム]]のストリーム識別子と等しいものとします。なければ、 null とします。
+= [VAR[ストリーム]]を、[VAR[ストリーム群]] ([VAR[フレーム]]のストリーム識別子) とします。
 = [VAR[ストリーム]]が非 null で状態が closed なら、
 == 不正なフレームを警告します。
 [WEAK[[[RFC]] 上では、 [[接続エラー]] [CODE[[[STREAM_CLOSED]]]] を投げます。]]
@@ -373,9 +376,9 @@ payload[8..([VAR[フレーム]]の長さ -1)] に設定します。
 ==== [VAR[ストリーム]]の状態を、 closed に設定します。
 == 
 [FIG(list)[
-- [VAR[フレーム]]のデータの長さが[VAR[自身の設定]]の [CODE[[[SETTINGS_INITIAL_WINDOW_SIZE]]]]
+- [VAR[フレーム]]のデータの長さが[VAR[自身の設定]]の欄 [CODE[[[SETTINGS_INITIAL_WINDOW_SIZE]]]]
 の値 + [VAR[自身のフロー制御窓差分]]より大きい
-- [VAR[フレーム]]のデータの長さが[VAR[自身の設定]]の [CODE[[[SETTINGS_INITIAL_WINDOW_SIZE]]]]
+- [VAR[フレーム]]のデータの長さが[VAR[自身の設定]]の欄 [CODE[[[SETTINGS_INITIAL_WINDOW_SIZE]]]]
 の値 + [VAR[ストリーム]]の自身のフロー制御窓差分より大きい
 ]FIG]
 ... のいずれかなら、
@@ -387,8 +390,8 @@ payload[8..([VAR[フレーム]]の長さ -1)] に設定します。
 = [VAR[フレーム]]の型が [CODE[HEADERS]] なら、
 == [VAR[ストリーム]]が null か状態が idle なら、
 === [VAR[ストリーム群]]のうち状態が open, half-closed (local), half-closed (remote)
-のいずれかのものの数が [CODE[[[SETTINGS_MAX_CONCURRENT_STREAMS]]]] 
-と等しければ、
+のいずれかのものの数が[VAR[自身の設定]]の欄 [CODE[[[SETTINGS_MAX_CONCURRENT_STREAMS]]]] 
+の値と等しければ、
 ==== [[ストリームエラー]] [CODE[[[PROTOCOL_ERROR]]]] または 
 [CODE[[[REFUSED_STREAM]]]] を選び、投げます。
 === ストリームを作成します。[VAR[ストリーム識別子]]は[VAR[フレーム]]のストリーム識別子とします。[VAR[ストリーム]]を、得られたストリームに設定します。
@@ -444,7 +447,7 @@ payload[8..([VAR[フレーム]]の長さ -1)] に設定します。
 === [[接続エラー]] [CODE[[[PROTOCOL_ERROR]]]] を投げます。
 == [VAR[フレーム]]の窓サイズ増分が0なら、
 === [[ストリームエラー]] [CODE[[[PROTOCOL_ERROR]]]] を投げます。
-== [VAR[peerの設定]]の [CODE[[[SETTINGS_INITIAL_WINDOW_SIZE]]]] +
+== [VAR[peerの設定]]の欄 [CODE[[[SETTINGS_INITIAL_WINDOW_SIZE]]]] の値 +
 [VAR[ストリーム]]のpeerのフロー制御窓差分 + [VAR[フレーム]]の窓サイズ増分が 2[SUP[31]]-1
 より大きければ、
 === [[ストリームエラー]] [CODE[[[FLOW_CONTROL_ERROR]]]] を投げます。
@@ -521,7 +524,12 @@ XXX なら、XXX
 = [VAR[バイト]]を、[VAR[ストリーム]]のバッファー[i] に設定します。
 = [VAR[i]] を、 [VAR[i]] + 1 に設定します。
 = [VAR[バイト]]の先頭ビットが [CODE[001]] なら、
-== @@動的
+==
+@@不適切な文脈で現れた時、
+== [VAR[復号用動的表サイズ]]を、 HPACK整数 ([VAR[バイト]], 5) とします。
+== [VAR[復号用動的表最大サイズ]]が[VAR[自身の設定]]の欄 [CODE[[[SETTINGS_HEADER_TABLE_SIZE]]]] の値より大きければ、
+=== 復号エラーを投げ、停止します。
+== [VAR[復号用動的表]]の eviction を実行します。[VAR[最大値]]は[VAR[復号用動的表サイズ]]とします。
 = それ以外で、[VAR[バイト]]の先頭ビットが [CODE[1]] なら、
 == [VAR[索引]]を、HPACK整数 ([VAR[バイト]], 7) とします。
 == [VAR[ヘッダー]]を、 HPACKヘッダー ([VAR[索引]]) とします。
@@ -548,8 +556,7 @@ XXX なら、XXX
 == [VAR[バイト]]の先頭ビットが [CODE[01]] なら、
 === [VAR[復号用動的表]]の先頭に[VAR[ヘッダー]]を追加します。
 === [VAR[復号用動的表]]について eviction を実行します。
-[VAR[最大値]]は[VAR[自身の設定]]の [CODE[[[SETTINGS_HEADER_TABLE_SIZE]]]]
-の値とします。
+[VAR[最大値]]は[VAR[復号用動的表サイズ]]とします。
 == [VAR[ヘッダーリスト]]の末尾に[VAR[ヘッダー]]を追加します。
 ]FIG]
 
