@@ -1,9 +1,13 @@
 [67] [[CSP指令]] [DFN[[CODE(HTTP)@en[[[upgrade-insecure-requests]]]]]]
 は、そのページに関する [[fetch]] で [CODE(URI)@en[[[http:]]]] を
-[CODE(URI)@en[[[https:]]]] に書き換えることを指示するものです。
+[CODE(URI)@en[[[https:]]]] に書き換えること ([DFN[[RUBYB[格上げ]@en[upgrade]]]])
+を指示するものです。
 
-[68] [[HTTP要求]]の [CODE(HTTP)@en[[[Upgrade-Insecure-Requests:]]]]
+[68] [[HTTP要求]]の [DFN[[CODE(HTTP)@en[[[Upgrade-Insecure-Requests:]]]]]]
 [[ヘッダー]]は、[[クライアント]]が本 [[CSP指令]]に対応していることを示すものです。
+
+[69] これらの機能は [[W3C]] [[WebAppSec WG]] で [[Mike West]] らにより開発された仕様書
+[DFN[[CITE[[[Upgrade Insecure Requests]]]]]] (非保安要求の格上げ) で規定されています。
 
 * 仕様書
 
@@ -15,6 +19,58 @@
 -- [42] [CITE@en[Upgrade Insecure Requests]] ([TIME[2015-10-07 03:24:10 +09:00]] 版) <https://w3c.github.io/webappsec-upgrade-insecure-requests/#preference>
 -- [65] [CITE@en[Upgrade Insecure Requests]] ([TIME[2015-10-07 03:24:10 +09:00]] 版) <https://w3c.github.io/webappsec-upgrade-insecure-requests/#should-upgrade-for-client>
 ]REFS]
+
+* 意味
+
+[71] [[CSP指令]] [CODE(HTTP)@en[[[upgrade-insecure-requests]]]]
+は、本来 [CODE(URI)@en[[[http:]]]] [[URL]] で指定され[[素のHTTP]]
+で [[fetch]] するべきところを [CODE(URI)@en[[[https:]]]]
+に書き換え [[HTTPS]] で [[fetch]] するよう、 [[Webブラウザー]]に指示するものです。
+
+[72] 10年代半ば、[[インターネット]]の[[プロトコル]]が[[平文]]から [[TLS]]
+ベースへと移行することを迫られる中、既存の [CODE(URI)@en[[[http:]]]]
+前提の [[Webサイト]]の [[HTTPS]] への移行のために [[Webサイト]]中の [CODE(URI)@en[[[http:]]]]
+[[URL]] をすべて書き換えなければ [[Mixed Content]] 制約に抵触することが問題となりました。
+例えば [CODE(HTMLe)@en[[[script]]]] [[要素]]で [CODE(URI)@en[[[http:]]]]
+の[[絶対URL]]が指定されていると、
+そのままでは [[HTTPS]] 化できません。そのため、あまりメンテナンスされなくなった
+[[Webページ]]や本文を編集したくない歴史的な文書などの [[Webサイト]]は
+[[HTTPS]] に移行するのが困難でした。
+
+[73] そこで導入された本機能を使うと、[[Webページ]]の[[文書]]自体は編集せずとも
+[[HTTPヘッダー]]を追加するだけで、 [[Mixed Content]] 制約の検査の前に
+[CODE(URI)@en[[[http:]]]] [[URL]] を[[Webブラウザー]]に読み替えさせることができます。
+
+[74] ただし [[Mixed Content]] 制約を実装して本機能を実装しない旧来の
+[[Webブラウザー]]に対して [[HTTPS]] で[[Webサイト]]を提供すると、
+[[CSP指令]]は単に無視されますから、 [[URL]] の書き換えが行われず、
+[[Webサイト]]は壊れてしまいます。そこで本機能に対応した [[Webブラウザー]]は
+[[HTTP要求]]に [CODE(HTTP)@en[[[Upgrade-Insecure-Requests:]] 1]]
+[[ヘッダー]]を追加することになっています。[[サーバー]]はこの[[ヘッダー]]がある時だけ
+[[HTTPS]] で本機能を利用し、そうでない時は従来通り[[素のHTTP]]
+で [[Webサイト]]を提供できます。
+
+;; [75] この [[HTTPヘッダー]]による[[サーバー]]側での分岐は、すべての
+[[Webブラウザー]]が本 [[CSP指令]]に対応さえすれば、不要になると思われます。
+[[Webブラウザー]]は多くの[[要求]]で [CODE(HTTP)@en[[[Upgrade-Insecure-Requests:]] 1]]
+[[ヘッダー]]分の余計な転送が必要となりますが、いずれはそれも要らなくなるかもしれません。
+(現状でもできるだけ削減するために [[HSTS]] の情報が使われています。)
+一方で [[CSP指令]]は [[HTTPS]] に移行した [[Webサイト]]が今後も意図通り動作し続けるために、
+[[Webブラウザー]]が恒久的に対応し続ける必要があります。
+
+[76] [[CSP指令]] [CODE(HTTP)@en[[[upgrade-insecure-requests]]]]
+は、その[[文書]]内の[[画像]]、[[スクリプト]]、[[ワーカー]]、
+[[XHR]] アクセスなどで [CODE(URI)@en[[[http:]]]] を [CODE(URI)@en[[[https:]]]]
+に読み替えさせます。 [[WebSocket]] アクセスでは [CODE(URI)@en[[[ws:]]]]
+を [CODE(URI)@en[[[wss:]]]] に読み返させます。
+
+[78] [[CSP指令]] [CODE(HTTP)@en[[[upgrade-insecure-requests]]]]
+は、その[[文書]]からの [[navigate]] ([[ハイパーリンク]]や[[フレーム]]など)
+のうち、同じ[[起源]]へのものや、[[フォーム提出]]について [CODE(URI)@en[[[http:]]]] を 
+[CODE(URI)@en[[[https:]]]] に読み替えさせます。
+
+[79] この[[CSP指令]]の効果は[[フレーム]]内にも及びます。
+[[フレーム]]内でこれを解除することはできません。
 
 * 用語
 
@@ -97,6 +153,9 @@
 [SRC[>>31]]。 [CODE(HTML)@en[[[<meta http-equiv=Content-Security-Policy>]]]]
 での利用も禁止されていません。 [CODE(HTTP)@en[[[Content-Security-Policy-Report-Only:]]]]
 [[ヘッダー]]でも禁止はされていませんが意味はありません [SRC[>>31]]。
+
+[77] [CODE(URI)@en[[[http:]]]] での利用も禁止されておらず、
+処理も [CODE(URI)@en[[[https:]]]] の場合と変わらないようです。
 
 [35] [[enforce]] は、次のようにします [SRC[>>31]]。
 [FIG(steps)[
@@ -185,6 +244,10 @@
 [60] [[サーバー]]は、[[HTTPキャッシュ]]を考慮して
 [CODE(HTTP)@en[[[Vary:]]]] [[ヘッダー]]に
 [CODE(HTTP)@en[[[Upgrade-Insecure-Requests]]]] を追加する必要があるかもしれません。
+
+* 関連
+
+[70] [[HTTPヘッダー]] [CODE(HTTP)@en[[[Upgrade:]]]] とは無関係です。
 
 * 歴史
 
