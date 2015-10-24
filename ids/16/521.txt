@@ -1,3 +1,11 @@
+* 仕様書
+
+[REFS[
+- [100] '''[CITE@en-US[Fetch Standard]] ([TIME[2015-10-15 18:48:08 +09:00]] 版) <https://fetch.spec.whatwg.org/>'''
+-- [101] [CITE@en-US[Fetch Standard]] ([TIME[2015-10-15 18:48:08 +09:00]] 版) <https://fetch.spec.whatwg.org/#main-fetch>
+- [115] [CITE@en[RFC 6797 - HTTP Strict Transport Security (HSTS)]] ([TIME[2015-10-17 03:00:32 +09:00]] 版) <http://tools.ietf.org/html/rfc6797#section-8.3>
+]REFS]
+
 * プロトコル
 
 [48] [[Fetch]] は次の[[プロトコル]]や[[アルゴリズム]]と深く関係しています。
@@ -96,6 +104,20 @@
 ;; [[WebSocket]] は [[HTTP]] とはプロトコルの処理モデルが大きく異なるので、
 今後も [[fetch]] 操作を呼び出す形にはならないと思われます。
 
+* fetch 操作
+
+[102] [[fetch]] は次のような部分操作により構成されます。
+[FIG(list)[
+- [[fetch]]
+-- [[main fetch]]
+--- [[basic fetch]]
+---- [[HTTP fetch]]
+----- [[HTTP-network-or-cache fetch]]
+------ [[HTTP-network fetch]]
+----- [[CORS-preflight fetch]]
+]FIG]
+
+
 * fetch に相当する操作
 
 [72] [[navigate]] は、 [CODE(URI)@en[[[javascript:]]]] などの処理で
@@ -105,6 +127,41 @@
 
 [73] [[navigate]] は、本来の [[fetch]] のかわりに [[AppCache]] からの [[fetch]]
 を行うことがあります。
+
+* main fetch
+
+[103] [[main fetch]] は、まず[[要求]]を検査し、
+必要ならエラーを返したり、書き換えたりします。具体的には、
+次のようにします [SRC[>>101]]。
+[FIG(steps)[
+= [104] [VAR[要求]]の[[局所URLのみフラグ]]が設定されていれば、
+== [105] [VAR[要求]]の[[現在URL]]が[[局所URL]]でないなら、
+=== [106] [VAR[応答]]を、[[ネットワークエラー]]に設定します。 [SRC[>>101]]
+= [107] [VAR[Upgrade [VAR[request]] to a potentially secure URL, if appropriate]] [SRC[>>101]]
+= [108] [[should fetching [VAR[request]] be blocked as mixed content]] が「[[blocked]]」なら、
+== [109] [VAR[応答]]を、[[ネットワークエラー]]に設定します。 [SRC[>>101]]
+= [110] [[should fetching [VAR[request]] be blocked by Content Security Policy]] が
+「[[blocked]]」なら、
+== [111] [VAR[応答]]を、[[ネットワークエラー]]に設定します。 [SRC[>>101]]
+= [112] [VAR[要求]]の[[referrer]]が「[[no-referrer]]」でないなら、
+== [113] [[要求]]の[[referrer]]を、 [[determine [VAR[request]]'s referrer]]
+の結果に設定します [SRC[>>101]]。
+= [114] [VAR[要求]]の[[現在URL]] [SRC[>>101]] の [[scheme]] が [CODE(URI)@en[[[http]]]]
+なら [SRC[>>115]]、
+== [319] 
+[FIG(list)[
+- [116] [[ホスト]]が[[ドメイン名]]で、
+- [117] [[既知HSTSホストドメイン一致]]により、
+-- [118] [[合同一致]]する[[既知HSTSホスト]]が存在するか、
+-- [119] [[超ドメイン一致]]する[[既知HSTSホスト]]が存在してその
+[CODE(HTTP)@en[[[includeSubDomains]]]] [[指令]]が指定されている
+]FIG]
+... なら、
+=== [320] [[scheme]] を、 [CODE(URI)@en[[[https]]]] に設定します [SRC[>>115]]。
+=== [321] [[ポート]]が [[80]] なら、 [[443]] に設定します [SRC[>>115]]。
+]FIG]
+
+[120] その後実際の処理に入ります。
 
 * 歴史
 
