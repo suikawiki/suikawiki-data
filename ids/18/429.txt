@@ -23,12 +23,47 @@
 
 ;; [61] このため、 [[HTTPS]] でない素の [[HTTP]] で[[基本認証]]を用いるのは安全ではありません。
 
+* 利用者識別子と合言葉
+
+[23] 一般には、[[利用者識別子]]も[[合言葉]]も、任意の不透明な[[文字列]]
+(ないし[[バイト列]]) と解釈されています。
+あり得る[[文字]]や[[バイト]]の制約や、
+[[大文字]]・[[小文字]]その他の値の[[正規化]]の有無は、
+[[サーバー]]の実装や設計・設定に依存します。
+
+;; [21] [[サーバー]]や[[資源]]によっては[[利用者識別子]]は[[大文字・小文字不区別]]かもしれません。[SRC[>>18]]
+[[合言葉]]も[[大文字・小文字不区別]]かもしれません。しかし[[クライアント]]は、
+[[サーバー]]がどう解釈するか決められません。
+
+;; [22] [[文字コード]]の節 (>>94) も参照。
+
 [60] 古くから広く行われている利用形態では、[[利用者]]本人 (または[[管理者]]等、いずれにせよ人間)
 が事前に登録した[[利用者名]] (当該システム等の[[アカウント]]名などの記号列) と[[合言葉]]
 ([[パスワード]]) を用います。この形態は [[HTTP]] 以外の多くのシステムでも基本的な認証方式としてよく用いられていますが、
 [[合言葉]]の強度や[[ソーシャルハッキング]]などに関する運用上の脆弱性が指摘されています。
 
 [62] 近年では [[Web API]] 等における認証方式として、機械的に生成された[[利用者名]]と[[合言葉]]の組を用いる場合も増えています。この場合は人間が利用することは想定されていないのが普通です。
+
+[41] [[OAuth 2.0]] [[クライアント認証]]としての[[基本認証]]では、
+[[利用者名]]と[[合言葉]]は [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]]
+版[[パーセント符号化]]したものを使います。
+
+;; [[クライアント認証]]を参照。
+
+[44] いくつかの[[Webアプリケーション]]の提供する [[Web API]] では、
+[[利用者名]]を [[OAuth]] の[[アクセストークン]]やそれに相当する何らかの [[APIキー]]、
+[[合言葉]]を空欄または何らかの固定の値として[[基本認証]]を使う[[認証]]方式
+[SRC[>>42]] を採用しています。
+
+;; [45] [[OAuth 2.0]] [CODE(HTTP)@en[[[Bearer]]]] 認証と実質的に等価ですが、
+[[基本認証]]は [[Webブラウザー]]が対応しているという利点 (場合によっては欠点) があります。
+
+[97] [[利用者識別子]]と[[合言葉]]は、[[制御文字]] ([[RFC 5234]] [CODE[[[CTL]]]] = >>98)
+を含んでは[['''なりません''']] [SRC[>>72]]。
+
+[REFS[
+- [98] [CITE@en[Character set "CTL"]] ([TIME[2015-11-12 16:04:42 +09:00]] 版) <http://chars.suikawiki.org/set/%24rfc5234%3ACTL>
+]REFS]
 
 * [CODE(HTTP)@en[auth-scheme]]
 
@@ -79,72 +114,6 @@
 [16] [[利用者]]IDと[[合言葉]]を [CODE(char)[[[:]]]]
 で連結し、それを [[Base64]] した文字列を [[credentials]] として使います。
 
-[FIG[
-[FIGCAPTION[
-[19] [[RFC 2068]] における [CODE(HTTP)@en[[[Basic]]]] 認証の [[credentials]] の構文
-]FIGCAPTION]
-
-[PRE(ABNF code)[
-          basic-credentials = "Basic" SP basic-cookie
-          basic-cookie   = <base64 [7] encoding of user-pass,
-                           except not limited to 76 char/line>
-          user-pass   = userid ":" password
-          userid      = *<TEXT excluding ":">
-          password    = *TEXT
-]PRE]
-
-;; [28] [[RFC 2617]] の定義もこれと等価です。
-]FIG]
-
-[FIG[
-[FIGCAPTION[
-[11] [[RFC 1945]] における [CODE(HTTP)@en[[[Basic]]]] 認証の [[credentials]] の構文
-]FIGCAPTION]
-
-[PRE(ABNF code)[
-       basic-credentials = "Basic" SP basic-cookie
-       basic-cookie      = <base64 [5] encoding of userid-password,
-                            except not limited to 76 char/line>
-       userid-password   = [ token ] ":" *TEXT
-]PRE]
-]FIG]
-
-[17] [[ABNF]] 構文上[[利用者]]IDと[[合言葉]]は [[HTTP]] の
-[[TEXT]] に制限されていますが、実際には[[鯖]]の既存のシステムの認証システムが流用されていることもしばしばあり、
-[[非ASCII文字]]が含まれることもあります。
-
-;; [20] [[RFC 1945]] の定義では[[利用者]]IDは [[HTTP]] の [[token]] で、更に制限されていました。
-
-[21] [[利用者]]ID は[[大文字・小文字不区別]]かもしれません。[SRC[>>18]]
-
-[22] [[合言葉]]は[[大文字・小文字不区別]]かもしれません。
-
-;; [23] [[大文字]]・[[小文字]]その他の値の[[正規化]]の有無は[[起源鯖]]の実装や設定に依存します。
-
-[41] [[OAuth 2.0]] [[クライアント認証]]としての[[基本認証]]では、
-[[利用者名]]と[[合言葉]]は [CODE(MIME)@en[[[application/x-www-form-urlencoded]]]]
-版[[パーセント符号化]]したものを使います。
-
-;; [[クライアント認証]]を参照。
-
-[44] いくつかの[[Webアプリケーション]]の提供する [[Web API]] では、
-[[利用者名]]を [[OAuth]] の[[アクセストークン]]やそれに相当する何らかの [[APIキー]]、
-[[合言葉]]を空欄または何らかの固定の値として[[基本認証]]を使う[[認証]]方式を採用しています。
-
-[FIG(quote)[
-[FIGCAPTION[
-[42] [CITE@en[Other Authentication Methods | GitHub API]]
-([TIME[2015-02-05 07:24:20 +09:00]] 版)
-<https://developer.github.com/v3/auth/>
-]FIGCAPTION]
-
-> you can authenticate using personal access tokens or OAuth tokens. To do so, provide the token as the username and provide a blank password or a password of x-oauth-basic. 
-
-]FIG]
-
-;; [45] [[OAuth 2.0]] [CODE(HTTP)@en[[[Bearer]]]] 認証と実質的に等価ですが、
-[[基本認証]]は [[Webブラウザー]]が対応しているという利点 (場合によっては欠点) があります。
-
 ** 文字コード
 
 [94] [[利用者識別子]]と[[合言葉]]の[[符号化]]に使う[[文字コード]]について、
@@ -156,6 +125,13 @@
 [95] 元々[[文字コード]]が規定されておらず、 [CODE[[[ISO-8859-1]]]]、
 [CODE[[[UTF-8]]]] その他の[[ロケール]]依存の[[文字コード]]が使われてきたため、
 それとの[[後方互換性]]のため、このように規定されています [SRC[>>72]]。
+
+[17] 旧 [[RFC]] の [[ABNF]] 構文上[[利用者]]IDと[[合言葉]]は [[HTTP]] の
+[[TEXT]] に制限されていますが、実際には[[鯖]]の既存のシステムの認証システムが流用されていることもしばしばあり、
+[[非ASCII文字]]が含まれることもありました。
+
+[20] それより前の [[RFC 1945]] の定義では[[利用者]]IDは [[HTTP]] の [[token]] と、
+更に制限されていました。
 ]HISTORY]
 
 * サーバーの処理
@@ -300,9 +276,35 @@ Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
 ( ([[Bjoern Hoehrmann]] 著, [TIME[2014-02-15 00:18:19 +09:00]] 版))
 <http://lists.w3.org/Archives/Public/www-archive/2014Feb/0014.html>
 
-[35] [CITE@en[RFC 7236 - Initial Hypertext Transfer Protocol (HTTP) Authentication Scheme Registrations]]
-( ([TIME[2014-09-10 00:40:16 +09:00]] 版))
-<https://tools.ietf.org/html/rfc7236#section-3>
+[FIG(quote)[
+[FIGCAPTION[
+[19] [[RFC 2068]] における [CODE(HTTP)@en[[[Basic]]]] 認証の [[credentials]] の構文
+]FIGCAPTION]
+
+[PRE(ABNF code)[
+          basic-credentials = "Basic" SP basic-cookie
+          basic-cookie   = <base64 [7] encoding of user-pass,
+                           except not limited to 76 char/line>
+          user-pass   = userid ":" password
+          userid      = *<TEXT excluding ":">
+          password    = *TEXT
+]PRE]
+
+;; [28] [[RFC 2617]] の定義もこれと等価です。
+]FIG]
+
+[FIG(quote)[
+[FIGCAPTION[
+[11] [[RFC 1945]] における [CODE(HTTP)@en[[[Basic]]]] 認証の [[credentials]] の構文
+]FIGCAPTION]
+
+[PRE(ABNF code)[
+       basic-credentials = "Basic" SP basic-cookie
+       basic-cookie      = <base64 [5] encoding of userid-password,
+                            except not limited to 76 char/line>
+       userid-password   = [ token ] ":" *TEXT
+]PRE]
+]FIG]
 
 ** RFC 761x
 
@@ -310,6 +312,10 @@ Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
 その後 [DFN[[[RFC 7617]]]] として出版されています。
 
 [81] 新たに [CODE(HTTP)@en[[[charset]]]] [[引数]]が追加されています。
+
+[35] [CITE@en[RFC 7236 - Initial Hypertext Transfer Protocol (HTTP) Authentication Scheme Registrations]]
+( ([TIME[2014-09-10 00:40:16 +09:00]] 版))
+<https://tools.ietf.org/html/rfc7236#section-3>
 
 [36] [CITE@en[draft-ietf-httpauth-basicauth-enc-03 - An Encoding Parameter for HTTP Basic Authentication]]
 ( ([TIME[2014-10-16 11:44:39 +09:00]] 版))
@@ -326,6 +332,17 @@ Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
 * 実装
 
 [49] [[Twitter]] の [[API]] も当初は[[基本認証]]を使っていましたが、廃止されました。
+
+[FIG(quote)[
+[FIGCAPTION[
+[42] [CITE@en[Other Authentication Methods | GitHub API]]
+([TIME[2015-02-05 07:24:20 +09:00]] 版)
+<https://developer.github.com/v3/auth/>
+]FIGCAPTION]
+
+> you can authenticate using personal access tokens or OAuth tokens. To do so, provide the token as the username and provide a blank password or a password of x-oauth-basic. 
+
+]FIG]
 
 [FIG(quote)[
 [FIGCAPTION[
