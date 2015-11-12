@@ -16,12 +16,21 @@
 [58] [[基本認証]]は、[[クライアント]]から[[鯖]]に[[利用者]]の有する[RUBYB[[[利用者識別子]]]@en[userid]]と[RUBYB[[[合言葉]]]@en[password]]の組 [SRC[>>72]]
 を送信し、[[鯖]]がこれを受け入れるかどうか判断する共有鍵による認証方式です。
 
+[FIG(sequence)[
+:C:[[クライアント]]
+:S:[[鯖]]
+:C -> S:[[要求]] ([[利用者識別子]]、[[合言葉]])
+:S -> C:[[応答]]
+]FIG]
+
 [59] 本方式では、[[利用者名]]と[[合言葉]]の組が[[基本認証]]を使用するすべての
-[[HTTP要求]]において転送されることになります。[[クライアント]] (または[[利用者]]) は、
-[[利用者名]]と[[合言葉]]を[[平文]]または[[復号]]可能な形で保持している必要があります。
-[[鯖]]は、[[利用者名]]と[[合言葉]]を保持する必要がありますが、こちらは[[ハッシュ化]]などを行って保存していても構いません。
+[[HTTP要求]]において転送されることになります。
 
 ;; [61] このため、 [[HTTPS]] でない素の [[HTTP]] で[[基本認証]]を用いるのは安全ではありません。
+
+[99] [[クライアント]] (または[[利用者]]) は、
+[[利用者名]]と[[合言葉]]を[[平文]]または[[復号]]可能な形で保持している必要があります。
+[[鯖]]は、[[利用者名]]と[[合言葉]]を保持する必要がありますが、こちらは[[ハッシュ化]]などを行って保存していても構いません。
 
 * 利用者識別子と合言葉
 
@@ -64,6 +73,9 @@
 [REFS[
 - [98] [CITE@en[Character set "CTL"]] ([TIME[2015-11-12 16:04:42 +09:00]] 版) <http://chars.suikawiki.org/set/%24rfc5234%3ACTL>
 ]REFS]
+
+;; [103] 仕様上禁止されていても、実装がどう扱っているのかは不明です。
+少なくても[[サーバー]]は、[[制御文字]]を受信した場合の処理を怠れません。
 
 * [CODE(HTTP)@en[auth-scheme]]
 
@@ -134,30 +146,24 @@
 更に制限されていました。
 ]HISTORY]
 
-* サーバーの処理
+** [CODE[:]]
 
-[7] [[鯖]]は、指定された[[利用者]] ID と[[合言葉]]が当該 [[Request-URI]]
-の保護空間において妥当であると確認できる場合のみ、[[要求]]を[[認証]]します。
+[101] [[credentials]] で [[Base64]] [[復号]]した文字列においては、
+最初の [CODE[[[:]]]] が[[利用者識別子]]と[[合言葉]]の区切りです [SRC[>>72]]。
 
-[EG[
-[9] [[認証]]できない[[要求]]に対して[[鯖]]は
-[PRE(HTTP code)[
-WWW-Authenticate: Basic realm="WallyWorld"
-]PRE]
-... のように [CODE(HTTP)@en[[[realm]]]] を指定した [CODE(HTTP)@en[[[WWW-Authenticate:]]]]
-欄を送ります。この [CODE(HTTP)@en[[[realm]]]] が当該 [[Request-URI]]
-に対応する保護空間を表します。
-]EG]
+[100] [[利用者識別子]]が [CODE[[[:]]]] を含むのは[[非妥当]]です [SRC[>>72]]。
 
-[85] [[サーバー]]は、[[保護空間]]内の [[URL]] に関する[[要求]]が適切な [[credentials]]
-を欠いている場合には、 [CODE(HTTP)[[[401]]]] [[応答]]で
-[CODE(HTTP)@en[[[WWW-Authenticate:]]]] [[ヘッダー]]を返すことができます [SRC[>>72]]。
+;; [102] この「[[非妥当]]」が何を意味するのかは不明です。
+[[制御文字]]は禁止 (>>97) されていて、 [CODE[[[:]]]] は[[非妥当]]ですが、
+その違いも不明です。
 
-[86] [[プロキシ]]は、[[保護空間]]内の [[URL]] に関する[[要求]]が適切な [[credentials]]
-を欠いている場合には、 [CODE(HTTP)[[[407]]]] [[応答]]で
-[CODE(HTTP)@en[[[Proxy-Authenticate:]]]] [[ヘッダー]]を返すことができます [SRC[>>72]]。
+[104] 多くの[[利用者エージェント]]は、[[利用者識別子]]に [CODE[[[:]]]]
+が含まれるかどうかを検査しません [SRC[>>72]]。
 
-;; [87] [[HTTP認証]]も参照。
+;; [105] [[サーバー]]が [CODE[[[:]]]] を含む[[利用者識別子]]を発行する可能性もあります。
+[[サーバー]]は >>89 の[[クライアント]]の符号化と同じ方法で [[Base64]]
+[[符号化]]し、その結果を比較するのであれば、 [CODE[[[:]]]] を含む[[利用者識別子]]も扱えます。
+(ただしその場合、異なる[[利用者識別子]]であっても[[合言葉]]との組み合わせによっては一致してしまう危険性があります。)
 
 * クライアントの処理
 
@@ -204,21 +210,32 @@ Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
 
 ;; [88] [[HTTP認証]]も参照。
 
-* 二段階認証
+* サーバーの処理
 
-[47] [[GitHub]] は[[二段階認証]]のために追加の[[ヘッダー]]を導入しています。
+[7] [[鯖]]は、指定された[[利用者]] ID と[[合言葉]]が当該 [[Request-URI]]
+の保護空間において妥当であると確認できる場合のみ、[[要求]]を[[認証]]します。
 
-[FIG(quote)[
-[FIGCAPTION[
-[43] [CITE@en[Other Authentication Methods | GitHub API]]
-([TIME[2015-02-05 07:24:20 +09:00]] 版)
-<https://developer.github.com/v3/auth/>
-]FIGCAPTION]
+[EG[
+[9] [[認証]]できない[[要求]]に対して[[鯖]]は
+[PRE(HTTP code)[
+WWW-Authenticate: Basic realm="WallyWorld"
+]PRE]
+... のように [CODE(HTTP)@en[[[realm]]]] を指定した [CODE(HTTP)@en[[[WWW-Authenticate:]]]]
+欄を送ります。この [CODE(HTTP)@en[[[realm]]]] が当該 [[Request-URI]]
+に対応する保護空間を表します。
+]EG]
 
-> For users with two-factor authentication enabled, Basic Authentication requires an extra step. When you attempt to authenticate with Basic Authentication, the server will respond with a 401 and an X-GitHub-OTP: required; :2fa-type header. This indicates that a two-factor authentication code is needed (in addition to the username and password). The :2fa-type in this header indicates whether the account receives its two-factor authentication codes via SMS or via an application.
-> In addition to the Basic Authentication credentials, you must send the user’s authentication code (i.e., one-time password) in the X-GitHub-OTP header. Because these authentication codes expire quickly, we recommend using the Authorizations API to create an access token and using that token to authenticate via OAuth for most API access.
+[85] [[サーバー]]は、[[保護空間]]内の [[URL]] に関する[[要求]]が適切な [[credentials]]
+を欠いている場合には、 [CODE(HTTP)[[[401]]]] [[応答]]で
+[CODE(HTTP)@en[[[WWW-Authenticate:]]]] [[ヘッダー]]を返すことができます [SRC[>>72]]。
 
-]FIG]
+[86] [[プロキシ]]は、[[保護空間]]内の [[URL]] に関する[[要求]]が適切な [[credentials]]
+を欠いている場合には、 [CODE(HTTP)[[[407]]]] [[応答]]で
+[CODE(HTTP)@en[[[Proxy-Authenticate:]]]] [[ヘッダー]]を返すことができます [SRC[>>72]]。
+
+;; [87] [[HTTP認証]]も参照。
+
+@@ [106] [[Base64]] のバリエーション
 
 * 通信路の安全性と基本認証
 
@@ -254,6 +271,26 @@ Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
 の [CODE[[[userinfo]]]] として記述されることがあります。
 
 ;; [CODE[[[userinfo]]]] 参照。
+
+* 二段階認証の拡張
+
+[47] [[GitHub]] は[[二段階認証]]のために追加の[[ヘッダー]]を導入しています。
+
+[FIG(quote)[
+[FIGCAPTION[
+[43] [CITE@en[Other Authentication Methods | GitHub API]]
+([TIME[2015-02-05 07:24:20 +09:00]] 版)
+<https://developer.github.com/v3/auth/>
+]FIGCAPTION]
+
+> For users with two-factor authentication enabled, Basic Authentication requires an extra step. When you attempt to authenticate with Basic Authentication, the server will respond with a 401 and an X-GitHub-OTP: required; :2fa-type header. This indicates that a two-factor authentication code is needed (in addition to the username and password). The :2fa-type in this header indicates whether the account receives its two-factor authentication codes via SMS or via an application.
+> In addition to the Basic Authentication credentials, you must send the user’s authentication code (i.e., one-time password) in the X-GitHub-OTP header. Because these authentication codes expire quickly, we recommend using the Authorizations API to create an access token and using that token to authenticate via OAuth for most API access.
+
+]FIG]
+
+* 関連
+
+[114] [[APIキー]]的なものは [CODE(HTTP)@en[[[Bearer]]]] [[認証方式]]がより適切なこともあります。
 
 * 歴史
 
@@ -330,6 +367,28 @@ Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
 <http://www.w3.org/Protocols/HTTP/HTRQ_Headers.html#z9>
 
 * 実装
+
+[107] [[基本認証]]は[[クライアント]]にとっても[[サーバー]]にとっても極めて単純で、
+広く実装されています。
+
+[108] すべての[[要求]]で毎回[[認証]]が必要であること、
+[[平文]]で[[合言葉]]を送信すること、
+[[利用者インターフェイス]]のカスタマイズ性に乏しいことなどから、
+[[Webアプリケーション]]の一般利用者向けの認証として用いられることはほとんどありません
+([[Cookie認証]]が普通です)。しかし、
+次のような場合に、[[基本認証]]が用いられます。
+
+[FIG(list)[
+- [109] 限られた[[利用者]]のみが用いるもの (管理画面、開発サーバー等)
+- [110] [[Web API]]
+- [113] 専用クライアント向け[[資源]] ([[WebDAV]], [[Git]] など)
+]FIG]
+
+[111] 稀に、次のような目的で用いられることがあります。
+
+[FIG(list)[
+- [112] [[ロボット]]によるアクセスの拒絶
+]FIG]
 
 [49] [[Twitter]] の [[API]] も当初は[[基本認証]]を使っていましたが、廃止されました。
 
