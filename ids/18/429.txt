@@ -31,12 +31,16 @@
 
 * [CODE(HTTP)@en[auth-scheme]]
 
-[2] [[基本認証]]を表す [CODE(HTTP)@en[[[auth-scheme]]]] は [DFN[[CODE(HTTP)[[[Basic]]]]]] です。
+[2] [[基本認証]]を表す [CODE(HTTP)@en[[[auth-scheme]]]] は [DFN[[CODE(HTTP)[[[Basic]]]]]] です
+[SRC[>>72]]。
 
-* 誰何
+* challenge
 
-[8] [[基本認証]]では [CODE(HTTP)@en[[[realm]]]] 以外の [CODE(ABNF)@en[[[auth-param]]]]
-は使いません。 [SRC[>>3, >>18]]
+[8] [[基本認証]]では [CODE(HTTP)@en[[[realm]]]] [SRC[>>3, >>18]]
+と [CODE(HTTP)@en[[[charset]]]] [SRC[>>72]] 以外の [CODE(ABNF)@en[[[auth-param]]]]
+は使いません。 
+
+[76] [[受信者]]は未知の[[引数]]を無視しなければ[['''なりません''']] [SRC[>>72]]。
 
 ** [CODE(HTTP)@en[realm]]
 
@@ -44,9 +48,32 @@
 同じ[[鯖]]の別の [CODE(HTTP)@en[[[realm]]]] と[RUBYB[等しさ]@en[equality]]の比較のみができます。
 [SRC[>>3, >>18]]
 
+[73] 仕様上は [CODE(HTTP)@en[[[realm]]]] は[[保護空間]]とも呼ばれており、
+[[基本認証]]の名前と合言葉の組が適用される範囲を表すことになっています。
+
+;; [75] [[クライアント]]は、[[サーバー]]から[[応答]]で [CODE[[[realm]]]] 
+を受信せずとも[[基本認証]]の [[credentials]] を[[要求]]で送信することがあるのですから、
+[[保護空間]]ごとに名前と合言葉の組を使い分ける、というような使い方もされません。
+
+[74] 実際には [CODE[[[realm]]]] は[[著者]]から[[利用者]]への短い説明文として使われています。
+
+[77] [CODE(HTTP)@en[[[realm]]]] [[引数]]は必須です [SRC[>>72]]。
+
+;; [78] 指定されない場合に[[受信者]]がどうするべきかは不明です。
+
+;; [82] [CODE(HTTP)@en[[[realm]]]] も参照。
+
+** [CODE(HTTP)@en[charset]] 引数
+
+[79] [CODE(MIME)@en[[[charset]]]] [[引数]]は、必須ではありません [SRC[>>72]]。
+
+;; [83] [CODE(HTTP)@en[[[charset]]]] も参照。
+
 * credentials
 
 [15] [[基本認証]]の [[credentials]] は[[歴史的経緯]]により他の [[auth-scheme]] とは違う独自の構文になっています。
+
+;; [84] [[RFC 7235]] でいう [CODE(ABNF)@en[[[token68]]]] [SRC[>>72]] です。
 
 [16] [[利用者]]IDと[[合言葉]]を [CODE(char)[[[:]]]]
 で連結し、それを [[Base64]] した文字列を [[credentials]] として使います。
@@ -117,7 +144,7 @@
 ;; [45] [[OAuth 2.0]] [CODE(HTTP)@en[[[Bearer]]]] 認証と実質的に等価ですが、
 [[基本認証]]は [[Webブラウザー]]が対応しているという利点 (場合によっては欠点) があります。
 
-* 鯖の処理モデル
+* サーバーの処理
 
 [7] [[鯖]]は、指定された[[利用者]] ID と[[合言葉]]が当該 [[Request-URI]]
 の保護空間において妥当であると確認できる場合のみ、[[要求]]を[[認証]]します。
@@ -132,14 +159,17 @@ WWW-Authenticate: Basic realm="WallyWorld"
 に対応する保護空間を表します。
 ]EG]
 
-[65] [[Chrome]] や [[IE]] は、[[サーバー]]が複数の[[認証方式]]を示している場合、
-[[基本認証]]は使用しません [SRC[>>64]]。
+[85] [[サーバー]]は、[[保護空間]]内の [[URL]] に関する[[要求]]が適切な [[credentials]]
+を欠いている場合には、 [CODE(HTTP)[[[401]]]] [[応答]]で
+[CODE(HTTP)@en[[[WWW-Authenticate:]]]] [[ヘッダー]]を返すことができます [SRC[>>72]]。
 
-[REFS[
-- [64] [CITE[HTTP authentication - The Chromium Projects]] ([TIME[2015-03-21 10:14:33 +09:00]] 版) <https://www.chromium.org/developers/design-documents/http-authentication>
-]REFS]
+[86] [[プロキシ]]は、[[保護空間]]内の [[URL]] に関する[[要求]]が適切な [[credentials]]
+を欠いている場合には、 [CODE(HTTP)[[[407]]]] [[応答]]で
+[CODE(HTTP)@en[[[Proxy-Authenticate:]]]] [[ヘッダー]]を返すことができます [SRC[>>72]]。
 
-* 利用者エージェントの処理モデル
+;; [87] [[HTTP認証]]も参照。
+
+* 利用者エージェントの処理
 
 [10] [[利用者エージェント]]は[[利用者]]IDと[[合言葉]]を [[credentials]]
 に含めて、 [CODE(HTTP)@en[[[Authorization:]]]] 欄として送信します。
@@ -167,7 +197,14 @@ Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
 [CODE(HTTP)[[[401]]]] [[応答]]を受けて[[認証]]情報の入力を[[利用者]]に求める[[ダイアログ]]を表示し、
 改めて[[要求]]を送信することができる実装形態になっているのが普通です。
 
-;; [[HTTP認証]]も参照。
+[65] [[Chrome]] や [[IE]] は、[[サーバー]]が複数の[[認証方式]]を示している場合、
+[[基本認証]]は使用しません [SRC[>>64]]。
+
+[REFS[
+- [64] [CITE[HTTP authentication - The Chromium Projects]] ([TIME[2015-03-21 10:14:33 +09:00]] 版) <https://www.chromium.org/developers/design-documents/http-authentication>
+]REFS]
+
+;; [88] [[HTTP認証]]も参照。
 
 * 二段階認証
 
@@ -234,6 +271,13 @@ Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
 [35] [CITE@en[RFC 7236 - Initial Hypertext Transfer Protocol (HTTP) Authentication Scheme Registrations]]
 ( ([TIME[2014-09-10 00:40:16 +09:00]] 版))
 <https://tools.ietf.org/html/rfc7236#section-3>
+
+** RFC 761x
+
+[80] [[RFC 723x]] では [CODE(HTTP)@en[[[Basic]]]] 認証の定義は改訂されないままでしたが、
+その後 [DFN[[[RFC 7617]]]] として出版されています。
+
+[81] 新たに [CODE(HTTP)@en[[[charset]]]] [[引数]]が追加されています。
 
 [36] [CITE@en[draft-ietf-httpauth-basicauth-enc-03 - An Encoding Parameter for HTTP Basic Authentication]]
 ( ([TIME[2014-10-16 11:44:39 +09:00]] 版))
