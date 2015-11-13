@@ -3,22 +3,33 @@
 * 仕様書
 
 [REFS[
-- [2] '''[CITE@en[Page Visibility]] ([TIME[2013-05-20 14:37:13 +09:00]] 版) <https://dvcs.w3.org/hg/webperf/raw-file/tip/specs/PageVisibility/Overview.html#pv-visibility-change-event>'''
+- [19] '''[CITE@en[Page Visibility (Second Edition)]] ([TIME[2015-11-13 18:23:52 +09:00]] 版) <https://w3c.github.io/page-visibility/#h-reacting-to-visibility-changes>'''
 - [17] [CITE@en[Vibration API]] ([TIME[2014-11-20 01:59:39 +09:00]] 版) <http://dev.w3.org/2009/dap/vibration/#dfn-perform-vibration>
 ]REFS]
 
 * 可視状態への変化
 
-[5] 可視状態に変化するときには、 [DFN[[[now visible algorithm]]]] を実行しなければ[['''なりません''']] [SRC[>>2]]。
-これはすなわち、 [CODE(JS)@en[[[document.hidden]]]] を [CODE[[[false]]]] にし、
-[CODE(DOMa)@en[[[visibilityState]]]] を [CODE(DOM)@en[[[visible]]]] にした上で、 [CODE(DOMi)@en[[[Document]]]] において
-[[bubble]] する [CODE(DOMe)@en[[[visibilitychange]]]] [[単純イベントを発火]]することとなります [SRC[>>2]]。
-更に、[[バイブレーションを実施]]しているなら、それを停止させなければ[['''なりません''']]
-[SRC[>>17]]。
-[[session history entry]] への[[履歴の探索]]にあっては [CODE(DOMe)@en[[[pageshow]]]]
-[[イベント]]の[[発火]]の直前に、それ以外の場合にあっては[[タスクをキューに入れる]]ことによって行います [SRC[>>2]]。
+[5] [[最上位閲覧文脈]]の[[文書]]が可視状態に変化するときには、 [DFN[[[now visible algorithm]]]] を実行しなければ[['''なりません''']] [SRC[>>2]]。
 
-;; [6] [[タスク源]]はなぜか規定されていません。
+[22] すなわち、 [CODE(JS)@en[[[document.hidden]]]] を [CODE[[[false]]]] にし、
+[CODE(DOMa)@en[[[visibilityState]]]] を [CODE(DOM)@en[[[visible]]]] にした上で、 
+次のような[[単純イベントを発火]] [SRC[>>2]] し、
+[[バイブレーションを実施]]しているなら、それを停止させなければ[['''なりません''']]
+[SRC[>>17]]。
+
+[FIG(list members short)[
+[FIGCAPTION[
+[[単純イベント]] [SRC[>>2]]
+]FIGCAPTION]
+:[[イベント型]]: [CODE(DOMe)@en[[[visibilitychange]]]]
+:[[対象]]: [CODE(DOMi)@en[[[Document]]]]
+:[[bubbles]]: [[真]]
+:[[取消可能]]: [[偽]]
+:[[既定動作]]: なし
+]FIG]
+
+[23] [[session history entry]] への[[履歴の探索]]にあっては [CODE(DOMe)@en[[[pageshow]]]]
+[[イベント]]の[[発火]]の直前に、それ以外の場合にあっては[[利用者対話タスク源]]の[[タスクをキューに入れる]]ことによって行います [SRC[>>19]]。
 
 ;; [10] >>7 は[[文書をunload]]する途中で [[HTML Standard]] 側にフックがありますが (>>1 で追加)、なぜ >>5
 で同様のフックを用意していないのか謎です。
@@ -31,37 +42,56 @@
 
 * 不可視状態への変化
 
-[7] 不可視状態に変化するときには、 [DFN[[[now hidden algorithm]]]] を実行しなければ[['''なりません''']] [SRC[>>2]]。
-これはすなわち、 [CODE(JS)@en[[[document.hidden]]]] を [CODE[[[true]]]] にし、
-[CODE(DOMa)@en[[[visibilityState]]]] を変更した上で、 [CODE(DOMi)@en[[[Document]]]] において
-[[bubble]] する [CODE(DOMe)@en[[[visibilitychange]]]] [[単純イベントを発火]]することとなります [SRC[>>2]]。
-更に、[[バイブレーションを実施]]しているなら、それを停止させなければ[['''なりません''']]
+[7] [[最上位閲覧文脈]]の[[文書]]が不可視状態に変化するときには、 [DFN[[[now hidden algorithm]]]] を実行しなければ[['''なりません''']] [SRC[>>2]]。
+
+[20] これはすなわち、 [CODE(JS)@en[[[document.hidden]]]] を [CODE[[[true]]]] にし、
+[CODE(DOMa)@en[[[visibilityState]]]] を [CODE[[[hidden]]]] に変更した上で、 
+次のような[[単純イベントを発火]] [SRC[>>2]] し、
+[[バイブレーションを実施]]しているならそれを停止させなければ[['''なりません''']]
 [SRC[>>17]]。
-[[文書をunload]]する途中であれば[DFN[[RUBYB[unload文書可視性変更手順]@en[unloading document visibility change steps]]]]
+[FIG(list members short)[
+[FIGCAPTION[
+[[単純イベント]] [SRC[>>2]]
+]FIGCAPTION]
+:[[イベント型]]: [CODE(DOMe)@en[[[visibilitychange]]]]
+:[[対象]]: [CODE(DOMi)@en[[[Document]]]]
+:[[bubbles]]: [[真]]
+:[[取消可能]]: [[偽]]
+:[[既定動作]]: なし
+]FIG]
+
+[21] [[文書をunload]]する途中であれば[DFN[[RUBYB[unload文書可視性変更手順]@en[unloading document visibility change steps]]]]
 ([CODE(DOMe)@en[[[pagehide]]]] [[イベント]]の[[発火]]の直後) において、
-それ以外の場合にあっては[[タスクをキューに入れる]]ことによって行います [SRC[>>2]]。
-[CODE(DOMe)@en[[[visibilityState]]]] の新しい値は前者なら [CODE(DOM)@en[[[unloaded]]]]、
-後者なら [CODE(DOM)@en[[[hidden]]]] ですが、 [CODE(DOM)@en[[[unloaded]]]] に対応しない場合には
-両方 [CODE(DOM)@en[[[hidden]]]] でも構いません [SRC[>>2]]。
+それ以外の場合にあっては[[利用者対話タスク源]]の[[タスクをキューに入れる]]ことによって行います [SRC[>>2]]。
+
+[HISTORY[
+[6] かつては [CODE[[[unloaded]]]] という値がありました。
+[CODE(DOMe)@en[[[visibilityState]]]] の新しい値は前者の場合なら [CODE(DOM)@en[[[unloaded]]]]、
+後者の場合なら [CODE(DOM)@en[[[hidden]]]] ですが、 [CODE(DOM)@en[[[unloaded]]]] に対応しない場合には
+両方 [CODE(DOM)@en[[[hidden]]]] でも構いません [SRC[>>19]]。
 
 ;; [8] なぜわざわざ [CODE(DOM)@en[[[unloaded]]]] でなくても良いことになっているのでしょう。
 実装の都合上区別できない[[Webブラウザー]]があるんでしょうかね。
 
-;; [9] [[タスク源]]はなぜか規定されていません。
-
 ;; [13] [CODE(DOMe)@en[[[unload]]]] [[イベント]]の時は [CODE(JS)@en[[[document.hidden]]]] が[[真]]に、
 [CODE(DOMa)@en[[[visibilityState]]]] が [CODE(DOM)@en[[[unloaded]]]]/[CODE(DOM)@en[[[hidden]]]]
 になっているということになります。
+]HISTORY]
 
-;; [14] 元々 [CODE(DOMa)@en[[[visibilityState]]]] が [CODE(DOM)@en[[[hidden]]]] で[[unload文書可視性変更手順]]の結果
+[HISTORY[
+[14] 元々 [CODE(DOMa)@en[[[visibilityState]]]] が [CODE(DOM)@en[[[hidden]]]] で[[unload文書可視性変更手順]]の結果
 [CODE(DOM)@en[[[hidden]]]] が設定されるケースだと値は実際には変わっていませんが、仕様上
 [CODE(DOMe)@en[[[visibilitychange]]]] は[[発火]]されることになっています。
+
+[9] これはその後の改訂で修正されているようです。
+]HISTORY]
 
 * 歴史
 
 [3] [CODE(DOMe)@en[[[visibilitychange]]]] [[イベント]]は [[Page Visibility]] によって追加されました。
 
 [REFS[
+- [2] '''[CITE@en[Page Visibility]] ([TIME[2013-05-20 14:37:13 +09:00]] 版) <https://dvcs.w3.org/hg/webperf/raw-file/tip/specs/PageVisibility/Overview.html#pv-visibility-change-event>'''
 -[1] [CITE@en[Web Applications 1.0 r7010 Provide a hook for the Page Visibility spec.]]
 ( ([TIME[2012-03-01 07:39:00 +09:00]] 版))
 <http://html5.org/tools/web-apps-tracker?from=7009&to=7010>
