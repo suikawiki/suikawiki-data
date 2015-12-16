@@ -2,6 +2,13 @@
 あるいは [CODE(HTMLe)@en[[[iframe]]]] [[要素]]の挿入などの[[スクリプト]]の操作により、
 行われます。
 
+[41] [[閲覧文脈]]を作成すると、[[閲覧文脈]]に対応する [[JavaScript]]
+[[オブジェクト]]であり[[大域オブジェクト]]でもある [CODE(DOMi)@en[[[Window]]]]
+と、 [[JavaScript]] から実際にアクセスできる[[オブジェクト]]である
+[CODE(DOM)@en[[[WindowProxy]]]] が作成されます。更に、
+[[閲覧文脈]]の初期状態である [CODE(URI)@en[[[about:blank]]]] の[[文書]]が作成されます。
+そしてこれらの関連付けと初期化が行われます。
+
 * 仕様書
 
 [REFS[
@@ -31,57 +38,69 @@
 * 処理
 
 [2] [DFN[[RUBYB[新しい閲覧文脈の作成]@en[create a new browsing context]]]] [SRC[>>1]] は、
+[[引数]]として[VAR[作成子閲覧文脈]] ([[閲覧文脈]]または無指定)、
+[VAR[入れ子か最上位か]]、[VAR[[[補助閲覧文脈]]か否か]]を指定できます。
 次のようにしなければ[['''なりません''']]。
-なお作成時には[[閲覧文脈]][VAR[作成子閲覧文脈]]を指定できます。
 [FIG(steps)[
 = [35] [VAR[作成子文書]]を、[VAR[作成子閲覧文脈]]があればその[F[[[活性文書]]]]、
 なければ null に設定します。
+= [50] [VAR[閲覧文脈]]を、新しい[[閲覧文脈]]に設定します。
+[FIG(list members)[
+[FIGCAPTION[
+[[閲覧文脈]]
+]FIGCAPTION]
+:[F[入れ子か最上位か]]: [VAR[入れ子か最上位か]]
+:[F[[[補助閲覧文脈]]か]]: [VAR[[[補助閲覧文脈]]か否か]]
+:[F[[[作成子閲覧文脈]]]]: [VAR[作成子閲覧文脈]] 
+:[F[[[作成子[CODE(DOMi)@en[Document]]]]]]: [VAR[作成子文書]]
+:[F[[[[CODE(HTMLe)@en[iframe]] sandboxing flag set]]]]:
+[CODE(HTMLa)@en[[[sandbox]]]] [[属性]]と [CODE(HTMLa)@en[[[allowfullscreen]]]]
+[[属性]]を [[parse the sandboxing directive]]
+して得た[[砂箱化フラグ集合]] ([CODE(HTMLe)@en[[[iframe]]]] [[入れ子閲覧文脈]]の場合) 
+[SRC[>>19]]。
+]FIG]
+= [48] [VAR[窓]]を、新しい [CODE(DOMi)@en[[[Window]]]] に設定します [SRC[>>1]]。
+= [49] [VAR[窓プロキシ]]を、新しい [CODE(DOMi)@en[[[WindowProxy]]]] に設定します。
+この[VAR[窓プロキシ]]は、すべてを[VAR[閲覧文脈]]の[F[[[活性文書]]]]の[F[[[[CODE(DOMi)@en[Window]]]]]]に転送するものとします。 [SRC[>>1]]
+= [51] [VAR[閲覧文脈]]の [F[[CODE(DOMi)@en[[[WindowProxy]]]]]] を、[VAR[窓プロキシ]]に設定します。
+= [47] [CODE[[[InitializeHostDefinedRealm]]]] [[抽象操作]]を実行します [SRC[>>1]]。
+[FIG(list members)[
+:[[大域オブジェクト]]: [VAR[窓]]
+:[[大域[CODE(JS)[this]]値]]: [VAR[窓プロキシ]]
+:[[スクリプト]]や[[モジュール]]の[[ソーステキスト]]: なし
+]FIG]
 = [15] [VAR[文書]]を、新しい[DFN[[RUBYB[初期「[CODE(URI)@en[about:blank]]」[[文書]]]@en[initial "[CODE(URI)@en[about:blank]]" document]]]]に設定します [SRC[>>1]]。
 [FIG(list members)[
 [FIGCAPTION[
-[[文書]]
+[53] [[文書]]
 ]FIGCAPTION]
-:[[文書の番地]]:[CODE(URI)@en[[[about:blank]]]]
-:[[HTML文書]]:[[真]]
-:[[文字符号化]]:[[UTF-8]]
-:[[ready for post-load tasks]]:[[真]]
-:[[completely loaded]]:[[真]]
-:[[子供節点]]:[CODE(HTMLe)@en[[[html]]]] [[要素]]。その[[子供]]は
+:[F[[[文書の番地]]]]:[CODE(URI)@en[[[about:blank]]]]
+:[F[[[型]]]]: [[HTML文書]]
+:[F[[[文字符号化]]]]: [[utf-8]]
+:[F[[[ready for post-load tasks]]]]: [[真]]
+:[F[[[completely loaded]]]]: [[真]]
+:[F[[[子供節点]]]]: [CODE(HTMLe)@en[[[html]]]] [[要素]]。その[[子供]]は
 [CODE(HTMLe)@en[[[head]]]] [[要素]]と [CODE(HTMLe)@en[[[body]]]] [[要素]]
 (いずれも[[空]])。
 ]FIG]
 = [37] [VAR[作成子文書]]が null なら [SRC[>>1]]、
-== [41] [VAR[起源]]を、新しい[[大域的に固有な識別子]]に設定します。
-== [39] [VAR[文書]]の[F[[[文書の起源]]]]を、[VAR[起源]]に設定します。
-== [40] [VAR[文書]]の[F[[[実効スクリプト起源]]]]を、[VAR[起源]]の[[別名]]に設定します。
+== [39] [VAR[文書]]の[F[[[文書の起源]]]]を、新しい[[大域的に固有な識別子]]に設定します。
+== [40] [VAR[文書]]の[F[[[実効スクリプト起源]]]]を、[VAR[文書]]の[F[[[文書の起源]]]]の[[別名]]に設定します。
 = [38] そうでなければ [SRC[>>1]]、
 == [42] [VAR[文書]]の[F[[[文書のreferrer]]]]を、[VAR[作成子文書]]の[[文書の番地]]に設定します。
 == [43] [VAR[文書]]の[F[[[文書の起源]]]]を、[VAR[作成子文書]]の[F[[[文書の起源]]]]の[[別名]]に設定します。
 == [44] [VAR[文書]]の[F[[[実効スクリプト起源]]]]を、[VAR[作成子文書]]の[F[[[実効スクリプト資源]]]]の[[別名]]に設定します。
 = [18] [VAR[文書]]について[[砂箱化の実装]]を行います [SRC[>>1]]。
-= [17] [[閲覧文脈]]を作成します。
-[FIG(list members)[
-[FIGCAPTION[
-[[閲覧文脈]]
-]FIGCAPTION]
-:入れ子か最上位か:呼び出し元の指定によります。
-:[[auxiliary browsing context]] か:呼び出し元の指定によります。
-:[[セッション履歴]]:
+= [52] [VAR[窓]]について[[閲覧文脈環境設定群オブジェクトの設定]]を行います [SRC[>>1]]。
+= [17] [VAR[閲覧文脈]]の[F[[[セッション履歴]]]]に、
+新しい[[セッション履歴エントリー]]を追加します [SRC[>>1]]。
 [FIG(list members)[
 [FIGCAPTION[
 [45] [[セッション履歴エントリー]]
 ]FIGCAPTION]
-:[F[[[文書]]]]: [VAR[文書]] [SRC[>>1]]
+:[F[[[文書]]]]: [VAR[文書]]
 ]FIG]
-:[F[[[作成子閲覧文脈]]]]: [VAR[作成子閲覧文脈]] [SRC[>>1]]
-:[F[[[作成子[CODE(DOMi)@en[Document]]]]]]: [VAR[作成子文書]]
-:[[[CODE(HTMLe)@en[iframe]] sandboxing flag set]]:
-[CODE(HTMLa)@en[[[sandbox]]]] [[属性]]と [CODE(HTMLa)@en[[[allowfullscreen]]]]
-[[属性]]を [[parse the sandboxing directive]]
-して得た [[sandboxing flag set]] ([CODE(HTMLe)@en[[[iframe]]]] [[入れ子閲覧文脈]]の場合) 
-[SRC[>>19]]。
-]FIG]
-= [16] 新しい [CODE(DOMi)@en[[[Window]]]] を作成し、[VAR[文書]]と関連付けます [SRC[>>1]]。
+= [16] [VAR[窓]]の[F[[[文書]]]]を、 [VAR[文書]]に設定します [SRC[>>1]]。
 = [22] [[最上位閲覧文脈]]の場合、
 == [23] 既存の[[閲覧文脈]]の[RUBYB[複製]@en[clone]]の場合は、
 [[セッションストレージ領域]]群は元の[[閲覧文脈]]のものの複製とします。
@@ -100,7 +119,7 @@
 
 ;; [26] [[閲覧文脈]]の複製というのが具体的にどのような操作なのかは不明です。
 そのような [[API]] は無さそうですが、そのような[[利用者]]の操作を実装している
-[[Webブラウザー]]があるのかは不明です。
+[[Webブラウザー]]があります (例えば [[Chrome]] は[[タブ]]の複製操作があります)。
 
 ;; [27] 新しい[[閲覧文脈]]に関係する[[文書]]については、[[閲覧文脈の選択]]を参照。
 ([[閲覧文脈の選択]]によらない場合でも、理論上は [[Webブラウザー]]依存の方法
@@ -137,6 +156,12 @@
 
 ;; [[閲覧文脈の作成]]の呼び出し元で、[[閲覧文脈]]の表示サイズなどの設定が行われることがあります。
 [CODE(JS)@en[[[window.open]]]] や[[閲覧文脈の選択]]を参照。
+
+[54] いずれにせよ、 [[閲覧文脈の作成]]と前後して、その[[閲覧文脈]]の表示のための[[窓]]や[[タブ]]、
+関係する[[利用者インターフェイス]]などの作成と初期化を適宜行う必要があります。
+
+;; [55] その具体的な方法やタイミングは環境や実装方法に依存しますし、
+[[Web互換性]]に直接影響しないので、[[標準化]]されていません。
 
 [36] [[閲覧文脈]]は、[DFN[[F[[RUBYB[作成子閲覧文脈]@en[creator browsing context]]]]]]と[DFN[[F[[RUBYB[作成子[CODE(DOM)@en[Document]]]@en[creator [CODE(DOM)@en[Document]]]]]]]]を持ちます。
 これらは[[閲覧文脈の作成]]時に (あれば) 設定されます。
@@ -176,3 +201,7 @@
 [34] [CITE@en[Refactor browsing context creation · whatwg/html@357f649]]
 ([TIME[2015-12-16 16:04:28 +09:00]] 版)
 <https://github.com/whatwg/html/commit/357f649a2fda01b0ae07c3d7643d3123d29a5538>
+
+[46] [CITE@en[Rewrite global object initialization to delegate to ES · whatwg/html@cf0355d]]
+([TIME[2015-12-16 18:15:51 +09:00]] 版)
+<https://github.com/whatwg/html/commit/cf0355d7e0e229b98f7fbd51b8c7608010c787f5>
