@@ -5,6 +5,7 @@
 - [32] '''[CITE@en[RFC 7616 - HTTP Digest Access Authentication]] ([TIME[2015-11-10 07:05:08 +09:00]] 版) <https://tools.ietf.org/html/rfc7616>'''
 -- [36] [CITE@en[RFC 7616 - HTTP Digest Access Authentication]] ([TIME[2015-11-10 07:05:08 +09:00]] 版) <https://tools.ietf.org/html/rfc7616#section-3>
 --- [44] [CITE@en[RFC 7616 - HTTP Digest Access Authentication]] ([TIME[2015-11-10 07:05:08 +09:00]] 版) <https://tools.ietf.org/html/rfc7616#section-3.4>
+--- [53] [CITE@en[RFC 7616 - HTTP Digest Access Authentication]] ([TIME[2015-11-10 07:05:08 +09:00]] 版) <https://tools.ietf.org/html/rfc7616#section-3.6>
 - [34] [CITE[RFC Errata Report » RFC Editor]] ([TIME[2015-11-27 18:09:15 +09:00]] 版) <https://www.rfc-editor.org/errata_search.php?rfc=7616>
 - [5] [CITE@en[RFC 3261 - SIP: Session Initiation Protocol]] ([TIME[2014-08-15 14:48:03 +09:00]] 版) <http://tools.ietf.org/html/rfc3261#section-22.4>
 - [26] [CITE@en[RFC 4918 - HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV)]] ([TIME[2014-09-21 17:04:59 +09:00]] 版) <http://tools.ietf.org/html/rfc4918#section-20.1>
@@ -71,11 +72,38 @@
 
 [40] [[ダイジェストアルゴリズム]]参照。
 
+* 認証セッション
+
+[58] ある[[保護空間]]の[RUBYB[認証セッション]@en[authentication session]]は、
+その[[保護空間]]の [CODE(HTTP)@en[[[WWW-Authenticate:]]]] 
+の [[challenge]] に対して[[クライアント]]が[[応答]]するところから始まり、
+[[クライアント]]が当該[保護空間]]の[[サーバー]]から他の
+[CODE(HTTP)@en[[[WWW-Authenticate:]]]] 
+の [[challenge]] を受信することで終わります。 [SRC[>>53]]
+
+[59] [[クライアント]]は、
+[[保護空間]]内の後の[[要求]]の [CODE(HTTP)@en[[[Authorization:]]]]
+[[ヘッダー]]で使うための[[利用者名]]、[[合言葉]]、[[nonce]]、[[nonce]] の数
+([CODE[[[nc]]]])、 [CODE[[[opaque]]]] 値を[[認証セッション]]に関連付けて記憶する[['''べきです''']]。
+[SRC[>>53]]
+
 * 処理
 
 [45] [[credentials]] の[[引数]]やその値が不適切だったり、
 必須のものが指定されていなかったりした時は、
 [CODE(HTTP)[[[4xx]]]] [[応答]]を返すのが適切です [SRC[>>44]]。
+
+[54] [[サーバー]]は、 [CODE(HTTP)@en[[[Authorization:]]]]
+[[ヘッダー]]を受信したら、提出された[[利用者名]]に対応する[[合言葉]]を探し、
+[[妥当性]]を検査して構いません。
+次に、[[クライアント]]が行ったのと同じ[[ダイジェストアルゴリズム]]を適用し、
+[CODE[[[response]]]] 値と比較しなければ[['''なりません''']]。 [SRC[>>53]]
+
+;; [55] [[サーバー]]は、 [CODE[[VAR[[[H]]]] ([VAR[[[A1]]]])]]
+さえ覚えておけば、[[合言葉]]を[[平文]]で保存しておく必要はありません。 [SRC[>>53]]
+
+;; [56] と [[RFC]] は言っていますが、そうすると [[MD5]] → [[SHA1]] → [[SHA2]]
+のような[[ダイジェストアルゴリズム]]の移行が不可能になってしまいます。
 
 [46] [[ログイン]]の失敗は、記録する[['''べきです''']]。
 特定の[[クライアント]]が失敗を繰り返す時は、
@@ -84,6 +112,16 @@
 [47] [[サーバー]]は、記録時には[[平文]]の[[合言葉]]が記録されないよう注意する[['''べきです''']]
 [SRC[>>44]]。
 例えば[[利用者名]]に誤って[[合言葉]]が記入されるかもしれません [SRC[>>44]]。
+
+;; [57] そんな無茶な...
+
+[60] [CODE(HTTP)@en[[[Authorization:]]]] [[ヘッダー]]を ([[challenge]] を受信せずに)
+予め[[要求]]に含めておいても構いません。 [SRC[>>53]]
+
+[61] [[サーバー]]は、古い [CODE(HTTP)@en[[[Authorization:]]]]
+[[ヘッダー]]を受け入れることとしても構いません。 [[nonce]] が[[新鮮]]でなくても受け入れて構いません。
+あるいは新しい [CODE[[[nonce]]]] 値を含む [CODE(HTTP)[[[401]]]]
+[[応答]]を返して[[クライアント]]に再試行を求めても構いません。 [SRC[>>53]]
 
 * 関連
 
