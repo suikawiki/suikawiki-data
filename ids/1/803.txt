@@ -414,6 +414,59 @@ HTML 4 も特にそうするべきだなどとは言っていません。
 
 * 処理
 
+[412] 
+[FIG(table)[
+:create: 作成方法
+:parser-inserted: [[「構文解析器挿入」]]
+:already started: [[「開始済み」]]
+:non-blocking: [[「非ブロッキング」]]
+:execute: スクリプト実行
+
+:create: [CODE(DOMm)@en[[[createElement]]]], [CODE(DOMm)@en[[[createElementNS]]]]
+:parser-inserted: いいえ
+:already started: いいえ
+:non-blocking: はい
+:execute: はい
+
+:create: [[構文解析器]]
+:parser-inserted: はい
+:non-blocking: いいえ
+:execute: はい
+:already started: いいえ
+
+:create: [[構文解析器]] ([CODE(DOMa)@en[[[innerHTML]]]], [CODE(DOMa)@en[[[outerHTML]]]],
+[CODE(DOMm)@en[[[insertAdjacentHTML]]]], [CODE(DOMm)@en[[[createContextualFragment]]]])
+:parser-inserted: はい
+:non-blocking: いいえ
+:already started: はい
+:execute: いいえ
+
+:create: [CODE(XML)@en[[[xml-stylesheet]]]] で参照された
+[[XSLTスタイルシート]] [SRC[>>130]]
+:parser-inserted: はい
+:already started: いいえ
+:non-blocking: ?
+:execute: はい
+
+:create: [CODE(DOMm)@en[[[transformToDocument]]]] [SRC[>>130]]
+:parser-inserted: はい
+:already started: はい
+:non-blocking: ?
+:execute: いいえ
+
+:create: [CODE(DOMm)@en[[[transformToFragment]]]] [SRC[>>130]]
+:parser-inserted: いいえ
+:already started: いいえ
+:non-blocking: ?
+:execute: はい
+
+:create: [CODE(DOMm)@en[[[cloneNode]]]]
+:already started: 複製元と同じ
+:parser-inserted: いいえ
+:non-blocking: はい
+
+]FIG]
+
 ** スクリプトの準備
 
 [257] [VAR[要素]]の[DFN[[RUBYB[スクリプトの準備]@en[prepare a script]]]]は、
@@ -754,11 +807,64 @@ HTML 4 も特にそうするべきだなどとは言っていません。
 == [397] [VAR[neutralised doc]] を、[VAR[要素]]の[F[[[節点文書]]]]に設定します。
 == [396] [VAR[neutralised doc]] の [F[[[ignore-destructive-writes counter]]]]
 を[[インクリメント]]します。
-
-
+= [398] [VAR[旧スクリプト]]を、[VAR[要素]]の[F[[[節点文書]]]]の
+[F[[CODE(DOMa)@en[[[currentScript]]]]]] に設定します。
+= [399] [VAR[要素]]の[F[[[節点文書]]]]の [F[[CODE(DOMa)@en[[[currentScript]]]]]]
+を、[VAR[要素]]に設定します。
+= [400] [VAR[設定群]]を、[VAR[要素]]の[F[[[節点文書]]]]の [F[[CODE(DOMi)@en[[[Window]]]]]]
+の[F[[[環境設定群オブジェクト]]]]に設定します。
+= [401] [VAR[要素]]の[F[[[スクリプトの型]]]]により、
+[FIG(switch)[
+: [CODE[[[classic]]]] : 
+[VAR[要素]]の[F[[[スクリプトのスクリプト]]]]について[[古典スクリプトを実行]]します。
+: [CODE[[[module]]]] :
+[VAR[要素]]の[F[[[スクリプトのスクリプト]]]]について[[モジュールスクリプトを実行]]します。
+]FIG]
+= [402] [VAR[要素]]の[F[[[節点文書]]]]の [F[[CODE(DOMa)@en[[[currentScript]]]]]]
+を、[VAR[旧スクリプト]]に設定します。
+= [403] [VAR[neutralised doc]] が設定されていれば、
+== [404] [VAR[neutralised doc]] の [F[[[ignore-destructive-writes counter]]]]
+を[[デクリメント]]します。
+= [405] [[単純イベントを発火]]します。
+[FIG(list members middle)[
+[FIGCAPTION[
+[[単純イベント]]
+]FIGCAPTION]
+: [F[[[イベント型]]]] : [CODE(DOMe)@en[[[afterscriptexecute]]]]
+: [F[[[対象]]]] : [VAR[要素]]
+: [F[[[bubbles]]]]: [[真]]
+]FIG]
+= [406] [VAR[要素]]の[F[[[スクリプトの型]]]]が [CODE[[[classic]]]] で、
+[VAR[要素]]の[F[[[外部ファイルから]]]]フラグが設定されていれば、
+== [407] [[単純イベントを発火]]します。
+[FIG(list members middle)[
+[FIGCAPTION[
+[[単純イベント]]
+]FIGCAPTION]
+: [F[[[イベント型]]]] : [CODE(DOMe)@en[[[load]]]]
+: [F[[[対象]]]] : [VAR[要素]]
+]FIG]
+= [408] それ以外なら、[[タスクキュー]]に[[タスクを追加]]します。
+[FIG(list members)[
+:処理:
+[FIG(steps)[
+= [409] [[単純イベントを発火]]します。
+[FIG(list members middle)[
+[FIGCAPTION[
+[[単純イベント]]
+]FIGCAPTION]
+: [F[[[イベント型]]]] : [CODE(DOMe)@en[[[load]]]]
+: [F[[[対象]]]] : [VAR[要素]]
+]FIG]
+]FIG]
+:[F[[[タスク源]]]]: ?
+]FIG]
 ]FIG]
 
 ** エラーの通知
+
+[410] [[スクリプト]]の [[fetch]] に関するエラーは、 [CODE(DOMe)@en[[[error]]]]
+[[イベント]]で通知されます。これは[[起源]]に関わらず詳しい情報が提供されません。
 
 [305] [VAR[要素]]のエラーを通知する[[タスクを追加]]するとは、次のようにすることを言います。
 [FIG(steps)[
@@ -783,6 +889,9 @@ HTML 4 も特にそうするべきだなどとは言っていません。
 : [F[[[対象]]]] : [VAR[要素]]
 ]FIG]
 ]FIG]
+
+[411] [[スクリプト]]の実行時エラーは、他の[[スクリプト]]同様に[[例外の報告]]により処理されます。
+こちらは[[起源]]次第で報告内容が省略されることがあります。
 
 * [CODE(DOMi)@en[HTMLScriptElement]] インターフェイス
 
