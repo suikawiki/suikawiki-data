@@ -380,7 +380,7 @@ HTML 4 も特にそうするべきだなどとは言っていません。
 [[外部スクリプト]]かどうかを表します。
 : [F[[DFN[[RUBYB[スクリプトのスクリプト]@en[the script's script]]]]]] [SRC[>>130]] :
 [CODE(HTMLe)@en[[[script]]]] [[要素]]から得た[[スクリプト]]です。
-: [F[[DFN[[RUBYB[スクリプトが準備完了]@en[the script is ready]]]]]] [SRC[>>130]] :
+: [F[[[スクリプトの準備完了]]]] :
 [[スクリプトのfetch]]の完了を表します。
 それまで[[loadイベントが遅延]]されます。
 : 作成した構文解析器 :
@@ -504,7 +504,27 @@ HTML 4 も特にそうするべきだなどとは言っていません。
 [VAR[続きの処理]]は、 >>316 とします。
 = [361] >>360 の実行タイミングにより、
 [FIG(switch)[
-
+:甲:
+[VAR[要素]]を作成した[[構文解析器]]の[F[[[文書]]]]の
+[F[[[list of scripts that will execute when the document has finished parsing]]]]
+の末尾に[VAR[要素]]を追加します。
+:乙:
+[VAR[要素]]を作成した[[構文解析器]]の[F[[[文書]]]]の
+[F[[[pending parsing-blocking script]]]] を、[VAR[要素]]に設定します。
+:丙:
+[VAR[要素]]の[F[[[節点文書]]]]の
+[F[[[list of scripts that will execute in order as soon as possible]]]]
+の末尾に[VAR[要素]]を追加します。
+:丁:
+[VAR[要素]]の[F[[[節点文書]]]]の
+[F[[[set of scripts that will execute as soon as possible]]]]
+に[VAR[要素]]を追加します。
+:戊:
+[VAR[要素]]を作成した[[構文解析器]]の[F[[[文書]]]]の
+[F[[[pending parsing-blocking script]]]]
+を、[VAR[要素]]に設定します。
+:己:
+[VAR[要素]]について[[スクリプトブロックを実行]]します。
 ]FIG]
 ]FIG]
 
@@ -569,6 +589,10 @@ HTML 4 も特にそうするべきだなどとは言っていません。
 - [321] [CODE(HTMLa)@en[[[event]]]] [[属性]]や [CODE(HTMLa)@en[[[for]]]]
 [[属性]]は、[[古典スクリプト]]でのみ効力を持ちます。
 - [322] [CODE(HTMLa)@en[[[charset]]]] [[属性]]は、[[古典スクリプト]]でのみ効力を持ちます。
+- [363] [[構文解析器]]の実行途中で挿入された [CODE(HTMLe)@en[[[script]]]]
+[[要素]]が [[fetch]] 待ちの間に他の[[文書]]に [[adopt]] されると、
+その[[スクリプト]]は実行されなくなります。しかし [[fetch]]
+完了まで[[構文解析器]]の停止や[[[CODE(DOMe)@en[load]]イベントの遅延]]は継続します。
 ]FIG]
 
 [279] [[HTML Standard]] と [[Firefox]] は、[[構文解析器]]が作成した
@@ -587,9 +611,6 @@ HTML 4 も特にそうするべきだなどとは言っていません。
 - [277] [CITE[tests-web/html/script/mutations]] ([TIME[2016-02-22 16:51:13 +09:00]] 版) <https://webtests.herokuapp.com/html/script/mutations/>
 ]REFS]
 
-[248] [CODE(HTMLe)@en[[[script]]]] [[要素]]の[F[[[スクリプトが準備完了]]]]するまで、
-[F[[[節点文書]]]]の[[loadイベントを遅延]]しなければ[['''なりません''']] [SRC[>>130]]。
-
 ** 実行タイミング
 
 [164] [CODE(HTMLe)@en[[[script]]]] [[要素]]から作成された[[スクリプト]]の実行のタイミングは、
@@ -601,19 +622,19 @@ HTML 4 も特にそうするべきだなどとは言っていません。
 -- その他の場合
 -- その場 (挿入や[[終了タグ]]の時点) で実行されます。
 [[スクリプト]]内から呼ばれている場合も、再帰的に[[スクリプト]]を実行します。
-- [165] [[pending parsing-blocking script]]
+- [165] [[文書]]の[F[[DFN[[[pending parsing-blocking script]]]]]] [SRC[>>130]]
 -- ([CODE(HTMLa)@en[[[src]]]] & [["parser-inserted"]]) or [[has a style sheet that is blocking scripts]] の場合
 -- [[構文解析器]]によって[[スクリプト]]を実行中ならすべて完了させてから、
 必要な[[スクリプト]]や[[スタイルシート]]が読み込まれるまで[[構文解析]]を中断し、
 読み込まれた時点で実行され、[[構文解析]]も再開されます。
-- [166] [[list of scripts that will execute when the document has finished parsing]]
+- [166] [[文書]]の[F[[DFN[[[list of scripts that will execute when the document has finished parsing]]]]]] [SRC[>>130]]
 -- [CODE(HTMLa)@en[[[src]]]] & [CODE(HTMLa)@en[[[defer]]]] & [["parser-inserted"]] の場合
 -- [[stop parsing]] が実行します。
-- [167] [[list of scripts that will execute in order as soon as possible]]
+- [167] [[文書]]の[F[[DFN[[[list of scripts that will execute in order as soon as possible]]]]]] [SRC[>>130]]
 -- [CODE(HTMLa)@en[[[src]]]] の場合
 -- [[fetch]] 完了時の[[タスク]]で実行します。
 -- [[構文解析]]実行中に登録された場合、実行完了まで [CODE(DOMe)@en[[[load]]]] を遅延させます。
-- [168] [[set of scripts that will execute as soon as possible]]
+- [168] [[文書]]の[F[[DFN[[[set of scripts that will execute as soon as possible]]]]]] [SRC[>>130]]
 -- [CODE(HTMLa)@en[[[src]]]] & [CODE(HTMLa)@en[[[async]]]] の場合
 -- [[fetch]] 完了時の[[タスク]]で実行します。
 -- [[構文解析]]実行中に登録された場合、実行完了まで [CODE(DOMe)@en[[[load]]]] を遅延させます。
@@ -681,6 +702,39 @@ HTML 4 も特にそうするべきだなどとは言っていません。
 ==== 丁
 == [344] それ以外の場合、
 === 丁
+]FIG]
+
+;; [362] 丙、丁は通常の [CODE(HTMLe)@en[[[script]]]] [[要素]]としての実行、
+それ以外は[[構文解析器]]による [CODE(HTMLe)@en[[[script]]]]
+[[要素]]の実行です。
+
+** スクリプトの準備完了
+
+[364] [CODE(HTMLe)@en[[[script]]]] [[要素]]は、
+[[スクリプトの準備]]の実行の過程で、
+[DFN[[RUBYB[スクリプトの準備完了]@en[the script is ready]]]] [SRC[>>130]]
+となります。
+
+[248] [CODE(HTMLe)@en[[[script]]]] [[要素]]の[F[[[スクリプトが準備完了]]]]するまで、
+[F[[[節点文書]]]]の[[loadイベントを遅延]]しなければ[['''なりません''']] [SRC[>>130]]。
+つまり[[構文解析器]]の動作中に[[スクリプトのfetch]]が開始されると、
+それが (成功であれ失敗であれ) 完了するまでは [CODE(DOMe)@en[[[load]]]]
+は[[発火]]されません。
+
+;; [367] [F[[[節点文書]]]]が変化した場合の扱いは不明です。
+
+[365] [VAR[要素]]の[[スクリプトの準備完了]]により、
+次のようにしなければ[['''なりません''']] [SRC[>>130]]。
+[FIG(steps)[
+= [366] >>360 の実行タイミングにより、
+[FIG(switch)[
+:甲:
+:乙:
+:丙:
+:丁:
+:戊:
+:己:
+]FIG]
 ]FIG]
 
 * 安全性
