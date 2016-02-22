@@ -413,9 +413,6 @@ HTML 4 も特にそうするべきだなどとは言っていません。
 
 * 処理
 
-[248] [CODE(HTMLe)@en[[[script]]]] [[要素]]の[F[[[スクリプトが準備完了]]]]するまで、
-[F[[[節点文書]]]]の[[loadイベントを遅延]]しなければ[['''なりません''']] [SRC[>>130]]。
-
 ** スクリプトの準備
 
 [257] [VAR[要素]]の[DFN[[RUBYB[スクリプトの準備]@en[prepare a script]]]]は、
@@ -487,6 +484,23 @@ HTML 4 も特にそうするべきだなどとは言っていません。
 === [315] [[モジュールスクリプト木のfetch]]を実行します。
 [VAR[URL]]、[VAR[credentialsモード]]、[VAR[設定群]]を引き渡します。
 [VAR[続きの処理]]は、 >>316 とします。
+= [327] それ以外なら、
+== [328] [VAR[ソーステキスト]]を、 [VAR[要素]]の [CODE(DOMa)@en[[[text]]]] 
+[[IDL属性]]の値に設定します。
+== [329] [VAR[要素]]の[F[[[スクリプトの型]]]]が [CODE[[[classic]]]] なら、
+=== [331] [VAR[要素]]の[F[[[スクリプトのスクリプト]]]]を、
+[VAR[ソーステキスト]]と[VAR[設定群]]について[[古典スクリプトを作成]]した結果に設定します。
+=== [332] [VAR[要素]]の[F[[[スクリプトの準備完了]]]]とします。
+== [330] [VAR[要素]]の[F[[[スクリプトの型]]]]が [CODE[[[module]]]] なら、
+=== [333] [VAR[基底URL]]を、 [VAR[要素]]の[F[[[設定文書]]]]の[F[[[文書基底URL]]]]に設定します。
+=== [334] [VAR[スクリプト]]を、[VAR[ソーステキスト]]、[VAR[設定群]]、
+[VAR[基底URL]]、[VAR[CORS設定]]について[[モジュールスクリプトを作成]]した結果に設定します。
+=== [335] [VAR[スクリプト]]が null なら、
+==== [336] [VAR[要素]]の[F[[[スクリプトのスクリプト]]]]を null に設定します。
+==== [337] [VAR[要素]]の[F[[[スクリプトの準備完了]]]]とします。
+=== [339] それ以外の場合、
+==== [340] [VAR[スクリプト]]について[[モジュールスクリプトの子孫のfetch]]を実行します。
+[VAR[続きの処理]]は、 >>316 とします。
 ]FIG]
 
 [305] この処理でエラーを通知するとは、次のようにすることを言います [SRC[>>130]]。
@@ -504,6 +518,7 @@ HTML 4 も特にそうするべきだなどとは言っていません。
 [[単純イベント]]
 ]FIGCAPTION]
 : [F[[[イベント型]]]] : [CODE(DOMe)@en[[[error]]]]
+: [F[[[対象]]]] : [VAR[要素]]
 ]FIG]
 ]FIG]
 :[F[[[タスク源]]]]: ?
@@ -515,8 +530,6 @@ HTML 4 も特にそうするべきだなどとは言っていません。
 [FIG(steps)[
 = [317] [VAR[要素]]の[F[[[スクリプトのスクリプト]]]]を、[VAR[スクリプト]]に設定します。
 = [318] [VAR[要素]]の[F[[[スクリプトの準備完了]]]]とします。
-= 
-@@
 ]FIG]
 
 [320] [[スクリプトの準備]]は、次の動作から呼び出されることがあります。
@@ -531,6 +544,9 @@ HTML 4 も特にそうするべきだなどとは言っていません。
 [[属性の設定]]が行われた時点で、[[スクリプトの準備]]による[[スクリプトのfetch]]を行って構いません
 [SRC[>>130]]。 (実行はまだ行わず、後に[[文書に挿入]]された時に 
 ([[属性]]などの状況が変わっていなければ) [[fetch]] 結果を利用します。)
+
+;; [326] 実装によっては更に早い段階 ([[preload scanner]]) で [[fetch]]
+が実行されています。
 
 [264] [[スクリプトの準備]]の処理に関連して、
 [CODE(HTMLe)@en[[[script]]]] [[要素]]には次のような性質があります。
@@ -565,20 +581,8 @@ HTML 4 も特にそうするべきだなどとは言っていません。
 - [277] [CITE[tests-web/html/script/mutations]] ([TIME[2016-02-22 16:51:13 +09:00]] 版) <https://webtests.herokuapp.com/html/script/mutations/>
 ]REFS]
 
-** 構文解析との関係
-
-[63] 
-[CODE(HTMLa)@en[[[defer]]]]、[CODE(HTMLa)@en[[[async]]]] なしの場合で、
-[CODE(HTMLa)@en[[[src]]]] ありの場合に、外部[[スクリプト]]が実行されるまで[[構文解析]]は停止するか?
-
-[CITE[Index of /~wakaba/-temp/test/html/script/src]] ([TIME[2008-12-16 11:37:00 +09:00]] 版) <http://suika.fam.cx/~wakaba/-temp/test/html/script/src/>
-
-[64] [[HTML]] として記述された [CODE(HTMLe)@en[[[script]]]] [[要素]]の場合 (nodefer-1)、
-どのブラウザも[[構文解析]]が停止します。
-
-[65] [[DOM]] によって作成された [CODE(HTMLe)@en[[[script]]]] [[要素]]の場合 (nodefer-script-1)、
-[[Opera]] 以外は[[構文解析]]を続行し、外部[[スクリプト]]は準備が出来次第実行します
-([[HTML5]] に従った動作)。 [[Opera]] 9.61 は >>64 同様、[[構文解析]]を停止します。
+[248] [CODE(HTMLe)@en[[[script]]]] [[要素]]の[F[[[スクリプトが準備完了]]]]するまで、
+[F[[[節点文書]]]]の[[loadイベントを遅延]]しなければ[['''なりません''']] [SRC[>>130]]。
 
 ** 実行タイミング
 
@@ -995,10 +999,8 @@ method の説明もご覧ください。
 - ''XSLT Elements'' <http://msdn.microsoft.com/library/default.asp?url=/library/en-us/xmlsdk/htm/xsl_elm_qz_4s50.asp>
 [[#comment]]
 - ''XSLT 1.0で正規表現を使う(MSXML限定)'' <http://members.jcom.home.ne.jp/jintrick/Personal/d20031l.html#d22_4>
-[[#comment]]
 
-
-* xalan:script 要素 (Xalan-Java XSLT 実装)
+** xalan:script 要素 (Xalan-Java XSLT 実装)
 
 [23] [[Xalan]] では [[XSLT]] [[スタイル・シート]]で
 [[JavaScript]] などを使うのに [CODE(XML)[xalan:script]]
@@ -1014,6 +1016,10 @@ method の説明もご覧ください。
 - ''Xalan-Java Extensions'' <http://xml.apache.org/xalan-j/extensions.html>
 
 ** HTML5
+
+[323] [[HTML5]] では、初めて[[スクリプト]]の処理モデルが規定されました。
+
+[324] [[データブロック]]としての利用法も [[HTML5]] で追加されました。
 
 [49]
 [CITE[Bug 178258 &#8211; document.forms has no properties on a page without <body> (JavaScript error)]] ([CODE[2007-01-29 17:04:28 +09:00]] 版) <https://bugzilla.mozilla.org/show_bug.cgi?id=178258>
@@ -1053,8 +1059,6 @@ document.write('</sc'+'ript>');
 </script>
 ]PRE]
 
-([[名無しさん]])
-
 [55]
 [CITE@en[Re: <script> for non-script content]] ([[Ian Hickson]] 著, [CODE[2008-05-14 16:53:44 +09:00]] 版) <http://lists.w3.org/Archives/Public/public-html/2008May/0291.html>
 ([[名無しさん]])
@@ -1075,6 +1079,19 @@ document.write('</sc'+'ript>');
 [CITE[High Performance Web Sites :: “Delayed Script Execution” in Opera]] ([CODE[2008-09-17 13:31:22 +09:00]] 版) <http://www.stevesouders.com/blog/2008/09/11/delayed-script-execution-in-opera/>
 
 [62] [CITE[John Resig - JavaScript Micro-Templating]] ([TIME[2008-12-13 10:11:52 +09:00]] 版) <http://ejohn.org/blog/javascript-micro-templating/>
+
+[63] 
+[CODE(HTMLa)@en[[[defer]]]]、[CODE(HTMLa)@en[[[async]]]] なしの場合で、
+[CODE(HTMLa)@en[[[src]]]] ありの場合に、外部[[スクリプト]]が実行されるまで[[構文解析]]は停止するか?
+
+[CITE[Index of /~wakaba/-temp/test/html/script/src]] ([TIME[2008-12-16 11:37:00 +09:00]] 版) <http://suika.fam.cx/~wakaba/-temp/test/html/script/src/>
+
+[64] [[HTML]] として記述された [CODE(HTMLe)@en[[[script]]]] [[要素]]の場合 (nodefer-1)、
+どのブラウザも[[構文解析]]が停止します。
+
+[65] [[DOM]] によって作成された [CODE(HTMLe)@en[[[script]]]] [[要素]]の場合 (nodefer-script-1)、
+[[Opera]] 以外は[[構文解析]]を続行し、外部[[スクリプト]]は準備が出来次第実行します
+([[HTML5]] に従った動作)。 [[Opera]] 9.61 は >>64 同様、[[構文解析]]を停止します。
 
 [59]
 [[OSML]] で[[鯖]]側で処理される [[HTML]] 片の [CODE(HTMLe)@en[[[script]]]]
@@ -1390,6 +1407,11 @@ document.write('</sc'+'ript>');
 ]FIG]
 
 ** 2016年改訂
+
+[325] 2015年末から2016年にかけた [[HTML Standard]] の一連の改訂では、
+[[JavaScript]] 以外の[[スクリプト言語]]に関する規定が削除されると共に、
+新たに[[モジュールスクリプト]]が導入されました。
+その他細部の明確化が行われています。
 
 [180] [CITE@en[Call out to CSP's inline element hooks · whatwg/html@ee3486e]]
 ([TIME[2015-11-08 16:31:28 +09:00]] 版)
