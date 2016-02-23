@@ -10,6 +10,7 @@
 - [422] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2016-02-21 07:50:23 +09:00]] 版) <https://html.spec.whatwg.org/#scriptEndTag>
 - [427] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2016-02-21 07:50:23 +09:00]] 版) <https://html.spec.whatwg.org/#scriptForeignEndTag>
 - [424] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2016-02-21 07:50:23 +09:00]] 版) <https://html.spec.whatwg.org/#scriptTagXML>
+- [482] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2016-02-21 07:50:23 +09:00]] 版) <https://html.spec.whatwg.org/#stop-parsing>
 ]REFS]
 
 * 意味
@@ -740,6 +741,59 @@ HTML 4 も特にそうするべきだなどとは言っていません。
 完了まで[[構文解析器]]の停止や[[[CODE(DOMe)@en[load]]イベントの遅延]]は継続します。
 ]FIG]
 
+** スクリプトの準備完了
+
+[364] [CODE(HTMLe)@en[[[script]]]] [[要素]]は、
+[[スクリプトの準備]]の実行の過程で、
+[DFN[[RUBYB[スクリプトの準備完了]@en[the script is ready]]]] [SRC[>>130]]
+となります。
+
+[248] [CODE(HTMLe)@en[[[script]]]] [[要素]]の[F[[[スクリプトが準備完了]]]]するまで、
+[F[[[節点文書]]]]の[[loadイベントを遅延]]しなければ[['''なりません''']] [SRC[>>130]]。
+つまり[[構文解析器]]の動作中に[[スクリプトのfetch]]が開始されると、
+それが (成功であれ失敗であれ) 完了するまでは [CODE(DOMe)@en[[[load]]]]
+は[[発火]]されません。
+
+;; [367] [F[[[節点文書]]]]が変化した場合の扱いは不明です。
+
+[365] [VAR[要素]]の[[スクリプトの準備完了]]により、
+次のようにしなければ[['''なりません''']] [SRC[>>130]]。
+[FIG(steps)[
+= [366] >>360 の実行タイミングにより、
+[FIG(switch)[
+:甲、乙、戊:
+[FIG(steps)[
+= [368] [VAR[要素]]の[F[[[「構文解析器実行準備完了」]]フラグ]]を設定します。
+= [475] >>453 の[[スピン]]を終了できるかもしれません。
+]FIG]
+:丙:
+[FIG(steps)[
+= [369] [VAR[リスト]]を、 >>361 の
+[F[[[list of scripts that will execute in order as soon as possible]]]] に設定します。
+= [373] [VAR[リスト]]の最初の[[要素]]が[VAR[要素]]の場合、
+== [371] [VAR[要素]]の[F[準備完了フラグ]]を設定します。
+= [370] [VAR[リスト]]の最初の[[要素]]の[F[準備完了フラグ]]が設定されている限り繰り返し、
+== [372] [VAR[リスト]]の最初の[[要素]]について[[スクリプトブロックを実行]]します。
+== [374] [VAR[リスト]]から最初の[[要素]]を削除します。
+]FIG]
+:丁:
+[FIG(steps)[
+= [375] [VAR[要素]]について[[スクリプトブロックを実行]]します。
+= [376] >>361 の 
+[F[[[set of scripts that will execute as soon as possible]]]]
+から[VAR[要素]]を削除します。
+]FIG]
+:己:
+[FIG(steps)[
+= [378] [VAR[要素]]について[[スクリプトブロックを実行]]します。
+]FIG]
+]FIG]
+]FIG]
+
+;; [377] >>361 とは通常は[VAR[要素]]の[F[[[節点文書]]]]ですが、
+処理がここに到着するまでの間に[VAR[要素]]が他の[[文書]]に [[adopt]]
+される可能性もあります。
+
 ** 実行タイミング
 
 [164] [CODE(HTMLe)@en[[[script]]]] [[要素]]から作成された[[スクリプト]]の実行のタイミングは、
@@ -756,7 +810,7 @@ HTML 4 も特にそうするべきだなどとは言っていません。
 -- [[構文解析器]]によって[[スクリプト]]を実行中ならすべて完了させてから、
 必要な[[スクリプト]]や[[スタイルシート]]が読み込まれるまで[[構文解析]]を中断し、
 読み込まれた時点で実行され、[[構文解析]]も再開されます。
-- [166] [[文書]]の[F[[DFN[[[list of scripts that will execute when the document has finished parsing]]]]]] [SRC[>>130]]
+- [166] [[文書]]の[F[[[list of scripts that will execute when the document has finished parsing]]]]
 -- [CODE(HTMLa)@en[[[src]]]] & [CODE(HTMLa)@en[[[defer]]]] & [["parser-inserted"]] の場合
 -- [[stop parsing]] が実行します。
 - [167] [[文書]]の[F[[DFN[[[list of scripts that will execute in order as soon as possible]]]]]] [SRC[>>130]]
@@ -912,58 +966,11 @@ null に設定します。
 
 ;; [478] この分岐は、戊と己の分岐に対応します。
 
-*** スクリプトの準備完了
+*** list of scripts that will execute when the document has finished parsing
 
-[364] [CODE(HTMLe)@en[[[script]]]] [[要素]]は、
-[[スクリプトの準備]]の実行の過程で、
-[DFN[[RUBYB[スクリプトの準備完了]@en[the script is ready]]]] [SRC[>>130]]
-となります。
-
-[248] [CODE(HTMLe)@en[[[script]]]] [[要素]]の[F[[[スクリプトが準備完了]]]]するまで、
-[F[[[節点文書]]]]の[[loadイベントを遅延]]しなければ[['''なりません''']] [SRC[>>130]]。
-つまり[[構文解析器]]の動作中に[[スクリプトのfetch]]が開始されると、
-それが (成功であれ失敗であれ) 完了するまでは [CODE(DOMe)@en[[[load]]]]
-は[[発火]]されません。
-
-;; [367] [F[[[節点文書]]]]が変化した場合の扱いは不明です。
-
-[365] [VAR[要素]]の[[スクリプトの準備完了]]により、
-次のようにしなければ[['''なりません''']] [SRC[>>130]]。
-[FIG(steps)[
-= [366] >>360 の実行タイミングにより、
-[FIG(switch)[
-:甲、乙、戊:
-[FIG(steps)[
-= [368] [VAR[要素]]の[F[[[「構文解析器実行準備完了」]]フラグ]]を設定します。
-= [475] >>453 の[[スピン]]を終了できるかもしれません。
-]FIG]
-:丙:
-[FIG(steps)[
-= [369] [VAR[リスト]]を、 >>361 の
-[F[[[list of scripts that will execute in order as soon as possible]]]] に設定します。
-= [373] [VAR[リスト]]の最初の[[要素]]が[VAR[要素]]の場合、
-== [371] [VAR[要素]]の[F[準備完了フラグ]]を設定します。
-= [370] [VAR[リスト]]の最初の[[要素]]の[F[準備完了フラグ]]が設定されている限り繰り返し、
-== [372] [VAR[リスト]]の最初の[[要素]]について[[スクリプトブロックを実行]]します。
-== [374] [VAR[リスト]]から最初の[[要素]]を削除します。
-]FIG]
-:丁:
-[FIG(steps)[
-= [375] [VAR[要素]]について[[スクリプトブロックを実行]]します。
-= [376] >>361 の 
-[F[[[set of scripts that will execute as soon as possible]]]]
-から[VAR[要素]]を削除します。
-]FIG]
-:己:
-[FIG(steps)[
-= [378] [VAR[要素]]について[[スクリプトブロックを実行]]します。
-]FIG]
-]FIG]
-]FIG]
-
-;; [377] >>361 とは通常は[VAR[要素]]の[F[[[節点文書]]]]ですが、
-処理がここに到着するまでの間に[VAR[要素]]が他の[[文書]]に [[adopt]]
-される可能性もあります。
+[483] [[文書]]の[F[[DFN[[[list of scripts that will execute when the document has finished parsing]]]]]] [SRC[>>130]]
+は、 [CODE(HTMLe)@en[[[script]]]] [[要素]]のリストです。
+初期状態では空です。
 
 ** 実行
 
