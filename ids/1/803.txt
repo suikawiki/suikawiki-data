@@ -11,6 +11,7 @@
 - [427] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2016-02-21 07:50:23 +09:00]] 版) <https://html.spec.whatwg.org/#scriptForeignEndTag>
 - [424] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2016-02-21 07:50:23 +09:00]] 版) <https://html.spec.whatwg.org/#scriptTagXML>
 - [482] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2016-02-21 07:50:23 +09:00]] 版) <https://html.spec.whatwg.org/#stop-parsing>
+- [503] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2016-02-21 07:50:23 +09:00]] 版) <https://html.spec.whatwg.org/#HTMLScriptElement-partial>
 ]REFS]
 
 * 意味
@@ -98,6 +99,91 @@
 
 [249] [CODE(HTMLa)@en[[[async]]]] [[属性]]や [CODE(HTMLa)@en[[[src]]]]
 [[属性]]については[[属性が追加]]された時の処理が規定されています。
+
+[500] [[属性]]の有無と[[構文解析器]]によって作成されたか [[DOM]]
+[[メソッド]]で作成されたかにより、[[スクリプト]]の実行のタイミングは次のように変化します。
+
+[FIG(table)[
+:e: [[要素]]
+:timing: 実行時機
+:order: 相対的順序保存
+:pause parser: 構文解析器中断
+:c: >>360
+
+:e: [CODE(HTML)@en[<script>]]
+:order: はい
+:pause parser: はい
+:timing: 挿入直後・妨害条件解消後の遅い方
+:c: 己、戊
+
+:e: [CODE(HTML)@en[<script src>]]
+:order: はい
+:pause parser: はい
+:timing: [[fetch]] 直後・妨害条件解消後の遅い方
+:c: 乙
+
+:e: [CODE(HTML)@en[<script src defer>]]
+:order: はい
+:timing: 構文解析終了直後・[[fetch]] 直後・妨害条件解消後の遅い方
+:c: 甲
+
+:e: [CODE(HTML)@en[<script src async>]]
+:timing: [[fetch]] 直後
+:c: 丁
+
+:e: [CODE(HTML)@en[<script type=module>]]
+:order: はい
+:timing: 構文解析終了直後・妨害条件解消後の遅い方
+:c: 甲
+
+:e: [CODE(HTML)@en[<script type=module async>]]
+:timing: [[fetch]] 直後
+:c: 丁
+
+:e: [CODE(HTML)@en[<script type=module src>]]
+:order: はい
+:timing: 構文解析終了直後・[[fetch]] 直後・妨害条件解消後の遅い方
+:c: 甲
+
+:e: [CODE(HTML)@en[<script type=module src async>]]
+:timing: [[fetch]] 直後
+:c: 丁
+
+:e: [CODE(JS)@en[s = document.createElement ('script')]]
+:order: はい
+:timing: 挿入直後・妨害条件解消後の遅い方
+:c: 己
+
+:e: [CODE(JS)@en[s = document.createElement ('script'); s.src = ...]]
+:timing: [[fetch]] 直後
+:c: 丁
+
+:e: [CODE(JS)@en[s = document.createElement ('script'); s.async = false; s.src = ...]]
+:timing: [[fetch]] 直後・妨害条件解消後の遅い方
+:order: はい
+:c: 丙
+
+:e: [CODE(JS)@en[s = document.createElement ('script'); s.async = true; s.src = ...]]
+:timing: [[fetch]] 直後
+:c: 丁
+
+:e: [CODE(JS)@en[s = document.createElement ('script'); s.type = 'module']]
+:timing: 妨害条件解消後
+:c: 丁
+
+:e: [CODE(JS)@en[s = document.createElement ('script'); s.type = 'module'; s.src = ...]]
+:timing: [[fetch]] 直後
+:c: 丁
+
+:e: [CODE(JS)@en[s = document.createElement ('script'); s.type = 'module'; s.async = false; s.src = ...]]
+:order: はい
+:timing: [[fetch]] 直後・妨害条件解消後の遅い方
+:c: 丙
+
+:e: [CODE(JS)@en[s = document.createElement ('script'); s.type = 'module'; s.async = true; s.src = ...]]
+:timing: [[fetch]] 直後
+:c: 丁
+]FIG]
 
 * 内容
 
@@ -606,7 +692,7 @@ HTML 4 も特にそうするべきだなどとは言っていません。
 [FIG(switch)[
 : [[JavaScript MIME型]]のいずれかと [[ASCII大文字・小文字不区別]]で一致 :
 [VAR[要素]]の[F[[[スクリプトの型]]]]を、[CODE[[[classic]]]] に設定します。
-: [CODE[[[module]]]] [[ASCII大文字・小文字不区別]]で一致 :
+: [CODE[[[module]]]] と [[ASCII大文字・小文字不区別]]で一致 :
 [VAR[要素]]の[F[[[スクリプトの型]]]]を、[CODE[[[module]]]] に設定します。
 : それ以外 :
 ここで停止します。
@@ -705,7 +791,7 @@ HTML 4 も特にそうするべきだなどとは言っていません。
 [VAR[スクリプト]]について次のようにしなければ[['''なりません''']] [SRC[>>130]]。
 [FIG(steps)[
 = [317] [VAR[要素]]の[F[[[スクリプトのスクリプト]]]]を、[VAR[スクリプト]]に設定します。
-= [318] [VAR[要素]]の[F[[[スクリプトの準備完了]]]]とします。
+= [318] [VAR[要素]]の[F[[[スクリプトの準備完了]]]]とします (>>365)。
 ]FIG]
 
 [320] [[スクリプトの準備]]は、次の動作から呼び出されることがあります。
@@ -743,6 +829,12 @@ HTML 4 も特にそうするべきだなどとは言っていません。
 [[要素]]が [[fetch]] 待ちの間に他の[[文書]]に [[adopt]] されると、
 その[[スクリプト]]は実行されなくなります。しかし [[fetch]]
 完了まで[[構文解析器]]の停止や[[[CODE(DOMe)@en[load]]イベントの遅延]]は継続します。
+- [501] [CODE(HTMLa)@en[[[defer]]]] [[属性]]と [CODE(HTMLa)@en[[[async]]]]
+[[属性]]は、[[古典スクリプト]]では [CODE(HTMLa)@en[[[src]]]]
+[[属性]]が無い時無視されます。
+- [502] [[古典スクリプト]]では [CODE(HTMLa)@en[[[src]]]]
+[[属性]]の有無で動作が大きく変わりますが、
+[[モジュールスクリプト]]ではそこまで大きくは変わりません。
 ]FIG]
 
 ** スクリプトの準備完了
@@ -1145,6 +1237,8 @@ null に設定します。
 - [CODE(DOMa)@en[[[src]]]]
 - [CODE(DOMa)@en[[[text]]]]
 - [CODE(DOMa)@en[[[type]]]]
+- [CODE(DOMa)@en[[[event]]]]
+- [CODE(DOMa)@en[[[htmlFor]]]]
 ]FIG]
 
 * セキュリティー
