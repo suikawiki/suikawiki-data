@@ -23,6 +23,7 @@
 = [14] [VAR[要求]]を、 [VAR[URL]] と [VAR[CORS設定]]に関する[[潜在的CORS要求の作成]]の結果に設定します。
 = [15] [VAR[要求]]の[F[[[クライアント]]]]を、[VAR[設定群オブジェクト]]に設定します。
 = [16] [VAR[要求]]の[F[[[型]]]]を、 [CODE[[[script]]]] に設定します。
+= [100] [VAR[要求]]の[F[[[終点]]]]を、 [CODE[[[script]]]] に設定します。
 = [17] [VAR[要求]]を [[fetch]] します。 [[process response]] は、 >>18 とします。
 ]FIG]
 
@@ -63,7 +64,7 @@
 : [VAR[URL]] : [[URL]]。
 : [VAR[リファラー]] : [[URL]]。
 : [VAR[設定群オブジェクト]] : [[環境設定群オブジェクト]]。
-: [VAR[共有である]] : [[boolean]]。
+: [VAR[終点]] : [[要求終点]]。[[ワーカー]]の種別を表します。
 : [VAR[続きの処理]] : 処理。
 ]FIG]
 
@@ -71,15 +72,14 @@
 
 [FIG(steps)[
 = [54] 新しい[[要求]]を [[fetch]] します。
-[FIG(list members)[
+[FIG(list members middle)[
 [FIGCAPTION[
 [[要求]]
 ]FIGCAPTION]
 :[F[[[URL]]]]: [VAR[URL]]
 :[F[[[クライアント]]]]: [VAR[設定群オブジェクト]]
 :[F[[[型]]]]: [CODE[[[script]]]]
-:[F[[[終点]]]]: [VAR[共有である]]なら [CODE(DOMi)@en[[[sharedworker]]]]、
-そうでないなら [CODE[[[worker]]]]
+:[F[[[終点]]]]: [VAR[終点]]
 :[F[[[リファラー]]]]: [VAR[リファラー]]
 :[F[[[同期フラグ]]]]: 設定する
 :[F[[[モード]]]]: [CODE[[[same-origin]]]]
@@ -112,6 +112,7 @@
 [FIG(list members middle)[
 : [VAR[URL]] : [[URL]]。
 : [VAR[credentialsモード]] : [[credentialsモード]]の値。
+: [VAR[終点]] : [[要求終点]]。
 : [VAR[設定群オブジェクト]] : [[環境設定群オブジェクト]]。
 : [VAR[続きの処理]] : 処理。
 : [VAR[祖先リスト]] : リスト。明示的に指定されなければ、[[空リスト]]。
@@ -119,7 +120,8 @@
 
 [37] 次のようにします [SRC[>>4]]。
 [FIG(steps)[
-= [38] [VAR[URL]]、[VAR[credentialsモード]]、[VAR[設定群オブジェクト]]について[[単一モジュールスクリプトのfetch]]を実行します。
+= [38] [VAR[URL]]、[VAR[credentialsモード]]、[VAR[終点]]、
+[VAR[設定群オブジェクト]]について[[単一モジュールスクリプトのfetch]]を実行します。
 [VAR[続きの処理]]は、 >>39 とします。
 ]FIG]
 
@@ -134,11 +136,11 @@
 = [42] それ以外なら、
 == [43] [[モジュールスクリプトの子孫をfetch]]します。
 [VAR[祖先リスト]]は、[VAR[祖先リスト]]の末尾に [VAR[URL]] を追加した[[リスト]]とします。
-[VAR[続きの処理]]を引き渡します。
+[VAR[終点]]と[VAR[続きの処理]]を引き渡します。
 ]FIG]
 
 [44] [DFN[[RUBYB[モジュールスクリプトの子孫のfetch]@en[fetch the descendants of a module script]]]]は、
-[VAR[スクリプト]]と[VAR[祖先リスト]]と[VAR[続きの処理]]を受け取り、次のようにします [SRC[>>4]]。
+[VAR[スクリプト]]と[VAR[終点]]と[VAR[祖先リスト]]と[VAR[続きの処理]]を受け取り、次のようにします [SRC[>>4]]。
 
 [FIG(steps)[
 = [46] [VAR[記録]]を、[VAR[スクリプト]]の[F[[[モジュール記録]]]]に設定します。
@@ -154,6 +156,7 @@
 === [57] [VAR[URL]] を [VAR[URL群]]に追加します。
 = [58] [VAR[URL群]]の各値 [VAR[URL]] について順に、
 == [59] [VAR[URL]]、[VAR[スクリプト]]の[F[[[credentialsモード]]]]、
+[VAR[終点]]、
 [VAR[スクリプト]]の[F[[[設定群オブジェクト]]]]、
 [VAR[祖先リスト]]について[[モジュールスクリプト木のfetch]]を実行します。
 [VAR[続きの処理]]は、 >>60 とします。
@@ -175,7 +178,7 @@
 ]FIG]
 
 [69] [DFN[[RUBYB[単一モジュールスクリプトのfetch]@en[fetch a single module script]]]]は、
-[VAR[URL]]、[VAR[credentialsモード]]、[VAR[設定群オブジェクト]]、
+[VAR[URL]]、[VAR[credentialsモード]]、[VAR[終点]]、[VAR[設定群オブジェクト]]、
 [VAR[続きの処理]]について次のようにします [SRC[>>4]]。
 
 [FIG(steps)[
@@ -200,7 +203,7 @@
 [[要求]]
 ]FIGCAPTION]
 : [F[[[URL]]]] : [VAR[URL]]
-: [F[[[終点]]]] : [CODE[[[subresource]]]]
+: [F[[[終点]]]] : [VAR[終点]]
 : [F[[[型]]]] : [CODE[[[script]]]]
 : [F[[[モード]]]] : [CODE[[[cors]]]]
 : [F[[[credentialsモード]]]] : [VAR[credentialsモード]]
@@ -263,3 +266,7 @@
 [97] [CITE@en[Fix fetching module scripts with circular imports · whatwg/html@3c047b5]]
 ([TIME[2016-02-21 12:43:19 +09:00]] 版)
 <https://github.com/whatwg/html/commit/3c047b5a35da7af9cffef2a654a944e33be256cc>
+
+[99] [CITE@en[Make script fetching more correct with regard to request destinations · whatwg/html@6dc9c9e]]
+([TIME[2016-02-29 17:59:23 +09:00]] 版)
+<https://github.com/whatwg/html/commit/6dc9c9e1efcc3122294fb015e4a4eea66456a611>
