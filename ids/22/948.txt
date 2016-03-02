@@ -60,6 +60,110 @@
 
 * 歴史
 
+** RFC 3229
+
+[FIG(quote)[
+[FIGCAPTION[
+[17] RFC 3229 (差分符号化) 10.5.2 IM
+]FIGCAPTION]
+
+> The IM response-header field is used to indicate the instance-manipulations, if any, that have been applied to the instance
+represented by the response.  Typical instance manipulations include
+delta encoding and compression.
+
+[CODE(HTTP)[IM]] [[応答頭欄]]は、[[応答]]で表現される[[実現値]]に[[実現値操作]]が適用されていれば、これを示すために使用します。
+典型的な実現値操作には[[差分符号化]]や[[圧縮]]が含まれます。
+
+>
+- IM = "IM" ":" #(instance-manipulation)
+
+> Instance-manipulations are defined in section 10.1.
+
+実現値操作は10.1節で定義しています。
+
+> As a special case, if the instance-manipulations include both range
+selection and at least one other non-identity instance-manipulation,
+the IM header field MUST be used to indicate the order in which all
+of these instance-manipulations, including range selection, were
+applied.  If the IM header lists the "range" instance-manipulation,
+the response MUST include either a Content-Range header or a
+multipart/byteranges Content-Type in which each part contains a
+Content-Range header.  (See section 10.10 for specific discussion of
+combining delta encoding and multipart/byteranges.)
+
+特別な場合として、実現値操作が範囲選択と最低一つの他の非[[同一]]実現値操作を含む場合、 [CODE(HTTP)[IM]] 頭欄はどの順序で範囲選択を含む実現値操作が適用されたのかを示すために使用しなければ'''なりません'''。
+[CODE(HTTP)[IM]] 頭が [CODE(HTTP)[[[range]]]] 実現値操作を挙げているなら、
+応答は [CODE(HTTP)[[[Content-Range]]]] 頭を含んでいるか、
+各[[部分]]が [CODE(HTTP)[Content-Range]] 頭を含む
+[CODE(MIME)[[[multipart/byteranges]]]] [CODE(HTTP)[[[Content-Type]]]]
+でなければ'''なりません'''。 (差分符号化と [CODE(MIME)[multipart/byteranges]] の組み合わせについての議論は10.10節を参照。)
+
+> Responses that include an IM header MUST carry a response status code
+of 226 (IM Used), as specified in section 10.4.1.
+
+[CODE(HTTP)[IM]] 頭を含む応答は10.4.1節で規定されている通り
+[CODE(HTTP)[[[226]]]] ([ABBR[IM]] 使用中) 応答[[状態符号]]を運搬しなければ'''なりません'''。
+
+> The server SHOULD omit the IM header if it would list only the
+"range" instance-manipulation.  Such responses would normally be sent
+with response status code 206 (Partial Content), as specified by
+HTTP/1.1 [10].
+
+[[鯖]]は、 [CODE(HTTP)[IM]] 頭が [CODE(HTTP)[[[range]]]]
+実現値操作だけを挙げることになるときには [CODE(HTTP)[IM]]
+頭を省略する'''べきです'''。そのような応答は通常 HTTP/1.1
+で規定されている通り応答状態符号 [CODE(HTTP)[[[206]]]] (部分内容)
+で送信されます。
+
+> Examples of the use of the IM header include:
+
+[CODE(HTTP)[IM]] 頭の使用例
+
+>
+- IM: vcdiff
+
+> This example indicates that the entity-body is a delta encoding of
+the instance, using the vcdiff encoding.
+
+この例は [CODE(ABNF)[[[entity-body]]]] が [CODE(HTTP)[[[vcdiff]]]] 符号化を使った[[差分符号化]]であることを示します。
+
+>
+[PRE[
+IM: diffe, deflate, range
+]PRE]
+
+> This example indicates that the instance has first been delta-encoded
+using the diffe encoding, then the result of that has been compressed
+using deflate, and finally one or more ranges of that compressed
+encoding have been selected.
+
+この例は最初に [CODE(HTTP)[[[diffe]]]] 符号化を使って差分符号化して、
+その結果を [CODE(HTTP)[[[deflate]]]] を使って圧縮して、
+最後にその圧縮符号化の一つ以上の範囲を選択していることを示します。
+
+>
+[PRE[
+IM: range, vcdiff
+]PRE]
+
+> This example indicates that one or more ranges of the instance have
+been selected, and the result has then been delta encoded against
+identical ranges of a previous base instance.
+
+この例は一つ以上の実現値の範囲が選択され、
+その結果が以前の[[基底実現値]]の同じ範囲について差分符号化されていることを示します。
+
+> A cache using a response received in reply to one request to reply to
+a subsequent request MUST follow the rules in section 10.6 if the
+cached response includes an IM header field.
+
+ある要求に対して受信した応答を後の要求で使用する[[キャッシュ]]は、
+キャッシュした応答が [CODE(HTTP)[IM]] 頭欄を含む場合には、
+10.6 節の規則に従わなければ'''なりません'''。
+]FIG]
+
+** RFC 4229
+
 [27] [[RFC 4229]] は[[IANA登録簿]]に状態「[[標準]]」で登録しています [SRC[>>26]]。
 
 [REFS[
