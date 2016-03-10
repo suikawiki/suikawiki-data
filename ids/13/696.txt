@@ -7,8 +7,8 @@
 
 [REFS[
 - [14] '''[CITE@en-US-x-hixie[HTML Standard]] ([TIME[2014-04-03 03:44:44 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#dom-document-all>'''
-- [13] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2014-04-03 03:44:44 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#htmlallcollection-0>
-- [27] [CITE@en-US[DOM Standard]] ([TIME[2014-03-20 17:08:41 +09:00]] 版) <http://dom.spec.whatwg.org/#interface-htmlcollection>
+- [13] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2016-03-10 07:13:01 +09:00]] 版) <https://html.spec.whatwg.org/#htmlallcollection>
+- [60] [CITE@en[DOM Standard]] ([TIME[2016-03-07 17:31:44 +09:00]] 版) <https://dom.spec.whatwg.org/#htmlcollection>
 ]REFS]
 
 * [CODE(DOMi)@en[Document]] オブジェクト [CODE(DOMa)@en[all]] 属性 (DOM)
@@ -19,12 +19,21 @@
 すべての[[要素]]に[[一致]]する[[フィルター]]を持つものでなければ[['''なりません''']]。
 [SRC[>>14]]
 
-[37] この[[属性]]は、毎回同じオブジェクトを返します。
+[37] この[[属性]]は、毎回同じオブジェクトを返します ([CODE(IDL s)@en[SameObject]])。
 つまり[[文書]]にはちょうど1つだけ [CODE(DOMa)@en[[[all]]]] [[オブジェクト]]が存在します。
 
 * [CODE(DOMi)@en[HTMLAllCollection]] インターフェイス (DOM)
 
-[23] [DFN[[CODE(DOMi)@en[[[HTMLAllCollection]]]]]] [[インターフェイス]]は[[文書環境]]で [[JavaScriptに晒され]]ています。
+[23] [DFN[[CODE(DOMi)@en[HTMLAllCollection]]]] [[オブジェクト]]は、
+[CODE(JS)@en[document.all]] [[IDL属性]]で用いられる[[コレクション]]です。
+
+;; [58] [[HTML Standard]] は [CODE(DOMi)@en[HTMLAllCollection]]
+が[[コレクション]]だと (なぜか) 明記はしていませんが、
+[CODE(DOMi)@en[HTMLCollection]] と似ている [SRC[>>13]]
+とし、[[コレクション]]の用語を使って規定されています。
+
+[27] [CODE(DOMi)@en[HTMLAllCollection]]
+[[インターフェイス]]は[[文書環境]]で [[JavaScriptに晒され]]ています [SRC[>>13]]。
 
 [38] この[[オブジェクト]]は[[生きて]]おり、[[DOM木]]に対する変更が即時反映されます。
 
@@ -35,7 +44,7 @@
 
 [24] [CODE(DOMi)@en[[[HTMLAllCollection]]]] には、[[継承]]するものも含めて次のメンバーがあります。
 
-[FIG(short list)[
+[FIG(middle list)[
 - [CODE(DOMm)@en[item][item (DOM)]]
 - [CODE(DOMa)@en[length][length (DOM)]]
 - [CODE(DOMm)@en[[[namedItem]]]]
@@ -43,6 +52,64 @@
 - [[supported property names]]
 - [[legacy caller]]
 ]FIG]
+
+[57] [CODE(DOMa)@en[length]] [[IDL特性]]以外は、すべて、
+[[索引]]や[[名前]]で[[要素]]を取得するものです。
+つまり、次のような方法で[[要素]]にアクセスできます。
+
+[FIG(list middle)[
+- [CODE(JS)@en[document.all [ [VAR[索引]] ] ][indexed getter]]
+- [CODE(JS)@en[document.all [ [VAR[名前]] ] ][named getter]]
+- [CODE(JS)@en[document.all ( [VAR[索引]] ) ][legacycaller]]
+- [CODE(JS)@en[document.all ( [VAR[名前]] ) ][legacycaller]]
+- [CODE(JS)@en[document.all.item ( [VAR[索引]] ) ][item (DOM)]]
+- [CODE(JS)@en[document.all.item ( [VAR[名前]] ) ][item (DOM)]]
+- [CODE(JS)@en[document.all.namedItem ( [VAR[名前]] ) ][namedItem]]
+]FIG]
+
+* JavaScript 束縛
+
+[59] [CODE(JS)@en[document.all]] の [CODE(DOMi)@en[HTMLAllCollection]]
+[[オブジェクト]]には、 [[JavaScript]] にて他の[[プラットフォームオブジェクト]]とは異なる特別な取り扱いが規定されています。
+
+[17] [CODE(JS)@en[[[document.all]]]] [[オブジェクト]]に [[JavaScript]] [CODE(JS)@en[[[ToBoolean()]]]] 
+[[演算]]を適用すると、[[偽]]を返さなければ[['''なりません''']]。 [SRC[>>14]]
+
+[18] [CODE(JS)@en[[[document.all]]]] [[オブジェクト]]に [[JavaScript]] の[[抽象等値性比較]]
+([CODE(JS)@en[[[==]]]] や [CODE(JS)[[[!=]]]]
+の[[演算子]]) を適用すると、[CODE(JS)@en[[[undefined]]]] や [CODE(JS)@en[[[null]]]] 
+と同じように振る舞わなければ[['''なりません''']]。 [SRC[>>14]]
+
+;; [19] [CODE(JS)[[[===]]]] や [CODE(JS)[[[!==]]]] に関しては、普通の[[オブジェクト]]と同じように振る舞います。
+
+[20] [CODE(JS)@en[[[document.all]]]] [[オブジェクト]]に [[JavaScript]] の [CODE(JS)@en[[[typeof]]]]
+[[演算子]]を適用すると、[[文字列]] [CODE(JS)@en[[[undefined]]]] を返さなければ[['''なりません''']]。 [SRC[>>14]]
+
+[21] これらの要件は、通常の[[オブジェクト]]の動作とは異なりますが、歴史的経緯のために必要
+[SRC[>>14]] とされています。
+
+[HISTORY[
+[22] かつて [CODE(JS)@en[[[document.all]]]] は [[IE]] のみが実装していたため、 [[IE]]
+であるかどうかの判別に用いられることがありました。すなわち、
+[PRE(JS example code)[
+if (document.all) {
+  // for IE
+} else {
+  // for non-IE
+}
+]PRE]
+... で [[IE]] 以外の[[近代的ブラウザー]]は後者が実行される必要がありました。一方で、 [[IE]]
+のみに対応していて [CODE(JS)@en[[[document.all]]]] が実装されていなければ動作しない
+[[Webサイト]]も存在していました。この両方のパターンに対応するため、 [CODE(JS)@en[[[document.all]]]]
+[[オブジェクト]]は条件式においては [CODE(JS)@en[[[undefined]]]] と同じように動作する実装がなされました。
+現在では [[IE]] も[[近代的ブラウザー]]と [[HTML Standard]] に従っています。
+]HISTORY]
+
+[28] これらは [CODE(DOMi)@en[[[HTMLAllCollection]]]] ではなく [CODE(JS)@en[[[document.all]]]]
+について要求されているようですが、 [CODE(JS)@en[[[document.all]]]] 以外で [CODE(DOMi)@en[[[HTMLAllCollection]]]]
+は使われていないので (今後も使われる見込みはないので)、実質的にそれと同じです。
+
+* 
 
 [25] 数値インデックス ([[配列]]風アクセス) は、 [CODE(DOMm)@en[[[item]]]] [[メソッド]]の呼び出しと等価です
 [SRC[>>13]]。 [CODE(DOMm)@en[[[item]]]] 
@@ -102,45 +169,6 @@
 [35] [[supported property names]] においては、[[木順]]で、重複する場合は最初の方が採用されます。
 [CODE(HTMLa)@en[[[id]]]] と [CODE(HTMLa)@en[[[name]]]] がある[[要素]]があれば
 [CODE(HTMLa)@en[[[id]]]] が先に現れたと考えます。 [SRC[>>13]]
-
-* JavaScript 束縛
-
-[17] [CODE(JS)@en[[[document.all]]]] [[オブジェクト]]に [[JavaScript]] [CODE(JS)@en[[[ToBoolean()]]]] 
-[[演算]]を適用すると、[[偽]]を返さなければ[['''なりません''']]。 [SRC[>>14]]
-
-[18] [CODE(JS)@en[[[document.all]]]] [[オブジェクト]]に [[JavaScript]] の[[抽象等値性比較]]
-([CODE(JS)@en[[[==]]]] や [CODE(JS)[[[!=]]]]
-の[[演算子]]) を適用すると、[CODE(JS)@en[[[undefined]]]] や [CODE(JS)@en[[[null]]]] 
-と同じように振る舞わなければ[['''なりません''']]。 [SRC[>>14]]
-
-;; [19] [CODE(JS)[[[===]]]] や [CODE(JS)[[[!==]]]] に関しては、普通の[[オブジェクト]]と同じように振る舞います。
-
-[20] [CODE(JS)@en[[[document.all]]]] [[オブジェクト]]に [[JavaScript]] の [CODE(JS)@en[[[typeof]]]]
-[[演算子]]を適用すると、[[文字列]] [CODE(JS)@en[[[undefined]]]] を返さなければ[['''なりません''']]。 [SRC[>>14]]
-
-[21] これらの要件は、通常の[[オブジェクト]]の動作とは異なりますが、歴史的経緯のために必要
-[SRC[>>14]] とされています。
-
-[HISTORY[
-[22] かつて [CODE(JS)@en[[[document.all]]]] は [[IE]] のみが実装していたため、 [[IE]]
-であるかどうかの判別に用いられることがありました。すなわち、
-[PRE(JS example code)[
-if (document.all) {
-  // for IE
-} else {
-  // for non-IE
-}
-]PRE]
-... で [[IE]] 以外の[[近代的ブラウザー]]は後者が実行される必要がありました。一方で、 [[IE]]
-のみに対応していて [CODE(JS)@en[[[document.all]]]] が実装されていなければ動作しない
-[[Webサイト]]も存在していました。この両方のパターンに対応するため、 [CODE(JS)@en[[[document.all]]]]
-[[オブジェクト]]は条件式においては [CODE(JS)@en[[[undefined]]]] と同じように動作する実装がなされました。
-現在では [[IE]] も[[近代的ブラウザー]]と [[HTML Standard]] に従っています。
-]HISTORY]
-
-[28] これらは [CODE(DOMi)@en[[[HTMLAllCollection]]]] ではなく [CODE(JS)@en[[[document.all]]]]
-について要求されているようですが、 [CODE(JS)@en[[[document.all]]]] 以外で [CODE(DOMi)@en[[[HTMLAllCollection]]]]
-は使われていないので、実質的にそれと同じです。
 
 * 歴史
 
