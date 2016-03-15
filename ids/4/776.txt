@@ -14,13 +14,6 @@
 
 [FIG(list members)[
 : [DFN[[F(ss)[DefaultProperties]]]] : 作成時点での自身の[[プロパティー]]のリストです [SRC[>>12]]。
-: [F(ss)[GetPrototypeOf]] : 
-実行されたら、 [CODE[[[IsPlatformObjectSameOrigin]]([[this]])]] が[[真]]なら
-[CODE[[[!][! (ECMAScript)]] [[OrdinaryGetPrototypeOf]]([[this]])]] を返し、
-それ以外なら [[null]] を返さなければ[MUST[なりません]] [SRC[>>12]]。
-: [F(ss)[SetPrototypeOf]] : 実行されたら、[[偽]]を返さなければ[MUST[なりません]] [SRC[>>12]]。
-: [F(ss)[IsExtensible]] : 実行されたら、[[真]]を返さなければ[MUST[なりません]] [SRC[>>12]]。
-: [F(ss)[PreventExtensions]] : 実行されたら、[[偽]]を返さなければ[MUST[なりません]] [SRC[>>12]]。
 : [F[文書]] :
 当該[[オブジェクト]]が関連付けられた[[文書]]です。
 : [DFN[[F[[RUBYB[[[関係する[CODE(DOMi)@en[Document]]]]][relevant [CODE(DOMi)@en[Document]]]]]]]] :
@@ -131,6 +124,101 @@
 = [26] [VAR[オブジェクト]]の [F(ss)[DefaultProperties]] を、
 [VAR[オブジェクト]]の [F(ss)[OwnPropertyKeys]] を実行した結果に設定します。
 = [27] [VAR[オブジェクト]]を返します。
+]FIG]
+
+* 異なる起源からのアクセス
+
+[42] [CODE(DOMi)@en[Location]] は、[[同じ起源]]でなくてもアクセスできる例外的な[[オブジェクト]]です。
+(そのような性質を持つのは他に [CODE(DOMi)@en[WindowProxy]] だけです。)
+
+[43] [[同じ起源]]からアクセスした時と、それ以外からアクセスした時とで、
+動作がかなり変わります。
+
+[44] [[JavaScript]] の[[内部メソッド]]は次のように動作しなければ[MUST[なりません]]
+[SRC[>>12]]。
+
+[FIG(table)[
+:method: [[内部メソッド]]
+:params: [[引数]]
+:same: [CODE[[[IsPlatformObjectSameOrigin]]([[this]])]] が[[真]]
+:cross: [CODE[[[IsPlatformObjectSameOrigin]]([[this]])]] が[[偽]]
+
+:method: [60] [F(ss)[GetPrototypeOf]]
+:same: [CODE[[[!][! (ECMAScript)]] [[OrdinaryGetPrototypeOf]]([[this]])]] を返します。
+:cross: [[null]] を返します。
+
+:method: [61] [F(ss)[SetPrototypeOf]]
+:same: [[偽]]を返します。
+:cross: [[偽]]を返します。
+
+:method: [62] [F(ss)[IsExtensible]]
+:same: [[真]]を返します。
+:cross: [[真]]を返します。
+
+:method: [63] [F(ss)[PreventExtensions]]
+:same: [[偽]]を返します。
+:cross: [[偽]]を返します。
+
+:method: [64] [F(ss)[GetOwnProperty]]
+:params: [VAR[P]]
+:same:
+[FIG(steps)[
+= [32] [VAR[desc]] を、 [CODE[[[OrdinaryGetOwnProperty]]([[this]], [VAR[P]])]] に設定します。
+= [33] [CODE[this]] の [F(ss)[DefaultProperties]] の値に [VAR[P]] が含まれるなら、
+== [34] [VAR[desc]] の [F(ss)[Configurable]] を[[真]]に設定します。
+= [35] [VAR[desc]] を返します。
+]FIG]
+:cross:
+[FIG(steps)[
+= [37] [VAR[特性]]を、 [CODE[[[!][! (ECMAScript)]] [[CrossOriginGetOwnPropertyHelper]]([[this]], [VAR[P]])]] に設定します。
+= [38] [VAR[特性]]が[[未定義]]でなければ、
+== [39] [VAR[特性]]を返します。
+= [40] それ以外なら、
+== [41] [CODE(DOMe)@en[SecurityError]] [[例外]]を[[投げ]]ます。
+]FIG]
+
+:method: [65] [F(ss)[DefineOwnProperty]]
+:params: [VAR[P]], [VAR[Desc]]
+:same:
+[FIG(steps)[
+= [46] [CODE[this]] の[F(ss)[DefaultProperties]]の値が [VAR[P]] を含むなら、
+== [47] [[偽]]を返します。
+= [48] それ以外なら、
+== [49] [CODE[[[?][? (ECMAScript)]] [[OrdinaryDefineOwnProperty]]([[this]], [VAR[P]], [VAR[Desc]])]] を返します。
+]FIG]
+:cross: [[偽]]を返します。
+
+:method: [66] [F(ss)[Get]]
+:params: [VAR[P]], [VAR[Receiver]]
+:same:
+[CODE[[[?][? (ECMAScript)]] [[OrdinaryGet]]([[this]], [VAR[P]], [VAR[Receiver]])]]
+を返します。
+:cross:
+[CODE[[[?][? (ECMAScript)]] [[CrossOriginGet]]([[this]], [VAR[P]], [VAR[Receiver]])]]
+を返します。
+
+:method: [67] [F(ss)[Set]]
+:params: [VAR[P]], [VAR[V]], [VAR[Receiver]]
+:same:
+[CODE[[[?][? (ECMAScript)]] [[OrdinarySet]]([[this]], [VAR[P]], [VAR[V]], [VAR[Receiver]])]]
+を返します。
+:cross:
+[CODE[[[?][? (ECMAScript)]] [[CrossOriginSet]]([[this]], [VAR[P]], [VAR[V]], [VAR[Receiver]])]]
+を返します。
+
+:method: [68] [F(ss)[Delete]]
+:params: [VAR[P]]
+:same:
+[CODE[[[?][? (ECMAScript)]] [[OrdinaryDelete]]([[this]], [VAR[P]])]]
+を返します。
+:cross: [[偽]]を返します。
+
+:method: [69] [F(ss)[OwnPropertyKeys]]
+:same: [CODE[[[!][! (ECMAScript)]] [[OrdinaryOwnPropertyKeys]]([[this]])]]
+を返します。
+:cross:
+[CODE[[[!][! (ECMAScript)]] [[CrossOriginOwnPropertyKeys]]([[this]])]]
+を返します。
 ]FIG]
 
 * 歴史
