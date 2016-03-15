@@ -4,19 +4,13 @@
 [WEAK[(最初の [CODE(URI)[?]] より後で、 [CODE(URI)[#]] より前の部分)]]
 を表します。
 
-[10] '''定義の変遷''':
-= [1] [DEL[[CODE(ABNF)@en[[DFN[query]] :=  *( [[uchar]] / [[reserved]] ) ;; [[RFC 1808]]]]]]
-= [2] [DEL[[CODE(ABNF)@en[[DFN[query]] := *[[uric]] ;; [[RFC 2396]]]]]]
-= [6] [CODE(ABNF)@en[[DFN[query]] := *( pchar / "/" / "?" ) ;; [[RFC 3986]]]]
+* 仕様書
 
-[7] '''RFC 3986 の定義の詳細''':
-[[RFC 3986]] の [CODE(ABNF)@en[[[pchar]]]] は
-[CODE(ABNF)@en[[[unreserved]] / [[pct-encoded]] / [[sub-delims]] / ":" / "@"]]
-です。すなわち [[URI]] で使える[[文字]]のうち、
-[CODE(ABNF)["#" / "[" / "]"]] だけが使えません。
-定義としては [[RFC 2396]] と同じです。
+[REFS[
+- [36] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2016-03-14 22:44:13 +09:00]] 版) <https://html.spec.whatwg.org/#dom-location-search>
+]REFS]
 
-** より具体的な構文
+* より具体的な構文
 
 [11]
 [[照会]] ([CODE(ABNF)@en[query]]) 
@@ -178,6 +172,49 @@
 [CODE[http://www.example.com/?20000102]] のような [[URL]] が示されるかもしれません。
 ]EG]
 
+* [CODE(DOMi)@en[Location]] インターフェイス [CODE(DOMa)@en[search]] 属性
+
+** 性質
+
+[57] この[[属性]]は、 [CODE(xattr IDL)@en[Unforgeable]] です [SRC[>>36]]。
+
+** 取得器
+
+[37] [CODE(JS)@en[location.search]] の[[取得器]]は、次のようにしなければ[MUST[なりません]]
+[SRC[>>36]]。
+
+[FIG(steps)[
+= [38] [[文脈オブジェクト]]の[F[[[関係する[CODE(DOMi)@en[Document]]]]]]の[F[実効スクリプト起源]]と[[入口設定群オブジェクト]]の[F[実効スクリプト起源]]が[[同じ起源]]でなければ、
+== [39] [CODE(DOMe)@en[SecurityError]] [[例外]]を[[投げ]]、ここで停止します。
+= [40] [VAR[URL]]を、[[文脈オブジェクト]]の[F[URL][Location (DOM)]] に設定します。
+= [41] [VAR[URL]] の[F[query]]が [[null]] か[[空文字列]]なら、
+== [42] [[空文字列]]を返します。
+= [43] それ以外なら、
+== [44] [CODE[?]] と [VAR[URL]] の [F[query]] を連結したものを返します。
+]FIG]
+
+** 設定器
+
+[45] [CODE(JS)@en[location.search]] の[[設定器]]は、次のようにしなければ[MUST[なりません]]
+[SRC[>>36]]。
+
+[FIG(steps)[
+= [58] [VAR[入力]]を、与えられた値を [CODE(IDL)@en[USVString]] として解釈した結果に設定します。
+= [46] [[文脈オブジェクト]]の[F[[[関係する[CODE(DOMi)@en[Document]]]]]]の[F[実効スクリプト起源]]と[[入口設定群オブジェクト]]の[F[実効スクリプト起源]]が[[同じ起源]]でなければ、
+== [47] [CODE(DOMe)@en[SecurityError]] [[例外]]を[[投げ]]、ここで停止します。
+= [48] [VAR[複製]]を、[[文脈オブジェクト]]の[F[URL][Location (DOM)]] に設定します。
+= [49] [VAR[入力]]が[[空文字列]]なら、
+== [50] [VAR[複製]]の[F[query]]を、 [[null]] に設定します。
+= [51] それ以外なら、
+== [53] [VAR[入力]]の先頭が [CODE[?]] なら、これを削除します。
+== [54] [VAR[複製]]の[F[query]]を、[[空文字列]]に設定します。
+== [55] [VAR[入力]]に[[基本URL構文解析]]を適用します。
+[VAR[URL]] は[VAR[複製]]、[VAR[状態上書き]]は [[query state]] とします。
+[VAR[符号化上書き]]は、[[文脈オブジェクト]]の[F[[[関係する[CODE(DOMi)@en[Document]]]]]]の[F[文書の文字符号化]]とします。
+= [56] [[文脈オブジェクト]]と [VAR[複製]]について
+[[[CODE(DOMi)@en[Location]]-object-setter navigate]] を実行します。
+]FIG]
+
 * メタ変数 [CODE(CGI)@en[QUERY_STRING]] (CGI)
 
 [200] [[CGI]] の[[メタ変数]] [DFN[[CODE(CGI)@en[[[QUERY_STRING]]]]]] には[[要求]]された [[URL]]
@@ -265,6 +302,20 @@ Script-URI が問合せ部品を含まないときは、
 ** 関連
 
 [206] [[query]] はこの[[メタ変数]]の他、[[スクリプト命令行]]として[[CGIスクリプト]]に引き渡されることがあります。
+
+* 歴史
+
+[10] '''定義の変遷''':
+= [1] [DEL[[CODE(ABNF)@en[[DFN[query]] :=  *( [[uchar]] / [[reserved]] ) ;; [[RFC 1808]]]]]]
+= [2] [DEL[[CODE(ABNF)@en[[DFN[query]] := *[[uric]] ;; [[RFC 2396]]]]]]
+= [6] [CODE(ABNF)@en[[DFN[query]] := *( pchar / "/" / "?" ) ;; [[RFC 3986]]]]
+
+[7] '''RFC 3986 の定義の詳細''':
+[[RFC 3986]] の [CODE(ABNF)@en[[[pchar]]]] は
+[CODE(ABNF)@en[[[unreserved]] / [[pct-encoded]] / [[sub-delims]] / ":" / "@"]]
+です。すなわち [[URI]] で使える[[文字]]のうち、
+[CODE(ABNF)["#" / "[" / "]"]] だけが使えません。
+定義としては [[RFC 2396]] と同じです。
 
 [207] [CITE[Form of the GET method used with searches]]
 ( ([TIME[1993-12-13 15:42:19 +09:00]] 版))
