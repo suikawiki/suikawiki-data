@@ -196,10 +196,41 @@
 : [F[credentialsモード]] : [CODE[include]]
 : [F[キャッシュモード]] : [CODE[no-store]]
 : [F[リダイレクトモード]] : [CODE[error]]
+: [F[ヘッダーリスト]] :
+[FIG(list members)[
+:[CODE(HTTP)@en[[[Upgrade]]]]:[CODE(HTTP)@en[[[websocket]]]]
+:[CODE(HTTP)@en[[[Connection]]]]:[CODE(HTTP)@en[[[Upgrade]]]]
+:[CODE(HTTP)@en[[[Sec-WebSocket-Key]]]]:[[接続]]毎に[[無作為]]に選択した
+16バイトの [[nonce]] を [[RFC 4648]] [[Base64]] 符号化したもの
+:[CODE(HTTP)@en[[[Sec-WebSocket-Version]]]]:[CODE(HTTP)[[[13]]]]
+:[CODE(HTTP)@en[[[Sec-WebSocket-Protocol]]]]:
+([VAR[プロトコル群]]が空でない場合のみ)
+[VAR[プロトコル群]]内の各値を[[結合][リスト (HTTP)]]したもの
+:[CODE(HTTP)@en[[[Sec-WebSocket-Extensions]]]]:
+[CODE[permessage-deflate]] [[拡張][WebSocket拡張]]の値
+(例えば [CODE[permessage-deflate; client_max_window_bits]])
 ]FIG]
-=
-@@
 ]FIG]
+= [157] [VAR[要求]]を [[fetch]] します。
+続きの処理は >>159 とします。
+]FIG]
+
+[158] [[fetch]] 内で [CODE(HTTP)@en[Host:]] や [CODE(HTTP)@en[User-Agent:]]
+などの[[ヘッダー]]が追加されます。
+
+;; [109] [CODE(HTTP)@en[[[Referer:]]]] は、[[Referrer Policy]] の適用対象となります。
+
+[58] [[要求ヘッダー]]には [CODE(HTTP)@en[[[User-Agent:]]]] [SRC[[[Chrome]], [[Firefox]]]] や
+[CODE(HTTP)@en[[[Referer:]]]] や [CODE(HTTP)@en[[[DNT:]]]] [SRC[[[Chrome]], [[Firefox]]]] や
+[CODE(HTTP)@en[[[Accept-Encoding:]]]] [SRC[[[Chrome]], [[Firefox]]]] や
+[CODE(HTTP)@en[[[Accept:]]]] [SRC[[[Firefox]]]] も含まれるかもしれません。
+
+[117] [[Chrome]] は仕様通り [CODE(HTTP)@en[[[Connection:]] [[Upgrade]]]]
+ですが、 [[Firefox]] は [CODE(HTTP)@en[[[Connection:]] [[keep-alive]], [[Upgrade]]]]
+です。 [TIME[2015-08-08T13:34:03.400Z]]
+
+;; [110] [[ヘッダー]]によっては、またどの[[ヘッダー]]を送信するかは、
+[[fingerprinting vector]] です。
 
 @@
 [[クライアント]]は、[DFN[[RUBYB[WebSocket接続の確立]@en[Establish a WebSocket Connection]]]]で、
@@ -228,6 +259,7 @@
 ではよくあることです。)
 ]FIG]
 
+@@
 [FIG(steps)[
 = 入力として与えられた[[ホスト]]、[[ポート]]、[[資源名]]、[[secure]]
 フラグが [CODE(URI)@en[[[ws:]]]]/[CODE(URI)@en[[[wss:]]]] [[URL]]
@@ -245,41 +277,45 @@
 :[[プロトコルの版]]:[[HTTP/1.1]] [[以上]]
 :[CODE(HTTP)@en[[[Host]]]]:[[ホスト]]と、[[既定のポート番号]]で無い場合、
 [CODE(HTTP)[[[:]]]] と[[ポート]]
-:[CODE(HTTP)@en[[[Upgrade]]]]:[CODE(HTTP)@en[[[websocket]]]]
-:[CODE(HTTP)@en[[[Connection]]]]:[CODE(HTTP)@en[[[Upgrade]]]]
-:[CODE(HTTP)@en[[[Sec-WebSocket-Key]]]]:[[接続]]毎に[[無作為]]に選択した
-16バイトの [[nonce]] を [[RFC 4648]] [[Base64]] 符号化したもの
 :[CODE(HTTP)@en[[[Origin]]]]:([[起源]]の指定がある場合のみ) [[起源]]の[[ASCII直列化]]
-:[CODE(HTTP)@en[[[Sec-WebSocket-Version]]]]:[CODE(HTTP)[[[13]]]]
-:[CODE(HTTP)@en[[[Sec-WebSocket-Protocol]]]]:(部分プロトコル群の指定がある場合のみ)
-1つ[[以上]]の[[部分プロトコル]]の[[リスト (HTTP)]] ([CODE(HTTP)[#]])。
-:[CODE(HTTP)@en[[[Sec-WebSocket-Extensions]]]]:(拡張の指定がある場合のみ)
-プロトコル拡張の指定。
 :その他:[[HTTP認証]]その他の[[HTTPヘッダー]]を含めて構いません。
 [CODE(HTTP)@en[[[Accept-Language:]]]] [[ヘッダー]]を含めるべきです [SRC[>>114]]。
 [[適切なクッキーを送るヘッダー群]]を (あれば) 含めなければなりません [SRC[仕様無し]]。
 ]FIG]
 = [[応答]]を待ちます。
-= [[応答]]の[[状態符号]]が [CODE(HTTP)[[[101]]]] 以外なら、
-[[WebSocket接続失敗]]を実行し、停止します [SRC[>>60]]。
-= [[応答]]を検査し、次のいずれかの条件を満たすなら、
-[[WebSocket接続失敗]]を実行し、停止します。
+]FIG]
+
+[159] [[fetch]] により[[応答]][VAR[応答]]が利用可能となったら、次のようにします
+[SRC[>>130]]。
+[FIG(steps)[
+= [160] [VAR[応答]]が[[ネットワークエラー]]か、
+[VAR[応答]]の[F[状態][状態符号]]が [CODE[101]] ''以外''なら、
+== [161] [[WebSocket接続失敗]]を実行し、停止します。
+= [164] [VAR[応答]]が次のいずれかの条件を満たす場合:
 [FIG(list)[
 - [31] [CODE(HTTP)@en[[[Upgrade:]]]] [[ヘッダー]]が無いか、
-[CODE(HTTP)@en[[[websocket]]]] ([[ASCII大文字・小文字不区別]]) が含まれていない場合
+[CODE(HTTP)@en[[[websocket]]]] ([[ASCII大文字・小文字不区別]]) が含まれていない場合 [SRC[>>1]]
 - [32] [CODE(HTTP)@en[[[Connection:]]]] [[ヘッダー]]が無いか、
-[CODE(HTTP)@en[[[Upgrade]]]] ([[ASCII大文字・小文字不区別]]) が含まれていない場合
+[CODE(HTTP)@en[[[Upgrade]]]] ([[ASCII大文字・小文字不区別]]) が含まれていない場合 [SRC[>>1]]
 - [33] [CODE(HTTP)@en[[[Sec-WebSocket-Accept:]]]] [[ヘッダー]]が無いか、
 値が[[要求]]の [CODE(HTTP)@en[[[Sec-WebSocket-Key]]]] の値に
 [DFN[[CODE[[[258EAFA5-E914-47DA-95CA-C5AB0DC85B11]]]]]]
 を連結した値の [[SHA-1]] を [[Base64]] 符号化したものでない場合
-(前後に[[空白]]があっても構いません。)、
+(前後に[[空白]]があっても構いません。) [SRC[>>1]]
 - [34] [CODE(HTTP)@en[[[Sec-WebSocket-Extensions:]]]] 
 [[ヘッダー]]が構文的に正しくない場合や、[[要求]]で指定しなかった拡張が指定されている場合
+[SRC[>>1]]
 - [35] [CODE(HTTP)@en[[[Sec-WebSocket-Protocol:]]]] 
 [[ヘッダー]]が構文的に正しくない場合や、
-[[要求]]で指定しなかった[[部分プロトコル]]が指定されている場合
+[[要求]]で指定しなかった[[部分プロトコル]]が指定されている場合 [SRC[>>1]]
+- [162] [VAR[プロトコル群]]が空でない場合で、
+[VAR[応答]]の[F[ヘッダーリスト]]の [CODE(HTTP)@en[Sec-WebSocket-Protocol]]
+[[ヘッダー]]を[[ヘッダー値の構文解析]]した結果が
+[[null]]、[[失敗]]、[[空バイト列]]のいずれかの場合
 ]FIG]
+== [163] [[WebSocket接続失敗]]を実行し、停止します。
+
+@@
 = [[WebSocket接続]]の状態を、 [CODE[[[OPEN]]]] に設定します。
 = [DFN[[RUBYB[利用中拡張群]@en[Extensions In Use]]]]を、[[応答]]の
 [CODE(HTTP)@en[[[Sec-WebSocket-Extensions:]]]] [[ヘッダー]]の値
@@ -327,6 +363,7 @@
 = [89] 以後受信データは[[WebSocketメッセージ受信]]の処理を行います。
 ]FIG]
 
+@@
 [64] 入力が [CODE(URI)@en[[[ws:]]]]/[CODE(URI)@en[[[wss:]]]] として正しくなければ失敗となります。
 [[HTML Standard]] は [[URL Standard]] に基づき[[正準化]]した値を使っており、
 [[RFC]] は [[RFC 3986]] [[URI]] を参照して規定しているため、両者には違いが生じる可能性があります。
@@ -335,26 +372,13 @@
 では認められない壊れた[[パーセント符号化]]もどきが含まれる可能性が残ります。
 実装がこれをどう扱うのかは不明です。
 
+@@
 [14] [[要求対象]]は、直接接続なら[[資源名]]のみ、 [[プロキシ]]接続なら
 [[HTTP]] [[URL]] と思われますが、明記されていません。どちらでも良いということでしょうか
 (それは一般的な慣習とは異なります)。また [CODE(URI)@en[[[ws:]]]]/[CODE(URI)@en[[[wss:]]]]
 がそれぞれ [CODE(URI)@en[[[http:]]]]/[CODE(URI)@en[[[https:]]]] に変換されるものと思われますが、
 明記されていません。
 
-[58] [[要求ヘッダー]]には [CODE(HTTP)@en[[[User-Agent:]]]] [SRC[[[Chrome]], [[Firefox]]]] や
-[CODE(HTTP)@en[[[Referer:]]]] や [CODE(HTTP)@en[[[DNT:]]]] [SRC[[[Chrome]], [[Firefox]]]] や
-[CODE(HTTP)@en[[[Accept-Encoding:]]]] [SRC[[[Chrome]], [[Firefox]]]] や
-[CODE(HTTP)@en[[[Accept:]]]] [SRC[[[Firefox]]]] も含まれるかもしれません。
-
-;; [109] がこれを明確に規定した仕様書はありません。 [CODE(HTTP)@en[[[Referer:]]]] は、
-[[Referrer Policy]] の適用対象となるかもしれません。
-
-[117] [[Chrome]] は仕様通り [CODE(HTTP)@en[[[Connection:]] [[Upgrade]]]]
-ですが、 [[Firefox]] は [CODE(HTTP)@en[[[Connection:]] [[keep-alive]], [[Upgrade]]]]
-です。 [TIME[2015-08-08T13:34:03.400Z]]
-
-;; [110] [[ヘッダー]]によっては、またどの[[ヘッダー]]を送信するかは、
-[[fingerprinting vector]] です。
 
 [118] [[応答]]の[[プロトコルの版]]の検査は求められていないようです。
 
@@ -362,10 +386,12 @@
 でもかわらず続行します。 [TIME[2015-08-11T12:54:08.600Z]]
 
 [65] [[RFC]] では、[CODE(HTTP)[[[101]]]] 以外の[[状態符号]]の[[応答]]を受信した時、
-[[HTTP]] に従い処理することになっています。例えば [CODE(HTTP)[[[401]]]]
+[[HTTP]] に従い処理することになっていました。例えば [CODE(HTTP)[[[401]]]]
 なら[[HTTP認証]]の処理を行えますし、 [CODE(HTTP)[[[3xx]]]] なら
 [[HTTPリダイレクト]]しても良いことになっています。 [SRC[>>1]]
 しかし、 [[HTML Standard]] は [[WebSocket接続失敗]]として処理しなければ[['''ならない''']]と規定しています [SRC[>>60]]。
+[[HTML Standard]] を引き継いだ [[Fetch Standard]] も、
+[CODE(HTTP)[101]] 以外をエラーとして処理することを求めています [SRC[>>130]]。
 
 [66] これは、[[サーバー]]が[[リダイレクト]]することで、[[スクリプト]]が意図しない相手と接続してしまうため危険であるのが理由 [SRC[>>60]]  とされています。
 理論上は [CODE(DOMi)@en[[[WebSocket]]]] 以外の [[WebSocketクライアント]]はこの規定に従う義務はありませんが、
