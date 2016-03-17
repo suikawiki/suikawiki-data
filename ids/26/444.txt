@@ -21,7 +21,7 @@ They are initially [[null]].
 
 [30] A [DFN[category]] is a pair of [DFN[term][category's term]] and [DFN[label][category's label]].
 
-[1] To [DFN[process a feed resoonse]] [VAR[res]], run these steps:
+[1] To [DFN[process a feed response]] [VAR[res]], run these steps:
 [FIG(steps)[
 = [9] If [VAR[res]] is a [[network error]] or
 [VAR[res]]'s [F[status][status code]] is not [CODE(HTTP)[200]],
@@ -32,7 +32,7 @@ return [[null]] and abort these steps.
 == [6] Let [VAR[parser]] be an [[XML parser]] associated with [VAR[doc]].
 The [[XML parser]] [MUST[MUST]] implement [[XML5]].
 It [MUST[MUST NOT]] [[fetch]] and process [[external entities][external entity]].
-== [8] Parse [VAR[res]]'s [F[body]] using [VAR[parser]].
+== [8] Run [VAR[parser]], using [VAR[res]]'s [F[body]] as its [F[input byte stream]].
 The [CODE(MIME)@en[charset]] parameter value in the 
 [CODE(HTTP)@en[Content-Type]] [[header value]] of [VAR[res]], if any, is used as
 the [[encoding label]] provided by the underlying transport.
@@ -148,11 +148,44 @@ of [VAR[child]].
 = [53] Return [VAR[person]]
 ]FIG]
 
-@@
 [50] To [DFN[process an Atom text]] [VAR[element]], run these steps:
+[FIG(steps)[
+= [61] Let [VAR[type]] be the [CODE(XMLa)@en[type]] attribute value
+of [VAR[element]], if any, or [[null]].
+= [62] If [VAR[type]] is [CODE[html]]:
+== [73] Let [VAR[div]] be a [CODE(HTMLe)@en[div]] element
+whose [F[node document]] is [VAR[element]]'s [F[node document]].
+== [74] Let [VAR[fragment]] be a [CODE(DOMi)@en[DocumentFragment]]
+whose [F[node document]] is [VAR[element]]'s [F[node document]].
+== [70] Let [VAR[nodes]] be the result of running the [[HTML fragment parsing algorithm]]
+with [VAR[context]] element [VAR[div]] and
+[VAR[input]] the [CODE(DOMa)@en[textContent]] of [VAR[element]].
+== [71] For each item [VAR[node]] in [VAR[nodes]], in order,
+[[insert]] [VAR[node]] into [VAR[fragment]].
+== [72] Return [VAR[fragment]].
+= [63] Otherwise, if [VAR[type]] is [CODE[xhtml]] and
+[VAR[element]]'s [F[children]] contains a [CODE(HTMLe)@en[div]] element:
+== [66] Let [VAR[div]] be a [[clone]] of [VAR[element]]'s
+first [CODE(HTMLe)@en[div]] element child, with [VAR[clone children flag]] set.
+== [67] Let [VAR[fragment]] be a [CODE(DOMi)@en[DocumentFragment]]
+whose [F[node document]] is [VAR[element]]'s [F[node document]].
+== [68] For each child [VAR[node]] in [VAR[div]]'s [F[children]], in order,
+[[insert]] [VAR[node]] into [VAR[fragment]].
+== [69] Return [VAR[fragment]].
+= [64] Otherwise:
+== [65] Return a [CODE(DOMi)@en[Text]] whose [F[data]] is the
+[CODE(DOMa)@en[textContent]] of [VAR[element]] and
+whose [F[node document]] is [VAR[element]]'s [F[node document]].
+]FIG]
 
-@@
 [51] To [DFN[process an Atom date]] [VAR[element]], run these steps:
+[FIG(steps)[
+= [75] Let [VAR[text]] be the [CODE(DOMa)@en[textContent]] of [VAR[element]].
+= [76] Return the result of [[parsing an RFC 3339 [CODE[xs:dateTime]] string][parse an RFC 3339 [CODE[xs:dateTime]] string]] [VAR[text]].
+]FIG]
+
+@@ [77] Need to define [DFN[parse an RFC 3339 [CODE[xs:dateTime]] string]].
+It returns a number (JS timestamp) or [[null]].
 
 @@
 [52] To [DFN[process an Atom entry]] [VAR[element]], run these steps:
