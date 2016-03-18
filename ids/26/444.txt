@@ -10,11 +10,15 @@ They are initially empty.
 [DFN[[F[previous feed URL]]][feed's previous feed URL]],
 [DFN[[F[next feed URL]]][feed's next feed URL]],
 [DFN[[F[icon URL]]][feed's icon URL]],
-[DFN[[F[logo URL]]][feed's logo URL]],
-[DFN[[F[title]]][feed's title]],
-[DFN[[F[subtitle]]][feed's subtitle]], and
+[DFN[[F[logo URL]]][feed's logo URL]], and
 [DFN[[F[updated]]][feed's updated]].
 They are initially [[null]].
+
+[226] A [[feed]] has
+[DFN[[F[title]]][feed's title]],
+[DFN[[F[subtitle]]][feed's subtitle]], and
+[DFN[[F[description]]][feed's description]].
+They are initially [[null]].  They can be [[null]], a [[string]], or a [CODE(DOMi)@en[Node]].
 
 [28] An [DFN[entry]] has
 [DFN[[F[authors]]][entry's authors]], which is a list of [[persons][person]], and
@@ -23,12 +27,24 @@ They are initially empty.
 
 [88] An [[entry]] has
 [DFN[[F[feed]]][entry's feed]],
-[DFN[[F[title]]][entry's title]],
-[DFN[[F[summary]]][entry's summary]],
-[DFN[[F[content]]][entry's content]],
 [DFN[[F[published]]][entry's published]], and
 [DFN[[F[updated]]][entry's updated]].
 They are initially [[null]].
+
+[227] An [[entry]] has
+[DFN[[F[title]]][entry's title]] and
+[DFN[[F[summary]]][entry's summary]].
+They are initially [[null]].  They can be [[null]], a [[string]], or a [CODE(DOMi)@en[Node]].
+
+[228] An [[entry]] has [DFN[[F[content]]][entry's content]].
+It is initially [[null]].  It can be [[null]], a [[string]], a [[URL record]],
+a [[data pair]], or a [CODE(DOMi)@en[Node]].
+
+[229] A [DFN[data pair]] is either
+([[null]], [[null]]),
+([[MIME type]], [[string]]), or
+([[MIME type]], [[byte sequence]]).
+Note that a [[MIME type]] might or might not be a [[parsible MIME type]].
 
 [81] To get the [DFN[[F[computed authors]]]] of an [[entry]] [VAR[entry]], run these steps:
 [FIG(steps)[
@@ -224,12 +240,39 @@ to [VAR[feed]]'s [F[authors][feed's author]].
 
 [206] To [DFN[process an RSS channel]] [VAR[element]], run these steps:
 [FIG(steps)[
-= [207] Let [VAR[entry]] be an [[feed]].
+= [207] Let [VAR[feed]] be an [[feed]].
 = [208] For each [[element]] [VAR[child]] in [VAR[element]]'s [F[children]], in order,
 run these substeps:
 == [209] Switch by [VAR[child]]'s [F[namespace]] and [F[local name]]:
 [FIG(switch)[
-: [CODE(XMLe)@en[author]] element in the [[Atom namespace]] or in the [[Atom 0.3 namespace]] :
+: [CODE(XMLe)@en[description]] element in the [[null namespace]] :
+If [VAR[feed]]'s [F[description][feed's description]] is [[null]],
+set [VAR[feed]]'s [F[description][feed's description]] to
+[VAR[child]]'s [F[child text content]].
+: [CODE(XMLe)@en[image]] element in the [[null namespace]] :
+[FIG(steps)[
+= [211] If [VAR[feed]]'s [F[logo URL][feed's logo URL]] is [[null]]:
+== [213] Let [VAR[element]] be [VAR[child]]'s first [CODE(XMLe)@en[url]] child element
+in the [[null namespace]].
+== [214] If [VAR[element]] is not [[null]]:
+=== [212] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
+=== [215] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[child]]'s [F[node document]].
+=== [216] If not failed, set [VAR[feed]]'s [F[logo URL][feed's logo URL]] to the [[resulting URL string]].
+]FIG]
+: [CODE(XMLe)@en[pubDate]] element in the [[null namespace]] :
+[FIG(steps)[
+= [217] If [VAR[feed]]'s [F[updated][feed's updated]] is [[null]]:
+== [218] Set [VAR[feed]]'s [F[updated][feed's updated]] to the result of
+[[processing an RSS 2.0 date][process an RSS 2.0 date]] [VAR[child]].
+]FIG]
+: [CODE(XMLe)@en[title]] element in the [[null namespace]] :
+[FIG(steps)[
+= [223] If [VAR[feed]]'s [F[title][feed's title]] is [[null]]:
+== [224] Set [VAR[feed]]'s [F[title][feed's title]] to 
+[VAR[child]]'s [F[child text content]].
+]FIG]
+
+
 @@
 ]FIG]
 = [210] Return [VAR[feed]].
@@ -375,9 +418,7 @@ whose [F[node document]] is [VAR[element]]'s [F[node document]].
 [[insert]] [VAR[node]] into [VAR[fragment]].
 == [69] Return [VAR[fragment]].
 = [64] Otherwise:
-== [65] Return a [CODE(DOMi)@en[Text]] whose [F[data]] is the
-[VAR[element]]'s [F[child text content]] and
-whose [F[node document]] is [VAR[element]]'s [F[node document]].
+== [65] Return [VAR[element]]'s [F[child text content]].
 ]FIG]
 
 [102] To [DFN[process an Atom content]] [VAR[element]], run these steps:
@@ -413,12 +454,7 @@ whose [F[node document]] is [VAR[element]]'s [F[node document]].
 ]FIG]
 
 ;; [107] These steps return either 
-a [[URL record]], 
-pair ([[null]], [[null]]),
-pair ([[MIME type]], [[string]]),
-pair ([[MIME type]], [[byte sequence]]), or
-a [CODE(DOMi)@en[Node]].  Note that a [[MIME type]] might or might not be a
-[[parsible MIME type]].
+a [[string]], a [[URL record]], a [[data pair]], or a [CODE(DOMi)@en[Node]].
 
 [153] To [DFN[process an Atom 0.3 content]] [VAR[element]], run these steps:
 [FIG(steps)[
@@ -429,8 +465,7 @@ if any, or [CODE(MIME)@en[text/plain]].
 = [175] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
 = [162] If [VAR[mode]] is [CODE[escaped]]:
 == [177] If [VAR[type]] is equal to [CODE(MIME)@en[text/plain]] ([[ASCII case-insensitive]]):
-=== [179] Return a [CODE(DOMi)@en[Text]] whose 
-[F[node document]] is [VAR[element]]'s [F[node document]] and [F[data]] is [VAR[text]].
+=== [179] Return [VAR[text]].
 == [180] Otherwise, if [VAR[type]] is equal to [CODE(MIME)@en[text/html]] ([[ASCII case-insensitive]]):
 === [178] Let [VAR[div]] be a [CODE(HTMLe)@en[div]] element
 whose [F[node document]] is [VAR[element]]'s [F[node document]].
@@ -452,8 +487,7 @@ with [VAR[context]] element [VAR[div]] and
 === [184] Return ([VAR[type]], [VAR[binary]]).
 = [164] Otherwise:
 == [165] If [VAR[type]] is equal to [CODE(MIME)@en[text/plain]] ([[ASCII case-insensitive]]):
-=== [170] Return a [CODE(DOMi)@en[Text]] whose 
-[F[node document]] is [VAR[element]]'s [F[node document]] and [F[data]] is [VAR[text]].
+=== [170] Return [VAR[text]].
 == [171] Otherwise:
 === [172] Let [VAR[fragment]] be a [CODE(DOMi)@en[DocumentFragment]]
 whose [F[node document]] is [VAR[element]]'s [F[node document]].
@@ -461,6 +495,8 @@ whose [F[node document]] is [VAR[element]]'s [F[node document]].
 [[insert]] [VAR[node]] into [VAR[fragment]].
 === [174] Return [VAR[fragment]].
 ]FIG]
+
+;; [225] These steps return either a [[string]], a [[data pair]], or a [CODE(DOMi)@en[Node]].
 
 @@ [116] Need to define [[decode base64]] [VAR[text]].
 It returns [[null]] if failed.
@@ -481,4 +517,13 @@ It returns a number (JS timestamp) or [[null]].
 ]FIG]
 
 @@ [169] Need to define [DFN[parse a W3C-DTF string]].
+It returns a number (JS timestamp) or [[null]].
+
+[219] To [DFN[process an RSS 2.0 date]] [VAR[element]], run these steps:
+[FIG(steps)[
+= [220] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
+= [221] Return the result of [[parsing an RFC 822 date-time string][parse an RFC 822 date-time string]] [VAR[text]].
+]FIG]
+
+@@ [222] Need to define [DFN[parse an RFC 822 date-time string]].
 It returns a number (JS timestamp) or [[null]].
