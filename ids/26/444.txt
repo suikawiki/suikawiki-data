@@ -21,12 +21,15 @@ They are initially [[null]].
 They are initially [[null]].  They can be [[null]], a [[string]], or a [CODE(DOMi)@en[Node]].
 
 [28] An [DFN[entry]] has
-[DFN[[F[authors]]][entry's authors]], which is a list of [[persons][person]], and
-[DFN[[F[categories]]][feed's categories]], which is a list of [[categories][category]].
+[DFN[[F[authors]]][entry's authors]], which is a list of [[persons][person]],
+[DFN[[F[categories]]][feed's categories]], which is a list of [[categories][category]], and
+[DFN[[F[enclosures]]][feed's enclosures]], which is a list of [[enclosures][enclosure]].
 They are initially empty.
 
 [88] An [[entry]] has
 [DFN[[F[feed]]][entry's feed]],
+[DFN[[F[page URL]]][entry's page URL]],
+[DFN[[F[comment page URL]]][entry's comment page URL]],
 [DFN[[F[published]]][entry's published]], and
 [DFN[[F[updated]]][entry's updated]].
 They are initially [[null]].
@@ -44,7 +47,14 @@ a [[data pair]], or a [CODE(DOMi)@en[Node]].
 ([[null]], [[null]]),
 ([[MIME type]], [[string]]), or
 ([[MIME type]], [[byte sequence]]).
-Note that a [[MIME type]] might or might not be a [[parsible MIME type]].
+
+[188] An [DFN[enclosure]] has
+[DFN[[F[URL]]][enclosure's URL]],
+[DFN[[F[MIME type]]][enclosure's MIME type]], and
+[DFN[[F[length]]][enclosure's length]].
+They are initially [[null]].
+
+;; [190] Note that a [[MIME type]] might or might not be a [[parsible MIME type]].
 
 [81] To get the [DFN[[F[computed authors]]]] of an [[entry]] [VAR[entry]], run these steps:
 [FIG(steps)[
@@ -249,7 +259,7 @@ in the [[null namespace]].
 === [215] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[child]]'s [F[node document]].
 === [216] If not failed, set [VAR[feed]]'s [F[logo URL][feed's logo URL]] to the [[resulting URL string]].
 ]FIG]
-: [CODE(XMLe)@en[pubDate]] element in the [[null namespace]] :
+: [CODE(XMLe)@en[pubDate]] or [CODE(XMLe)@en[lastBuildDate]] element in the [[null namespace]] :
 [FIG(steps)[
 = [217] If [VAR[feed]]'s [F[updated][feed's updated]] is [[null]]:
 == [218] Set [VAR[feed]]'s [F[updated][feed's updated]] to the result of
@@ -385,6 +395,19 @@ to [VAR[entry]]'s [F[authors][entry's author]].
 = [260] Set [VAR[category]]'s [F[label][category's label]] to [VAR[text]].
 = [261] Append [VAR[category]] to [VAR[entry]]'s [F[categories][entry's categories]].
 ]FIG]
+: [CODE(XMLe)@en[comments]] element in the [[null namespace]] :
+[FIG(steps)[
+= [263] If [VAR[entry]]'s [F[comment page URL][entry's comment page URL]] is [[null]]:
+== [264] Let [VAR[text]] be [VAR[child]]'s [F[child text content]].
+== [265] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[child]]'s [F[node document]].
+== [266] If not failed, set [VAR[entry]]'s [F[comment page URL][entry's comment page URL]] to the [[resulting URL string]].
+]FIG]
+: [CODE(XMLe)@en[description]] element in the [[null namespace]] :
+[FIG(steps)[
+= [187] If [VAR[entry]]'s [F[summary][entry's summary]] is [[null]]:
+== [189] Set [VAR[entry]]'s [F[summary][entry's summary]] to the result of
+[[parsing escaped HTML content][parse escaped HTML content]] of [VAR[element]].
+]FIG]
 
 @@
 ]FIG]
@@ -430,16 +453,7 @@ set [VAR[person]]'s [F[email][person's email]] to [VAR[child]]'s [F[child text c
 = [61] Let [VAR[type]] be the [CODE(XMLa)@en[type]] attribute value
 of [VAR[element]], if any, or [[null]].
 = [62] If [VAR[type]] is [CODE[html]]:
-== [73] Let [VAR[div]] be a [CODE(HTMLe)@en[div]] element
-whose [F[node document]] is [VAR[element]]'s [F[node document]].
-== [74] Let [VAR[fragment]] be a [CODE(DOMi)@en[DocumentFragment]]
-whose [F[node document]] is [VAR[element]]'s [F[node document]].
-== [70] Let [VAR[nodes]] be the result of running the [[HTML fragment parsing algorithm]]
-with [VAR[context]] element [VAR[div]] and
-[VAR[input]] [VAR[element]]'s [F[child text content]].
-== [71] For each item [VAR[node]] in [VAR[nodes]], in order,
-[[insert]] [VAR[node]] into [VAR[fragment]].
-== [72] Return [VAR[fragment]].
+== [267] Return the result of [[parsing escaped HTML content][parse escaped HTML content]] of [VAR[element]].
 = [63] Otherwise, if [VAR[type]] is [CODE[xhtml]] and
 [VAR[element]]'s [F[children]] contains a [CODE(HTMLe)@en[div]] element:
 == [66] Let [VAR[div]] be a [[clone]] of [VAR[element]]'s
@@ -499,16 +513,7 @@ if any, or [CODE(MIME)@en[text/plain]].
 == [177] If [VAR[type]] is equal to [CODE(MIME)@en[text/plain]] ([[ASCII case-insensitive]]):
 === [179] Return [VAR[text]].
 == [180] Otherwise, if [VAR[type]] is equal to [CODE(MIME)@en[text/html]] ([[ASCII case-insensitive]]):
-=== [178] Let [VAR[div]] be a [CODE(HTMLe)@en[div]] element
-whose [F[node document]] is [VAR[element]]'s [F[node document]].
-=== [187] Let [VAR[fragment]] be a [CODE(DOMi)@en[DocumentFragment]]
-whose [F[node document]] is [VAR[element]]'s [F[node document]].
-=== [188] Let [VAR[nodes]] be the result of running the [[HTML fragment parsing algorithm]]
-with [VAR[context]] element [VAR[div]] and
-[VAR[input]] [VAR[element]]'s [F[child text content]].
-=== [189] For each item [VAR[node]] in [VAR[nodes]], in order,
-[[insert]] [VAR[node]] into [VAR[fragment]].
-=== [190] Return [VAR[fragment]].
+=== [268] Return the result of [[parsing escaped HTML content][parse escaped HTML content]] of [VAR[element]].
 == [185] Otherwise:
 === [186] Return ([VAR[type]], [VAR[text]]).
 = [163] Otherwise, if [VAR[mode]] is [CODE[base64]]:
@@ -532,6 +537,20 @@ whose [F[node document]] is [VAR[element]]'s [F[node document]].
 
 @@ [116] Need to define [[decode base64]] [VAR[text]].
 It returns [[null]] if failed.
+
+[178] To [DFN[parse escaped HTML content]] of element [VAR[element]], run these steps:
+[FIG(steps)[
+= [73] Let [VAR[div]] be a [CODE(HTMLe)@en[div]] element
+whose [F[node document]] is [VAR[element]]'s [F[node document]].
+= [74] Let [VAR[fragment]] be a [CODE(DOMi)@en[DocumentFragment]]
+whose [F[node document]] is [VAR[element]]'s [F[node document]].
+= [70] Let [VAR[nodes]] be the result of running the [[HTML fragment parsing algorithm]]
+with [VAR[context]] element [VAR[div]] and
+[VAR[input]] [VAR[element]]'s [F[child text content]].
+= [71] For each item [VAR[node]] in [VAR[nodes]], in order,
+[[insert]] [VAR[node]] into [VAR[fragment]].
+= [72] Return [VAR[fragment]].
+]FIG]
 
 [234] To [DFN[process an Atom link]] [VAR[element]] for [VAR[object]]
 with [VAR[type]], run these steps:
@@ -559,6 +578,20 @@ with [VAR[type]], run these steps:
 === [204] If [VAR[object]]'s [F[next feed URL][feed's next feed URL]] is [[null]]:
 ==== [205] Set [VAR[object]]'s [F[next feed URL][feed's next feed URL]] to
 [VAR[child]]'s [F[href URL]].
+= [269] If [VAR[mode]] is [CODE[entry]]:
+== [270] If [VAR[element]]'s [F[link relation]] is 
+[CODE[http://www.iana.org/assignments/relation/enclosure]]:
+=== [271] Let [VAR[enclosure]] be an [[enclosure]],
+whose [F[URL][enclosure's URL]] is [VAR[child]]'s [F[href URL]].
+=== [273] Set [VAR[enclosure]]'s [F[type][enclosure's type]] to [VAR[child]]'s
+[CODE(XMLa)@en[type]] attribute value, if any, or [[null]].
+=== [275] Let [VAR[length]] be [VAR[child]]'s [CODE(XMLa)@en[length]] attribute value.
+=== [276] If [VAR[length]] is not null:
+==== [277] Let [VAR[n]] be the result of applying the
+[[rules for parsing non-negative integers]] to [VAR[length]].
+==== [278] If [VAR[n]] is not an error:
+===== [274] Set [VAR[enclosure]]'s [F[length][enclosure's length]] to [VAR[n]].
+=== [272] Append [VAR[enclosure]] to [VAR[object]]'s [F[enclosures][entry's enclosures]].
 ]FIG]
 
 [51] To [DFN[process an Atom date]] [VAR[element]], run these steps:
