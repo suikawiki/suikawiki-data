@@ -134,9 +134,21 @@ to the [[character encoding]] used by [VAR[parser]].
 : [16] If it is a [CODE(XMLe)@en[feed]] element in the [[Atom namespace]] or in the [[Atom 0.3 namespace]] :
 Return the result of [[processing an Atom feed element][process a Atom feed element]] [VAR[root]].
 : [19] If it is an [CODE(XMLe)@en[rss]] element in the [[null namespace]] :
-If [VAR[root]]'s [F[children]] contains a [CODE(XMLe)@en[channel]]
-element in the [[null namespace]] [VAR[element]],
-return the result of [[processing an RSS channel][process an RSS channel]] [VAR[element]].
+[FIG(steps)[
+= [236] If [VAR[root]]'s [F[children]] contains a [CODE(XMLe)@en[channel]]
+element in the [[null namespace]] [VAR[element]]:
+== [237] Let [VAR[feed]] be the result of [[processing an RSS channel][process an RSS channel]] [VAR[element]].
+= [238] Otherwise:
+== [239] Let [VAR[feed]] be a [[feed]].
+= [240] For each [[element]] [VAR[child]] in [VAR[root]]'s [F[children]], in order,
+run these substeps:
+== [241] If [VAR[child]] is an [CODE(XMLe)@en[item]] element in the [[null namespace]],
+=== [242] Let [VAR[entry]] be the result of [[processing an RSS item][process an RSS item]]
+[VAR[child]].
+=== [243] Set [VAR[entry]]'s [F[feed][entry's feed]] to [VAR[feed]].
+=== [244] Append [VAR[entry]] to [VAR[feed]]'s [F[entries][feed's entry]].
+= [245] Return [VAR[feed]].
+]FIG]
 : [18] If it is an [CODE(XMLe)@en[RDF]] element in the [[RDF namespace]] :
 @@
 : [13] Otherwise : Return [[null]].
@@ -200,6 +212,8 @@ run these substeps:
 == [161] Set [VAR[feed]]'s [F[updated][feed's updated]] to the result of
 [[processing an Atom 0.3 date][process an Atom 0.3 date]] [VAR[child]].
 ]FIG]
+: [CODE(XMLe)@en[link]] element in the [[Atom namespace]] or in the [[Atom 0.3 namespace]] :
+[[Process an Atom link]] [VAR[child]] for [VAR[feed]], with [VAR[type]] [CODE[feed]].
 : [CODE(XMLe)@en[author]] element in the [[Atom namespace]] or in the [[Atom 0.3 namespace]] :
 Append the result of [[processing an Atom person][process an Atom person]] [VAR[child]]
 to [VAR[feed]]'s [F[authors][feed's author]].
@@ -209,30 +223,6 @@ to [VAR[feed]]'s [F[authors][feed's author]].
 [VAR[child]].
 = [85] Set [VAR[entry]]'s [F[feed][entry's feed]] to [VAR[feed]].
 = [87] Append [VAR[entry]] to [VAR[feed]]'s [F[entries][feed's entry]].
-]FIG]
-: [CODE(XMLe)@en[link]] element in the [[Atom namespace]] or in the [[Atom 0.3 namespace]] :
-[FIG(steps)[
-= [139] If [VAR[child]]'s [F[link relation]] is 
-[CODE[http://www.iana.org/assignments/relation/alternate]]:
-== [145] If [VAR[feed]]'s [F[page URL][feed's page URL]] is [[null]]:
-=== [146] Set [VAR[feed]]'s [F[page URL][feed's page URL]] to
-[VAR[child]]'s [F[href URL]].
-= [150] Otherwise, if [VAR[child]]'s [F[link relation]] is 
-[CODE[http://www.iana.org/assignments/relation/self]]:
-== [151] If [VAR[feed]]'s [F[feed URL][feed's feed URL]] is [[null]]:
-=== [152] Set [VAR[feed]]'s [F[feed URL][feed's feed URL]] to
-[VAR[child]]'s [F[href URL]].
-= [199] Otherwise, if [VAR[child]]'s [F[link relation]] is 
-[CODE[http://www.iana.org/assignments/relation/prev]] or
-[CODE[http://www.iana.org/assignments/relation/previous]]:
-== [201] If [VAR[feed]]'s [F[previous feed URL][feed's previous feed URL]] is [[null]]:
-=== [202] Set [VAR[feed]]'s [F[previous feed URL][feed's previous feed URL]] to
-[VAR[child]]'s [F[href URL]].
-= [203] Otherwise, if [VAR[child]]'s [F[link relation]] is 
-[CODE[http://www.iana.org/assignments/relation/next]]:
-== [204] If [VAR[feed]]'s [F[next feed URL][feed's next feed URL]] is [[null]]:
-=== [205] Set [VAR[feed]]'s [F[next feed URL][feed's next feed URL]] to
-[VAR[child]]'s [F[href URL]].
 ]FIG]
 ]FIG]
 = [25] Return [VAR[feed]].
@@ -271,9 +261,22 @@ in the [[null namespace]].
 == [224] Set [VAR[feed]]'s [F[title][feed's title]] to 
 [VAR[child]]'s [F[child text content]].
 ]FIG]
-
-
-@@
+: [CODE(XMLe)@en[link]] element in the [[null namespace]] :
+[FIG(steps)[
+= [230] If [VAR[feed]]'s [F[page URL][feed's page URL]] is [[null]]:
+== [231] Let [VAR[text]] be [VAR[child]]'s [F[child text content]].
+== [232] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[child]]'s [F[node document]].
+== [233] If not failed, set [VAR[feed]]'s [F[page URL][feed's page URL]] to the [[resulting URL string]].
+]FIG]
+: [CODE(XMLe)@en[link]] element in the [[Atom namespace]] :
+[[Process an Atom link]] [VAR[child]] for [VAR[feed]], with [VAR[type]] [CODE[feed]].
+: [CODE(XMLe)@en[item]] element in the [[null namespace]] :
+[FIG(steps)[
+= [147] Let [VAR[entry]] be the result of [[processing an RSS item][process an RSS item]]
+[VAR[child]].
+= [148] Set [VAR[entry]]'s [F[feed][entry's feed]] to [VAR[feed]].
+= [149] Append [VAR[entry]] to [VAR[feed]]'s [F[entries][feed's entry]].
+]FIG]
 ]FIG]
 = [210] Return [VAR[feed]].
 ]FIG]
@@ -359,14 +362,33 @@ to [VAR[entry]]'s [F[authors][entry's author]].
 [[processing an Atom 0.3 content][process an Atom 0.3 content]] [VAR[child]].
 ]FIG]
 : [CODE(XMLe)@en[link]] element in the [[Atom namespace]] or in the [[Atom 0.3 namespace]] :
+[[Process an Atom link]] [VAR[child]] for [VAR[entry]], with [VAR[type]] [CODE[entry]].
+]FIG]
+= [246] Return [VAR[entry]].
+]FIG]
+
+[249] To [DFN[process an RSS item]] [VAR[element]], run these steps:
 [FIG(steps)[
-= [147] If [VAR[child]]'s [F[link relation]] is 
-[CODE[http://www.iana.org/assignments/relation/alternate]]:
-== [148] If [VAR[entry]]'s [F[page URL][entry's page URL]] is [[null]]:
-=== [149] Set [VAR[entry]]'s [F[page URL][entry's page URL]] to
-[VAR[child]]'s [F[href URL]].
+= [248] Let [VAR[entry]] be an [[entry]].
+= [250] For each [[element]] [VAR[child]] in [VAR[element]]'s [F[children]], in order,
+run these substeps:
+== [251] Switch by [VAR[child]]'s [F[namespace]] and [F[local name]]:
+[FIG(switch)[
+: [CODE(XMLe)@en[author]] element in the [[null namespace]] :
+Append the result of [[processing an RSS 2.0 person][process an RSS 2.0 person]] [VAR[child]]
+to [VAR[entry]]'s [F[authors][entry's author]].
+: [CODE(XMLe)@en[category]] element in the [[null namespace]] :
+[FIG(steps)[
+= [258] Let [VAR[category]] a [[category]].
+= [262] Let [VAR[text]] be [VAR[child]]'s [F[child text content]].
+= [259] Set [VAR[category]]'s [F[term][category's term]] to [VAR[text]].
+= [260] Set [VAR[category]]'s [F[label][category's label]] to [VAR[text]].
+= [261] Append [VAR[category]] to [VAR[entry]]'s [F[categories][entry's categories]].
 ]FIG]
+
+@@
 ]FIG]
+= [252] Return [VAR[entry]].
 ]FIG]
 
 [24] To [DFN[process an Atom person]] [VAR[element]], run these steps:
@@ -390,8 +412,18 @@ set [VAR[person]]'s [F[email][person's email]] to [VAR[child]]'s [F[child text c
 == [60] If not failed, set [VAR[person]]'s [F[page URL][person's page URL]] to the [[resulting URL string]].
 ]FIG]
 ]FIG]
-= [53] Return [VAR[person]]
+= [53] Return [VAR[person]].
 ]FIG]
+
+[247] To [DFN[process an RSS 2.0 person]] [VAR[element]], run these steps:
+[FIG(steps)[
+= [254] Let [VAR[person]] be a [[person]].
+= [253] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
+= [255] Set [VAR[person]]'s [F[name][person's name]] to [VAR[text]].
+= [256] Return [VAR[person]].
+]FIG]
+
+@@ [257] email address should be extracted from [VAR[text]]?
 
 [50] To [DFN[process an Atom text]] [VAR[element]], run these steps:
 [FIG(steps)[
@@ -500,6 +532,34 @@ whose [F[node document]] is [VAR[element]]'s [F[node document]].
 
 @@ [116] Need to define [[decode base64]] [VAR[text]].
 It returns [[null]] if failed.
+
+[234] To [DFN[process an Atom link]] [VAR[element]] for [VAR[object]]
+with [VAR[type]], run these steps:
+
+[FIG(steps)[
+= [139] If [VAR[element]]'s [F[link relation]] is 
+[CODE[http://www.iana.org/assignments/relation/alternate]]:
+== [145] If [VAR[object]]'s [F[page URL]] is [[null]]:
+=== [146] Set [VAR[object]]'s [F[page URL]] to
+[VAR[child]]'s [F[href URL]].
+= [235] If [VAR[mode]] is [CODE[feed]]:
+== [150] If [VAR[element]]'s [F[link relation]] is 
+[CODE[http://www.iana.org/assignments/relation/self]]:
+=== [151] If [VAR[object]]'s [F[feed URL][feed's feed URL]] is [[null]]:
+==== [152] Set [VAR[object]]'s [F[feed URL][feed's feed URL]] to
+[VAR[child]]'s [F[href URL]].
+== [199] If [VAR[element]]'s [F[link relation]] is 
+[CODE[http://www.iana.org/assignments/relation/prev]] or
+[CODE[http://www.iana.org/assignments/relation/previous]]:
+=== [201] If [VAR[object]]'s [F[previous feed URL][feed's previous feed URL]] is [[null]]:
+==== [202] Set [VAR[object]]'s [F[previous feed URL][feed's previous feed URL]] to
+[VAR[child]]'s [F[href URL]].
+== [203] If [VAR[element]]'s [F[link relation]] is 
+[CODE[http://www.iana.org/assignments/relation/next]]:
+=== [204] If [VAR[object]]'s [F[next feed URL][feed's next feed URL]] is [[null]]:
+==== [205] Set [VAR[object]]'s [F[next feed URL][feed's next feed URL]] to
+[VAR[child]]'s [F[href URL]].
+]FIG]
 
 [51] To [DFN[process an Atom date]] [VAR[element]], run these steps:
 [FIG(steps)[
