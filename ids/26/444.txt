@@ -1,17 +1,51 @@
+
 [15] A [DFN[feed]] has
-[DFN[entries][feed's entries]], which is a list of [[entries][entry]],
-[DFN[authors][feed's authors]], which is a list of [[persons][person]], and
-[DFN[categories][feed's categories]], which is a list of [[categories][category]].
+[DFN[entries][feed's entries]], which is a list of [[entries][entry]], and
+[DFN[authors][feed's authors]], which is a list of [[persons][person]].
 They are initially empty.
 
-[39] A [[feed]] has [DFN[icon][feed's icon]],
+[39] A [[feed]] has 
+[DFN[icon][feed's icon]],
 [DFN[logo][feed's logo]],
 [DFN[title][feed's title]],
 [DFN[subtitle][feed's subtitle]], and
-[DFN[updated][feed's updated]],
-which are initially [[null]].
+[DFN[updated][feed's updated]].
+They are initially [[null]].
 
-@@ [28] A [DFN[entry]] is...
+[28] An [DFN[entry]] has
+[DFN[authors][entry's authors]], which is a list of [[persons][person]], and
+[DFN[categories][feed's categories]], which is a list of [[categories][category]].
+They are initially empty.
+
+[88] An [[entry]] has
+[DFN[feed][entry's feed]],
+[DFN[title][entry's title]],
+[DFN[summary][entry's summary]],
+[DFN[content][entry's content]],
+[DFN[published][entry's published]], and
+[DFN[updated][entry's updated]].
+They are initially [[null]].
+
+[81] To get the [DFN[computed authors]] of an [[entry]] [VAR[entry]], run these steps:
+[FIG(steps)[
+= [82] If [VAR[entry]]'s [F[authors][entry's authors]] is not empty,
+return [VAR[entry]]'s [F[authors][entry's authors]].
+= [83] Otherwise, if [VAR[entry]]'s [F[feed][entry's feed]] is not null,
+return [VAR[entry]]'s [F[feed][entry's feed]]'s [F[authors][feed's author]].
+= [84] Otherwise, return an empty list.
+]FIG]
+
+[93] To get the [DFN[computed updated]] of an [[entry]] [VAR[entry]], run these steps:
+[FIG(steps)[
+= [94] If [VAR[entry]]'s [F[updated][entry's updated]] is not [[null]],
+return [VAR[entry]]'s [F[updated][entry's updated]].
+= [97] Otherwise, if [VAR[entry]]'s [F[published][entry's published]] is not [[null]],
+return [VAR[entry]]'s [F[published][entry's published]].
+= [95] Otherwise, if [VAR[entry]]'s [F[feed][feed's entry]] is not null,
+return [VAR[entry]]'s [F[feed][entry's feed]]'s [F[updated][feed's updated]].
+= [96] Otherwise, return
+@@ the current timestamp.
+]FIG]
 
 [29] A [DFN[person]] is a tuple of 
 [DFN[name][person's name]],
@@ -100,22 +134,16 @@ run these substeps:
 == [49] Set [VAR[feed]]'s [F[updated][feed's updated]] to the result of
 [[processing an Atom date][process an Atom date]] [VAR[child]].
 ]FIG]
-: [CODE(XMLe)@en[category]] element in the [[Atom namespace]] :
-[FIG(steps)[
-= [31] Let [VAR[category]] a [[category]].
-= [32] Set [VAR[category]]'s [F[term][category's term]] to the
-[CODE(XMLa)@en[term]] attribute value of [VAR[child]], if any, or the empty string.
-= [33] Set [VAR[category]]'s [F[label][category's label]] to the
-[CODE(XMLa)@en[label]] attribute value of [VAR[child]], if any, or [VAR[category]]'s 
-[F[term][category's term]].
-= [34] Append [VAR[category]] to [VAR[feed]]'s [F[categories][feed's categories]].
-]FIG]
 : [CODE(XMLe)@en[author]] element in the [[Atom namespace]] :
 Append the result of [[processing an Atom person][process an Atom person]] [VAR[child]]
 to [VAR[feed]]'s [F[authors][feed's author]].
 : [CODE(XMLe)@en[entry]] element in the [[Atom namespace]] :
-Append the result of [[processing an Atom entry][process an Atom entry]] [VAR[child]]
-to [VAR[feed]]'s [F[entries][feed's entry]].
+[FIG(steps)[
+= [86] Let [VAR[entry]] be the result of [[processing an Atom entry][process an Atom entry]]
+[VAR[child]].
+= [85] Set [VAR[entry]]'s [F[feed][entry's feed]] to [VAR[feed]].
+= [87] Append [VAR[entry]] to [VAR[feed]]'s [F[entries][feed's entry]].
+]FIG]
 : [CODE(XMLe)@en[link]] element in the [[Atom namespace]] :
 @@
 ]FIG]
@@ -187,8 +215,56 @@ whose [F[node document]] is [VAR[element]]'s [F[node document]].
 @@ [77] Need to define [DFN[parse an RFC 3339 [CODE[xs:dateTime]] string]].
 It returns a number (JS timestamp) or [[null]].
 
-@@
 [52] To [DFN[process an Atom entry]] [VAR[element]], run these steps:
+[FIG(steps)[
+= [78] Let [VAR[entry]] be an [[entry]].
+= [79] For each [[element]] [VAR[child]] in [VAR[element]]'s [F[children]], in order,
+run these substeps:
+== [80] Switch by [VAR[child]]'s [F[namespace]] and [F[local name]]:
+[FIG(switch)[
+: [CODE(XMLe)@en[author]] element in the [[Atom namespace]] :
+Append the result of [[processing an Atom person][process an Atom person]] [VAR[child]]
+to [VAR[entry]]'s [F[authors][entry's author]].
+: [CODE(XMLe)@en[category]] element in the [[Atom namespace]] :
+[FIG(steps)[
+= [89] Let [VAR[category]] a [[category]].
+= [90] Set [VAR[category]]'s [F[term][category's term]] to the
+[CODE(XMLa)@en[term]] attribute value of [VAR[child]], if any, or the empty string.
+= [91] Set [VAR[category]]'s [F[label][category's label]] to the
+[CODE(XMLa)@en[label]] attribute value of [VAR[child]], if any, or [VAR[category]]'s 
+[F[term][category's term]].
+= [92] Append [VAR[category]] to [VAR[entry]]'s [F[categories][entry's categories]].
+]FIG]
+: [CODE(XMLe)@en[published]] element in the [[Atom namespace]] :
+[FIG(steps)[
+= [33] If [VAR[entry]]'s [F[published][entry's published]] is [[null]]:
+== [34] Set [VAR[entry]]'s [F[published][entry's published]] to the result of
+[[processing an Atom date][process an Atom date]] [VAR[child]].
+]FIG]
+: [CODE(XMLe)@en[updated]] element in the [[Atom namespace]] :
+[FIG(steps)[
+= [31] If [VAR[entry]]'s [F[updated][entry's updated]] is [[null]]:
+== [32] Set [VAR[entry]]'s [F[updated][entry's updated]] to the result of
+[[processing an Atom date][process an Atom date]] [VAR[child]].
+]FIG]
+: [CODE(XMLe)@en[title]] element in the [[Atom namespace]] :
+[FIG(steps)[
+= [98] If [VAR[entry]]'s [F[title][entry's title]] is [[null]]:
+== [99] Set [VAR[entry]]'s [F[title][entry's title]] to the result of
+[[processing an Atom text][process an Atom text]] [VAR[child]].
+]FIG]
+: [CODE(XMLe)@en[summary]] element in the [[Atom namespace]] :
+[FIG(steps)[
+= [100] If [VAR[entry]]'s [F[summary][entry's summary]] is [[null]]:
+== [101] Set [VAR[entry]]'s [F[summary][entry's summary]] to the result of
+[[processing an Atom text][process an Atom text]] [VAR[child]].
+]FIG]
+: [CODE(XMLe)@en[content]] element in the [[Atom namespace]] :
+@@
+: [CODE(XMLe)@en[link]] element in the [[Atom namespace]] :
+@@
+]FIG]
+]FIG]
 
 @@
 [26] To [DFN[process an Atom 0.3 feed element]] [VAR[element]], run these steps:
