@@ -204,6 +204,49 @@ whose [F[node document]] is [VAR[element]]'s [F[node document]].
 whose [F[node document]] is [VAR[element]]'s [F[node document]].
 ]FIG]
 
+[102] To [DFN[process an Atom content]] [VAR[element]], run these steps:
+[FIG(steps)[
+= [103] Let [VAR[type]] be the [CODE(XMLa)@en[type]] attribute value
+of [VAR[element]], if any, or [[null]].
+= [104] If [VAR[type]] is either [[null]], [CODE[text]], [CODE[html]], or [CODE[xhtml]]:
+== [105] Return the result of [[processing an Atom text][process an Atom text]]
+[VAR[element]] and abort these steps.
+= [106] If [VAR[element]] has a [CODE(XMLa)@en[src]] attribute:
+== [108] Let [VAR[text]] be [VAR[element]]'s [CODE(XMLa)@en[src]] attribute value.
+== [109] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[element]]'s [F[node document]].
+== [111] If failed, return ([[null]], [[null]]) and abort these steps.
+== [112] Return the [[resulting URL record]] and abort these steps.
+= [110] Let [VAR[mime]] be the result of [[parsing][parse a MIME type]] [VAR[text]] as a [[MIME type]].
+= [113] If [VAR[mime]] is an [[XML MIME type]]:
+== [125] Let [VAR[fragment]] be a [CODE(DOMi)@en[DocumentFragment]]
+whose [F[node document]] is [VAR[element]]'s [F[node document]].
+== [126] For each child [VAR[node]] in [VAR[element]]'s [F[children]], in order,
+[[insert]] [VAR[node]] into [VAR[fragment]].
+== [127] Return [VAR[fragment]].
+= [114] Otherwise:
+== [117] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
+== [123] If [VAR[mime]]'s [F[type]] is [CODE(MIME)@en[text][text/[VAR[*]]]]
+([[ASCII case-insensitive]]):
+=== [124] Return ([VAR[type]], [VAR[text]]).
+== [115] Otherwise:
+=== [118] Let [VAR[binary]] be the result of [[decoding base64][decode base64]] [VAR[text]].
+=== [119] If [VAR[binary]] is [[null]]:
+==== [120] Return ([[null]], [[null]]).
+=== [121] Otherwise:
+==== [122] Return ([VAR[type]], [VAR[binary]]).
+]FIG]
+
+;; [107] These steps return either 
+a [[URL record]], 
+pair ([[null]], [[null]]),
+pair ([[MIME type]], [[string]]),
+pair ([[MIME type]], [[byte sequence]]), or
+a [CODE(DOMi)@en[Node]].  Note that a [[MIME type]] might or might not be a
+[[parsible MIME type]].
+
+@@ [116] Need to define [[decode base64]] [VAR[text]].
+It returns [[null]] if failed.
+
 [51] To [DFN[process an Atom date]] [VAR[element]], run these steps:
 [FIG(steps)[
 = [75] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
@@ -258,7 +301,11 @@ to [VAR[entry]]'s [F[authors][entry's author]].
 [[processing an Atom text][process an Atom text]] [VAR[child]].
 ]FIG]
 : [CODE(XMLe)@en[content]] element in the [[Atom namespace]] :
-@@
+[FIG(steps)[
+= [128] If [VAR[entry]]'s [F[content][entry's content]] is [[null]]:
+== [129] Set [VAR[entry]]'s [F[content][entry's content]] to the result of
+[[processing an Atom content][process an Atom content]] [VAR[child]].
+]FIG]
 : [CODE(XMLe)@en[link]] element in the [[Atom namespace]] :
 @@
 ]FIG]
