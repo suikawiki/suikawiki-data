@@ -142,25 +142,11 @@ to the [[character encoding]] used by [VAR[parser]].
 = [17] Switch by [VAR[root]]:
 [FIG(switch)[
 : [16] If it is a [CODE(XMLe)@en[feed]] element in the [[Atom namespace]] or in the [[Atom 0.3 namespace]] :
-Return the result of [[processing an Atom feed element][process a Atom feed element]] [VAR[root]].
+Return the result of [[processing an Atom feed element][process an Atom feed element]] [VAR[root]].
 : [19] If it is an [CODE(XMLe)@en[rss]] element in the [[null namespace]] :
-[FIG(steps)[
-= [236] If [VAR[root]]'s [F[children]] contains a [CODE(XMLe)@en[channel]]
-element in the [[null namespace]] [VAR[element]]:
-== [237] Let [VAR[feed]] be the result of [[processing an RSS channel][process an RSS channel]] [VAR[element]].
-= [238] Otherwise:
-== [239] Let [VAR[feed]] be a [[feed]].
-= [240] For each [[element]] [VAR[child]] in [VAR[root]]'s [F[children]], in order,
-run these substeps:
-== [241] If [VAR[child]] is an [CODE(XMLe)@en[item]] element in the [[null namespace]],
-=== [242] Let [VAR[entry]] be the result of [[processing an RSS item][process an RSS item]]
-[VAR[child]].
-=== [243] Set [VAR[entry]]'s [F[feed][entry's feed]] to [VAR[feed]].
-=== [244] Append [VAR[entry]] to [VAR[feed]]'s [F[entries][feed's entry]].
-= [245] Return [VAR[feed]].
-]FIG]
+Return the result of [[processing an rss element][process an rss element]] [VAR[root]].
 : [18] If it is an [CODE(XMLe)@en[RDF]] element in the [[RDF namespace]] :
-@@
+Return the result of [[processing an RDF element][process an RDF element]] [VAR[root]].
 : [13] Otherwise : Return [[null]].
 ]FIG]
 ]FIG]
@@ -220,7 +206,7 @@ run these substeps:
 [FIG(steps)[
 = [160] If [VAR[feed]]'s [F[updated][feed's updated]] is [[null]]:
 == [161] Set [VAR[feed]]'s [F[updated][feed's updated]] to the result of
-[[processing an Atom 0.3 date][process an Atom 0.3 date]] [VAR[child]].
+[[processing a W3C-DTF date][process a W3C-DTF date]] [VAR[child]].
 ]FIG]
 : [CODE(XMLe)@en[link]] element in the [[Atom namespace]] or in the [[Atom 0.3 namespace]] :
 [[Process an Atom link]] [VAR[child]] for [VAR[feed]], with [VAR[type]] [CODE[feed]].
@@ -238,9 +224,59 @@ to [VAR[feed]]'s [F[authors][feed's author]].
 = [25] Return [VAR[feed]].
 ]FIG]
 
-[206] To [DFN[process an RSS channel]] [VAR[element]], run these steps:
+[301] To [DFN[process an rss element]] [VAR[element]], run these steps:
 [FIG(steps)[
-= [207] Let [VAR[feed]] be an [[feed]].
+= [239] Let [VAR[feed]] be a [[feed]].
+= [240] For each [[element]] [VAR[child]] in [VAR[element]]'s [F[children]], in order,
+run these substeps:
+== [302] Switch by [VAR[child]]'s [F[namespace]] and [F[local name]]:
+[FIG(switch)[
+: [CODE(XMLe)@en[channel]] element in the [[null namespace]] :
+[[Process an RSS channel][process an RSS channel]] [VAR[element]] with [VAR[feed]].
+: [CODE(XMLe)@en[item]] element in the [[null namespace]] :
+[FIG(steps)[
+= [242] Let [VAR[entry]] be the result of [[processing an RSS item][process an RSS item]]
+[VAR[child]].
+= [243] Set [VAR[entry]]'s [F[feed][entry's feed]] to [VAR[feed]].
+= [244] Append [VAR[entry]] to [VAR[feed]]'s [F[entries][feed's entry]].
+]FIG]
+]FIG]
+= [245] Return [VAR[feed]].
+]FIG]
+
+[207] To [DFN[process an RDF element]] [VAR[element]], run these steps:
+[FIG(steps)[
+= [238] Let [VAR[feed]] be a [[feed]].
+= [210] For each [[element]] [VAR[child]] in [VAR[element]]'s [F[children]], in order,
+run these substeps:
+== [236] Switch by [VAR[child]]'s [F[namespace]] and [F[local name]]:
+[FIG(switch)[
+: [CODE(XMLe)@en[channel]] element in the [[RSS 1.0 namespace]] :
+[[Process an RSS 1.0 channel][process an RSS 1.0 channel]] [VAR[element]] with [VAR[feed]].
+: [CODE(XMLe)@en[item]] element in the [[RSS 1.0 namespace]] :
+[FIG(steps)[
+= [237] Let [VAR[entry]] be the result of [[processing an RSS 1.0 item][process an RSS 1.0 item]]
+[VAR[child]].
+= [241] Set [VAR[entry]]'s [F[feed][entry's feed]] to [VAR[feed]].
+= [303] Append [VAR[entry]] to [VAR[feed]]'s [F[entries][feed's entry]].
+]FIG]
+: [CODE(XMLe)@en[image]] element in the [[RSS 1.0 namespace]] :
+[FIG(steps)[
+= [305] If [VAR[feed]]'s [F[logo URL][feed's logo URL]] is [[null]]:
+== [306] Let [VAR[element]] be [VAR[child]]'s first [CODE(XMLe)@en[url]] child element
+in the [[RSS 1.0 namespace]].
+== [307] If [VAR[element]] is not [[null]]:
+=== [308] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
+=== [309] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[child]]'s [F[node document]].
+=== [310] If not failed, set [VAR[feed]]'s [F[logo URL][feed's logo URL]] to the [[resulting URL string]].
+]FIG]
+]FIG]
+= [304] Return [VAR[feed]].
+]FIG]
+
+[206] To [DFN[process an RSS channel]] [VAR[element]] with [[feed]] [VAR[feed]], 
+run these steps:
+[FIG(steps)[
 = [208] For each [[element]] [VAR[child]] in [VAR[element]]'s [F[children]], in order,
 run these substeps:
 == [209] Switch by [VAR[child]]'s [F[namespace]] and [F[local name]]:
@@ -291,7 +327,42 @@ to [VAR[feed]]'s [F[authors][feed's author]].
 = [149] Append [VAR[entry]] to [VAR[feed]]'s [F[entries][feed's entry]].
 ]FIG]
 ]FIG]
-= [210] Return [VAR[feed]].
+]FIG]
+
+[311] To [DFN[process an RSS 1.0 channel]] [VAR[element]] with [[feed]] [VAR[feed]], 
+run these steps:
+[FIG(steps)[
+= [312] For each [[element]] [VAR[child]] in [VAR[element]]'s [F[children]], in order,
+run these substeps:
+== [313] Switch by [VAR[child]]'s [F[namespace]] and [F[local name]]:
+[FIG(switch)[
+: [CODE(XMLe)@en[description]] element in the [[RSS 1.0 namespace]] :
+If [VAR[feed]]'s [F[description][feed's description]] is [[null]],
+set [VAR[feed]]'s [F[description][feed's description]] to
+[VAR[child]]'s [F[child text content]].
+: [CODE(XMLe)@en[creator]] element in the [[Dublin Core namespace]] :
+Append a [[person]] whose [F[name]] is [VAR[element]]'s [F[child text content]]
+to [VAR[feed]]'s [F[authors][feed's author]].
+: [CODE(XMLe)@en[date]] element in the [[Dublin Core namespace]]:
+[FIG(steps)[
+= [314] If [VAR[feed]]'s [F[updated][feed's updated]] is [[null]]:
+== [315] Set [VAR[feed]]'s [F[updated][feed's updated]] to the result of
+[[processing a W3C-DTF date][process a W3C-DTF date]] [VAR[child]].
+]FIG]
+: [CODE(XMLe)@en[title]] element in the [[RSS 1.0 namespace]] :
+[FIG(steps)[
+= [316] If [VAR[feed]]'s [F[title][feed's title]] is [[null]]:
+== [317] Set [VAR[feed]]'s [F[title][feed's title]] to 
+[VAR[child]]'s [F[child text content]].
+]FIG]
+: [CODE(XMLe)@en[link]] element in the [[RSS 1.0 namespace]] :
+[FIG(steps)[
+= [318] If [VAR[feed]]'s [F[page URL][feed's page URL]] is [[null]]:
+== [319] Let [VAR[text]] be [VAR[child]]'s [F[child text content]].
+== [320] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[child]]'s [F[node document]].
+== [321] If not failed, set [VAR[feed]]'s [F[page URL][feed's page URL]] to the [[resulting URL string]].
+]FIG]
+]FIG]
 ]FIG]
 
 [52] To [DFN[process an Atom entry]] [VAR[element]], run these steps:
@@ -324,7 +395,7 @@ to [VAR[entry]]'s [F[authors][entry's author]].
 [FIG(steps)[
 = [193] If [VAR[entry]]'s [F[published][entry's published]] is [[null]]:
 == [194] Set [VAR[entry]]'s [F[published][entry's published]] to the result of
-[[processing an Atom 0.3 date][process an Atom 0.3 date]] [VAR[child]].
+[[processing a W3C-DTF date][process a W3C-DTF date]] [VAR[child]].
 ]FIG]
 : [CODE(XMLe)@en[updated]] element in the [[Atom namespace]] :
 [FIG(steps)[
@@ -336,7 +407,7 @@ to [VAR[entry]]'s [F[authors][entry's author]].
 [FIG(steps)[
 = [23] If [VAR[entry]]'s [F[updated][entry's updated]] is [[null]]:
 == [26] Set [VAR[entry]]'s [F[updated][entry's updated]] to the result of
-[[processing an Atom 0.3 date][process an Atom 0.3 date]] [VAR[child]].
+[[processing a W3C-DTF date][process a W3C-DTF date]] [VAR[child]].
 ]FIG]
 : [CODE(XMLe)@en[title]] element in the [[Atom namespace]] :
 [FIG(steps)[
@@ -433,7 +504,7 @@ to [VAR[entry]]'s [F[authors][entry's author]].
 == [189] Set [VAR[entry]]'s [F[summary][entry's summary]] to the result of
 [[parsing escaped HTML content][parse escaped HTML content]] of [VAR[element]].
 ]FIG]
-: [CODE(XMLe)@en[encoded]] element in the [[RSS 1.0 content namespace]] :
+: [CODE(XMLe)@en[encoded]] element in the [[RSS content namespace]] :
 [FIG(steps)[
 = [299] If [VAR[entry]]'s [F[content][entry's content]] is [[null]]:
 == [300] Set [VAR[entry]]'s [F[content][entry's content]] to the result of
@@ -649,7 +720,7 @@ whose [F[URL][enclosure's URL]] is [VAR[child]]'s [F[href URL]].
 @@ [77] Need to define [DFN[parse an RFC 3339 [CODE[xs:dateTime]] string]].
 It returns a number (JS timestamp) or [[null]].
 
-[166] To [DFN[process an Atom 0.3 date]] [VAR[element]], run these steps:
+[166] To [DFN[process a W3C-DTF date]] [VAR[element]], run these steps:
 [FIG(steps)[
 = [167] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
 = [168] Return the result of [[parsing a W3C-DTF string][parse a W3C-DTF string]] [VAR[text]].
