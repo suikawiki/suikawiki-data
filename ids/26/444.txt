@@ -235,7 +235,7 @@ run these substeps:
 [[Process an RSS channel][process an RSS channel]] [VAR[element]] with [VAR[feed]].
 : [CODE(XMLe)@en[item]] element in the [[null namespace]] :
 [FIG(steps)[
-= [242] Let [VAR[entry]] be the result of [[processing an RSS item][process an RSS item]]
+= [242] Let [VAR[entry]] be the result of [[processing an RSS 2.0 item][process an RSS 2.0 item]]
 [VAR[child]].
 = [243] Set [VAR[entry]]'s [F[feed][entry's feed]] to [VAR[feed]].
 = [244] Append [VAR[entry]] to [VAR[feed]]'s [F[entries][feed's entry]].
@@ -321,7 +321,7 @@ to [VAR[feed]]'s [F[authors][feed's author]].
 [[Process an Atom link]] [VAR[child]] for [VAR[feed]], with [VAR[type]] [CODE[feed]].
 : [CODE(XMLe)@en[item]] element in the [[null namespace]] :
 [FIG(steps)[
-= [147] Let [VAR[entry]] be the result of [[processing an RSS item][process an RSS item]]
+= [147] Let [VAR[entry]] be the result of [[processing an RSS 2.0 item][process an RSS 2.0 item]]
 [VAR[child]].
 = [148] Set [VAR[entry]]'s [F[feed][entry's feed]] to [VAR[feed]].
 = [149] Append [VAR[entry]] to [VAR[feed]]'s [F[entries][feed's entry]].
@@ -384,6 +384,14 @@ to [VAR[entry]]'s [F[authors][entry's author]].
 [CODE(XMLa)@en[label]] attribute value of [VAR[child]], if any, or [VAR[category]]'s 
 [F[term][category's term]].
 = [92] Append [VAR[category]] to [VAR[entry]]'s [F[categories][entry's categories]].
+]FIG]
+: [CODE(XMLe)@en[subject]] element in the [[Dublin Core namespace]] :
+[FIG(steps)[
+= [344] Let [VAR[category]] a [[category]].
+= [345] Let [VAR[text]] be [VAR[child]]'s [F[child text content]].
+= [346] Set [VAR[category]]'s [F[term][category's term]] to [VAR[text]].
+= [347] Set [VAR[category]]'s [F[label][category's label]] to [VAR[text]].
+= [348] Append [VAR[category]] to [VAR[entry]]'s [F[categories][entry's categories]].
 ]FIG]
 : [CODE(XMLe)@en[published]] element in the [[Atom namespace]] :
 [FIG(steps)[
@@ -451,7 +459,7 @@ to [VAR[entry]]'s [F[authors][entry's author]].
 = [246] Return [VAR[entry]].
 ]FIG]
 
-[249] To [DFN[process an RSS item]] [VAR[element]], run these steps:
+[249] To [DFN[process an RSS 2.0 item]] [VAR[element]], run these steps:
 [FIG(steps)[
 = [248] Let [VAR[entry]] be an [[entry]].
 = [250] For each [[element]] [VAR[child]] in [VAR[element]]'s [F[children]], in order,
@@ -529,6 +537,59 @@ to [VAR[entry]]'s [F[authors][entry's author]].
 ]FIG]
 ]FIG]
 = [252] Return [VAR[entry]].
+]FIG]
+
+[322] To [DFN[process an RSS 1.0 item]] [VAR[element]], run these steps:
+[FIG(steps)[
+= [323] Let [VAR[entry]] be an [[entry]].
+= [324] For each [[element]] [VAR[child]] in [VAR[element]]'s [F[children]], in order,
+run these substeps:
+== [325] Switch by [VAR[child]]'s [F[namespace]] and [F[local name]]:
+[FIG(switch)[
+: [CODE(XMLe)@en[link]] element in the [[RSS 1.0 namespace]] :
+[FIG(steps)[
+= [331] If [VAR[entry]]'s [F[page URL][entry's page URL]] is [[null]]:
+== [332] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
+== [333] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[element]]'s [F[node document]].
+== [334] If not failed, set [VAR[entry]]'s [F[page URL][entry's page URL]] to the [[resulting URL string]].
+]FIG]
+: [CODE(XMLe)@en[creator]] element in the [[Dublin Core namespace]] :
+Append a [[person]] whose [F[name]] is [VAR[element]]'s [F[child text content]]
+to [VAR[entry]]'s [F[authors][entry's author]].
+: [CODE(XMLe)@en[date]] element in the [[Dublin Core namespace]]:
+[FIG(steps)[
+= [335] If [VAR[entry]]'s [F[updated][entry's updated]] is [[null]]:
+== [336] Set [VAR[entry]]'s [F[updated][entry's updated]] to the result of
+[[processing a W3C-DTF date][process a W3C-DTF date]] [VAR[child]].
+]FIG]
+: [CODE(XMLe)@en[subject]] element in the [[Dublin Core namespace]] :
+[FIG(steps)[
+= [326] Let [VAR[category]] a [[category]].
+= [327] Let [VAR[text]] be [VAR[child]]'s [F[child text content]].
+= [328] Set [VAR[category]]'s [F[term][category's term]] to [VAR[text]].
+= [329] Set [VAR[category]]'s [F[label][category's label]] to [VAR[text]].
+= [330] Append [VAR[category]] to [VAR[entry]]'s [F[categories][entry's categories]].
+]FIG]
+: [CODE(XMLe)@en[title]] element in the [[RSS 1.0 namespace]] :
+[FIG(steps)[
+= [337] If [VAR[entry]]'s [F[title][entry's title]] is [[null]]:
+== [338] Set [VAR[entry]]'s [F[title][entry's title]] to 
+[VAR[element]]'s [F[child text content]].
+]FIG]
+: [CODE(XMLe)@en[description]] element in the [[RSS 1.0 namespace]] :
+[FIG(steps)[
+= [339] If [VAR[entry]]'s [F[summary][entry's summary]] is [[null]]:
+== [340] Set [VAR[entry]]'s [F[summary][entry's summary]] to the result of
+[[parsing escaped HTML content][parse escaped HTML content]] of [VAR[element]].
+]FIG]
+: [CODE(XMLe)@en[encoded]] element in the [[RSS content namespace]] :
+[FIG(steps)[
+= [341] If [VAR[entry]]'s [F[content][entry's content]] is [[null]]:
+== [342] Set [VAR[entry]]'s [F[content][entry's content]] to the result of
+[[parsing escaped HTML content][parse escaped HTML content]] of [VAR[element]].
+]FIG]
+]FIG]
+= [343] Return [VAR[entry]].
 ]FIG]
 
 [24] To [DFN[process an Atom person]] [VAR[element]], run these steps:
