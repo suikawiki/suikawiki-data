@@ -259,7 +259,10 @@ in the [[null namespace]].
 === [215] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[child]]'s [F[node document]].
 === [216] If not failed, set [VAR[feed]]'s [F[logo URL][feed's logo URL]] to the [[resulting URL string]].
 ]FIG]
-: [CODE(XMLe)@en[pubDate]] or [CODE(XMLe)@en[lastBuildDate]] element in the [[null namespace]] :
+: [CODE(XMLe)@en[creator]] element in the [[Dublin Core namespace]] :
+Append a [[person]] whose [F[name]] is [VAR[element]]'s [F[child text content]]
+to [VAR[feed]]'s [F[authors][feed's author]].
+: [CODE(XMLe)@en[pubDate]] or [CODE(XMLe)@en[lastBuildDate]] element in the [[null namespace]]:
 [FIG(steps)[
 = [217] If [VAR[feed]]'s [F[updated][feed's updated]] is [[null]]:
 == [218] Set [VAR[feed]]'s [F[updated][feed's updated]] to the result of
@@ -384,9 +387,6 @@ to [VAR[entry]]'s [F[authors][entry's author]].
 run these substeps:
 == [251] Switch by [VAR[child]]'s [F[namespace]] and [F[local name]]:
 [FIG(switch)[
-: [CODE(XMLe)@en[author]] element in the [[null namespace]] :
-Append the result of [[processing an RSS 2.0 person][process an RSS 2.0 person]] [VAR[child]]
-to [VAR[entry]]'s [F[authors][entry's author]].
 : [CODE(XMLe)@en[category]] element in the [[null namespace]] :
 [FIG(steps)[
 = [258] Let [VAR[category]] a [[category]].
@@ -395,12 +395,37 @@ to [VAR[entry]]'s [F[authors][entry's author]].
 = [260] Set [VAR[category]]'s [F[label][category's label]] to [VAR[text]].
 = [261] Append [VAR[category]] to [VAR[entry]]'s [F[categories][entry's categories]].
 ]FIG]
+: [CODE(XMLe)@en[link]] element in the [[null namespace]] :
+[FIG(steps)[
+= [291] If [VAR[entry]]'s [F[page URL][entry's page URL]] is [[null]]:
+== [292] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
+== [293] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[element]]'s [F[node document]].
+== [294] If not failed, set [VAR[entry]]'s [F[page URL][entry's page URL]] to the [[resulting URL string]].
+]FIG]
 : [CODE(XMLe)@en[comments]] element in the [[null namespace]] :
 [FIG(steps)[
 = [263] If [VAR[entry]]'s [F[comment page URL][entry's comment page URL]] is [[null]]:
-== [264] Let [VAR[text]] be [VAR[child]]'s [F[child text content]].
-== [265] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[child]]'s [F[node document]].
+== [264] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
+== [265] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[element]]'s [F[node document]].
 == [266] If not failed, set [VAR[entry]]'s [F[comment page URL][entry's comment page URL]] to the [[resulting URL string]].
+]FIG]
+: [CODE(XMLe)@en[author]] element in the [[null namespace]] :
+Append the result of [[processing an RSS 2.0 person][process an RSS 2.0 person]] [VAR[child]]
+to [VAR[entry]]'s [F[authors][entry's author]].
+: [CODE(XMLe)@en[creator]] element in the [[Dublin Core namespace]] :
+Append a [[person]] whose [F[name]] is [VAR[element]]'s [F[child text content]]
+to [VAR[entry]]'s [F[authors][entry's author]].
+: [CODE(XMLe)@en[pubDate]] element in the [[null namespace]]:
+[FIG(steps)[
+= [295] If [VAR[entry]]'s [F[updated][entry's updated]] is [[null]]:
+== [296] Set [VAR[entry]]'s [F[updated][entry's updated]] to the result of
+[[processing an RSS 2.0 date][process an RSS 2.0 date]] [VAR[child]].
+]FIG]
+: [CODE(XMLe)@en[title]] element in the [[null namespace]] :
+[FIG(steps)[
+= [297] If [VAR[entry]]'s [F[title][entry's title]] is [[null]]:
+== [298] Set [VAR[entry]]'s [F[title][entry's title]] to 
+[VAR[element]]'s [F[child text content]].
 ]FIG]
 : [CODE(XMLe)@en[description]] element in the [[null namespace]] :
 [FIG(steps)[
@@ -408,8 +433,29 @@ to [VAR[entry]]'s [F[authors][entry's author]].
 == [189] Set [VAR[entry]]'s [F[summary][entry's summary]] to the result of
 [[parsing escaped HTML content][parse escaped HTML content]] of [VAR[element]].
 ]FIG]
-
-@@
+: [CODE(XMLe)@en[encoded]] element in the [[RSS 1.0 content namespace]] :
+[FIG(steps)[
+= [299] If [VAR[entry]]'s [F[content][entry's content]] is [[null]]:
+== [300] Set [VAR[entry]]'s [F[content][entry's content]] to the result of
+[[parsing escaped HTML content][parse escaped HTML content]] of [VAR[element]].
+]FIG]
+: [CODE(XMLe)@en[enclosure]] element in the [[null namespace]] :
+[FIG(steps)[
+= [279] Let [VAR[enclosure]] be an [[enclosure]].
+= [280] Let [VAR[text]] be [VAR[child]]'s [CODE(XMLa)@en[url]] attribute value.
+= [281] If [VAR[text]] is not [[null]]:
+== [282] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[child]]'s [F[node document]].
+== [283] If not failed, set [VAR[enclosure]]'s [F[URL][enclosure's URL]] to the [[resulting URL string]].
+= [284] Set [VAR[enclosure]]'s [F[type][enclosure's type]] to [VAR[child]]'s
+[CODE(XMLa)@en[type]] attribute value.
+= [285] Let [VAR[length]] be [VAR[child]]'s [CODE(XMLa)@en[length]] attribute value.
+= [286] If [VAR[length]] is not null:
+== [287] Let [VAR[n]] be the result of applying the
+[[rules for parsing non-negative integers]] to [VAR[length]].
+== [288] If [VAR[n]] is not an error:
+=== [289] Set [VAR[enclosure]]'s [F[length][enclosure's length]] to [VAR[n]].
+= [290] Append [VAR[enclosure]] to [VAR[object]]'s [F[enclosures][entry's enclosures]].
+]FIG]
 ]FIG]
 = [252] Return [VAR[entry]].
 ]FIG]
@@ -584,7 +630,7 @@ with [VAR[type]], run these steps:
 === [271] Let [VAR[enclosure]] be an [[enclosure]],
 whose [F[URL][enclosure's URL]] is [VAR[child]]'s [F[href URL]].
 === [273] Set [VAR[enclosure]]'s [F[type][enclosure's type]] to [VAR[child]]'s
-[CODE(XMLa)@en[type]] attribute value, if any, or [[null]].
+[CODE(XMLa)@en[type]] attribute value.
 === [275] Let [VAR[length]] be [VAR[child]]'s [CODE(XMLa)@en[length]] attribute value.
 === [276] If [VAR[length]] is not null:
 ==== [277] Let [VAR[n]] be the result of applying the
