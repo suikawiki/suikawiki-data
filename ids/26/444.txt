@@ -32,6 +32,7 @@ They are initially empty.
 [DFN[[F[page URL]]][entry's page URL]],
 [DFN[[F[comment page URL]]][entry's comment page URL]],
 [DFN[[F[thumbnail URL]]][entry's thumbnail URL]],
+[DFN[[F[duration][entry's duration]]]],
 [DFN[[F[published]]][entry's published]], and
 [DFN[[F[updated]]][entry's updated]].
 They are initially [[null]].
@@ -46,9 +47,7 @@ It is initially [[null]].  It can be [[null]], a [[string]], a [[URL record]],
 a [[data pair]], or a [CODE(DOMi)@en[Node]].
 
 [229] A [DFN[data pair]] is either
-([[null]], [[null]]),
-([[MIME type]], [[string]]), or
-([[MIME type]], [[byte sequence]]).
+([[MIME type]], [[string]]) or ([[MIME type]], [[byte sequence]]).
 
 [188] An [DFN[enclosure]] has
 [DFN[[F[URL]]][enclosure's URL]],
@@ -81,8 +80,9 @@ return [VAR[entry]]'s [F[feed][entry's feed]]'s [F[updated][feed's updated]].
 
 [29] A [DFN[person]] is a tuple of 
 [DFN[[F[name]]][person's name]],
-[DFN[[F[email]]][person's email]], and
-[DFN[[F[page URL]]][person's page URL]].
+[DFN[[F[email]]][person's email]],
+[DFN[[F[page URL]]][person's page URL]], and
+[DFN[[F[icon URL]]][person's icon URL]].
 They are initially [[null]].
 
 [30] A [DFN[category]] is a pair of
@@ -112,6 +112,9 @@ whose [F[term]] is [VAR[name]] and [F[label]] is [VAR[name]].
 
 :name: The [DFN@en[Dublin Core namespace]]
 :url: [CODE(URI)@en[http://purl.org/dc/elements/1.1/]]
+
+:name: The [DFN@en[GData namespace]]
+:url: [CODE(URI)@en[http://schemas.google.com/g/2005]]
 
 :name: The [DFN@en[Hatena namespace]]
 :url: [CODE(URI)@en[http://www.hatena.ne.jp/info/xmlns#]]
@@ -167,6 +170,7 @@ It returns a number (JS timestamp) or [[null]].
 [372] To [DFN[process a URL element]] [VAR[element]], run these steps:
 [FIG(steps)[
 = [35] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
+= [196] If [VAR[text]] is the [[empty string]], return [[null]] and abort these steps.
 = [36] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[element]]'s [F[node document]].
 = [38] If not failed, return the [[resulting URL string]].
 = [373] Otherwise, return [[null]].
@@ -238,6 +242,420 @@ whose [F[URL][enclosure's URL]] is [VAR[child]]'s [F[href URL]].
 ==== [278] If [VAR[n]] is not an error and [VAR[n]] is greater than zero:
 ===== [274] Set [VAR[enclosure]]'s [F[length][enclosure's length]] to [VAR[n]].
 === [272] Append [VAR[enclosure]] to [VAR[object]]'s [F[enclosures][entry's enclosures]].
+]FIG]
+
+** Persons
+
+[24] To [DFN[process an Atom person]] [VAR[element]], run these steps:
+[FIG(steps)[
+= [54] Let [VAR[person]] be a [[person]].
+= [55] For each [[element]] [VAR[child]] in [VAR[element]]'s [F[children]], in order,
+run these substeps:
+== [56] Switch by [VAR[child]]'s [F[namespace]] and [F[local name]]:
+[FIG(switch)[
+: [CODE(XMLe)@en[name]] element in the [[Atom namespace]] or in the [[Atom 0.3 namespace]]:
+If [VAR[person]]'s [F[name][person's name]] is [[null]],
+set [VAR[person]]'s [F[name][person's name]] to [VAR[child]]'s [F[child text content]].
+: [CODE(XMLe)@en[email]] element in the [[Atom namespace]] or in the [[Atom 0.3 namespace]]:
+If [VAR[person]]'s [F[email][person's email]] is [[null]],
+set [VAR[person]]'s [F[email][person's email]] to [VAR[child]]'s [F[child text content]].
+: [CODE(XMLe)@en[uri]] element in the [[Atom namespace]] or in the [[Atom 0.3 namespace]] :
+If [VAR[person]]'s [F[page URL][person's page URL]] is [[null]],
+set [VAR[person]]'s [F[page URL][person's page URL]] to the result of
+[[processing a URL element][process a URL element]] [VAR[child]].
+: [CODE(XMLe)@en[image]] element in the [[GData namespace]] :
+[FIG(steps)[
+= [160] If [VAR[person]]'s [F[icon URL][person's icon URL]] is [[null]]:
+== [161] Let [VAR[text]] be [VAR[element]]'s [CODE(XMLa)@en[src]] attribute value.
+== [170] If [VAR[text]] is not [[null]] or the [[empty string]]:
+=== [179] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[element]]'s [F[node document]].
+=== [187] If not failed, set [VAR[person]]'s [F[icon URL][person's icon URL]] to the [[resulting URL string]].
+]FIG]
+]FIG]
+= [53] Return [VAR[person]].
+]FIG]
+
+[247] To [DFN[process an RSS 2.0 person]] [VAR[element]], run these steps:
+[FIG(steps)[
+= [254] Let [VAR[person]] be a [[person]].
+= [253] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
+= [157] If [VAR[text]] is
+one or more [[Unicode code points][Unicode code point]] that are not [[space characters]],
+followed by one or more [[space characters]],
+followed by a [CODE[(]] character,
+followed by one or more [[Unicode code points][Unicode code point]],
+followed by a [CODE[)]] character:
+== [158] Set [VAR[person]]'s [F[name][person's name]] to the substring
+between [CODE[(]] and [CODE[)]] characters in [VAR[text]], not inclusive.
+== [159] Set [VAR[person]]'s [F[email][person's email]] to the substring
+before the first [[space character][space characters]] in [VAR[text]].
+= Otherwise:
+== [255] Set [VAR[person]]'s [F[name][person's name]] to [VAR[text]].
+= [256] Return [VAR[person]].
+]FIG]
+
+** Texts and contents
+
+[50] To [DFN[process an Atom text]] [VAR[element]], run these steps:
+[FIG(steps)[
+= [61] Let [VAR[type]] be the [CODE(XMLa)@en[type]] attribute value
+of [VAR[element]], if any, or [[null]].
+= [62] If [VAR[type]] is [CODE[html]]:
+== [267] Return the result of [[parsing escaped HTML content][parse escaped HTML content]] of [VAR[element]].
+= [63] Otherwise, if [VAR[type]] is [CODE[xhtml]] and
+[VAR[element]]'s [F[children]] contains a [CODE(HTMLe)@en[div]] element:
+== [66] Let [VAR[div]] be a [[clone]] of [VAR[element]]'s
+first [CODE(HTMLe)@en[div]] element child, with [VAR[clone children flag]] set.
+== [67] Let [VAR[fragment]] be a [CODE(DOMi)@en[DocumentFragment]]
+whose [F[node document]] is [VAR[element]]'s [F[node document]].
+== [68] For each child [VAR[node]] in [VAR[div]]'s [F[children]], in order,
+[[insert]] [VAR[node]] into [VAR[fragment]].
+== [69] Return [VAR[fragment]].
+= [64] Otherwise:
+== [65] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
+== [45] If [VAR[text]] contains a [[Unicode code point]] that is not a [[space character]]:
+=== [46] Return [VAR[text]].
+== [47] Otherwise:
+=== [48] Return [[null]].
+]FIG]
+
+[102] To [DFN[process an Atom content]] [VAR[element]], run these steps:
+[FIG(steps)[
+= [103] Let [VAR[type]] be the [CODE(XMLa)@en[type]] attribute value
+of [VAR[element]], if any, or [[null]].
+= [104] If [VAR[type]] is either [[null]], [CODE[text]], [CODE[html]], or [CODE[xhtml]]:
+== [105] Return the result of [[processing an Atom text][process an Atom text]]
+[VAR[element]] and abort these steps.
+= [106] If [VAR[element]] has a [CODE(XMLa)@en[src]] attribute:
+== [108] Let [VAR[text]] be [VAR[element]]'s [CODE(XMLa)@en[src]] attribute value.
+== [197] If [VAR[text]] is the [[empty string]], return [[null]] and abort these steps.
+== [109] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[element]]'s [F[node document]].
+== [111] If failed, return [[null]] and abort these steps.
+== [112] Return the [[resulting URL record]] and abort these steps.
+= [110] Let [VAR[mime]] be the result of [[parsing][parse a MIME type]] [VAR[text]] as a [[MIME type]].
+= [113] If [VAR[mime]] is an [[XML MIME type]]:
+== [125] Let [VAR[fragment]] be a [CODE(DOMi)@en[DocumentFragment]]
+whose [F[node document]] is [VAR[element]]'s [F[node document]].
+== [126] For each child [VAR[node]] in [VAR[element]]'s [F[children]], in order,
+[[insert]] [VAR[node]] into [VAR[fragment]].
+== [127] Return [VAR[fragment]].
+= [114] Otherwise:
+== [117] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
+== [123] If [VAR[mime]]'s [F[type]] is [CODE(MIME)@en[text][text/[VAR[*]]]]
+([[ASCII case-insensitive]]):
+=== [124] Return ([VAR[type]], [VAR[text]]).
+== [115] Otherwise:
+=== [118] Let [VAR[binary]] be the result of [[decoding base64][decode base64]] [VAR[text]].
+=== [119] If [VAR[binary]] is [[null]]:
+==== [120] Return [[null]].
+=== [121] Otherwise:
+==== [122] Return ([VAR[type]], [VAR[binary]]).
+]FIG]
+
+;; [107] These steps return either 
+[[null]],
+a [[string]], a [[URL record]], a [[data pair]], or a [CODE(DOMi)@en[Node]].
+
+[153] To [DFN[process an Atom 0.3 content]] [VAR[element]], run these steps:
+[FIG(steps)[
+= [155] Let [VAR[mode]] be [VAR[element]]'s [CODE(XMLa)@en[mode]] attribute value,
+if any, or [CODE(MIME)@en[xml]].
+= [154] Let [VAR[type]] be [VAR[element]]'s [CODE(XMLa)@en[type]] attribute value,
+if any, or [CODE(MIME)@en[text/plain]].
+= [175] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
+= [162] If [VAR[mode]] is [CODE[escaped]]:
+== [177] If [VAR[type]] is equal to [CODE(MIME)@en[text/plain]] ([[ASCII case-insensitive]]):
+=== [60] If [VAR[text]] contains a [[Unicode code point]] that is not a [[space character]]:
+==== [98] Return [VAR[text]].
+=== [99] Otherwise:
+==== [100] Return [[null]].
+== [180] Otherwise, if [VAR[type]] is equal to [CODE(MIME)@en[text/html]] ([[ASCII case-insensitive]]):
+=== [268] Return the result of [[parsing escaped HTML content][parse escaped HTML content]] of [VAR[element]].
+== [185] Otherwise:
+=== [186] Return ([VAR[type]], [VAR[text]]).
+= [163] Otherwise, if [VAR[mode]] is [CODE[base64]]:
+== [176] Let [VAR[binary]] be the result of [[decoding base64][decode base64]] [VAR[text]].
+== [181] If [VAR[binary]] is [[null]]:
+=== [182] Return [[null]].
+== [183] Otherwise:
+=== [184] Return ([VAR[type]], [VAR[binary]]).
+= [164] Otherwise:
+== [165] If [VAR[type]] is equal to [CODE(MIME)@en[text/plain]] ([[ASCII case-insensitive]]):
+=== [49] If [VAR[text]] contains a [[Unicode code point]] that is not a [[space character]]:
+==== [57] Return [VAR[text]].
+=== [58] Otherwise:
+==== [59] Return [[null]].
+== [171] Otherwise:
+=== [172] Let [VAR[fragment]] be a [CODE(DOMi)@en[DocumentFragment]]
+whose [F[node document]] is [VAR[element]]'s [F[node document]].
+=== [173] For each child [VAR[node]] in [VAR[element]]'s [F[children]], in order,
+[[insert]] [VAR[node]] into [VAR[fragment]].
+=== [174] Return [VAR[fragment]].
+]FIG]
+
+;; [225] These steps return either
+[[null]], a [[string]], a [[data pair]], or a [CODE(DOMi)@en[Node]].
+
+@@ [116] Need to define [[decode base64]] [VAR[text]].
+It returns [[null]] if failed.
+
+[178] To [DFN[parse escaped HTML content]] of element [VAR[element]], run these steps:
+[FIG(steps)[
+= [101] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
+= [128] If [VAR[text]] contains a [[Unicode code point]] that is not a [[space character]]:
+== [73] Let [VAR[div]] be a [CODE(HTMLe)@en[div]] element
+whose [F[node document]] is [VAR[element]]'s [F[node document]].
+== [74] Let [VAR[fragment]] be a [CODE(DOMi)@en[DocumentFragment]]
+whose [F[node document]] is [VAR[element]]'s [F[node document]].
+== [70] Let [VAR[nodes]] be the result of running the [[HTML fragment parsing algorithm]]
+with [VAR[context]] set to [VAR[div]] and [VAR[input]] set to [VAR[text]].
+== [71] For each item [VAR[node]] in [VAR[nodes]], in order,
+[[insert]] [VAR[node]] into [VAR[fragment]].
+== [72] Return [VAR[fragment]].
+= [129] Otherwise:
+== [156] Return [[null]].
+]FIG]
+
+** Entries
+
+[52] To [DFN[process an Atom entry]] [VAR[element]], run these steps:
+[FIG(steps)[
+= [78] Let [VAR[entry]] be an [[entry]].
+= [79] For each [[element]] [VAR[child]] in [VAR[element]]'s [F[children]], in order,
+run these substeps:
+== [80] Switch by [VAR[child]]'s [F[namespace]] and [F[local name]]:
+[FIG(switch)[
+: [CODE(XMLe)@en[author]] element in the [[Atom namespace]] or in the [[Atom 0.3 namespace]] :
+Append the result of [[processing an Atom person][process an Atom person]] [VAR[child]]
+to [VAR[entry]]'s [F[authors][entry's author]].
+: [CODE(XMLe)@en[category]] element in the [[Atom namespace]] :
+[FIG(steps)[
+= [89] Let [VAR[category]] a [[category]].
+= [90] Set [VAR[category]]'s [F[term][category's term]] to the
+[CODE(XMLa)@en[term]] attribute value of [VAR[child]], if any, or the empty string.
+= [91] Set [VAR[category]]'s [F[label][category's label]] to the
+[CODE(XMLa)@en[label]] attribute value of [VAR[child]], if any, or [VAR[category]]'s 
+[F[term][category's term]].
+= [92] Append [VAR[category]] to [VAR[entry]]'s [F[categories][entry's categories]].
+]FIG]
+: [CODE(XMLe)@en[subject]] element in the [[Dublin Core namespace]] :
+Append a [[category]] whose [VAR[name]] is
+[VAR[child]]'s [F[child text content]]
+to [VAR[entry]]'s [F[categories][entry's categories]].
+: [CODE(XMLe)@en[published]] element in the [[Atom namespace]] :
+If [VAR[entry]]'s [F[published][entry's published]] is [[null]],
+set [VAR[entry]]'s [F[published][entry's published]] to the result of
+[[processing an Atom date][process an Atom date]] [VAR[child]].
+: [CODE(XMLe)@en[created]] element in the [[Atom 0.3 namespace]] or in the [[Atom namespace]] :
+If [VAR[entry]]'s [F[published][entry's published]] is [[null]],
+set [VAR[entry]]'s [F[published][entry's published]] to the result of
+[[processing a W3C-DTF date][process a W3C-DTF date]] [VAR[child]].
+: [CODE(XMLe)@en[updated]] element in the [[Atom namespace]] :
+If [VAR[entry]]'s [F[updated][entry's updated]] is [[null]],
+set [VAR[entry]]'s [F[updated][entry's updated]] to the result of
+[[processing an Atom date][process an Atom date]] [VAR[child]].
+: [CODE(XMLe)@en[modified]] element in the [[Atom 0.3 namespace]] or in the [[Atom namespace]]:
+If [VAR[entry]]'s [F[updated][entry's updated]] is [[null]],
+set [VAR[entry]]'s [F[updated][entry's updated]] to the result of
+[[processing a W3C-DTF date][process a W3C-DTF date]] [VAR[child]].
+: [CODE(XMLe)@en[title]] element in the [[Atom namespace]] :
+If [VAR[entry]]'s [F[title][entry's title]] is [[null]],
+set [VAR[entry]]'s [F[title][entry's title]] to the result of
+[[processing an Atom text][process an Atom text]] [VAR[child]].
+: [CODE(XMLe)@en[title]] element in the [[Atom 0.3 namespace]] :
+If [VAR[entry]]'s [F[title][entry's title]] is [[null]],
+set [VAR[entry]]'s [F[title][entry's title]] to the result of
+[[processing an Atom 0.3 content][process an Atom 0.3 content]] [VAR[child]].
+: [CODE(XMLe)@en[summary]] element in the [[Atom namespace]] :
+If [VAR[entry]]'s [F[summary][entry's summary]] is [[null]],
+set [VAR[entry]]'s [F[summary][entry's summary]] to the result of
+[[processing an Atom text][process an Atom text]] [VAR[child]].
+: [CODE(XMLe)@en[summary]] element in the [[Atom 0.3 namespace]] :
+If [VAR[entry]]'s [F[summary][entry's summary]] is [[null]],
+set [VAR[entry]]'s [F[summary][entry's summary]] to the result of
+[[processing an Atom 0.3 content][process an Atom 0.3 content]] [VAR[child]].
+: [CODE(XMLe)@en[content]] element in the [[Atom namespace]] :
+If [VAR[entry]]'s [F[content][entry's content]] is [[null]],
+set [VAR[entry]]'s [F[content][entry's content]] to the result of
+[[processing an Atom content][process an Atom content]] [VAR[child]].
+: [CODE(XMLe)@en[content]] element in the [[Atom 0.3 namespace]] :
+If [VAR[entry]]'s [F[content][entry's content]] is [[null]],
+set [VAR[entry]]'s [F[content][entry's content]] to the result of
+[[processing an Atom 0.3 content][process an Atom 0.3 content]] [VAR[child]].
+: [CODE(XMLe)@en[link]] element in the [[Atom namespace]] or in the [[Atom 0.3 namespace]] :
+[[Process an Atom link]] [VAR[child]] for [VAR[entry]], with [VAR[type]] [CODE[entry]].
+: [CODE(XMLe)@en[thumbnail]] element in the [[Media RSS namespace]] :
+[FIG(steps)[
+= [360] If [VAR[entry]]'s [F[thumbnail URL][entry's thumbnail URL]] is [[null]]:
+== [361] Let [VAR[text]] be [VAR[element]]'s [CODE(XMLa)@en[url]] attribute value.
+== [362] If [VAR[text]] is not [[null]] or the [[empty string]]:
+=== [363] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[element]]'s [F[node document]].
+=== [364] If not failed, set [VAR[entry]]'s [F[thumbnail URL][entry's thumbnail URL]] to the [[resulting URL string]].
+]FIG]
+: [CODE(XMLe)@en[duration]] element in the [[iTunes namespace]] :
+[FIG(steps)[
+= [218] If [VAR[entry]]'s [F[duration][entry's duration]] is not [[null]]:
+== [198] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
+== [212] If [VAR[text]] is one or more [[ASCII digits]]:
+=== [217] Set [VAR[entry]]'s [F[duration][entry's duration]] to
+the [[ASCII digits]] in [VAR[text]], interpreted as a decimal number.
+== [215] Otherwise, if [VAR[text]] is one or more [[ASCII digits]],
+followed by a [CODE(char)[:]] character,
+followed by one or more [[ASCII digits]]:
+=== [223] Set [VAR[m]] to the first sequence of [[ASCII digits]] in [VAR[text]],
+interpreted as a decimal number.
+=== [224] Set [VAR[s]] to the second sequence of [[ASCII digits]] in [VAR[text]],
+interpreted as a decimal number.
+=== [230] Set [VAR[entry]]'s [F[duration][entry's duration]] to
+[CODE(math)[[VAR[m]] × 60 + [VAR[s]]]].
+== [216] Otherwise, if [VAR[text]] is one or more [[ASCII digits]],
+followed by a [CODE(char)[:]] character,
+followed by one or more [[ASCII digits]],
+followed by a [CODE(char)[:]] character,
+followed by one or more [[ASCII digits]]:
+=== [231] Set [VAR[h]] to the first sequence of [[ASCII digits]] in [VAR[text]],
+interpreted as a decimal number.
+=== [232] Set [VAR[m]] to the second sequence of [[ASCII digits]] in [VAR[text]],
+interpreted as a decimal number.
+=== [233] Set [VAR[s]] to the third sequence of [[ASCII digits]] in [VAR[text]],
+interpreted as a decimal number.
+=== [257] Set [VAR[entry]]'s [F[duration][entry's duration]] to
+[CODE(math)[[VAR[h]] × 3600 + [VAR[m]] × 60 + [VAR[s]]]].
+]FIG]
+]FIG]
+= [246] Return [VAR[entry]].
+]FIG]
+
+[249] To [DFN[process an RSS 2.0 item]] [VAR[element]], run these steps:
+[FIG(steps)[
+= [248] Let [VAR[entry]] be an [[entry]].
+= [250] For each [[element]] [VAR[child]] in [VAR[element]]'s [F[children]], in order,
+run these substeps:
+== [251] Switch by [VAR[child]]'s [F[namespace]] and [F[local name]]:
+[FIG(switch)[
+: [CODE(XMLe)@en[category]] element in the [[null namespace]] :
+Append a [[category]] whose [VAR[name]] is
+[VAR[child]]'s [F[child text content]]
+to [VAR[entry]]'s [F[categories][entry's categories]].
+: [CODE(XMLe)@en[author]] element in the [[null namespace]] :
+Append the result of [[processing an RSS 2.0 person][process an RSS 2.0 person]] [VAR[child]]
+to [VAR[entry]]'s [F[authors][entry's author]].
+: [CODE(XMLe)@en[creator]] element in the [[Dublin Core namespace]] :
+Append a [[person]] whose [F[name]] is [VAR[element]]'s [F[child text content]]
+to [VAR[entry]]'s [F[authors][entry's author]].
+: [CODE(XMLe)@en[author]] element in the [[iTunes namespace]] :
+Append a [[person]] whose [F[name]] is [VAR[element]]'s [F[child text content]]
+to [VAR[entry]]'s [F[authors][entry's author]].
+: [CODE(XMLe)@en[pubDate]] element in the [[null namespace]]:
+If [VAR[entry]]'s [F[published][entry's published]] is [[null]],
+set [VAR[entry]]'s [F[published][entry's published]] to the result of
+[[processing an RSS 2.0 date][process an RSS 2.0 date]] [VAR[child]].
+: [CODE(XMLe)@en[updated]] element in the [[Atom namespace]]:
+If [VAR[entry]]'s [F[updated][entry's updated]] is [[null]],
+set [VAR[entry]]'s [F[updated][entry's updated]] to the result of
+[[processing an Atom date][process an Atom date]] [VAR[child]].
+: [CODE(XMLe)@en[link]] element in the [[null namespace]] :
+If [VAR[entry]]'s [F[page URL][entry's page URL]] is [[null]],
+set [VAR[entry]]'s [F[page URL][entry's page URL]] to the result of
+[[processing a URL element][process a URL element]] [VAR[child]].
+: [CODE(XMLe)@en[comments]] element in the [[null namespace]] :
+If [VAR[entry]]'s [F[comment page URL][entry's comment page URL]] is [[null]],
+set [VAR[entry]]'s [F[comment page URL][entry's comment page URL]] to the result of
+[[processing a URL element][process a URL element]] [VAR[child]].
+: [CODE(XMLe)@en[thumbnail]] element in the [[Media RSS namespace]] :
+[FIG(steps)[
+= [355] If [VAR[entry]]'s [F[thumbnail URL][entry's thumbnail URL]] is [[null]]:
+== [356] Let [VAR[text]] be [VAR[element]]'s [CODE(XMLa)@en[url]] attribute value.
+== [357] If [VAR[text]] is not [[null]] or the [[empty string]]:
+=== [358] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[element]]'s [F[node document]].
+=== [359] If not failed, set [VAR[entry]]'s [F[thumbnail URL][entry's thumbnail URL]] to the [[resulting URL string]].
+]FIG]
+: [CODE(XMLe)@en[image]] element in the [[iTunes namespace]] :
+[FIG(steps)[
+= [189] If [VAR[entry]]'s [F[thumbnail URL][entry's thumbnail URL]] is [[null]]:
+== [191] Let [VAR[text]] be [VAR[element]]'s [CODE(XMLa)@en[href]] attribute value.
+== [192] If [VAR[text]] is not [[null]] or the [[empty string]]:
+=== [193] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[element]]'s [F[node document]].
+=== [194] If not failed, set [VAR[entry]]'s [F[thumbnail URL][entry's thumbnail URL]] to the [[resulting URL string]].
+]FIG]
+: [CODE(XMLe)@en[enclosure]] element in the [[null namespace]] :
+[FIG(steps)[
+= [279] Let [VAR[enclosure]] be an [[enclosure]].
+= [280] Let [VAR[text]] be [VAR[child]]'s [CODE(XMLa)@en[url]] attribute value.
+= [281] If [VAR[text]] is not [[null]] or the [[empty string]]:
+== [282] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[child]]'s [F[node document]].
+== [283] If not failed:
+=== [195] Set [VAR[enclosure]]'s [F[URL][enclosure's URL]] to the [[resulting URL string]].
+=== [284] Set [VAR[enclosure]]'s [F[type][enclosure's type]] to [VAR[child]]'s
+[CODE(XMLa)@en[type]] attribute value.
+=== [285] Let [VAR[length]] be [VAR[child]]'s [CODE(XMLa)@en[length]] attribute value.
+=== [286] If [VAR[length]] is not null:
+==== [287] Let [VAR[n]] be the result of applying the
+[[rules for parsing non-negative integers]] to [VAR[length]].
+==== [288] If [VAR[n]] is not an error and [VAR[n]] is greater than zero:
+===== [289] Set [VAR[enclosure]]'s [F[length][enclosure's length]] to [VAR[n]].
+=== [290] Append [VAR[enclosure]] to [VAR[object]]'s [F[enclosures][entry's enclosures]].
+]FIG]
+: [CODE(XMLe)@en[title]] element in the [[null namespace]] :
+If [VAR[entry]]'s [F[title][entry's title]] is [[null]],
+set [VAR[entry]]'s [F[title][entry's title]] to [VAR[element]]'s [F[child text content]].
+: [CODE(XMLe)@en[subtitle]] element in the [[iTunes namespace]] :
+If [VAR[entry]]'s [F[subtitle][entry's subtitle]] is [[null]],
+set [VAR[entry]]'s [F[subtitle][entry's subtitle]] to [VAR[element]]'s [F[child text content]].
+: [CODE(XMLe)@en[description]] element in the [[null namespace]] :
+If [VAR[entry]]'s [F[summary][entry's summary]] is [[null]],
+set [VAR[entry]]'s [F[summary][entry's summary]] to the result of
+[[parsing escaped HTML content][parse escaped HTML content]] of [VAR[element]].
+: [CODE(XMLe)@en[summary]] element in the [[iTunes namespace]] :
+If [VAR[entry]]'s [F[subtitle][entry's subtitle]] is [[null]],
+set [VAR[entry]]'s [F[subtitle][entry's subtitle]] to [VAR[element]]'s [F[child text content]].
+: [CODE(XMLe)@en[encoded]] element in the [[RSS content namespace]] :
+If [VAR[entry]]'s [F[content][entry's content]] is [[null]],
+set [VAR[entry]]'s [F[content][entry's content]] to the result of
+[[parsing escaped HTML content][parse escaped HTML content]] of [VAR[element]].
+]FIG]
+= [252] Return [VAR[entry]].
+]FIG]
+
+[322] To [DFN[process an RSS 1.0 item]] [VAR[element]], run these steps:
+[FIG(steps)[
+= [323] Let [VAR[entry]] be an [[entry]].
+= [324] For each [[element]] [VAR[child]] in [VAR[element]]'s [F[children]], in order,
+run these substeps:
+== [325] Switch by [VAR[child]]'s [F[namespace]] and [F[local name]]:
+[FIG(switch)[
+: [CODE(XMLe)@en[link]] element in the [[RSS namespace]] :
+If [VAR[entry]]'s [F[page URL][entry's page URL]] is [[null]],
+set [VAR[entry]]'s [F[page URL][entry's page URL]] to the result of
+[[processing a URL element][process a URL element]] [VAR[child]].
+: [CODE(XMLe)@en[imageurl]] element in the [[Hatena namespace]] :
+If [VAR[entry]]'s [F[thumbnail URL][entry's thumbnail URL]] is [[null]],
+set [VAR[entry]]'s [F[thumbnail URL][entry's thumbnail URL]] to the result of
+[[processing a URL element][process a URL element]] [VAR[child]].
+: [CODE(XMLe)@en[creator]] element in the [[Dublin Core namespace]] :
+Append a [[person]] whose [F[name]] is [VAR[element]]'s [F[child text content]]
+to [VAR[entry]]'s [F[authors][entry's author]].
+: [CODE(XMLe)@en[date]] element in the [[Dublin Core namespace]]:
+If [VAR[entry]]'s [F[updated][entry's updated]] is [[null]],
+set [VAR[entry]]'s [F[updated][entry's updated]] to the result of
+[[processing a W3C-DTF date][process a W3C-DTF date]] [VAR[child]].
+: [CODE(XMLe)@en[subject]] element in the [[Dublin Core namespace]] :
+Append a [[category]] whose [VAR[name]] is
+[VAR[child]]'s [F[child text content]]
+to [VAR[entry]]'s [F[categories][entry's categories]].
+: [CODE(XMLe)@en[title]] element in the [[RSS namespace]] :
+If [VAR[entry]]'s [F[title][entry's title]] is [[null]],
+set [VAR[entry]]'s [F[title][entry's title]] to [VAR[element]]'s [F[child text content]].
+: [CODE(XMLe)@en[description]] element in the [[RSS namespace]] :
+If [VAR[entry]]'s [F[summary][entry's summary]] is [[null]],
+set [VAR[entry]]'s [F[summary][entry's summary]] to the result of
+[[parsing escaped HTML content][parse escaped HTML content]] of [VAR[element]].
+: [CODE(XMLe)@en[encoded]] element in the [[RSS content namespace]] :
+If [VAR[entry]]'s [F[content][entry's content]] is [[null]],
+set [VAR[entry]]'s [F[content][entry's content]] to the result of
+[[parsing escaped HTML content][parse escaped HTML content]] of [VAR[element]].
+]FIG]
+= [343] Return [VAR[entry]].
 ]FIG]
 
 ** Feeds
@@ -406,7 +824,7 @@ in the [[null namespace]].
 [FIG(steps)[
 = [366] If [VAR[feed]]'s [F[logo URL][feed's logo URL]] is [[null]]:
 == [367] Let [VAR[text]] be [VAR[child]]'s [CODE(XMLa)@en[href]] attribute value.
-== [368] If [VAR[text]] is not [[null]]:
+== [368] If [VAR[text]] is not [[null]] or the [[empty string]]:
 === [370] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[child]]'s [F[node document]].
 === [369] If not failed, set [VAR[feed]]'s [F[logo URL][feed's logo URL]] to the [[resulting URL string]].
 ]FIG]
@@ -426,10 +844,14 @@ set [VAR[feed]]'s [F[updated][feed's updated]] to the result of
 : [CODE(XMLe)@en[title]] element in the [[null namespace]] :
 If [VAR[feed]]'s [F[title][feed's title]] is [[null]],
 set [VAR[feed]]'s [F[title][feed's title]] to [VAR[child]]'s [F[child text content]].
-: [CODE(XMLe)@en[subtitle]] element in the [[null namespace]] :
+: [CODE(XMLe)@en[subtitle]] element in the [[iTunes namespace]] :
 If [VAR[feed]]'s [F[subtitle][feed's subtitle]] is [[null]],
 set [VAR[feed]]'s [F[subtitle][feed's subtitle]] to [VAR[child]]'s [F[child text content]].
 : [CODE(XMLe)@en[description]] element in the [[null namespace]] :
+If [VAR[feed]]'s [F[description][feed's description]] is [[null]],
+set [VAR[feed]]'s [F[description][feed's description]] to
+[VAR[child]]'s [F[child text content]].
+: [CODE(XMLe)@en[summary]] element in the [[iTunes namespace]] :
 If [VAR[feed]]'s [F[description][feed's description]] is [[null]],
 set [VAR[feed]]'s [F[description][feed's description]] to
 [VAR[child]]'s [F[child text content]].
@@ -479,340 +901,15 @@ set [VAR[feed]]'s [F[logo URL][feed's page URL]] to the result of
 ]FIG]
 ]FIG]
 
-[52] To [DFN[process an Atom entry]] [VAR[element]], run these steps:
-[FIG(steps)[
-= [78] Let [VAR[entry]] be an [[entry]].
-= [79] For each [[element]] [VAR[child]] in [VAR[element]]'s [F[children]], in order,
-run these substeps:
-== [80] Switch by [VAR[child]]'s [F[namespace]] and [F[local name]]:
-[FIG(switch)[
-: [CODE(XMLe)@en[author]] element in the [[Atom namespace]] or in the [[Atom 0.3 namespace]] :
-Append the result of [[processing an Atom person][process an Atom person]] [VAR[child]]
-to [VAR[entry]]'s [F[authors][entry's author]].
-: [CODE(XMLe)@en[category]] element in the [[Atom namespace]] :
-[FIG(steps)[
-= [89] Let [VAR[category]] a [[category]].
-= [90] Set [VAR[category]]'s [F[term][category's term]] to the
-[CODE(XMLa)@en[term]] attribute value of [VAR[child]], if any, or the empty string.
-= [91] Set [VAR[category]]'s [F[label][category's label]] to the
-[CODE(XMLa)@en[label]] attribute value of [VAR[child]], if any, or [VAR[category]]'s 
-[F[term][category's term]].
-= [92] Append [VAR[category]] to [VAR[entry]]'s [F[categories][entry's categories]].
-]FIG]
-: [CODE(XMLe)@en[subject]] element in the [[Dublin Core namespace]] :
-Append a [[category]] whose [VAR[name]] is
-[VAR[child]]'s [F[child text content]]
-to [VAR[entry]]'s [F[categories][entry's categories]].
-: [CODE(XMLe)@en[published]] element in the [[Atom namespace]] :
-If [VAR[entry]]'s [F[published][entry's published]] is [[null]],
-set [VAR[entry]]'s [F[published][entry's published]] to the result of
-[[processing an Atom date][process an Atom date]] [VAR[child]].
-: [CODE(XMLe)@en[created]] element in the [[Atom 0.3 namespace]] or in the [[Atom namespace]] :
-If [VAR[entry]]'s [F[published][entry's published]] is [[null]],
-set [VAR[entry]]'s [F[published][entry's published]] to the result of
-[[processing a W3C-DTF date][process a W3C-DTF date]] [VAR[child]].
-: [CODE(XMLe)@en[updated]] element in the [[Atom namespace]] :
-If [VAR[entry]]'s [F[updated][entry's updated]] is [[null]],
-set [VAR[entry]]'s [F[updated][entry's updated]] to the result of
-[[processing an Atom date][process an Atom date]] [VAR[child]].
-: [CODE(XMLe)@en[modified]] element in the [[Atom 0.3 namespace]] or in the [[Atom namespace]]:
-If [VAR[entry]]'s [F[updated][entry's updated]] is [[null]],
-set [VAR[entry]]'s [F[updated][entry's updated]] to the result of
-[[processing a W3C-DTF date][process a W3C-DTF date]] [VAR[child]].
-: [CODE(XMLe)@en[title]] element in the [[Atom namespace]] :
-If [VAR[entry]]'s [F[title][entry's title]] is [[null]],
-set [VAR[entry]]'s [F[title][entry's title]] to the result of
-[[processing an Atom text][process an Atom text]] [VAR[child]].
-: [CODE(XMLe)@en[title]] element in the [[Atom 0.3 namespace]] :
-If [VAR[entry]]'s [F[title][entry's title]] is [[null]],
-set [VAR[entry]]'s [F[title][entry's title]] to the result of
-[[processing an Atom 0.3 content][process an Atom 0.3 content]] [VAR[child]].
-: [CODE(XMLe)@en[summary]] element in the [[Atom namespace]] :
-If [VAR[entry]]'s [F[summary][entry's summary]] is [[null]],
-set [VAR[entry]]'s [F[summary][entry's summary]] to the result of
-[[processing an Atom text][process an Atom text]] [VAR[child]].
-: [CODE(XMLe)@en[summary]] element in the [[Atom 0.3 namespace]] :
-If [VAR[entry]]'s [F[summary][entry's summary]] is [[null]],
-set [VAR[entry]]'s [F[summary][entry's summary]] to the result of
-[[processing an Atom 0.3 content][process an Atom 0.3 content]] [VAR[child]].
-: [CODE(XMLe)@en[content]] element in the [[Atom namespace]] :
-If [VAR[entry]]'s [F[content][entry's content]] is [[null]],
-set [VAR[entry]]'s [F[content][entry's content]] to the result of
-[[processing an Atom content][process an Atom content]] [VAR[child]].
-: [CODE(XMLe)@en[content]] element in the [[Atom 0.3 namespace]] :
-If [VAR[entry]]'s [F[content][entry's content]] is [[null]],
-set [VAR[entry]]'s [F[content][entry's content]] to the result of
-[[processing an Atom 0.3 content][process an Atom 0.3 content]] [VAR[child]].
-: [CODE(XMLe)@en[link]] element in the [[Atom namespace]] or in the [[Atom 0.3 namespace]] :
-[[Process an Atom link]] [VAR[child]] for [VAR[entry]], with [VAR[type]] [CODE[entry]].
-: [CODE(XMLe)@en[thumbnail]] element in the [[Media RSS namespace]] :
-[FIG(steps)[
-= [360] If [VAR[entry]]'s [F[thumbnail URL][entry's thumbnail URL]] is [[null]]:
-== [361] Let [VAR[text]] be [VAR[element]]'s [CODE(XMLa)@en[url]] attribute value.
-== [362] If [VAR[text]] is not [[null]]:
-=== [363] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[element]]'s [F[node document]].
-=== [364] If not failed, set [VAR[entry]]'s [F[thumbnail URL][entry's thumbnail URL]] to the [[resulting URL string]].
-]FIG]
-]FIG]
-= [246] Return [VAR[entry]].
-]FIG]
-
-[249] To [DFN[process an RSS 2.0 item]] [VAR[element]], run these steps:
-[FIG(steps)[
-= [248] Let [VAR[entry]] be an [[entry]].
-= [250] For each [[element]] [VAR[child]] in [VAR[element]]'s [F[children]], in order,
-run these substeps:
-== [251] Switch by [VAR[child]]'s [F[namespace]] and [F[local name]]:
-[FIG(switch)[
-: [CODE(XMLe)@en[category]] element in the [[null namespace]] :
-Append a [[category]] whose [VAR[name]] is
-[VAR[child]]'s [F[child text content]]
-to [VAR[entry]]'s [F[categories][entry's categories]].
-: [CODE(XMLe)@en[link]] element in the [[null namespace]] :
-If [VAR[entry]]'s [F[page URL][entry's page URL]] is [[null]],
-set [VAR[entry]]'s [F[page URL][entry's page URL]] to the result of
-[[processing a URL element][process a URL element]] [VAR[child]].
-: [CODE(XMLe)@en[comments]] element in the [[null namespace]] :
-If [VAR[entry]]'s [F[comment page URL][entry's comment page URL]] is [[null]],
-set [VAR[entry]]'s [F[comment page URL][entry's comment page URL]] to the result of
-[[processing a URL element][process a URL element]] [VAR[child]].
-: [CODE(XMLe)@en[thumbnail]] element in the [[Media RSS namespace]] :
-[FIG(steps)[
-= [355] If [VAR[entry]]'s [F[thumbnail URL][entry's thumbnail URL]] is [[null]]:
-== [356] Let [VAR[text]] be [VAR[element]]'s [CODE(XMLa)@en[url]] attribute value.
-== [357] If [VAR[text]] is not [[null]]:
-=== [358] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[element]]'s [F[node document]].
-=== [359] If not failed, set [VAR[entry]]'s [F[thumbnail URL][entry's thumbnail URL]] to the [[resulting URL string]].
-]FIG]
-: [CODE(XMLe)@en[author]] element in the [[null namespace]] :
-Append the result of [[processing an RSS 2.0 person][process an RSS 2.0 person]] [VAR[child]]
-to [VAR[entry]]'s [F[authors][entry's author]].
-: [CODE(XMLe)@en[creator]] element in the [[Dublin Core namespace]] :
-Append a [[person]] whose [F[name]] is [VAR[element]]'s [F[child text content]]
-to [VAR[entry]]'s [F[authors][entry's author]].
-: [CODE(XMLe)@en[pubDate]] element in the [[null namespace]]:
-If [VAR[entry]]'s [F[published][entry's published]] is [[null]],
-set [VAR[entry]]'s [F[published][entry's published]] to the result of
-[[processing an RSS 2.0 date][process an RSS 2.0 date]] [VAR[child]].
-: [CODE(XMLe)@en[updated]] element in the [[Atom namespace]]:
-If [VAR[entry]]'s [F[updated][entry's updated]] is [[null]],
-set [VAR[entry]]'s [F[updated][entry's updated]] to the result of
-[[processing an Atom date][process an Atom date]] [VAR[child]].
-: [CODE(XMLe)@en[title]] element in the [[null namespace]] :
-If [VAR[entry]]'s [F[title][entry's title]] is [[null]],
-set [VAR[entry]]'s [F[title][entry's title]] to [VAR[element]]'s [F[child text content]].
-: [CODE(XMLe)@en[description]] element in the [[null namespace]] :
-If [VAR[entry]]'s [F[summary][entry's summary]] is [[null]],
-set [VAR[entry]]'s [F[summary][entry's summary]] to the result of
-[[parsing escaped HTML content][parse escaped HTML content]] of [VAR[element]].
-: [CODE(XMLe)@en[encoded]] element in the [[RSS content namespace]] :
-If [VAR[entry]]'s [F[content][entry's content]] is [[null]],
-set [VAR[entry]]'s [F[content][entry's content]] to the result of
-[[parsing escaped HTML content][parse escaped HTML content]] of [VAR[element]].
-: [CODE(XMLe)@en[enclosure]] element in the [[null namespace]] :
-[FIG(steps)[
-= [279] Let [VAR[enclosure]] be an [[enclosure]].
-= [280] Let [VAR[text]] be [VAR[child]]'s [CODE(XMLa)@en[url]] attribute value.
-= [281] If [VAR[text]] is not [[null]]:
-== [282] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[child]]'s [F[node document]].
-== [283] If not failed, set [VAR[enclosure]]'s [F[URL][enclosure's URL]] to the [[resulting URL string]].
-= [284] Set [VAR[enclosure]]'s [F[type][enclosure's type]] to [VAR[child]]'s
-[CODE(XMLa)@en[type]] attribute value.
-= [285] Let [VAR[length]] be [VAR[child]]'s [CODE(XMLa)@en[length]] attribute value.
-= [286] If [VAR[length]] is not null:
-== [287] Let [VAR[n]] be the result of applying the
-[[rules for parsing non-negative integers]] to [VAR[length]].
-== [288] If [VAR[n]] is not an error and [VAR[n]] is greater than zero:
-=== [289] Set [VAR[enclosure]]'s [F[length][enclosure's length]] to [VAR[n]].
-= [290] Append [VAR[enclosure]] to [VAR[object]]'s [F[enclosures][entry's enclosures]].
-]FIG]
-]FIG]
-= [252] Return [VAR[entry]].
-]FIG]
-
-[322] To [DFN[process an RSS 1.0 item]] [VAR[element]], run these steps:
-[FIG(steps)[
-= [323] Let [VAR[entry]] be an [[entry]].
-= [324] For each [[element]] [VAR[child]] in [VAR[element]]'s [F[children]], in order,
-run these substeps:
-== [325] Switch by [VAR[child]]'s [F[namespace]] and [F[local name]]:
-[FIG(switch)[
-: [CODE(XMLe)@en[link]] element in the [[RSS namespace]] :
-If [VAR[entry]]'s [F[page URL][entry's page URL]] is [[null]],
-set [VAR[entry]]'s [F[page URL][entry's page URL]] to the result of
-[[processing a URL element][process a URL element]] [VAR[child]].
-: [CODE(XMLe)@en[imageurl]] element in the [[Hatena namespace]] :
-If [VAR[entry]]'s [F[thumbnail URL][entry's thumbnail URL]] is [[null]],
-set [VAR[entry]]'s [F[thumbnail URL][entry's thumbnail URL]] to the result of
-[[processing a URL element][process a URL element]] [VAR[child]].
-: [CODE(XMLe)@en[creator]] element in the [[Dublin Core namespace]] :
-Append a [[person]] whose [F[name]] is [VAR[element]]'s [F[child text content]]
-to [VAR[entry]]'s [F[authors][entry's author]].
-: [CODE(XMLe)@en[date]] element in the [[Dublin Core namespace]]:
-If [VAR[entry]]'s [F[updated][entry's updated]] is [[null]],
-set [VAR[entry]]'s [F[updated][entry's updated]] to the result of
-[[processing a W3C-DTF date][process a W3C-DTF date]] [VAR[child]].
-: [CODE(XMLe)@en[subject]] element in the [[Dublin Core namespace]] :
-Append a [[category]] whose [VAR[name]] is
-[VAR[child]]'s [F[child text content]]
-to [VAR[entry]]'s [F[categories][entry's categories]].
-: [CODE(XMLe)@en[title]] element in the [[RSS namespace]] :
-If [VAR[entry]]'s [F[title][entry's title]] is [[null]],
-set [VAR[entry]]'s [F[title][entry's title]] to [VAR[element]]'s [F[child text content]].
-: [CODE(XMLe)@en[description]] element in the [[RSS namespace]] :
-If [VAR[entry]]'s [F[summary][entry's summary]] is [[null]],
-set [VAR[entry]]'s [F[summary][entry's summary]] to the result of
-[[parsing escaped HTML content][parse escaped HTML content]] of [VAR[element]].
-: [CODE(XMLe)@en[encoded]] element in the [[RSS content namespace]] :
-If [VAR[entry]]'s [F[content][entry's content]] is [[null]],
-set [VAR[entry]]'s [F[content][entry's content]] to the result of
-[[parsing escaped HTML content][parse escaped HTML content]] of [VAR[element]].
-]FIG]
-= [343] Return [VAR[entry]].
-]FIG]
-
-[24] To [DFN[process an Atom person]] [VAR[element]], run these steps:
-[FIG(steps)[
-= [54] Let [VAR[person]] be a [[person]].
-= [55] For each [[element]] [VAR[child]] in [VAR[element]]'s [F[children]], in order,
-run these substeps:
-== [56] Switch by [VAR[child]]'s [F[namespace]] and [F[local name]]:
-[FIG(switch)[
-: [CODE(XMLe)@en[name]] element in the [[Atom namespace]] or in the [[Atom 0.3 namespace]]:
-If [VAR[person]]'s [F[name][person's name]] is [[null]],
-set [VAR[person]]'s [F[name][person's name]] to [VAR[child]]'s [F[child text content]].
-: [CODE(XMLe)@en[email]] element in the [[Atom namespace]] or in the [[Atom 0.3 namespace]]:
-If [VAR[person]]'s [F[email][person's email]] is [[null]],
-set [VAR[person]]'s [F[email][person's email]] to [VAR[child]]'s [F[child text content]].
-: [CODE(XMLe)@en[uri]] element in the [[Atom namespace]] or in the [[Atom 0.3 namespace]] :
-If [VAR[person]]'s [F[page URL][person's page URL]] is [[null]],
-set [VAR[person]]'s [F[page URL][person's page URL]] to the result of
-[[processing a URL element][process a URL element]] [VAR[child]].
-]FIG]
-= [53] Return [VAR[person]].
-]FIG]
-
-[247] To [DFN[process an RSS 2.0 person]] [VAR[element]], run these steps:
-[FIG(steps)[
-= [254] Let [VAR[person]] be a [[person]].
-= [253] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
-= [255] Set [VAR[person]]'s [F[name][person's name]] to [VAR[text]].
-= [256] Return [VAR[person]].
-]FIG]
-
-@@ [257] email address should be extracted from [VAR[text]]?
-
-[50] To [DFN[process an Atom text]] [VAR[element]], run these steps:
-[FIG(steps)[
-= [61] Let [VAR[type]] be the [CODE(XMLa)@en[type]] attribute value
-of [VAR[element]], if any, or [[null]].
-= [62] If [VAR[type]] is [CODE[html]]:
-== [267] Return the result of [[parsing escaped HTML content][parse escaped HTML content]] of [VAR[element]].
-= [63] Otherwise, if [VAR[type]] is [CODE[xhtml]] and
-[VAR[element]]'s [F[children]] contains a [CODE(HTMLe)@en[div]] element:
-== [66] Let [VAR[div]] be a [[clone]] of [VAR[element]]'s
-first [CODE(HTMLe)@en[div]] element child, with [VAR[clone children flag]] set.
-== [67] Let [VAR[fragment]] be a [CODE(DOMi)@en[DocumentFragment]]
-whose [F[node document]] is [VAR[element]]'s [F[node document]].
-== [68] For each child [VAR[node]] in [VAR[div]]'s [F[children]], in order,
-[[insert]] [VAR[node]] into [VAR[fragment]].
-== [69] Return [VAR[fragment]].
-= [64] Otherwise:
-== [65] Return [VAR[element]]'s [F[child text content]].
-]FIG]
-
-[102] To [DFN[process an Atom content]] [VAR[element]], run these steps:
-[FIG(steps)[
-= [103] Let [VAR[type]] be the [CODE(XMLa)@en[type]] attribute value
-of [VAR[element]], if any, or [[null]].
-= [104] If [VAR[type]] is either [[null]], [CODE[text]], [CODE[html]], or [CODE[xhtml]]:
-== [105] Return the result of [[processing an Atom text][process an Atom text]]
-[VAR[element]] and abort these steps.
-= [106] If [VAR[element]] has a [CODE(XMLa)@en[src]] attribute:
-== [108] Let [VAR[text]] be [VAR[element]]'s [CODE(XMLa)@en[src]] attribute value.
-== [109] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[element]]'s [F[node document]].
-== [111] If failed, return ([[null]], [[null]]) and abort these steps.
-== [112] Return the [[resulting URL record]] and abort these steps.
-= [110] Let [VAR[mime]] be the result of [[parsing][parse a MIME type]] [VAR[text]] as a [[MIME type]].
-= [113] If [VAR[mime]] is an [[XML MIME type]]:
-== [125] Let [VAR[fragment]] be a [CODE(DOMi)@en[DocumentFragment]]
-whose [F[node document]] is [VAR[element]]'s [F[node document]].
-== [126] For each child [VAR[node]] in [VAR[element]]'s [F[children]], in order,
-[[insert]] [VAR[node]] into [VAR[fragment]].
-== [127] Return [VAR[fragment]].
-= [114] Otherwise:
-== [117] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
-== [123] If [VAR[mime]]'s [F[type]] is [CODE(MIME)@en[text][text/[VAR[*]]]]
-([[ASCII case-insensitive]]):
-=== [124] Return ([VAR[type]], [VAR[text]]).
-== [115] Otherwise:
-=== [118] Let [VAR[binary]] be the result of [[decoding base64][decode base64]] [VAR[text]].
-=== [119] If [VAR[binary]] is [[null]]:
-==== [120] Return ([[null]], [[null]]).
-=== [121] Otherwise:
-==== [122] Return ([VAR[type]], [VAR[binary]]).
-]FIG]
-
-;; [107] These steps return either 
-a [[string]], a [[URL record]], a [[data pair]], or a [CODE(DOMi)@en[Node]].
-
-[153] To [DFN[process an Atom 0.3 content]] [VAR[element]], run these steps:
-[FIG(steps)[
-= [155] Let [VAR[mode]] be [VAR[element]]'s [CODE(XMLa)@en[mode]] attribute value,
-if any, or [CODE(MIME)@en[xml]].
-= [154] Let [VAR[type]] be [VAR[element]]'s [CODE(XMLa)@en[type]] attribute value,
-if any, or [CODE(MIME)@en[text/plain]].
-= [175] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
-= [162] If [VAR[mode]] is [CODE[escaped]]:
-== [177] If [VAR[type]] is equal to [CODE(MIME)@en[text/plain]] ([[ASCII case-insensitive]]):
-=== [179] Return [VAR[text]].
-== [180] Otherwise, if [VAR[type]] is equal to [CODE(MIME)@en[text/html]] ([[ASCII case-insensitive]]):
-=== [268] Return the result of [[parsing escaped HTML content][parse escaped HTML content]] of [VAR[element]].
-== [185] Otherwise:
-=== [186] Return ([VAR[type]], [VAR[text]]).
-= [163] Otherwise, if [VAR[mode]] is [CODE[base64]]:
-== [176] Let [VAR[binary]] be the result of [[decoding base64][decode base64]] [VAR[text]].
-== [181] If [VAR[binary]] is [[null]]:
-=== [182] Return ([[null]], [[null]]).
-== [183] Otherwise:
-=== [184] Return ([VAR[type]], [VAR[binary]]).
-= [164] Otherwise:
-== [165] If [VAR[type]] is equal to [CODE(MIME)@en[text/plain]] ([[ASCII case-insensitive]]):
-=== [170] Return [VAR[text]].
-== [171] Otherwise:
-=== [172] Let [VAR[fragment]] be a [CODE(DOMi)@en[DocumentFragment]]
-whose [F[node document]] is [VAR[element]]'s [F[node document]].
-=== [173] For each child [VAR[node]] in [VAR[element]]'s [F[children]], in order,
-[[insert]] [VAR[node]] into [VAR[fragment]].
-=== [174] Return [VAR[fragment]].
-]FIG]
-
-;; [225] These steps return either a [[string]], a [[data pair]], or a [CODE(DOMi)@en[Node]].
-
-@@ [116] Need to define [[decode base64]] [VAR[text]].
-It returns [[null]] if failed.
-
-[178] To [DFN[parse escaped HTML content]] of element [VAR[element]], run these steps:
-[FIG(steps)[
-= [73] Let [VAR[div]] be a [CODE(HTMLe)@en[div]] element
-whose [F[node document]] is [VAR[element]]'s [F[node document]].
-= [74] Let [VAR[fragment]] be a [CODE(DOMi)@en[DocumentFragment]]
-whose [F[node document]] is [VAR[element]]'s [F[node document]].
-= [70] Let [VAR[nodes]] be the result of running the [[HTML fragment parsing algorithm]]
-with [VAR[context]] element [VAR[div]] and
-[VAR[input]] [VAR[element]]'s [F[child text content]].
-= [71] For each item [VAR[node]] in [VAR[nodes]], in order,
-[[insert]] [VAR[node]] into [VAR[fragment]].
-= [72] Return [VAR[fragment]].
-]FIG]
-
 * References
 
 [43] The key word [DFN[[MUST[MUST]]]] is defined by [[RFC 2119]].
 
-[34] The term [DFN[[[URL record]]]] is defined by the [[URL Standard]].
+[34] The terms [DFN[[[ASCII digits]]]] and [DFN[[[URL record]]]] 
+are defined by the [[URL Standard]].
 
-[42] The terms [DFN[[[MIME type]]]], [DFN[[[computed MIME type]]]], and
+[42] The terms [DFN[[[MIME type]]]], [DFN[[[computed MIME type]]]],
+[DFN[[F[type]]]], and
 [DFN[[[parse a MIME type]]]] are defined by the [[MIME Sniffing Standard]].
 
 [41] The terms [DFN[[[response]]]], [DFN[[[status][status code]]]],
@@ -826,7 +923,8 @@ are defined by the [[Fetch Standard]].
 [DFN[[F[node document]]]] are defined by the [[DOM Standard]].
 
 [23] The terms
-[DFN[[[ASCII case-insensitive]]]],
+[DFN[[[XML MIME type]]]],
+[DFN[[[Unicode code point]]]], [DFN[[[space characters]]]], [DFN[[[ASCII case-insensitive]]]],
 [DFN[[[parse a URL]]]], [DFN[[[resulting URL string]]]], [DFN[[[resulting URL string]]]],
 [DFN[[[rules for parsing non-negative integers]]]],
 [DFN[[F[document's address]]]], [DFN[[F[document's character encoding]]]],
