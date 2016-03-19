@@ -1,3 +1,4 @@
+* Data model
 
 [15] A [DFN[feed]] has
 [DFN[[F[entries]]][feed's entries]], which is a list of [[entries][entry]], and
@@ -88,6 +89,46 @@ They are initially [[null]].
 [DFN[[F[term]]][category's term]] and
 [DFN[[F[label]]][category's label]].
 
+* Parsing
+
+** Namespaces
+
+[365] The following namespaces are used in this section:
+[FIG(table)[
+:name: Name
+:url: [[Namespace URL][namespace URL]]
+
+:name: The [DFN@en[null namespace]]
+:url: [[null]]
+
+:name: The [DFN@en[Atom namespace]]
+:url: [CODE(URI)@en[http://www.w3.org/2005/Atom]]
+
+:name: The [DFN@en[Atom 0.3 namespace]]
+:url: [CODE(URI)@en[http://purl.org/atom/ns#]]
+
+:name: The [DFN@en[Dublin Core namespace]]
+:url: [CODE(URI)@en[http://purl.org/dc/elements/1.1/]]
+
+:name: The [DFN@en[Hatena namespace]]
+:url: [CODE(URI)@en[http://www.hatena.ne.jp/info/xmlns#]]
+
+:name: The [DFN@en[Media RSS namespace]]
+:url: [CODE(URI)@en[http://search.yahoo.com/mrss/]]
+
+:name: The [DFN@en[RDF namespace]]
+:url: [CODE(URI)@en[http://www.w3.org/1999/02/22-rdf-syntax-ns#]]
+
+:name: The [DFN@en[RSS namespace]]
+:url: [CODE(URI)@en[http://purl.org/rss/1.0/]]
+
+:name: The [DFN@en[RSS content namespace]]
+:url: [CODE(URI)@en[http://purl.org/rss/1.0/modules/content/]]
+
+]FIG]
+
+** Links
+
 [130] The [DFN[[F[link relation]]]] of a [CODE(XMLe)@en[link][atom:link]] element 
 in the [[Atom namespace]] or in the [[Atom 0.3 namespace]]
 [VAR[element]] is the value returned by the following steps:
@@ -113,6 +154,50 @@ if any, or the empty string.
 = [143] If failed, return [[null]].
 = [144] Otherwise, return the [[resulting URL record]].
 ]FIG]
+
+[234] To [DFN[process an Atom link]] [VAR[element]] for [VAR[object]]
+with [VAR[type]], run these steps:
+
+[FIG(steps)[
+= [139] If [VAR[element]]'s [F[link relation]] is 
+[CODE[http://www.iana.org/assignments/relation/alternate]]:
+== [145] If [VAR[object]]'s [F[page URL]] is [[null]]:
+=== [146] Set [VAR[object]]'s [F[page URL]] to
+[VAR[child]]'s [F[href URL]].
+= [235] If [VAR[mode]] is [CODE[feed]]:
+== [150] If [VAR[element]]'s [F[link relation]] is 
+[CODE[http://www.iana.org/assignments/relation/self]]:
+=== [151] If [VAR[object]]'s [F[feed URL][feed's feed URL]] is [[null]]:
+==== [152] Set [VAR[object]]'s [F[feed URL][feed's feed URL]] to
+[VAR[child]]'s [F[href URL]].
+== [199] If [VAR[element]]'s [F[link relation]] is 
+[CODE[http://www.iana.org/assignments/relation/prev]] or
+[CODE[http://www.iana.org/assignments/relation/previous]]:
+=== [201] If [VAR[object]]'s [F[previous feed URL][feed's previous feed URL]] is [[null]]:
+==== [202] Set [VAR[object]]'s [F[previous feed URL][feed's previous feed URL]] to
+[VAR[child]]'s [F[href URL]].
+== [203] If [VAR[element]]'s [F[link relation]] is 
+[CODE[http://www.iana.org/assignments/relation/next]]:
+=== [204] If [VAR[object]]'s [F[next feed URL][feed's next feed URL]] is [[null]]:
+==== [205] Set [VAR[object]]'s [F[next feed URL][feed's next feed URL]] to
+[VAR[child]]'s [F[href URL]].
+= [269] If [VAR[mode]] is [CODE[entry]]:
+== [270] If [VAR[element]]'s [F[link relation]] is 
+[CODE[http://www.iana.org/assignments/relation/enclosure]]:
+=== [271] Let [VAR[enclosure]] be an [[enclosure]],
+whose [F[URL][enclosure's URL]] is [VAR[child]]'s [F[href URL]].
+=== [273] Set [VAR[enclosure]]'s [F[type][enclosure's type]] to [VAR[child]]'s
+[CODE(XMLa)@en[type]] attribute value.
+=== [275] Let [VAR[length]] be [VAR[child]]'s [CODE(XMLa)@en[length]] attribute value.
+=== [276] If [VAR[length]] is not null:
+==== [277] Let [VAR[n]] be the result of applying the
+[[rules for parsing non-negative integers]] to [VAR[length]].
+==== [278] If [VAR[n]] is not an error:
+===== [274] Set [VAR[enclosure]]'s [F[length][enclosure's length]] to [VAR[n]].
+=== [272] Append [VAR[enclosure]] to [VAR[object]]'s [F[enclosures][entry's enclosures]].
+]FIG]
+
+** Responses
 
 [1] To [DFN[process a feed response]] [VAR[res]], run these steps:
 [FIG(steps)[
@@ -252,20 +337,20 @@ run these substeps:
 run these substeps:
 == [236] Switch by [VAR[child]]'s [F[namespace]] and [F[local name]]:
 [FIG(switch)[
-: [CODE(XMLe)@en[channel]] element in the [[RSS 1.0 namespace]] :
+: [CODE(XMLe)@en[channel]] element in the [[RSS namespace]] :
 [[Process an RSS 1.0 channel][process an RSS 1.0 channel]] [VAR[element]] with [VAR[feed]].
-: [CODE(XMLe)@en[item]] element in the [[RSS 1.0 namespace]] :
+: [CODE(XMLe)@en[item]] element in the [[RSS namespace]] :
 [FIG(steps)[
 = [237] Let [VAR[entry]] be the result of [[processing an RSS 1.0 item][process an RSS 1.0 item]]
 [VAR[child]].
 = [241] Set [VAR[entry]]'s [F[feed][entry's feed]] to [VAR[feed]].
 = [303] Append [VAR[entry]] to [VAR[feed]]'s [F[entries][feed's entry]].
 ]FIG]
-: [CODE(XMLe)@en[image]] element in the [[RSS 1.0 namespace]] :
+: [CODE(XMLe)@en[image]] element in the [[RSS namespace]] :
 [FIG(steps)[
 = [305] If [VAR[feed]]'s [F[logo URL][feed's logo URL]] is [[null]]:
 == [306] Let [VAR[element]] be [VAR[child]]'s first [CODE(XMLe)@en[url]] child element
-in the [[RSS 1.0 namespace]].
+in the [[RSS namespace]].
 == [307] If [VAR[element]] is not [[null]]:
 === [308] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
 === [309] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[child]]'s [F[node document]].
@@ -340,7 +425,7 @@ run these steps:
 run these substeps:
 == [313] Switch by [VAR[child]]'s [F[namespace]] and [F[local name]]:
 [FIG(switch)[
-: [CODE(XMLe)@en[description]] element in the [[RSS 1.0 namespace]] :
+: [CODE(XMLe)@en[description]] element in the [[RSS namespace]] :
 If [VAR[feed]]'s [F[description][feed's description]] is [[null]],
 set [VAR[feed]]'s [F[description][feed's description]] to
 [VAR[child]]'s [F[child text content]].
@@ -353,13 +438,13 @@ to [VAR[feed]]'s [F[authors][feed's author]].
 == [315] Set [VAR[feed]]'s [F[updated][feed's updated]] to the result of
 [[processing a W3C-DTF date][process a W3C-DTF date]] [VAR[child]].
 ]FIG]
-: [CODE(XMLe)@en[title]] element in the [[RSS 1.0 namespace]] :
+: [CODE(XMLe)@en[title]] element in the [[RSS namespace]] :
 [FIG(steps)[
 = [316] If [VAR[feed]]'s [F[title][feed's title]] is [[null]]:
 == [317] Set [VAR[feed]]'s [F[title][feed's title]] to 
 [VAR[child]]'s [F[child text content]].
 ]FIG]
-: [CODE(XMLe)@en[link]] element in the [[RSS 1.0 namespace]] :
+: [CODE(XMLe)@en[link]] element in the [[RSS namespace]] :
 [FIG(steps)[
 = [318] If [VAR[feed]]'s [F[page URL][feed's page URL]] is [[null]]:
 == [319] Let [VAR[text]] be [VAR[child]]'s [F[child text content]].
@@ -574,7 +659,7 @@ to [VAR[entry]]'s [F[authors][entry's author]].
 run these substeps:
 == [325] Switch by [VAR[child]]'s [F[namespace]] and [F[local name]]:
 [FIG(switch)[
-: [CODE(XMLe)@en[link]] element in the [[RSS 1.0 namespace]] :
+: [CODE(XMLe)@en[link]] element in the [[RSS namespace]] :
 [FIG(steps)[
 = [331] If [VAR[entry]]'s [F[page URL][entry's page URL]] is [[null]]:
 == [332] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
@@ -605,13 +690,13 @@ to [VAR[entry]]'s [F[authors][entry's author]].
 = [329] Set [VAR[category]]'s [F[label][category's label]] to [VAR[text]].
 = [330] Append [VAR[category]] to [VAR[entry]]'s [F[categories][entry's categories]].
 ]FIG]
-: [CODE(XMLe)@en[title]] element in the [[RSS 1.0 namespace]] :
+: [CODE(XMLe)@en[title]] element in the [[RSS namespace]] :
 [FIG(steps)[
 = [337] If [VAR[entry]]'s [F[title][entry's title]] is [[null]]:
 == [338] Set [VAR[entry]]'s [F[title][entry's title]] to 
 [VAR[element]]'s [F[child text content]].
 ]FIG]
-: [CODE(XMLe)@en[description]] element in the [[RSS 1.0 namespace]] :
+: [CODE(XMLe)@en[description]] element in the [[RSS namespace]] :
 [FIG(steps)[
 = [339] If [VAR[entry]]'s [F[summary][entry's summary]] is [[null]]:
 == [340] Set [VAR[entry]]'s [F[summary][entry's summary]] to the result of
@@ -763,48 +848,6 @@ with [VAR[context]] element [VAR[div]] and
 = [71] For each item [VAR[node]] in [VAR[nodes]], in order,
 [[insert]] [VAR[node]] into [VAR[fragment]].
 = [72] Return [VAR[fragment]].
-]FIG]
-
-[234] To [DFN[process an Atom link]] [VAR[element]] for [VAR[object]]
-with [VAR[type]], run these steps:
-
-[FIG(steps)[
-= [139] If [VAR[element]]'s [F[link relation]] is 
-[CODE[http://www.iana.org/assignments/relation/alternate]]:
-== [145] If [VAR[object]]'s [F[page URL]] is [[null]]:
-=== [146] Set [VAR[object]]'s [F[page URL]] to
-[VAR[child]]'s [F[href URL]].
-= [235] If [VAR[mode]] is [CODE[feed]]:
-== [150] If [VAR[element]]'s [F[link relation]] is 
-[CODE[http://www.iana.org/assignments/relation/self]]:
-=== [151] If [VAR[object]]'s [F[feed URL][feed's feed URL]] is [[null]]:
-==== [152] Set [VAR[object]]'s [F[feed URL][feed's feed URL]] to
-[VAR[child]]'s [F[href URL]].
-== [199] If [VAR[element]]'s [F[link relation]] is 
-[CODE[http://www.iana.org/assignments/relation/prev]] or
-[CODE[http://www.iana.org/assignments/relation/previous]]:
-=== [201] If [VAR[object]]'s [F[previous feed URL][feed's previous feed URL]] is [[null]]:
-==== [202] Set [VAR[object]]'s [F[previous feed URL][feed's previous feed URL]] to
-[VAR[child]]'s [F[href URL]].
-== [203] If [VAR[element]]'s [F[link relation]] is 
-[CODE[http://www.iana.org/assignments/relation/next]]:
-=== [204] If [VAR[object]]'s [F[next feed URL][feed's next feed URL]] is [[null]]:
-==== [205] Set [VAR[object]]'s [F[next feed URL][feed's next feed URL]] to
-[VAR[child]]'s [F[href URL]].
-= [269] If [VAR[mode]] is [CODE[entry]]:
-== [270] If [VAR[element]]'s [F[link relation]] is 
-[CODE[http://www.iana.org/assignments/relation/enclosure]]:
-=== [271] Let [VAR[enclosure]] be an [[enclosure]],
-whose [F[URL][enclosure's URL]] is [VAR[child]]'s [F[href URL]].
-=== [273] Set [VAR[enclosure]]'s [F[type][enclosure's type]] to [VAR[child]]'s
-[CODE(XMLa)@en[type]] attribute value.
-=== [275] Let [VAR[length]] be [VAR[child]]'s [CODE(XMLa)@en[length]] attribute value.
-=== [276] If [VAR[length]] is not null:
-==== [277] Let [VAR[n]] be the result of applying the
-[[rules for parsing non-negative integers]] to [VAR[length]].
-==== [278] If [VAR[n]] is not an error:
-===== [274] Set [VAR[enclosure]]'s [F[length][enclosure's length]] to [VAR[n]].
-=== [272] Append [VAR[enclosure]] to [VAR[object]]'s [F[enclosures][entry's enclosures]].
 ]FIG]
 
 [51] To [DFN[process an Atom date]] [VAR[element]], run these steps:
