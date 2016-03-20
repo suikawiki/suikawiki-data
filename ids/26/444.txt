@@ -10,8 +10,8 @@ They are initially empty.
 [DFN[[F[feed URL]]][feed's feed URL]],
 [DFN[[F[previous feed URL]]][feed's previous feed URL]],
 [DFN[[F[next feed URL]]][feed's next feed URL]],
-[DFN[[F[icon URL]]][feed's icon URL]],
-[DFN[[F[logo URL]]][feed's logo URL]], and
+[DFN[[F[icon]]][feed's icon]],
+[DFN[[F[logo]]][feed's logo]], and
 [DFN[[F[updated]]][feed's updated]].
 They are initially [[null]].
 
@@ -31,7 +31,7 @@ They are initially empty.
 [DFN[[F[feed]]][entry's feed]],
 [DFN[[F[page URL]]][entry's page URL]],
 [DFN[[F[comment page URL]]][entry's comment page URL]],
-[DFN[[F[thumbnail URL]]][entry's thumbnail URL]],
+[DFN[[F[thumbnail]]][entry's thumbnail]],
 [DFN[[F[duration][entry's duration]]]],
 [DFN[[F[published]]][entry's published]], and
 [DFN[[F[updated]]][entry's updated]].
@@ -42,14 +42,6 @@ They are initially [[null]].
 [DFN[[F[summary]]][entry's summary]], and
 [DFN[[F[content]]][entry's content]].
 They are initially [[null]].  They can be [[null]], a [[string]], or a [CODE(DOMi)@en[Node]].
-
-[188] An [DFN[enclosure]] has
-[DFN[[F[URL]]][enclosure's URL]],
-[DFN[[F[MIME type]]][enclosure's MIME type]], and
-[DFN[[F[length]]][enclosure's length]].
-They are initially [[null]].
-
-;; [190] Note that a [[MIME type]] might or might not be a [[parsible MIME type]].
 
 [81] To get the [DFN[[F[computed authors]]]] of an [[entry]] [VAR[entry]], run these steps:
 [FIG(steps)[
@@ -76,7 +68,7 @@ return [VAR[entry]]'s [F[feed][entry's feed]]'s [F[updated][feed's updated]].
 [DFN[[F[name]]][person's name]],
 [DFN[[F[email]]][person's email]],
 [DFN[[F[page URL]]][person's page URL]], and
-[DFN[[F[icon URL]]][person's icon URL]].
+[DFN[[F[icon]]][person's icon]].
 They are initially [[null]].
 
 [30] A [DFN[category]] is a pair of
@@ -89,6 +81,20 @@ whose [F[term]] is [VAR[name]] and [F[label]] is [VAR[name]].
 [295] A [[category]] is [DFN[equal][equal category]] to another [[category]]
 if their [F[term][category's term]] and [F[label][category's label]]
 are respectively equal.
+
+[160] An [DFN[image]] has
+[DFN[[F[URL]]][image's URL]],
+[DFN[[F[width]]][image's width]], and
+[DFN[[F[height]]][image's height]].
+They are initially [[null]].
+
+[188] An [DFN[enclosure]] has
+[DFN[[F[URL]]][enclosure's URL]],
+[DFN[[F[MIME type]]][enclosure's MIME type]], and
+[DFN[[F[length]]][enclosure's length]].
+They are initially [[null]].
+
+;; [190] Note that a [[MIME type]] might or might not be a [[parsible MIME type]].
 
 * Parsing
 
@@ -248,6 +254,30 @@ whose [F[URL][enclosure's URL]] is [VAR[child]]'s [F[href URL]].
 === [272] Append [VAR[enclosure]] to [VAR[object]]'s [F[enclosures][entry's enclosures]].
 ]FIG]
 
+[176] To [DFN[process an image element]] [VAR[element]] with string
+[VAR[attribute name]], run these steps:
+
+[FIG(steps)[
+= [161] Let [VAR[text]] be [VAR[element]]'s [VAR[attribute name]] attribute value.
+= [170] If [VAR[text]] is not [[null]] or the [[empty string]]:
+== [179] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[element]]'s [F[node document]].
+== [187] If not failed:
+=== [228] Let [VAR[image]] be an [[image]].
+=== [229] Set [VAR[image]]'s [F[URL][image's URL]] to the [[resulting URL string]].
+=== [297] Let [VAR[w]] be the result of applying the
+[[rules for parsing non-negative integers]] to [VAR[element]]'s [CODE(XMLa)@en[width]]
+attribute value, if any, or the empty string.
+=== [298] If [VAR[w]] is not an error, set [VAR[image]]'s [F[width][image's width]]
+to [VAR[w]].
+=== [299] Let [VAR[h]] be the result of applying the
+[[rules for parsing non-negative integers]] to [VAR[element]]'s [CODE(XMLa)@en[height]]
+attribute value, if any, or the empty string.
+=== [300] If [VAR[h]] is not an error, set [VAR[image]]'s [F[height][image's height]]
+to [VAR[h]].
+=== [296] Return [VAR[image]] and abort these steps.
+= [177] Return [[null]].
+]FIG]
+
 ** Persons
 
 [24] To [DFN[process an Atom person]] [VAR[element]], run these steps:
@@ -270,13 +300,10 @@ If [VAR[person]]'s [F[page URL][person's page URL]] is [[null]],
 set [VAR[person]]'s [F[page URL][person's page URL]] to the result of
 [[processing a URL element][process a URL element]] [VAR[child]].
 : [CODE(XMLe)@en[image]] element in the [[GData namespace]] :
-[FIG(steps)[
-= [160] If [VAR[person]]'s [F[icon URL][person's icon URL]] is [[null]]:
-== [161] Let [VAR[text]] be [VAR[element]]'s [CODE(XMLa)@en[src]] attribute value.
-== [170] If [VAR[text]] is not [[null]] or the [[empty string]]:
-=== [179] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[element]]'s [F[node document]].
-=== [187] If not failed, set [VAR[person]]'s [F[icon URL][person's icon URL]] to the [[resulting URL string]].
-]FIG]
+If [VAR[person]]'s [F[icon][person's icon]] is [[null]],
+set [VAR[person]]'s [F[icon][person's icon]] to the result of
+[[processing an image element][process an image element]] [VAR[child]]
+with [VAR[attribute name]] [CODE[src]].
 ]FIG]
 = [53] Return [VAR[person]].
 ]FIG]
@@ -797,13 +824,23 @@ set [VAR[feed]]'s [F[updated][feed's updated]] to the result of
 : [CODE(XMLe)@en[link]] element in the [[Atom namespace]] or in the [[Atom 0.3 namespace]] :
 [[Process an Atom link]] [VAR[child]] for [VAR[feed]], with [VAR[type]] [CODE[feed]].
 : [CODE(XMLe)@en[icon]] element in the [[Atom namespace]] :
-If [VAR[feed]]'s [F[icon URL][feed's icon URL]] is [[null]],
-set [VAR[feed]]'s [F[icon URL][feed's icon URL]] to the result of
+[FIG(steps)[
+= [181] If [VAR[feed]]'s [F[icon][feed's icon]] is [[null]]:
+== [184] Let [VAR[image]] be an [[image]].
+== [183] Set [VAR[image]]'s [F[URL][image's URL]] to the result of
 [[processing a URL element][process a URL element]] [VAR[child]].
+== [182] If [VAR[image]]'s [F[URL][image's URL]] is not [[null]],
+set [VAR[feed]]'s [F[icon][feed's icon]] to [VAR[image]].
+]FIG]
 : [CODE(XMLe)@en[logo]] element in the [[Atom namespace]] :
-If [VAR[feed]]'s [F[logo URL][feed's logo URL]] is [[null]],
-set [VAR[feed]]'s [F[logo URL][feed's logo URL]] to the result of
+[FIG(steps)[
+= [185] If [VAR[feed]]'s [F[logo URL][feed's logo]] is [[null]]:
+== [186] Let [VAR[image]] be an [[image]].
+== [197] Set [VAR[image]]'s [F[URL][image's URL]] to the result of
 [[processing a URL element][process a URL element]] [VAR[child]].
+== [225] If [VAR[image]]'s [F[URL][image's URL]] is not [[null]],
+set [VAR[feed]]'s [F[logo][feed's logo]] to [VAR[image]].
+]FIG]
 : [CODE(XMLe)@en[author]] element in the [[Atom namespace]] or in the [[Atom 0.3 namespace]] :
 Append the result of [[processing an Atom person][process an Atom person]] [VAR[child]]
 to [VAR[feed]]'s [F[authors][feed's author]].
