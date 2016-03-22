@@ -23,7 +23,7 @@ They are initially [[null]].  They can be [[null]], a [[string]], or a [CODE(DOM
 
 [28] An [DFN[entry]] has
 [DFN[[F[authors]]][entry's authors]], which is a list of [[persons][person]],
-[DFN[[F[categories]]][feed's categories]], which is a list of [[categories][category]], and
+[DFN[[F[categories]]][feed's categories]], which is a set of strings, and
 [DFN[[F[enclosures]]][feed's enclosures]], which is a list of [[enclosures][enclosure]].
 They are initially empty.
 
@@ -69,17 +69,6 @@ return [VAR[entry]]'s [F[feed][entry's feed]]'s [F[updated][feed's updated]].
 [DFN[[F[page URL]]][person's page URL]], and
 [DFN[[F[icon]]][person's icon]].
 They are initially [[null]].
-
-[30] A [DFN[category]] is a pair of
-[DFN[[F[term]]][category's term]] and
-[DFN[[F[label]]][category's label]].
-
-[44] A [[category]] with string [VAR[name]] is a [[category]]
-whose [F[term]] is [VAR[name]] and [F[label]] is [VAR[name]].
-
-[295] A [[category]] is [DFN[equal][equal category]] to another [[category]]
-if their [F[term][category's term]] and [F[label][category's label]]
-are respectively equal.
 
 [160] An [DFN[image]] has
 [DFN[[F[URL]]][image's URL]],
@@ -240,16 +229,18 @@ with [VAR[type]], run these steps:
 = [269] If [VAR[mode]] is [CODE[entry]]:
 == [270] If [VAR[element]]'s [F[link relation]] is 
 [CODE[http://www.iana.org/assignments/relation/enclosure]]:
-=== [271] Let [VAR[enclosure]] be an [[enclosure]],
-whose [F[URL][enclosure's URL]] is [VAR[child]]'s [F[href URL]].
-=== [273] Set [VAR[enclosure]]'s [F[type][enclosure's type]] to [VAR[child]]'s
+=== [336] Let [VAR[url]] be [VAR[child]]'s [F[href URL]].
+=== [337] If [VAR[url]] is not [[null]]:
+==== [271] Let [VAR[enclosure]] be an [[enclosure]],
+whose [F[URL][enclosure's URL]] is [VAR[url]].
+==== [273] Set [VAR[enclosure]]'s [F[type][enclosure's type]] to [VAR[child]]'s
 [CODE(XMLa)@en[type]] attribute value.
-=== [275] Let [VAR[length]] be [VAR[child]]'s [CODE(XMLa)@en[length]] attribute value.
-=== [276] If [VAR[length]] is not null:
-==== [277] Let [VAR[n]] be the result of applying the
+==== [275] Let [VAR[length]] be [VAR[child]]'s [CODE(XMLa)@en[length]] attribute value.
+==== [276] If [VAR[length]] is not null:
+===== [277] Let [VAR[n]] be the result of applying the
 [[rules for parsing non-negative integers]] to [VAR[length]].
-==== [278] If [VAR[n]] is not an error and [VAR[n]] is greater than zero:
-===== [274] Set [VAR[enclosure]]'s [F[length][enclosure's length]] to [VAR[n]].
+===== [278] If [VAR[n]] is not an error and [VAR[n]] is greater than zero:
+====== [274] Set [VAR[enclosure]]'s [F[length][enclosure's length]] to [VAR[n]].
 === [272] Append [VAR[enclosure]] to [VAR[object]]'s [F[enclosures][entry's enclosures]].
 ]FIG]
 
@@ -475,12 +466,6 @@ is [VAR[enclosure]]'s [F[URL][enclosure's URL]].
 = [291] If [VAR[entry]]'s [F[summary][entry's summary]] is a [[string]] and is equal to
 [VAR[entry]]'s [F[title][entry's title]]:
 == [292] Set [VAR[entry]]'s [F[summary][entry's summary]] to [[null]].
-= [293] If [VAR[entry]]'s [F[categories][entry's categories]] contains 
-a [[category]] whose [F[term]] is the [[empty string]],
-remove the [[category]] from [VAR[entry]]'s [F[categories][entry's categories]].
-= [294] If [VAR[entry]]'s [F[categories][entry's categories]] contains 
-a [[category]] which is [[equal][equal category]] to another [[category]] in the same list,
-remove the [[category]] from [VAR[entry]]'s [F[categories][entry's categories]].
 ]FIG]
 
 *** Atom entries
@@ -497,18 +482,17 @@ Append the result of [[processing an Atom person][process an Atom person]] [VAR[
 to [VAR[entry]]'s [F[authors][entry's author]].
 : [CODE(XMLe)@en[category]] element in the [[Atom namespace]] :
 [FIG(steps)[
-= [89] Let [VAR[category]] a [[category]].
-= [90] Set [VAR[category]]'s [F[term][category's term]] to the
-[CODE(XMLa)@en[term]] attribute value of [VAR[child]], if any, or the empty string.
-= [91] Set [VAR[category]]'s [F[label][category's label]] to the
-[CODE(XMLa)@en[label]] attribute value of [VAR[child]], if any, or [VAR[category]]'s 
-[F[term][category's term]].
-= [92] Append [VAR[category]] to [VAR[entry]]'s [F[categories][entry's categories]].
+= [30] If [VAR[child]] has a [CODE(XMLa)@en[term]] attribute:
+== [44] Let [VAR[term]] be [VAR[child]]'s [CODE(XMLa)@en[term]] attribute value.
+== [89] If [VAR[term]] is not an empty string,
+add [VAR[term]] to [VAR[entry]]'s [F[categories][entry's categories]].
 ]FIG]
 : [CODE(XMLe)@en[subject]] element in the [[Dublin Core namespace]] :
-Append a [[category]] whose [VAR[name]] is
-[VAR[child]]'s [F[child text content]]
-to [VAR[entry]]'s [F[categories][entry's categories]].
+[FIG(list)[
+= [90] Let [VAR[term]] be [VAR[child]]'s [F[child text content]].
+= [91] If [VAR[term]] is not an empty string,
+add [VAR[term]] to [VAR[entry]]'s [F[categories][entry's categories]].
+]FIG]
 : [CODE(XMLe)@en[published]] element in the [[Atom namespace]] :
 If [VAR[entry]]'s [F[published][entry's published]] is [[null]],
 set [VAR[entry]]'s [F[published][entry's published]] to the result of
@@ -609,9 +593,11 @@ run these substeps:
 == [251] Switch by [VAR[child]]'s [F[namespace]] and [F[local name]]:
 [FIG(switch)[
 : [CODE(XMLe)@en[category]] element in the [[null namespace]] :
-Append a [[category]] whose [VAR[name]] is
-[VAR[child]]'s [F[child text content]]
-to [VAR[entry]]'s [F[categories][entry's categories]].
+[FIG(list)[
+= [92] Let [VAR[term]] be [VAR[child]]'s [F[child text content]].
+= [293] If [VAR[term]] is not the empty string,
+add [VAR[term]] to [VAR[entry]]'s [F[categories][entry's categories]].
+]FIG]
 : [CODE(XMLe)@en[author]] element in the [[null namespace]] :
 Append the result of [[processing an RSS 2.0 person][process an RSS 2.0 person]] [VAR[child]]
 to [VAR[entry]]'s [F[authors][entry's author]].
@@ -743,9 +729,11 @@ If [VAR[entry]]'s [F[updated][entry's updated]] is [[null]],
 set [VAR[entry]]'s [F[updated][entry's updated]] to the result of
 [[processing a W3C-DTF date][process a W3C-DTF date]] [VAR[child]].
 : [CODE(XMLe)@en[subject]] element in the [[Dublin Core namespace]] :
-Append a [[category]] whose [VAR[name]] is
-[VAR[child]]'s [F[child text content]]
-to [VAR[entry]]'s [F[categories][entry's categories]].
+[FIG(list)[
+= [294] Let [VAR[term]] be [VAR[child]]'s [F[child text content]].
+= [295] If [VAR[term]] is not the empty string,
+add [VAR[term]] to [VAR[entry]]'s [F[categories][entry's categories]].
+]FIG]
 : [CODE(XMLe)@en[title]] element in the [[RSS namespace]] :
 If [VAR[entry]]'s [F[title][entry's title]] is [[null]],
 set [VAR[entry]]'s [F[title][entry's title]] to [VAR[element]]'s [F[child text content]].
