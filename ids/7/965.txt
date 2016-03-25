@@ -1,4 +1,53 @@
-#?SuikaWiki/0.9
+[19] [[Unicode符号位置]]を [DFN[[CODE[\u[VAR[HHHH]]]]]]
+のように[[エスケープ]]する方法が色々な場面で使われます。
+
+* BMP 符号位置の符号化
+
+[20] [CODE(char)[U+0000]]-[CODE(char)[U+FFFF]] の[[符号位置]]は、
+[CODE[\u]] の後に4桁の[[ASCII十六進数字]]で[[符号位置]]を表すことによって表現できます。
+
+[22] [[十六進数字]]として[[大文字]]と[[小文字]]のどちらを用いるか (両方認められるか)
+は、使われる文脈によります。
+
+[21] 何を[[エスケープ]]形で表し、何を[[エスケープ]]しないで表すかは、
+使われる文脈によります。
+
+* 非 BMP 符号位置の符号化
+
+[23] [CODE(char)[U+10000]] [[以上]]の[[符号位置]]の表現方法は、
+いくつかの流儀があります。
+
+[24] 古くから使われている方法では、 [CODE[\U]] の後に8桁の[[十六進数字]]で[[符号位置]]を指定します。
+この方法は [[UCS]] の31ビットすべての[[符号位置]]を表現できます。
+([[BMP]] をこの方法でも表現できるかどうかは、文脈によります。)
+
+[25] 場合によっては、 [CODE[\U]] の後に6桁の[[十六進数字]]で[[符号位置]]を指定します。
+この方法は [[Unicode]] の21ビットすべての[[符号位置]]を表現できます。
+([[BMP]] をこの方法でも表現できるかどうかは、文脈によります。)
+
+[26] この2つの方法は、混在させることができません。
+
+[27] [[UTF-16]] を使う環境では、[[サロゲートペア]]に相当する2つの[[符号位置]]の
+[CODE[\u[VAR[HHHH]]]] 形で非 [[BMP]] [[符号位置]]を表現する場合があります。
+
+* エラー処理
+
+[28] エラー処理の方法は、文脈によります。困ったことに、明確に規定していない場合もあります。
+
+[29] 少なくても次のようなエラー状況を想定する必要があります。
+[FIG(list)[
+- [30] [CODE[\u[VAR[HHHH]]]] など適切な形式にならずに途切れている [CODE[\]]
+などが出現した場合の扱い
+- [31] [[値域]]外の[[符号位置]]の扱い ([[Unicode]] の範囲外の [CODE[\U12345678]] 
+のようなものなど)
+- [32] [[サロゲート]]の[[符号位置]]の扱い ([[サロゲート]]を認めない場合、
+[[サロゲート]]自体と[[エスケープ]]された[[サロゲート]]の組で現れた場合、
+単独の[[サロゲート]]が現れた場合)
+- [33] [[非文字]]の扱い
+]FIG]
+
+* [CODE[\u[VAR[HHHH]]]] (Java)
+
 [1] [[Java]] の \u 符号化 (UnicodeEscape)
 <http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#100850>
 <http://java.sun.com/docs/books/jls/first_edition/html/3.doc.html#100850>
@@ -20,3 +69,53 @@
 
 ''Supplementary Characters in the Java Platform'' <http://java.sun.com/developer/technicalArticles/Intl/Supplementary/>
 
+* [CODE[\uHHHH]] (JavaScript)
+
+[11] [[JavaScript]] の[[正規表現]]で \u の後に[[十六進数]]が4桁続かない場合、
+[[ES3]] によると構文エラーのはずですが、どのブラウザでも、 \
+がなかった場合と同じように処理されます。
+
+;;
+<http://software.hixie.ch/utilities/js/live-dom-viewer/?%3Cscript%3E%0Adocument.write%20(%22u1%22.match(%2F%5E%5Cu1%24%2F)%3F1%3A0)%3B%0A%3C%2Fscript%3E>
+
+* [CODE[\u'[VAR[HHHH]]']] (RFC 5137)
+
+[12] [[RFC 5137]] ([[BCP 137]]) は、
+[[Unicode]] [[文字]]を [[escape]] するための方法で勧められるものを2つ挙げています。
+そのうちの1つが ¥u'HHHH' のような書式です。
+
+   EmbeddedUnicodeChar =  %x5C.75.27 4*6HEXDIG %x27
+      ; starting with lowercase "\u" and "'" and ending with "'".
+      ; Note that the encodings are considered to be abstractions
+      ; for the relevant characters, not designations of specific
+      ; octets.
+
+   HEXDIG =  "0" / "1" / "2" / "3" / "4" / "5" / "6" / "7" / "8" / "9" /
+      "A" / "B" / "C" / "D" / "E" / "F"
+
+[[RFC 5234のABNF]] を用いているので、[[十六進数]]の[[大文字]]・[[小文字]]は区別しません。
+(「\u」の部分は[[小文字]]でなければなりません。)
+
+;; [13] [[RFC 5137]] はこの他 [[XML]] の[[十六進数文字参照]]も勧めています。
+[[C]] 式の「\uHHHH」/「\UHHHHHHHH」表記、  [[Perl]] 風の「¥x{H}」表記、
+[[Java]] 式の「\uHHHH」+ [[代理組]]表記は「通常は勧められない」としています。
+([[C]] 式が勧められないのは、終わりを表す[[区切子]]がないため。)
+
+[14] [CITE@en[RFC 5137 - ASCII Escaping of Unicode Characters]]
+([TIME[2015-07-26 17:06:08 +09:00]] 版)
+<https://tools.ietf.org/html/rfc5137#section-5.1>
+
+[15] [CITE@en[draft-klensin-encoded-word-type-u-00 - The "U" Encoding for Encoded-Words in Email]]
+([TIME[2016-01-11 02:26:53 +09:00]] 版)
+<https://tools.ietf.org/html/draft-klensin-encoded-word-type-u-00>
+
+[16] この方法が [[IETF]] 以外で使われるのは見たことがありません。
+[[IETF]] は世間一般で広く普及した形式を奇妙にアレンジするのが好きなようです。
+
+* 関連
+
+[17] [CODE[U+]] や [CODE[%u]] も参照。
+
+* メモ
+
+[18] [CITE[Unicode の文字列をソースコードに埋め込む方法 - いやなブログ]] ([CODE[2007-09-09 19:34:15 +09:00]] 版) <http://0xcc.net/blog/archives/000183.html>
