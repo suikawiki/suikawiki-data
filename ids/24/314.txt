@@ -241,61 +241,52 @@
 ですが、 [[Firefox]] は [CODE(HTTP)@en[[[Connection:]] [[keep-alive]], [[Upgrade]]]]
 です。 [TIME[2015-08-08T13:34:03.400Z]]
 
+[12] [[Web互換性]]のため、
+[CODE(HTTP)@en[[[Accept-Language:]]]] [[ヘッダー]]を含めるべきです [SRC[>>114]]。
+
 ;; [110] [[ヘッダー]]によっては、またどの[[ヘッダー]]を送信するかは、
 [[fingerprinting vector]] です。
 
-@@
-[[クライアント]]は、[DFN[[RUBYB[WebSocket接続の確立]@en[Establish a WebSocket Connection]]]]で、
-次のようにしなければ[['''なりません''']] [SRC[>>1]]。
-@@
-[8] この手順は、入力として次のものを受け取ります。
-[FIG(list members)[
-:[[ホスト]]:接続先の[[ホスト名]]です。必須です。
-:[[ポート]]:接続先の[[ポート番号]]です。必須です。
-:[[資源名]]:接続先の[[資源]]を表します。必須です。
-:[[secure]]:[[TLS]] を使うか否かを表します。
-:[[起源]]:
-[10] [[Webブラウザー]]は、[[起源]]を指定しなければ[['''なりません''']]。
-これは接続を開いた元を表すものです。
-それ以外の[[クライアント]]は、[[起源]]を指定しても構いません。 [SRC[>>1]]
-:[[部分プロトコル]]群:
-[11] [[クライアント]]が通信したい[[部分プロトコル]]を優先順に指定するものです。
-各[[部分プロトコル]]名は、[[字句]]です。
-同じ[[部分プロトコル]]を複数指定しては[['''なりません''']]。 [SRC[>>1]]
-:拡張:
-[12] [[クライアント]]が利用したい[[WebSocket拡張]]を指定するものです [SRC[>>1]]。
-:[DFN[[RUBYB[適切なクッキーを送るヘッダー群]@en[headers to send appropriate cookies]]]]:
+[HISTORY[
+[184] この[DFN[[RUBYB[WebSocket接続の確立]@en[Establish a WebSocket Connection]]]] [SRC[>>1]]
+の処理はかつては [[RFC]] で規定されていましたが、
+2016年3月の [[Fetch Standard]] と [[HTML Standard]] の大規模リファクタリングによってほとんどが
+[[Fetch Standard]] に移動しました。
+
+[64] 入力 [[URL]] の処理について、
+[[HTML Standard]] は [[URL Standard]] に基づき[[正準化]]した値を使っており、
+[[RFC]] は [[RFC 3986]] [[URI]] を参照して規定しているため、
+理論上は両者の差異のために予測できない挙動となる可能性がありました。
+実際はすべて当初より [[URL Standard]] に近い動作で統一されているものと思われますが、
+リファクタリングにより [[URL Standard]] ベースの処理になり、理論上も問題は解消しました。
+
+[10] [[RFC]] は、 [[Webブラウザー]]は[[起源]]を指定しなければ[MUST[ならず]]、
+それ以外は指定しても[MAY[良い]] [SRC[>>1]] と規定していました。
+これは [CODE(HTTP)@en[Origin:]] [[ヘッダー]]が指定されるかどうかに影響します。
+本来 [[WebSocket]] は [[Webブラウザー]]向けプロトコルなのですから、
+[[Webブラウザー]]以外の[[クライアント]]もできるだけ 
+[[Webブラウザー]]に似せた動作にするのが適当そうです。 (が 
+[[Webブラウザー]]以外の[[クライアント]]は [[Web]] 
+の[[起源]]ベースのセキュリティーモデルには従っていないかもしれませんから、
+適当な値を決めるのが難しいこともあるかもしれません。)
+
+[8] [DFN[[RUBYB[適切なクッキーを送るヘッダー群]@en[headers to send appropriate cookies]]]]は、
 送信するべき [CODE(HTTP)@en[[[Cookie:]]]] [[ヘッダー]]を指定するものです。
-[[HTML Standard]] が参照していますが、 [[RFC 6455]] にはありません。
+かつての [[HTML Standard]] が参照していますが、 [[RFC 6455]] にはありません。
 ([[WHATWG]] 時代には存在していたものが、 [[IETF]] で削除されたようです。 [[IETF]]
 ではよくあることです。)
-]FIG]
 
-@@
-[FIG(steps)[
-= 入力として与えられた[[ホスト]]、[[ポート]]、[[資源名]]、[[secure]]
-フラグが [CODE(URI)@en[[[ws:]]]]/[CODE(URI)@en[[[wss:]]]] [[URL]]
-の構成要素として正しいかどうかを検査します。
-正しくなければ[[WebSocket接続失敗]]を実行し、停止します。
-=
-@@
-= [[RFC 2616]] [[HTTP要求]]を送信します。 (なお、バッファリングなどで遅延しても構いません [SRC[>>15]]。)
-[FIG(list members)[
-[FIGCAPTION[
-[[HTTP要求]]
-]FIGCAPTION]
-:[[要求メソッド]]:[CODE(HTTP)@en[[[GET]]]]
-:[[要求対象]]:[[資源名]]、または[[ホスト]]、[[ポート]]、[[資源名]]を使った [CODE(URI)@en[[[http:]]]]/[CODE(URI)@en[[[https:]]]] [[URL]] のいずれか
-:[[プロトコルの版]]:[[HTTP/1.1]] [[以上]]
-:[CODE(HTTP)@en[[[Host]]]]:[[ホスト]]と、[[既定のポート番号]]で無い場合、
-[CODE(HTTP)[[[:]]]] と[[ポート]]
-:[CODE(HTTP)@en[[[Origin]]]]:([[起源]]の指定がある場合のみ) [[起源]]の[[ASCII直列化]]
-:その他:[[HTTP認証]]その他の[[HTTPヘッダー]]を含めて構いません。
-[CODE(HTTP)@en[[[Accept-Language:]]]] [[ヘッダー]]を含めるべきです [SRC[>>114]]。
-[[適切なクッキーを送るヘッダー群]]を (あれば) 含めなければなりません [SRC[仕様無し]]。
-]FIG]
-= [[応答]]を待ちます。
-]FIG]
+[11] [[RFC]] は [[HTTP/1.1]] [[以上]]を使って[[要求]]を送信することを求めていましたが、
+現在の [[Fetch Standard]] はなぜかこれを ([[HTTP]] についても [[WebSocket]]
+についても) 明言していません。
+
+[14] [[要求対象]]は、直接接続なら[[資源名]]のみ、 [[プロキシ]]接続なら
+[[HTTP]] [[URL]] と思われますが、明記されていません。どちらでも良いということでしょうか
+(それは一般的な慣習とは異なります)。また [CODE(URI)@en[[[ws:]]]]/[CODE(URI)@en[[[wss:]]]]
+がそれぞれ [CODE(URI)@en[[[http:]]]]/[CODE(URI)@en[[[https:]]]] に変換されるものと思われますが、
+明記されていません。
+
+]HISTORY]
 
 [159] [[fetch]] により[[応答]][VAR[応答]]が利用可能となったら、次のようにします
 [SRC[>>130]]。
@@ -326,20 +317,16 @@
 [[null]]、[[失敗]]、[[空バイト列]]のいずれかの場合
 ]FIG]
 == [163] [[WebSocket接続失敗]]を実行し、停止します。
-
-@@
-= [[WebSocket接続]]の状態を、 [CODE[[[OPEN]]]] に設定します。
-= [DFN[[RUBYB[利用中拡張群]@en[Extensions In Use]]]]を、[[応答]]の
+= [177] [[WebSocket接続]]の状態を、 [CODE[[[OPEN]]]] に設定します。 [SRC[RFC]]
+= [178] [DFN[[RUBYB[利用中拡張群]@en[Extensions In Use]]]]を、[[応答]]の
 [CODE(HTTP)@en[[[Sec-WebSocket-Extensions:]]]] [[ヘッダー]]の値
-(なければ [[null]]) に設定します。
-= [DFN[[RUBYB[利用中部分プロトコル]@en[Subprotocol In Use]]]]を、[[応答]]の
+(なければ [[null]]) に設定します。 [SRC[RFC]]
+= [179] [DFN[[RUBYB[利用中部分プロトコル]@en[Subprotocol In Use]]]]を、[[応答]]の
 [CODE(HTTP)@en[[[Sec-WebSocket-Protocol:]]]] [[ヘッダー]]の値
-(なければ [[null]]) に設定します。
-= [[応答]]の [CODE(HTTP)@en[[[Set-Cookie:]]]] [[ヘッダー]]で[[クッキー]]の設定が指示されていれば、
-これを[DFN[[[Cookies Set During the Server's Opening Handshake]]]]とします。
-= [DFN[[RUBYB[WebSocket接続確立]@en[The WebSocket Connection is Established]]]]とします。
-= [86] [[[CODE(DOMi)@en[WebSocket]]コンストラクター]]から本処理が始まった場合、
-[[タスク]]を追加します [SRC[>>77]]。
+(なければ [[null]]) に設定します。 [SRC[RFC]]
+= [181] [DFN[[RUBYB[WebSocket接続確立]@en[The WebSocket Connection is Established]]]]とします。
+[SRC[RFC]]
+= [86] [[タスク]]を追加します [SRC[>>77]]。
 [FIG(list members)[
 [FIGCAPTION[
 [[タスク]]
@@ -347,22 +334,13 @@
 :[[タスク源]]:[[WebSocketタスク源]]
 :処理:
 [FIG(steps)[
-= [[クライアント指定プロトコル群]]が空のリストではなく、
-[[利用中部分プロトコル]]が [[null]] なら、
-== [[WebSocket接続失敗]]を実行します。
-== [CODE(DOMa)@en[[[readyState]]]] を、 [CODE(DOM)@en[[[CLOSING]]]] ([CODE(DOM)[[[2]]]])
-に設定します。
-== 停止します。
-= [CODE(DOMa)@en[[[readyState]]]] を、 [DFN[[CODE(DOM)@en[[[OPEN]]]]]] ([CODE(DOM)[[[1]]]])
+= [183] [CODE(DOMa)@en[[[readyState]]]] を、 [DFN[[CODE(DOM)@en[[[OPEN]]]]]] ([CODE(DOM)[[[1]]]])
 に設定します。
 = [[利用中拡張群]]が [[null]] でなければ、
 == [CODE(DOMa)@en[[[extensions]]]] を、[[利用中拡張群]]に設定します。
 = [[利用中プロトコル]]が [[null]] でなければ、
 == [CODE(DOMa)@en[[[protocol]]]] を、[[利用中プロトコル]]に設定します。
-= [[Cookies Set During the Server's Opening Handshake]] があれば、
-[CODE(DOMi)@en[[[WebSocket]]]] [[オブジェクト]]の [CODE(DOMa)@en[[[url]]]] について、
-これを [[set-cookie-string]] として受信したものとして処理します。
-= [[単純イベントを発火]]します。
+= [182] [[単純イベントを発火]]します。
 [FIG(list members)[
 [FIGCAPTION[
 [[単純イベント]]
@@ -372,25 +350,8 @@
 ]FIG]
 ]FIG]
 ]FIG]
-= [89] 以後受信データは[[WebSocketメッセージ受信]]の処理を行います。
+= [89] 以後受信データは[[WebSocketメッセージ受信]]の処理を行います。 [SRC[RFC]]
 ]FIG]
-
-@@
-[64] 入力が [CODE(URI)@en[[[ws:]]]]/[CODE(URI)@en[[[wss:]]]] として正しくなければ失敗となります。
-[[HTML Standard]] は [[URL Standard]] に基づき[[正準化]]した値を使っており、
-[[RFC]] は [[RFC 3986]] [[URI]] を参照して規定しているため、両者には違いが生じる可能性があります。
-[[正準化]]が失敗しなかったということは、[[ホスト]]や[[ポート]]は [[RFC 3986]]
-[[URI]] としても適切な値になっているはずです。[[資源名]]は、 [[RFC 3986]]
-では認められない壊れた[[パーセント符号化]]もどきが含まれる可能性が残ります。
-実装がこれをどう扱うのかは不明です。
-
-@@
-[14] [[要求対象]]は、直接接続なら[[資源名]]のみ、 [[プロキシ]]接続なら
-[[HTTP]] [[URL]] と思われますが、明記されていません。どちらでも良いということでしょうか
-(それは一般的な慣習とは異なります)。また [CODE(URI)@en[[[ws:]]]]/[CODE(URI)@en[[[wss:]]]]
-がそれぞれ [CODE(URI)@en[[[http:]]]]/[CODE(URI)@en[[[https:]]]] に変換されるものと思われますが、
-明記されていません。
-
 
 [118] [[応答]]の[[プロトコルの版]]の検査は求められていないようです。
 
@@ -449,6 +410,13 @@
 
 [90] [[WebSocket]] の規定に従わない[[サーバー]]は、[[クライアント]]からの要求を待たずに[[応答]]
 (や[[応答]]になっていないデータ) を送信するかもしれません。[[クライアント]]はそれに特別な対処を行う必要はありませんが、 >>54 を根拠に切断しても良いのかもしれません。
+
+[HISTORY[
+[180] かつて [[RFC]] は[[クッキー]]の処理のため[[応答]]の処理で
+[DFN[[[Cookies Set During the Server's Opening Handshake]]]]
+という語を使い、これを [[HTML Standard]] が利用する形を採っていました。
+これは [[Fetch Standard]] との統合により死文化しました。
+]HISTORY]
 
 * サーバーの動作
 
