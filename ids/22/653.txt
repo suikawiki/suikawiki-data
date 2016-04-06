@@ -15,31 +15,63 @@
 
 * 定義
 
-[301] [[URL]] の[[起源]]は、次の通り決まります。
+[301] [[URL]] [VAR[URL]] の[[起源]]は、次の手順が返す値です [SRC[>>300]]。
 [FIG(steps)[
-= [302] [[URL scheme]] が [CODE(URI)@en[[[blob:]]]] なら、
-[[scheme data]] を [[URL]] として[[構文解析]]し、
-成功すればその[[起源]]、失敗すれば新しい大域的に固有な識別子です [SRC[>>300]]。
-=- [15] [[scheme data]] の先頭部分に[[起源]]が埋め込まれています。
-=- [16] [[Blob URL]] も参照。
-= [303] [[URL scheme]] が [CODE(URI)@en[[[ftp:]]]],
-[CODE(URI)@en[[[gopher:]]]], [CODE(URI)@en[[[http:]]]], [CODE(URI)@en[[[https:]]]],
-[CODE(URI)@en[[[ws:]]]], [CODE(URI)@en[[[wss:]]]] なら、
-[[URL scheme]]、[[ホスト]]、[[ポート]]の[[三項組]]です。
-ただし[[ポート]]が[[空文字列]]なら、[[既定のポート]]です。 [SRC[>>300]]
-= [304] [[URL scheme]] が [CODE(URI)@en[[[file:]]]] なら、
-何らかの値です。決めかねるときは新しい大域的に固有な識別子です。 [SRC[>>300]]
-= [305] それ以外の時は、新しい大域的に固有な識別子です。 [SRC[>>300]]
+= [21] [VAR[URL]] の [F[scheme][URL scheme]] により、
+[FIG(switch)[
+: [CODE(URI)@en[http]], [CODE(URI)@en[https]], [CODE(URI)@en[ftp]], [CODE(URI)@en[gopher]], [CODE(URI)@en[ws]], [CODE(URI)@en[https]] のいずれかの場合 :
+[[項組起源]]を返します。
+[FIG(list members)[
+[FIGCAPTION[
+[[項組起源]]
+]FIGCAPTION]
+: [F[scheme][URL scheme]] : [VAR[URL]] の [F[scheme][URL scheme]]
+: [F[ホスト]] : [VAR[URL]] の[F[ホスト]]
+: [F[ポート]] : [VAR[URL]] の[F[ポート]]
+]FIG]
+: [CODE(URI)@en[blob]] の場合 :
+[FIG(steps)[
+= [22] [VAR[URL2]] を、[VAR[URL]] の[F[path]]の最初の項目に[[基本URL構文解析器]]を適用した結果に設定します。
+= [24] [VAR[URL2]] が[[失敗]]なら、
+== [25] [[不透明起源]]を返します。
+= [26] それ以外なら、
+== [27] [VAR[URL2]] の[F[起源][URLの起源]]を返します。
+]FIG]
+: [CODE(URI)@en[file]] の場合 :
+[[実装依存]]の値を返します (>>31)。決めかねる時は[[不透明起源]]を返します。
+: [[実装依存]]の [[scheme][URL scheme]] の場合 :
+[[実装依存]]の方法で決めた値を返します (>>29)。
+: それ以外の場合 :
+[[不透明起源]]を返します。
+]FIG]
 ]FIG]
 
-;; [306] ここでいう [[URL scheme]]、[[ホスト]]、[[ポート]]は [[URL]]
-を[[構文解析]]して得られる値なので、[[正準化]]が済んだ値です。
+;; [306] ここでいう [F[scheme][URL scheme]]、[F[ホスト]]、[F[ポート]]は
+[[URLの構文解析]]で得られる値なので、[[正準化]]が済んだ値です。
+[F[scheme][URL scheme]] や[F[ホスト]]は[[小文字]]化されています。
 
+[EG[
+[15] [CODE(URI)@en[https://www.example.com/path]] の[[起源][URLの起源]]は、
+[[項組起源]] ([CODE[https]], [CODE[www.example.com]], [[null]]) です。
+]EG]
+
+[EG[
+[16] [CODE(URI)@en[blob:https://www.example.com:8080/abcde]] の[[起源][URLの起源]]は、
+[[項組起源]] ([CODE[https]], [CODE[www.example.com]], [N[8080]]) です。
+]EG]
+
+[EG[
+[28] [CODE(URI)@en[about:blank]] の[[起源][URLの起源]]は、
+新しい[[不透明起源]]です。
+]EG]
+
+[HISTORY[
 [162] [[URL]] の[[実効スクリプト起源]]は[[起源]]と同じです [SRC[>>135]]。
 
 ;; [242] 別名ではありません。
+]HISTORY]
 
-;; [5] [[文書の起源]]と[[文書のURL]]の[[起源]]は必ずしも一致しません。
+;; [5] [[文書の[F[起源]]]]と[[文書の[F[URL]]]]の[F[起源]]は必ずしも一致しません。
 
 [EG[
 [9] 例えば [CODE(URI)@en[http://foo.example/hoge/fuga]] の[[起源]]は、
@@ -65,6 +97,10 @@
 ;; [CODE(URI)@en[file:]] 参照。
 
 * Web ブラウザー依存の URL scheme の起源
+
+[29] [[URL Standard]] には明記されていませんが、実際には、
+各[[Webブラウザー]]固有の [[URL scheme]] 
+では[[実装依存]]の方法で決定された[[起源][URLの起源]]が用いられることがあります。
 
 [12] [[Chrome]] は、 [CODE(HTTP)@en[[[Origin:]] chrome://version]] のように
 [CODE(URI)@en[[[chrome:]]]] [[URL]] でも [[URL scheme]] と [[authority]]
@@ -106,3 +142,18 @@ TS 102 851 [10] clause 6.3.1):
 [19] [CITE@en[Merge effective script origin into origin · whatwg/html@8a843f2]]
 ([TIME[2016-03-31 16:19:51 +09:00]] 版)
 <https://github.com/whatwg/html/commit/8a843f2169a6864a3024c4329528dccb2051d275>
+
+[20] [CITE@en[Align with origin changes in HTML · whatwg/url@b0e4def]]
+([TIME[2016-04-06 16:48:56 +09:00]] 版)
+<https://github.com/whatwg/url/commit/b0e4def5b62e0be2d75b4b7b5720a5e0ea879596>
+
+[FIG(quote)[
+[FIGCAPTION[
+[30] [CITE@en[What is the 'Origin' (in Same-Origin-Policy sense) of a Google Chrome extension? - Quora]]
+([TIME[2016-04-06 17:07:14 +09:00]] 版)
+<https://www.quora.com/What-is-the-Origin-in-Same-Origin-Policy-sense-of-a-Google-Chrome-extension>
+]FIGCAPTION]
+
+> If you're writing JavaScript for Chrome extension, the origin is the directory structure inside the zipped up file of the extension itself.
+
+]FIG]
