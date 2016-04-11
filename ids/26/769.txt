@@ -26,9 +26,10 @@ which is initially [[null]].
 [DFN[[F[routes]]]], and
 [DFN[[F[tracks]]]], which are initially empty lists.
 
-[25] A [DFN[point]] is an [[object]].
-
 [26] A [[point]] has
+[DFN[[F[name]]]],
+[DFN[[F[description]]]],
+[DFN[[F[timestamp]]]],
 [DFN[[F[latitude]]]],
 [DFN[[F[longitude]]]],
 [DFN[[F[elevation]]]],
@@ -250,83 +251,117 @@ into [VAR[object]], run these steps:
 ]FIG]
 ]FIG]
 
-[27] To [DFN[parse a point element]] [VAR[element]] into [VAR[object]],
+[27] To [DFN[parse a point element]] [VAR[element]], run these steps:
+[FIG(steps)[
+= [25] Let [VAR[point]] be a [[point]].
+= [116] Set [VAR[point]]'s [F[latitude]] to the result of applying the
+[[rules for parsing a latitude value]] to [VAR[element]]'s [CODE[lat]] attribute value.
+= [118] Set [VAR[point]]'s [F[longitude]] to the result of applying the
+[[rules for parsing a latitude value]] to [VAR[element]]'s [CODE[lon]] attribute value.
+= [18] For each [[element]] [VAR[child]] in [VAR[element]]'s [F[children]], in order:
+== [154] [[Process][process a value element]] [VAR[element]] with [VAR[point]],
+using the following table:
+[FIG(table)[
+:l: [F[local name]]
+:f: Field
+:r: Rule
+
+:l: [CODE[ele]]
+:f: [F[elevation]]
+:r: Number
+
+:l: [CODE[geoidheight]]
+:f: [F[geoid height]]
+:r: Number
+
+:l: [CODE[magvar]]
+:f: [F[magnetic variation]]
+:r: Degree
+
+:l: [CODE[time][time (GPX)]]
+:f: [F[timestamp]]
+:r: Time
+
+:l: [CODE[name][name (GPX)]]
+:f: [F[name]]
+:r: String
+
+:l: [CODE[desc][desc (GPX)]]
+:f: [F[description]]
+:r: String
+
+:l: [CODE[cmt]]
+:f: [F[comment]]
+:r: String
+
+:l: [CODE[src][src (GPX)]]
+:f: [F[source]]
+:r: String
+
+:l: [CODE[sym]]
+:f: [F[symbol name]]
+:r: String
+
+:l: [CODE[type][type (GPX)]]
+:f: [F[type]]
+:r: String
+
+:l: [CODE[fix][fix (GPX)]]
+:f: [F[fix]]
+:r: String
+]FIG]
+]FIG]
+
+[153] To [DFN[process a value element]] [VAR[element]] with [VAR[object]] and [VAR[table]],
 run these steps:
 [FIG(steps)[
-= [18] For each [[element]] [VAR[child]] in [VAR[element]]'s [F[children]], in order:
-== [117] If [VAR[object]]'s [F[latitude]] is [[null]]:
-=== [116] Set [VAR[object]]'s [F[latitude]] to the result of applying the
-[[rules for parsing a latitude value]] to [VAR[child]]'s [CODE[lat]] attribute value.
-== [16] If [VAR[object]]'s [F[longitude]] is [[null]]:
-=== [118] Set [VAR[object]]'s [F[longitude]] to the result of applying the
-[[rules for parsing a latitude value]] to [VAR[child]]'s [CODE[lon]] attribute value.
-== [15] Switch by [VAR[child]]'s [F[local name]]:
+= [156] Let [VAR[row]] be a row in [VAR[table]], whose "[F[local name]]"
+cell value is [VAR[element]]'s [F[local name]].
+= [155] Let [VAR[field]] be [VAR[row]]'s "Field" cell value.
+= [157] Let [VAR[result]] be the result of switching by [VAR[row]]'s "Rule" cell value:
 [FIG(switch)[
-: [CODE[ele]] :
+: String :
 [FIG(steps)[
-= [119] If [VAR[object]]'s [F[elevation]] is [[null]]:
-== [120] Let [VAR[text]] be [VAR[child]]'s [F[child text content]].
-== [121] Let [VAR[number]] be the result of applying the
+= [149] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
+= [150] If [VAR[text]] is not the [[empty string]]:
+== [151] Return [VAR[text]].
+= [148] Otherwise:
+== [152] Return [[null]].
+]FIG]
+: Number :
+[FIG(steps)[
+= [120] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
+= [121] Let [VAR[number]] be the result of applying the
 [[rules for parsing floating-point number values]] to [VAR[text]].
-== [122] If [VAR[number]] is not an error,
-set [VAR[object]]'s [F[elevation]] to [VAR[number]].
+= [122] If [VAR[number]] is a number:
+== [119] Return [VAR[number]].
+= [128] Otherwise:
+== [129] Return [[null]].
 ]FIG]
-: [CODE[geoidheight]] :
+: Degree :
 [FIG(steps)[
-= [128] If [VAR[object]]'s [F[geoid height]] is [[null]]:
-== [129] Let [VAR[text]] be [VAR[child]]'s [F[child text content]].
-== [130] Let [VAR[number]] be the result of applying the
+= [125] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
+= [126] Let [VAR[number]] be the result of applying the
 [[rules for parsing floating-point number values]] to [VAR[text]].
-== [131] If [VAR[number]] is not an error,
-set [VAR[object]]'s [F[geoid height]] to [VAR[number]].
+= [127] If [VAR[number]] is a number in the range [ [N[0]], [N[360]] ]:
+== [124] Return [VAR[number]].
+= [132] Otherwise:
+== [133] Return [[null]].
 ]FIG]
-: [CODE[magvar]] :
+: Time :
 [FIG(steps)[
-= [124] If [VAR[object]]'s [F[magnetic variation]] is [[null]]:
-== [125] Let [VAR[text]] be [VAR[child]]'s [F[child text content]].
-== [126] Let [VAR[number]] be the result of applying the
-[[rules for parsing floating-point number values]] to [VAR[text]].
-== [127] If [VAR[number]] is a number in the range [ [N[0]], [N[360]] ],
-set [VAR[object]]'s [F[magnetic variation]] to [VAR[number]].
-]FIG]
-: [CODE[cmt]] :
-[FIG(steps)[
-= [132] If [VAR[object]]'s [F[comment]] is [[null]]:
-== [133] Let [VAR[text]] be [VAR[child]]'s [F[child text content]].
-== [134] If [VAR[text]] is not the [[empty string]]:
-=== [135] Set [VAR[object]]'s [F[comment]] to [VAR[text]].
-]FIG]
-: [CODE[src][src (GPX)]] :
-[FIG(steps)[
-= [136] If [VAR[object]]'s [F[source]] is [[null]]:
-== [137] Let [VAR[text]] be [VAR[child]]'s [F[child text content]].
-== [138] If [VAR[text]] is not the [[empty string]]:
-=== [139] Set [VAR[object]]'s [F[source]] to [VAR[text]].
-]FIG]
-: [CODE[sym]] :
-[FIG(steps)[
-= [140] If [VAR[object]]'s [F[symbol name]] is [[null]]:
-== [141] Let [VAR[text]] be [VAR[child]]'s [F[child text content]].
-== [142] If [VAR[text]] is not the [[empty string]]:
-=== [143] Set [VAR[object]]'s [F[symbol name]] to [VAR[text]].
-]FIG]
-: [CODE[type][type (GPX)]] :
-[FIG(steps)[
-= [144] If [VAR[object]]'s [F[type]] is [[null]]:
-== [145] Let [VAR[text]] be [VAR[child]]'s [F[child text content]].
-== [146] If [VAR[text]] is not the [[empty string]]:
-=== [147] Set [VAR[object]]'s [F[type]] to [VAR[text]].
-]FIG]
-: [CODE[fix][fix (GPX)]] :
-[FIG(steps)[
-= [148] If [VAR[object]]'s [F[fix]] is [[null]]:
-== [149] Let [VAR[text]] be [VAR[child]]'s [F[child text content]].
-== [150] If [VAR[text]] is not the [[empty string]]:
-=== [151] Set [VAR[object]]'s [F[fix]] to [VAR[text]].
+= [16] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
+= [117] [[Parse a global date and time string][parse a global date and time string]]
+[VAR[text]].
+= [123] If a time is returned:
+== [130] Return the time.
+= [131] Otherwise:
+== [134] Return [[null]].
 ]FIG]
 
 ]FIG]
-= [123] [[Process property elements][process property elements]] of [VAR[child]] into [VAR[object]].
+= [158] If [VAR[result]] is not [[null]],
+set [VAR[object]]'s [VAR[field]] field to [VAR[result]].
 ]FIG]
 
 ;; [13] These steps intentionally ignore [[namespaces][namespace]].
