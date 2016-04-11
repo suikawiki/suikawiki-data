@@ -1,9 +1,10 @@
 * Data model
 
-[9] An [DFN[object]] has 
+[9] A [DFN[data set]] has 
 [DFN[[F[name]]]],
 [DFN[[F[description]]]],
 [DFN[[F[keywords]]]],
+[DFN[[F[generator]]]],
 [DFN[[F[page URL]]]],
 [DFN[[F[timestamp]]]],
 [DFN[[F[modified]]]],
@@ -15,18 +16,12 @@
 [DFN[[F[maximum longitude]]]],
 which are initially [[null]].
 
-[23] A [DFN[data set]] is an [[object]].
-
-[24] A [[data set]] has
-[DFN[[F[generator]]]],
-which is initially [[null]].
-
-[19] A [DFN[data set]] has
+[19] A [[data set]] has
 [DFN[[F[waypoints]]]],
 [DFN[[F[routes]]]], and
 [DFN[[F[tracks]]]], which are initially empty lists.
 
-[26] A [[point]] has
+[26] A [DFN[point]] has
 [DFN[[F[name]]]],
 [DFN[[F[description]]]],
 [DFN[[F[timestamp]]]],
@@ -38,8 +33,13 @@ which is initially [[null]].
 [DFN[[F[comment]]]],
 [DFN[[F[source]]]],
 [DFN[[F[symbol name]]]],
-[DFN[[F[type]]]], and
+[DFN[[F[type]]]],
 [DFN[[F[fix]]]],
+[DFN[[F[number of satellites]]]],
+[DFN[[F[hdop]]]],
+[DFN[[F[vdop]]]],
+[DFN[[F[age of DGPS data]]]], and
+[DFN[[F[DGPS ID]]]],
 which are initially [[null]].
 
 [43] A [DFN[person]] has
@@ -72,62 +72,60 @@ into [VAR[object]].
 with [VAR[object]], run these steps:
 [FIG(steps)[
 = [29] For each [[element]] [VAR[child]] in [VAR[element]]'s [F[children]], in order:
+== [20] [[Process][process a value element]] [VAR[child]] with [VAR[point]],
+using the following table:
+[FIG(table)[
+:l: [F[local name]]
+:f: Field
+:r: Rule
+
+:l: [CODE[name][name (GPX)]]
+:f: [F[name]]
+:r: String
+
+:l: [CODE[desc][desc (GPX)]]
+:f: [F[description]]
+:r: String
+
+:l: [CODE[keywords][keywords (GPX)]]
+:f: [F[keywords]]
+:r: String
+
+:l: [CODE[link][link (GPX)]]
+:f: [F[page URL]]
+:r: URL
+
+]FIG]
 == [30] Switch by [VAR[child]]'s [F[local name]]:
 [FIG(switch)[
-: [CODE[name][name (GPX)]] :
-[FIG(steps)[
-= [35] If [VAR[object]]'s [F[name]] is [[null]]:
-== [31] Let [VAR[text]] be [VAR[child]]'s [F[child text content]].
-== [32] If [VAR[text]] is not the [[empty string]]:
-=== [33] Set [VAR[object]]'s [F[name]] to [VAR[text]].
-]FIG]
-: [CODE[desc][desc (GPX)]] :
-[FIG(steps)[
-= [36] If [VAR[object]]'s [F[description]] is [[null]]:
-== [37] Let [VAR[text]] be [VAR[child]]'s [F[child text content]].
-== [38] If [VAR[text]] is not the [[empty string]]:
-=== [39] Set [VAR[object]]'s [F[description]] to [VAR[text]].
-]FIG]
-: [CODE[keywords][keywords (GPX)]] :
-[FIG(steps)[
-= [93] If [VAR[object]]'s [F[keywords]] is [[null]]:
-== [94] Let [VAR[text]] be [VAR[child]]'s [F[child text content]].
-== [95] If [VAR[text]] is not the [[empty string]]:
-=== [96] Set [VAR[object]]'s [F[keywords]] to [VAR[text]].
-]FIG]
 : [CODE[author][author (GPX)]] :
 [FIG(steps)[
 = [40] If [VAR[object]]'s [F[author]] is [[null]]:
 == [42] Let [VAR[person]] be a [[person]].
 == [68] For each [[element]] [VAR[gc]] in [VAR[child]]'s [F[children]], in order:
-=== [69] Switch by [VAR[gc]]'s [F[local name]]:
-[FIG(switch)[
-: [CODE[name][name (GPX)]] :
-[FIG(steps)[
-= [41] If [VAR[person]]'s [F[name]] is [[null]]:
-== [70] Let [VAR[text]] be [VAR[gc]]'s [F[child text content]].
-== [71] If [VAR[text]] is not the [[empty string]]:
-=== [72] Set [VAR[person]]'s [F[name]] to [VAR[text]].
+=== [23] [[Process][process a value element]] [VAR[gc]] with [VAR[person]],
+using the following table:
+[FIG(table)[
+:l: [F[local name]]
+:f: Field
+:r: Rule
+
+:l: [CODE[name][name (GPX)]]
+:f: [F[name]]
+:r: String
+
+:l: [CODE[link][link (GPX)]]
+:f: [F[page URL]]
+:r: URL
+
 ]FIG]
-: [CODE[email][email (GPX)]] :
-[FIG(steps)[
-= [45] If [VAR[person]]'s [F[email]] is [[null]]:
-== [46] Let [VAR[left]] be [VAR[gc]]'s [CODE[id][email (GPX)]] attribute value.
-== [47] Let [VAR[right]] be [VAR[gc]]'s [CODE[domain][email (GPX)]] attribute value.
-== [48] If [VAR[left]] and [VAR[right]] are not [[null]]:
-=== [50] Let [VAR[email]] be [VAR[left]] followed by [CODE[@]] followed by [VAR[right]].
-=== [49] Set [VAR[person]]'s [F[email]] to [VAR[email]].
-]FIG]
-: [CODE[link][link (GPX)]] :
-[FIG(steps)[
-= [82] If [VAR[person]]'s [F[page URL]] is [[null]]:
-== [79] Let [VAR[href]] be [VAR[child]]'s [CODE(XMLa)@en[href]] attribute value.
-== [80] If [VAR[href]] is not [[null]],
-[[parse][parse a URL]] [VAR[href]] relative to [VAR[child]]'s [F[node document]].
-== [65] If parsed and not failed:
-=== [81] Set [VAR[person]]'s [F[page URL]] to the [[resulting URL string]].
-]FIG]
-]FIG]
+=== [69] If [VAR[gc]]'s [F[local name]] is [CODE[email][email (GPX)]]
+and [VAR[person]]'s [F[email]] is [[null]]:
+==== [46] Let [VAR[left]] be [VAR[gc]]'s [CODE[id][email (GPX)]] attribute value.
+==== [47] Let [VAR[right]] be [VAR[gc]]'s [CODE[domain][email (GPX)]] attribute value.
+==== [48] If [VAR[left]] and [VAR[right]] are not [[null]]:
+===== [50] Let [VAR[email]] be [VAR[left]] followed by [CODE[@]] followed by [VAR[right]].
+===== [49] Set [VAR[person]]'s [F[email]] to [VAR[email]].
 == [44] Set [VAR[object]]'s [F[author]] to [VAR[person]].
 ]FIG]
 : [CODE[copyright][copyright (GPX)]] :
@@ -137,36 +135,21 @@ with [VAR[object]], run these steps:
 == [54] Set [VAR[license]]'s [F[holder]] to
 [VAR[child]]'s [CODE[author][copyright (GPX)]] attribute value.
 == [53] For each [[element]] [VAR[gc]] in [VAR[child]]'s [F[children]], in order:
-=== [56] Switch by [VAR[gc]]'s [F[local name]]:
-[FIG(switch)[
-: [CODE[year]] :
-[FIG(steps)[
-= [57] If [VAR[license]]'s [F[year]] is [[null]]:
-== [59] Let [VAR[text]] be [VAR[gc]]'s [F[child text content]].
-== [60] If [VAR[text]] is four or more [[ASCII digits]]:
-=== [61] Let [VAR[year]] be the result of applying the [[rules for parsing non-negative integers]] to [VAR[text]].
-=== [3] If [VAR[year]] is a positive integer:
-==== [58] Set [VAR[license]]'s [F[year]] to [VAR[year]].
+=== [24] [[Process][process a value element]] [VAR[gc]] with [VAR[license]],
+using the following table:
+[FIG(table)[
+:l: [F[local name]]
+:f: Field
+:r: Rule
+
+:l: [CODE[year]]
+:f: [F[year]]
+:r: Year
+
+:l: [CODE[license][license (GPX)]]
+:f: [F[page URL]]
+:r: URL
 ]FIG]
-: [CODE[license][license (GPX)]] :
-[FIG(steps)[
-= [62] If [VAR[license]]'s [F[page URL]] is [[null]]:
-== [63] Let [VAR[text]] be [VAR[gc]]'s [F[child text content]].
-== [64] If [VAR[text]] is not the [[empty string]],
-[[parse][parse a URL]] [VAR[text]] relative to [VAR[gc]]'s [F[node document]].
-== [66] If parsed and not failed:
-=== [67] Set [VAR[license]]'s [F[page URL]] to the [[resulting URL string]].
-]FIG]
-]FIG]
-]FIG]
-: [CODE[link][link (GPX)]] :
-[FIG(steps)[
-= [73] If [VAR[object]]'s [F[page URL]] is [[null]]:
-== [74] Let [VAR[href]] be [VAR[child]]'s [CODE(XMLa)@en[href]] attribute value.
-== [75] If [VAR[href]] is not [[null]],
-[[parse][parse a URL]] [VAR[href]] relative to [VAR[child]]'s [F[node document]].
-== [76] If parsed and not failed:
-=== [77] Set [VAR[object]]'s [F[page URL]] to the [[resulting URL string]].
 ]FIG]
 : [CODE[time][time (GPX)]] :
 [FIG(steps)[
@@ -239,11 +222,8 @@ into [VAR[object]], run these steps:
 : [CODE(XMLe)@en[metadata][metadata (GPX)]] or [CODE(XMLe)@en[extensions][extensions (GPX)]] :
 [[Process property elements][process property elements]] of [VAR[child]] into [VAR[object]].
 : [CODE(XMLe)@en[wpt]] :
-[FIG(steps)[
-= [20] Let [VAR[point]] be a [[point]].
-= [21] [[Parse a point element][parse a point element]] [VAR[child]] into [VAR[point]].
-= [22] Append [VAR[point]] to [VAR[object]]'s [F[waypoints]].
-]FIG]
+Append the result of [[parsing a point element][parse a point element]] [VAR[child]]
+to [VAR[object]]'s [F[waypoints]].
 : [CODE(XMLe)@en[rte]] :
 @@
 : [CODE(XMLe)@en[trk]] :
@@ -266,12 +246,36 @@ using the following table:
 :f: Field
 :r: Rule
 
+:l: [CODE[sat]]
+:f: [F[number of satellites]]
+:r: Non-negative number
+
+:l: [CODE[dgpsid]]
+:f: [F[DGPS ID]]
+:r: Non-negative integer
+
 :l: [CODE[ele]]
 :f: [F[elevation]]
 :r: Number
 
 :l: [CODE[geoidheight]]
 :f: [F[geoid height]]
+:r: Number
+
+:l: [CODE[hdop]]
+:f: [F[hdop]]
+:r: Number
+
+:l: [CODE[vdop]]
+:f: [F[vdop]]
+:r: Number
+
+:l: [CODE[pdop]]
+:f: [F[pdop]]
+:r: Number
+
+:l: [CODE[ageofdgpsdata]]
+:f: [F[age of DGPS data]]
 :r: Number
 
 :l: [CODE[magvar]]
@@ -310,6 +314,9 @@ using the following table:
 :f: [F[fix]]
 :r: String
 ]FIG]
+== [141] If [VAR[element]]'s [F[local name]] is [CODE[extensions]]:
+===
+@@
 ]FIG]
 
 [153] To [DFN[process a value element]] [VAR[element]] with [VAR[object]] and [VAR[table]],
@@ -317,6 +324,7 @@ run these steps:
 [FIG(steps)[
 = [156] Let [VAR[row]] be a row in [VAR[table]], whose "[F[local name]]"
 cell value is [VAR[element]]'s [F[local name]].
+= [142] If [VAR[row]] is [[null]], abort these steps.
 = [155] Let [VAR[field]] be [VAR[row]]'s "Field" cell value.
 = [157] Let [VAR[result]] be the result of switching by [VAR[row]]'s "Rule" cell value:
 [FIG(switch)[
@@ -327,6 +335,16 @@ cell value is [VAR[element]]'s [F[local name]].
 == [151] Return [VAR[text]].
 = [148] Otherwise:
 == [152] Return [[null]].
+]FIG]
+: Non-negative number :
+[FIG(steps)[
+= [135] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
+= [136] Let [VAR[number]] be the result of applying the 
+[[rules for parsing non-negative integers]] to [VAR[text]].
+= [137] If [VAR[number]] is a number:
+== [138] Return [VAR[number]].
+= [139] Otherwise:
+== [140] Return [[null]].
 ]FIG]
 : Number :
 [FIG(steps)[
@@ -348,6 +366,15 @@ cell value is [VAR[element]]'s [F[local name]].
 = [132] Otherwise:
 == [133] Return [[null]].
 ]FIG]
+: Year :
+[FIG(steps)[
+= [36] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
+= [37] If [VAR[text]] is four or more [[ASCII digits]]:
+== [38] Let [VAR[year]] be the result of applying the [[rules for parsing non-negative integers]] to [VAR[text]].
+== [41] If [VAR[year]] is a positive integer:
+=== [39] Return [VAR[year]] and abort these steps.
+= [3] Return [[null]].
+]FIG]
 : Time :
 [FIG(steps)[
 = [16] Let [VAR[text]] be [VAR[element]]'s [F[child text content]].
@@ -358,6 +385,17 @@ cell value is [VAR[element]]'s [F[local name]].
 = [131] Otherwise:
 == [134] Return [[null]].
 ]FIG]
+: URL :
+[FIG(steps)[
+= [21] Let [VAR[href]] be [VAR[element]]'s [CODE(XMLa)@en[href]] attribute value.
+= [22] If [VAR[href]] is not [[null]],
+[[parse][parse a URL]] [VAR[href]] relative to [VAR[element]]'s [F[node document]].
+= [31] If parsed and not failed:
+== [32] Return the [[resulting URL string]].
+= [33] Otherwise:
+== [35] Return [[null]].
+]FIG]
+
 
 ]FIG]
 = [158] If [VAR[result]] is not [[null]],
