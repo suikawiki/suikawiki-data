@@ -3,11 +3,13 @@
 [9] An [DFN[object]] has 
 [DFN[[F[name]]]],
 [DFN[[F[description]]]],
+[DFN[[F[keywords]]]],
+[DFN[[F[page URL]]]],
+[DFN[[F[timestamp]]]],
+[DFN[[F[modified]]]],
 [DFN[[F[author]]]], and
 [DFN[[F[license]]]],
 which are initially [[null]].
-
-[80] An [DFN[object]] has [DFN[[F[links]]]], which is initially an empty list.
 
 [23] A [DFN[data set]] is an [[object]].
 
@@ -28,11 +30,10 @@ which is initially [[null]].
 which are initially [[null]].
 
 [43] A [DFN[person]] has
-[DFN[[F[name]]]] and
-[DFN[[F[email]]]],
+[DFN[[F[name]]]],
+[DFN[[F[email]]]], and
+[DFN[[F[page URL]]]],
 which are initially [[null]].
-
-[79] A [DFN[person]] has [DFN[[F[links]]]], which is initially an empty list.
 
 [51] A [DFN[license]] has
 [DFN[[F[holder]]]],
@@ -74,6 +75,13 @@ with [VAR[object]], run these steps:
 == [38] If [VAR[text]] is not the [[empty string]]:
 === [39] Set [VAR[object]]'s [F[description]] to [VAR[text]].
 ]FIG]
+: [CODE[keywords][keywords (GPX)]] :
+[FIG(steps)[
+= [93] If [VAR[object]]'s [F[keywords]] is [[null]]:
+== [94] Let [VAR[text]] be [VAR[child]]'s [F[child text content]].
+== [95] If [VAR[text]] is not the [[empty string]]:
+=== [96] Set [VAR[object]]'s [F[keywords]] to [VAR[text]].
+]FIG]
 : [CODE[author][author (GPX)]] :
 [FIG(steps)[
 = [40] If [VAR[object]]'s [F[author]] is [[null]]:
@@ -99,9 +107,12 @@ with [VAR[object]], run these steps:
 ]FIG]
 : [CODE[link][link (GPX)]] :
 [FIG(steps)[
-= [73] Let [VAR[link]] be the result of [[parsing a [CODE[link]] element][parse a [CODE[link]] element]] [VAR[child]].
-= [74] If [VAR[link]] is not [[null]]:
-== [75] Append [VAR[link]] to [VAR[person]]'s [F[links]].
+= [82] If [VAR[person]]'s [F[page URL]] is [[null]]:
+== [79] Let [VAR[href]] be [VAR[child]]'s [CODE(XMLa)@en[href]] attribute value.
+== [80] If [VAR[href]] is not [[null]],
+[[parse][parse a URL]] [VAR[href]] relative to [VAR[child]]'s [F[node document]].
+== [65] If parsed and not failed:
+=== [81] Set [VAR[person]]'s [F[page URL]] to the [[resulting URL string]].
 ]FIG]
 ]FIG]
 == [44] Set [VAR[object]]'s [F[author]] to [VAR[person]].
@@ -128,22 +139,45 @@ with [VAR[object]], run these steps:
 [FIG(steps)[
 = [62] If [VAR[license]]'s [F[page URL]] is [[null]]:
 == [63] Let [VAR[text]] be [VAR[gc]]'s [F[child text content]].
-== [64] If [VAR[text]] is not the [[empty string]]:
-=== [65] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[gc]]'s [F[node document]].
-=== [66] If not failed:
-==== [67] Set [VAR[license]]'s [F[page URL]] to the [[resulting URL string]].
+== [64] If [VAR[text]] is not the [[empty string]],
+[[parse][parse a URL]] [VAR[text]] relative to [VAR[gc]]'s [F[node document]].
+== [66] If parsed and not failed:
+=== [67] Set [VAR[license]]'s [F[page URL]] to the [[resulting URL string]].
 ]FIG]
 ]FIG]
 ]FIG]
 : [CODE[link][link (GPX)]] :
 [FIG(steps)[
-= [76] Let [VAR[link]] be the result of [[parsing a [CODE[link]] element][parse a [CODE[link]] element]] [VAR[child]].
-= [77] If [VAR[link]] is not [[null]]:
-== [78] Append [VAR[link]] to [VAR[object]]'s [F[links]].
+= [73] If [VAR[object]]'s [F[page URL]] is [[null]]:
+== [74] Let [VAR[href]] be [VAR[child]]'s [CODE(XMLa)@en[href]] attribute value.
+== [75] If [VAR[href]] is not [[null]],
+[[parse][parse a URL]] [VAR[href]] relative to [VAR[child]]'s [F[node document]].
+== [76] If parsed and not failed:
+=== [77] Set [VAR[object]]'s [F[page URL]] to the [[resulting URL string]].
+]FIG]
+: [CODE[time][time (GPX)]] :
+[FIG(steps)[
+= [83] If [VAR[child]]'s [F[namespace]] is [CODE[http://www.topografix.com/GPX/gpx_modified/0/1]]:
+== [88] If [VAR[object]]'s [F[modified]] is [[null]]:
+=== [85] Let [VAR[text]] be [VAR[child]]'s [F[child text content]].
+=== [86] [[Parse a global date and time string][parse a global date and time string]]
+[VAR[text]].
+=== [87] If a time is returned,
+set [VAR[object]]'s [F[modified]] to the time.
+= [84] Otherwise:
+== [89] If [VAR[object]]'s [F[timestamp]] is [[null]]:
+=== [90] Let [VAR[text]] be [VAR[child]]'s [F[child text content]].
+=== [91] [[Parse a global date and time string][parse a global date and time string]]
+[VAR[text]].
+=== [92] If a time is returned,
+set [VAR[object]]'s [F[timestamp]] to the time.
 ]FIG]
 
 ]FIG]
 ]FIG]
+
+;; [78] These steps ignore any duplicate [CODE(XMLe)@en[link][link (GPX)]]
+element.  They also ignore any [CODE(XMLe)@en[link][link (GPX)]] content.
 
 [10] To [DFN[parse a [CODE[gpx]] element]] [VAR[element]]
 into [VAR[object]], run these steps:
@@ -170,12 +204,6 @@ into [VAR[object]], run these steps:
 ]FIG]
 ]FIG]
 
-[81] To [DFN[parse a [CODE[link]] element]] [VAR[element]], run these steps:
-[FIG(steps)[
-
-@@
-]FIG]
-
 [27] To [DFN[parse a point element]] [VAR[element]] into [VAR[object]],
 run these steps:
 
@@ -193,6 +221,7 @@ and [DFN[[F[namespace]]]] are defined by the [[DOM Standard]].
 
 [34] The terms [DFN[[[ASCII digits]]]], 
 [DFN[[[rules for parsing non-negative integers]]]],
+[DFN[[[parse a global date and time string]]]],
 [DFN[[F[child text content]]]],
 [DFN[parse a URL]], and
 [DFN[resulting URL string]]
