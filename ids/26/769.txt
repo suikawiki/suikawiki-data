@@ -1,9 +1,13 @@
 * Data model
 
 [9] An [DFN[object]] has 
-[DFN[[F[name]]]], and
+[DFN[[F[name]]]],
 [DFN[[F[description]]]],
+[DFN[[F[author]]]], and
+[DFN[[F[license]]]],
 which are initially [[null]].
+
+[80] An [DFN[object]] has [DFN[[F[links]]]], which is initially an empty list.
 
 [23] A [DFN[data set]] is an [[object]].
 
@@ -23,6 +27,19 @@ which is initially [[null]].
 [DFN[[F[longitude]]]],
 which are initially [[null]].
 
+[43] A [DFN[person]] has
+[DFN[[F[name]]]] and
+[DFN[[F[email]]]],
+which are initially [[null]].
+
+[79] A [DFN[person]] has [DFN[[F[links]]]], which is initially an empty list.
+
+[51] A [DFN[license]] has
+[DFN[[F[holder]]]],
+[DFN[[F[year]]]], and
+[DFN[[F[page URL]]]],
+which are initially null.
+
 * Parsing
 
 [1] To [DFN[parse a GPX document]] [VAR[doc]], run these steps:
@@ -37,7 +54,8 @@ into [VAR[object]].
 == [12] Return [[null]].
 ]FIG]
 
-[28] To [DFN[process property elements]] of [[element]] [VAR[element]], run these steps:
+[28] To [DFN[process property elements]] of [[element]] [VAR[element]]
+with [VAR[object]], run these steps:
 [FIG(steps)[
 = [29] For each [[element]] [VAR[child]] in [VAR[element]]'s [F[children]], in order:
 == [30] Switch by [VAR[child]]'s [F[local name]]:
@@ -55,6 +73,73 @@ into [VAR[object]].
 == [37] Let [VAR[text]] be [VAR[child]]'s [F[child text content]].
 == [38] If [VAR[text]] is not the [[empty string]]:
 === [39] Set [VAR[object]]'s [F[description]] to [VAR[text]].
+]FIG]
+: [CODE[author][author (GPX)]] :
+[FIG(steps)[
+= [40] If [VAR[object]]'s [F[author]] is [[null]]:
+== [42] Let [VAR[person]] be a [[person]].
+== [68] For each [[element]] [VAR[gc]] in [VAR[child]]'s [F[children]], in order:
+=== [69] Switch by [VAR[gc]]'s [F[local name]]:
+[FIG(switch)[
+: [CODE[name][name (GPX)]] :
+[FIG(steps)[
+= [41] If [VAR[person]]'s [F[name]] is [[null]]:
+== [70] Let [VAR[text]] be [VAR[gc]]'s [F[child text content]].
+== [71] If [VAR[text]] is not the [[empty string]]:
+=== [72] Set [VAR[person]]'s [F[name]] to [VAR[text]].
+]FIG]
+: [CODE[email][email (GPX)]] :
+[FIG(steps)[
+= [45] If [VAR[person]]'s [F[email]] is [[null]]:
+== [46] Let [VAR[left]] be [VAR[gc]]'s [CODE[id][email (GPX)]] attribute value.
+== [47] Let [VAR[right]] be [VAR[gc]]'s [CODE[domain][email (GPX)]] attribute value.
+== [48] If [VAR[left]] and [VAR[right]] are not [[null]]:
+=== [50] Let [VAR[email]] be [VAR[left]] followed by [CODE[@]] followed by [VAR[right]].
+=== [49] Set [VAR[person]]'s [F[email]] to [VAR[email]].
+]FIG]
+: [CODE[link][link (GPX)]] :
+[FIG(steps)[
+= [73] Let [VAR[link]] be the result of [[parsing a [CODE[link]] element][parse a [CODE[link]] element]] [VAR[child]].
+= [74] If [VAR[link]] is not [[null]]:
+== [75] Append [VAR[link]] to [VAR[person]]'s [F[links]].
+]FIG]
+]FIG]
+== [44] Set [VAR[object]]'s [F[author]] to [VAR[person]].
+]FIG]
+: [CODE[copyright][copyright (GPX)]] :
+[FIG(steps)[
+= [52] If [VAR[object]]'s [F[license]] is [[null]]:
+== [55] Let [VAR[license]] be a [[license]].
+== [54] Set [VAR[license]]'s [F[holder]] to
+[VAR[child]]'s [CODE[author][copyright (GPX)]] attribute value.
+== [53] For each [[element]] [VAR[gc]] in [VAR[child]]'s [F[children]], in order:
+=== [56] Switch by [VAR[gc]]'s [F[local name]]:
+[FIG(switch)[
+: [CODE[year]] :
+[FIG(steps)[
+= [57] If [VAR[license]]'s [F[year]] is [[null]]:
+== [59] Let [VAR[text]] be [VAR[gc]]'s [F[child text content]].
+== [60] If [VAR[text]] is four or more [[ASCII digits]]:
+=== [61] Let [VAR[year]] be the result of applying the [[rules for parsing non-negative integers]] to [VAR[text]].
+=== [3] If [VAR[year]] is a positive integer:
+==== [58] Set [VAR[license]]'s [F[year]] to [VAR[year]].
+]FIG]
+: [CODE[license][license (GPX)]] :
+[FIG(steps)[
+= [62] If [VAR[license]]'s [F[page URL]] is [[null]]:
+== [63] Let [VAR[text]] be [VAR[gc]]'s [F[child text content]].
+== [64] If [VAR[text]] is not the [[empty string]]:
+=== [65] [[Parse][parse a URL]] [VAR[text]] relative to [VAR[gc]]'s [F[node document]].
+=== [66] If not failed:
+==== [67] Set [VAR[license]]'s [F[page URL]] to the [[resulting URL string]].
+]FIG]
+]FIG]
+]FIG]
+: [CODE[link][link (GPX)]] :
+[FIG(steps)[
+= [76] Let [VAR[link]] be the result of [[parsing a [CODE[link]] element][parse a [CODE[link]] element]] [VAR[child]].
+= [77] If [VAR[link]] is not [[null]]:
+== [78] Append [VAR[link]] to [VAR[object]]'s [F[links]].
 ]FIG]
 
 ]FIG]
@@ -85,6 +170,12 @@ into [VAR[object]], run these steps:
 ]FIG]
 ]FIG]
 
+[81] To [DFN[parse a [CODE[link]] element]] [VAR[element]], run these steps:
+[FIG(steps)[
+
+@@
+]FIG]
+
 [27] To [DFN[parse a point element]] [VAR[element]] into [VAR[object]],
 run these steps:
 
@@ -95,11 +186,14 @@ run these steps:
 * References
 
 [5] The terms [DFN[[[element]]]], [DFN[[[attribute]]]],
+[DFN[[F[document element]]]],
+[DFN[[F[node document]]]],
 [DFN[[F[children]]]], [DFN[[F[local name]]]],
 and [DFN[[F[namespace]]]] are defined by the [[DOM Standard]].
 
-[34] The term [DFN[[F[child text content]]]]
-is defined by the [[HTML Standard]].
-
-[3] The term [DFN[[F[document element]]]] is defined by
-@@ XXX
+[34] The terms [DFN[[[ASCII digits]]]], 
+[DFN[[[rules for parsing non-negative integers]]]],
+[DFN[[F[child text content]]]],
+[DFN[parse a URL]], and
+[DFN[resulting URL string]]
+are defined by the [[HTML Standard]].
