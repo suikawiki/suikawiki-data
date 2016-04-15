@@ -29,9 +29,155 @@
 
 * 歴史
 
+** W3C DOM 時代
+
+[19] [CODE(DOMi)@en[[[Element]]]] を [CODE(DOMp)@en[[[deep]]]] = [CODE(IDL)@en[[[false]]]]
+で [CODE(DOMm)@en[[[cloneNode]]]] すると、[[既定属性]]が自動的に作られるのかは明確ではありません。
+
+[20] [CODE(DOMi)@en[[[UserDataHandler]]]] がいつ呼び出されるのかはよくわかりません。
+各[[節点]]が複製される度に呼ばれるのか、それとも全[[節点]]が複製されてから順に呼んでもいいのか。
+
+[21] [CITE@en-us[Firefox 3.1 for developers - MDC]] ([TIME[2009-02-08 18:25:06 +09:00]] 版) <https://developer.mozilla.org/ja/Firefox_3.1_for_developers#.E6.96.B0.E3.81.97.E3.81.8F.E3.82.B5.E3.83.9D.E3.83.BC.E3.83.88.E3.81.95.E3.82.8C.E3.81.9F.E6.A9.9F.E8.83.BD_2>
+
+>HTML ノードでの cloneNode ( bug 42976 )。
+
+[22] [CITE[IEにおけるcloneNodeの問題点 - dhrnameの開発日誌]] ([TIME[2009-01-27 20:59:01 +09:00]] 版) <http://d.hatena.ne.jp/dhrname/20080621/p1>
+
+>DOMのcloneNodeはノードを複製できますし、IEもそれに従っています。しかしながら、IEでは、setAttributeなどで、後から付け足された属性は複製しない特徴を持っています。
+
+
+[18] 
+Returns a duplicate of the node, i.e. serves as a generic
+[PRE[
+      copy constructor for nodes.
+]PRE]
+
+[PRE[
+      - The duplicate node has no parent, i.e. <A::Node.parentNode>
+        is <DOM::null>.  <SRC::DOM1, DOM2, DOM3>
+]PRE]
+
+[PRE[
+      - The duplicate node has no user data, i.e. user data
+        associated to the node is not carried over.  However,
+        if any <IF::UserDataHandlers> has been specified along with
+        the associated data, those handlers will be called with
+        the appropriate parameters before the method returns.  <SRC::DOM3>
+]PRE]
+
+[PRE[
+      - If the node is an <IF::Element>, all attributes and their values,
+        including those representing defaulted attributes (i.e.
+        attributes whose <A::Attr.specified> are <DOM::false>),
+but the method does not copy any children it contains
+        unless it is a deep clone (i.e. <P::deep> is <DOM::true>).
+        <SRC::DOM1, DOM2, DOM3>
+]PRE]
+
+[PRE[
+      - Cloning an <IF::Attr> directly, as oppsed to be cloned
+        as part of an <IF::Element> cloning operation, returns
+        a specified attribute (i.e. its <A::Attr.specified> is
+        set to <DOM::true>).  <SRC::DOM1, DOM2, DOM3>
+]PRE]
+
+[PRE[
+      - Cloning an <IF::Attr> always clones its children, since
+        they represent its value, no matter whether this is a
+        deep clone or not.  <SRC::DOM3>
+]PRE]
+
+[PRE[
+      - Cloning an <IF::tx|EntityReference> automatically constructs
+        its subtree if a corresponding <IF::tx|Entity> is available,
+        no matter whether this is a deep clone or not.  <SRC::DOM3>
+- Cloning an <IF::Attr> always clones its children, since
+        they represent its value, no matter whether this is a
+        deep clone or not.  <SRC::DOM3>
+]PRE]
+
+[PRE[
+      - Cloning an <IF::tx|EntityReference> automatically constructs
+        its subtree if a corresponding <IF::tx|Entity> is available,
+        no matter whether this is a deep clone or not.  <SRC::DOM3>
+]PRE]
+
+[PRE[
+      - Cloning any other type of node simply returns a copy of the node.
+        <SRC::DOM1, DOM2, DOM3>
+]PRE]
+
+[PRE[
+      - Cloning <IF::Document>, <IF::tx|DocumentType>, <IF::tx|Entity>,
+        <IF::tx|Notation> nodes is implementation dependent.
+        <SRC::DOM1SE, DOM2, DOM3>
+]PRE]
+
+[PRE[
+      - Cloning an immutable subtree results in a mutable copy, but
+        the children of an <IF::tx|EntityReference> clone are
+        read-only.  <SRC::DOM2, DOM3>
+- Cloning <IF::Document>, <IF::tx|DocumentType>, <IF::tx|Entity>,
+        <IF::tx|Notation> nodes is implementation dependent.
+        <SRC::DOM1SE, DOM2, DOM3>
+]PRE]
+
+[PRE[
+      - Cloning an immutable subtree results in a mutable copy, but
+        the children of an <IF::tx|EntityReference> clone are
+        read-only.  <SRC::DOM2, DOM3>
+]PRE]
+
+[PRE[
+      - Cloning a node does not copy the event listeners attached to it.
+        <SRC::DOM2 Events, DOM3 Events>
+]PRE]
+
+[PRE[
+      {NOTE:: <IF::UserDataHandler>s are prohibitted to throw exceptions;
+              if a <IF::UserDataHandler> that is registered to the node
+              being cloned throws an exception, then the result of
+              the method is undefined.
+]PRE]
+
+[CODE(DOMc)@en[[[NOT_SUPPORTED_ERR]]]]:
+The node is of type <IF::Document>, <IF::tx|DocumentType>,
+[PRE[
+          <IF::tx|Entity>, or <IF::tx|Notation> and the implementation
+          does not support cloning that type of node.  <SRC::DOM1SE>
+]PRE]
+
+[PRE[
+          Only in DOM1SE; they are implementation dependent
+          in DOM1SE, DOM2, and DOM3.
+]PRE]
+
+
+** DOM Standard 時代
+
+[23] [CITE@en[(X)HTML5 Tracking]]
+([TIME[2009-09-15 20:16:30 +09:00]] 版)
+<http://html5.org/tools/web-apps-tracker?from=3853&to=3854>
+
+[25] [CITE[''''''[''''''whatwg'''''']'''''' cloneNode and HTML elements]]
+( ([TIME[2009-09-27 11:33:07 +09:00]] 版))
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2009-September/022960.html>
+
+[26] [CITE[''''''[''''''whatwg'''''']'''''' cloneNode and HTML elements]]
+( ([TIME[2009-09-27 11:33:07 +09:00]] 版))
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2009-September/022969.html>
+
 [1] [CITE@en[Web Applications 1.0 r6423 DOM Core convergence (cloning)]]
 ( ([TIME[2011-08-12 06:53:00 +09:00]] 版))
 <http://html5.org/tools/web-apps-tracker?from=6422&to=6423>
+
+[24] [CITE[IRC logs: freenode / #whatwg / 20120514]]
+( ([TIME[2012-05-21 23:32:11 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20120514#l-223>
+
+[27] [CITE[Sadness. (Default importNode() and cloneNode() to false.) https://www.w3... · 70fdc5f · whatwg/dom]]
+( ([TIME[2013-11-13 11:27:00 +09:00]] 版))
+<https://github.com/whatwg/dom/commit/70fdc5f9030c22c5ceca9e875e06f8b305529ef8>
 
 [12] [CITE@en[Define Request/Response clone() methods. Give up on structured clones fo... · ae663b5 · whatwg/fetch]]
 ( ([TIME[2014-10-10 03:00:13 +09:00]] 版))
@@ -45,6 +191,22 @@
 ( ([TIME[2014-12-12 11:32:48 +09:00]] 版))
 <https://github.com/whatwg/dom/commit/5fc973c1d2fda9c92e43dba9c946eba389f8546c>
 
+[28] [CITE@en[Make cloning more explicit regarding attributes. Fixes #30. · whatwg/dom@39e6a33]]
+([TIME[2015-08-05 12:11:38 +09:00]] 版)
+<https://github.com/whatwg/dom/commit/39e6a33785b33649ef839d8ad355461a57413963>
+
+[29] [CITE@en[Define copying attributes since @domenic almost called me lazy. · whatwg/dom@1d24476]]
+([TIME[2015-08-05 12:13:28 +09:00]] 版)
+<https://github.com/whatwg/dom/commit/1d24476e7faf715bd0edd1f28351cfd8f32e1025>
+
 [16] [CITE[IRC logs: freenode / #whatwg / 20151021]]
 ([TIME[2015-10-22 11:33:28 +09:00]] 版)
 <http://krijnhoetmer.nl/irc-logs/whatwg/20151021>
+
+[30] [CITE@en[Make cloneNode() throw for ShadowRoot objects · whatwg/dom@02ec9c7]]
+([TIME[2016-02-25 11:20:29 +09:00]] 版)
+<https://github.com/whatwg/dom/commit/02ec9c7e52cb5a09d4cf7d14a583c635ea6dc38d>
+
+[31] [CITE@en[Add support for custom elements · whatwg/dom@7f63535]]
+([TIME[2016-04-13 22:20:30 +09:00]] 版)
+<https://github.com/whatwg/dom/commit/7f63535da39a1cbf7f8f68563abc6f05f760990a>
