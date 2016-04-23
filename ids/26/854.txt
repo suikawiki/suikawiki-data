@@ -5,7 +5,7 @@ Otherwise, if the client is configured to use one or more proxy servers,
 it is set to a virtual [[PAC file]] which represents those proxy server configurations.
 
 [1] To [DFN[establish a connection to the HTTP server]] of an [[URL record]] [VAR[url]]
-from a client [VAR[client]], run these steps:
+from a client [VAR[client]], optionally with the [VAR[ws]] flag, run these steps:
 [FIG(steps)[
 = [2] If [VAR[client]]'s [F[PAC]] is not [[null]]:
 == [3] Let [VAR[proxies]] be the result of [[running a PAC file][run a PAC file]] with 
@@ -26,9 +26,15 @@ is ([CODE[direct]], [[null]], [[null]]).
 : [CODE(URI)@en[http]] : [N[80]]
 : [CODE(URI)@en[https]] : [N[443]]
 ]FIG]
+= [13] If [VAR[url]]'s [F[host]] is a [[domain]]:
+== [14] Let [VAR[addr]] be the result of applying [[name resolution]] to [VAR[host]].
+= [46] Otherwise:
+== [47] Let [VAR[addr]] be [VAR[host]].
+= [44] If [VAR[ws]] flag is set, [[wait for other connections]]
+with [VAR[addr]] and [VAR[port]].
 = [31] Let [VAR[connection]] be the result of 
 [[establishing a TCP connection][establish a TCP connection]]
-to [VAR[url]]'s [F[host]] and [VAR[port]].
+to [VAR[addr]] and [VAR[port]].
 = [13] If [VAR[connection]] is ''not'' a [[failure]] and
 [VAR[url]]'s [F[scheme][URL scheme]] is [CODE(URI)@en[https]]:
 == [37] Set [VAR[connection]] to the result of running the [[TLS steps]] for
@@ -38,12 +44,33 @@ to [VAR[url]]'s [F[host]] and [VAR[port]].
 [FIG(steps)[
 = [34] Let [VAR[port]] be [VAR[proxy]]'s [F[port]].
 = [35] If [VAR[port]] is [[null]], set [VAR[port]] to [N[80]].
+= [48] If [VAR[proxy]]'s [F[host]] is a [[domain]]:
+== [49] Let [VAR[addr]] be the result of applying [[name resolution]] to [VAR[proxy]]'s [F[host]].
+= [50] Otherwise:
+== [51] Let [VAR[addr]] be [VAR[proxy]]'s [F[host]].
 = [36] Let [VAR[connection]] be the result of 
 [[establishing a TCP connection][establish a TCP connection]]
-to [VAR[proxy]]'s [F[host]] and [VAR[port]].
+to [VAR[addr]] and [VAR[port]].
 = [29] If [VAR[connection]] is ''not'' a [[failure]] and
 [VAR[url]]'s [F[scheme][URL scheme]] is [CODE(URI)@en[https]]:
-== [38] 
+== [40] If [VAR[url]]'s [VAR[port]] is [[null]]:
+=== [39] Let [VAR[target]] be [VAR[url]]'s [F[host]].
+== [41] Otherwise:
+=== [42] Let [VAR[target]] be [VAR[url]]'s [F[host]], followed by [CODE[:]],
+followed by [VAR[url]]'s [F[port]], [[serialized][serialize an integer]].
+== [38] [[Send an HTTP request][HTTP接続の処理]]:
+[FIG(list members)[
+: [F[method][request method]] : [CODE[CONNECT]]
+: [F[request target]] : [VAR[target]]
+: [F[header list]] :
+[FIG(list members)[
+: [CODE[Host]] : [VAR[target]]
+: [CODE[Proxy-Connection]] : [CODE[keep-alive]]
+: [CODE[User-Agent]] : [[default `[CODE[User-Agent]]` value]]
+]FIG]
+]FIG]
+== [43] Wait for an [[HTTP response]] [VAR[response]].
+==
 @@
 ]FIG]
 : [CODE[https]] :
@@ -58,11 +85,9 @@ and abort these steps.
 = [9] Return a [[failure]].
 ]FIG]
 
-[32] To [DFN[establish a TCP connection]] to [VAR[host]] and [VAR[port]],
+[32] To [DFN[establish a TCP connection]] to [VAR[addr]] and [VAR[port]],
 run these steps:
 [FIG(steps)[
-= [13] If [VAR[host]] is a [[domain]]:
-== [14] Let [VAR[addr]] be the result of applying [[name resolution]] to [VAR[host]].
 = [16] Let [VAR[connection]] be a [[TCP]] connection to [VAR[addr]] and [VAR[port]].
 = [19] If [VAR[connection]] is ''not'' a [[failure]]:
 == [24] Disable the [CODE[SO_OOBINLINE]] option of [VAR[connection]].
@@ -88,6 +113,10 @@ A [DFN[proxy configuration]] is a tuple of ([DFN[protocol]], [DFN[host]], [DFN[p
 [CODE[https]],
 [CODE[socks4]], and
 [CODE[socks5]].
+
+@@
+[45] 
+WebSocket接続を得る
 
 @@
 [15] The [DFN[name resolution]] steps with [VAR[host]] is ...
