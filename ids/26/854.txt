@@ -1,6 +1,8 @@
 [4] A [[client]] has a [F[PAC]], which is initially [[null]].
 If the client is configured to use a [[PAC file]], it is set to an object
 which represents the file.
+Otherwise, if the client is configured to use one or more proxy servers,
+it is set to a virtual [[PAC file]] which represents those proxy server configurations.
 
 [1] To [DFN[establish a connection to the HTTP server]] of an [[URL record]] [VAR[url]]
 from a client [VAR[client]], run these steps:
@@ -9,10 +11,64 @@ from a client [VAR[client]], run these steps:
 == [3] Let [VAR[proxies]] be the result of [[running a PAC file][run a PAC file]] with 
 [VAR[client]]'s [F[PAC]] and [VAR[url]].
 = [6] Otherwise:
-== [7] Let [VAR[proxies]] be an empty list.
-=
+== [7] Let [VAR[proxies]] be a list whose only member
+is ([CODE[direct]], [[null]], [[null]]).
+= [10] For each [VAR[proxy]] in [VAR[proxies]], in order, run these substeps:
+== [12] Switch by [VAR[proxy]]'s [F[protocol]]:
+[FIG(switch)[
+: [CODE[direct]] :
+[FIG(steps)[
+= [13] If [VAR[url]]'s [F[host]] is a [[domain]]:
+== [14] Let [VAR[addr]] be the result of applying [[name resolution]] to [VAR[url]]'s [F[host]].
+== [17] Let [VAR[port]] be [VAR[url]]'s [F[port]].
+== [18] If [VAR[port]] is [[null]]:
+=== [21] Set [VAR[port]] to the value determined by the [VAR[url]]'s [F[scheme][URL scheme]]:
+[FIG(switch)[
+: [CODE(URI)@en[ftp]] : [N[21]]
+: [CODE(URI)@en[http]] : [N[80]]
+: [CODE(URI)@en[https]] : [N[443]]
+]FIG]
+== [16] Let [VAR[connection]] be a [[TCP]] connection to [VAR[addr]] and [VAR[port]].
+== [19] If [VAR[connection]] is not a [[failure]]:
+=== [24] Disable the [CODE[SO_OOBINLINE]] option of [VAR[connection]].
+=== [22] Enable the [CODE[SO_NODELAY]] option of [VAR[connection]].
+=== [27] Run the [[TCP keep alive]] steps for [VAR[connection]].
+===
 @@
+=== [20] Return [VAR[connection]].
+]FIG]
+: [CODE[http]] :
+@@
+: [CODE[https]] :
+@@
+: [CODE[socks4]] :
+@@
+: [CODE[socks5]] :
+@@
+]FIG]
+= [9] Return a [[failure]].
 ]FIG]
 
 @@
 [5] To [DFN[run a PAC file]] with [VAR[pac]] and [VAR[url]], ...
+
+[8] The steps to [[run a PAC file]] return zero or more [[proxy configurations][proxy configuration]].
+A [DFN[proxy configuration]] is a tuple of ([DFN[protocol]], [DFN[host]], [DFN[port]]).
+
+[11] The [[proxy configuration]]'s [F[protocol]] is one of:
+[CODE[direct]],
+[CODE[http]],
+[CODE[https]],
+[CODE[socks4]], and
+[CODE[socks5]].
+
+@@
+[15] The [DFN[name resolution]] steps with [VAR[host]] is ...
+
+[28] The [DFN[TCP keep alive]] steps for [VAR[connection]] is a set of implementation
+dependent steps.  An example of such steps is:
+[FIG(steps)[
+= [23] Enable the [CODE[SO_KEEPALIVE]] option of [VAR[connection]].
+= [25] Set [CODE[TCP_KEEPIDLE]] option of [VAR[connection]] to 45 (seconds).
+= [26] Set [CODE[TCP_KEEPINTVL]] option of [VAR[connection]] to 45 (seconds).
+]FIG]
