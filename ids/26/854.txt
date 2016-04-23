@@ -31,17 +31,19 @@ is ([CODE[direct]], [[null]], [[null]]).
 = [46] Otherwise:
 == [47] Let [VAR[addr]] be [VAR[host]].
 = [44] If [VAR[ws]] flag is set, [[wait for other connections]]
-with [VAR[addr]] and [VAR[port]].
+with [VAR[addr]] and [VAR[url]]'s [F[port]].
 = [31] Let [VAR[connection]] be the result of 
 [[establishing a TCP connection][establish a TCP connection]]
 to [VAR[addr]] and [VAR[port]].
 = [13] If [VAR[connection]] is ''not'' a [[failure]] and
 [VAR[url]]'s [F[scheme][URL scheme]] is [CODE(URI)@en[https]]:
 == [37] Set [VAR[connection]] to the result of running the [[TLS steps]] for
-[VAR[connection]] and [VAR[url]].
+[VAR[connection]] and [VAR[url]]'s [F[host]].
 ]FIG]
-: [CODE[http]] :
+: [CODE[http]] or [CODE[https]] :
 [FIG(steps)[
+= [43] If [VAR[ws]] flag is set, [[wait for other connections]]
+with [VAR[url]]'s [F[host]] and [VAR[url]]'s [F[port]].
 = [34] Let [VAR[port]] be [VAR[proxy]]'s [F[port]].
 = [35] If [VAR[port]] is [[null]], set [VAR[port]] to [N[80]].
 = [48] If [VAR[proxy]]'s [F[host]] is a [[domain]]:
@@ -51,30 +53,28 @@ to [VAR[addr]] and [VAR[port]].
 = [36] Let [VAR[connection]] be the result of 
 [[establishing a TCP connection][establish a TCP connection]]
 to [VAR[addr]] and [VAR[port]].
+= [54] If [VAR[connection]] is ''not'' a [[failure]] and
+[VAR[proxy]]'s [F[protocol]] is [CODE[https]]:
+== [55] Set [VAR[connection]] to the result of running the [[TLS steps]] for
+[VAR[connection]] and [VAR[proxy]]'s [F[host]].
 = [29] If [VAR[connection]] is ''not'' a [[failure]] and
 [VAR[url]]'s [F[scheme][URL scheme]] is [CODE(URI)@en[https]]:
-== [40] If [VAR[url]]'s [VAR[port]] is [[null]]:
+== [40] If [VAR[url]]'s [F[port]] is [[null]]:
 === [39] Let [VAR[target]] be [VAR[url]]'s [F[host]].
 == [41] Otherwise:
 === [42] Let [VAR[target]] be [VAR[url]]'s [F[host]], followed by [CODE[:]],
 followed by [VAR[url]]'s [F[port]], [[serialized][serialize an integer]].
-== [38] [[Send an HTTP request][HTTP接続の処理]]:
-[FIG(list members)[
-: [F[method][request method]] : [CODE[CONNECT]]
-: [F[request target]] : [VAR[target]]
-: [F[header list]] :
-[FIG(list members)[
-: [CODE[Host]] : [VAR[target]]
-: [CODE[Proxy-Connection]] : [CODE[keep-alive]]
-: [CODE[User-Agent]] : [[default `[CODE[User-Agent]]` value]]
+== [52] Let [VAR[http]] be a new [[HTTP client][HTTP接続の処理]] whose
+[F[transport]] is [VAR[connection]].
+== [53] Set [VAR[connection]] to the result of
+[[establishing an HTTP [CODE(HTTP)[CONNECT]] connection][下位層の接続]]
+with [VAR[http]] and [VAR[target]].
+@@ and proxy credentials
+== [38] If [VAR[connection]] is a [[failure]] whose HTTP response's [F[status]] is
+[CODE[409]]:
+=== 
+@@ Show proxy auth dialog
 ]FIG]
-]FIG]
-== [43] Wait for an [[HTTP response]] [VAR[response]].
-==
-@@
-]FIG]
-: [CODE[https]] :
-@@
 : [CODE[socks4]] :
 @@
 : [CODE[socks5]] :
@@ -115,8 +115,8 @@ A [DFN[proxy configuration]] is a tuple of ([DFN[protocol]], [DFN[host]], [DFN[p
 [CODE[socks5]].
 
 @@
-[45] 
-WebSocket接続を得る
+[45] To [DFN[wait for other connections]] with [VAR[host]] and [VAR[port]],
+run steps in [[WebSocket接続を得る]].
 
 @@
 [15] The [DFN[name resolution]] steps with [VAR[host]] is ...
