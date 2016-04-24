@@ -73,6 +73,7 @@ The value is one of
 [CODE[unix]],
 [CODE[http1]],
 [CODE[http2]],
+[CODE[tls]],
 [CODE[socks4]], and
 [CODE[socks5]].
 :[VAR[種別]]:「サーバー」または「クライアント」。
@@ -84,6 +85,9 @@ The value is either ''default'' or ''HTTP proxy''.
 If the [F[request mode]] of a [[connection]] is ''HTTP proxy'',
 a [[request]] has to be sent over the [[connection]] as an [[HTTP request]]
 whose [[request target]] is an [[absolute URL]].
+: [DFN[[F[HTTPS state]]][connection's HTTPS state]] :
+An [[HTTPS state]] value.  Either [CODE[none]], [CODE[deprecated]], or [CODE[modern]].
+Unless stated otherwise, the value is [CODE[none]].
 ]FIG]
 
 [542] To [DFN[establish an HTTP connection]] for an [[URL record]] [VAR[url]]
@@ -643,10 +647,15 @@ with following states:
 
 ** TLS
 
-[638] The [DFN[TLS steps]] for [VAR[connection]], [VAR[url]], and [VAR[credentials]] are
+[638] The [DFN[TLS steps]] for [VAR[transport]], [VAR[url]], and [VAR[credentials]] are
 as follows:
 [FIG(steps)[
+= [860] Let [VAR[connection]] be 
+@@ ...
+=
 @@
+= [859] Set [VAR[connection]]'s [F[HTTPS state][connection's HTTPS state]]
+to [CODE[modern]] or [CODE[deprecated]], as determined by the implementation.
 ]FIG]
 
 [704] 接続の確立は、指定された[VAR[下位の[[接続]]]]において、 [[TLS handshake]]
@@ -826,7 +835,11 @@ separated from each other by [CODE[/]]
 ]FIG]
 : 応答のヘッダー受信完了の通知 : Process [VAR[http response]] as follows:
 [FIG(steps)[
-= [841] Set [VAR[response]] to a [[response]].
+= [856] If [VAR[client]]'s [F[transport]]'s [F[request mode]] is ''not'' ''HTTP proxy'' and
+[VAR[http response]]'s [F[状態符号]] is [CODE[407]]:
+== [857] Set [VAR[response]] to a [[network error]].
+= [858] Otherwise:
+== [841] Set [VAR[response]] to a [[response]].
 [FIG(list members)[
 [FIGCAPTION[
 [[Response][response]]
@@ -834,6 +847,7 @@ separated from each other by [CODE[/]]
 : [F[status][status code]] : [VAR[http response]]'s [F[状態符号]]
 : [F[status message]] : [VAR[http response]]'s [F[理由句]]
 : [F[header list][response's header list]] : [VAR[http response]]'s [F[ヘッダーリスト]]
+: [F[HTTPS state]] : [VAR[client]]'s [F[transport]]'s [F[HTTPS state][connection's HTTPS state]]
 ]FIG]
 = [842] Now ''headers are transmitted''.  Return [VAR[response]].
 ]FIG]
@@ -860,25 +874,10 @@ separated from each other by [CODE[/]]
 
 @@ TLS client certificate dialog
 
-@@ HTTP state
-
-@@
-[355] 起源サーバーからの応答の受信
-- [CODE(HTTP)[[[407]]]] なら、[[ネットワークエラー]]
-
-@@
-[356] [[HTTP]] プロキシからの応答の受信
-- [CODE(HTTP)[[[407]]]] なら、...
-
 @@
 [357] [[HTTP]] [CODE(HTTP)[[[CONNECT]]]] プロキシからの応答の受信
 - [CODE(HTTP)[[[407]]]] なら、...
 - その他非 [CODE(HTTP)[[[200]]]] なら、[[ネットワークエラー]]
-
-@@
-[384] 認証の通知
-- 認証ダイアログ ([[TLSクライアント認証]])
-
 
 ** アプリケーションからの指示
 
@@ -2035,6 +2034,7 @@ are defined in the [[URL Standard]].
 [DFN[[F[status message]]]],
 [DFN[[F[body][response body]]]],
 [DFN[[F[header list][response's header list]]]],
+[DFN[[F[HTTPS state]]]],
 [DFN[network error]],
 [DFN[[[connection]]]],
 [DFN[[[obtain a connection]]]],
