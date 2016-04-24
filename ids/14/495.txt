@@ -442,8 +442,7 @@ for [VAR[target]] over an [[HTTP client]] [VAR[http]], run these steps:
 [FIG(steps)[
 = [740] Let [VAR[connection]] be a [[connection endpoint]]:
 [FIG(list members)[
-: [F[protocol][connection's protocol]] : 
-If [VAR[http]]'s [F[プロトコルの版]] is HTTP/2, [CODE[http2]].  Otherwise, [CODE[http1]].
+: [F[protocol][connection's protocol]] : [VAR[http]]'s [F[protocol][endpoint's protocol]]
 : [F[種別]] : クライアント
 : [F[HTTP]] : [VAR[http]]
 ]FIG]
@@ -739,57 +738,13 @@ to [CODE[modern]] or [CODE[deprecated]], as determined by the implementation.
 = [737] そうでなければ、与えられた [[credentials]] を [[TLS]] の処理に引渡します。
 ]FIG]
 
-* HTTP/1
+* HTTP
 
-[34] An [DFN[HTTP client]] has following states:
+[355] An [DFN[HTTP client]] has following states:
 [FIG(list members)[
 :[VAR[種別]]:[[クライアント]]。
+: [DFN[[F[protocol][endpoint's protocol]]]] : Either [CODE[http1]] or [CODE[http2]].
 :[VAR[接続]]:[[下位層の接続]]の端点。
-:[VAR[状態]]:後述の状態遷移における状態のいずれか。初期値は「初期」。
-:[VAR[要求の送信状態]]: 未送信、送信中、送信済みのいずれか。初期値は未送信。
-:[VAR[要求締め切り]]フラグ:初期値は未設定です。
-:[VAR[要求]]:[[要求]]か null。初期値は null です。
-:[VAR[応答]]:[[応答]]か null。初期値は null です。
-:[VAR[一時バッファー]]:バイト列。初期値は空。
-:[VAR[最後のヘッダー]]:ヘッダーか null
-:[VAR[残り長さ]]:[[非負整数]]か null か「chunked」かエラー。
-:[VAR[応答受信済み]]:[[boolean]]。初期値は[[偽]]。
-:[VAR[要求の転送済]]:[[非負整数]]。初期値は 0。
-:[VAR[要求の処理完了]]:[[Promise]] か null。初期値は null。
-:[VAR[WebSocket接続の状態]]:[CODE[CONNECTING]]、[CODE[OPEN]]、
-[CODE[CLOSING]]、[CODE[CLOSED]]、null のいずれか。初期値は null。
-:[VAR[フレーム]]:[[WebSocketフレーム]]または null。初期値は null。
-:[VAR[先頭フレーム]]:[[WebSocketフレーム]]または null。初期値は null。
-:[VAR[送信待ちフレーム]]:[[WebSocketフレーム]]または null。初期値は null。
-:[VAR[終了]]:終了または null。初期値は null。
-:[VAR[切断タイマー]]:タイマー。
-]FIG]
-
-[314] タイマーは、初期状態では動作していません。時間と動作が設定されると、
-指定時間経過後に指定の動作が実行されます。既に設定された動作は取り消され、実行されません。
-
-[62] [[要求]]は、次のようなデータ構造です。
-[FIG(list members)[
-[FIGCAPTION[
-[[要求]]
-]FIGCAPTION]
-:[[要求メソッド]]:バイト列。
-:[[要求対象]]:バイト列。
-:[[プロトコルの版]]:[CODE[1.1]]。
-:[[ヘッダーリスト]]:0個以上の[[ヘッダー]]のリスト。
-:[[本体]]:バイト列。初期値は空。
-]FIG]
-
-[63] [[応答]]は、次のようなデータ構造です。
-[FIG(list members)[
-[FIGCAPTION[
-[[応答]]
-]FIGCAPTION]
-:[[プロトコルの版]]:[CODE[0.9]], [CODE[1.0]], [CODE[1.1]] のいずれか。初期値は [CODE[0.9]]。
-:[[状態符号]]:[[非負整数]]。初期値は [CODE[200]]。
-:[[理由句]]:[[バイト列]]。初期値は [CODE[OK]]。
-:[[ヘッダーリスト]]:0個以上の[[ヘッダー]]のリスト。初期値は空。
-:[[不完全メッセージ]]フラグ:初期値は未設定。
 ]FIG]
 
 [837] An [[HTTP client]] is a [[connection]] for the purpose of steps in the
@@ -878,6 +833,58 @@ separated from each other by [CODE[/]]
 [357] [[HTTP]] [CODE(HTTP)[[[CONNECT]]]] プロキシからの応答の受信
 - [CODE(HTTP)[[[407]]]] なら、...
 - その他非 [CODE(HTTP)[[[200]]]] なら、[[ネットワークエラー]]
+
+* HTTP/1
+
+[34] An [[HTTP client]] whose [F[protocol][endpoint's protocol]] is [CODE[http1]]
+has following additional states:
+[FIG(list members)[
+:[VAR[状態]]:後述の状態遷移における状態のいずれか。初期値は「初期」。
+:[VAR[要求の送信状態]]: 未送信、送信中、送信済みのいずれか。初期値は未送信。
+:[VAR[要求締め切り]]フラグ:初期値は未設定です。
+:[VAR[要求]]:[[要求]]か null。初期値は null です。
+:[VAR[応答]]:[[応答]]か null。初期値は null です。
+:[VAR[一時バッファー]]:バイト列。初期値は空。
+:[VAR[最後のヘッダー]]:ヘッダーか null
+:[VAR[残り長さ]]:[[非負整数]]か null か「chunked」かエラー。
+:[VAR[応答受信済み]]:[[boolean]]。初期値は[[偽]]。
+:[VAR[要求の転送済]]:[[非負整数]]。初期値は 0。
+:[VAR[要求の処理完了]]:[[Promise]] か null。初期値は null。
+:[VAR[WebSocket接続の状態]]:[CODE[CONNECTING]]、[CODE[OPEN]]、
+[CODE[CLOSING]]、[CODE[CLOSED]]、null のいずれか。初期値は null。
+:[VAR[フレーム]]:[[WebSocketフレーム]]または null。初期値は null。
+:[VAR[先頭フレーム]]:[[WebSocketフレーム]]または null。初期値は null。
+:[VAR[送信待ちフレーム]]:[[WebSocketフレーム]]または null。初期値は null。
+:[VAR[終了]]:終了または null。初期値は null。
+:[VAR[切断タイマー]]:タイマー。
+]FIG]
+
+[314] タイマーは、初期状態では動作していません。時間と動作が設定されると、
+指定時間経過後に指定の動作が実行されます。既に設定された動作は取り消され、実行されません。
+
+[62] [[要求]]は、次のようなデータ構造です。
+[FIG(list members)[
+[FIGCAPTION[
+[[要求]]
+]FIGCAPTION]
+:[[要求メソッド]]:バイト列。
+:[[要求対象]]:バイト列。
+:[[プロトコルの版]]:[CODE[1.1]]。
+:[[ヘッダーリスト]]:0個以上の[[ヘッダー]]のリスト。
+:[[本体]]:バイト列。初期値は空。
+]FIG]
+
+[63] [[応答]]は、次のようなデータ構造です。
+[FIG(list members)[
+[FIGCAPTION[
+[[応答]]
+]FIGCAPTION]
+:[[プロトコルの版]]:[CODE[0.9]], [CODE[1.0]], [CODE[1.1]] のいずれか。初期値は [CODE[0.9]]。
+:[[状態符号]]:[[非負整数]]。初期値は [CODE[200]]。
+:[[理由句]]:[[バイト列]]。初期値は [CODE[OK]]。
+:[[ヘッダーリスト]]:0個以上の[[ヘッダー]]のリスト。初期値は空。
+:[[不完全メッセージ]]フラグ:初期値は未設定。
+]FIG]
 
 ** アプリケーションからの指示
 
