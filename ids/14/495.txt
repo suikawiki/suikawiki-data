@@ -1,4 +1,4 @@
-* 内部状態
+* States
 
 [34] [[クライアント]]は、次の内部状態を持ちます。
 [FIG(list members)[
@@ -23,6 +23,11 @@
 :[VAR[終了]]:終了または null。初期値は null。
 :[VAR[切断タイマー]]:タイマー。
 ]FIG]
+
+[314] タイマーは、初期状態では動作していません。時間と動作が設定されると、
+指定時間経過後に指定の動作が実行されます。既に設定された動作は取り消され、実行されません。
+
+* Data structures
 
 [62] [[要求]]は、次のようなデータ構造です。
 [FIG(list members)[
@@ -76,8 +81,222 @@
 
 ;; [257] 再試行可能性が[[真]]であれば、何も考えずに同じ[[要求]]を他の[[接続]]で再送信して構いません。
 
-[314] タイマーは、初期状態では動作していません。時間と動作が設定されると、
-指定時間経過後に指定の動作が実行されます。既に設定された動作は取り消され、実行されません。
+* Proxies
+
+[609] A [[client]] has a [F[PAC]], which is initially [[null]].
+If the client is configured to use a [[PAC file]], it is set to an object
+which represents the file.
+Otherwise, if the client is configured to use one or more proxy servers,
+it is set to a virtual [[PAC file]] which represents those proxy server configurations.
+
+@@
+[610] To [DFN[run a PAC file]] with [VAR[pac]] and [VAR[url]], ...
+
+[611] The steps to [[run a PAC file]] return zero or more [[proxy configurations][proxy configuration]].
+
+[612] A [DFN[proxy configuration]] has [DFN[[F[protocol]]]], which is one of:
+[CODE[tcp]],
+[CODE[unix]],
+[CODE[http]],
+[CODE[https]],
+[CODE[socks4]], and
+[CODE[socks5]].
+
+[613] A [[proxy configuration]] whose [F[protocol]] is
+[CODE[http]], [CODE[https]], [CODE[socks4]], or [CODE[socks5]] has
+[DFN[[F[host]]]], whose value is a [[host]], and
+[DFN[[F[port]]]], whose value is an [[integer]] or [[null]].
+
+[614] A [[proxy configuration]] whose [F[protocol]] is
+[CODE[unix]] has [DFN[[F[path]]]], whose value is a [[byte string]].
+
+* Domain names
+
+[615] The [DFN[name resolution steps]] for [VAR[host]] are these steps:
+[FIG(steps)[
+= [616] If [VAR[host]] is a [[domain]]:
+== [617] Return the result of applying [[name resolution]] to [VAR[host]].
+= [618] Otherwise:
+== [619] Return [VAR[host]].
+]FIG]
+
+;; [620] These steps return an [[IPv4 address]], an [[IPv6 address]],
+or an [[error]].
+
+* Establishing connections
+
+[542] To [DFN[establish a connection to the HTTP server]] of an [[URL record]] [VAR[url]]
+from a client [VAR[client]], optionally with the [VAR[ws]] flag, run these steps:
+[FIG(steps)[
+= [543] If [VAR[client]]'s [F[PAC]] is not [[null]]:
+== [544] Let [VAR[proxies]] be the result of [[running a PAC file][run a PAC file]] with 
+[VAR[client]]'s [F[PAC]] and [VAR[url]].
+= [545] Otherwise:
+== [546] Let [VAR[proxies]] be a list whose only member is a [[proxy configuration]]
+whose [F[protocol]] is [CODE[tcp]].
+= [547] For each [VAR[proxy]] in [VAR[proxies]], in order, run these substeps:
+== [548] Set [VAR[request mode]] to ''default''.
+== [549] If [VAR[client]] does not support [VAR[proxy]]'s [F[protocol]]:
+=== [550] Set [VAR[connection]] to a [[failure]].
+== [551] Otherwise, switch by [VAR[proxy]]'s [F[protocol]]:
+[FIG(switch)[
+: [CODE[tcp]] :
+[FIG(steps)[
+= [552] Let [VAR[port]] be the [[effective port]] of [VAR[url]].
+= [553] Let [VAR[addr]] be the result of applying [[name resolution steps]] 
+to [VAR[url]]'s [F[host]].
+= [554] If [VAR[addr]] is an [[error]]:
+== [555] Set [VAR[connection]] to a [[failure]].
+= [556] Otherwise:
+== [557] If [VAR[ws]] flag is set, [[wait for other connections]]
+with [VAR[addr]] and [VAR[url]]'s [F[port]].
+== [558] Set [VAR[connection]] to the result of 
+[[establishing a TCP connection][establish a TCP connection]]
+to [VAR[addr]] and [VAR[port]].
+]FIG]
+: [CODE[unix]] :
+[FIG(steps)[
+= [559] Set [VAR[connection]] to the result of
+[[establishing a UNIX socket domain connection][下位層の接続]]
+with [VAR[protocol]]'s [F[path]].
+]FIG]
+: [CODE[http]] or [CODE[https]] :
+[FIG(steps)[
+= [560] If [VAR[ws]] flag is set, [[wait for other connections]]
+with [VAR[url]]'s [F[host]] and [VAR[url]]'s [F[port]].
+= [561] Let [VAR[proxy port]] be [VAR[proxy]]'s [F[port]].
+= [562] If [VAR[proxy port]] is [[null]]:
+== [563] If [VAR[proxy]]'s [F[protocol]] is [CODE[http]], set [VAR[proxy port]] to [[80]].
+== [564] If [VAR[proxy]]'s [F[protocol]] is [CODE[https]], set [VAR[proxy port]] to [[443]].
+= [565] Let [VAR[proxy addr]] be the result of applying [[name resolution steps]] 
+to [VAR[proxy]]'s [F[host]].
+= [566] If [VAR[proxy addr]] is an [[error]]:
+== [567] Set [VAR[connection]] to a [[failure]].
+= [568] Otherwise:
+== [569] Set [VAR[connection]] to the result of 
+[[establishing a TCP connection][establish a TCP connection]]
+to [VAR[proxy addr]] and [VAR[proxy port]].
+= [570] If [VAR[connection]] is ''not'' a [[failure]] and
+[VAR[proxy]]'s [F[protocol]] is [CODE[https]]:
+== [571] Set [VAR[connection]] to the result of running the [[TLS steps]] for
+[VAR[connection]] and [VAR[proxy]]'s [F[host]].
+= [572] If [VAR[connection]] is ''not'' a [[failure]] and
+[VAR[url]]'s [F[scheme][URL scheme]] is [CODE(URI)@en[https]]:
+== [573] If [VAR[url]]'s [F[port]] is [[null]]:
+=== [574] Let [VAR[target]] be [VAR[url]]'s [F[host]].
+== [575] Otherwise:
+=== [576] Let [VAR[target]] be [VAR[url]]'s [F[host]], followed by [CODE[:]],
+followed by [VAR[url]]'s [F[port]], [[serialized][serialize an integer]].
+== [577] Let [VAR[http]] be a new [[HTTP client][HTTP接続の処理]] whose
+[F[transport]] is [VAR[connection]].
+== [578] Set [VAR[connection]] to the result of
+[[establishing an HTTP [CODE(HTTP)[CONNECT]] connection][下位層の接続]]
+with [VAR[http]] and [VAR[target]].
+@@ and proxy credentials
+== [579] If [VAR[connection]] is a [[failure]] whose HTTP response's [F[status]] is
+[CODE[407]]:
+=== 
+@@ Show proxy auth dialog
+= [580] Otherwise:
+== [581] Set [VAR[request mode]] to ''HTTP proxy''.
+]FIG]
+: [CODE[socks4]] :
+[FIG(steps)[
+= [582] Let [VAR[port]] be the [[effective port]] of [VAR[url]].
+= [583] Let [VAR[addr]] be the result of applying [[name resolution steps]] 
+to [VAR[url]]'s [F[host]].
+= [584] If [VAR[addr]] is ''not'' an [[IPv4 address]]:
+== [585] Set [VAR[connection]] to a [[failure]].
+= [586] Otherwise:
+== [587] If [VAR[ws]] flag is set, [[wait for other connections]]
+with [VAR[addr]] and [VAR[url]]'s [F[port]].
+== [588] Let [VAR[proxy port]] be [VAR[proxy]]'s [F[port]].
+== [589] If [VAR[proxy port]] is [[null]], set [VAR[proxy port]] to [[1080]].
+== [590] Let [VAR[proxy addr]] be the result of applying [[name resolution steps]] 
+to [VAR[proxy]]'s [F[host]].
+== [591] Set [VAR[connection]] to the result of 
+[[establishing a TCP connection][establish a TCP connection]]
+to [VAR[proxy addr]] and [VAR[proxy port]].
+== [592] Set [VAR[connection]] to the result of
+[[establishing a SOCKS4 connection][下位層の接続]]
+with [VAR[connection]], [VAR[addr]], and [VAR[port]].
+]FIG]
+: [CODE[socks5]] :
+[FIG(steps)[
+= [593] Let [VAR[port]] be the [[effective port]] of [VAR[url]].
+= [594] If [VAR[ws]] flag is set, [[wait for other connections]]
+with [VAR[url]]'s [F[host]] and [VAR[url]]'s [F[port]].
+= [595] Let [VAR[proxy port]] be [VAR[proxy]]'s [F[port]].
+= [597] If [VAR[proxy port]] is [[null]], set [VAR[proxy port]] to [[1080]].
+= [596] Let [VAR[proxy addr]] be the result of applying [[name resolution steps]] 
+to [VAR[proxy]]'s [F[host]].
+= [598] Set [VAR[connection]] to the result of 
+[[establishing a TCP connection][establish a TCP connection]]
+to [VAR[proxy addr]] and [VAR[proxy port]].
+= [599] Set [VAR[connection]] to the result of
+[[establishing a SOCKS5 connection][下位層の接続]]
+with [VAR[connection]], [VAR[url]]'s [F[host]], and [VAR[port]].
+]FIG]
+]FIG]
+== [600] If [VAR[connection]] is not a [[failure]]:
+=== [601] If [VAR[url]]'s [F[scheme][URL scheme]] is [CODE(URI)@en[https]]:
+==== [602] Set [VAR[connection]] to the result of running the [[TLS steps]] for
+[VAR[connection]] and [VAR[url]]'s [F[host]].
+== [603] If [VAR[connection]] is not a [[failure]]:
+=== [604] Set [VAR[connection]]'s [F[request mode]] to [VAR[request mode]].
+=== [605] Return [VAR[connection]] and abort these steps.
+= [606] Return a [[failure]].
+]FIG]
+
+@@
+[607] To [DFN[wait for other connections]] with [VAR[host]] and [VAR[port]],
+run steps in [[WebSocket接続を得る]].
+
+[608] A [[connection]] has [DFN[[F[request mode]]]], which is ''default'' or ''HTTP proxy''.
+If the [F[request mode]] of a [[connection]] is ''HTTP proxy'',
+a [[request]] has to be sent over the [[connection]] as an [[HTTP request]]
+whose [[request target]] is an [[absolute URL]].
+
+** TCP
+
+[622] The [DFN[effective port]] of [VAR[url]] is the value returned by these steps:
+[FIG(steps)[
+= [623] Let [VAR[port]] be [VAR[url]]'s [F[port][URL's port]].
+= [624] If [VAR[port]] is [[null]]:
+== [625] Set [VAR[port]] to the value determined by the [VAR[url]]'s [F[scheme][URL scheme]]:
+[FIG(switch)[
+: [CODE(URI)@en[ftp]] : [[21]]
+: [CODE(URI)@en[http]] : [[80]]
+: [CODE(URI)@en[https]] : [[443]]
+]FIG]
+= [626] Return [VAR[port]].
+]FIG]
+
+[627] To [DFN[establish a TCP connection]] to [VAR[addr]] and [VAR[port]],
+run these steps:
+[FIG(steps)[
+= [628] Let [VAR[connection]] be a [[TCP]] connection to [VAR[addr]] and [VAR[port]].
+= [629] If [VAR[connection]] is ''not'' a [[failure]]:
+== [630] Disable the [CODE[SO_OOBINLINE]] option of [VAR[connection]].
+== [631] Enable the [CODE[SO_NODELAY]] option of [VAR[connection]].
+== [632] Run the [[TCP keep alive steps]] for [VAR[connection]].
+= [633] Return [VAR[connection]].
+]FIG]
+
+[634] The [DFN[TCP keep alive steps]] for [VAR[connection]] is a set of implementation
+dependent steps.  An example of such steps is:
+[FIG(steps)[
+= [635] Enable the [CODE[SO_KEEPALIVE]] option of [VAR[connection]].
+= [636] Set [CODE[TCP_KEEPIDLE]] option of [VAR[connection]] to 45 (seconds).
+= [637] Set [CODE[TCP_KEEPINTVL]] option of [VAR[connection]] to 45 (seconds).
+]FIG]
+
+** TLS
+
+[638] The [DFN[TLS steps]] for [VAR[connection]] and [VAR[url]] is:
+[FIG(steps)[
+@@
+]FIG]
 
 * アプリケーションからの指示
 
@@ -386,7 +605,7 @@
 
 ;; [253] 図の「受信」は、データ受信、ping の受信、WebSocket終了開始、データ開始、データ終了を表します。
 
-* 状態機械
+* The HTTP state machine
 
 [68] [[クライアント]]は[[状態機械]]を持ちます。
 
@@ -1051,7 +1270,7 @@
 
 [71] 正常終了や中断を受信したら、何もしません。
 
-* ヘッダー群として構文解析
+** ヘッダー群として構文解析
 
 [17] 入力を、 0x0D や 0x0A で区切られた[[行]]に分割します。
 [[行]]には区切りの 0x0D, 0x0A は含めません。
@@ -1100,7 +1319,7 @@
 == 値の末尾から 0x20 と 0x09 をすべて除去します。
 ]FIG]
 
-* WebSocket フレームの処理
+** WebSocket フレームの処理
 
 [189] [[WebSocketフレーム]]の処理は、次のようにします。
 [FIG(steps)[
@@ -1193,7 +1412,18 @@
 === [187] [VAR[先頭フレーム]]を、 null に設定します。
 ]FIG]
 
-* アプリケーションからの利用
+* FTP
+
+@@
+[639] XXX
+
+* References
+
+[621] The terms [DFN[[[serialize an integer]]]], [DFN[[[URL record]]]],
+[DFN[[F[scheme][URL scheme]]]], [DFN[[F[host]]][URL's host]], and [DFN[[F[port]]][URL's port]]
+are defined in the [[URL Standard]].
+
+* XXX
 
 @@
 [354] 要求の送信:
@@ -1234,8 +1464,6 @@
 
 @@
 [541] [[HTTPキャッシュ]]
-
-* TODO
 
 @@
 [65] 
