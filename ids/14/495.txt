@@ -1,9 +1,6 @@
 
 * Data structures
 
-[314] タイマーは、初期状態では動作していません。時間と動作が設定されると、
-指定時間経過後に指定の動作が実行されます。既に設定された動作は取り消され、実行されません。
-
 [62] [[要求]]は、次のようなデータ構造です。
 [FIG(list members)[
 [FIGCAPTION[
@@ -28,24 +25,11 @@
 :[[不完全メッセージ]]フラグ:初期値は未設定。
 ]FIG]
 
-[252] [[WebSocketフレーム]]は、次のようなデータ構造です。
-[FIG(list members)[
-[FIGCAPTION[
-[[WebSocketフレーム]]
-]FIGCAPTION]
-:[[FIN]]:0 か 1。
-:[[RSV1]]:0 か 1。
-:[[RSV2]]:0 か 1。
-:[[RSV3]]:0 か 1。
-:[[opcode]]:0-15 の[[整数]]。
-:[[mask]]:0 か 1。
-:長さ:[[非負整数]]。
-:マスクキー:4バイトの[[バイト列]]または null。
-:データ:[[バイト列]]または[[文字列]]。
-]FIG]
-
 [38] 終了は、次のようなデータ構造です。
 [FIG(list members)[
+[FIGCAPTION[
+[[Exit status][exit status]]
+]FIGCAPTION]
 :リセット:[[真]]か[[偽]]。既定値は[[偽]]。
 :失敗:[[真]]か[[偽]]。
 :[[WebSocket]] cleanly:[[真]]か[[偽]]か null。既定値は null。
@@ -98,7 +82,31 @@ it is set to a virtual [[PAC file]] which represents those proxy server configur
 ;; [620] These steps return an [[IPv4 address]], an [[IPv6 address]],
 or an [[error]].
 
-* Establishing connections
+* Connections
+
+[640] A [DFN[connection endpoint]] has following states:
+[FIG(list members)[
+[FIGCAPTION[
+[[Connection endpoint][connection endpoint]]
+]FIGCAPTION]
+: [DFN[[F[protocol]]][connection's protocol]] :
+The value is one of 
+[CODE[tcp]],
+[CODE[unix]],
+[CODE[http1]],
+[CODE[http2]],
+[CODE[socks4]], and
+[CODE[socks5]].
+:[VAR[種別]]:「サーバー」または「クライアント」。
+:[VAR[送信閉じ済みフラグ]]:初期状態では未設定。
+:[VAR[受信閉じ済みフラグ]]:初期状態では未設定。
+:[VAR[送信待ちバッファー]]:初期状態では空のリスト。
+: [DFN[[F[request mode]]]] :
+The value is either ''default'' or ''HTTP proxy''.
+If the [F[request mode]] of a [[connection]] is ''HTTP proxy'',
+a [[request]] has to be sent over the [[connection]] as an [[HTTP request]]
+whose [[request target]] is an [[absolute URL]].
+]FIG]
 
 [542] To [DFN[establish a connection to the HTTP server]] of an [[URL record]] [VAR[url]]
 from a client [VAR[client]], optionally with the [VAR[ws]] flag, run these steps:
@@ -132,7 +140,7 @@ to [VAR[addr]] and [VAR[port]].
 : [CODE[unix]] :
 [FIG(steps)[
 = [559] Set [VAR[connection]] to the result of
-[[establishing a UNIX socket domain connection][下位層の接続]]
+[[establishing a UNIX socket domain connection][establish a UNIX socket domain connection]]
 with [VAR[protocol]]'s [F[path]].
 ]FIG]
 : [CODE[http]] or [CODE[https]] :
@@ -162,10 +170,10 @@ to [VAR[proxy addr]] and [VAR[proxy port]].
 == [575] Otherwise:
 === [576] Let [VAR[target]] be [VAR[url]]'s [F[host]], followed by [CODE[:]],
 followed by [VAR[url]]'s [F[port]], [[serialized][serialize an integer]].
-== [577] Let [VAR[http]] be a new [[HTTP client][HTTP接続の処理]] whose
+== [577] Let [VAR[http]] be a new [[HTTP client]] whose
 [F[transport]] is [VAR[connection]].
 == [578] Set [VAR[connection]] to the result of
-[[establishing an HTTP [CODE(HTTP)[CONNECT]] connection][下位層の接続]]
+[[establishing an HTTP [CODE(HTTP)[CONNECT]] connection][establish an HTTP [CODE(HTTP)@en[CONNECT]] connection]]
 with [VAR[http]] and [VAR[target]].
 @@ and proxy credentials
 == [579] If [VAR[connection]] is a [[failure]] whose HTTP response's [F[status]] is
@@ -193,7 +201,7 @@ to [VAR[proxy]]'s [F[host]].
 [[establishing a TCP connection][establish a TCP connection]]
 to [VAR[proxy addr]] and [VAR[proxy port]].
 == [592] Set [VAR[connection]] to the result of
-[[establishing a SOCKS4 connection][下位層の接続]]
+[[establishing a SOCKS4 connection][establish a SOCKS4 connection]]
 with [VAR[connection]], [VAR[addr]], and [VAR[port]].
 ]FIG]
 : [CODE[socks5]] :
@@ -209,7 +217,7 @@ to [VAR[proxy]]'s [F[host]].
 [[establishing a TCP connection][establish a TCP connection]]
 to [VAR[proxy addr]] and [VAR[proxy port]].
 = [599] Set [VAR[connection]] to the result of
-[[establishing a SOCKS5 connection][下位層の接続]]
+[[establishing a SOCKS5 connection][establish a SOCKS5 connection]]
 with [VAR[connection]], [VAR[url]]'s [F[host]], and [VAR[port]].
 ]FIG]
 ]FIG]
@@ -227,21 +235,6 @@ with [VAR[connection]], [VAR[url]]'s [F[host]], and [VAR[port]].
 [607] To [DFN[wait for other connections]] with [VAR[host]] and [VAR[port]],
 run steps in [[WebSocket接続を得る]].
 
-[640] [[接続]]の端点は、その種類に依存した[[接続]]確立の処理によって作成されます。
-[[接続]]の確立完了時に、接続の種類に依存した情報を[[アプリケーション]]に引渡します。
-
-[641] [[接続]]の端点は、次の状態を持ちます。
-[FIG(list members)[
-:[VAR[種別]]:「サーバー」または「クライアント」。
-:[VAR[送信閉じ済みフラグ]]:初期状態では未設定。
-:[VAR[受信閉じ済みフラグ]]:初期状態では未設定。
-:[VAR[送信待ちバッファー]]:初期状態では空のリスト。
-]FIG]
-
-[608] A [[connection]] has [DFN[[F[request mode]]]], which is ''default'' or ''HTTP proxy''.
-If the [F[request mode]] of a [[connection]] is ''HTTP proxy'',
-a [[request]] has to be sent over the [[connection]] as an [[HTTP request]]
-whose [[request target]] is an [[absolute URL]].
 
 [642] [[アプリケーション]]は、[[接続]]の端点に次の指示を行えます。
 [FIG(list)[
@@ -328,28 +321,30 @@ whose [[request target]] is an [[absolute URL]].
 
 ** TCP
 
-[622] The [DFN[effective port]] of [VAR[url]] is the value returned by these steps:
-[FIG(steps)[
-= [623] Let [VAR[port]] be [VAR[url]]'s [F[port][URL's port]].
-= [624] If [VAR[port]] is [[null]]:
-== [625] Set [VAR[port]] to the value determined by the [VAR[url]]'s [F[scheme][URL scheme]]:
-[FIG(switch)[
-: [CODE(URI)@en[ftp]] : [[21]]
-: [CODE(URI)@en[http]] : [[80]]
-: [CODE(URI)@en[https]] : [[443]]
-]FIG]
-= [626] Return [VAR[port]].
+[608] A [[connection endpoint]] whose [F[protocol][connection's protocol]] is
+[CODE[tcp]] has following additional states:
+[FIG(list members)[
+: [F[remote address]] : An [[IPv4 address]] or [[IPv6 address]].
+: [F[remote port]] : An [[integer]].
 ]FIG]
 
 [627] To [DFN[establish a TCP connection]] to [VAR[addr]] and [VAR[port]],
 run these steps:
 [FIG(steps)[
-= [628] Let [VAR[connection]] be a [[TCP]] connection to [VAR[addr]] and [VAR[port]].
-= [629] If [VAR[connection]] is ''not'' a [[failure]]:
+= [628] Connect to address [VAR[addr]] and port [VAR[port]] using [[TCP]].
+= [641] If a [[TCP connection]] has been established:
+== [674] Let [VAR[connection]] be a [[connection endpoint]] representing the
+[[TCP connection]], with following states:
+[FIG(list members)[
+: [F[remote address]] : [VAR[addr]]
+: [F[remote port]] : [VAR[port]]
+]FIG]
 == [630] Disable the [CODE[SO_OOBINLINE]] option of [VAR[connection]].
 == [631] Enable the [CODE[SO_NODELAY]] option of [VAR[connection]].
 == [632] Run the [[TCP keep alive steps]] for [VAR[connection]].
-= [633] Return [VAR[connection]].
+== [818] Return [VAR[connection]].
+= [629] Otherwise:
+== [819] Return a [[failure]].
 ]FIG]
 
 [634] The [DFN[TCP keep alive steps]] for [VAR[connection]] is a set of implementation
@@ -359,12 +354,6 @@ dependent steps.  An example of such steps is:
 = [636] Set [CODE[TCP_KEEPIDLE]] option of [VAR[connection]] to 45 (seconds).
 = [637] Set [CODE[TCP_KEEPINTVL]] option of [VAR[connection]] to 45 (seconds).
 ]FIG]
-
-[674] [[接続]]の確立は、送受信者の [[IPアドレス]]と[[ポート番号]]を決定し
-[[handshake]] を適切に行い、正常に完了することによります。
-端点における[[フロー制御]]その他のオプションも適切に設定します。
-
-[675] 確立の完了時に、相手の [[IPアドレス]]と[[ポート番号]]を[[アプリケーション]]に通知します。
 
 [676] [[TCP]] の[[セグメント]]を受信したら、次のようにします。
 [FIG(steps)[
@@ -413,6 +402,19 @@ dependent steps.  An example of such steps is:
 [FIG(steps)[
 = [702] 必要に応じて [CODE[[[FIN]]]] フラグが設定された[[セグメント]]を送信することにします。
 = [703] [[TCP]] で受信したデータの処理を以後行わないことにします。
+]FIG]
+
+[622] The [DFN[effective port]] of [VAR[url]] is the value returned by these steps:
+[FIG(steps)[
+= [623] Let [VAR[port]] be [VAR[url]]'s [F[port][URL's port]].
+= [624] If [VAR[port]] is [[null]]:
+== [625] Set [VAR[port]] to the value determined by the [VAR[url]]'s [F[scheme][URL scheme]]:
+[FIG(switch)[
+: [CODE(URI)@en[ftp]] : [[21]]
+: [CODE(URI)@en[http]] : [[80]]
+: [CODE(URI)@en[https]] : [[443]]
+]FIG]
+= [626] Return [VAR[port]].
 ]FIG]
 
 ** TLS
@@ -700,6 +702,9 @@ dependent steps.  An example of such steps is:
 :[VAR[終了]]:終了または null。初期値は null。
 :[VAR[切断タイマー]]:タイマー。
 ]FIG]
+
+[314] タイマーは、初期状態では動作していません。時間と動作が設定されると、
+指定時間経過後に指定の動作が実行されます。既に設定された動作は取り消され、実行されません。
 
 ** アプリケーションからの指示
 
@@ -1044,6 +1049,22 @@ dependent steps.  An example of such steps is:
 [FIG(steps)[
 = [319] [VAR[状態]]が「トンネル」か「トンネル送信中」なら、
 == [320] [VAR[要求]]について送信するものがなくなったことを通知します。
+]FIG]
+
+[252] [[WebSocketフレーム]]は、次のようなデータ構造です。
+[FIG(list members)[
+[FIGCAPTION[
+[[WebSocketフレーム]]
+]FIGCAPTION]
+:[[FIN]]:0 か 1。
+:[[RSV1]]:0 か 1。
+:[[RSV2]]:0 か 1。
+:[[RSV3]]:0 か 1。
+:[[opcode]]:0-15 の[[整数]]。
+:[[mask]]:0 か 1。
+:長さ:[[非負整数]]。
+:マスクキー:4バイトの[[バイト列]]または null。
+:データ:[[バイト列]]または[[文字列]]。
 ]FIG]
 
 ** 「初期」状態
@@ -1822,7 +1843,9 @@ dependent steps.  An example of such steps is:
 
 * References
 
-[621] The terms [DFN[[[serialize an integer]]]], [DFN[[[URL record]]]],
+[621] The terms [DFN[[[serialize an integer]]]], 
+[DFN[[[IPv4 address]]]], [DFN[[[IPv6 address]]]], [DFN[[[domain]]]], [DFN[[[host]]]],
+[DFN[[[URL record]]]],
 [DFN[[F[scheme][URL scheme]]]], [DFN[[F[host]]][URL's host]], and [DFN[[F[port]]][URL's port]]
 are defined in the [[URL Standard]].
 
