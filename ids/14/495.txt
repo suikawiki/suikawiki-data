@@ -321,13 +321,6 @@ run steps in [[WebSocket接続を得る]].
 
 ** TCP
 
-[608] A [[connection endpoint]] whose [F[protocol][connection's protocol]] is
-[CODE[tcp]] has following additional states:
-[FIG(list members)[
-: [F[remote address]] : An [[IPv4 address]] or [[IPv6 address]].
-: [F[remote port]] : An [[integer]].
-]FIG]
-
 [627] To [DFN[establish a TCP connection]] to [VAR[addr]] and [VAR[port]],
 run these steps:
 [FIG(steps)[
@@ -336,8 +329,8 @@ run these steps:
 == [674] Let [VAR[connection]] be a [[connection endpoint]] representing the
 [[TCP connection]], with following states:
 [FIG(list members)[
-: [F[remote address]] : [VAR[addr]]
-: [F[remote port]] : [VAR[port]]
+: [F[protocol][connection's protocol]] : [CODE[tcp]]
+: [F[種別]] : クライアント
 ]FIG]
 == [630] Disable the [CODE[SO_OOBINLINE]] option of [VAR[connection]].
 == [631] Enable the [CODE[SO_NODELAY]] option of [VAR[connection]].
@@ -354,6 +347,8 @@ dependent steps.  An example of such steps is:
 = [636] Set [CODE[TCP_KEEPIDLE]] option of [VAR[connection]] to 45 (seconds).
 = [637] Set [CODE[TCP_KEEPINTVL]] option of [VAR[connection]] to 45 (seconds).
 ]FIG]
+
+@@ [675] XXX server accept steps
 
 [676] [[TCP]] の[[セグメント]]を受信したら、次のようにします。
 [FIG(steps)[
@@ -505,20 +500,26 @@ dependent steps.  An example of such steps is:
 = [737] そうでなければ、与えられた [[credentials]] を [[TLS]] の処理に引渡します。
 ]FIG]
 
-** HTTP/1 [CODE(HTTP)@en[CONNECT]] の場合
+** HTTP [CODE(HTTP)@en[CONNECT]]
 
-[738] 状態として、次のものを持ちます。
+[633] A [[connection endpoint]] whose [F[protocol][connection's protocol]] is
+[CODE[http1]] or [CODE[http2]] has following additional states:
 [FIG(list members)[
-:[VAR[HTTP]]:[[HTTP接続]]の[[クライアント]]。[[HTTP接続の処理]]参照。
-:[VAR[接続確立済みフラグ]]:初期値は未設定。
+:[F[HTTP]]:[[HTTP接続]]の[[クライアント]]。[[HTTP接続の処理]]参照。
+:[F[接続確立済みフラグ]]:初期値は未設定。
 ]FIG]
 
-[739] 接続の確立は、[VAR[target]] について、次のようにします。
+[739] To [DFN[establish an HTTP [CODE(HTTP)@en[CONNECT]] connection]]
+for [VAR[target]] over an [[HTTP client]] [VAR[http]], run these steps:
 [FIG(steps)[
-= [740] [VAR[種別]]が「クライアント」の場合、
-== [741] [VAR[HTTP]] を、引数として受け取った[[HTTP接続]]の[[クライアント]]に設定します。
-== [742] [VAR[HTTP]] に、[[要求]]を送信します。ただし[[クライアント]]が適切な状態になく[[要求]]を送信できないときは、
-[[例外]]を投げて停止します。
+= [740] Let [VAR[connection]] be a [[connection endpoint]]:
+[FIG(list members)[
+: [F[protocol][connection's protocol]] : 
+If [VAR[http]]'s [F[プロトコルの版]] is HTTP/2, [CODE[http2]].  Otherwise, [CODE[http1]].
+: [F[種別]] : クライアント
+: [F[HTTP]] : [VAR[http]]
+]FIG]
+= [766] Send an [[HTTP request]] over [VAR[http]]:
 [FIG(list members)[
 : [F[method][request method]] : [CODE[CONNECT]]
 : [F[request target]] : [VAR[target]]
@@ -529,33 +530,43 @@ dependent steps.  An example of such steps is:
 : [CODE[User-Agent]] : [[default `[CODE[User-Agent]]` value]]
 ]FIG]
 ]FIG]
-== [743] [VAR[HTTP]] からの通知を、次のように処理します。
-=== [744] [[要求]]のヘッダー受信完了の通知の場合、
-==-= [745] 応答の状態符号が [CODE(HTTP)[[[200]]]] なら、
-==-== [746] [VAR[接続確立済みフラグ]]を設定します。
-==-== [747] 接続が確立されたとします。
-==-= [748] それ以外なら、
-==-== [749] 接続の確立は失敗とします。
-=== [750] [[要求]]のデータ受信の通知の場合、
-==== [751] [VAR[接続確立済みフラグ]]が設定されていれば、
-===-= [752] データの各バイトについて、順に、
-===-== [753] バイトの受信を通知します。当該バイトの値を渡します。
-=== [754] [[要求]]のデータ終了の通知の場合、
-==== [755] [VAR[接続確立済みフラグ]]が設定されていれば、
-===-= [756] [VAR[受信閉じ済みフラグ]]を設定します。
-===-= [757] 正常終了の受信を通知します。
-=== [758] [[要求]]の完了の通知の場合、
-==-= [759] 終了の失敗フラグが設定されていれば、
-==-== [760] [VAR[接続確立済みフラグ]]が設定されていれば、
-==-=== [761] [VAR[送信閉じ済みフラグ]]を設定します。
-==-=== [762] [VAR[受信閉じ済みフラグ]]を設定します。
-==-=== [763] 中断を通知します。
-==-== [764] それ以外なら、
-==-=== [765] 接続の確立は失敗とします。
-= [766] [VAR[種別]]が「サーバー」の場合、
-==
-@@
+= [741] If failed, return a [[failure]] and abort these steps.
+= [817] Process notifications from [VAR[http]] as follows:
+[FIG(switch)[
+: [744] [[要求]]のヘッダー受信完了の通知 :
+[FIG(steps)[
+= [745] 応答の状態符号が [CODE(HTTP)[[[200]]]] なら、
+== [746] [VAR[接続確立済みフラグ]]を設定します。
+== [747] 接続が確立されたとします。
+= [748] それ以外なら、
+== [749] 接続の確立は失敗とします。
 ]FIG]
+: [750] [[要求]]のデータ受信の通知 :
+[FIG(steps)[
+= [751] [VAR[接続確立済みフラグ]]が設定されていれば、
+-= [752] データの各バイトについて、順に、
+-== [753] バイトの受信を通知します。当該バイトの値を渡します。
+]FIG]
+: [754] [[要求]]のデータ終了の通知 :
+[FIG(steps)[
+= [755] [VAR[接続確立済みフラグ]]が設定されていれば、
+-= [756] [VAR[受信閉じ済みフラグ]]を設定します。
+-= [757] 正常終了の受信を通知します。
+]FIG]
+: [758] [[要求]]の完了の通知 :
+[FIG(steps)[
+= [759] 終了の失敗フラグが設定されていれば、
+== [760] [VAR[接続確立済みフラグ]]が設定されていれば、
+=== [761] [VAR[送信閉じ済みフラグ]]を設定します。
+=== [762] [VAR[受信閉じ済みフラグ]]を設定します。
+=== [763] 中断を通知します。
+== [764] それ以外なら、
+=== [765] 接続の確立は失敗とします。
+]FIG]
+]FIG]
+]FIG]
+
+@@ [738] XXX server accept steps
 
 [767] バイトは常に送信可能とします。
 
@@ -574,90 +585,119 @@ dependent steps.  An example of such steps is:
 = [773] [VAR[HTTP]] に中断を指示します。
 ]FIG]
 
-** HTTP/2 [CODE[CONNECT]]
+*** HTTP/2
 
 @@
 
-** SOCKS4 の場合
+** SOCKS4
 
-[774] 接続の確立は、次のようにします。下位層の接続[VAR[接続]]、
-宛先[[IPv4アドレス]][VAR[ホスト]]、宛先[[ポート]]番号[VAR[ポート]]を引数として受け取ります。
-[FIG(steps)[
-= [775] [VAR[種別]]が「クライアント」の場合、
-== [776] [VAR[接続]]で 0x04 0x01 [VAR[p[SUB[1]]]] [VAR[p[SUB[2]]]] [VAR[a[SUB[1]]]] [VAR[a[SUB[2]]]]
-[VAR[a[SUB[3]]]] [VAR[a[SUB[4]]]] 0x00 を送信します。
-==- [VAR[p[SUB[1]]]] [VAR[p[SUB[2]]]] は[VAR[ポート]]を[[16ビット符号無し整数]]
-([[ネットワークバイト順]]) としたものです。
-==- [VAR[a[SUB[1]]]] [VAR[a[SUB[2]]]] [VAR[a[SUB[3]]]] [VAR[a[SUB[4]]]]
-は[VAR[ホスト]]を[[32ビット符号無し整数]] ([[ネットワークバイト順]]) としたものです。
-== [777] [VAR[接続]]から8バイト受信するのを最大30s待ちます。
-== [778] 受信した最初の2バイトが 0x00 0x5A でなければ、
-=== [779] [VAR[接続]]の中断を指示します。
-=== [780] 接続の確立を失敗とします。ここで停止します。
-== [781] 接続を確立できたとします。
-= [782] [VAR[種別]]が「サーバー」の場合、
-== 
-@@
+[743] A [[connection endpoint]] whose [F[protocol][connection's protocol]] is
+[CODE[socks4]] has following additional states:
+[FIG(list members)[
+: [F[transport]] : A [[connection endpoint]].
 ]FIG]
+
+[774] To [DFN[establish a SOCKS4 connection]]
+to [[IPv4 address]] [VAR[address]] and [[port]] [VAR[port]] over 
+[[connection endpoint]] [VAR[transport]], run these steps:
+[FIG(steps)[
+= [776] [VAR[transport]]で 0x04 0x01 [VAR[p[SUB[1]]]] [VAR[p[SUB[2]]]] [VAR[a[SUB[1]]]] [VAR[a[SUB[2]]]]
+[VAR[a[SUB[3]]]] [VAR[a[SUB[4]]]] 0x00 を送信します。
+=- [VAR[p[SUB[1]]]] [VAR[p[SUB[2]]]] は[VAR[port]]を[[16ビット符号無し整数]]
+([[ネットワークバイト順]]) としたものです。
+=- [VAR[a[SUB[1]]]] [VAR[a[SUB[2]]]] [VAR[a[SUB[3]]]] [VAR[a[SUB[4]]]]
+は[VAR[address]]を[[32ビット符号無し整数]] ([[ネットワークバイト順]]) としたものです。
+= [777] [VAR[transport]]から8バイト受信するのを最大30s待ちます。
+= [778] 受信した最初の2バイトが 0x00 0x5A でなければ、
+== [779] [VAR[transport]]の中断を指示します。
+== [780] Return a [[failure]] and abort these steps.
+= [781] Return a [[connection endpoint]]:
+[FIG(list members)[
+: [F[protocol][connection's protocol]] : [CODE[socks4]]
+: [F[種別]] : クライアント
+: [F[transport]] : [VAR[transport]]
+]FIG]
+]FIG]
+
+@@ [742] XXX server
 
 [783] 接続確立後は、指示は[VAR[接続]]への指示とし、
 [VAR[接続]]からの通知があればそれを通知します。
 
-** SOCKS5 の場合
+** SOCKS5
 
-[784] 接続の確立は、次のようにします。下位層の接続[VAR[接続]]、
-宛先[[ドメイン名]] (長さ255[[以下]]の[[バイト列]]) または
-[[IPv4アドレス]]または[[IPv6アドレス]][VAR[ホスト]]、
-宛先[[ポート]]番号[VAR[ポート]]を引数として受け取ります。
+[775] A [[connection endpoint]] whose [F[protocol][connection's protocol]] is
+[CODE[socks5]] has following additional states:
+[FIG(list members)[
+: [F[transport]] : A [[connection endpoint]].
+]FIG]
+
+[784] To [DFN[establish a SOCKS5 connection]]
+to destination [VAR[host]] and port [VAR[port]] over [VAR[transport]],
+run these steps:
 [FIG(steps)[
-= [785] [VAR[種別]]が「クライアント」の場合、
-== [786] [VAR[接続]]で 0x05 0x01 0x00 を送信します。
-== [787] [VAR[接続]]から2バイト受信するのを最大30s待ちます。
-== [788] 受信したのが 0x05 0x00 でなければ、
-=== [789] [VAR[接続]]の中断を指示します。
-=== [790] 接続の確立を失敗とします。ここで停止します。
-== [791] [VAR[接続]]で 0x05 0x01 0x00 [VAR[A]] [VAR[p[SUB[1]]]] [VAR[p[SUB[2]]]]
+= [785] If [VAR[host]] is a [[domain]] whose length is greater than [N[255]]:
+== [803] Return a [[failure]] and abort these steps.
+= [786] [VAR[transport]]で 0x05 0x01 0x00 を送信します。
+= [787] [VAR[transport]]から2バイト受信するのを最大30s待ちます。
+= [788] 受信したのが 0x05 0x00 でなければ、
+== [789] [VAR[transport]]の中断を指示します。
+== [790] Return a [[failure]] and abort these steps.
+= [791] [VAR[transport]]で 0x05 0x01 0x00 [VAR[A]] [VAR[p[SUB[1]]]] [VAR[p[SUB[2]]]]
 を送信します。
-==- [VAR[A]] は、
-==-= [VAR[ホスト]]が[[ドメイン名]]の場合、[VAR[ホスト]]の前に[VAR[ホスト]]のバイト数を[[8ビット符号無し整数]]としたものです。
-==-= [VAR[ホスト]]が[[IPv4アドレス]]の場合、[VAR[ホスト]]を[[32ビット符号無し整数]] ([[ネットワークバイト順]]) としたものです。
-==-= [VAR[ホスト]]が[[IPv6アドレス]]の場合、[VAR[ホスト]]を16バイトのバイト列としたものです。
-==- [VAR[p[SUB[1]]]] [VAR[p[SUB[2]]]] は[VAR[ポート]]を[[16ビット符号無し整数]]
+=- [VAR[A]] は、
+=-= [VAR[host]]が[[ドメイン名]]の場合、[VAR[host]]の前に[VAR[host]]のバイト数を[[8ビット符号無し整数]]としたものです。
+=-= [VAR[host]]が[[IPv4アドレス]]の場合、[VAR[host]]を[[32ビット符号無し整数]] ([[ネットワークバイト順]]) としたものです。
+=-= [VAR[host]]が[[IPv6アドレス]]の場合、[VAR[host]]を16バイトのバイト列としたものです。
+=- [VAR[p[SUB[1]]]] [VAR[p[SUB[2]]]] は[VAR[port]]を[[16ビット符号無し整数]]
 ([[ネットワークバイト順]]) としたものです。
-== [792] [VAR[接続]]から5バイト受信するのを最大30s待ちます。
-== [793] 受信した最初の3バイトが 0x05 0x00 0x00 でないか、
+= [792] [VAR[transport]]から5バイト受信するのを最大30s待ちます。
+= [793] 受信した最初の3バイトが 0x05 0x00 0x00 でないか、
 第4バイトが 0x01, 0x03, 0x04 のいずれでもないか、
 5バイトに満たなければ、
-=== [794] [VAR[接続]]の中断を指示します。
-=== [795] 接続の確立を失敗とします。ここで停止します。
-== [796] 第4バイトが 0x01 なら、[VAR[接続]]から5バイト受信するのを最大30s待ちます。
-== [797] 第4バイトが 0x03 なら、第5バイトを[[8ビット符号無し整数]]として解釈し、
-[VAR[接続]]からそのバイト数 + 2 バイト分受信するのを最大30s待ちます。
-== [798] 第4バイトが 0x04 なら、[VAR[接続]]から17バイト受信するのを最大30s待ちます。
-== [799] 得られたのが指定のバイト数に満たなければ、
-=== [800] [VAR[接続]]の中断を指示します。
-=== [801] 接続の確立を失敗とします。ここで停止します。
-== [802] 接続を確立できたとします。
-= [803] [VAR[種別]]が「サーバー」の場合、
-== 
-@@
+== [794] [VAR[transport]]の中断を指示します。
+== [795] Return a [[failure]] and abort these steps.
+= [796] 第4バイトが 0x01 なら、[VAR[transport]]から5バイト受信するのを最大30s待ちます。
+= [797] 第4バイトが 0x03 なら、第5バイトを[[8ビット符号無し整数]]として解釈し、
+[VAR[transport]]からそのバイト数 + 2 バイト分受信するのを最大30s待ちます。
+= [798] 第4バイトが 0x04 なら、[VAR[transport]]から17バイト受信するのを最大30s待ちます。
+= [799] 得られたのが指定のバイト数に満たなければ、
+== [800] [VAR[transport]]の中断を指示します。
+== [801] Return a [[failure]] and abort these steps.
+= [802] Return a [[connection endpoint]]:
+[FIG(list members)[
+: [F[protocol][connection's protocol]] : [CODE[socks5]]
+: [F[種別]] : クライアント
+: [F[transport]] : [VAR[transport]]
 ]FIG]
+]FIG]
+
+@@ [782] XXX server
 
 [804] 接続確立後は、指示は[VAR[接続]]への指示とし、
 [VAR[接続]]からの通知があればそれを通知します。
 
 ** UNIX domain socket の場合
 
-[805] 接続の確立は、次のようにします。
+[805] To [DFN[establish a UNIX domain socket connection]] for [[path]] [VAR[path]],
+run these steps:
 [FIG(steps)[
-= [806] [VAR[種別]]が「クライアント」の場合、
-== [807] [[ソケットAPI]]を使って新たに接続します。
-[[アドレス族]]は [CODE[[[AF_UNIX]]]]、パス名は引数で指定された[[パス]]、
-[[ソケット型]]は [CODE[[[SOCK_STREAM]]]] とします。
-== [808] 接続に失敗すれば、確立は失敗とします。そうでなければ、確立できたとします。
-= [809] [VAR[種別]]が「サーバー」の場合、
-@@
+= [807] [[ソケットAPI]]を使って新たに接続します。
+[FIG(list members)[
+: [[アドレス族]] :[CODE[[[AF_UNIX]]]]
+: [[パス名]] : [VAR[path]]
+: [[ソケット型]] : [CODE[[[SOCK_STREAM]]]]
 ]FIG]
+= [806] If failed, return a [[failure]] and abort these steps.
+= [820] Return a [[connection endpoint]] representing the socket,
+with following states:
+[FIG(list members)[
+: [F[protocol][connection's protocol]] : [CODE[unix]]
+: [F[種別]] : クライアント
+]FIG]
+]FIG]
+
+@@ [608] XXX server
 
 [810] バイトが送信可能かどうかは、 [CODE[[[send]]]] によりバイト列を送信できるかどうかとします。
 
