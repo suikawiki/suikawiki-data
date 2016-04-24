@@ -1,30 +1,6 @@
 
 * Data structures
 
-[62] [[要求]]は、次のようなデータ構造です。
-[FIG(list members)[
-[FIGCAPTION[
-[[要求]]
-]FIGCAPTION]
-:[[要求メソッド]]:バイト列。
-:[[要求対象]]:バイト列。
-:[[プロトコルの版]]:[CODE[1.1]]。
-:[[ヘッダーリスト]]:0個以上の[[ヘッダー]]のリスト。
-:[[本体]]:バイト列。初期値は空。
-]FIG]
-
-[63] [[応答]]は、次のようなデータ構造です。
-[FIG(list members)[
-[FIGCAPTION[
-[[応答]]
-]FIGCAPTION]
-:[[プロトコルの版]]:[CODE[0.9]], [CODE[1.0]], [CODE[1.1]] のいずれか。初期値は [CODE[0.9]]。
-:[[状態符号]]:[[非負整数]]。初期値は [CODE[200]]。
-:[[理由句]]:[[バイト列]]。初期値は [CODE[OK]]。
-:[[ヘッダーリスト]]:0個以上の[[ヘッダー]]のリスト。初期値は空。
-:[[不完全メッセージ]]フラグ:初期値は未設定。
-]FIG]
-
 [38] 終了は、次のようなデータ構造です。
 [FIG(list members)[
 [FIGCAPTION[
@@ -783,32 +759,70 @@ as follows:
 [314] タイマーは、初期状態では動作していません。時間と動作が設定されると、
 指定時間経過後に指定の動作が実行されます。既に設定された動作は取り消され、実行されません。
 
+[62] [[要求]]は、次のようなデータ構造です。
+[FIG(list members)[
+[FIGCAPTION[
+[[要求]]
+]FIGCAPTION]
+:[[要求メソッド]]:バイト列。
+:[[要求対象]]:バイト列。
+:[[プロトコルの版]]:[CODE[1.1]]。
+:[[ヘッダーリスト]]:0個以上の[[ヘッダー]]のリスト。
+:[[本体]]:バイト列。初期値は空。
+]FIG]
+
+[63] [[応答]]は、次のようなデータ構造です。
+[FIG(list members)[
+[FIGCAPTION[
+[[応答]]
+]FIGCAPTION]
+:[[プロトコルの版]]:[CODE[0.9]], [CODE[1.0]], [CODE[1.1]] のいずれか。初期値は [CODE[0.9]]。
+:[[状態符号]]:[[非負整数]]。初期値は [CODE[200]]。
+:[[理由句]]:[[バイト列]]。初期値は [CODE[OK]]。
+:[[ヘッダーリスト]]:0個以上の[[ヘッダー]]のリスト。初期値は空。
+:[[不完全メッセージ]]フラグ:初期値は未設定。
+]FIG]
+
 [837] An [[HTTP client]] is a [[connection]] for the purpose of steps in the
 [[Fetch Standard]].
 
 [838] To make an HTTP request over [VAR[client]] using [VAR[request]]
 in [[HTTP-network fetch]], run these steps:
 [FIG(steps)[
+= [541] If [VAR[client]]'s [F[transport]]'s [F[request mode]] is ''HTTP proxy'':
+== [845] Let [VAR[target]] be the result of applying [[URL serializer]] to
+[VAR[request]]'s [F[current url]] with [VAR[exclude fragment flag]] set.
+= [843] Otherwise:
+== [844] Let [VAR[target]] be the concatenation of:
+[FIG(list)[
+= [846] [CODE[/]]
+= [847] The strings in [VAR[request]]'s [F[current url]]'s [F[path]],
+separated from each other by [CODE[/]]
+= [848] If [VAR[request]]'s [F[current url]]'s [F[query]] is not [[null]]:
+== [849] [CODE[?]]
+== [850] [VAR[request]]'s [F[current url]]'s [F[query]]
+]FIG]
 = [840] Send an [[HTTP request]] over [VAR[client]].
 [FIG(list members)[
 [FIGCAPTION[
 [[HTTP request]]
 ]FIGCAPTION]
 : [F[要求メソッド]] : [VAR[request]]'s [F[method][request method]]
-: [F[要求対象]] :
-@@
+: [F[要求対象]] : [VAR[target]]
 : [F[ヘッダーリスト]] : [VAR[request]]'s [F[header list][request's header list]]
 : [F[本体]] : [VAR[request]]'s [F[body][request body]]
 ]FIG]
 = [839] Process notifications from [VAR[client]] as follows:
 [FIG(switch)[
-: 要求の本体の一部の送信の通知 :
+: 要求の本体の一部の送信の通知 : Process [VAR[transmitted]] as follows:
 [FIG(steps)[
-@@ [VAR[sent]]
+= 
+@@ Increase [VAR[request]]'s [F[body][request body]] stream's transmitted bytes
 ]FIG]
 : 要求の送信完了の通知 :
 [FIG(steps)[
-@@
+= 
+@@ Set [VAR[request]]'s [F[body][request body]] stream's done flag
 ]FIG]
 : 応答のヘッダー受信完了の通知 : Process [VAR[http response]] as follows:
 [FIG(steps)[
@@ -823,20 +837,26 @@ in [[HTTP-network fetch]], run these steps:
 ]FIG]
 = [842] Now ''headers are transmitted''.  Return [VAR[response]].
 ]FIG]
-: データ開始の通知 :
-@@
-: データ受信の通知 :
-@@ [VAR[data]]
+: データ受信の通知 : Process [VAR[data]] as follows:
+[FIG(steps)[
+= 
+@@ Write [VAR[data]] to [VAR[response]]'s [F[body][response body]] stream
+]FIG]
 : データ終了の通知 :
-@@
-: 完了の通知 :
-@@ [VAR[response]], [VAR[exit status]]
+[FIG(steps)[
+= 
+@@ Set [VAR[response]]'s [F[body][response body]] stream's done flag
+]FIG]
+: 完了の通知 : Process [VAR[http response]] and [VAR[exit status]] as follows:
+[FIG(steps)[
+= [851] If [VAR[exit status]]'s [F[失敗]] is true:
+== [852] If ''headers are transmitted'':
+=== [853] Return a [[network error]].
+== [854] Otherwise:
+=== [855] Mutate [VAR[response]] into a [[network error]].
 ]FIG]
 ]FIG]
-
-@@ terminate with reason
-
-@@ response
+]FIG]
 
 @@ TLS client certificate dialog
 
@@ -2000,7 +2020,8 @@ in [[HTTP-network fetch]], run these steps:
 [621] The terms [DFN[[[serialize an integer]]]], 
 [DFN[[[IPv4 address]]]], [DFN[[[IPv6 address]]]], [DFN[[[domain]]]], [DFN[[[host]]]],
 [DFN[[[URL record]]]],
-[DFN[[F[scheme][URL scheme]]]], [DFN[[F[host]]][URL's host]], and [DFN[[F[port]]][URL's port]]
+[DFN[[F[scheme][URL scheme]]]], [DFN[[F[host]]][URL's host]], [DFN[[F[port]]][URL's port]], and
+[DFN[[F[query]]]]
 are defined in the [[URL Standard]].
 
 [354] The terms
@@ -2014,6 +2035,7 @@ are defined in the [[URL Standard]].
 [DFN[[F[status message]]]],
 [DFN[[F[body][response body]]]],
 [DFN[[F[header list][response's header list]]]],
+[DFN[network error]],
 [DFN[[[connection]]]],
 [DFN[[[obtain a connection]]]],
 [DFN[[[obtain a WebSocket connection]]]], and
