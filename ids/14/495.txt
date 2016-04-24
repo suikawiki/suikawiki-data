@@ -1,21 +1,4 @@
 
-* Data structures
-
-[38] 終了は、次のようなデータ構造です。
-[FIG(list members)[
-[FIGCAPTION[
-[[Exit status][exit status]]
-]FIGCAPTION]
-:リセット:[[真]]か[[偽]]。既定値は[[偽]]。
-:失敗:[[真]]か[[偽]]。
-:[[WebSocket]] cleanly:[[真]]か[[偽]]か null。既定値は null。
-:[[WebSocket]] [[状態符号]]:[[整数]]か null。既定値は null。
-:[[WebSocket]] 理由:[[文字列]]か null。既定値は null。
-:[131] 再試行可能性:[[真]]か[[偽]]。既定値は[[偽]]。
-]FIG]
-
-;; [257] 再試行可能性が[[真]]であれば、何も考えずに同じ[[要求]]を他の[[接続]]で再送信して構いません。
-
 * Proxies
 
 [609] A [[client]] has a [F[PAC]], which is initially [[null]].
@@ -650,8 +633,9 @@ with following states:
 [877] A [[connection endpoint]] whose [F[protocol][connection's protocol]] is
 [CODE[tls]] has following additional states:
 [FIG(list members)[
-: [F[is ev]] : A [[boolean]].
-: [F[certificates]] : A list of [[certificates][certificate]].
+: [F[is ev]] : A [[boolean]].  Initially, [[false]].
+: [F[remote certificates]] : A list of [[certificates][certificate]].
+: [F[has alert]] : A [[boolean]].  Initially, [[false]].
 ]FIG]
 
 [638] The [DFN[TLS steps]] for [VAR[transport]], [VAR[url]], and [VAR[credentials]],
@@ -672,7 +656,9 @@ in [VAR[user agent]] are as follows:
 @@ If switched from HTTP/2 to HTTP/1.1
 = [356] Initiate [[TLS handshake]].
 [FIG(list members)[
+: Minimum TLS version : [CODE[1.0]]
 : Underlying transport : [VAR[transport]]
+: Compression : Disabled
 : [[TLS session]] cache : [VAR[user agent]]'s [F[[[TLS session]] cache]]
 : [[SNI]] host name : [VAR[domain]]
 : [[ALPN protocol names][ALPN protocol name]] : [VAR[alpn protocols]]
@@ -680,14 +666,23 @@ in [VAR[user agent]] are as follows:
 ]FIG]
 = [861] If failed, return a [[failure]] and abort these steps.
 = [865] Let [VAR[alpn]] be the [[ALPN protocol name]] obtained by the TLS handshake.
+= [872] Let [VAR[version]] be the [[TLS]] protocol version in use.
+= [873] Let [VAR[cipher]] be the [[cipher suite]] and parameters in use.
 = [866] If [VAR[alpn]] is [[null]] or [CODE[http/1.1]]:
 == [867] Set [VAR[protocol]] to [CODE[http1]].
 = [868] Otherwise, if [VAR[alpn]] is [CODE[h2]]:
 == [869] Set [VAR[protocol]] to [CODE[http2]].
+== [885] If one of the following conditions is met:
+[FIG(list)[
+- [887] [VAR[version]] is [CODE[1.0]] or [CODE[1.1]]
+- [888] [VAR[cipher]]'s [[cipher suite]] is blacklisted by the [[HTTP/2]] specification
+- [890] [VAR[cipher]]'s parameter is disallowed by the [[HTTP/2]] specification
+]FIG]
+===
+@@ connection error [CODE[INADEQUATE_SECURITY]]
+=== [886] Return a [[failure]] and abort these steps.
 = [870] Otherwise:
 == [871] Return a [[failure]] and abort these steps.
-= [872] Let [VAR[version]] be the [[TLS]] protocol version in use.
-= [873] Let [VAR[cipher]] be the [[cipher suite]] and parameters in use.
 = [874] Let [VAR[certs]] be the received [[certificates][certificate]].
 = [876] Let [VAR[ev]] be whether [VAR[certs]] contain a valid [[EV certificate]] or not.
 = [860] Let [VAR[connection]] be a [[connection endpoint]] that represents the TLS connection,
@@ -696,9 +691,11 @@ with following states:
 : [F[種別]] : クライアント
 : [F[protocol][connection's protocol]] : [VAR[protocol]]
 : [F[is ev]] : [VAR[ev]]
-: [F[certificates]] : [VAR[certs]]
+: [F[remote certificates]] : [VAR[certs]]
 ]FIG]
 = [875] Apply [[service identity]] verification for [VAR[certs]] and [VAR[url]]'s [F[host]].
+= [705] Apply [[PKP]] verification for [VAR[certs]] and [VAR[url]]'s [F[host]]
+in [VAR[user agent]].
 = [859] Set [VAR[connection]]'s [F[HTTPS state][connection's HTTPS state]]
 to [CODE[modern]] or [CODE[deprecated]], as determined by an implementation dependent
 algorithm whose inputs are [VAR[version]], [VAR[cipher]], [VAR[certs]],
@@ -707,8 +704,6 @@ and whether there are TLS warnings or not.
 
 [384] A [[user agent]] has [F[[[TLS session]] cache]] and
 [F[certificate database]].
-
-@@ [705] [[警告]]を受信していれば、アプリケーションにその旨を通知します。
 
 @@ server:
 [706] 確立の完了時に、次の情報をアプリケーションに引渡します。
@@ -729,7 +724,9 @@ and whether there are TLS warnings or not.
 
 [710] [[error alert]] を受信したら、次のようにします。
 [FIG(steps)[
-= [711] [[alert level]] が[[警告]]なら、
+= [891] Set [VAR[connection]]'s [F[has alert]] to [[true]].
+= [711] [[alert level]] が[[警告]] and [VAR[user agent]] does not have
+[[HSTS policy]] or pin for [VAR[url]]'s [F[host]]:
 == [712] 警告を通知します。
 = [713] それ以外なら、
 == [714] [VAR[送信閉じ済みフラグ]]を設定します。
@@ -768,6 +765,10 @@ and whether there are TLS warnings or not.
 [732] [[TLS]] の処理によりバイト列を送信するべきときは、
 [VAR[下位の接続]]で指定されたバイト列を送信します。
 
+@@
+[889] TLS renegotiation:
+If protocol is http2 and after preface, connection error PROTOCOL_ERROR
+
 [733] [[TLS]] の最初の [[handshake]] 
 または[[再折衝]]により[[クライアント証明書]]を要求された時は、
 次のようにします。
@@ -800,7 +801,9 @@ and whether there are TLS warnings or not.
 [[Fetch Standard]].
 
 [838] To make an HTTP request over [VAR[client]] using [VAR[request]]
-in [[HTTP-network fetch]], run these steps:
+in [[HTTP-network fetch]], 
+with [VAR[credentials]] flag and optional [VAR[not retryable]] flag,
+run these steps:
 [FIG(steps)[
 = [541] If [VAR[client]]'s [F[transport]]'s [F[request mode]] is ''HTTP proxy'':
 == [845] Let [VAR[target]] be the result of applying [[URL serializer]] to
@@ -853,6 +856,10 @@ separated from each other by [CODE[/]]
 : [F[header list][response's header list]] : [VAR[http response]]'s [F[ヘッダーリスト]]
 : [F[HTTPS state]] : [VAR[client]]'s [F[transport]]'s [F[HTTPS state][connection's HTTPS state]]
 ]FIG]
+== [892] If [VAR[client]]'s [F[transport]]'s [F[protocol][transport's protocol]] is 
+[CODE[tls]] and [VAR[client]]'s [F[transport]]'s [F[has alert]] is [[false]]:
+=== [893] Process the HSTS header of [VAR[response]], if any.
+=== [894] Process the PKP headers of [VAR[response]], if any.
 = [842] Now ''headers are transmitted''.  Return [VAR[response]].
 ]FIG]
 : データ受信の通知 : Process [VAR[data]] as follows:
@@ -869,9 +876,19 @@ separated from each other by [CODE[/]]
 [FIG(steps)[
 = [851] If [VAR[exit status]]'s [F[失敗]] is true:
 == [852] If ''headers are transmitted'':
-=== [853] Return a [[network error]].
-== [854] Otherwise:
 === [855] Mutate [VAR[response]] into a [[network error]].
+== [257] Otherwise, if not [VAR[not retryable]] and 
+[VAR[exit status]]'s [F[再試行可能性]] is true:
+=== [882] Let [VAR[client]] be the result of 
+[[obtaining a connection][obtain a connection]], given [VAR[request]]'s 
+[F[current url]]'s [F[origin]] and [VAR[credentials]].
+=== [883] If [VAR[client]] is a [[failure]], return a [[network error]]
+and abort these steps.
+=== [884] Return the result of recursively making an HTTP request
+over [VAR[client]] using [VAR[request]],
+with [VAR[credentials]] flag, with [VAR[not retryable]] flag set.
+== [854] Otherwise:
+=== [853] Return a [[network error]].
 ]FIG]
 ]FIG]
 ]FIG]
@@ -882,6 +899,19 @@ separated from each other by [CODE[/]]
 [357] [[HTTP]] [CODE(HTTP)[[[CONNECT]]]] プロキシからの応答の受信
 - [CODE(HTTP)[[[407]]]] なら、...
 - その他非 [CODE(HTTP)[[[200]]]] なら、[[ネットワークエラー]]
+
+[38] An [DFN[exit status]] has following states:
+[FIG(list members)[
+[FIGCAPTION[
+[[Exit status][exit status]]
+]FIGCAPTION]
+:リセット:[[真]]か[[偽]]。既定値は[[偽]]。
+:失敗:[[真]]か[[偽]]。
+:[[WebSocket]] cleanly:[[真]]か[[偽]]か null。既定値は null。
+:[[WebSocket]] [[状態符号]]:[[整数]]か null。既定値は null。
+:[[WebSocket]] 理由:[[文字列]]か null。既定値は null。
+:[131] 再試行可能性:[[真]]か[[偽]]。既定値は[[偽]]。
+]FIG]
 
 * HTTP/1
 
