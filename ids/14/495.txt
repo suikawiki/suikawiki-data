@@ -69,6 +69,8 @@ it is set to a virtual [[PAC file]] which represents those proxy server configur
 [614] A [[proxy configuration]] whose [F[protocol]] is
 [CODE[unix]] has [DFN[[F[path]]]], whose value is a [[byte string]].
 
+@@ [836] Environment variables
+
 * Domain names
 
 [615] The [DFN[name resolution steps]] for [VAR[host]] are these steps:
@@ -109,17 +111,18 @@ whose [[request target]] is an [[absolute URL]].
 ]FIG]
 
 [542] To [DFN[establish an HTTP connection]] for an [[URL record]] [VAR[url]]
-and a [[user agent]] [VAR[client]], optionally with the [VAR[ws]] flag, run these steps:
+and a [[user agent]] [VAR[user agent]], optionally with [VAR[credentials]]
+and [VAR[ws]] flags, run these steps:
 [FIG(steps)[
-= [543] If [VAR[client]]'s [F[PAC]] is not [[null]]:
+= [543] If [VAR[user agent]]'s [F[PAC]] is not [[null]]:
 == [544] Let [VAR[proxies]] be the result of [[running a PAC file][run a PAC file]] with 
-[VAR[client]]'s [F[PAC]] and [VAR[url]].
+[VAR[user agent]]'s [F[PAC]] and [VAR[url]].
 = [545] Otherwise:
 == [546] Let [VAR[proxies]] be a list whose only member is a [[proxy configuration]]
 whose [F[protocol]] is [CODE[tcp]].
 = [547] For each [VAR[proxy]] in [VAR[proxies]], in order, run these substeps:
 == [548] Set [VAR[request mode]] to ''default''.
-== [549] If [VAR[client]] does not support [VAR[proxy]]'s [F[protocol]]:
+== [549] If [VAR[user agent]] does not support [VAR[proxy]]'s [F[protocol]]:
 === [550] Set [VAR[connection]] to a [[failure]].
 == [551] Otherwise, switch by [VAR[proxy]]'s [F[protocol]]:
 [FIG(switch)[
@@ -175,7 +178,7 @@ followed by [VAR[url]]'s [F[port]], [[serialized][serialize an integer]].
 == [578] Set [VAR[connection]] to the result of
 [[establishing an HTTP [CODE(HTTP)[CONNECT]] connection][establish an HTTP [CODE(HTTP)@en[CONNECT]] connection]]
 with [VAR[http]] and [VAR[target]].
-@@ and proxy credentials
+@@ [VAR[credentials]] flag and proxy credentials
 == [579] If [VAR[connection]] is a [[failure]] whose HTTP response's [F[status]] is
 [CODE[407]]:
 === 
@@ -224,26 +227,50 @@ with [VAR[connection]], [VAR[url]]'s [F[host]], and [VAR[port]].
 == [600] If [VAR[connection]] is not a [[failure]]:
 === [601] If [VAR[url]]'s [F[scheme][URL scheme]] is [CODE(URI)@en[https]]:
 ==== [602] Set [VAR[connection]] to the result of running the [[TLS steps]] for
-[VAR[connection]] and [VAR[url]]'s [F[host]].
+[VAR[connection]], [VAR[url]]'s [F[host]], and [VAR[credentials]] flag.
 == [603] If [VAR[connection]] is not a [[failure]]:
 === [604] Set [VAR[connection]]'s [F[request mode]] to [VAR[request mode]].
 === [605] Return [VAR[connection]] and abort these steps.
 = [606] Return a [[failure]].
 ]FIG]
 
-;; [808] These steps are intended to be invoked from
-the [[obtain a connection]] steps and the [[obtain a WebSocket connection]] steps.
+[822] In the steps to [[obtain a connection]], to establish an HTTP connection,
+run these steps:
+[FIG(steps)[
+= [808] Let [VAR[connection]] be the result of
+[[establishing an HTTP connection][establish an HTTP connection]]
+for the request's [F[current url]], [VAR[credentials]] flag, and the [[user agent]].
+= [823] If [VAR[connection]] is a [[failure]]:
+== [824] Return a [[failure]].
+= [825] Otherwise:
+== [826] Return an [[HTTP client]] whose [F[接続]] is [VAR[connection]].
+]FIG]
 
 [809] To [[obtain a WebSocket connection]] for [VAR[url]], run these steps:
 [FIG(steps)[
-= [821] Return the result of [[establishing an HTTP connection][establish an HTTP connection]]
+= [821] Let [VAR[connection]] be the result of
+[[establishing an HTTP connection][establish an HTTP connection]]
 for [VAR[url]] and the [[user agent]], with [VAR[ws]] flag set.
+= [827] If [VAR[connection]] is a [[failure]]:
+== [828] Return a [[failure]].
+= [829] Otherwise:
+== [830] Return an [[HTTP client]] whose [F[接続]] is [VAR[connection]].
 ]FIG]
 
-@@
-[607] To [DFN[wait for other connections]] with [VAR[host]] and [VAR[port]],
-run steps in [[WebSocket接続を得る]].
-
+[607] To [DFN[wait for other connections]] with [VAR[host]] and [VAR[port]]
+in [VAR[user agent]], run these steps:
+[FIG(steps)[
+= [831] If [VAR[host]] is a [[domain]]:
+== [832] Let [VAR[n]] be an implementation dependent small number.
+= [833] Otherwise:
+== [834] Let [VAR[n]] be [N[1]].
+= [835] Wait while the number of [[connections][connection]]
+whose 
+@@ host is [VAR[host]],
+port is [VAR[port]], and
+[F[WebSocket状態]] is [CODE[CONNECTING]]
+in the [VAR[user agent]]'s [F[connection pool]] is not less than [VAR[n]].
+]FIG]
 
 [642] [[アプリケーション]]は、[[接続]]の端点に次の指示を行えます。
 [FIG(list)[
@@ -419,94 +446,6 @@ dependent steps.  An example of such steps is:
 : [CODE(URI)@en[https]] : [[443]]
 ]FIG]
 = [626] Return [VAR[port]].
-]FIG]
-
-** TLS
-
-[638] The [DFN[TLS steps]] for [VAR[connection]] and [VAR[url]] is:
-[FIG(steps)[
-@@
-]FIG]
-
-[704] 接続の確立は、指定された[VAR[下位の[[接続]]]]において、 [[TLS handshake]]
-を適切に行い、正常に完了することによります。
-
-;; [705] [[警告]]を受信していれば、アプリケーションにその旨を通知します。
-
-[706] 確立の完了時に、次の情報をアプリケーションに引渡します。
-[FIG(list)[
-- [[TLS]] の版
-- 選択された [[cipher suite]] と引数
-- ([VAR[種別]]が「サーバー」の場合) [[SNI]] ホスト名
-- 選択された [[ALPN]] プロトコル
-- 相手の[[証明書]]と[[中間証明書]] (あれば)
-]FIG]
-
-[707] [VAR[下位の接続]]からバイトを受信したら、[[バイト]]と[[緊急データ]]フラグを [[TLS]] に従い処理します。
-
-[708] [[closure alert]] を受信したら、次のようにします。
-[FIG(steps)[
-= [709] 正常終了の受信を通知します。
-]FIG]
-
-[710] [[error alert]] を受信したら、次のようにします。
-[FIG(steps)[
-= [711] [[alert level]] が[[警告]]なら、
-== [712] 警告を通知します。
-= [713] それ以外なら、
-== [714] [VAR[送信閉じ済みフラグ]]を設定します。
-== [715] [VAR[受信閉じ済みフラグ]]を設定します。
-== [716] 中断を通知します。リセットフラグを設定します。
-]FIG]
-
-[717] [VAR[下位の接続]]から正常終了を受信したら、次のようにします。
-[FIG(steps)[
-= [718] [VAR[受信閉じ済みフラグ]]が設定されていなければ、
-== [719] [VAR[受信閉じ済みフラグ]]を設定します。
-== [720] 正常終了の受信を通知します。
-]FIG]
-
-[721] [VAR[下位の接続]]から中断を受信したら、次のようにします。
-[FIG(steps)[
-= [722] [VAR[受信閉じ済みフラグ]]と[VAR[送信閉じ済みフラグ]]のどちらかが未設定なら、
-== [723] [VAR[送信閉じ済みフラグ]]を設定します。
-== [724] [VAR[受信閉じ済みフラグ]]を設定します。
-== [725] 中断を通知します。
-]FIG]
-
-[726] バイトの送信は、 [[TLS]] に従い処理します。
-
-[727] バイトを送信できるかどうかは、新たなバイトを入力として [[TLS]]
-で処理できるかどうかとします。
-
-[728] 正常終了の送信の指示があれば、次のようにします。
-[FIG(steps)[
-= [729] [[closure alert]] を送信します。
-= [730] [VAR[下位の接続]]に正常終了の送信を指示します。
-]FIG]
-
-[731] 中断の指示があれば、[VAR[下位の接続]]に中断を指示します。
-
-[732] [[TLS]] の処理によりバイト列を送信するべきときは、
-[VAR[下位の接続]]で指定されたバイト列を送信します。
-
-[733] [[TLS]] の最初の [[handshake]] 
-または[[再折衝]]により[[クライアント証明書]]を要求された時は、
-次のようにします。
-[FIG(steps)[
-= [734] challenge の受信を通知します。
-[FIG(list members)[
-:接続:この[[接続]]。
-:challenge:(サーバーなら) [CODE(HTTP)@en[[[ClientHello]]]]
-や (クライアントなら) [CODE(HTTP)@en[[[CertificateRequest]]]]
-に含まれる情報のうち必要なもの。
-]FIG]
-]FIG]
-
-[735] credentials の送信は、次のようにします。
-[FIG(steps)[
-= [736] [[TLS]] が [[credentials]] を受け付ける状態でなければ、例外を投げて停止します。
-= [737] そうでなければ、与えられた [[credentials]] を [[TLS]] の処理に引渡します。
 ]FIG]
 
 ** HTTP [CODE(HTTP)@en[CONNECT]]
@@ -726,6 +665,95 @@ with following states:
 [VAR[送信閉じ済みフラグ]]と[VAR[受信閉じ済みフラグ]]を設定し、
 中断を通知します。
 
+** TLS
+
+[638] The [DFN[TLS steps]] for [VAR[connection]], [VAR[url]], and [VAR[credentials]] are
+as follows:
+[FIG(steps)[
+@@
+]FIG]
+
+[704] 接続の確立は、指定された[VAR[下位の[[接続]]]]において、 [[TLS handshake]]
+を適切に行い、正常に完了することによります。
+
+;; [705] [[警告]]を受信していれば、アプリケーションにその旨を通知します。
+
+[706] 確立の完了時に、次の情報をアプリケーションに引渡します。
+[FIG(list)[
+- [[TLS]] の版
+- 選択された [[cipher suite]] と引数
+- ([VAR[種別]]が「サーバー」の場合) [[SNI]] ホスト名
+- 選択された [[ALPN]] プロトコル
+- 相手の[[証明書]]と[[中間証明書]] (あれば)
+]FIG]
+
+[707] [VAR[下位の接続]]からバイトを受信したら、[[バイト]]と[[緊急データ]]フラグを [[TLS]] に従い処理します。
+
+[708] [[closure alert]] を受信したら、次のようにします。
+[FIG(steps)[
+= [709] 正常終了の受信を通知します。
+]FIG]
+
+[710] [[error alert]] を受信したら、次のようにします。
+[FIG(steps)[
+= [711] [[alert level]] が[[警告]]なら、
+== [712] 警告を通知します。
+= [713] それ以外なら、
+== [714] [VAR[送信閉じ済みフラグ]]を設定します。
+== [715] [VAR[受信閉じ済みフラグ]]を設定します。
+== [716] 中断を通知します。リセットフラグを設定します。
+]FIG]
+
+[717] [VAR[下位の接続]]から正常終了を受信したら、次のようにします。
+[FIG(steps)[
+= [718] [VAR[受信閉じ済みフラグ]]が設定されていなければ、
+== [719] [VAR[受信閉じ済みフラグ]]を設定します。
+== [720] 正常終了の受信を通知します。
+]FIG]
+
+[721] [VAR[下位の接続]]から中断を受信したら、次のようにします。
+[FIG(steps)[
+= [722] [VAR[受信閉じ済みフラグ]]と[VAR[送信閉じ済みフラグ]]のどちらかが未設定なら、
+== [723] [VAR[送信閉じ済みフラグ]]を設定します。
+== [724] [VAR[受信閉じ済みフラグ]]を設定します。
+== [725] 中断を通知します。
+]FIG]
+
+[726] バイトの送信は、 [[TLS]] に従い処理します。
+
+[727] バイトを送信できるかどうかは、新たなバイトを入力として [[TLS]]
+で処理できるかどうかとします。
+
+[728] 正常終了の送信の指示があれば、次のようにします。
+[FIG(steps)[
+= [729] [[closure alert]] を送信します。
+= [730] [VAR[下位の接続]]に正常終了の送信を指示します。
+]FIG]
+
+[731] 中断の指示があれば、[VAR[下位の接続]]に中断を指示します。
+
+[732] [[TLS]] の処理によりバイト列を送信するべきときは、
+[VAR[下位の接続]]で指定されたバイト列を送信します。
+
+[733] [[TLS]] の最初の [[handshake]] 
+または[[再折衝]]により[[クライアント証明書]]を要求された時は、
+次のようにします。
+[FIG(steps)[
+= [734] challenge の受信を通知します。
+[FIG(list members)[
+:接続:この[[接続]]。
+:challenge:(サーバーなら) [CODE(HTTP)@en[[[ClientHello]]]]
+や (クライアントなら) [CODE(HTTP)@en[[[CertificateRequest]]]]
+に含まれる情報のうち必要なもの。
+]FIG]
+]FIG]
+
+[735] credentials の送信は、次のようにします。
+[FIG(steps)[
+= [736] [[TLS]] が [[credentials]] を受け付ける状態でなければ、例外を投げて停止します。
+= [737] そうでなければ、与えられた [[credentials]] を [[TLS]] の処理に引渡します。
+]FIG]
+
 * HTTP clients
 
 [34] An [DFN[HTTP client]] has following states:
@@ -754,6 +782,9 @@ with following states:
 
 [314] タイマーは、初期状態では動作していません。時間と動作が設定されると、
 指定時間経過後に指定の動作が実行されます。既に設定された動作は取り消され、実行されません。
+
+[837] An [[HTTP client]] is a [[connection]] for the purpose of steps in the
+[[Fetch Standard]].
 
 ** アプリケーションからの指示
 
@@ -1899,6 +1930,9 @@ with following states:
 are defined in the [[URL Standard]].
 
 [354] The terms
+[DFN[[[request]]]],
+[DFN[[F[current url]]]],
+[DFN[[[connection]]]],
 [DFN[[[obtain a connection]]]] and
 [DFN[[[obtain a WebSocket connection]]]]
 are defined in the [[Fetch Standard]].
