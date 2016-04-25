@@ -1,3 +1,8 @@
+* Introduction
+
+''This section is non-normative.''
+
+[907] This document is an implementation of Web protocols.
 
 * Proxies
 
@@ -43,6 +48,9 @@ for the request's [F[current url]], [VAR[credentials]] flag, and the [[user agen
 = [825] Otherwise:
 == [826] Return an [[HTTP connection]]:
 [FIG(list members)[
+[FIGCAPTION[
+[[HTTP connection]]
+]FIGCAPTION]
 : [F[endpoint type][connection's endpoint type]] : [CODE[client]]
 : [F[transport][connection's transport]] : [F[transport]]
 ]FIG]
@@ -58,6 +66,9 @@ for [VAR[url]] and the [[user agent]], with [VAR[ws]] flag set.
 = [829] Otherwise:
 == [830] Return an [[HTTP connection]]:
 [FIG(list members)[
+[FIGCAPTION[
+[[HTTP connection]]
+]FIGCAPTION]
 : [F[endpoint type][connection's endpoint type]] : [CODE[client]]
 : [F[transport][connection's transport]] : [F[transport]]
 ]FIG]
@@ -72,10 +83,11 @@ in [VAR[user agent]], run these steps:
 == [834] Let [VAR[n]] be [N[1]].
 = [835] Wait while the number of [[connections][connection]]
 whose 
-@@ host is [VAR[host]],
-port is [VAR[port]], and
-[F[WebSocket状態]] is [CODE[CONNECTING]]
-in the [VAR[user agent]]'s [F[connection pool]] is not less than [VAR[n]].
+[F[remote address or domain][transport's remote address or domain]] is [VAR[host]],
+[F[remote port][transport's remote port]] is [VAR[port]], and
+[F[WebSocket接続の状態]] is [CODE[CONNECTING]],
+in the [VAR[user agent]]'s [F[connection pool]],
+is ''not'' less than [VAR[n]].
 ]FIG]
 
 * Domain names
@@ -109,6 +121,10 @@ One of
 [CODE[socks5]].
 : [DFN[[F[endpoint type][transport's endpoint type]]]] :
 Either [CODE[client]] or [CODE[server]].
+: [DFN[[F[remote address or domain][transport's remote address or domain]]]] :
+A [[domain]] or [[null]].  Unless stated otherwise, the value is [[null]].
+: [DFN[[F[remote port][transport's remote port]]]] :
+An [[integer]] or [[null]].
 : [DFN[[F[http protocol][transport's http protocol]]]] :
 Either [CODE[http1]] or [CODE[http2]].
 Unless stated otherwise, the value is [CODE[http1]].
@@ -135,6 +151,8 @@ and [VAR[ws]] flags, run these steps:
 = [545] Otherwise:
 == [546] Let [VAR[proxies]] be a list whose only member is a [[proxy configuration]]
 whose [F[protocol]] is [CODE[tcp]].
+= [908] Let [VAR[addr]] be [[null]].
+= [914] Let [VAR[port]] be [VAR[url]]'s [F[port]].
 = [547] For each [VAR[proxy]] in [VAR[proxies]], in order, run these substeps:
 == [548] Set [VAR[request mode]] to ''default''.
 == [549] If [VAR[user agent]] does not support [VAR[proxy]]'s [F[protocol]]:
@@ -143,17 +161,17 @@ whose [F[protocol]] is [CODE[tcp]].
 [FIG(switch)[
 : [CODE[tcp]] :
 [FIG(steps)[
-= [552] Let [VAR[port]] be the [[effective port]] of [VAR[url]].
-= [553] Let [VAR[addr]] be the result of applying [[name resolution steps]] 
+= [552] Set [VAR[effective port]] be the [[effective port]] of [VAR[url]].
+= [553] Set [VAR[addr]] to the result of applying [[name resolution steps]] 
 to [VAR[url]]'s [F[host]].
 = [554] If [VAR[addr]] is an [[error]]:
 == [555] Set [VAR[transport]] to a [[failure]].
 = [556] Otherwise:
 == [557] If [VAR[ws]] flag is set, [[wait for other connections]]
-with [VAR[addr]] and [VAR[url]]'s [F[port]].
+with [VAR[addr]] and [VAR[port]].
 == [558] Set [VAR[transport]] to the result of 
 [[establishing a TCP transport][establish a TCP transport]]
-to [VAR[addr]] and [VAR[port]].
+to [VAR[addr]] and [VAR[effective port]].
 ]FIG]
 : [CODE[unix]] :
 [FIG(steps)[
@@ -164,7 +182,7 @@ with [VAR[protocol]]'s [F[path]].
 : [CODE[http]] or [CODE[https]] :
 [FIG(steps)[
 = [560] If [VAR[ws]] flag is set, [[wait for other connections]]
-with [VAR[url]]'s [F[host]] and [VAR[url]]'s [F[port]].
+with [VAR[url]]'s [F[host]] and [VAR[port]].
 = [561] Let [VAR[proxy port]] be [VAR[proxy]]'s [F[port]].
 = [562] If [VAR[proxy port]] is [[null]]:
 == [563] If [VAR[proxy]]'s [F[protocol]] is [CODE[http]], set [VAR[proxy port]] to [[80]].
@@ -183,11 +201,11 @@ to [VAR[proxy addr]] and [VAR[proxy port]].
 [VAR[transport]] and [VAR[proxy]]'s [F[host]].
 = [572] If [VAR[transport]] is ''not'' a [[failure]] and
 [VAR[url]]'s [F[scheme][URL scheme]] is [CODE(URI)@en[https]]:
-== [573] If [VAR[url]]'s [F[port]] is [[null]]:
+== [573] If [VAR[port]] is [[null]]:
 === [574] Let [VAR[target]] be [VAR[url]]'s [F[host]].
 == [575] Otherwise:
 === [576] Let [VAR[target]] be [VAR[url]]'s [F[host]], followed by [CODE[:]],
-followed by [VAR[url]]'s [F[port]], [[serialized][serialize an integer]].
+followed by [VAR[port]], [[serialized][serialize an integer]].
 == [577] Let [VAR[http]] be an [[HTTP connection]]:
 [FIG(list members)[
 [FIGCAPTION[
@@ -209,14 +227,14 @@ with [VAR[http]] and [VAR[target]].
 ]FIG]
 : [CODE[socks4]] :
 [FIG(steps)[
-= [582] Let [VAR[port]] be the [[effective port]] of [VAR[url]].
-= [583] Let [VAR[addr]] be the result of applying [[name resolution steps]] 
+= [582] Let [VAR[effective port]] be the [[effective port]] of [VAR[url]].
+= [583] Set [VAR[addr]] to the result of applying [[name resolution steps]] 
 to [VAR[url]]'s [F[host]].
 = [584] If [VAR[addr]] is ''not'' an [[IPv4 address]]:
 == [585] Set [VAR[connection]] to a [[failure]].
 = [586] Otherwise:
 == [587] If [VAR[ws]] flag is set, [[wait for other connections]]
-with [VAR[addr]] and [VAR[url]]'s [F[port]].
+with [VAR[addr]] and [VAR[port]].
 == [588] Let [VAR[proxy port]] be [VAR[proxy]]'s [F[port]].
 == [589] If [VAR[proxy port]] is [[null]], set [VAR[proxy port]] to [[1080]].
 == [590] Let [VAR[proxy addr]] be the result of applying [[name resolution steps]] 
@@ -226,13 +244,13 @@ to [VAR[proxy]]'s [F[host]].
 to [VAR[proxy addr]] and [VAR[proxy port]].
 == [592] Set [VAR[connection]] to the result of
 [[establishing a SOCKS4 connection][establish a SOCKS4 connection]]
-with [VAR[connection]], [VAR[addr]], and [VAR[port]].
+with [VAR[connection]], [VAR[addr]], and [VAR[effective port]].
 ]FIG]
 : [CODE[socks5]] :
 [FIG(steps)[
-= [593] Let [VAR[port]] be the [[effective port]] of [VAR[url]].
+= [593] Let [VAR[effective port]] be the [[effective port]] of [VAR[url]].
 = [594] If [VAR[ws]] flag is set, [[wait for other connections]]
-with [VAR[url]]'s [F[host]] and [VAR[url]]'s [F[port]].
+with [VAR[url]]'s [F[host]] and [VAR[port]].
 = [595] Let [VAR[proxy port]] be [VAR[proxy]]'s [F[port]].
 = [597] If [VAR[proxy port]] is [[null]], set [VAR[proxy port]] to [[1080]].
 = [596] Let [VAR[proxy addr]] be the result of applying [[name resolution steps]] 
@@ -242,7 +260,7 @@ to [VAR[proxy]]'s [F[host]].
 to [VAR[proxy addr]] and [VAR[proxy port]].
 = [599] Set [VAR[transport]] to the result of
 [[establishing a SOCKS5 transport][establish a SOCKS5 transport]]
-with [VAR[transport]], [VAR[url]]'s [F[host]], and [VAR[port]].
+with [VAR[transport]], [VAR[url]]'s [F[host]], and [VAR[effective port]].
 ]FIG]
 ]FIG]
 == [600] If [VAR[transport]] is not a [[failure]]:
@@ -251,6 +269,14 @@ with [VAR[transport]], [VAR[url]]'s [F[host]], and [VAR[port]].
 [VAR[transport]], [VAR[url]]'s [F[host]], [VAR[credentials]] flag, and [VAR[ws]] flag,
 in [VAR[user agent]].
 == [603] If [VAR[transport]] is not a [[failure]]:
+=== [909] If [VAR[addr]] is [[null]]:
+==== [910] Set [VAR[transport]]'s
+[F[remote address or domain][transport's remote address or domain]] to
+[VAR[url]]'s [F[host]].
+=== [911] Otherwise:
+==== [912] Set [VAR[transport]]'s
+[F[remote address or domain][transport's remote address or domain]] to [VAR[addr]].
+=== [913] Set [VAR[transport]]'s [F[remote port][transport's remote port]] to [VAR[port]].
 === [604] Set [VAR[transport]]'s [F[request mode]] to [VAR[request mode]].
 === [605] Return [VAR[transport]] and abort these steps.
 = [606] Return a [[failure]].
