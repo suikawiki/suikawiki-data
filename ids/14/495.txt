@@ -1,10 +1,10 @@
 
 * Proxies
 
-[609] A [[client]] has a [F[PAC]], which is initially [[null]].
-If the client is configured to use a [[PAC file]], it is set to an object
+[609] A [[user agent]] has a [F[PAC]], which is initially [[null]].
+If the [[user agent]] is configured to use a [[PAC file]], it is set to an object
 which represents the file.
-Otherwise, if the client is configured to use one or more proxy servers,
+Otherwise, if the [[user agent]] is configured to use one or more proxy servers,
 it is set to a virtual [[PAC file]] which represents those proxy server configurations.
 
 @@
@@ -30,6 +30,54 @@ it is set to a virtual [[PAC file]] which represents those proxy server configur
 
 @@ [836] Environment variables
 
+* Fetch's connections
+
+[822] In the steps to [[obtain a connection]], to establish an HTTP connection,
+run these steps:
+[FIG(steps)[
+= [808] Let [VAR[transport]] be the result of
+[[establishing a transport][establish a transport]]
+for the request's [F[current url]], [VAR[credentials]] flag, and the [[user agent]].
+= [823] If [VAR[transport]] is a [[failure]]:
+== [824] Return a [[failure]].
+= [825] Otherwise:
+== [826] Return an [[HTTP connection]]:
+[FIG(list members)[
+: [F[endpoint type][connection's endpoint type]] : [CODE[client]]
+: [F[transport][connection's transport]] : [F[transport]]
+]FIG]
+]FIG]
+
+[809] To [[obtain a WebSocket connection]] for [VAR[url]], run these steps:
+[FIG(steps)[
+= [821] Let [VAR[transport]] be the result of
+[[establishing a transport][establish a transport]]
+for [VAR[url]] and the [[user agent]], with [VAR[ws]] flag set.
+= [827] If [VAR[transport]] is a [[failure]]:
+== [828] Return a [[failure]].
+= [829] Otherwise:
+== [830] Return an [[HTTP connection]]:
+[FIG(list members)[
+: [F[endpoint type][connection's endpoint type]] : [CODE[client]]
+: [F[transport][connection's transport]] : [F[transport]]
+]FIG]
+]FIG]
+
+[607] To [DFN[wait for other connections]] with [VAR[host]] and [VAR[port]]
+in [VAR[user agent]], run these steps:
+[FIG(steps)[
+= [831] If [VAR[host]] is a [[domain]]:
+== [832] Let [VAR[n]] be an implementation dependent small number.
+= [833] Otherwise:
+== [834] Let [VAR[n]] be [N[1]].
+= [835] Wait while the number of [[connections][connection]]
+whose 
+@@ host is [VAR[host]],
+port is [VAR[port]], and
+[F[WebSocket状態]] is [CODE[CONNECTING]]
+in the [VAR[user agent]]'s [F[connection pool]] is not less than [VAR[n]].
+]FIG]
+
 * Domain names
 
 [615] The [DFN[name resolution steps]] for [VAR[host]] are these steps:
@@ -43,14 +91,14 @@ it is set to a virtual [[PAC file]] which represents those proxy server configur
 ;; [620] These steps return an [[IPv4 address]], an [[IPv6 address]],
 or an [[error]].
 
-* Connections
+* Transports
 
-[640] A [DFN[connection endpoint]] has following states:
+[640] A [DFN[transport]] has following states:
 [FIG(list members)[
 [FIGCAPTION[
-[[Connection endpoint][connection endpoint]]
+[[Transport][transport]]
 ]FIGCAPTION]
-: [DFN[[F[protocol]]][connection's protocol]] :
+: [DFN[[F[protocol]]][transport's protocol]] :
 The value is one of 
 [CODE[tcp]],
 [CODE[unix]],
@@ -65,15 +113,15 @@ The value is one of
 :[VAR[送信待ちバッファー]]:初期状態では空のリスト。
 : [DFN[[F[request mode]]]] :
 The value is either ''default'' or ''HTTP proxy''.
-If the [F[request mode]] of a [[connection]] is ''HTTP proxy'',
-a [[request]] has to be sent over the [[connection]] as an [[HTTP request]]
+If the [F[request mode]] of a [[transport]] is ''HTTP proxy'',
+a [[request]] has to be sent over the [[transport]] as an [[HTTP request]]
 whose [[request target]] is an [[absolute URL]].
-: [DFN[[F[HTTPS state]]][connection's HTTPS state]] :
+: [DFN[[F[HTTPS state]]][transport's HTTPS state]] :
 An [[HTTPS state]] value.  Either [CODE[none]], [CODE[deprecated]], or [CODE[modern]].
 Unless stated otherwise, the value is [CODE[none]].
 ]FIG]
 
-[542] To [DFN[establish an HTTP connection]] for an [[URL record]] [VAR[url]]
+[542] To [DFN[establish a transport]] for an [[URL record]] [VAR[url]]
 and a [[user agent]] [VAR[user agent]], optionally with [VAR[credentials]]
 and [VAR[ws]] flags, run these steps:
 [FIG(steps)[
@@ -86,7 +134,7 @@ whose [F[protocol]] is [CODE[tcp]].
 = [547] For each [VAR[proxy]] in [VAR[proxies]], in order, run these substeps:
 == [548] Set [VAR[request mode]] to ''default''.
 == [549] If [VAR[user agent]] does not support [VAR[proxy]]'s [F[protocol]]:
-=== [550] Set [VAR[connection]] to a [[failure]].
+=== [550] Set [VAR[transport]] to a [[failure]].
 == [551] Otherwise, switch by [VAR[proxy]]'s [F[protocol]]:
 [FIG(switch)[
 : [CODE[tcp]] :
@@ -95,18 +143,18 @@ whose [F[protocol]] is [CODE[tcp]].
 = [553] Let [VAR[addr]] be the result of applying [[name resolution steps]] 
 to [VAR[url]]'s [F[host]].
 = [554] If [VAR[addr]] is an [[error]]:
-== [555] Set [VAR[connection]] to a [[failure]].
+== [555] Set [VAR[transport]] to a [[failure]].
 = [556] Otherwise:
 == [557] If [VAR[ws]] flag is set, [[wait for other connections]]
 with [VAR[addr]] and [VAR[url]]'s [F[port]].
-== [558] Set [VAR[connection]] to the result of 
-[[establishing a TCP connection][establish a TCP connection]]
+== [558] Set [VAR[transport]] to the result of 
+[[establishing a TCP transport][establish a TCP transport]]
 to [VAR[addr]] and [VAR[port]].
 ]FIG]
 : [CODE[unix]] :
 [FIG(steps)[
-= [559] Set [VAR[connection]] to the result of
-[[establishing a UNIX socket domain connection][establish a UNIX socket domain connection]]
+= [559] Set [VAR[transport]] to the result of
+[[establishing a UNIX socket domain transport][establish a UNIX socket domain transport]]
 with [VAR[protocol]]'s [F[path]].
 ]FIG]
 : [CODE[http]] or [CODE[https]] :
@@ -120,29 +168,35 @@ with [VAR[url]]'s [F[host]] and [VAR[url]]'s [F[port]].
 = [565] Let [VAR[proxy addr]] be the result of applying [[name resolution steps]] 
 to [VAR[proxy]]'s [F[host]].
 = [566] If [VAR[proxy addr]] is an [[error]]:
-== [567] Set [VAR[connection]] to a [[failure]].
+== [567] Set [VAR[transport]] to a [[failure]].
 = [568] Otherwise:
-== [569] Set [VAR[connection]] to the result of 
-[[establishing a TCP connection][establish a TCP connection]]
+== [569] Set [VAR[transport]] to the result of 
+[[establishing a TCP transport][establish a TCP transport]]
 to [VAR[proxy addr]] and [VAR[proxy port]].
-= [570] If [VAR[connection]] is ''not'' a [[failure]] and
+= [570] If [VAR[transport]] is ''not'' a [[failure]] and
 [VAR[proxy]]'s [F[protocol]] is [CODE[https]]:
-== [571] Set [VAR[connection]] to the result of running the [[TLS steps]] for
-[VAR[connection]] and [VAR[proxy]]'s [F[host]].
-= [572] If [VAR[connection]] is ''not'' a [[failure]] and
+== [571] Set [VAR[transport]] to the result of running the [[TLS steps]] for
+[VAR[transport]] and [VAR[proxy]]'s [F[host]].
+= [572] If [VAR[transport]] is ''not'' a [[failure]] and
 [VAR[url]]'s [F[scheme][URL scheme]] is [CODE(URI)@en[https]]:
 == [573] If [VAR[url]]'s [F[port]] is [[null]]:
 === [574] Let [VAR[target]] be [VAR[url]]'s [F[host]].
 == [575] Otherwise:
 === [576] Let [VAR[target]] be [VAR[url]]'s [F[host]], followed by [CODE[:]],
 followed by [VAR[url]]'s [F[port]], [[serialized][serialize an integer]].
-== [577] Let [VAR[http]] be a new [[HTTP client]] whose
-[F[transport]] is [VAR[connection]].
-== [578] Set [VAR[connection]] to the result of
-[[establishing an HTTP [CODE(HTTP)[CONNECT]] connection][establish an HTTP [CODE(HTTP)@en[CONNECT]] connection]]
+== [577] Let [VAR[http]] be an [[HTTP connection]]:
+[FIG(list members)[
+[FIGCAPTION[
+[[HTTP connection]]
+]FIGCAPTION]
+: [F[endpoint type][connection's endpoint type]] : [CODE[client]]
+: [F[transport][connection's transport]] : [VAR[transport]]
+]FIG]
+== [578] Set [VAR[transport]] to the result of
+[[establishing an HTTP [CODE(HTTP)[CONNECT]] transport][establish an HTTP [CODE(HTTP)@en[CONNECT]] transport]]
 with [VAR[http]] and [VAR[target]].
 @@ [VAR[credentials]] flag and proxy credentials
-== [579] If [VAR[connection]] is a [[failure]] whose HTTP response's [F[status]] is
+== [579] If [VAR[transport]] is a [[failure]] whose HTTP response's [F[status]] is
 [CODE[407]]:
 === 
 @@ Show proxy auth dialog
@@ -179,61 +233,23 @@ with [VAR[url]]'s [F[host]] and [VAR[url]]'s [F[port]].
 = [597] If [VAR[proxy port]] is [[null]], set [VAR[proxy port]] to [[1080]].
 = [596] Let [VAR[proxy addr]] be the result of applying [[name resolution steps]] 
 to [VAR[proxy]]'s [F[host]].
-= [598] Set [VAR[connection]] to the result of 
-[[establishing a TCP connection][establish a TCP connection]]
+= [598] Set [VAR[transport]] to the result of 
+[[establishing a TCP transport][establish a TCP transport]]
 to [VAR[proxy addr]] and [VAR[proxy port]].
-= [599] Set [VAR[connection]] to the result of
-[[establishing a SOCKS5 connection][establish a SOCKS5 connection]]
-with [VAR[connection]], [VAR[url]]'s [F[host]], and [VAR[port]].
+= [599] Set [VAR[transport]] to the result of
+[[establishing a SOCKS5 transport][establish a SOCKS5 transport]]
+with [VAR[transport]], [VAR[url]]'s [F[host]], and [VAR[port]].
 ]FIG]
 ]FIG]
-== [600] If [VAR[connection]] is not a [[failure]]:
+== [600] If [VAR[transport]] is not a [[failure]]:
 === [601] If [VAR[url]]'s [F[scheme][URL scheme]] is [CODE(URI)@en[https]]:
-==== [602] Set [VAR[connection]] to the result of running the [[TLS steps]] for
-[VAR[connection]], [VAR[url]]'s [F[host]], [VAR[credentials]] flag, and [VAR[ws]] flag,
+==== [602] Set [VAR[transport]] to the result of running the [[TLS steps]] for
+[VAR[transport]], [VAR[url]]'s [F[host]], [VAR[credentials]] flag, and [VAR[ws]] flag,
 in [VAR[user agent]].
-== [603] If [VAR[connection]] is not a [[failure]]:
-=== [604] Set [VAR[connection]]'s [F[request mode]] to [VAR[request mode]].
-=== [605] Return [VAR[connection]] and abort these steps.
+== [603] If [VAR[transport]] is not a [[failure]]:
+=== [604] Set [VAR[transport]]'s [F[request mode]] to [VAR[request mode]].
+=== [605] Return [VAR[transport]] and abort these steps.
 = [606] Return a [[failure]].
-]FIG]
-
-[822] In the steps to [[obtain a connection]], to establish an HTTP connection,
-run these steps:
-[FIG(steps)[
-= [808] Let [VAR[connection]] be the result of
-[[establishing an HTTP connection][establish an HTTP connection]]
-for the request's [F[current url]], [VAR[credentials]] flag, and the [[user agent]].
-= [823] If [VAR[connection]] is a [[failure]]:
-== [824] Return a [[failure]].
-= [825] Otherwise:
-== [826] Return an [[HTTP client]] whose [F[接続]] is [VAR[connection]].
-]FIG]
-
-[809] To [[obtain a WebSocket connection]] for [VAR[url]], run these steps:
-[FIG(steps)[
-= [821] Let [VAR[connection]] be the result of
-[[establishing an HTTP connection][establish an HTTP connection]]
-for [VAR[url]] and the [[user agent]], with [VAR[ws]] flag set.
-= [827] If [VAR[connection]] is a [[failure]]:
-== [828] Return a [[failure]].
-= [829] Otherwise:
-== [830] Return an [[HTTP client]] whose [F[接続]] is [VAR[connection]].
-]FIG]
-
-[607] To [DFN[wait for other connections]] with [VAR[host]] and [VAR[port]]
-in [VAR[user agent]], run these steps:
-[FIG(steps)[
-= [831] If [VAR[host]] is a [[domain]]:
-== [832] Let [VAR[n]] be an implementation dependent small number.
-= [833] Otherwise:
-== [834] Let [VAR[n]] be [N[1]].
-= [835] Wait while the number of [[connections][connection]]
-whose 
-@@ host is [VAR[host]],
-port is [VAR[port]], and
-[F[WebSocket状態]] is [CODE[CONNECTING]]
-in the [VAR[user agent]]'s [F[connection pool]] is not less than [VAR[n]].
 ]FIG]
 
 [642] [[アプリケーション]]は、[[接続]]の端点に次の指示を行えます。
@@ -321,31 +337,31 @@ in the [VAR[user agent]]'s [F[connection pool]] is not less than [VAR[n]].
 
 ** TCP
 
-[627] To [DFN[establish a TCP connection]] to [VAR[addr]] and [VAR[port]],
+[627] To [DFN[establish a TCP transport]] to [VAR[addr]] and [VAR[port]],
 run these steps:
 [FIG(steps)[
 = [628] Connect to address [VAR[addr]] and port [VAR[port]] using [[TCP]].
 = [641] If a [[TCP connection]] has been established:
-== [674] Let [VAR[connection]] be a [[connection endpoint]] representing the
+== [674] Let [VAR[transport]] be a [[transport]] representing the
 [[TCP connection]], with following states:
 [FIG(list members)[
-: [F[protocol][connection's protocol]] : [CODE[tcp]]
+: [F[protocol][transport's protocol]] : [CODE[tcp]]
 : [F[種別]] : クライアント
 ]FIG]
-== [630] Disable the [CODE[SO_OOBINLINE]] option of [VAR[connection]].
-== [631] Enable the [CODE[SO_NODELAY]] option of [VAR[connection]].
-== [632] Run the [[TCP keep alive steps]] for [VAR[connection]].
-== [818] Return [VAR[connection]].
+== [630] Disable the [CODE[SO_OOBINLINE]] option of [VAR[transport]]'s connection.
+== [631] Enable the [CODE[SO_NODELAY]] option of [VAR[transport]]'s connection.
+== [632] Run the [[TCP keep alive steps]] for [VAR[transport]].
+== [818] Return [VAR[transport]].
 = [629] Otherwise:
 == [819] Return a [[failure]].
 ]FIG]
 
-[634] The [DFN[TCP keep alive steps]] for [VAR[connection]] is a set of implementation
-dependent steps.  An example of such steps is:
+[634] The [DFN[TCP keep alive steps]] for [VAR[transport]] are implementation
+dependent.  An example of such steps is:
 [FIG(steps)[
-= [635] Enable the [CODE[SO_KEEPALIVE]] option of [VAR[connection]].
-= [636] Set [CODE[TCP_KEEPIDLE]] option of [VAR[connection]] to 45 (seconds).
-= [637] Set [CODE[TCP_KEEPINTVL]] option of [VAR[connection]] to 45 (seconds).
+= [635] Enable the [CODE[SO_KEEPALIVE]] option of [VAR[transport]].
+= [636] Set [CODE[TCP_KEEPIDLE]] option of [VAR[transport]]'s connection to 45 (seconds).
+= [637] Set [CODE[TCP_KEEPINTVL]] option of [VAR[transport]]'s connection to 45 (seconds).
 ]FIG]
 
 @@ [675] XXX server accept steps
@@ -414,19 +430,19 @@ dependent steps.  An example of such steps is:
 
 ** HTTP [CODE(HTTP)@en[CONNECT]]
 
-[633] A [[connection endpoint]] whose [F[protocol][connection's protocol]] is
+[633] A [[transport]] whose [F[protocol][transport's protocol]] is
 [CODE[http1]] or [CODE[http2]] has following additional states:
 [FIG(list members)[
 :[F[HTTP]]:[[HTTP接続]]の[[クライアント]]。[[HTTP接続の処理]]参照。
 :[F[接続確立済みフラグ]]:初期値は未設定。
 ]FIG]
 
-[739] To [DFN[establish an HTTP [CODE(HTTP)@en[CONNECT]] connection]]
-for [VAR[target]] over an [[HTTP client]] [VAR[http]], run these steps:
+[739] To [DFN[establish an HTTP [CODE(HTTP)@en[CONNECT]] transport]]
+for [VAR[target]] over an [[HTTP connection]] [VAR[http]], run these steps:
 [FIG(steps)[
-= [740] Let [VAR[connection]] be a [[connection endpoint]]:
+= [740] Let [VAR[transport]] be a [[transport]]:
 [FIG(list members)[
-: [F[protocol][connection's protocol]] : [VAR[http]]'s [F[protocol][endpoint's protocol]]
+: [F[protocol][transport's protocol]] : [VAR[http]]'s [F[protocol][endpoint's protocol]]
 : [F[種別]] : クライアント
 : [F[HTTP]] : [VAR[http]]
 ]FIG]
@@ -502,15 +518,15 @@ for [VAR[target]] over an [[HTTP client]] [VAR[http]], run these steps:
 
 ** SOCKS4
 
-[743] A [[connection endpoint]] whose [F[protocol][connection's protocol]] is
+[743] A [[transport]] whose [F[protocol][transport's protocol]] is
 [CODE[socks4]] has following additional states:
 [FIG(list members)[
-: [F[transport]] : A [[connection endpoint]].
+: [F[transport]] : A [[transport]].
 ]FIG]
 
-[774] To [DFN[establish a SOCKS4 connection]]
+[774] To [DFN[establish a SOCKS4 transport]]
 to [[IPv4 address]] [VAR[address]] and [[port]] [VAR[port]] over 
-[[connection endpoint]] [VAR[transport]], run these steps:
+[[transport]] [VAR[transport]], run these steps:
 [FIG(steps)[
 = [776] [VAR[transport]]で 0x04 0x01 [VAR[p[SUB[1]]]] [VAR[p[SUB[2]]]] [VAR[a[SUB[1]]]] [VAR[a[SUB[2]]]]
 [VAR[a[SUB[3]]]] [VAR[a[SUB[4]]]] 0x00 を送信します。
@@ -522,9 +538,9 @@ to [[IPv4 address]] [VAR[address]] and [[port]] [VAR[port]] over
 = [778] 受信した最初の2バイトが 0x00 0x5A でなければ、
 == [779] [VAR[transport]]の中断を指示します。
 == [780] Return a [[failure]] and abort these steps.
-= [781] Return a [[connection endpoint]]:
+= [781] Return a [[transport]]:
 [FIG(list members)[
-: [F[protocol][connection's protocol]] : [CODE[socks4]]
+: [F[protocol][transport's protocol]] : [CODE[socks4]]
 : [F[種別]] : クライアント
 : [F[transport]] : [VAR[transport]]
 ]FIG]
@@ -537,14 +553,14 @@ to [[IPv4 address]] [VAR[address]] and [[port]] [VAR[port]] over
 
 ** SOCKS5
 
-[775] A [[connection endpoint]] whose [F[protocol][connection's protocol]] is
+[775] A [[transport]] whose [F[protocol][transport's protocol]] is
 [CODE[socks5]] has following additional states:
 [FIG(list members)[
-: [F[transport]] : A [[connection endpoint]].
+: [F[transport]] : A [[transport]].
 ]FIG]
 
-[784] To [DFN[establish a SOCKS5 connection]]
-to destination [VAR[host]] and port [VAR[port]] over [VAR[transport]],
+[784] To [DFN[establish a SOCKS5 transport]]
+to destination [VAR[host]] and [[port]] [VAR[port]] over [[transport]] [VAR[transport]],
 run these steps:
 [FIG(steps)[
 = [785] If [VAR[host]] is a [[domain]] whose length is greater than [N[255]]:
@@ -575,9 +591,9 @@ run these steps:
 = [799] 得られたのが指定のバイト数に満たなければ、
 == [800] [VAR[transport]]の中断を指示します。
 == [801] Return a [[failure]] and abort these steps.
-= [802] Return a [[connection endpoint]]:
+= [802] Return a [[transport]]:
 [FIG(list members)[
-: [F[protocol][connection's protocol]] : [CODE[socks5]]
+: [F[protocol][transport's protocol]] : [CODE[socks5]]
 : [F[種別]] : クライアント
 : [F[transport]] : [VAR[transport]]
 ]FIG]
@@ -630,7 +646,7 @@ with following states:
 
 ** TLS
 
-[877] A [[connection endpoint]] whose [F[protocol][connection's protocol]] is
+[877] A [[transport]] whose [F[protocol][transport's protocol]] is
 [CODE[tls]] has following additional states:
 [FIG(list members)[
 : [F[is ev]] : A [[boolean]].  Initially, [[false]].
@@ -685,21 +701,22 @@ in [VAR[user agent]] are as follows:
 == [871] Return a [[failure]] and abort these steps.
 = [874] Let [VAR[certs]] be the received [[certificates][certificate]].
 = [876] Let [VAR[ev]] be whether [VAR[certs]] contain a valid [[EV certificate]] or not.
-= [860] Let [VAR[connection]] be a [[connection endpoint]] that represents the TLS connection,
+= [860] Let [VAR[tls transport]] be a [[transport]] that represents the [[TLS connection]],
 with following states:
 [FIG(list members)[
 : [F[種別]] : クライアント
-: [F[protocol][connection's protocol]] : [VAR[protocol]]
+: [F[protocol][transport's protocol]] : [VAR[protocol]]
 : [F[is ev]] : [VAR[ev]]
 : [F[remote certificates]] : [VAR[certs]]
 ]FIG]
 = [875] Apply [[service identity]] verification for [VAR[certs]] and [VAR[url]]'s [F[host]].
 = [705] Apply [[PKP]] verification for [VAR[certs]] and [VAR[url]]'s [F[host]]
 in [VAR[user agent]].
-= [859] Set [VAR[connection]]'s [F[HTTPS state][connection's HTTPS state]]
+= [859] Set [VAR[tls transport]]'s [F[HTTPS state][transport's HTTPS state]]
 to [CODE[modern]] or [CODE[deprecated]], as determined by an implementation dependent
 algorithm whose inputs are [VAR[version]], [VAR[cipher]], [VAR[certs]],
 and whether there are TLS warnings or not.
+= [906] Return [VAR[tls transport]].
 ]FIG]
 
 @@ [895] [MUST[MUST]] verify revocation of [VAR[certs]]
@@ -792,15 +809,12 @@ If protocol is http2 and after preface, connection error PROTOCOL_ERROR
 
 * HTTP
 
-[355] An [DFN[HTTP client]] has following states:
+[355] An [DFN[HTTP connection]] has following states:
 [FIG(list members)[
-:[VAR[種別]]:[[クライアント]]。
-: [DFN[[F[protocol][endpoint's protocol]]]] : Either [CODE[http1]] or [CODE[http2]].
-:[VAR[接続]]:[[下位層の接続]]の端点。
+: [DFN[[F[endpoint type][connection's endpoint type]]]] : [CODE[client]] or [CODE[server]].
+: [DFN[[F[transport][connection's transport]]]] : A [[transport]].
+: [DFN[[F[protocol][connection's protocol]]]] : [CODE[http1]] or [CODE[http2]].
 ]FIG]
-
-[837] An [[HTTP client]] is a [[connection]] for the purpose of steps in the
-[[Fetch Standard]].
 
 [896] To modify [VAR[request]]'s [F[header list][request's header list]] per HTTP
 in [[HTTP-network-or-cache fetch]], run these steps:
@@ -810,12 +824,13 @@ in [[HTTP-network-or-cache fetch]], run these steps:
 = [899] Append [CODE[Upgrade-Insecure-Requests]] header, if necessary.
 ]FIG]
 
-[838] To make an HTTP request over [VAR[client]] using [VAR[request]]
+[838] To make an HTTP request over [VAR[connection]] using [VAR[request]]
 in [[HTTP-network fetch]], 
 with [VAR[credentials]] flag and optional [VAR[not retryable]] flag,
 run these steps:
 [FIG(steps)[
-= [541] If [VAR[client]]'s [F[transport]]'s [F[request mode]] is ''HTTP proxy'':
+= [541] If [VAR[connection]]'s [F[transport][connection's transport]]'s
+[F[request mode]] is ''HTTP proxy'':
 == [845] Let [VAR[target]] be the result of applying [[URL serializer]] to
 [VAR[request]]'s [F[current url]] with [VAR[exclude fragment flag]] set.
 = [843] Otherwise:
@@ -836,7 +851,7 @@ separated from each other by [CODE[/]]
 = [900] Append [CODE[Host]]/[VAR[host header]] to [VAR[request]]'s [F[header list][request's header list]].
 = [905] Append [CODE[Connection]]/[CODE[keep-alive]] to [VAR[request]]'s
 [F[header list][request's header list]].
-= [840] Send an [[HTTP request]] over [VAR[client]].
+= [840] Send an [[HTTP request]] over [VAR[connection]].
 [FIG(list members)[
 [FIGCAPTION[
 [[HTTP request]]
@@ -846,7 +861,7 @@ separated from each other by [CODE[/]]
 : [F[ヘッダーリスト]] : [VAR[request]]'s [F[header list][request's header list]]
 : [F[本体]] : [VAR[request]]'s [F[body][request body]]
 ]FIG]
-= [839] Process notifications from [VAR[client]] as follows:
+= [839] Process notifications from [VAR[connection]] as follows:
 [FIG(switch)[
 : 要求の本体の一部の送信の通知 : Process [VAR[transmitted]] as follows:
 [FIG(steps)[
@@ -860,7 +875,8 @@ separated from each other by [CODE[/]]
 ]FIG]
 : 応答のヘッダー受信完了の通知 : Process [VAR[http response]] as follows:
 [FIG(steps)[
-= [856] If [VAR[client]]'s [F[transport]]'s [F[request mode]] is ''not'' ''HTTP proxy'' and
+= [856] If [VAR[connection]]'s [F[transport][connection's transport]]'s
+[F[request mode]] is ''not'' ''HTTP proxy'' and
 [VAR[http response]]'s [F[状態符号]] is [CODE[407]]:
 == [857] Set [VAR[response]] to a [[network error]].
 = [858] Otherwise:
@@ -872,10 +888,13 @@ separated from each other by [CODE[/]]
 : [F[status][status code]] : [VAR[http response]]'s [F[状態符号]]
 : [F[status message]] : [VAR[http response]]'s [F[理由句]]
 : [F[header list][response's header list]] : [VAR[http response]]'s [F[ヘッダーリスト]]
-: [F[HTTPS state]] : [VAR[client]]'s [F[transport]]'s [F[HTTPS state][connection's HTTPS state]]
+: [F[HTTPS state]] : [VAR[connection]]'s [F[transport][connection's transport]]'s
+[F[HTTPS state][connection's HTTPS state]]
 ]FIG]
-== [892] If [VAR[client]]'s [F[transport]]'s [F[protocol][transport's protocol]] is 
-[CODE[tls]] and [VAR[client]]'s [F[transport]]'s [F[has alert]] is [[false]]:
+== [892] If [VAR[connection]]'s [F[transport][connection's transport]]'s
+[F[protocol][transport's protocol]] is 
+[CODE[tls]] and [VAR[connection]]'s [F[transport][connection's transport]]'s
+[F[has alert]] is [[false]]:
 === [893] Process the HSTS header of [VAR[response]], if any.
 === [894] Process the PKP headers of [VAR[response]], if any.
 = [842] Now ''headers are transmitted''.  Return [VAR[response]].
@@ -897,13 +916,13 @@ separated from each other by [CODE[/]]
 === [855] Mutate [VAR[response]] into a [[network error]].
 == [257] Otherwise, if [VAR[not retryable]] is [[false]] and 
 [VAR[exit status]]'s [F[再試行可能性]] is [[true]]:
-=== [882] Let [VAR[client]] be the result of 
+=== [882] Let [VAR[connection]] be the result of 
 [[obtaining a connection][obtain a connection]], given [VAR[request]]'s 
 [F[current url]]'s [F[origin]] and [VAR[credentials]].
-=== [883] If [VAR[client]] is a [[failure]], return a [[network error]]
+=== [883] If [VAR[connection]] is a [[failure]], return a [[network error]]
 and abort these steps.
 === [884] Return the result of recursively making an HTTP request
-over [VAR[client]] using [VAR[request]],
+over [VAR[connection]] using [VAR[request]],
 with [VAR[credentials]] flag, with [VAR[not retryable]] flag set.
 == [854] Otherwise:
 === [853] Return a [[network error]].
@@ -933,7 +952,7 @@ with [VAR[credentials]] flag, with [VAR[not retryable]] flag set.
 
 * HTTP/1
 
-[34] An [[HTTP client]] whose [F[protocol][endpoint's protocol]] is [CODE[http1]]
+[34] An [[HTTP connection]] whose [F[protocol][connection's protocol]] is [CODE[http1]]
 has following additional states:
 [FIG(list members)[
 :[VAR[状態]]:後述の状態遷移における状態のいずれか。初期値は「初期」。
