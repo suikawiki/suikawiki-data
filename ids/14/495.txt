@@ -4,38 +4,7 @@
 
 [907] This document is an implementation of Web protocols.
 
-* Proxies
-
-[609] A [[user agent]] has a [F[PAC]], which is initially [[null]].
-If the [[user agent]] is configured to use a [[PAC file]], it is set to an object
-which represents the file.
-Otherwise, if the [[user agent]] is configured to use one or more proxy servers,
-it is set to a virtual [[PAC file]] which represents those proxy server configurations.
-
-@@
-[610] To [DFN[run a PAC file]] with [VAR[pac]] and [VAR[url]], ...
-
-[611] The steps to [[run a PAC file]] return zero or more [[proxy configurations][proxy configuration]].
-
-[612] A [DFN[proxy configuration]] has [DFN[[F[protocol]]]], which is one of:
-[CODE[tcp]],
-[CODE[unix]],
-[CODE[http]],
-[CODE[https]],
-[CODE[socks4]], and
-[CODE[socks5]].
-
-[613] A [[proxy configuration]] whose [F[protocol]] is
-[CODE[http]], [CODE[https]], [CODE[socks4]], or [CODE[socks5]] has
-[DFN[[F[host]]]], whose value is a [[host]], and
-[DFN[[F[port]]]], whose value is an [[integer]] or [[null]].
-
-[614] A [[proxy configuration]] whose [F[protocol]] is
-[CODE[unix]] has [DFN[[F[path]]]], whose value is a [[byte string]].
-
-@@ [836] Environment variables
-
-* Fetch's connections
+* Fetch and connections
 
 [822] In the steps to [[obtain a connection]], to establish an HTTP connection,
 run these steps:
@@ -90,6 +59,134 @@ in the [VAR[user agent]]'s [F[connection pool]],
 is ''not'' less than [VAR[n]].
 ]FIG]
 
+[896] To modify [VAR[request]]'s [F[header list][request's header list]] per HTTP
+in [[HTTP-network-or-cache fetch]], run these steps:
+[FIG(steps)[
+= [898] Append [CODE[Accept-Encoding]] header, if necessary.
+= [897] Append [CODE[DNT]] header, if necessary.
+= [899] Append [CODE[Upgrade-Insecure-Requests]] header, if necessary.
+]FIG]
+
+[838] To make an HTTP request over [VAR[connection]] using [VAR[request]]
+in [[HTTP-network fetch]], 
+with [VAR[credentials]] flag and optional [VAR[not retryable]] flag,
+run these steps:
+[FIG(steps)[
+= [837] If [VAR[connection]]'s [F[transport][connection's transport]]'s
+[F[http protocol][transport's http protocol]] is [CODE[http2]]:
+== 
+@@
+= [541] If [VAR[connection]]'s [F[transport][connection's transport]]'s
+[F[request mode]] is ''HTTP proxy'':
+== [845] Let [VAR[target]] be the result of applying [[URL serializer]] to
+[VAR[request]]'s [F[current url]] with [VAR[exclude fragment flag]] set.
+= [843] Otherwise:
+== [844] Let [VAR[target]] be the concatenation of:
+[FIG(list)[
+= [846] [CODE[/]]
+= [847] The strings in [VAR[request]]'s [F[current url]]'s [F[path]],
+separated from each other by [CODE[/]]
+= [848] If [VAR[request]]'s [F[current url]]'s [F[query]] is not [[null]]:
+== [849] [CODE[?]]
+== [850] [VAR[request]]'s [F[current url]]'s [F[query]]
+]FIG]
+= [901] Let [VAR[host header]] be [VAR[request]]'s [F[current url]]'s [F[host]].
+= [902] If [VAR[request]]'s [F[current url]]'s [F[port]] is not [[null]]:
+== [903] Append [CODE[:]] to [VAR[host header]].
+== [904] Append [VAR[request]]'s [F[current url]]'s [F[port]],
+[[serialized][serialize an integer]], to [VAR[host header]].
+= [900] Append [CODE[Host]]/[VAR[host header]] to [VAR[request]]'s [F[header list][request's header list]].
+= [905] Append [CODE[Connection]]/[CODE[keep-alive]] to [VAR[request]]'s
+[F[header list][request's header list]].
+= [840] Send an [[HTTP request]] over [VAR[connection]].
+[FIG(list members)[
+[FIGCAPTION[
+[[HTTP request]]
+]FIGCAPTION]
+: [F[要求メソッド]] : [VAR[request]]'s [F[method][request method]]
+: [F[要求対象]] : [VAR[target]]
+: [F[ヘッダーリスト]] : [VAR[request]]'s [F[header list][request's header list]]
+: [F[本体]] : [VAR[request]]'s [F[body][request body]]
+]FIG]
+= [839] Process notifications from [VAR[connection]] as follows:
+[FIG(switch)[
+: 要求の本体の一部の送信の通知 : Process [VAR[transmitted]] as follows:
+[FIG(steps)[
+= 
+@@ Increase [VAR[request]]'s [F[body][request body]] stream's transmitted bytes
+]FIG]
+: 要求の送信完了の通知 :
+[FIG(steps)[
+= 
+@@ Set [VAR[request]]'s [F[body][request body]] stream's done flag
+]FIG]
+: 応答のヘッダー受信完了の通知 : Process [VAR[http response]] as follows:
+[FIG(steps)[
+= [856] If [VAR[connection]]'s [F[transport][connection's transport]]'s
+[F[request mode]] is ''not'' ''HTTP proxy'' and
+[VAR[http response]]'s [F[状態符号]] is [CODE[407]]:
+== [857] Set [VAR[response]] to a [[network error]].
+= [858] Otherwise:
+== [841] Set [VAR[response]] to a [[response]].
+[FIG(list members)[
+[FIGCAPTION[
+[[Response][response]]
+]FIGCAPTION]
+: [F[status][status code]] : [VAR[http response]]'s [F[状態符号]]
+: [F[status message]] : [VAR[http response]]'s [F[理由句]]
+: [F[header list][response's header list]] : [VAR[http response]]'s [F[ヘッダーリスト]]
+: [F[HTTPS state]] : [VAR[connection]]'s [F[transport][connection's transport]]'s
+[F[HTTPS state][connection's HTTPS state]]
+]FIG]
+== [892] If [VAR[connection]]'s [F[transport][connection's transport]]'s
+[F[protocol][transport's protocol]] is 
+[CODE[tls]] and [VAR[connection]]'s [F[transport][connection's transport]]'s
+[F[has alert]] is [[false]]:
+=== [893] Process the HSTS header of [VAR[response]], if any.
+=== [894] Process the PKP headers of [VAR[response]], if any.
+= [842] Now ''headers are transmitted''.  Return [VAR[response]].
+]FIG]
+: データ受信の通知 : Process [VAR[data]] as follows:
+[FIG(steps)[
+= 
+@@ Write [VAR[data]] to [VAR[response]]'s [F[body][response body]] stream
+]FIG]
+: データ終了の通知 :
+[FIG(steps)[
+= 
+@@ Set [VAR[response]]'s [F[body][response body]] stream's done flag
+]FIG]
+: 完了の通知 : Process [VAR[http response]] and [VAR[exit status]] as follows:
+[FIG(steps)[
+= [851] If [VAR[exit status]]'s [F[失敗]] is true:
+== [852] If ''headers are transmitted'':
+=== [855] Mutate [VAR[response]] into a [[network error]].
+== [257] Otherwise, if [VAR[not retryable]] is [[false]] and 
+[VAR[exit status]]'s [F[再試行可能性]] is [[true]]:
+=== [882] Let [VAR[connection]] be the result of 
+[[obtaining a connection][obtain a connection]], given [VAR[request]]'s 
+[F[current url]]'s [F[origin]] and [VAR[credentials]].
+=== [883] If [VAR[connection]] is a [[failure]], return a [[network error]]
+and abort these steps.
+=== [884] Return the result of recursively making an HTTP request
+over [VAR[connection]] using [VAR[request]],
+with [VAR[credentials]] flag, with [VAR[not retryable]] flag set.
+== [854] Otherwise:
+=== [853] Return a [[network error]].
+]FIG]
+]FIG]
+]FIG]
+
+@@ TLS client certificate dialog
+
+@@
+[357] [[HTTP]] [CODE(HTTP)[[[CONNECT]]]] プロキシからの応答の受信
+- [CODE(HTTP)[[[407]]]] なら、...
+- その他非 [CODE(HTTP)[[[200]]]] なら、[[ネットワークエラー]]
+
+@@
+[539] [[WebSocket]] client/server steps
+
 * Domain names
 
 [615] The [DFN[name resolution steps]] for [VAR[host]] are these steps:
@@ -102,6 +199,38 @@ is ''not'' less than [VAR[n]].
 
 ;; [620] These steps return an [[IPv4 address]], an [[IPv6 address]],
 or an [[error]].
+
+
+* Proxies
+
+[609] A [[user agent]] has a [F[PAC]], which is initially [[null]].
+If the [[user agent]] is configured to use a [[PAC file]], it is set to an object
+which represents the file.
+Otherwise, if the [[user agent]] is configured to use one or more proxy servers,
+it is set to a virtual [[PAC file]] which represents those proxy server configurations.
+
+@@
+[610] To [DFN[run a PAC file]] with [VAR[pac]] and [VAR[url]], ...
+
+[611] The steps to [[run a PAC file]] return zero or more [[proxy configurations][proxy configuration]].
+
+[612] A [DFN[proxy configuration]] has [DFN[[F[protocol]]]], which is one of:
+[CODE[tcp]],
+[CODE[unix]],
+[CODE[http]],
+[CODE[https]],
+[CODE[socks4]], and
+[CODE[socks5]].
+
+[613] A [[proxy configuration]] whose [F[protocol]] is
+[CODE[http]], [CODE[https]], [CODE[socks4]], or [CODE[socks5]] has
+[DFN[[F[host]]]], whose value is a [[host]], and
+[DFN[[F[port]]]], whose value is an [[integer]] or [[null]].
+
+[614] A [[proxy configuration]] whose [F[protocol]] is
+[CODE[unix]] has [DFN[[F[path]]]], whose value is a [[byte string]].
+
+@@ [836] Environment variables
 
 * Transports
 
@@ -461,7 +590,7 @@ dependent.  An example of such steps is:
 ** HTTP [CODE(HTTP)@en[CONNECT]]
 
 [633] A [[transport]] whose [F[protocol][transport's protocol]] is
-[CODE[http1]] or [CODE[http2]] has following additional states:
+[CODE[http1connect]] or [CODE[http2connect]] has following additional states:
 [FIG(list members)[
 : [DFN[[F[http][transport's http]]]] : An [[HTTP connection]].
 : [DFN[[F[established][transport's established]]]] :  A [[boolean]].  Initially, [[false]].
@@ -863,131 +992,6 @@ If protocol is http2 and after preface, connection error PROTOCOL_ERROR
 : [DFN[[F[transport][connection's transport]]]] : A [[transport]].
 ]FIG]
 
-[896] To modify [VAR[request]]'s [F[header list][request's header list]] per HTTP
-in [[HTTP-network-or-cache fetch]], run these steps:
-[FIG(steps)[
-= [898] Append [CODE[Accept-Encoding]] header, if necessary.
-= [897] Append [CODE[DNT]] header, if necessary.
-= [899] Append [CODE[Upgrade-Insecure-Requests]] header, if necessary.
-]FIG]
-
-[838] To make an HTTP request over [VAR[connection]] using [VAR[request]]
-in [[HTTP-network fetch]], 
-with [VAR[credentials]] flag and optional [VAR[not retryable]] flag,
-run these steps:
-[FIG(steps)[
-= [837] If [VAR[connection]]'s [F[transport][connection's transport]]'s
-[F[http protocol][transport's http protocol]] is [CODE[http2]]:
-== 
-@@
-= [541] If [VAR[connection]]'s [F[transport][connection's transport]]'s
-[F[request mode]] is ''HTTP proxy'':
-== [845] Let [VAR[target]] be the result of applying [[URL serializer]] to
-[VAR[request]]'s [F[current url]] with [VAR[exclude fragment flag]] set.
-= [843] Otherwise:
-== [844] Let [VAR[target]] be the concatenation of:
-[FIG(list)[
-= [846] [CODE[/]]
-= [847] The strings in [VAR[request]]'s [F[current url]]'s [F[path]],
-separated from each other by [CODE[/]]
-= [848] If [VAR[request]]'s [F[current url]]'s [F[query]] is not [[null]]:
-== [849] [CODE[?]]
-== [850] [VAR[request]]'s [F[current url]]'s [F[query]]
-]FIG]
-= [901] Let [VAR[host header]] be [VAR[request]]'s [F[current url]]'s [F[host]].
-= [902] If [VAR[request]]'s [F[current url]]'s [F[port]] is not [[null]]:
-== [903] Append [CODE[:]] to [VAR[host header]].
-== [904] Append [VAR[request]]'s [F[current url]]'s [F[port]],
-[[serialized][serialize an integer]], to [VAR[host header]].
-= [900] Append [CODE[Host]]/[VAR[host header]] to [VAR[request]]'s [F[header list][request's header list]].
-= [905] Append [CODE[Connection]]/[CODE[keep-alive]] to [VAR[request]]'s
-[F[header list][request's header list]].
-= [840] Send an [[HTTP request]] over [VAR[connection]].
-[FIG(list members)[
-[FIGCAPTION[
-[[HTTP request]]
-]FIGCAPTION]
-: [F[要求メソッド]] : [VAR[request]]'s [F[method][request method]]
-: [F[要求対象]] : [VAR[target]]
-: [F[ヘッダーリスト]] : [VAR[request]]'s [F[header list][request's header list]]
-: [F[本体]] : [VAR[request]]'s [F[body][request body]]
-]FIG]
-= [839] Process notifications from [VAR[connection]] as follows:
-[FIG(switch)[
-: 要求の本体の一部の送信の通知 : Process [VAR[transmitted]] as follows:
-[FIG(steps)[
-= 
-@@ Increase [VAR[request]]'s [F[body][request body]] stream's transmitted bytes
-]FIG]
-: 要求の送信完了の通知 :
-[FIG(steps)[
-= 
-@@ Set [VAR[request]]'s [F[body][request body]] stream's done flag
-]FIG]
-: 応答のヘッダー受信完了の通知 : Process [VAR[http response]] as follows:
-[FIG(steps)[
-= [856] If [VAR[connection]]'s [F[transport][connection's transport]]'s
-[F[request mode]] is ''not'' ''HTTP proxy'' and
-[VAR[http response]]'s [F[状態符号]] is [CODE[407]]:
-== [857] Set [VAR[response]] to a [[network error]].
-= [858] Otherwise:
-== [841] Set [VAR[response]] to a [[response]].
-[FIG(list members)[
-[FIGCAPTION[
-[[Response][response]]
-]FIGCAPTION]
-: [F[status][status code]] : [VAR[http response]]'s [F[状態符号]]
-: [F[status message]] : [VAR[http response]]'s [F[理由句]]
-: [F[header list][response's header list]] : [VAR[http response]]'s [F[ヘッダーリスト]]
-: [F[HTTPS state]] : [VAR[connection]]'s [F[transport][connection's transport]]'s
-[F[HTTPS state][connection's HTTPS state]]
-]FIG]
-== [892] If [VAR[connection]]'s [F[transport][connection's transport]]'s
-[F[protocol][transport's protocol]] is 
-[CODE[tls]] and [VAR[connection]]'s [F[transport][connection's transport]]'s
-[F[has alert]] is [[false]]:
-=== [893] Process the HSTS header of [VAR[response]], if any.
-=== [894] Process the PKP headers of [VAR[response]], if any.
-= [842] Now ''headers are transmitted''.  Return [VAR[response]].
-]FIG]
-: データ受信の通知 : Process [VAR[data]] as follows:
-[FIG(steps)[
-= 
-@@ Write [VAR[data]] to [VAR[response]]'s [F[body][response body]] stream
-]FIG]
-: データ終了の通知 :
-[FIG(steps)[
-= 
-@@ Set [VAR[response]]'s [F[body][response body]] stream's done flag
-]FIG]
-: 完了の通知 : Process [VAR[http response]] and [VAR[exit status]] as follows:
-[FIG(steps)[
-= [851] If [VAR[exit status]]'s [F[失敗]] is true:
-== [852] If ''headers are transmitted'':
-=== [855] Mutate [VAR[response]] into a [[network error]].
-== [257] Otherwise, if [VAR[not retryable]] is [[false]] and 
-[VAR[exit status]]'s [F[再試行可能性]] is [[true]]:
-=== [882] Let [VAR[connection]] be the result of 
-[[obtaining a connection][obtain a connection]], given [VAR[request]]'s 
-[F[current url]]'s [F[origin]] and [VAR[credentials]].
-=== [883] If [VAR[connection]] is a [[failure]], return a [[network error]]
-and abort these steps.
-=== [884] Return the result of recursively making an HTTP request
-over [VAR[connection]] using [VAR[request]],
-with [VAR[credentials]] flag, with [VAR[not retryable]] flag set.
-== [854] Otherwise:
-=== [853] Return a [[network error]].
-]FIG]
-]FIG]
-]FIG]
-
-@@ TLS client certificate dialog
-
-@@
-[357] [[HTTP]] [CODE(HTTP)[[[CONNECT]]]] プロキシからの応答の受信
-- [CODE(HTTP)[[[407]]]] なら、...
-- その他非 [CODE(HTTP)[[[200]]]] なら、[[ネットワークエラー]]
-
 [38] An [DFN[exit status]] has following states:
 [FIG(list members)[
 [FIGCAPTION[
@@ -1052,9 +1056,6 @@ has following additional states:
 :[[ヘッダーリスト]]:0個以上の[[ヘッダー]]のリスト。初期値は空。
 :[[不完全メッセージ]]フラグ:初期値は未設定。
 ]FIG]
-
-@@
-[539] [[WebSocket]] client/server steps
 
 ** アプリケーションからの指示
 
