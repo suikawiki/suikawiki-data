@@ -102,12 +102,15 @@ or an [[error]].
 The value is one of 
 [CODE[tcp]],
 [CODE[unix]],
-[CODE[http1]],
-[CODE[http2]],
+[CODE[http1connect]],
+[CODE[http2connect]],
 [CODE[tls]],
 [CODE[socks4]], and
 [CODE[socks5]].
 :[VAR[種別]]:「サーバー」または「クライアント」。
+: [DFN[[F[http protocol][transport's http protocol]]]] :
+Either [CODE[http1]] or [CODE[http2]].
+Unless stated otherwise, the value is [CODE[http1]].
 :[VAR[送信閉じ済みフラグ]]:初期状態では未設定。
 :[VAR[受信閉じ済みフラグ]]:初期状態では未設定。
 :[VAR[送信待ちバッファー]]:初期状態では空のリスト。
@@ -252,7 +255,7 @@ in [VAR[user agent]].
 = [606] Return a [[failure]].
 ]FIG]
 
-[642] [[アプリケーション]]は、[[接続]]の端点に次の指示を行えます。
+[642] [[アプリケーション]]は、 [[transport]] に次の指示を行えます。
 [FIG(list)[
 - [[バイト]]の送信の指示
 - 正常終了の送信の指示
@@ -267,7 +270,7 @@ in [VAR[user agent]].
 = [644] [VAR[送信閉じ済みフラグ]]が設定されていれば、[[例外]]を投げて停止します。
 = [645] [VAR[送信待ちバッファー]]が満杯なら、[[例外]]を投げて停止します。
 = [646] [[緊急データ]]フラグが設定されていて、
-接続の種類が[[緊急データ]]に対応していないものなら、
+[[transport]] の種類が[[緊急データ]]に対応していないものなら、
 [[例外]]を投げて停止します。
 = [647] [VAR[送信待ちバッファー]]の末尾に、
 引数の[[バイト]]、
@@ -285,7 +288,7 @@ in [VAR[user agent]].
 [FIG(steps)[
 = [652] [VAR[送信閉じ済みフラグ]]が設定されていれば、[[例外]]を投げて停止します。
 = [653] [VAR[送信閉じ済みフラグ]]を設定します。
-= [654] [[接続]]の種類に応じた処理を行います。
+= [654] [[transport]]の種類に応じた処理を行います。
 ]FIG]
 
 [655] 中断の指示は、次のように処理します。
@@ -296,16 +299,16 @@ in [VAR[user agent]].
 = [658] [VAR[受信閉じ済みフラグ]]を設定します。
 = [659] [VAR[送信待ちバッファー]]の先頭の項目から順に、
 [[約束]]を[[拒絶]]していきます。
-= [660] [[接続]]の種類に応じた処理を行います。
+= [660] [[transport]]の種類に応じた処理を行います。
 = [661] 中断の通知を行います。リセットフラグを設定します。
 ]FIG]
 
 [662] [[credentials]] の送信の指示は、
-接続の種類に応じた処理を実行します。そのようなものがなければ、
+[[transport]]の種類に応じた処理を実行します。そのようなものがなければ、
 [[例外]]を投げます。
-なお引数として、接続の種類に応じた [[credentials]] を受け取ります。
+なお引数として、[[transport]]の種類に応じた [[credentials]] を受け取ります。
 
-[663] [[接続]]の端点は、[[アプリケーション]]に対して次の通知を行います。
+[663] [[transport]]は、[[アプリケーション]]に対して次の通知を行います。
 [FIG(list)[
 - [664] [[バイト]]の受信の通知
 [FIG(list members)[
@@ -320,17 +323,17 @@ in [VAR[user agent]].
 - [667] 警告の通知
 - [668] challenge の受信の通知
 [FIG(list members)[
-:接続:認証を行う接続の端点。
+: [VAR[transport]] :認証を行う [[transport]]。
 :[[challenge]]:プロトコル依存の [[challenge]] データ。
 ]FIG]
 ]FIG]
 
-[669] [[接続]]の種類に依存した方法で次の[[バイト]]を送信可能であると判断したら、
+[669] [[transport]]の種類に依存した方法で次の[[バイト]]を送信可能であると判断したら、
 次のようにします。
 [FIG(steps)[
 = [670] [VAR[送信待ちバッファー]]が空なら、ここで停止します。
 = [671] [VAR[送信待ちバッファー]]の先頭の項目を取得し、バッファーからは削除します。
-= [672] [[接続]]の種類に依存した方法で取得した項目の[[バイト]]を送信します。
+= [672] [[transport]]の種類に依存した方法で取得した項目の[[バイト]]を送信します。
 (あれば) [[緊急データ]]フラグを引渡します。
 = [673] 取得した項目の[[約束]]を[[解決]]します。
 ]FIG]
@@ -381,7 +384,7 @@ dependent.  An example of such steps is:
 == [686] 正常終了の受信を通知します。
 ]FIG]
 
-[687] [[タイムアウト]]その他の理由で[[接続]]が利用できないことを検知したら、
+[687] [[タイムアウト]]その他の理由で[[transport]]が利用できないことを検知したら、
 次のようにします。
 [FIG(steps)[
 = [688] [VAR[送信閉じ済みフラグ]]を設定します。
@@ -433,8 +436,8 @@ dependent.  An example of such steps is:
 [633] A [[transport]] whose [F[protocol][transport's protocol]] is
 [CODE[http1]] or [CODE[http2]] has following additional states:
 [FIG(list members)[
-:[F[HTTP]]:[[HTTP接続]]の[[クライアント]]。[[HTTP接続の処理]]参照。
-:[F[接続確立済みフラグ]]:初期値は未設定。
+: [DFN[[F[http][transport's http]]]] : An [[HTTP connection]].
+: [DFN[[F[established][transport's established]]]] :  A [[boolean]].  Initially, [[false]].
 ]FIG]
 
 [739] To [DFN[establish an HTTP [CODE(HTTP)@en[CONNECT]] transport]]
@@ -442,9 +445,14 @@ for [VAR[target]] over an [[HTTP connection]] [VAR[http]], run these steps:
 [FIG(steps)[
 = [740] Let [VAR[transport]] be a [[transport]]:
 [FIG(list members)[
-: [F[protocol][transport's protocol]] : [VAR[http]]'s [F[protocol][endpoint's protocol]]
+[FIGCAPTION[
+[[Transport][transport]]
+]FIGCAPTION]
+: [F[protocol][transport's protocol]] :
+If [VAR[http]]'s [F[protocol][connection's protocol]] is [CODE[http2]], [CODE[http2connect]].
+Otherwise, [CODE[http1connect]].
 : [F[種別]] : クライアント
-: [F[HTTP]] : [VAR[http]]
+: [F[http][transport's http]] : [VAR[http]]
 ]FIG]
 = [766] Send an [[HTTP request]] over [VAR[http]]:
 [FIG(list members)[
@@ -463,32 +471,32 @@ for [VAR[target]] over an [[HTTP connection]] [VAR[http]], run these steps:
 : [744] [[要求]]のヘッダー受信完了の通知 :
 [FIG(steps)[
 = [745] 応答の状態符号が [CODE(HTTP)[[[200]]]] なら、
-== [746] [VAR[接続確立済みフラグ]]を設定します。
-== [747] 接続が確立されたとします。
-= [748] それ以外なら、
-== [749] 接続の確立は失敗とします。
+== [746] Set [VAR[transport]]'s [F[established][transport's established]] to [[true]].
+== [747] Return [VAR[transport]].
+= [748] Otherwise:
+== [749] Return a [[failure]].
 ]FIG]
 : [750] [[要求]]のデータ受信の通知 :
 [FIG(steps)[
-= [751] [VAR[接続確立済みフラグ]]が設定されていれば、
+= [751] If [VAR[transport]]'s [F[established][transport's established]] is [[true]]:
 -= [752] データの各バイトについて、順に、
 -== [753] バイトの受信を通知します。当該バイトの値を渡します。
 ]FIG]
 : [754] [[要求]]のデータ終了の通知 :
 [FIG(steps)[
-= [755] [VAR[接続確立済みフラグ]]が設定されていれば、
+= [755] If [VAR[transport]]'s [F[established][transport's established]] is [[true]]:
 -= [756] [VAR[受信閉じ済みフラグ]]を設定します。
 -= [757] 正常終了の受信を通知します。
 ]FIG]
 : [758] [[要求]]の完了の通知 :
 [FIG(steps)[
 = [759] 終了の失敗フラグが設定されていれば、
-== [760] [VAR[接続確立済みフラグ]]が設定されていれば、
+== [760] If [VAR[transport]]'s [F[established][transport's established]] is [[true]]:
 === [761] [VAR[送信閉じ済みフラグ]]を設定します。
 === [762] [VAR[受信閉じ済みフラグ]]を設定します。
 === [763] 中断を通知します。
-== [764] それ以外なら、
-=== [765] 接続の確立は失敗とします。
+== [764] Otherwise:
+=== [765] Return a [[failure]].
 ]FIG]
 ]FIG]
 ]FIG]
@@ -499,17 +507,17 @@ for [VAR[target]] over an [[HTTP connection]] [VAR[http]], run these steps:
 
 [768] バイトの送信は、次のようにします。
 [FIG(steps)[
-= [769] [VAR[HTTP]] でトンネルに指定されたバイトを送信します。
+= [769] [VAR[transport]]'s [F[http][transport's http]] でトンネルに指定されたバイトを送信します。
 ]FIG]
 
 [770] 正常終了の送信の指示があれば、次のようにします。
 [FIG(steps)[
-= [771] [VAR[HTTP]] に接続の正常終了を指示します。
+= [771] [VAR[transport]]'s [F[http][transport's http]] に接続の正常終了を指示します。
 ]FIG]
 
 [772] 中断の指示があれば、次のようにします。
 [FIG(steps)[
-= [773] [VAR[HTTP]] に中断を指示します。
+= [773] [VAR[transport]]'s [F[http][transport's http]] に中断を指示します。
 ]FIG]
 
 *** HTTP/2
@@ -548,8 +556,8 @@ to [[IPv4 address]] [VAR[address]] and [[port]] [VAR[port]] over
 
 @@ [742] XXX server
 
-[783] 接続確立後は、指示は[VAR[接続]]への指示とし、
-[VAR[接続]]からの通知があればそれを通知します。
+[783] 接続確立後は、指示は[VAR[transport]]への指示とし、
+[VAR[transport]]からの通知があればそれを通知します。
 
 ** SOCKS5
 
@@ -601,8 +609,8 @@ run these steps:
 
 @@ [782] XXX server
 
-[804] 接続確立後は、指示は[VAR[接続]]への指示とし、
-[VAR[接続]]からの通知があればそれを通知します。
+[804] 接続確立後は、指示は[VAR[transport]]への指示とし、
+[VAR[transport]]からの通知があればそれを通知します。
 
 ** UNIX domain socket の場合
 
@@ -704,8 +712,12 @@ in [VAR[user agent]] are as follows:
 = [860] Let [VAR[tls transport]] be a [[transport]] that represents the [[TLS connection]],
 with following states:
 [FIG(list members)[
+[FIGCAPTION[
+[[Transport][transport]]
+]FIGCAPTION]
+: [F[protocol][transport's protocol]] : [CODE[tls]]
 : [F[種別]] : クライアント
-: [F[protocol][transport's protocol]] : [VAR[protocol]]
+: [F[http protocol][transport's http protocol]] : [VAR[protocol]]
 : [F[is ev]] : [VAR[ev]]
 : [F[remote certificates]] : [VAR[certs]]
 ]FIG]
@@ -734,7 +746,7 @@ and whether there are TLS warnings or not.
 - 相手の[[証明書]]と[[中間証明書]] (あれば)
 ]FIG]
 
-[707] [VAR[下位の接続]]からバイトを受信したら、[[バイト]]と[[緊急データ]]フラグを [[TLS]] に従い処理します。
+[707] [VAR[transport]]からバイトを受信したら、[[バイト]]と[[緊急データ]]フラグを [[TLS]] に従い処理します。
 
 [708] [[closure alert]] を受信したら、次のようにします。
 [FIG(steps)[
@@ -753,14 +765,14 @@ and whether there are TLS warnings or not.
 == [716] 中断を通知します。リセットフラグを設定します。
 ]FIG]
 
-[717] [VAR[下位の接続]]から正常終了を受信したら、次のようにします。
+[717] [VAR[transport]]から正常終了を受信したら、次のようにします。
 [FIG(steps)[
 = [718] [VAR[受信閉じ済みフラグ]]が設定されていなければ、
 == [719] [VAR[受信閉じ済みフラグ]]を設定します。
 == [720] 正常終了の受信を通知します。
 ]FIG]
 
-[721] [VAR[下位の接続]]から中断を受信したら、次のようにします。
+[721] [VAR[transport]]から中断を受信したら、次のようにします。
 [FIG(steps)[
 = [722] [VAR[受信閉じ済みフラグ]]と[VAR[送信閉じ済みフラグ]]のどちらかが未設定なら、
 == [723] [VAR[送信閉じ済みフラグ]]を設定します。
@@ -776,13 +788,13 @@ and whether there are TLS warnings or not.
 [728] 正常終了の送信の指示があれば、次のようにします。
 [FIG(steps)[
 = [729] [[closure alert]] を送信します。
-= [730] [VAR[下位の接続]]に正常終了の送信を指示します。
+= [730] [VAR[transport]]に正常終了の送信を指示します。
 ]FIG]
 
-[731] 中断の指示があれば、[VAR[下位の接続]]に中断を指示します。
+[731] 中断の指示があれば、[VAR[transport]]に中断を指示します。
 
 [732] [[TLS]] の処理によりバイト列を送信するべきときは、
-[VAR[下位の接続]]で指定されたバイト列を送信します。
+[VAR[transport]]で指定されたバイト列を送信します。
 
 @@
 [889] TLS renegotiation:
@@ -794,7 +806,7 @@ If protocol is http2 and after preface, connection error PROTOCOL_ERROR
 [FIG(steps)[
 = [734] challenge の受信を通知します。
 [FIG(list members)[
-:接続:この[[接続]]。
+: [VAR[transport]] : [VAR[transport]]
 :challenge:(サーバーなら) [CODE(HTTP)@en[[[ClientHello]]]]
 や (クライアントなら) [CODE(HTTP)@en[[[CertificateRequest]]]]
 に含まれる情報のうち必要なもの。
@@ -813,7 +825,6 @@ If protocol is http2 and after preface, connection error PROTOCOL_ERROR
 [FIG(list members)[
 : [DFN[[F[endpoint type][connection's endpoint type]]]] : [CODE[client]] or [CODE[server]].
 : [DFN[[F[transport][connection's transport]]]] : A [[transport]].
-: [DFN[[F[protocol][connection's protocol]]]] : [CODE[http1]] or [CODE[http2]].
 ]FIG]
 
 [896] To modify [VAR[request]]'s [F[header list][request's header list]] per HTTP
@@ -829,6 +840,10 @@ in [[HTTP-network fetch]],
 with [VAR[credentials]] flag and optional [VAR[not retryable]] flag,
 run these steps:
 [FIG(steps)[
+= [837] If [VAR[connection]]'s [F[transport][connection's transport]]'s
+[F[http protocol][transport's http protocol]] is [CODE[http2]]:
+== 
+@@
 = [541] If [VAR[connection]]'s [F[transport][connection's transport]]'s
 [F[request mode]] is ''HTTP proxy'':
 == [845] Let [VAR[target]] be the result of applying [[URL serializer]] to
@@ -1007,7 +1022,7 @@ has following additional states:
 
 ** アプリケーションからの指示
 
-[49] [[接続]]に対して[[アプリケーション]]は、
+[49] [[HTTP connection]]に対して[[アプリケーション]]は、
 [FIG(list)[
 - [[要求]]の送信 (>>42)
 - [[WebSocket]] メッセージ送信 (>>259)
@@ -1073,10 +1088,10 @@ has following additional states:
 [FIG(steps)[
 = [47] [[HTTP/1.1]] に従い[VAR[要求]]の[[ヘッダー部]] (空行の [CODE[CRLF]] まで)
 を表す[[バイト列]]の各[[バイト]]を順に、
-== [VAR[接続]]で[[バイト]]の送信を指示します。
+== [VAR[connection]]'s [F[transport][connection's transport]] で[[バイト]]の送信を指示します。
 == エラーが返されたら、ここで停止します。
 = [1] [VAR[要求]]の[[メッセージ本体]]が存在する場合、各[[バイト]]を順に、
-== [VAR[接続]]で[[バイト]]の送信を指示します。
+== [VAR[connection]]'s [F[transport][connection's transport]] で[[バイト]]の送信を指示します。
 == エラーが返されたら、ここで停止します。
 == [VAR[要求の転送済]]を、1だけ大きな値に設定します。
 == [VAR[要求]]について要求の本体の一部の送信を通知して構いません。
@@ -1111,7 +1126,7 @@ has following additional states:
 先頭から [VAR[i]] バイト目 (先頭が0バイト) であれば、
 [[マスクキー]]の [VAR[i]] [[mod]] 4 バイト目 (先頭が0バイト)
 と [[XOR]] した結果に差し替えます。
-= [270] [VAR[接続]]で [[WebSocketフレーム]]のバイト列を送信することとします。
+= [270] [VAR[connection]]'s [F[transport][connection's transport]] で [[WebSocketフレーム]]のバイト列を送信することとします。
 ]FIG]
 
 [260] ping 送信は、次のようにします。
@@ -1139,14 +1154,14 @@ has following additional states:
 先頭から [VAR[i]] バイト目 (先頭が0バイト) であれば、
 [[マスクキー]]の [VAR[i]] [[mod]] 4 バイト目 (先頭が0バイト)
 と [[XOR]] した結果に差し替えます。
-= [275] [VAR[接続]]で [[WebSocketフレーム]]のバイト列を送信することとします。
+= [275] [VAR[connection]]'s [F[transport][connection's transport]] で [[WebSocketフレーム]]のバイト列を送信することとします。
 ]FIG]
 
 [107] [[トンネル]]への[[バイト]]の送信は、次のようにします。
 [FIG(steps)[
 = [108] [VAR[状態]]が「トンネル」か「トンネル送信中」以外なら、
 == [335] エラーを返し、ここで停止します。
-= [109] [VAR[接続]]で指定された[[バイト]]の送信を指示します。
+= [109] [VAR[connection]]'s [F[transport][connection's transport]] で指定された[[バイト]]の送信を指示します。
 = [110] エラーが返されたら、ここで停止します。
 ]FIG]
 
@@ -1184,11 +1199,11 @@ has following additional states:
 == [290] それ以外なら、
 === [297] [VAR[WebSocket接続の状態]]を、 [CODE[[[CLOSING]]]] に設定します。
 === [174] [VAR[要求]]について、WebSocket終了開始を通知します。
-=== [284] [VAR[接続]]で、作成した [[WebSocketフレーム]]のバイト列を送信することとします。
+=== [284] [VAR[connection]]'s [F[transport][connection's transport]] で、作成した [[WebSocketフレーム]]のバイト列を送信することとします。
 === [315] [VAR[切断タイマー]]により20s後に次の要求に進むことにします。
 = [72] [VAR[要求締め切り]]フラグを設定します。
 = [66] [VAR[状態]]が「初期」か「要求待ち」か「トンネル」か「トンネル送信中」なら、
-== [55] [VAR[接続]]で正常終了の送信を指示します。
+== [55] [VAR[connection]]'s [F[transport][connection's transport]] で正常終了の送信を指示します。
 = [362] [VAR[状態]]が「トンネル」なら、
 == [363] [VAR[状態]]を、「トンネル受信中」に設定します。
 ]FIG]
@@ -1199,7 +1214,7 @@ has following additional states:
 [FIG(steps)[
 = [44] [VAR[要求の締め切り]]フラグを設定します。
 = [39] [VAR[要求の送信状態]]を送信済みに設定します。
-= [51] [VAR[接続]]を中断します。
+= [51] [VAR[connection]]'s [F[transport][connection's transport]] を中断します。
 ]FIG]
 
 ** アプリケーションへの通知
@@ -1316,7 +1331,7 @@ has following additional states:
 
 [68] [[クライアント]]は[[状態機械]]を持ちます。
 
-[53] [VAR[接続]]の[[バイト]]受信の通知があると、次のようにします。
+[53] [VAR[connection]]'s [F[transport][connection's transport]] の[[バイト]]受信の通知があると、次のようにします。
 ただし、[VAR[状態]]が「初期」なら、[VAR[状態]]が変化するまで待ってから実行します。
 [FIG(steps)[
 = [14] [[緊急データ]]フラグが設定されていなければ、
@@ -1327,7 +1342,7 @@ has following additional states:
 [FIG(steps)[
 = [54] [VAR[状態]]により決まる正常終了処理を行います。
 = [322] [VAR[状態]]が「トンネル送信中」以外なら、
-== [224] [VAR[接続]]を閉じることにします。
+== [224] [VAR[connection]]'s [F[transport][connection's transport]] を閉じることにします。
 ]FIG]
 
 [13] 中断の通知があると、次のようにします。
@@ -1340,7 +1355,7 @@ has following additional states:
 == [524] 次の要求に進みます。
 = [41] それ以外なら、
 == [525] [VAR[状態]]により決まる中断処理を行います。
-= [225] [VAR[接続]]を破棄します。
+= [225] [VAR[connection]]'s [F[transport][connection's transport]] を破棄します。
 ]FIG]
 
 @@
@@ -1534,7 +1549,7 @@ has following additional states:
 === [147] [VAR[一時バッファー]]を、空に設定します。
 === [294] [VAR[送信待ちフレーム]]が null 以外なら、
 ==== [296] [VAR[WebSocket接続の状態]]を、 [CODE[[[CLOSING]]]] に設定します。
-==== [295] [VAR[接続]]で、[VAR[送信待ちフレーム]]のバイト列を送信することにします。
+==== [295] [VAR[connection]]'s [F[transport][connection's transport]] で、[VAR[送信待ちフレーム]]のバイト列を送信することにします。
 ==== [316] [VAR[切断タイマー]]により20s後に次の要求に進むことにします。
 = [106] それ以外で、 [VAR[応答]]の[[状態符号]]が [CODE(HTTP)[[[1xx]]]] なら、
 == [337] [VAR[要求]]の[[要求メソッド]]が [CODE(HTTP)[[[CONNECT]]]] か、
@@ -1905,7 +1920,7 @@ has following additional states:
 先頭から [VAR[i]] バイト目 (先頭が0バイト) であれば、
 [[マスクキー]]の [VAR[i]] [[mod]] 4 バイト目 (先頭が0バイト)
 と [[XOR]] した結果に差し替えます。
-= [306] [VAR[接続]]で、作成した[[WebSocketフレーム]]を送信することにします。
+= [306] [VAR[connection]]'s [F[transport][connection's transport]] で、作成した[[WebSocketフレーム]]を送信することにします。
 = [232] [VAR[状態]]を、「WebSocket切断待ち」に設定します。
 = [233] 次の要求に進むことにします。
 ]FIG]
@@ -1982,8 +1997,8 @@ has following additional states:
 === [516] [VAR[要求の処理完了]]を[[解決]]します。
 === [517] [VAR[要求の処理完了]]を null に設定します。
 == [518] [VAR[要求締め切り]]フラグが設定されていれば、
-=== [351] [VAR[接続]]の正常終了の送信を指示します。
-=== [350] これ以後[VAR[接続]]の受信終了を指示して構いません。
+=== [351] [VAR[connection]]'s [F[transport][connection's transport]] の正常終了の送信を指示します。
+=== [350] これ以後 [VAR[connection]]'s [F[transport][connection's transport]] の受信終了を指示して構いません。
 === [352] [VAR[状態]]を、「停止済み」に設定します。
 == [519] それ以外なら、
 === [353] [VAR[状態]]を、「要求待ち」に設定します。
@@ -2078,7 +2093,7 @@ has following additional states:
 先頭から [VAR[i]] バイト目 (先頭が0バイト) であれば、
 [[マスクキー]]の [VAR[i]] [[mod]] 4 バイト目 (先頭が0バイト)
 と [[XOR]] した結果に差し替えます。
-=== [308] [VAR[接続]]で、作成した[[WebSocketフレーム]]を送信することにします。
+=== [308] [VAR[connection]]'s [F[transport][connection's transport]] で、作成した[[WebSocketフレーム]]を送信することにします。
 == [218] [VAR[状態]]を、「WebSocket切断待ち」に設定します。
 == [228] [VAR[終了]]を、次の通り設定します。
 [FIG(list members)[
@@ -2109,7 +2124,7 @@ has following additional states:
 先頭から [VAR[i]] バイト目 (先頭が0バイト) であれば、
 [[マスクキー]]の [VAR[i]] [[mod]] 4 バイト目 (先頭が0バイト)
 と [[XOR]] した結果に差し替えます。
-== [310] [VAR[接続]]で、作成した[[WebSocketフレーム]]を送信することにします。
+== [310] [VAR[connection]]'s [F[transport][connection's transport]] で、作成した[[WebSocketフレーム]]を送信することにします。
 = [168] [VAR[フレーム]]の [[opcode]] が 10 なら、
 == [221] [VAR[要求]]について、 ping を通知します。返答フラグを設定し、
 [VAR[一時バッファー]]をデータとして引き渡します。
