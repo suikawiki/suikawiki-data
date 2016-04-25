@@ -4,28 +4,85 @@
 * 仕様書
 
 [REFS[
+- [101] '''[CITE@en-US[DOM Standard]] ([TIME[2014-08-19 13:36:28 +09:00]] 版) <https://dom.spec.whatwg.org/#concept-node-insert-ext>'''
 - [1] '''[CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2014-07-20 22:41:10 +09:00]] 版) <https://www.whatwg.org/specs/web-apps/current-work/#insert-an-element-into-a-document>'''
 - [14] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2016-04-09 09:15:24 +09:00]] 版) <https://html.spec.whatwg.org/#parser-inserted>
 - [18] [CITE@en-US[Fetch Standard]] ([TIME[2016-04-15 18:13:01 +09:00]] 版) <https://fetch.spec.whatwg.org/#concept-request-parser-metadata>
 - [24] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2016-04-16 15:05:57 +09:00]] 版) <https://html.spec.whatwg.org/#concept-module-script-parser>
 ]REFS]
 
-* 意味
+* 挿入
 
-[13] [[要素]]の[F[根]]が変化して[[文書]]となった時、
+@@
+
+* 構文解析器による挿入
+
+[108] [[構文解析器]]によって[[挿入]]される[[節点]]は、すべて[[構文解析器]]によって新たに作られたものです。
+[[挿入]]の時点ではまだ一度も[[スクリプト]]からアクセスされたことがないものですし、
+[[子孫]]も存在しません。[[属性]]は、[[挿入]]と同時に設定されることがありますが、
+それ以外の方法で追加されたものは存在しません。
+
+;; [111] ただし [[AAA]] で既存の[[節点]]を[[親]]から別の[[要素]]に移動することはあります。
+移動対象となる[[節点]]は[[スクリプト]]によって編集されているかもしれませんし、
+元々[[スクリプト]]が作ったものである可能性もあります。
+
+[109] [[里親付け]]が発生する場合と、[[根要素]]外を[[構文解析器]]中の場合を除き、
+すべての[[節点]]の[[挿入]]・[[append]] 先は[[要素]]です。
+
+[110] [[里親付け]]の場合、挿入先となるはずだった[[節点]]が [CODE(HTMLe)@en[[[table]]]]
+[[要素]]などだった時、その[[兄]]として挿入されるので、その[[親]]が
+[CODE(DOMi)@en[[[Document]]]] や [CODE(DOMi)@en[[[DocumentFragment]]]] のこともあります。
+
+;; [CODE(DOMi)@en[[[Document]]]] の場合、2つ目の[[根要素]]または
+[CODE(DOMi)@en[[[Document]]]] 直下の[[テキスト]]となるので、
+[[挿入]]は失敗して捨てられます。 ([[注釈]]は[[里親付け]]の対象となりません。)
+
+* 挿入手順
+
+[102] [[節点]]が別の[[節点]]の[[子供]]として[[挿入]]されると、
+[DFN[[RUBYB[[[挿入手順]]]@en[insertion steps]]]] [SRC[>>101]] が呼び出されます。
+[[挿入]]された[[節点]]自体のみならず、その[[影根を含む子孫]]についても[[影根を含む木順]]に呼び出されます。
+
+;; [103] [[DOM Standard]] 上の[[アルゴリズム]]である [[pre-insert]]、[[replace]]、
+[[replace all]] によって呼び出されます。
+
+[104] この[[フック]]によって次の[[節点]]が何らかの処理を行います。
+
+[FIG(list)[
+- [CODE(HTMLe)@en[[[option]]]] [SRC[[[HTML Standard]]]]
+- ([CODE(HTMLe)@en[[[script]]]] に対して) [[子供]] [SRC[[[HTML Standard]]]]
+- [CODE(HTMLe)@en[[[source]]]] ([[媒体要素]]) ※ [SRC[[[HTML Standard]]]]
+- [[媒体要素]] ※ [SRC[[[HTML Standard]]]]
+- [CODE(HTMLe)@en[[[img]]]] ([CODE(HTMLe)@en[[[picture]]]]) [SRC[[[HTML Standard]]]]
+- [CODE(HTMLe)@en[[[source]]]] ([CODE(HTMLe)@en[[[picture]]]]) [SRC[[[HTML Standard]]]]
+- [[要素の文書への挿入]] ※ [SRC[[[HTML Standard]]]]
+]FIG]
+
+[105] 仕様上明確には規定されていませんが、次の動作もこの[[フック]]のタイミングで処理されると思われます。
+
+[FIG(list)[
+- [[画像写像]] [SRC[[[HTML Standard]]]]
+- [CODE(HTMLe)@en[[[style]]]] の[[子孫]] ※ [SRC[[[HTML Standard]]]]
+- [CODE(HTMLe)@en[[[track]]]] ※ [SRC[[[HTML Standard]]]]
+- [CODE(XML)@en[[[<?xml-stylesheet?>]]]] [SRC[[[CSSOM]]]]
+- [[フォーム被関連付け要素]] ※ [SRC[[[HTML Standard]]]]
+- [[文書基底URL]]・[[凍結基底URL]]の更新 [SRC[[[HTML Standard]]]]
+]FIG]
+
+;; [106] 「※」は[[構文解析器]]による挿入かどうかで動作が異なることがあります。
+
+;; [119] 多くは[[要素]]の[[挿入]]に関する処理ですが、
+それ以外の種類の[[節点]]の場合もあります。
+
+[107] なお、[[pre-insert]], [[replace]], [[replace all]] 操作は[[挿入]]に先立って [[adopt]]
+を行いますので、その中で[[節点]]の種類によっては [[adopting steps]] も実行されます。
+
+@@ [124] [[custom element]] の[[コールバック]]
+
+* 文書に挿入
+
+[13] [[節点]]が[[挿入手順]]により[[文書中]]となった時、
 [DFN[[RUBYB[[[文書に挿入]]]@en[inserted into a document]]]]されたといいます [SRC[>>1]]。
-
-[HISTORY[
-[3] [[要素]]の[[根要素]]が変更され、[[文書]]の[[根要素]]となったとき、
-[DFN[[RUBYB[[[文書に挿入]]]@en[inserted into a document]]]]されたといいます [SRC[>>1]]。
-
-;; [4] この定義によれば、[[根要素]]が[[文書]]に挿入されて[[文書]]の[[根要素]]となった時には、
-[[根要素]]自身は変化していませんから、[[文書に挿入]]はされていないこととなります。
-(意図通りなのかは不明です。) 他の定義との整合性を考えると、
-このケースも該当すると考えるべきかもしれません。
-]HISTORY]
-
-* 文書への挿入の処理
 
 [7] [[文書への挿入]]のタイミングで行われる[[要素]]ごとの処理も存在しています。
 
@@ -91,13 +148,45 @@
 
 * 関連
 
-[5] [[文書]]が属する[[木]]以外の場合や、[[要素]]以外の場合も含まれる
-「[[節点の挿入]]」という[[フック]]も存在します。
-
 [6] 逆に[[要素が文書から削除]]される場合に発生する処理もあり、
 挿入時と共通しているものも多くあります。
 
 * 歴史
+
+[114] [[挿入手順]]は、 >>112 までは[DFN[[RUBYB[[[節点の挿入]]]@en[node is inserted]]]]と呼ばれていました。
+
+[116] [[HTML Standard]] は現在でも「nodes are inserted」という用語を使っていますが、
+[[DOM Standard]] の「insertion steps」を参照するようになっています [SRC[>>115, >>117]]。
+
+[3] [[要素]]の[[根要素]]が変更され、[[文書]]の[[根要素]]となったとき、
+[DFN[[RUBYB[[[文書に挿入]]]@en[inserted into a document]]]]されたといいます [SRC[>>1]]。
+
+;; [4] この定義によれば、[[根要素]]が[[文書]]に挿入されて[[文書]]の[[根要素]]となった時には、
+[[根要素]]自身は変化していませんから、[[文書に挿入]]はされていないこととなります。
+(意図通りなのかは不明です。) 他の定義との整合性を考えると、
+このケースも該当すると考えるべきかもしれません。
+
+[REFS[
+- [112] [CITE@en[Fix the low-level remove/insert hooks and rewrite NodeIterator in terms ... · 4937f1a · whatwg/dom]] ([TIME[2014-08-21 15:10:21 +09:00]] 版) <https://github.com/whatwg/dom/commit/4937f1a5e39c0914ad2f0a3a35558cf1678e8b89>
+- [113] [CITE@en[Bug 24653 – Planning on changing mutation hooks]] ([TIME[2014-08-21 15:10:10 +09:00]] 版) <https://www.w3.org/Bugs/Public/show_bug.cgi?id=24653#c3>
+- [115] [CITE@en[Web Applications 1.0 r8769 Integrate with DOM for 'removing steps' and 'insertion steps'.]] ([TIME[2014-09-13 03:23:00 +09:00]] 版) <http://html5.org/r/8769>
+- [117] [CITE@en[Sync with r8769 (Integrate with DOM for 'removing steps' and 'insertion ... · 4a62050 · ResponsiveImagesCG/picture-element]] ([TIME[2014-09-15 08:59:45 +09:00]] 版) <https://github.com/ResponsiveImagesCG/picture-element/commit/4a620502e75e2839842fa737a3bc25894836e895>
+- [118] [CITE@en[Need to grab children of a DocumentFragment before an insert. Fixes h… · whatwg/dom@1b9e2f9]]
+([TIME[2015-05-11 13:27:23 +09:00]] 版)
+<https://github.com/whatwg/dom/commit/1b9e2f9765884460410d1396dbba99951eafe838>
+- [120] [CITE@en[Fix #34: invoke insertion/removing steps for descendants · whatwg/dom@5ec535e]]
+([TIME[2016-03-05 18:26:41 +09:00]] 版)
+<https://github.com/whatwg/dom/commit/5ec535e56111d600b8afe89d0b4f709ab844461e>
+- [121] [CITE@en[Shadow: run insertion and removing steps also for shadow trees · whatwg/dom@2d5aaed]]
+([TIME[2016-03-16 15:14:38 +09:00]] 版)
+<https://github.com/whatwg/dom/commit/2d5aaed1f525561a2c92b4e23ae2b7e6ff8244ad>
+- [122] [CITE@en[Only pass oldParent to removing steps for the node actually removed · whatwg/dom@baf4e6e]]
+([TIME[2016-03-16 15:16:55 +09:00]] 版)
+<https://github.com/whatwg/dom/commit/baf4e6e83e473330e5b073df77c091815489bb81>
+- [123] [CITE@en[Add support for custom elements · whatwg/dom@7f63535]]
+([TIME[2016-04-13 22:17:41 +09:00]] 版)
+<https://github.com/whatwg/dom/commit/7f63535da39a1cbf7f8f68563abc6f05f760990a>
+]REFS]
 
 [12] [CITE@en[Editorial: synchronize with the DOM Standard · whatwg/html@21c6ec7]] ([TIME[2016-03-20 17:40:31 +09:00]] 版) <https://github.com/whatwg/html/commit/21c6ec77594eb89b836d4872222f5916910967fd>
 
@@ -110,3 +199,7 @@
 [22] [CITE@en[Pass parser metadata to Fetch · whatwg/html@e6500b9]]
 ([TIME[2016-04-16 22:23:08 +09:00]] 版)
 <https://github.com/whatwg/html/commit/e6500b90244376c023e7b78642dbc7b86829233f>
+
+[25] [CITE@en[Generalize inserted/removed into/from a document algorithms · whatwg/html@8da5a18]]
+([TIME[2016-04-25 17:59:46 +09:00]] 版)
+<https://github.com/whatwg/html/commit/8da5a18b447290ffcdd6c23e268a6e75f906c684>
