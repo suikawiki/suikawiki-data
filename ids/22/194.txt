@@ -1,25 +1,123 @@
-[1] [[要素]]の作成は、
-[FIG(list)[
-- [CODE(DOMm)@en[[[createElement]]]]
-- [CODE(DOMm)@en[[[createElementNS]]]]
-- [[HTML構文解析器]]・[[XML構文解析器]]
-- [[clone]]
-]FIG]
-... の4種類の方法があり、それぞれで作れる[[要素]]の範囲が少しずつ違っています。
-また、[[HTML文書]]と[[XML文書]]でも、動作が異なります。
+[1] [[要素]]の作成は、いくつかの方法があり、
+それぞれで作れる[[要素]]の範囲が少しずつ違っています。
+また、[[HTML文書]]と[[XML文書]]とでも、動作が異なります。
 
 * 仕様書
 
 [REFS[
+- [23] '''[CITE@en[DOM Standard]] ([TIME[2016-04-26 17:13:41 +09:00]] 版) <https://dom.spec.whatwg.org/#concept-create-element>'''
+- [92] [CITE@en[DOM Standard]] ([TIME[2016-04-26 17:13:41 +09:00]] 版) <https://dom.spec.whatwg.org/#dom-document-createelement>
 - [7] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2014-07-20 22:41:10 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#create-an-element-for-the-token>
 - [2] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2014-07-02 23:06:24 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#blocked-on-parser>
 ]REFS]
 
-* 共通の動作
+* 要素の作成
+
+[63] [DFN[[RUBYB[要素の作成]@en[create an element]]]]は、
+[VAR[文書]]、[VAR[局所名]]、[VAR[名前空間]]、[VAR[接頭辞]] (既定値 [[null]])、
+[VAR[is]] (既定値 [[null]])、[VAR[同期カスタム要素フラグ]]について、
+次のようにします [SRC[>>23]]。
+[FIG(steps)[
+= [64] [VAR[定義]]を、[VAR[文書]]、[VAR[名前空間]]、[VAR[局所名]]、[VAR[is]]
+について[[カスタム要素定義を探す]]を実行した結果に設定します。
+= [65] [VAR[定義]]が [[null]] でなく、
+[VAR[定義]]の[F[名前][カスタム要素定義名]]が[VAR[定義]]の[F[局所名]]と異なるなら、
+== [66] [VAR[結果]]を、[[要素]]に設定します。
+[FIG(list members middle)[
+[FIGCAPTION[
+[[要素]]
+]FIGCAPTION]
+: [F[インターフェイス]] : [VAR[局所名]]と[[HTML名前空間]]の[[要素インターフェイス]]
+: [F[属性リスト]] : 空
+: [F[名前空間]] : [[HTML名前空間]]
+: [F[名前空間接頭辞]] : [VAR[接頭辞]]
+: [F[局所名]] : [VAR[局所名]]
+: [F[カスタム要素状態]] : [CODE[undefined]]
+: [F[節点文書]] : [VAR[文書]]
+]FIG]
+== [67] [VAR[同期カスタム要素フラグ]]が設定されていれば、
+=== [68] [VAR[要素]]と[VAR[定義]]について[[要素の格上げ]]を実行します。
+== [30] それ以外なら、
+=== [31] [VAR[結果]]と[VAR[定義]]について [[enqueue a custom element upgrade reaction]]
+します。
+== [32] [VAR[結果]]を返します。
+= [43] それ以外で、[VAR[定義]]が [[null]] 以外なら、
+== [33] [VAR[同期カスタム要素フラグ]]が設定されているなら、
+=== [69] [VAR[C]] を、[VAR[定義]]の[F[コンストラクター]]に設定します。
+=== [45] [VAR[結果]]を、 [CODE[[[Construct]]([VAR[C]])]] に設定します。
+[[例外]]が[[投げ]]られたら、改めて[[投げ]]てここで停止します。
+=== [46] [VAR[結果]]が [CODE(DOMi)@en[HTMLElement]] を[[実装]]していなければ、
+==== [47] [CODE(DOMe)@en[TypeError]] を[[投げ]]、ここで停止します。
+=== [48] 
+[FIG(list)[
+- [49] [VAR[結果]]の[F[属性リスト]]が空ではない
+- [50] [VAR[結果]]の[F[子供][childNodes]]が空ではない
+- [51] [VAR[結果]]の[F[親][parentNode]]が [[null]] ではない
+- [52] [VAR[結果]]の[F[節点文書]]が[VAR[文書]]ではない
+- [53] [VAR[結果]]の[F[名前空間]]が[[HTML名前空間]]でない
+- [55] [VAR[結果]]の[F[局所名]]が[VAR[局所名]]でない
+]FIG]
+... のいずれかを満たすなら、
+==== [56] [CODE(DOMe)@en[NotSupportedError]] を[[投げ]]、ここで停止します。
+=== [57] [VAR[結果]]の[F[名前空間接頭辞]]を、[VAR[接頭辞]]に設定します。
+=== [58] [VAR[結果]]の[F[カスタム要素状態]]を、 [CODE[custom]] に設定します。
+== [59] それ以外なら、
+=== [60] [VAR[結果]]を、[[要素]]に設定します。
+[FIG(list members middle)[
+[FIGCAPTION[
+[[要素]]
+]FIGCAPTION]
+: [F[インターフェイス]] : [CODE(DOMi)@en[HTMLElement]]
+: [F[属性リスト]] : 空
+: [F[名前空間]] : [[HTML名前空間]]
+: [F[名前空間接頭辞]] : [VAR[接頭辞]]
+: [F[局所名]] : [VAR[局所名]]
+: [F[カスタム要素状態]] : [CODE[undefined]]
+: [F[節点文書]] : [VAR[文書]]
+]FIG]
+=== [61] [VAR[結果]]と[VAR[定義]]について [[enqueue a custom element upgrade reaction]]
+します。
+== [54] [VAR[結果]]を返します。
+= [44] それ以外なら、
+== [34] 
+[FIG(list)[
+- [37] [VAR[文書]]が[F[閲覧文脈]]を持つ
+- [39] [VAR[名前空間]]が [[HTML名前空間]]
+- [40] [VAR[局所名]]が[[妥当なカスタム要素名]]か、または [VAR[is]] が [[null]] ではない
+]FIG]
+... のすべてを満たすなら、
+=== [38] [VAR[カスタム要素状態]]を、 [CODE[undefined]] に設定します。
+== [42] それ以外なら、
+=== [41] [VAR[カスタム要素状態]]を、 [CODE[uncustomized]] に設定します。
+== [35] 新しい[[要素]]を返します。
+[FIG(list members middle)[
+[FIGCAPTION[
+[[要素]]
+]FIGCAPTION]
+: [F[インターフェイス]] : [VAR[局所名]]と[VAR[名前空間]]の[[要素インターフェイス]]
+: [F[属性リスト]] : 空
+: [F[名前空間]] : [VAR[名前空間]]
+: [F[局所名]] : [VAR[局所名]]
+: [F[カスタム要素状態]] : [VAR[カスタム要素状態]]
+: [F[節点文書]] : [VAR[文書]]
+]FIG]
+]FIG]
+
+[36] この処理は、次の場面で呼び出されます。
+[FIG(list short)[
+- [[clone]]
+- [CODE(DOMm)@en[createElement]]
+- [[内部[CODE(DOMm)@en[createElementNS]]手順群]]
+-- [CODE(DOMm)@en[createElementNS]]
+-- [CODE(DOMm)@en[createDocument]]
+- [CODE(DOMm)@en[createHTMLDocument]]
+]FIG]
+
+* 要素依存の動作
 
 [28] どの作成方法によっても共通して実行される[[要素]]の種類に依存する操作がいくつかあります。
 
-[FIG(list)[
+[FIG(list middle)[
 - [CODE(HTMLe)@en[[[img]]]] - [[update the image data]] [SRC[[[HTML Standard]]]]
 - [CODE(HTMLe)@en[[[template]]]] [SRC[[[HTML Standard]]]]
 - [CODE(HTMLe)@en[[[a]]]] [SRC[[[HTML Standard]]]]
@@ -40,7 +138,46 @@
 
 ;; 多くは初期状態の設定に関するものですが、いくつかは何らかの動作を開始させるものです。
 
-* 構文解析器固有の動作
+* DOM メソッドの動作
+
+[96] [CODE(DOMi)@en[Document]] [[インターフェイス]]の
+[DFN[[CODE(DOMm)@en[createElement]]]] [[メソッド]]は、次のようにしなければ[MUST[なりません]]
+[SRC[>>92]]。
+[FIG(steps)[
+= [97] [VAR[局所名]]を、必須の第1引数を[[文字列]]として解釈した結果に設定します。
+= [98] [VAR[オプション群]]を、第2引数を省略可能な[[辞書]] [CODE(DOMi)@en[CreateElementOptions]]
+として解釈した結果に設定します。
+= [99] [VAR[局所名]]が [CODE(XML)@en[Name]] でなければ、
+== [100] [CODE(DOMe)@en[InvalidCharacterError]] を[[投げ]]、ここで停止します。
+= [101] [[文脈オブジェクト]]が[F[HTML文書]]なら、
+== [102] [VAR[局所名]]を、[VAR[局所名]]を[[ASCII小文字に変換]]した結果に設定します。
+= [103] [VAR[is]] を、[VAR[オプション群]]の [CODE(DOMa)@en[is][is=""]] の値に設定します。
+= [104] [VAR[定義]]を、[[文脈オブジェクト]]と[[HTML名前空間]]と[VAR[局所名]]と
+[VAR[is]] について[[カスタム要素定義を探す]]を実行した結果に設定します。
+= [105] [VAR[is]] が [[null]] でなく、
+[VAR[定義]]が [[null]] なら、
+== [106] [CODE(DOMe)@en[NotFoundError]] を[[投げ]]、ここで停止します。
+= [108] [[文脈オブジェクト]]の[F[内容型]]が [CODE(MIME)@en[text/html]] か
+[CODE(MIME)@en[application/xhtml+xml]] なら、
+== [107] [VAR[名前空間]]を、[[HTML名前空間]]に設定します。
+= [109] それ以外なら、
+== [110] [VAR[名前空間]]を、[[null]] に設定します。
+= [111] [VAR[要素]]を、[[要素の作成]]の結果に設定します。
+[FIG(list members middle)[
+: [VAR[文書]] : [[文脈オブジェクト]]
+: [VAR[局所名]] : [VAR[局所名]]
+: [VAR[名前空間]] : [VAR[名前空間]]
+: [VAR[接頭辞]] : [[null]]
+: [VAR[is]] : [VAR[is]]
+: [VAR[同期カスタム要素フラグ]] : 設定する
+]FIG]
+[[例外]]が[[投げ]]られたら、改めて[[投げ]]ます。
+= [112] [VAR[is]] が [[null]] 以外なら、
+== [113] [VAR[要素]]に名前 [CODE[is][is=""]]、値 [VAR[is]] で[[属性を設定]]します。
+= [114] [VAR[要素]]を返します。
+]FIG]
+
+* 構文解析器の動作
 
 [8] [[HTML構文解析器]]による[[要素の作成]]は、
 [DFN[[RUBYB[[[字句から要素を作成]]]@en[create an element for a token]]]]する手順 [SRC[>>7]]
@@ -70,7 +207,7 @@
 =- [21] 新しい[[要素]]が[[再関連付け可能要素]]でないか、
 [CODE(HTMLa)@en[[[form]]]] [[属性]]を持たない
 =- [22] [[[CODE(HTMLe)@en[form]]要素指示子]]の[[要素]]と指定された想定親が同じ[[家部分木]]にある
-= [23] >>17 をすべて満たしているなら、
+= [29] >>17 をすべて満たしているなら、
 =- [24] 新しい[[要素]]に[[[CODE(HTMLe)@en[form]]要素指示子]]の[[要素]]を関連付けます [SRC[>>7]]。
 =- [25] [[構文解析器]]が後ほどこの[[要素]]を挿入することによって行われる[[フォーム所有者の再設定]]アルゴリズムの実行を抑制します [SRC[>>7]]。
 ]FIG]
@@ -98,3 +235,129 @@
 ;; 通常は[[属性]]は追加された順序が保持されます。
 
 [5] [[フォーム所有者の再設定]]は、通常の[[挿入]]時とは若干異なる形で行われます [SRC[>>7]]。
+
+
+* 歴史
+
+** DOM0 時代
+
+[71] [[Netscape]] の [[JavaScript]] では、
+[CODE(DOMi)@en[Image]] や [CODE(DOMi)@en[Option]] の[[コンストラクター]]だけが[[要素]]を作成する方法でした。
+(もちろん他に[[HTML構文解析器]]と [CODE(JS)@en[document.write]]
+がありましたが、当時はまだ[[文書木]]がありませんでした。)
+
+** W3C DOM 時代
+
+[93] [CODE(DOMm)@en[createElement]] は [[DOM1]] で追加されました。
+
+[94] [[MSHTML]] では [CODE(DOMi)@en[[[HTMLDocument2]]]] で実装されていました。
+
+[95] [CODE(DOMm)@en[createElementNS]] は [[DOM2 HTML]] で追加されました。
+
+[62] [CITE[Bug 280692 - createElement breaks DOM spec for HTML and XUL documents]] <https://bugzilla.mozilla.org/show_bug.cgi?id=280692>
+
+[70] [CITE[d:id:quaa]] ([CODE[2007-03-21 23:49:00 +09:00]] 版) <http://d.hatena.ne.jp/quaa/20070321#p2>
+([[名無しさん]] [WEAK[2007-03-21 23:59:07 +00:00]])
+
+[72] [[DOM水準1]]と[[DOM水準2]]では、 [CODE(DOMm)@en[createElement]] は [[HTML]] [[文書]]では
+[CODE(DOMp)@en[[[tagName]]]] は[[大文字]][[正準形]]に[[実装]]が[[写像]]しなければならないと明記されていました。
+
+[[DOM水準3]]では、[[XML]] 以外の[[マーク付け言語]]においては[[大文字]]と[[小文字]]を区別するか否かは[[マーク付け言語]]に依存し、
+区別しない場合には[[実装]]が[[正準形]]に[[写像]]しなければならないと述べています。
+
+[73] [[DOM水準2]]と[[DOM水準3]]では、
+[CODE(DOMm)@en[createElement]] は
+[CODE(DOMa)@en[[[localName]]]] は
+[CODE(IDL)@en[[[null]]]] にすると述べています。
+
+[74] [[DOM水準3]]では [CODE(DOMm)@en[createElement]] は [CODE(DOMp)@en[[[tagName]]]]
+が [CODE(XMLa)@en[[[xmlVersion]]]] に照らして正しい[[名前]]でなければ
+[CODE(DOMc)@en[[[INVALID_CHARACTER_ERR]]]]
+とされていますが、 [[HTML]] [[文書]]の場合にどうなるのかは不明です。
+
+[75] [CITE[あるSEのつぶやき: IE7でHTMLに存在しない要素にスタイルシートを適用する方法]] ([CODE[2008-03-09 21:53:37 +09:00]] 版) <http://fnya.cocolog-nifty.com/blog/2008/01/ie7html_faf9.html>
+
+[76] [CITE[document.createElement()にタグではなくHTMLを指定してみる(IE限定) - uupaaの開発日記]] ([TIME[2009-01-09 07:43:07 +09:00]] 版) <http://d.hatena.ne.jp/uupaa/20080718/1216362040>
+
+[77] [[DOM水準3]]で [CODE(DOMm)@en[createElementNS]] の
+[CODE(DOMc)@en[[[NAMESPACE_ERR]]]] の条件が増えています:
+[FIG(list)[
+- [[名前空間接頭辞]]が [CODE(XML)@en[[[xmlns]]]] で
+[[名前空間URI]] が [CODE(URI)@en[[[http://www.w3.org/2000/xmlns/]]]] ではない
+- [[修飾名]]が [CODE(XMLa)@en[[[xmlns]]]] で[[名前空間URI]]
+が [CODE(URI)@en[[[http://www.w3.org/2000/xmlns/]]]] ではない
+- [[名前空間URI]] が
+[CODE(URI)@en[[[http://www.w3.org/2000/xmlns/]]]]
+で[[修飾名]]または[[名前空間接頭辞]]が
+[CODE(XML)@en[[[xmlns]]]] ではない
+]FIG]
+
+[78] [[Firefox]] 1.5 と [[Opera]] 9 Preview 1 は
+[CODE(DOMm)@en[[[createElement]]]] や
+[CODE(DOMm)@en[[[createElementNS]]]]
+で[[既定属性]]を追加しません。
+
+;; [[Opera]] は[[構文解析]]の時にも[[既定属性]]を
+([[内部部分集合]]にあっても) 追加しません。
+[[Firefox]] は追加しますが、
+[CODE(DOMa)@en[[[specified]]]] は
+[CODE(IDL)@en[[[true]]]] になっています。
+
+[79] [CODE(DOMm)@en[createElementNS]] は
+[CODE(DOMa)@en[[[qualifiedName]]]] が[[修飾名]]でなければ
+[CODE(DOMc)@en[[[NAMESPACE_ERR]]]] ですが、
+その [[XML]] の[[版]]に関して・・・ [CODE(DOMm)@en[[[createAttributeNS]]]] 
+を参照。
+
+** HTML5 時代
+
+[80] [CITE[IRC logs: freenode / #whatwg / 20090312]] ([TIME[2009-04-26 16:50:56 +09:00]] 版) <http://krijnhoetmer.nl/irc-logs/whatwg/20090312#l-333>
+
+> [14:35] <Lachy> hsivonen, document.createElement("foo").namespaceURI returns the XHTML namespace in an XHTML document.
+> [14:37] <Lachy> for an SVG document, Opera returns the SVG namespace, but Gecko and WebKit return the XHTML namespace still 
+
+[81] [CITE[Bug 280692 – createElement breaks DOM spec for HTML and XUL documents]]
+([TIME[2009-10-12 19:16:05 +09:00]] 版)
+<https://bugzilla.mozilla.org/show_bug.cgi?id=280692>
+
+[82] [CITE[IRC logs: freenode / #whatwg / 20091007]]
+([TIME[2009-12-07 22:54:41 +09:00]] 版)
+<http://krijnhoetmer.nl/irc-logs/whatwg/20091007#l-342>
+
+[83] [CITE@en[Bug 24271 – Document.createElement name validation inconsistent with HTML parse rules]]
+( ([TIME[2014-01-12 16:15:53 +09:00]] 版))
+<https://www.w3.org/Bugs/Public/show_bug.cgi?id=24271>
+
+[84] [CITE[IRC logs: freenode / #whatwg / 20140113]]
+( ([TIME[2014-01-15 08:51:21 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20140113#l-241>
+
+[85] [CITE@en[Bug 19431 – Namespace of elements made via .createElement() in XML documents must be null]]
+( ([TIME[2014-05-05 04:00:37 +09:00]] 版))
+<https://www.w3.org/Bugs/Public/show_bug.cgi?id=19431>
+
+[86] [CITE@en[CreateElement no longer supports angle brackets (Windows)]]
+( ([TIME[2014-05-23 06:19:11 +09:00]] 版))
+<http://msdn.microsoft.com/en-us/library/ie/ff986077(v=vs.85).aspx>
+
+[87] [CITE@en[Change .createElement() namespace to match UAs by ayg · Pull Request #213 · whatwg/dom]]
+([TIME[2016-04-16 23:44:02 +09:00]] 版)
+<https://github.com/whatwg/dom/pull/213>
+
+** カスタム要素への対応
+
+[88] [CITE@en[Add support for custom elements · whatwg/dom@7f63535]]
+([TIME[2016-04-13 22:20:44 +09:00]] 版)
+<https://github.com/whatwg/dom/commit/7f63535da39a1cbf7f8f68563abc6f05f760990a>
+
+[89] [CITE@en[Change createElement() namespace to match implementations · whatwg/dom@c8ae9cb]]
+([TIME[2016-04-19 23:15:35 +09:00]] 版)
+<https://github.com/whatwg/dom/commit/c8ae9cbd46ca3175e07b7f205ebe375805013119>
+
+[90] [CITE@en[Editorial: make "is" and "prefix" optional in "create an element" · whatwg/dom@5fc5624]]
+([TIME[2016-04-20 12:30:17 +09:00]] 版)
+<https://github.com/whatwg/dom/commit/5fc5624fb80648de46088cac06864b4048c1981c>
+
+[91] [CITE@en[Editorial: createDocument should not invoke createElementNS directly · whatwg/dom@4d5ae94]]
+([TIME[2016-04-09 16:02:16 +09:00]] 版)
+<https://github.com/whatwg/dom/commit/4d5ae94463a464adf6d7a8eacb4bf1b578ce0905>
