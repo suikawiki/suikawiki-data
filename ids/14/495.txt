@@ -162,7 +162,7 @@ separated from each other by [CODE[/]]
 == [852] If ''headers are transmitted'':
 === [855] Mutate [VAR[response]] into a [[network error]].
 == [257] Otherwise, if [VAR[not retryable]] is [[false]] and 
-[VAR[exit status]]'s [F[再試行可能性]] is [[true]]:
+[VAR[exit status]]'s [F[can retry][exit's can retry]] is [[true]]:
 === [882] Let [VAR[connection]] be the result of 
 [[obtaining a connection][obtain a connection]], given [VAR[request]]'s 
 [F[current url]]'s [F[origin]] and [VAR[credentials]].
@@ -646,7 +646,7 @@ Otherwise, [CODE[http1connect]].
 ]FIG]
 : [758] [[要求]]の完了の通知 :
 [FIG(steps)[
-= [759] 終了の失敗フラグが設定されていれば、
+= [759] If [VAR[connection]]'s [F[exit status][connection's exit status]]'s [F[失敗]] is [[true]]:
 == [760] If [VAR[transport]]'s [F[established][transport's established]] is [[true]]:
 === [761] [VAR[送信閉じ済みフラグ]]を設定します。
 === [762] [VAR[受信閉じ済みフラグ]]を設定します。
@@ -1003,7 +1003,7 @@ If protocol is http2 and after preface, connection error PROTOCOL_ERROR
 :[[WebSocket]] cleanly:[[真]]か[[偽]]か null。既定値は null。
 :[[WebSocket]] [[状態符号]]:[[整数]]か null。既定値は null。
 :[[WebSocket]] 理由:[[文字列]]か null。既定値は null。
-:[131] 再試行可能性:[[真]]か[[偽]]。既定値は[[偽]]。
+: [DFN[[F[can retry][exit's can retry]]]] : A [[boolean]].  Initially, [[false]].
 ]FIG]
 
 * HTTP/1
@@ -1028,7 +1028,8 @@ A [[boolean]].  Initially, '''[[true]]'''.
 :[VAR[フレーム]]:[[WebSocketフレーム]]または null。初期値は null。
 :[VAR[先頭フレーム]]:[[WebSocketフレーム]]または null。初期値は null。
 :[VAR[送信待ちフレーム]]:[[WebSocketフレーム]]または null。初期値は null。
-:[VAR[終了]]:終了または null。初期値は null。
+: [F[exit status][connection's exit status]] :  An [[exit status]] or [[null]].
+Initially, [[null]].
 :[VAR[切断タイマー]]:タイマー。
 ]FIG]
 
@@ -1306,7 +1307,7 @@ A [[boolean]].  Initially, [[false]].
 - [358] 完了の通知
 [FIG(list members)[
 :[[応答]]:[VAR[応答]]。
-:[[終了]]:終了。
+: [VAR[exit status]] : A [[exit status]].
 ]FIG]
 ]FIG]
 
@@ -1389,7 +1390,8 @@ A [[boolean]].  Initially, [[false]].
 [FIG(steps)[
 = [359] リセットフラグが設定されていれば、
 == [360] [VAR[要求]]が null でなければ、
-=== [361] [VAR[終了]]を、新しい終了に設定します。リセットと失敗を[[真]]とします。
+=== [361] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]] whose [F[リセット]] and [F[失敗]] are [[true]].
 == [522] [VAR[要求締め切り]]フラグを設定します。
 == [523] [VAR[要求の送信状態]]を送信済みに設定します。
 == [524] 次の要求に進みます。
@@ -1473,7 +1475,8 @@ A [[boolean]].  Initially, [[false]].
 == [VAR[要求]]の[[要求メソッド]]が [CODE(HTTP)@en[[[PUT]]]] か [CODE(HTTP)@en[[[CONNECT]]]] なら、
 === [VAR[要求締め切り]]フラグを設定します。
 === [VAR[要求の送信状態]]を送信済みに設定します。
-=== [432] [VAR[終了]]を、失敗が[[真]]の新しい終了に設定します。
+=== [432] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]] whose [F[失敗]] is [[true]].
 === [433] 次の要求に進みます。
 == それ以外なら、
 === [367] [VAR[要求]]についてデータ開始を通知します。
@@ -1487,14 +1490,17 @@ A [[boolean]].  Initially, [[false]].
 = [132] [VAR[一時バッファー]]が[[空文字列]]なら、
 == [134] [VAR[要求締め切り]]フラグを設定します。
 == [135] [VAR[要求の送信状態]]を送信済みに設定します。
-== [133] [VAR[終了]]を、失敗が[[真]]の新しい終了に設定します。
-== [434] If [VAR[connection]]'s [F[response received][connection's response received]] is [[false]]:
-=== [915] Set [VAR[終了]]の再試行可能性 to [[true]].
+== [133] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]] whose [F[失敗]] is [[true]].
+== [434] If not 中断 and [VAR[connection]]'s [F[response received][connection's response received]] is [[false]]:
+=== [915] Set [VAR[connection]]'s [F[exit status][connection's exit status]]'s
+[F[can retry][exit's can retry]] to [[true]].
 == [136] 次の要求に進みます。
 = [VAR[要求]]の[[要求メソッド]]が [CODE(HTTP)@en[[[PUT]]]] か [CODE(HTTP)@en[[[CONNECT]]]] なら、
 == [VAR[要求締め切り]]フラグを設定します。
 == [VAR[要求の送信状態]]を送信済みに設定します。
-== [435] [VAR[終了]]を、失敗が[[真]]の新しい終了に設定します。
+== [435] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]] whose [F[失敗]] is [[true]].
 == [436] 次の要求に進みます。
 = [924] Otherwise:
 == [925] [VAR[要求]]について[VAR[応答]]のヘッダー受信完了を通知します。
@@ -1506,7 +1512,8 @@ A [[boolean]].  Initially, [[false]].
 [F[incomplete message][response's incomplete message]] flag to [[true]].
 === [928] [VAR[要求の送信状態]]を送信済みに設定します。
 == [926] [VAR[要求締め切り]]フラグを設定します。
-== [437] [VAR[終了]]を、新しい終了に設定します。
+== [437] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]].
 == [438] 次の要求に進みます。
 ]FIG]
 
@@ -1520,7 +1527,8 @@ A [[boolean]].  Initially, [[false]].
 = それ以外で、 [VAR[一時バッファー]]の長さが 2[SUP[18]]‐1 なら、
 == [VAR[要求締め切り]]フラグを設定します。
 == [VAR[要求の送信状態]]を送信済みに設定します。
-== [439] [VAR[終了]]を、失敗が[[真]]の新しい終了に設定します。
+== [439] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]] whose [F[失敗]] is [[true]].
 == [440] 次の要求に進みます。
 ]FIG]
 
@@ -1529,9 +1537,10 @@ A [[boolean]].  Initially, [[false]].
 = [445] Set [VAR[connection]]'s [F[response][connection's response]]'s
 [F[incomplete message][response's incomplete message]] flag to [[true]].
 = [139] ヘッダーの処理 (>>138) を行います。
-= [442] [VAR[終了]]を、新しい終了に設定します。
+= [442] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]].
 = [141] [VAR[残り長さ]]が[[正]]で[VAR[応答]]の[[プロトコルの版]]が [CODE[1.1]] なら、
-== [441] [VAR[終了]]の失敗を、[[真]]に設定します。
+== [441] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to [[true]].
 = [142] [VAR[要求締め切り]]フラグを設定します。
 = [443] [VAR[要求の送信状態]]を送信済みに設定します。
 = [444] 次の要求に進みます。
@@ -1549,7 +1558,8 @@ A [[boolean]].  Initially, [[false]].
 = [448] [VAR[残り長さ]]がエラーなら、
 == [449] [VAR[要求締め切り]]フラグを設定します。
 == [450] [VAR[要求の送信状態]]を送信済みに設定します。
-== [446] [VAR[終了]]を、失敗が[[真]]の新しい終了に設定します。
+== [446] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]] whose [F[失敗]] is [[true]].
 == [447] 次の要求に進みます。
 = [540] それ以外で、[VAR[要求]]の[[要求メソッド]]が [CODE(HTTP)[[[CONNECT]]]] で、
 [VAR[応答]]の[[状態符号]]が [CODE(HTTP)[[[200]]]] なら、
@@ -1577,8 +1587,12 @@ A [[boolean]].  Initially, [[false]].
 ]FIG]
 ... のいずれかであれば、
 === [145] [VAR[要求]]について[[応答]]のヘッダー受信完了を通知します。
-=== [248] [VAR[終了]]を、次の通り設定します。
+=== [248] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]]:
 [FIG(list members)[
+[FIGCAPTION[
+[[Exit status][exit status]]
+]FIGCAPTION]
 :失敗:[[真]]。
 :cleanly:[[偽]]。
 :[[状態符号]]:[CODE[[[1006]]]]。
@@ -1602,7 +1616,9 @@ A [[boolean]].  Initially, [[false]].
 == [337] [VAR[要求]]の[[要求メソッド]]が [CODE(HTTP)[[[CONNECT]]]] か、
 [VAR[WebSocket接続の状態]]が [CODE[CONNECTING]] なら、
 === [255] [VAR[要求]]について[[応答]]のヘッダー受信完了を通知します。
-=== [254] [VAR[終了]]が null なら、新しい終了に設定します。
+=== [254] If [VAR[connection]]'s [F[exit status][connection's exit status]] is [[null]]:
+==== [131] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]].
 === [339] [VAR[要求締め切り]]フラグを設定します。
 === [340] [VAR[要求の送信状態]]を送信済みに設定します。
 === [338] 次の要求に進みます。
@@ -1622,7 +1638,8 @@ A [[boolean]].  Initially, [[false]].
 ... のいずれかの場合、
 === [347] [VAR[残り長さ]]を、0に設定します。
 == [87] [VAR[残り長さ]]が 0 なら、
-=== [89] [VAR[終了]]を、新しい終了に設定します。
+=== [89] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]].
 === [79] [VAR[応答]]に [CODE(HTTP)@en[[[Connection:]]]] [[ヘッダー]]があって
 [CODE(HTTP)@en[[[close]]]] ([[ASCII大文字・小文字不区別]]) [[接続オプション]]が指定されていれば、
 ==== [80] [VAR[要求締め切り]]フラグを設定します。
@@ -1646,7 +1663,8 @@ A [[boolean]].  Initially, [[false]].
 == [454] [VAR[残り長さ]]を1減らします。
 == [386] [VAR[残り長さ]]が0なら、
 === [387] [VAR[要求]]についてデータ終了を通知します。
-=== [251] [VAR[終了]]を、新しい終了に設定します。
+=== [251] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]].
 === [83] [VAR[応答]]に [CODE(HTTP)@en[[[Connection:]]]] [[ヘッダー]]があって
 [CODE(HTTP)@en[[[close]]]] ([[ASCII大文字・小文字不区別]]) [[接続オプション]]が指定されていれば、
 ==== [84] [VAR[要求締め切り]]フラグを設定します。
@@ -1664,9 +1682,10 @@ A [[boolean]].  Initially, [[false]].
 [F[incomplete message][response's incomplete message]] flag to [[true]].
 == [390] [VAR[要求の送信状態]]を送信済みに設定します。
 == [395] [VAR[要求]]についてデータ終了を通知します。
-== [455] [VAR[終了]]を、新しい終了に設定します。
+== [455] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]].
 == [391] [VAR[応答]]の[[プロトコルの版]]が [CODE[1.1]] なら、
-=== [392] [VAR[終了]]の失敗を[[真]]に設定します。
+=== [392] Set [VAR[connection]]'s [F[失敗]] to [[true]].
 = [400] それ以外なら、
 == [396] 中断なら、
 === [398] [VAR[残り長さ]]が0なら、
@@ -1675,7 +1694,8 @@ A [[boolean]].  Initially, [[false]].
 ==== [916] Set [VAR[connection]]'s [F[response][connection's response]]'s
 [F[incomplete message][response's incomplete message]] flag to [[true]].
 == [401] [VAR[要求]]についてデータ終了を通知します。
-== [402] [VAR[終了]]を、新しい終了に設定します。
+== [402] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]].
 = [403] [VAR[要求締め切り]]フラグを設定します。
 = [404] 次の要求に進みます。
 ]FIG]
@@ -1693,7 +1713,8 @@ A [[boolean]].  Initially, [[false]].
 == [VAR[要求締め切り]]フラグを設定します。
 == [VAR[要求の送信状態]]を送信済みに設定します。
 == [405] [VAR[要求]]についてデータ終了を通知します。
-== [406] [VAR[終了]]を、新しい終了に設定します。
+== [406] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]].
 == [393] 次の要求に進みます。
 ]FIG]
 
@@ -1704,7 +1725,8 @@ A [[boolean]].  Initially, [[false]].
 = [460] [VAR[要求締め切り]]フラグを設定します。
 = [461] [VAR[要求の送信状態]]を送信済みに設定します。
 = [407] [VAR[要求]]についてデータ終了を通知します。
-= [408] [VAR[終了]]を、新しい終了に設定します。
+= [408] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]].
 = [409] 次の要求に進みます。
 ]FIG]
 
@@ -1723,7 +1745,8 @@ A [[boolean]].  Initially, [[false]].
 === [469] [VAR[要求締め切り]]フラグを設定します。
 === [470] [VAR[要求の送信状態]]を送信済みに設定します。
 === [410] [VAR[要求]]についてデータ終了を通知します。
-=== [411] [VAR[終了]]を、新しい終了に設定します。
+=== [411] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]].
 === [412] 次の要求に進みます。
 == [428] それ以外で、[VAR[残り長さ]]が 0 なら、
 === [431] [VAR[要求]]についてデータ終了を通知します。
@@ -1743,7 +1766,8 @@ A [[boolean]].  Initially, [[false]].
 = [477] [VAR[要求締め切り]]フラグを設定します。
 = [478] [VAR[要求の送信状態]]を送信済みに設定します。
 = [413] [VAR[要求]]についてデータ終了を通知します。
-= [414] [VAR[終了]]を、新しい終了に設定します。
+= [414] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]].
 = [415] 次の要求に進みます。
 ]FIG]
 
@@ -1762,7 +1786,8 @@ A [[boolean]].  Initially, [[false]].
 = [482] [VAR[要求締め切り]]フラグを設定します。
 = [483] [VAR[要求の送信状態]]を送信済みに設定します。
 = [416] [VAR[要求]]についてデータ終了を通知します。
-= [417] [VAR[終了]]を、新しい終了に設定します。
+= [417] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]].
 = [418] 次の要求に進みます。
 ]FIG]
 
@@ -1783,7 +1808,8 @@ A [[boolean]].  Initially, [[false]].
 = [490] [VAR[要求締め切り]]フラグを設定します。
 = [491] [VAR[要求の送信状態]]を送信済みに設定します。
 = [419] [VAR[要求]]についてデータ終了を通知します。
-= [420] [VAR[終了]]を、新しい終了に設定します。
+= [420] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]].
 = [421] 次の要求に進みます。
 ]FIG]
 
@@ -1801,7 +1827,8 @@ A [[boolean]].  Initially, [[false]].
 == [498] [VAR[要求締め切り]]フラグを設定します。
 == [499] [VAR[要求の送信状態]]を送信済みに設定します。
 == [422] [VAR[要求]]についてデータ終了を通知します。
-== [423] [VAR[終了]]を、新しい終了に設定します。
+== [423] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]].
 == [424] 次の要求に進みます。
 ]FIG]
 
@@ -1812,7 +1839,8 @@ A [[boolean]].  Initially, [[false]].
 = [501] [VAR[要求締め切り]]フラグを設定します。
 = [502] [VAR[要求の送信状態]]を送信済みに設定します。
 = [425] [VAR[要求]]についてデータ終了を通知します。
-= [426] [VAR[終了]]を、新しい終了に設定します。
+= [426] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]].
 = [427] 次の要求に進みます。
 ]FIG]
 
@@ -1830,7 +1858,8 @@ A [[boolean]].  Initially, [[false]].
 = それ以外で、 [VAR[一時バッファー]]の長さが 2[SUP[18]]‐1 なら、
 == [VAR[要求締め切り]]フラグを設定します。
 == [VAR[要求の送信状態]]を送信済みに設定します。
-== [505] [VAR[終了]]を、新しい終了に設定します。
+== [505] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]].
 == [506] 次の要求に進みます。
 ]FIG]
 
@@ -1838,7 +1867,8 @@ A [[boolean]].  Initially, [[false]].
 [FIG(steps)[
 = [509] [VAR[要求締め切り]]フラグを設定します。
 = [510] [VAR[要求の送信状態]]を送信済みに設定します。
-= [507] [VAR[終了]]を、新しい終了に設定します。
+= [507] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]].
 = [508] 次の要求に進みます。
 ]FIG]
 
@@ -1908,8 +1938,12 @@ and [VAR[フレーム]]の [[mask]] が 1 なら、
 [149] 正常終了か中断を受信したら、
 [FIG(steps)[
 = [226] [VAR[WebSocket接続の状態]]を、[CODE[CLOSING]] に設定します。
-= [227] [VAR[終了]]を、次の通り設定します。
+= [227] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]]:
 [FIG(list members)[
+[FIGCAPTION[
+[[Exit status][exit status]]
+]FIGCAPTION]
 :失敗:[[真]]
 :cleanly:[[偽]]
 :状態符号:[CODE[[[1006]]]]
@@ -1940,8 +1974,12 @@ and [VAR[フレーム]]の [[mask]] が 1 なら、
 [162] 正常終了か中断を受信したら、
 [FIG(steps)[
 = [212] [VAR[WebSocket接続の状態]]を、[CODE[CLOSING]] に設定します。
-= [215] [VAR[終了]]を、次の通り設定します。
+= [215] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]]:
 [FIG(list members)[
+[FIGCAPTION[
+[[Exit status][exit status]]
+]FIGCAPTION]
 :失敗:[[真]]
 :cleanly:[[偽]]
 :状態符号:[CODE[[[1006]]]]
@@ -1956,8 +1994,12 @@ and [VAR[フレーム]]の [[mask]] が 1 なら、
 次のようにします。
 [FIG(steps)[
 = [229] [VAR[WebSocket接続の状態]]を、[CODE[CLOSING]] に設定します。
-= [230] [VAR[終了]]を、次の通り設定します。
+= [230] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]]:
 [FIG(list members)[
+[FIGCAPTION[
+[[Exit status][exit status]]
+]FIGCAPTION]
 :失敗:[[真]]
 :cleanly:[[偽]]
 :状態符号:[CODE[[[1002]]]]
@@ -1973,7 +2015,8 @@ and [VAR[フレーム]]の [[mask]] が 1 なら、
 :[[mask]]:1
 :[[長さ]]:データのバイト数
 :[[マスクキー]]:無作為に決定した4バイトのバイト列
-:データ:[VAR[終了]]の[[状態符号]]を表す[[16ビット符号無し整数]] ([[ネットワークバイト順]]) と、
+:データ: [VAR[connection]]'s [F[exit status][connection's exit status]]'s
+[[状態符号]]を表す[[16ビット符号無し整数]] ([[ネットワークバイト順]]) と、
 それに続けて理由
 ]FIG]
 = [305] 作成した [[WebSocketフレーム]]のデータの各[[バイト]]について、
@@ -1987,19 +2030,25 @@ and [VAR[フレーム]]の [[mask]] が 1 なら、
 
 [214] バイトを受信したら、
 [FIG(steps)[
-= [234] [VAR[終了]]の[[失敗]]が[[偽]]なら、
-== [235] [VAR[終了]]の[[失敗]]を[[真]]に設定します。
-== [236] [VAR[終了]]の[[状態符号]]を [CODE[[[1006]]]] に設定します。
-== [237] [VAR[終了]]の理由を[[空文字列]]に設定します。
+= [234] If [VAR[connection]]'s [F[exit status][connection's exit status]]'s [F[失敗]]
+is [[false]]:
+== [235] Set [VAR[connection]]'s [F[exit status][connection's exit status]]'s [F[失敗]] to [[true]].
+== [236] Set [VAR[connection]]'s [F[exit status][connection's exit status]]'s [[状態符号]]を [CODE[[[1006]]]] に設定します。
+== [237] Set [VAR[connection]]'s [F[exit status][connection's exit status]]'s
+理由を[[空文字列]]に設定します。
 ]FIG]
 
 [220] 正常終了か中断を受信したら、
 [FIG(steps)[
 = [238] [VAR[WebSocket接続の状態]]を、[CODE[CLOSING]] に設定します。
-= [239] 中断で[VAR[終了]]の[[失敗]]が[[偽]]なら、
-== [240] [VAR[終了]]の[[失敗]]を[[真]]に設定します。
-== [241] [VAR[終了]]の[[状態符号]]を [CODE[[[1006]]]] に設定します。
-== [242] [VAR[終了]]の理由を[[空文字列]]に設定します。
+= [239] If 中断 and [VAR[connection]]'s [F[exit status][connection's exit status]]'s
+[[失敗]]が[[偽]]なら、
+== [240] Set [VAR[connection]]'s [F[exit status][connection's exit status]]'s
+[F[失敗]] to [[true]].
+== [241] Set [VAR[connection]]'s [F[exit status][connection's exit status]]'s
+[F[状態符号]] to [CODE[1006]].
+== [242] Set [VAR[connection]]'s [F[exit status][connection's exit status]]'s
+理由 to the [[empty string]].
 = [332] 次の要求に進みます。
 ]FIG]
 
@@ -2018,7 +2067,8 @@ and [VAR[フレーム]]の [[mask]] が 1 なら、
 == [325] [VAR[状態]]を、「トンネル送信中」に設定します。
 = [323] それ以外なら、
 == [326] [VAR[要求の送信状態]]を送信済みに設定します。
-== [324] [VAR[終了]]を、失敗が[[真]]の新しい終了に設定します。
+== [324] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]] whose [F[失敗]] is [[true]].
 == [327] 次の要求に進みます。
 ]FIG]
 
@@ -2034,8 +2084,11 @@ and [VAR[フレーム]]の [[mask]] が 1 なら、
 = [372] [VAR[要求]]についてデータ終了を通知します。
 = [328] [VAR[要求締め切り]]フラグを設定します。
 = [369] [VAR[要求の送信状態]]を送信済みに設定します。
-= [511] [VAR[終了]]を、新しい終了に設定します。
-= [368] 中断なら、[VAR[終了]]の異常を[[真]]に設定します。
+= [511] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]].
+= [368] If 中断:
+== [923] Set [VAR[connection]]'s [F[exit status][connection's exit status]]'s
+[F[異常]] to [[true]].
 = [370] 次の要求に進みます。
 ]FIG]
 
@@ -2049,7 +2102,8 @@ and [VAR[フレーム]]の [[mask]] が 1 なら、
 == [380] [VAR[状態]]を、「要求送信中」に設定します。
 = [381] それ以外なら、
 == [512] [VAR[要求]]が null ではなく、[VAR[要求の送信状態]]が送信済みなら、
-=== [513] [VAR[要求]]について完了を通知します。[VAR[終了]]を引渡します。
+=== [513] [VAR[要求]]について完了を通知します。[VAR[connection]]'s [F[exit status][connection's exit status]]
+を引渡します。
 == [333] [VAR[要求]]を、 null に設定します。
 == [334] [VAR[応答]]を、 null に設定します。
 == [514] [VAR[要求の送信状態]]を、未送信に設定します。
@@ -2155,8 +2209,12 @@ and [VAR[フレーム]]の [[mask]] が 1 なら、
 と [[XOR]] した結果に差し替えます。
 === [308] [VAR[connection]]'s [F[transport][connection's transport]] で、作成した[[WebSocketフレーム]]を送信することにします。
 == [218] [VAR[状態]]を、「WebSocket切断待ち」に設定します。
-== [228] [VAR[終了]]を、次の通り設定します。
+== [228] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+[[exit status]]:
 [FIG(list members)[
+[FIGCAPTION[
+[[Exit status][exit status]]
+]FIGCAPTION]
 :失敗:[[偽]]
 :cleanly:[[真]]
 :状態符号:[VAR[フレーム]]の[[状態符号]] (なければ [CODE[1005]])
