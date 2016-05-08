@@ -192,7 +192,8 @@ with [VAR[credentials]] flag, with [VAR[not retryable]] flag set.
 [615] The [DFN[name resolution steps]] for [VAR[host]] are these steps:
 [FIG(steps)[
 = [616] If [VAR[host]] is a [[domain]]:
-== [617] Return the result of applying [[name resolution]] to [VAR[host]].
+== [617] Return the result of applying [[platform]]'s [[name resolution]]
+steps to [VAR[host]].
 = [618] Otherwise:
 == [619] Return [VAR[host]].
 ]FIG]
@@ -219,11 +220,10 @@ the first [CODE[CN]] value.
 == [969] Let [VAR[cn]] be [[null]].
 = [944] If [VAR[host]] is a [[domain]]:
 == [958] For each [VAR[domain]] in [VAR[domains]]:
-=== [960] Let [VAR[canonical domain]] be [VAR[domain]], [[converted to ASCII lowercase]].
-=== [962] If [VAR[canonical domain]] is [VAR[host]]:
+=== [957] If [VAR[host]] [[domain-pattern matches][domain-pattern match]] [VAR[domain]]:
 ==== [959] Return [[true]] and abort these steps.
-== [970] If [VAR[cn]] is not [[null]] and [VAR[cn]], [[converted to ASCII lowercase]],
-is [VAR[host]]:
+== [970] If [VAR[cn]] is not [[null]] and
+[VAR[host]] [[domain-pattern matches][domain-pattern match]] [VAR[cn]]:
 === [971] Return [[true]] and abort these steps.
 = [945] Otherwise, if [VAR[host]] is an [[IPv4 address]]:
 == [954] For each [VAR[address]] in [VAR[addresses]]:
@@ -238,9 +238,25 @@ is [VAR[host]]:
 = [953] Return [[false]].
 ]FIG]
 
-@@ trailing dots
-
-@@ wildcards
+[960] Whether a [[domain]] [VAR[domain]] [DFN[domain-pattern matches][domain-pattern match]]
+a string [VAR[pattern]] or not is the value returned by the following steps:
+[FIG(steps)[
+= [962] If the last character of [VAR[pattern]], if any, is a [CODE[.]] character:
+== [973] Return [[false]] and abort these steps.
+= [975] Let [VAR[canonicalized pattern]] be [VAR[pattern]], [[converted to ASCII lowercase]].
+= [974] If [VAR[domain]] is [VAR[canonicalized pattern]], optionally followed by
+a [CODE[.]] character:
+== [976] Return [[true]] and abort these steps.
+= [977] If the first two characters of [VAR[canonicalized pattern]], if any, is [CODE[*.]]:
+== [979] Remove the first two characters from [VAR[canonicalized pattern]].
+== [980] If [VAR[canonicalized pattern]] does not contain any [CODE[.]] character,
+or [VAR[canonicalized pattern]] is one of [[ICANN DOMAINS]]:
+=== [982] Return [[false]] and abort these steps.
+== [983] If [VAR[domain]] is one or more characters,
+followed by [VAR[canonicalized pattern]], optionally followed by a [CODE[.]] character:
+=== [984] Return [[true]] and abort these steps.
+= [978] Return [[false]].
+]FIG]
 
 * Proxies
 
@@ -889,10 +905,6 @@ in [VAR[user agent]] are as follows:
 [FIG(steps)[
 = 
 @@ credentials
-= [704] If [VAR[url]]'s [F[host]] is a [[domain]]:
-== [862] Let [VAR[domain]] be [VAR[url]]'s [F[host]].
-= [863] Otherwise:
-== [864] Let [VAR[domain]] be [[null]].
 = [878] If [VAR[ws]] is true:
 == [879] Set [VAR[alpn protocols]] to ([CODE[http/1.1]]).
 = [880] Otherwise:
@@ -905,9 +917,14 @@ in [VAR[user agent]] are as follows:
 : Underlying transport : [VAR[transport]]
 : Compression : Disabled
 : [[TLS session]] cache : [VAR[user agent]]'s [F[[[TLS session]] cache]]
-: [[SNI]] host : [VAR[domain]]
+: [[SNI]] host : 
+If [VAR[url]]'s [F[host]] is a [[domain]], [VAR[url]]'s [F[host]].
+Otherwise, [[null]].
 : [[ALPN protocol names][ALPN protocol name]] : [VAR[alpn protocols]]
 : Certificate database : [VAR[user agent]]'s [F[certificate database]]
+: Additional verification for server certificate [VAR[cert]] :
+Return the result of running the [[service identity verification steps]] with
+[VAR[url]]'s [F[host]] and [VAR[cert]].
 ]FIG]
 = [861] If failed, return a [[failure]] and abort these steps.
 = [865] Let [VAR[alpn]] be the [[ALPN protocol name]] obtained by the TLS handshake.
@@ -942,7 +959,6 @@ with following states:
 : [F[is ev]] : [VAR[ev]]
 : [F[remote certificates]] : [VAR[certs]]
 ]FIG]
-= [875] Apply [[service identity]] verification for [VAR[certs]] and [VAR[url]]'s [F[host]].
 = [705] Apply [[PKP]] verification for [VAR[certs]] and [VAR[url]]'s [F[host]]
 in [VAR[user agent]].
 = [859] Set [VAR[tls transport]]'s [F[HTTPS state][transport's HTTPS state]]
@@ -954,10 +970,6 @@ and whether there are TLS warnings or not.
 
 ;; [941] When [[SNI]] host is [[null]], the [[TLS]] client is not expected to
 send any [[SNI]] [[extension][TLS extension]] in the handshake.
-
-@@ [940] If SI host is IP address
-
-@@ [937] Service identity verification steps
 
 @@ [895] [MUST[MUST]] verify revocation of [VAR[certs]]
 
@@ -2355,6 +2367,8 @@ is [[false]]:
 [DFN[[F[scheme][URL scheme]]]], [DFN[[F[host]]][URL's host]], [DFN[[F[port]]][URL's port]], and
 [DFN[[F[query]]]]
 are defined in the [[URL Standard]].
+
+[981] The term [DFN[[[ICANN DOMAINS]]]] is defined in the [[Public Suffix List]].
 
 [354] The terms
 [DFN[[[request]]]],
