@@ -987,26 +987,32 @@ send any [[SNI]] [[extension][TLS extension]] in the handshake.
 [895] The [DFN[certificate revocation verification steps]] for
 [VAR[certificate]] (a [[certificate]]),
 [VAR[certificate type]] (''CA certificate'' or ''end entity certificate''), and
-[VAR[ocsp]] (an [[OCSP response]] or [[null]]) are these steps:
+[VAR[ocsp]] (an [[OCSP response]] or [[null]]) are implementation dependent
+steps, e.g.:
 [FIG(steps)[
-= [864] If the [[user agent]]'s [F[certificate database]] knows that
-[VAR[cert]] has been revoked:
-== [875] Return [[false]] and abort these steps.
-= [863] Otherwise, if [VAR[certificate type]] is ''CA certificate'':
-== [995] Return [[true]] and abort these steps.
-= [937] If [VAR[ocsp]] is not [[null]]:
-== [987] If [VAR[cert]] has been revoked according to [VAR[ocsp]]
-or [VAR[ocsp]] is invalid:
-=== [988] Return [[false]] and abort these steps.
-= [989] Otherwise:
-== [986] If [VAR[cert]] has the [[OCSP must-staple]] option enabled:
-=== [940] Return [[false]] and abort these steps.
+= [864] If the [[user agent]]'s [F[certificate database]] knows whether
+[VAR[cert]] has been revoked or not:
+== [875] Return [[true]] if [VAR[cert]] has been revoked,
+or [[false]] otherwise, and abort these steps.
+= [937] If [VAR[ocsp]] is a valid [[OCSP]] response:
+== [999] Return [[true]] if [VAR[cert]] has been revoked according to [VAR[ocsp]],
+or [[false]] otherwise, and abort these steps.
+= [989] Otherwise, if [VAR[cert]] has the [[OCSP must-staple]] option enabled:
+== [940] Return [[false]] and abort these steps.
 = [990] Let [VAR[duration]] be [VAR[cert]]'s [F[[CODE[notAfter]]]] timestamp - 
 [VAR[cert]]'s [F[[CODE[notBefore]]]] timestamp.
 = [991] If [VAR[duration]] is less than 10 days (i.e. [VAR[cert]] is a [[short-lived certificate]]):
 == [992] Return [[true]] and abort these steps.
+= [863] Let [VAR[ocsp url]] be [VAR[cert]]'s [[OCSP]] [[URL]].
+= [995] If [VAR[ocsp url]] is not [[null]]:
+== [996] Send an [[OCSP]] request for [VAR[cert]] to [VAR[ocsp url]].
+Set [VAR[ocsp]] to the result.
+== [997] If [VAR[ocsp]] is a valid [[OCSP]] response:
+=== [986] Return [[true]] if [VAR[cert]] has been revoked according to [VAR[ocsp]],
+or [[false]] otherwise, and abort these steps.
 =
-@@
+@@ unset EV flag
+= [987] Return [[true]].
 ]FIG]
 
 @@ [938] [[HTTPS state]] steps
