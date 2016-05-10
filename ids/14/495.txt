@@ -922,6 +922,7 @@ in [VAR[user agent]] are as follows:
 : [[SNI]] host : 
 If [VAR[url]]'s [F[host]] is a [[domain]], [VAR[url]]'s [F[host]].
 Otherwise, [[null]].
+: Use [[OCSP stapling]] request : [[true]]
 : [[ALPN protocol names][ALPN protocol name]] : [VAR[alpn protocols]]
 : Certificate database : [VAR[user agent]]'s [F[certificate database]]
 : Additional verification for server certificate [VAR[cert]] :
@@ -949,6 +950,18 @@ Return the result of running the [[service identity verification steps]] with
 == [871] Return a [[failure]] and abort these steps.
 = [874] Let [VAR[certs]] be the received [[certificates][certificate]].
 = [876] Let [VAR[ev]] be whether [VAR[certs]] contain a valid [[EV certificate]] or not.
+= [985] Let [VAR[ocsp]] be the [[OCSP stapling]] response, if any, or [[null]].
+= [993] For each [VAR[cert]] in [VAR[certs]]'s [[CA certificates][CA certificate]]:
+== [994] If the result of running the [[certificate revocation verification steps]]
+with [VAR[certificate]] set to [VAR[cert]], [VAR[certificate type]] set to ''CA certificate'',
+and [VAR[ocsp]] set to [[null]], is [[false]]:
+== [704] Return a [[failure]] and abort these steps.
+= [862] If the result of running the [[certificate revocation verification steps]]
+with [VAR[certificate]] set to [VAR[certs]]'s [[end entity certificate]],
+[VAR[certificate type]] set to ''end entity'', and [VAR[ocsp]], is [[false]]:
+== [704] Return a [[failure]] and abort these steps.
+= [705] Apply [[PKP]] verification for [VAR[certs]] and [VAR[url]]'s [F[host]]
+in [VAR[user agent]].
 = [860] Let [VAR[tls transport]] be a [[transport]] that represents the [[TLS connection]],
 with following states:
 [FIG(list members)[
@@ -961,8 +974,6 @@ with following states:
 : [F[is ev]] : [VAR[ev]]
 : [F[remote certificates]] : [VAR[certs]]
 ]FIG]
-= [705] Apply [[PKP]] verification for [VAR[certs]] and [VAR[url]]'s [F[host]]
-in [VAR[user agent]].
 = [859] Set [VAR[tls transport]]'s [F[HTTPS state][transport's HTTPS state]]
 to [CODE[modern]] or [CODE[deprecated]], as determined by an implementation dependent
 algorithm whose inputs are [VAR[version]], [VAR[cipher]], [VAR[certs]],
@@ -973,7 +984,30 @@ and whether there are TLS warnings or not.
 ;; [941] When [[SNI]] host is [[null]], the [[TLS]] client is not expected to
 send any [[SNI]] [[extension][TLS extension]] in the handshake.
 
-@@ [895] [MUST[MUST]] verify revocation of [VAR[certs]]
+[895] The [DFN[certificate revocation verification steps]] for
+[VAR[certificate]] (a [[certificate]]),
+[VAR[certificate type]] (''CA certificate'' or ''end entity certificate''), and
+[VAR[ocsp]] (an [[OCSP response]] or [[null]]) are these steps:
+[FIG(steps)[
+= [864] If the [[user agent]]'s [F[certificate database]] knows that
+[VAR[cert]] has been revoked:
+== [875] Return [[false]] and abort these steps.
+= [863] Otherwise, if [VAR[certificate type]] is ''CA certificate'':
+== [995] Return [[true]] and abort these steps.
+= [937] If [VAR[ocsp]] is not [[null]]:
+== [987] If [VAR[cert]] has been revoked according to [VAR[ocsp]]
+or [VAR[ocsp]] is invalid:
+=== [988] Return [[false]] and abort these steps.
+= [989] Otherwise:
+== [986] If [VAR[cert]] has the [[OCSP must-staple]] option enabled:
+=== [940] Return [[false]] and abort these steps.
+= [990] Let [VAR[duration]] be [VAR[cert]]'s [F[[CODE[notAfter]]]] timestamp - 
+[VAR[cert]]'s [F[[CODE[notBefore]]]] timestamp.
+= [991] If [VAR[duration]] is less than 10 days (i.e. [VAR[cert]] is a [[short-lived certificate]]):
+== [992] Return [[true]] and abort these steps.
+=
+@@
+]FIG]
 
 @@ [938] [[HTTPS state]] steps
 
