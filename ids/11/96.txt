@@ -51,13 +51,11 @@
 [49] [DFN[[RUBYB[ワーカーを走らせる]@en[run a worker]]]]操作は、
 次の引数を持ちます [SRC[>>48]]。
 [FIG(list members)[
-: [VAR[ワーカー]] : [CODE(DOMi)@en[[[Worker]]]] または [CODE(DOMi)@en[[[SharedWorker]]]]
+: [VAR[ワーカー]] : [CODE(DOMi)@en[Worker]] または [CODE(DOMi)@en[SharedWorker]]
 : [VAR[URL]] : [[URL]]
-: [VAR[リファラー]] : [[URL]]
-: [VAR[外側ポート]] : [CODE(DOMi)@en[[[MessagePort]]]]
-: [VAR[文書群]] : [[list of relevant [CODE(DOMi)@en[Document]] objects to add]]
-: [VAR[親ワーカー大域適用範囲]] : [CODE(DOMi)@en[[[WorkerGlobalScope]]]] または null
-: [VAR[オプション群]] : [CODE(DOMi)@en[[[WorkerOptions]]]]
+: [VAR[外側設定群]] : [[環境設定群オブジェクト]]
+: [VAR[外側ポート]] : [CODE(DOMi)@en[MessagePort]]
+: [VAR[オプション群]] : [CODE(DOMi)@en[WorkerOptions]]
 ]FIG]
 
 [136] 次のようにしなければ[['''なりません''']] [SRC[>>48]]。
@@ -70,20 +68,26 @@
 = [55] [VAR[ワーカー大域適用範囲]]を、[VAR[共有である]]なら新しい 
 [CODE(DOMi)@en[[[SharedWorkerGlobalScope]]]]、
 それ以外なら新しい [CODE(DOMi)@en[[[DedicatedWorkerGlobalScope]]]] に設定します。
+= [164] [VAR[文書群]]を、[VAR[外側設定群]]の
+[F[[[list of relevant [CODE(DOMi)@en[Document]] objects to add]]]] に設定します。
+= [176] [VAR[外側設定群]]の[F[大域オブジェクト]]が [CODE(DOMi)@en[WorkerGlobalScope]] なら、
+== [177] [VAR[親ワーカー大域適用範囲]]を、
+[VAR[外側設定群]]の[F[大域オブジェクト]]に設定します。
+= [178] それ以外なら、
+== [175] [VAR[親ワーカー大域適用範囲]]を、 [[null]] に設定します。
 = [53] [CODE[[[InitializeHostDefinedRealm]]]] [[抽象操作]]を実行します。
 [FIG(list members)[
 : [[大域オブジェクト]] : [VAR[ワーカー大域適用範囲]]
 ]FIG]
 = [156] [VAR[realm実行文脈]]を、前項で作成された[[JavaScript実行文脈]]に設定します。
-= [137] [VAR[設定群オブジェクト]]を、[VAR[realm実行文脈]]について[[ワーカー環境設定群オブジェクトの設定]]を実行した結果に設定します。
+= [137] [VAR[内側設定群]]を、[VAR[realm実行文脈]]について[[ワーカー環境設定群オブジェクトの設定]]を実行した結果に設定します。
 = [162] [VAR[オプション群]]の[F[[CODE[[[type]]]]]] により、
 [FIG(switch)[
 : [CODE[classic]] :
 [[古典ワーカースクリプトのfetch]]を実行します。
 [FIG(list members)[
 : [VAR[URL]] : [VAR[URL]]
-: [VAR[リファラー]] : [VAR[リファラー]]
-: [VAR[設定群オブジェクト]] : [VAR[設定群オブジェクト]]
+: [VAR[設定群オブジェクト]] : [VAR[内側設定群]]
 : [VAR[終点]] :
 [VAR[共有である]]なら [CODE[sharedworker]]、そうでないなら [CODE[worker]]
 : [VAR[続きの処理]] : >>163
@@ -95,7 +99,8 @@
 : [VAR[credentialsモード]] : [VAR[オプション群]]の[F[[CODE[credentials]]]]
 : [VAR[終点]] :
 [VAR[共有である]]なら [CODE[sharedworker]]、そうでないなら [CODE[worker]]
-: [VAR[設定群オブジェクト]] : [VAR[設定群オブジェクト]]
+: [VAR[fetchクライアント設定群オブジェクト]] : [VAR[外側設定群]]
+: [VAR[モジュール写像設定群オブジェクト]] : [VAR[内側設定群]]
 : [VAR[暗号学的nonce]] : [[空文字列]]
 : [VAR[構文解析器状態]] : [CODE[not-parser-inserted]]
 : [VAR[続きの処理]] : >>163
@@ -129,7 +134,7 @@
 == [59] ここで終わります。
 = [138] [VAR[ワーカー]]に[VAR[ワーカー大域適用範囲]]を関連付けます。
 = [139] [VAR[内側ポート]]を、[[新しい[CODE(DOMi)@en[MessagePort]]オブジェクトを作成]]した結果に設定します。
-その[F[[[所有者]]]]は[VAR[設定群オブジェクト]]とします。
+その[F[所有者]]は、[VAR[内側設定群]]とします。
 = [140] [VAR[内側ポート]]を、[VAR[ワーカー大域適用範囲]]に関連付けます。
 = [141] [VAR[外側ポート]]と[VAR[内側ポート]]を [[entangle]] します。
 = [142] [VAR[文書群]]の各[[文書]]を[VAR[ワーカー大域適用範囲]]の[[ワーカーの[CODE(DOMi)@en[Document]]群のリストに追加]]します。
@@ -197,7 +202,7 @@
 [113] [[ワーカー]]は、[[active needed worker]] ではなく、
 [[permissible worker]] なら、 [DFN[[[suspendable worker]]]] です [SRC[>>42]]。
 
-[66] [VAR[設定群オブジェクト]]の[F[[[大域オブジェクト]]]]の [F[[[closing flag]]]]
+[66] [VAR[内側設定群]]の[F[大域オブジェクト]]の [F[[[closing flag]]]]
 が[[偽]]で、[[ワーカー]]が [[suspendable worker]] である間は、
 実行を[RUBYB[一時中断]@en[suspend]]しなければ[['''なりません''']] [SRC[>>48]]。
 その後 [F[[[closing flag]]]] が[[真]]となるか、 [[suspendable worker]]
@@ -290,8 +295,8 @@
 ]FIG]
 ]FIG]
 = [151] それ以外なら、
-== [70] [[ワーカー]]の暗示的なポートの [F[[[port message queue]]]] を有効にします。
-= [71] [VAR[設定群オブジェクト]]の[F[[[有責イベントループ]]]]を
+== [70] [[ワーカー]]の暗示的なポートの [F[port message queue]] を有効にします。
+= [71] [VAR[内側設定群]]の[F[有責イベントループ]]を
 (破棄されるまで) 実行します。
 = [72] 破棄の処理に続きます (>>73)。
 ]FIG]
@@ -361,7 +366,7 @@
 [73] 破棄の処理 (>>72 から呼び出されます。) は、次のようにしなければ[['''なりません''']]
 [SRC[>>48]]。
 [FIG(steps)[
-= [74] [[環境設定群オブジェクト]]の[F[[[活性タイマーのリスト]]]]を空にします。
+= [74] [VAR[内側設定群]]の[F[[[活性タイマーのリスト]]]]を空にします。
 = [75] [[ワーカーのポート群]]のすべてのポートを [[disentangle]] します。
 = [76] [[ワーカーの[CODE(DOMi)@en[Document]]群]]を空にします。
 ]FIG]
@@ -655,3 +660,7 @@
 [129] [CITE@en[Pass parser metadata to Fetch · whatwg/html@e6500b9]]
 ([TIME[2016-04-16 23:05:43 +09:00]] 版)
 <https://github.com/whatwg/html/commit/e6500b90244376c023e7b78642dbc7b86829233f>
+
+[131] [CITE@en[Use outside settings object to fetch workers]]
+( ([[domenic]]著, [TIME[2016-05-11 19:57:24 +09:00]]))
+<https://github.com/whatwg/html/commit/4e2b0066cb88fdc7ac65cc6e6a7eb40ac39418bd>
