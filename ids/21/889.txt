@@ -1,3 +1,81 @@
+* 仕様書
+
+[REFS[
+- [25] '''[CITE[Web IDL (Second Edition)]] ([TIME[2016-05-21 05:55:04 +09:00]]) <https://heycam.github.io/webidl/#idl-USVString>'''
+- [26] [CITE[Web IDL (Second Edition)]] ([TIME[2016-05-21 05:55:04 +09:00]]) <https://heycam.github.io/webidl/#es-USVString>
+- [38] [CITE[Web IDL (Second Edition)]] ([TIME[2016-05-21 05:55:04 +09:00]]) <https://heycam.github.io/webidl/#dfn-obtain-unicode>
+]REFS]
+
+* 意味
+
+[27] [CODE(IDL)@en[USVString]] は、[[Unicodeスカラー値]]の[[列]]を表します [SRC[>>25]]。
+
+[29] [[型名]]は、 [CODE[USVString]] です [SRC[>>25]]。
+
+* 構文
+
+[28] [[辞書メンバー]]や[[引数]]の[[既定値]]の指定では、
+[[文字列リテラル]]として記述できます [SRC[>>25]]。
+
+* 文脈
+
+[30] ほとんどの場合は [CODE(IDL)@en[DOMString]] を使うべきであり、
+[[Unicodeスカラー値]]の列が必要な場合に限って [CODE(IDL)@en[USVString]]
+とする[SHOULD[べき]]です [SRC[>>25]]。
+
+* 変換
+
+[31] [CODE(IDL)@en[USVString]] 型の[[IDL値]][VAR[入力]]から [[JavaScript]] 
+への[[変換][変換 (WebIDL)]]は、次のようにします [SRC[>>26]]。
+[FIG(steps)[
+= [35] [VAR[スカラー値列]]を、[VAR[入力]]の表す[[Unicodeスカラー値]]の列に設定します。
+= [36] [VAR[符号単位列]]を、[VAR[スカラー値列]]を [[UTF-16]] で[[符号化]]した結果の[[符号単位]]の列に設定します。
+= [37] [VAR[符号単位列]]と同じ[[符号単位]]の列を表す [CODE(JS)@en[String]]
+値を返します。
+]FIG]
+
+[33] [[JavaScript]] [VAR[入力]]から [CODE(IDL)@en[USVString]]
+型[[IDL値]]への[[変換][変換 (WebIDL)]]は、次のようにします [SRC[>>26]]。
+[FIG(steps)[
+= [32] [VAR[列]]を、[VAR[入力]]を [CODE(IDL)@en[DOMString]] に[[変換][変換 (WebIDL)]]した結果に設定します。
+= [34] [VAR[列]]を[[[CODE(IDL)@en[DOMString]]をUnicodeスカラー値列に変換]]した結果を返します。
+]FIG]
+
+[39] [VAR[符号単位列]]について[DFN[[RUBYB[[[[CODE(JS)@en[DOMString]]をUnicodeスカラー値列に変換]]]@en[convert a DOMString to a sequence of Unicode scalar values]]]]するには、
+次のようにします [SRC[>>38]]。
+[FIG(steps)[
+= [42] [VAR[スカラー値列]]を、[[空]]の[[列]]に設定します。
+= [40] [VAR[n]] を、[VAR[文字列]]の[[長さ]]に設定します。
+= [41] [VAR[i]] を、 [N[0]] に設定します。
+= [43] [VAR[i]] < [VAR[n]] の間、繰り返し、
+== [44] [VAR[c]] を、[VAR[符号単位列]]において[[索引]] [VAR[i]] の[[符号単位]]に設定します。
+== [45] [VAR[c]] により、
+[FIG(switch)[
+: [VAR[c]] が[[範囲]] [ [N[0xDC00]], [N[0xDFFF]] ] に含まれる :
+[VAR[スカラー値列]]の末尾に [CODE(char)[U+FFFD]] を追加します。
+: [VAR[c]] が[[範囲]] [ [N[0xD800]], [N[0xDBFF]] ] に含まれる :
+[FIG(steps)[
+= [46] [VAR[i]] が [VAR[n]] - 1 なら、
+== [47] [VAR[スカラー値列]]の末尾に [CODE(char)[U+FFFD]] を追加します。
+= [48] それ以外なら、
+== [49] [VAR[d]] を、[VAR[符号単位列]]において[[索引]] [VAR[i]] + 1 の[[符号単位]]に設定します。
+== [50] [VAR[d]] が[[範囲]] [ [N[0xDC00]], [N[0xDFFF]] ] に含まれるなら、
+=== [51] [VAR[スカラー値列]]の末尾に[[符号位置]] [N[216]] + [N[210]] × ([VAR[c]] & [N[0x3FF]]) + 
+([VAR[d]] & [N[0x3FF]]) の[[Unicode文字]]を追加します。
+=== [52] [VAR[i]] を[[インクリメント]]します。
+== [53] それ以外なら、
+=== [54] [VAR[スカラー値列]] の末尾に [CODE(char)[U+FFFD]] を追加します。
+]FIG]
+: それ以外 :
+[VAR[スカラー値列]]の末尾に[[符号位置]] [VAR[c]] の[[Unicode文字]]を追加します。
+]FIG]
+== [55] [VAR[i]] を[[インクリメント]]します。
+= [56] [VAR[スカラー値列]]を返します。
+]FIG]
+
+;; [57] これはつまり、[[サロゲートペア]]になっていない[[サロゲート]]が含まれる時、
+[CODE(char)[U+FFFD]] に置換されることとなります。
+
 * 歴史
 
 ** [CODE(IDL)@en[EnsureUTF16]]
