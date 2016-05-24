@@ -15,6 +15,7 @@
 
 [REFS[
 - [65] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-5.5.2>
+- [3] [CITE@en[Referrer Policy]] ([TIME[2016-05-21 07:45:08 +09:00]]) <https://w3c.github.io/webappsec-referrer-policy/#determine-requests-referrer>
 ]REFS]
 
 * 意味
@@ -119,7 +120,78 @@ Mozilla では、最近 (2002年末) まで Referer URI に[[素片識別子]]�
 ですから、身元申告文書の URI 参照を入れる標準の頭欄で最も適切なのは
 [CODE(HTTP)[[[User-Agent]]:]] 欄です。 (しかし、単なる文字列の一部でしかないので機械処理ができない諸刃の剣。素人は [CODE(HTTP)[User-Agent:]] 欄に入れるときには[[注釈]]にしないといけないことにも注意されたし。)
 
-* 処理モデル
+* 要求の参照元の決定
+
+[5] [VAR[要求]]について [DFN[Determine [VAR[request]]’s Referrer]]
+は、次のようにします [SRC[>>3]]。
+
+[FIG(steps)[
+= [9] [VAR[方針]]を、[VAr[要求]]の[F[参照元ポリシー]]に設定します。
+= [10] [VAR[設定群]]を、[VAR[要求]]の[F[クライアント][要求クライアント]]に設定します。
+= [23] [VAR[文書]]を、 [[null]] に設定します。
+= [11] [VAR[要求]]の[F[参照元]]が [[URL]] なら、
+== [12] [VAR[参照元源]]を、[VAR[要求]]の[F[参照元]]に設定します。
+= [13] それ以外なら、
+== [14] [VAR[設定群]]の[F[大域オブジェクト]]が [CODE(DOMi)@en[Window]] なら、
+=== [15] [VAR[文書]]を、[VAR[設定群]]の[F[有責閲覧文脈]]の[F[活性文書]]に設定します。
+== [16] [VAR[設定群]]の[F[大域オブジェクト]]が [CODE(DOMi)@en[WorkerGlobalScope]] なら、
+@@
+=== [17] [VAR[源]]を、[[現職設定群オブジェクト]]の[F[API参照元源]]に設定します。
+=== [18] [VAR[源]]が [[URL]] なら、
+==== [19] [VAR[参照元源]]を、[VAR[源]]に設定します。
+=== [20] それ以外なら、
+==== [22] [VAR[文書]]を、[VAR[源]]に設定します。
+= [24] [VAR[文書]]が [[null]] でなければ、
+== [26] [VAR[文書]]の[F[起源][文書の起源]]が[[不透明起源]]なら、
+=== [30] [[null]] を返し、ここで停止します。
+== [31] [VAR[文書]]が[F[[[[CODE(HTMLe)@en[iframe]] [CODE(HTMLa)@en[srcdoc]]文書]]]]である間、繰り返し、
+=== [27] [VAR[文書]]を、[VAR[文書]]の[F[閲覧文脈]]の[F[閲覧文脈包含子]]の[F[節点文書]]に設定します。
+=== [32] [VAR[参照元源]]を、[VAR[文書]]の[F[URL][文書の番地]]に設定します。
+= [33] [VAR[参照元URL]]を、[VAR[参照元源]]に [[Strip url for use as a referrer]]
+を適用した結果に設定します。
+= [34] [VAR[参照元起源]]を、[VAR[参照元源]]に [[Strip url for use as a referrer]]
+を適用した結果に設定します。このとき[VAR[起源のみ]]フラグを[[真]]に設定します。
+= [37] [VAR[方針]]が [CODE[no-referrer-when-downgrade]] または[[空文字列]] なら、
+== [38] 
+[FIG(list)[
+- [39] [VAR[設定群]]が [[null]] でない
+- [41] [VAR[設定群]]が[[TLS保護]]されている
+- [42] [VAR[要求]]の[F[現在URL]]が [[a priori authenticated URL]] で''ない''
+]FIG]
+... のすべてを満たす場合、
+=== [44] [[null]] を返し、ここで停止します。
+== [57] それ以外なら、
+=== [58] [VAR[参照元URL]]を返し、ここで停止します。
+= [35] 次の表に従って値を返します。
+[FIG(table)[
+:policy: [VAR[方針]]
+
+:policy: [CODE[no-referrer]]
+:same-origin: [[null]]
+:cross-origin: [[null]]
+
+:policy: [CODE[origin][Referrer Policy]]
+:same-origin: [VAR[参照元起源]]
+:cross-origin: [VAR[参照元起源]]
+
+:policy: [CODE[unsafe-url]]
+:same-origin: [VAR[参照元URL]]
+:cross-origin: [VAR[参照元URL]]
+
+:policy: [CODE[same-origin][Referrer Policy]]
+:same-origin: [VAR[参照元URL]]
+:cross-origin: [[null]]
+
+:policy: [CODE[origin-when-cross-origin]]
+:cross-origin: [VAR[参照元起源]]
+:same-origin: [VAR[参照元URL]]
+]FIG]
+]FIG]
+
+;; [6] [[Fetch]] から呼び出されます。
+ただし [CODE@en[rel=noreferrer]] の時は呼び出されません。
+
+* 処理
 
 [EG[
 [68] [CODE(HTTP)@en[[[Referer:]]]] [[ヘッダー]]は、例えば次のような用途に使うことができます
