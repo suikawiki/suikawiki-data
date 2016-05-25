@@ -19,6 +19,7 @@
 - [60] [CITE@en[Referrer Policy]] ([TIME[2016-05-21 07:45:08 +09:00]]) <https://w3c.github.io/webappsec-referrer-policy/#strip-url>
 - [102] [CITE@en[Referrer Policy]] ([TIME[2016-05-21 07:45:08 +09:00]]) <https://w3c.github.io/webappsec-referrer-policy/#user-controls>
 - [105] [CITE@en-US[Fetch Standard]] ([TIME[2016-05-24 18:42:15 +09:00]]) <https://fetch.spec.whatwg.org/#concept-request-referrer>
+- [107] [CITE@en-US[Fetch Standard]] ([TIME[2016-05-24 18:42:15 +09:00]]) <https://fetch.spec.whatwg.org/#concept-main-fetch>
 ]REFS]
 
 * 意味
@@ -51,10 +52,10 @@
 [DFN[Strip [VAR[url]] for use as a referrer]] [SRC[>>60]]、
 すなわち次のようにします。入力として[VAR[起源のみ]]フラグを持ちます。
 [FIG(steps)[
-= [61] [VAR[URL]] が [[null]] なら、
-== [92] [[null]] を返し、ここで停止します。
+= [61] [VAR[URL]] が [CODE[no-referrer]] なら、
+== [92] [CODE[no-referrer]] を返し、ここで停止します。
 = [93] [VAR[URL]] の [F[scheme][URL scheme]] が[[局所scheme]]なら、
-== [94] [[null]] を返し、ここで停止します。
+== [94] [CODE[no-referrer]] を返し、ここで停止します。
 = [95] [VAR[URL]] の[F[利用者名][userinfo]]を、[[空文字列]]に設定します。
 = [96] [VAR[URL]] の[F[合言葉][userinfo]]を、 [[null]] に設定します。
 = [97] [VAR[URL]] の[F[素片][素片識別子]]を、 [[null]] に設定します。
@@ -63,6 +64,9 @@
 == [100] [VAR[URL]] の[F[query][URL query]] を、 [[null]] に設定します。
 = [101] [VAR[URL]] を返します。
 ]FIG]
+
+;; [6] 他にも、 [CODE(URI)@en[file:]] [[URL]] や[[ブラウザー拡張]]の
+[[URL scheme]] などを [CODE[no-referrer]] とする必要があるかもしれません。
 
 * 文脈
 
@@ -154,11 +158,24 @@ Mozilla では、最近 (2002年末) まで Referer URI に[[素片識別子]]�
 
 ;; [[参照元ポリシー]]参照。
 
+[108] [[main fetch]] における[[[VAR[要求]]の[F[参照元]]の決定]]は、次のようにします
+[SRC[>>107]]。
+[FIG(steps)[
+= [109] [VAR[要求]]の[F[参照元ポリシー]]が[[空文字列]]で、
+[VAR[要求]]の[F[クライアント]]が [[null]] で''ない''なら、
+== [163] [VAR[要求]]の[F[参照元ポリシー]]を、[VAR[要求]]の[F[クライアント]]の[F[参照元ポリシー]]に設定します。
+= [188] [VAR[要求]]の[F[参照元ポリシー]]が[[空文字列]]なら、
+== [189] [VAR[要求]]の[F[参照元ポリシー]]を、 [CODE[no-referrer-when-downgrade]]
+に設定します。
+= [112] [VAR[要求]]の[F[参照元]]が [CODE[no-referrer]] 以外なら、
+== [113] [VAR[要求]]の[F[参照元]]を、 
+[VAR[要求]]に [[determine [VAR[request]]'s referrer]] を適用した結果に設定します。
+]FIG]
+
 [5] [VAR[要求]]について [DFN[Determine [VAR[request]]’s Referrer]]
 は、次のようにします [SRC[>>3]]。
 
 [FIG(steps)[
-= [9] [VAR[方針]]を、[VAR[要求]]の[F[参照元ポリシー]]に設定します。
 = [10] [VAR[設定群]]を、[VAR[要求]]の[F[クライアント][要求クライアント]]に設定します。
 = [23] [VAR[文書]]を、 [[null]] に設定します。
 = [11] [VAR[要求]]の[F[参照元]]が [[URL]] なら、
@@ -183,6 +200,7 @@ Mozilla では、最近 (2002年末) まで Referer URI に[[素片識別子]]�
 を適用した結果に設定します。
 = [34] [VAR[参照元起源]]を、[VAR[参照元源]]に [[Strip url for use as a referrer]]
 を適用した結果に設定します。このとき[VAR[起源のみ]]フラグを[[真]]に設定します。
+= [9] [VAR[方針]]を、[VAR[要求]]の[F[参照元ポリシー]]に設定します。
 = [37] [VAR[方針]]が [CODE[no-referrer-when-downgrade]] または[[空文字列]] なら、
 == [38] 
 [FIG(list)[
@@ -221,9 +239,6 @@ Mozilla では、最近 (2002年末) まで Referer URI に[[素片識別子]]�
 :same-origin: [VAR[参照元URL]]
 ]FIG]
 ]FIG]
-
-;; [6] [[Fetch]] から呼び出されます。
-ただし [CODE@en[rel=noreferrer]] の時は呼び出されません。
 
 * 処理
 
