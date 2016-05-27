@@ -1,3 +1,6 @@
+[67] [CODE(HTMLa)@en[ping]] [[属性]]は、[[リンク]]をたどる際に同時にアクセスするべき
+[[URL]] を指定するものです。
+
 * 仕様書
 
 [REFS[
@@ -5,7 +8,69 @@
 - [50] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2016-05-25 20:37:04 +09:00]]) <https://html.spec.whatwg.org/#hyperlink-auditing>
 ]REFS]
 
+* 利用者の設定
+
+[63] [[利用者エージェント]]は、[[利用者]]が [CODE(HTMLa)@en[ping]]
+[[属性]]の挙動を調節できるようにする[SHOULD[べきです]] [SRC[>>50]]。
+
+[EG[
+[65] 例えば、 [CODE(HTTP)@en[Referer:]] [[ヘッダー]]の送信有無と同時に設定可能とすることができます
+[SRC[>>50]]。
+]EG]
+
+[EG[
+[66] [CODE(HTMLa)@en[ping]] [[属性]]をすべて無視しても構いませんし、
+第三者 [[URL]] を無視するなどの判断を挟んでも構いません。 [SRC[>>50]]
+]EG]
+
 * 処理
+
+[51] [CODE(HTMLa)@en[ping]] [[属性]]の処理は、
+[[要素]][VAR[要素]]とリンク先の[VAR[対象URL]]について、
+次のようにしなければ[MUST[なりません]] [SRC[>>50]]。
+[FIG(steps)[
+= [52] [VAR[値]]を、[VAR[要素]]の [CODE(HTMLa)@en[ping]] [[属性値]]に設定します。
+= [53] [VAR[値]]が [[null]] なら、ここで停止します。
+= [54] [VAR[リスト]]を、[VAR[値]]に[[文字列を間隔で分割]]を適用した結果に設定します。
+= [55] [VAR[リスト]]の各要素[VAR[字句]]について、
+== [56] [VAR[URL]] を、[VAR[要素]]の[F[節点文書]]に[[相対]]に[VAR[字句]]を[[構文解析][URLの構文解析]]した結果に設定します。
+== [57] 
+[FIG(list)[
+- [58] [VAR[URL]] が[[失敗]]でない
+- [59] [VAR[URL]] の [F[scheme][URL scheme]] が [[HTTP(S) scheme]] である
+- [60] [[利用者エージェント]]依存の条件を満たす (>>63)
+]FIG]
+... のすべてを満たす場合、
+=== [61] [[要求]]を [[fetch]] します。
+[FIG(list members)[
+[FIGCAPTION[
+[[要求]]
+]FIGCAPTION]
+: [F[URL][要求URL]] : [VAR[URL]]
+: [F[メソッド][要求メソッド]] : [CODE[POST]]
+: [F[ヘッダーリスト]] :
+[FIG(list members)[
+: [CODE[Ping-From]] : 
+[VAR[要素]]の[F[節点文書]]の[F[起源][文書の起源]]と [VAR[URL]] の[F[起源][URLの起源]]が[[同じ起源]]か、
+[VAR[要素]]の[F[節点文書]]の[F[HTTPS状態]]が [CODE[none]] なら、
+[VAR[要素]]の[F[節点文書]]の[F[URL][文書の番地]]。それ以外なら、 [[null]]。
+: [CODE[Ping-To]] : [VAR[対象URL]]
+]FIG]
+: [F[本体][要求本体]] : [CODE[PING]]
+: [F[クライアント][要求クライアント]] : [VAR[要素]]の[F[節点文書]]の[F[関連する設定群オブジェクト]]
+: [F[終点]] : [CODE[subresource]]
+: [F[credentialsモード]] : [CODE[include]]
+: [F[参照元]] : [CODE[no-referrer]]
+: [F[URL credentials利用]] : [[真]]
+: [F[process response]] : 
+[FIG(steps)[
+= [64] 本 [[fetch]] を [[abort]] して構いません。
+]FIG]
+]FIG]
+]FIG]
+
+;; [62] [[fetch]] の結果は使われません。 [[fetch]] は[[並列に]]行うことができます
+[SRC[>>50]]。結果が使われない以上、どう実装されているか[[著者]]が直接感知することはできません。
 
 [42] [CODE(HTMLa)@en[ping]] [[属性]]の処理は、[[ハイパーリンクをたどる]]処理から呼び出されます。
 
@@ -16,9 +81,40 @@
 
 ;; 実装がどうしているのかは不明。
 
+[69] [CODE(HTTP)@en[Ping-From:]] [[ヘッダー]]は、 [CODE(URI)@en[https:]]
+のページの場合、[[同一起源]]でなければ送信されません。つまり[[同一起源ポリシー]]が適用されます。
+[CODE(URI)@en[http:]] の場合は、[[異なる起源]]であっても送信されます。
+[CODE(HTTP)@en[Referer:]] [[ヘッダー]]の動作 ([[参照元ポリシー]]
+[CODE[no-referrer-when-downgrade]]) に倣ったものと思われますが、
+[[同一起源]]でなければならない分、少し厳しくなっています。
+
+[HISTORY[
+[70] そもそも [CODE(HTMLa)@en[ping]] の [[URL]] は[[著者]]が指定するもので、
+[[著者]]は任意の [[URL]] を指定でき、 [[URL]] に自ページの [[URL]]
+を含めることもできるわけですから、この制約は情報の漏洩を防ぐものではありません。
+[[XHR]] や [[Fetch]] を使って [CODE(HTTP)@en[Ping-From:]] の指定された[[要求]]を送信することはできますから、
+第三者の不正な[[スクリプト]]からの送信を防げるものでもありません。
+この制約が何のためのものなのかは不明です。
+
+[71] >>70 [[CORS preflight]] でOKが出ないと [CODE[POST]] + 
+[CODE(HTTP)@en[Ping-From:]] は送れないのか。それなら、 [[HTTPS]]
+を使っていれば、不正な要求と区別できる。
+
+[72] >>14 で削除された仕様書のコメントによると元々 [CODE(HTTP)@en[Referer:]]
+を含めないことにしていたのは他の [CODE(HTTP)@en[POST]] と区別できるようにするためらしい。
+既存の[[サーバー]]の [[CSRF]] などの検査を壊さないように
+[CODE(HTTP)@en[Referer:]] とは別にほぼ同じ意味の [CODE(HTTP)@en[Ping-From:]]
+を設定することにしたようである。更に付け加えると、 [CODE[ping]] は
+[[CORS]] より古いので、 [CODE(HTTP)@en[Ping-From:]] が他の方法で指定されて[[異なる起源]]に送信される、
+ということは想定されていない模様。
+]HISTORY]
+
 * 関連
 
 [37] 似た機能に [CODE(DOMi)@en[[[Beacon]]]] があります。
+
+[68] [[WebSocket]] の [[Pingフレーム]]や [[HTTP/2]] の [CODE[PING]]
+[[フレーム]]とは無関係です。
 
 * 歴史
 
