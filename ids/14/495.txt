@@ -262,18 +262,7 @@ followed by [VAR[canonicalized pattern]], optionally followed by a [CODE[.]] cha
 
 * Proxies
 
-[609] A [[user agent]] has a [F[PAC]], which is initially [[null]].
-If the [[user agent]] is configured to use a [[PAC file]], it is set to an object
-which represents the file.
-Otherwise, if the [[user agent]] is configured to use one or more proxy servers,
-it is set to a virtual [[PAC file]] which represents those proxy server configurations.
-
-@@
-[610] To [DFN[run a PAC file]] with [VAR[pac]] and [VAR[url]], ...
-
-[611] The steps to [[run a PAC file]] return zero or more [[proxy configurations][proxy configuration]].
-
-[612] A [DFN[proxy configuration]] has [DFN[[F[protocol]]]], which is one of:
+[612] A [DFN[proxy configuration]] has [DFN[[F[protocol][proxy's protocol]]]], which is one of:
 [CODE[tcp]],
 [CODE[unix]],
 [CODE[http]],
@@ -281,13 +270,71 @@ it is set to a virtual [[PAC file]] which represents those proxy server configur
 [CODE[socks4]], and
 [CODE[socks5]].
 
-[613] A [[proxy configuration]] whose [F[protocol]] is
-[CODE[http]], [CODE[https]], [CODE[socks4]], or [CODE[socks5]] has
-[DFN[[F[host]]]], whose value is a [[host]], and
-[DFN[[F[port]]]], whose value is an [[integer]] or [[null]].
+;; [1017] The value [CODE[tcp]] represents direct access (i.e. no proxy).
 
-[614] A [[proxy configuration]] whose [F[protocol]] is
-[CODE[unix]] has [DFN[[F[path]]]], whose value is a [[byte string]].
+[613] A [[proxy configuration]] whose [F[protocol][proxy's protocol]] is
+[CODE[http]], [CODE[https]], [CODE[socks4]], or [CODE[socks5]] has
+[DFN[[F[host][proxy's host]]]], whose value is a [[host]], and
+[DFN[[F[port][proxy's port]]]], whose value is an [[integer]] or [[null]].
+
+[614] A [[proxy configuration]] whose [F[protocol][proxy's protocol]] is
+[CODE[unix]] has [DFN[[F[path][proxy's path]]]], whose value is a [[byte string]].
+
+
+[1000] A [[user agent]] has following fields:
+[FIG(list members)[
+: [DFN[[F[HTTP proxy]]]] : A [[proxy configuration]] or [[null]].
+: [DFN[[F[HTTPS proxy]]]] : A [[proxy configuration]] or [[null]].
+: [DFN[[F[FTP proxy]]]] : A [[proxy configuration]] or [[null]].
+: [DFN[[F[SOCKS proxy]]]] : A [[proxy configuration]] or [[null]].
+: [DFN[[F[[[PAC]] [[URL]]]]  : A [[URL record]] or [[null]].
+: [DFN[[F[use [[WPAD]] flag]]]] : A [[boolean]].
+: [DFN[[F[no proxy hosts]]]] : A list of [[host]]s.
+]FIG]
+
+;; [543] These fields are typically configurable by a [[user]].
+
+[1004] A [[user agent]] has a [F[[[PAC]] script]], which is initially [[null]].
+
+
+[1001] If [F[use [[WPAD]] flag]] is [[true]], the [[user agent]] [MUST[MUST]]
+send appropriate [[WPAD]] request.
+
+[1003] If a [[PAC]] [[URL]] is provided by [[WPAD]] processing,
+the [[user agent]] [MUST[MUST]] [[fetch]] the [[PAC]] file.
+Otherwise, if [F[[[PAC]] [[URL]]]] is not [[null]],
+the [[user agent]] [MUST[MUST]] [[fetch]] the [F[[[PAC]] [[URL]]]].
+When a [[PAC]] script file is [[fetch]]ed, the [[user agent]]'s
+[F[[[PAC]] script]] [MUST[MUST]] be set to the file.
+
+
+[1010] To [DFN[get proxies]] for [[URL record]] [VAR[url]], run these steps:
+[FIG(steps)[
+= [1018] For each [[host]] [VAR[host]] in the [[user agent]]'s [F[no proxy hosts]]:
+== [1019] If [VAR[host]] [[equals][host equivalence]] [VAR[url]]'s [F[host]]:
+=== [1020] Return a list whose only member is a [[proxy configuration]]
+whose [F[protocol][proxy's protocol]] is [CODE[tcp]] and abort these steps.
+= [544] If the [[user agent]]'s [F[[[PAC]] script]] is not [[null]]:
+== [545] Process the [[user agent]]'s [F[[[PAC]] script]] with [VAR[url]].
+== [1011] Return the result of the previous step and abort these steps.
+= [609] If the [[user agent]]'s [F[SOCKS proxy]] is not [[null]]:
+== [610] Return a list whose only member is the [[user agent]]'s [F[SOCKS proxy]]
+and abort these steps.
+= [611] If [VAR[url]]'s [F[scheme][URL scheme]] is [CODE[http][http:]] and 
+the [[user agent]]'s [F[HTTP proxy]] is not [[null]]:
+== [1012] Return a list whose only member is the [[user agent]]'s [F[HTTP proxy]]
+and abort these steps.
+= [1013] If [VAR[url]]'s [F[scheme][URL scheme]] is [CODE[https][https:]] and 
+the [[user agent]]'s [F[HTTPS proxy]] is not [[null]]:
+== [1014] Return a list whose only member is the [[user agent]]'s [F[HTTPS proxy]]
+and abort these steps.
+= [1015] If [VAR[url]]'s [F[scheme][URL scheme]] is [CODE[ftp][ftp:]] and 
+the [[user agent]]'s [F[FTP proxy]] is not [[null]]:
+== [1016] Return a list whose only member is the [[user agent]]'s [F[FTP proxy]]
+and abort these steps.
+= [546] Return a list whose only member is a [[proxy configuration]]
+whose [F[protocol][proxy's protocol]] is [CODE[tcp]].
+]FIG]
 
 @@ [836] Environment variables
 
@@ -333,12 +380,7 @@ Unless stated otherwise, the value is [CODE[none]].
 and a [[user agent]] [VAR[user agent]], optionally with [VAR[credentials]]
 and [VAR[ws]] flags, run these steps:
 [FIG(steps)[
-= [543] If [VAR[user agent]]'s [F[PAC]] is not [[null]]:
-== [544] Let [VAR[proxies]] be the result of [[running a PAC file][run a PAC file]] with 
-[VAR[user agent]]'s [F[PAC]] and [VAR[url]].
-= [545] Otherwise:
-== [546] Let [VAR[proxies]] be a list whose only member is a [[proxy configuration]]
-whose [F[protocol]] is [CODE[tcp]].
+= [1009] Let [VAR[proxies]] be the result of [[getting proxies][get proxies]] for [VAR[url]].
 = [908] Let [VAR[addr]] be [[null]].
 = [914] Let [VAR[port]] be [VAR[url]]'s [F[port]].
 = [547] For each [VAR[proxy]] in [VAR[proxies]], in order, run these substeps:
@@ -2409,7 +2451,7 @@ is [[false]]:
 [621] The terms [DFN[[[serialize an integer]]]], 
 [DFN[[[IPv4 address]]]], 
 [DFN[[[IPv4 serializer]]]],
-[DFN[[[IPv6 address]]]], [DFN[[[domain]]]], [DFN[[[host]]]],
+[DFN[[[IPv6 address]]]], [DFN[[[domain]]]], [DFN[[[host]]]], [DFN[[[equals][host equivalence]]]]
 [DFN[[[URL record]]]],
 [DFN[[F[scheme][URL scheme]]]], [DFN[[F[host]]][URL's host]], [DFN[[F[port]]][URL's port]], and
 [DFN[[F[query]]]]
@@ -2442,6 +2484,10 @@ are defined in the [[Fetch Standard]].
 is defined in the [[DOM Standard]].
 
 [942] [DFN[[ABBR@en[[[SNI]]][Server Name Indication]]]] is specified in [[RFC 6066]].
+
+[1007] [[WPAD]] is defined by the [[Internet Draft]].
+
+[1008] Someday [[PAC]] might be defined at somewhere.
 
 * XXX
 
