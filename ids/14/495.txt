@@ -292,13 +292,68 @@ followed by [VAR[canonicalized pattern]], optionally followed by a [CODE[.]] cha
 : [DFN[[F[no proxy hosts]]]] : A list of [[host]]s.
 ]FIG]
 
-;; [543] These fields are typically configurable by a [[user]].
+[1043] A [[user agent]] [MAY[MAY]] allow the [[user]] to configure
+values of these fields in implementation-dependent ways.
 
 [836] If a [[user agent]] supports [[environment variable]]s, 
 it [MUST[MUST]] run these steps upon initialization:
 [FIG(steps)[
+= [1021] Set the [[user agent]]'s [F[HTTP proxy]] to the result of
+[[parsing environment variable][parse an environment variable]] [CODE[http_proxy]].
+= [1022] Set the [[user agent]]'s [F[HTTPS proxy]] to the result of
+[[parsing environment variable][parse an environment variable]] [CODE[https_proxy]].
+= [1023] Set the [[user agent]]'s [F[FTP proxy]] to the result of
+[[parsing environment variable][parse an environment variable]] [CODE[ftp_proxy]].
+= [1037] Let [VAR[no_proxy]] be the value of the [[user agent]]'s [[process]]'s 
+[[environment variable]] whose name is [CODE[no_proxy]].
+= [1038] If [VAR[no_proxy value]] is not [[null]] and is not the [[empty string]]:
+== [1039] For each substring [VAR[value]] obtained by splitting [VAR[no_proxy value]]
+by a [CODE[,]] character:
+=== [1040] Remove any leading and trailing [[C0 controls and space]] characters
+from [VAR[value]].
+=== [1041] Let [VAR[host]] be the result of applying the [[host parser]] to [VAR[value]].
+=== [1042] Append [VAR[host]] to the [[user agent]]'s [F[no proxy hosts]].
+]FIG]
 
-@@
+[1024] To [DFN[parse an environment variable]] whose name is [VAR[name]],
+run these steps:
+[FIG(steps)[
+= [1025] Let [VAR[value]] be the value of the [[user agent]]'s [[process]]'s 
+[[environment variable]] whose name is [VAR[name]].
+= [1026] If [VAR[value]] is [[null]] or the [[empty string]]:
+== [1027] Return [[null]] and abort these steps.
+= [1028] If [VAR[value]] does not begin with a [[scheme][URL scheme (syntax)]]
+followed by [CODE[://]],
+prepend [CODE[http://]] to [VAR[value]].
+= [1029] Let [VAR[url]] be the result of applying the [[URL parser]] to [VAR[value]].
+= [1030] If [VAR[url]]'s [F[scheme][URL scheme]] is [CODE[http][http:]]
+or [CODE[https][https:]]:
+== [1031] Return a [[proxy configuration]].
+[FIG(list members)[
+[FIGCAPTION[
+[[Proxy configuration][proxy configuration]]
+]FIGCAPTION]
+: [F[protocol][proxy's protocol]] : [VAR[url]]'s [F[scheme][URL scheme]]
+: [F[host][proxy's host]] : [VAR[url]]'s [F[host][URL's host]]
+: [F[port][proxy's port]] : [VAR[url]]'s [F[port][URL's port]]
+: [F[username][proxy's username]] : [VAR[url]]'s [F[username][URL's username]]
+: [F[password][proxy's password]] : [VAR[url]]'s [F[password][URL's password]]
+]FIG]
+= [1032] Otherwise, if [VAR[url]]'s [F[scheme][URL scheme]] is [CODE[socks4][socks4:]]
+or [CODE[socks5][socks5:]] and [CODE[url]]'s [F[host][URL's host]] is not [[null]]:
+== [1033] Return a [[proxy configuration]].
+[FIG(list members)[
+[FIGCAPTION[
+[[Proxy configuration][proxy configuration]]
+]FIGCAPTION]
+: [F[protocol][proxy's protocol]] : [VAR[url]]'s [F[scheme][URL scheme]]
+: [F[host][proxy's host]] : [VAR[url]]'s [F[host][URL's host]]
+: [F[port][proxy's port]] : [VAR[url]]'s [F[port][URL's port]]
+]FIG]
+= [1034] Otherwise:
+== [1035] The [[user agent]] [MAY[MAY]] report an error and [MAY[MAY]]
+terminate the [[user agent]].
+== [1036] Return [[null]].
 ]FIG]
 
 
@@ -2453,16 +2508,21 @@ is [[false]]:
 
 * References
 
-[621] The terms [DFN[[[serialize an integer]]]], 
+[621] The terms 
+[DFN[[[C0 controls and space]]]],
+[DFN[[[serialize an integer]]]], 
 [DFN[[[IPv4 address]]]], 
 [DFN[[[IPv4 serializer]]]],
-[DFN[[[IPv6 address]]]], [DFN[[[domain]]]], [DFN[[[host]]]], [DFN[[[equals][host equivalence]]]]
+[DFN[[[IPv6 address]]]], [DFN[[[domain]]]],
+[DFN[[[host]]]], [DFN[[[host parser]]]], [DFN[[[equals][host equivalence]]]],
+[DFN[scheme][URL scheme (syntax)]],
+[DFN[[[URL parser]]]],
 [DFN[[[URL record]]]],
 [DFN[[F[scheme][URL scheme]]]], [DFN[[F[host]]][URL's host]], [DFN[[F[port]]][URL's port]], and
 [DFN[[F[query]]]]
-are defined in the [[URL Standard]].
+are defined in the [CITE[URL Standard]].
 
-[981] The term [DFN[[[ICANN DOMAINS]]]] is defined in the [[Public Suffix List]].
+[981] The term [DFN[[[ICANN DOMAINS]]]] is defined in the [CITE[Public Suffix List]].
 
 [354] The terms
 [DFN[[[request]]]],
@@ -2482,11 +2542,11 @@ are defined in the [[URL Standard]].
 [DFN[[[obtain a WebSocket connection]]]],
 [DFN[[[HTTP-network-or-cache fetch]]]], and
 [DFN[[[HTTP-network fetch]]]]
-are defined in the [[Fetch Standard]].
+are defined in the [CITE[Fetch Standard]].
 
 [961] The term 
 [DFN[[[converted to ASCII lowercase]]]]
-is defined in the [[DOM Standard]].
+is defined in the [CITE[DOM Standard]].
 
 [942] [DFN[[ABBR@en[[[SNI]]][Server Name Indication]]]] is specified in [[RFC 6066]].
 
