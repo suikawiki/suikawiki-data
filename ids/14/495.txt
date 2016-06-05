@@ -469,18 +469,12 @@ An [[HTTPS state]] value.  Either [CODE[none]], [CODE[deprecated]], or [CODE[mod
 Unless stated otherwise, the value is [CODE[none]].
 ]FIG]
 
-[542] To [DFN[establish a transport]] for an [[URL record]] [VAR[url]]
-and a [[user agent]] [VAR[user agent]], optionally with [VAR[credentials]]
-and [VAR[ws]] flags, run these steps:
+[1054] To [DFN[create a transport for a proxy configuration]] [VAR[proxy]]
+with a [[URL record]] [VAR[url]], run rhese steps:
 [FIG(steps)[
-= [1009] Let [VAR[proxies]] be the result of [[getting proxies][get proxies]] for [VAR[url]].
-= [908] Let [VAR[addr]] be [[null]].
-= [914] Let [VAR[port]] be [VAR[url]]'s [F[port]].
-= [547] For each [VAR[proxy]] in [VAR[proxies]], in order, run these substeps:
-== [548] Set [VAR[request mode]] to ''default''.
-== [549] If [VAR[user agent]] does not support [VAR[proxy]]'s [F[protocol]]:
-=== [550] Set [VAR[transport]] to a [[failure]].
-== [551] Otherwise, switch by [VAR[proxy]]'s [F[protocol]]:
+= [549] If [VAR[user agent]] does not support [VAR[proxy]]'s [F[protocol]]:
+== [550] Return a [[failure]] and abort these steps.
+= [551] Switch by [VAR[proxy]]'s [F[protocol]]:
 [FIG(switch)[
 : [CODE[tcp]] :
 [FIG(steps)[
@@ -488,17 +482,16 @@ and [VAR[ws]] flags, run these steps:
 = [553] Set [VAR[addr]] to the result of applying [[name resolution steps]] 
 to [VAR[url]]'s [F[host]].
 = [554] If [VAR[addr]] is an [[error]]:
-== [555] Set [VAR[transport]] to a [[failure]].
-= [556] Otherwise:
-== [557] If [VAR[ws]] flag is set, [[wait for other connections]]
+== [555] Return a [[failure]] and abort these steps.
+= [557] If [VAR[ws]] flag is set, [[wait for other connections]]
 with [VAR[addr]] and [VAR[port]].
-== [558] Set [VAR[transport]] to the result of 
+= [558] Return the result of 
 [[establishing a TCP transport][establish a TCP transport]]
 to [VAR[addr]] and [VAR[effective port]].
 ]FIG]
 : [CODE[unix]] :
 [FIG(steps)[
-= [559] Set [VAR[transport]] to the result of
+= [559] Return the result of
 [[establishing a UNIX socket domain transport][establish a UNIX socket domain transport]]
 with [VAR[protocol]]'s [F[path]].
 ]FIG]
@@ -508,22 +501,21 @@ with [VAR[protocol]]'s [F[path]].
 with [VAR[url]]'s [F[host]] and [VAR[port]].
 = [561] Let [VAR[proxy port]] be [VAR[proxy]]'s [F[port]].
 = [562] If [VAR[proxy port]] is [[null]]:
-== [563] If [VAR[proxy]]'s [F[protocol]] is [CODE[http]], set [VAR[proxy port]] to [[80]].
-== [564] If [VAR[proxy]]'s [F[protocol]] is [CODE[https]], set [VAR[proxy port]] to [[443]].
+== [563] If [VAR[proxy]]'s [F[protocol]] is [CODE[http]], set [VAR[proxy port]] to [N[80]].
+== [564] If [VAR[proxy]]'s [F[protocol]] is [CODE[https]], set [VAR[proxy port]] to [N[443]].
 = [565] Let [VAR[proxy addr]] be the result of applying [[name resolution steps]] 
 to [VAR[proxy]]'s [F[host]].
 = [566] If [VAR[proxy addr]] is an [[error]]:
-== [567] Set [VAR[transport]] to a [[failure]].
-= [568] Otherwise:
-== [569] Set [VAR[transport]] to the result of 
+== [567] Return a [[failure]] and abort these steps.
+= [568] Let [VAR[transport]] be the result of 
 [[establishing a TCP transport][establish a TCP transport]]
 to [VAR[proxy addr]] and [VAR[proxy port]].
-= [570] If [VAR[transport]] is ''not'' a [[failure]] and
-[VAR[proxy]]'s [F[protocol]] is [CODE[https]]:
+= [570] If [VAR[proxy]]'s [F[protocol]] is [CODE[https]]:
 == [571] Set [VAR[transport]] to the result of running the [[TLS steps]] for
 [VAR[transport]] and [VAR[proxy]]'s [F[host]].
-= [572] If [VAR[transport]] is ''not'' a [[failure]] and
-[VAR[url]]'s [F[scheme][URL scheme]] is [CODE(URI)@en[https]]:
+= [556] If [VAR[transport]] is a [[failure]]:
+== [569] Return a [[failure]] and abort these steps.
+= [572] If [VAR[url]]'s [F[scheme][URL scheme]] is [CODE(URI)@en[https]]:
 == [573] If [VAR[port]] is [[null]]:
 === [574] Let [VAR[target]] be [VAR[url]]'s [F[host]].
 == [575] Otherwise:
@@ -546,7 +538,8 @@ with [VAR[http]] and [VAR[target]].
 === 
 @@ Show proxy auth dialog
 = [580] Otherwise:
-== [581] Set [VAR[request mode]] to ''HTTP proxy''.
+== [581] Set [VAR[transport]]'s [F[request mode]] to ''HTTP proxy''.
+= [548] Return [VAR[transport]].
 ]FIG]
 : [CODE[socks4]] :
 [FIG(steps)[
@@ -554,20 +547,19 @@ with [VAR[http]] and [VAR[target]].
 = [583] Set [VAR[addr]] to the result of applying [[name resolution steps]] 
 to [VAR[url]]'s [F[host]].
 = [584] If [VAR[addr]] is ''not'' an [[IPv4 address]]:
-== [585] Set [VAR[connection]] to a [[failure]].
-= [586] Otherwise:
-== [587] If [VAR[ws]] flag is set, [[wait for other connections]]
+== [585] Return a [[failure]] and abort these steps.
+= [587] If [VAR[ws]] flag is set, [[wait for other connections]]
 with [VAR[addr]] and [VAR[port]].
-== [588] Let [VAR[proxy port]] be [VAR[proxy]]'s [F[port]].
-== [589] If [VAR[proxy port]] is [[null]], set [VAR[proxy port]] to [[1080]].
-== [590] Let [VAR[proxy addr]] be the result of applying [[name resolution steps]] 
+= [588] Let [VAR[proxy port]] be [VAR[proxy]]'s [F[port]].
+= [589] If [VAR[proxy port]] is [[null]], set [VAR[proxy port]] to [N[1080]].
+= [590] Let [VAR[proxy addr]] be the result of applying [[name resolution steps]] 
 to [VAR[proxy]]'s [F[host]].
-== [591] Set [VAR[connection]] to the result of 
+= [591] Let [VAR[transport]] be the result of 
 [[establishing a TCP connection][establish a TCP connection]]
 to [VAR[proxy addr]] and [VAR[proxy port]].
-== [592] Set [VAR[connection]] to the result of
+= [592] Return the result of
 [[establishing a SOCKS4 connection][establish a SOCKS4 connection]]
-with [VAR[connection]], [VAR[addr]], and [VAR[effective port]].
+with [VAR[transport]], [VAR[addr]], and [VAR[effective port]].
 ]FIG]
 : [CODE[socks5]] :
 [FIG(steps)[
@@ -575,30 +567,44 @@ with [VAR[connection]], [VAR[addr]], and [VAR[effective port]].
 = [594] If [VAR[ws]] flag is set, [[wait for other connections]]
 with [VAR[url]]'s [F[host]] and [VAR[port]].
 = [595] Let [VAR[proxy port]] be [VAR[proxy]]'s [F[port]].
-= [597] If [VAR[proxy port]] is [[null]], set [VAR[proxy port]] to [[1080]].
+= [597] If [VAR[proxy port]] is [[null]], set [VAR[proxy port]] to [N[1080]].
 = [596] Let [VAR[proxy addr]] be the result of applying [[name resolution steps]] 
 to [VAR[proxy]]'s [F[host]].
-= [598] Set [VAR[transport]] to the result of 
+= [598] Let [VAR[transport]] be the result of 
 [[establishing a TCP transport][establish a TCP transport]]
 to [VAR[proxy addr]] and [VAR[proxy port]].
-= [599] Set [VAR[transport]] to the result of
+= [599] Return the result of
 [[establishing a SOCKS5 transport][establish a SOCKS5 transport]]
 with [VAR[transport]], [VAR[url]]'s [F[host]], and [VAR[effective port]].
 ]FIG]
 ]FIG]
+
+]FIG]
+
+[542] To [DFN[establish a transport]] for an [[URL record]] [VAR[url]]
+and a [[user agent]] [VAR[user agent]], optionally with [VAR[credentials]]
+and [VAR[ws]] flags, run these steps:
+[FIG(steps)[
+= [1009] Let [VAR[proxies]] be the result of [[getting proxies][get proxies]] for [VAR[url]].
+= [908] Let [VAR[addr]] be [[null]].
+= [914] Let [VAR[port]] be [VAR[url]]'s [F[port]].
+= [547] For each [VAR[proxy]] in [VAR[proxies]], in order, run these substeps:
+== [1053] Set [VAR[transport]] to the result of 
+[[creating a transport for proxy][create a transport for a proxy configuration]]
+[VAR[proxy]] with [VAR[url]].
 == [600] If [VAR[transport]] is not a [[failure]]:
 === [601] If [VAR[url]]'s [F[scheme][URL scheme]] is [CODE(URI)@en[https][https:]]:
 ==== [602] Set [VAR[transport]] to the result of running the [[TLS steps]] for
 [VAR[transport]], [VAR[url]]'s [F[host]], [VAR[credentials]] flag, and [VAR[ws]] flag,
 in [VAR[user agent]].
 == [927] If [VAR[transport]] is not a [[failure]]:
-=== [934] If [VAR[request mode]] is '''not''' ''HTTP proxy'' and
+=== [934] If [VAR[transport]]'s [F[request mode]] is '''not''' ''HTTP proxy'' and
 [VAR[url]]'s [F[scheme][URL scheme]] is [CODE(URI)@en[ftp][ftp:]]:
 ==== [935] 
 @@ Use [[FTP]]
 === [931] Otherwise, if none of these conditions is [[true]]:
 [FIG(list)[
-- [930] [VAR[request mode]] is ''HTTP proxy''
+- [930] [VAR[transport]]'s [F[request mode]] is ''HTTP proxy''
 - [932] [VAR[url]]'s [F[scheme][URL scheme]] is [CODE(URI)@en[http][http:]]
 - [933] [VAR[url]]'s [F[scheme][URL scheme]] is [CODE(URI)@en[https][https:]]
 ]FIG]
@@ -612,7 +618,6 @@ in [VAR[user agent]].
 ==== [912] Set [VAR[transport]]'s
 [F[remote address or domain][transport's remote address or domain]] to [VAR[addr]].
 === [913] Set [VAR[transport]]'s [F[remote port][transport's remote port]] to [VAR[port]].
-=== [604] Set [VAR[transport]]'s [F[request mode]] to [VAR[request mode]].
 === [605] Return [VAR[transport]] and abort these steps.
 = [606] Return a [[failure]].
 ]FIG]
