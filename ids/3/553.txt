@@ -82,13 +82,12 @@
 == [76] [VAR[置換]]を、[[真]]に設定します。
 = [77] それ以外なら、
 == [78] [VAR[置換]]を、[[偽]]に設定します。
-= [79] [VAR[メソッド]]を、[VAR[提出子]]の[F[メソッド][要求メソッド]]に設定します。
-= [67] [VAR[メソッド]]が[[ダイアログ][<dialog>]]なら、
-== [81] [[ダイアログ][<dialog>]]の[[提出]]処理 (>>80) をします。
-= [82] それ以外なら、
-== [65] [VAR[scheme]] を、[VAR[URL]]の [F[scheme][URL scheme]] に設定します。
-== [66] [VAR[enctype]] を、[VAR[提出子]]の [F[enctype]] に設定します。
-== [83] [VAR[scheme]] と [VAR[enctype]] によって決めた処理 (>>84, >>85) を実行します。
+= [79] [VAR[提出子]]の[F[メソッド][要求メソッド]]により、
+[FIG(switch)[
+: [CODE[GET]] : >>84 へ
+: [CODE[POST]] : >>85 へ
+: [[ダイアログ][<dialog>]] : >>80 へ
+]FIG]
 ]FIG]
 
 * フォーム検証
@@ -167,7 +166,13 @@ HTML 4 が[Q[確立された慣習]]として対応することを要求して�
 == [92] [VAR[scheme]] が [CODE(URI)@en[mailto][mailto:]] なら、
 === [93] [VAR[query]] の [CODE[+]] をすべて [CODE[%20]] に置換します。
 == [90] [VAR[URL]] の[F[クエリー][URL query]]を、[VAR[query]] に設定します。
-= [91] [VAR[URL]] に [[plan to navigate]] します。
+= [91] [[plan to navigate]] します。
+[FIG(list members)[
+[FIGCAPTION[
+[[要求]]
+]FIGCAPTION]
+: [F[URL][要求URL]] : [VAR[URL]]
+]FIG]
 ]FIG]
 
 [88] >>87 は [[HTML Standard]] では [CODE(URI)@en[ftp:]] の場合も除外されることになっていますが、
@@ -178,7 +183,94 @@ HTML 4 が[Q[確立された慣習]]として対応することを要求して�
 
 ** [CODE(HTTP)@en[POST]] の場合
 
-[85] 
+[85] [VAR[メソッド]]が [CODE(HTTP)@en[POST]] の場合には、
+次のようにします [SRC[>>38]]。
+[FIG(steps)[
+= [101] [VAR[URL]]の [F[scheme][URL scheme]] が [[HTTP(S) scheme]] なら、
+== [102] [VAR[提出子]]の [F[enctype]] により、
+[FIG(switch)[
+: [CODE(MIME)@en[text/plain]] : [[plan to navigate]] します。
+[FIG(list members)[
+[FIGCAPTION[
+[[要求]]
+]FIGCAPTION]
+: [F[URL][要求URL]] : [VAR[URL]]
+: [F[メソッド][要求メソッド]] : [CODE[POST]]
+: [F[ヘッダーリスト]] :
+[FIG(list members)[
+: [CODE(HTTP)@en[Content-Type]] : [CODE(MIME)@en[text/plain]]
+]FIG]
+: [F[本体][要求本体]] : [VAR[フォームデータ集合]]と[VAR[符号化]]に関して
+[CODE(MIME)@en[text/plain]] [[直列化器]]を適用した結果を[VAR[符号化]]で[[符号化]]したもの
+]FIG]
+: [CODE(MIME)@en[multipart/form-data]] : 
+[VAR[フォームデータ集合]]と[VAR[符号化]]に関して
+[CODE(MIME)@en[multipart/form-data]] [[符号化器]]を適用して得た[VAR[本体]]と[VAR[境界文字列]]を使って、
+[[plan to navigate]] します。
+[FIG(list members)[
+[FIGCAPTION[
+[[要求]]
+]FIGCAPTION]
+: [F[URL][要求URL]] : [VAR[URL]]
+: [F[メソッド][要求メソッド]] : [CODE[POST]]
+: [F[ヘッダーリスト]] :
+[FIG(list members)[
+: [CODE(HTTP)@en[Content-Type]] : [CODE(MIME)@en[multipart/form-data;]], [CODE[U+0020]],
+[CODE[boundary=]], [VAR[境界文字列]]を連結したもの
+]FIG]
+: [F[本体][要求本体]] : [VAR[本体]]
+]FIG]
+: [CODE(MIME)@en[application/x-www-form-urlencoded]] : [[plan to navigate]] します。
+[FIG(list members)[
+[FIGCAPTION[
+[[要求]]
+]FIGCAPTION]
+: [F[URL][要求URL]] : [VAR[URL]]
+: [F[メソッド][要求メソッド]] : [CODE[POST]]
+: [F[ヘッダーリスト]] :
+[FIG(list members)[
+: [CODE(HTTP)@en[Content-Type]] : [CODE(MIME)@en[application/x-www-form-urlencoded]]
+]FIG]
+: [F[本体][要求本体]] : [VAR[フォームデータ集合]]と[VAR[符号化]]に関して
+[CODE(MIME)@en[application/x-www-form-urlencoded]] [[直列化器]]を適用した結果を
+[[UTF-8符号化]]したもの
+]FIG]
+]FIG]
+= [103] それ以外なら、
+== [104] [VAR[URL]]の [F[scheme][URL scheme]] が [CODE(URI)@en[mailto][mailto:]]
+なら、
+=== [67] [VAR[提出子]]の [F[enctype]] が [CODE(MIME)@en[text/plain]] なら、
+==== [81] [VAR[本体]]を、[VAR[フォームデータ集合]]と[VAR[符号化]]に関して
+[CODE(MIME)@en[text/plain]] [[直列化器]]を適用した結果に設定します。
+=== [82] それ以外なら、
+==== [83] [VAR[本体]]を、[VAR[フォームデータ集合]]と[VAR[符号化]]に関して
+[CODE(MIME)@en[application/x-www-form-urlencoded]] [[直列化器]]を適用した結果に設定します。
+=== [94] [VAR[query]] を、[VAR[URL]] の[F[クエリー][URL query]]に設定します。
+=== [96] [VAR[query]] が [[null]] なら、
+==== [97] [VAR[query]] を、[[空文字列]]に設定します。
+=== [95] [VAR[query]] が空でなければ、
+==== [98] [VAR[query]] の末尾に、 [CODE[&]] を追加します。
+=== [99] [VAR[query]] の末尾に、 [CODE[body=]] を追加します。
+=== [106] [VAR[query]] の末尾に、[VAR[本体]]を[[既定符号化集合]]を使って
+[[UTF-8パーセント符号化]]した結果を追加します。
+=== [100] [VAR[URL]] の[F[クエリー][URL query]]を、 [VAR[query]] に設定します。
+== [105] [[plan to navigate]] します。
+[FIG(list members)[
+[FIGCAPTION[
+[[要求]]
+]FIGCAPTION]
+: [F[URL][要求URL]] : [VAR[URL]]
+]FIG]
+]FIG]
+
+;; [107] [[HTML Standard]] では、なぜか [CODE(URI)@en[mailto:]]
+で [CODE(MIME)@en[application/x-www-form-urlencoded]]
+の場合に最後に[[UTF-8パーセント符号化]]していませんが、
+[[Chrome]] はするようです。 [TIME[2016-06-06T15:05:29.0Z]]
+
+;; [108] [[HTML Standard]] はその他の [[URL scheme]] の場合を明確にしていませんが、
+[[Chrome]] は[VAR[URL]]そのままの [[navigate]] とするようです。
+[TIME[2016-06-06T15:05:58.00Z]]
 
 ** ダイアログの提出
 
@@ -239,11 +331,13 @@ HTML 4 が[Q[確立された慣習]]として対応することを要求して�
 仕様や実装によって実際に使用できる組合せは限られてきます。
 >>7 をご覧ください。
 
-** WF2
+** HTML5
 
-- [[Web Forms 2.0]]
+- [66] [[Web Forms 2.0]]
 -- [CSECTION@en[1.12. Security]]
 <IW:WF2:"#security">
+
+[65] [CITE@en-GB-x-Hixie[Web Forms 2.0]] ([TIME[2009-01-05 20:07:15 +09:00]] 版) <http://www.whatwg.org/specs/web-forms/current-work/#for-http>
 
 
 ** 実装
