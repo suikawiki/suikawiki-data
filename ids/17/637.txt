@@ -11,9 +11,17 @@
 - [11] [CITE[ECMAScript® 2017 Language Specification]]
 ([TIME[2016-06-04 05:39:35 +09:00]])
 <https://tc39.github.io/ecma262/#sec-escape-string>
+- [15] [CITE[ECMAScript® 2017 Language Specification]] ([TIME[2016-06-04 05:39:35 +09:00]]) <https://tc39.github.io/ecma262/#sec-unescape-string>
 ]REFS]
 
-* 符号化
+* [CODE[%u]] 符号化
+
+[16] [DFN[[CODE(URI)[%u[VAR[HHHH]]]]]] は、 [[JavaScript]] の[[関数]]
+[CODE(JS)@en[[[escape()]]]], [CODE(JS)@en[[[unescape()]]]] で用いられている[[符号化]]です。
+[[URL]] の[[パーセント符号化]]と半ば意図的に混同され、現在でもたまに用いられています。
+
+[17] 仕様上は [[URL]] で [CODE(URI)[%u]] [[符号化]]を用いることは認められていません。
+
 
 [4] [[Latin1]] [[文字]] ([CODE(char)[[[U+00FF]]]] [[以下]]) は[[百分率符号化]]されます。
 
@@ -25,6 +33,13 @@
 [7] 歴史的には、 [CODE(char)[[[U+0020]]]] が [CODE(URI)[[[+]]]] になることがありました。
 
 * 歴史
+
+** JavaScript
+
+[18] [CODE(URI)[[[%u]]]] による[[符号化]]は [[ECMA-262]] の第1版で 
+[CODE(JS)@en[[[escape()]]]], [CODE(JS)@en[[[unescape()]]]] 両[[関数]]の挙動として規定されました。
+この挙動は紆余曲折を経て現在では各 [[JavaScript]] [[エンジン]]で実装されています。
+
 
 [9] [CITE@ja[Escape]] ([TIME[2011-06-12 11:47:57 +09:00]] 版) <http://web.archive.org/web/20050222015746/http://www.felix.jp/~yugo/js/guide/escape.html>
 
@@ -46,7 +61,54 @@
 
 [10] [CITE[Bug 22594 – '''['''dogfood''']''' JavaScript escape() is incompatable w/ 4.x]] ([TIME[2011-06-12 11:51:18 +09:00]] 版) <https://bugzilla.mozilla.org/show_bug.cgi?id=22594>
 
-* 実装
+[150] [CITE[Bug 44272 - javascript escape and unescape don't work properly with unicode chars]] <https://bugzilla.mozilla.org/show_bug.cgi?id=44272>
+
+** Perl
+
+[25] [[CGI.pm]] は [CODE(URI)@en[%[VAR[HHHH]]]]
+の[[復号]]を実装しています (非 [[EBCDIC]] 環境のみ)。
+ただし[[サロゲート・ペア]]はそのまま2[[文字]]になってしまいます。
+
+[FIG(quote)[
+[FIGCAPTION[
+[26] [CITE[URI::Escape::JavaScript - search.cpan.org]]
+<http://search.cpan.org/~taniguchi/URI-Escape-JavaScript-0.04/lib/URI/Escape/JavaScript.pm>
+]FIGCAPTION]
+
+>URI::Escape doesn't work for escaping and unescaping JavaScript like Unicode URI-escape ("%uXXXX"). But you can use this module to do those.
+]FIG]
+
+[FIG(quote)[
+[FIGCAPTION[
+[27] [CITE[404 Blog Not Found:CPAN - URI::Escape::XS Released!]] ([TIME[2007-04-28 04:04:46 +09:00]] 版) <http://blog.livedoor.jp/dankogai/archives/50818918.html>
+]FIGCAPTION]
+
+>もう一つは、%uHHHHの対応。一応にぽたん作のURI::Escape::JavaScriptというものがあるのですが、コードを見るとSurrogate Pairに未対応。
+
+>
+In spite of that, there are a significant number of URIs with %uHHHH
+escapes. Therefore this module supports decoding only.
+]FIG]
+
+** IRI
+
+[FIG(quote)[
+[FIGCAPTION[
+[19] [CITE@en[RFC 3987 - Internationalized Resource Identifiers (IRIs)]] ([TIME[2011-05-08 01:17:48 +09:00]] 版) <http://tools.ietf.org/html/rfc3987#appendix-A.3>
+]FIGCAPTION]
+
+>Instead of using the existing percent-encoding convention of URIs,
+which is based on octets, the idea was to create a new encoding
+convention; for example, to use "%u" to introduce UCS code points.
+Using the existing octet-based percent-encoding mechanism does not
+need an upgrade of the URI syntax and does not need corresponding
+server upgrades.
+]FIG]
+
+[20] [[RFC 3987]] は >>19 のように述べており、 [CODE(URI)[[[%u]]]] 
+を使う方法を導入せずとも既存の[[パーセント符号化]]だけで同じことが実現できて互換性も高いとしています。
+
+**
 
 [3] [CITE@en[Functions - MDC Docs]] ([TIME[2011-06-12 11:38:48 +09:00]] 版) <https://developer.mozilla.org/en/Core_JavaScript_1.5_Guide/Functions#escape_and_unescape_Functions>
 
@@ -67,3 +129,28 @@
 [14] [CITE[JavaScriptにおけるURLエンコードの処理]]
 ( ([TIME[2003-02-03 15:40:49 +09:00]] 版))
 <http://www.cresc.co.jp/tech/java/URLencoding/JavaScript_URLEncoding.htm>
+
+[FIG(quote)[
+[FIGCAPTION[
+[21] [CITE@en[Percent-encoding - Wikipedia, the free encyclopedia]] ([TIME[2007-04-18 03:08:17 +09:00]] 版) <http://en.wikipedia.org/wiki/Percent-encoding#Non-standard_implementations>
+]FIGCAPTION]
+
+>There exists a non-standard encoding for Unicode characters: %uxxxx, where xxxx is a Unicode value represented as four hexadecimal digits. This behavior is not specified by any RFC and has been rejected by the W3C. The third edition of ECMA-262 still includes an escape(string) function that uses this syntax, but also an encodeURI(uri) function that converts to UTF-8 and percent-encodes each octet.
+]FIG]
+
+[22] [CODE(JS)@en[[[escape()]]]] を誤って使っているらしく [CODE[[[%u]]]]
+が使われることが今でも大きなサイトでもあったりします。 [TIME[2014-09-06T22:59:46.600Z]]
+
+[24] [[ニコニコ動画]]の [[URL]] で [CODE[%u]] が使われています。
+
+[FIG(quote)[
+[FIGCAPTION[
+[23] [CITE@ja[民泊のエアビーアンドビー、苦情サイト新設 - WSJ]]
+( ([[NATHAN OLIVAREZ-GILES]]著, [TIME[2016-06-03 19:05:57 +09:00]]))
+<http://jp.wsj.com/articles/SB10513819889225894892604582103810164964978>
+]FIGCAPTION]
+
+> <meta name="apple-itunes-app" content="app-id=364387007,app-argument=wsj://launch?articleid=SB10513819889225894892604582103810164964978&headline=%u6C11%u6CCA%u306E%u30A8%u30A2%u30D3%u30FC%u30A2%u30F3%u30C9%u30D3%u30FC%u3001%u82E6%u60C5%u30B5%u30A4%u30C8%u65B0%u8A2D&weburl=http://jp.wsj.com/articles/SB10513819889225894892604582103810164964978" />
+> <meta name="al:ios:url" content="wsj://launch?articleid=SB10513819889225894892604582103810164964978&headline=%u6C11%u6CCA%u306E%u30A8%u30A2%u30D3%u30FC%u30A2%u30F3%u30C9%u30D3%u30FC%u3001%u82E6%u60C5%u30B5%u30A4%u30C8%u65B0%u8A2D&weburl=http://jp.wsj.com/articles/SB10513819889225894892604582103810164964978" />
+
+]FIG]
