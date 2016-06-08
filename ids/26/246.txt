@@ -28,14 +28,40 @@
 
 [9] 右クリックされたことは [CODE[rightclick]] イベントで取得できます。
 
+[11] 地図上の[[クリック]]も標準状態では地図の外側の [[DOM]] [[要素]]の[[イベント]]として[[伝播]]しますが、
+[[Google Maps]] の [CODE[click]] や [CODE[rightclick]] のイベントにコールバック関数を登録していると、
+地図外には伝播しなくなる (場合もある) ようです。
+
 [10] コールバック関数の引数の [CODE[MouseEvent]] オブジェクトは、
 ドキュメントによると [CODE[latLng]] プロパティーしかありませんが、
 実際には ([CODE[Map]] オブジェクトの場合) [CODE[pixel]] プロパティーがあって、そこから [CODE[x]] と [CODE[y]]
 の座標が取得できます。 (ドキュメントにないのですが、世間ではまま使われているようです。)
+[CODE[Map]] 以外のオブジェクトでの右クリックだと [CODE[pixel]]
+は利用できないことがあります。
 
-[11] 地図上の[[クリック]]も標準状態では地図の外側の [[DOM]] [[要素]]の[[イベント]]として[[伝播]]しますが、
-[[Google Maps]] の [CODE[click]] や [CODE[rightclick]] のイベントにコールバック関数を登録していると、
-地図外には伝播しなくなる (場合もある) ようです。
+[12] より安全・確実に地図画面上の座標を取得したいときは、少し面倒ですが、 OverlayView から
+getProjection で取得できるオブジェクトを使うと良いようです。
+(Map の getProjection で取得できるオブジェクトは違う座標系になっていて、
+そのままでは使えません。)
+
+[FIG[
+[PRE(js code)[
+  var Overlay = function () { };
+  Overlay.prototype = new google.maps.OverlayView();
+  Overlay.prototype.draw = function () {
+  };
+  Overlay.prototype.remove = function () {
+  };
+
+  var overlay = new Overlay;
+  overlay.setMap (map);
+
+  object.addListener ('rightclick', function (ev) {
+    var xy = map.getProjection ().fromLatLngToPoint (ev.latLng);
+    console.log (xy.x, xy.y);
+  });
+]PRE]
+]FIG]
 
 * メモ
 
