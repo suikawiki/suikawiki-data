@@ -2566,9 +2566,11 @@ is [[false]]:
 : [DFN[[F[transport][FTP connection's transport]]]] : A [[transport]].
 : [DFN[[F[read buffer][FTP connection's read buffer]]]] : A [[byte string]].
 Initially, an empty [[byte string]].
-: [DFN[[F[state][FTP connection's state]]]] : Initially, ''initial state''.
+: [DFN[[F[state][FTP connection's state]]]] : Initially, ''connected state''.
 : [DFN[[F[username][FTP connection's username]]]] : A [[string]].
 : [DFN[[F[password][FTP connection's password]]]] : A [[string]].
+: [DFN[[F[established promise][FTP connection's established promise]]]] : A [[promise]].
+Initially, an unresolved [[promise]].
 ]FIG]
 
 [1068] An [DFN[FTP reply]] has following states:
@@ -2647,7 +2649,6 @@ run these steps:
 : [F[username][FTP connection's username]] : [VAR[username]]
 : [F[password][FTP connection's password]] : [VAR[password]]
 ]FIG]
-= [1074] Let [VAR[promise]] be a [[promise]].
 = [1067] Let [VAR[current code]] be [[null]].
 = [1066] Let [VAR[current text]] be an empty [[byte string]].
 = [911] Configure [VAR[transport]] to run these substeps whenever
@@ -2695,9 +2696,10 @@ it notifies of 正常終了の受信 or 中断 with [VAR[reset flag]]:
 @@
 =
 @@
-= [1089] Reject [VAR[promise]] with [VAR[exit]].
+= [1089] Reject [VAR[ftp]]'s [F[established promise][FTP connection's established promise]]
+with [VAR[exit]].
 ]FIG]
-= [1088] Return [VAR[promise]].
+= [1088] Return [VAR[ftp]].
 ]FIG]
 
 @@ 
@@ -2705,11 +2707,14 @@ it notifies of 正常終了の受信 or 中断 with [VAR[reset flag]]:
 異常終了として、ここで停止します。
 
 
-@@
-[910] To [DFN[establish a FTP data connection]] with ...
+[910] To [DFN[establish a FTP data connection]] for [VAR[host]] and [VAR[port]],
+run these steps:
 [FIG(steps)[
-= [VAR[transport]]'s [F[remote address or domain][transport's remote address or domain]]
-
+= [1156] If [VAR[port]] is less than [N[1024]], is greater than [N[65535]],
+or is one of [[bad ports]]:
+==
+@@ Abort
+=
 @@
 ]FIG]
 
@@ -2736,7 +2741,7 @@ run these steps:
 run these steps with [[FTP reply]] [VAR[reply]],
 switched by [VAR[ftp]]'s [F[state][FTP connection's state]]:
 [FIG(switch)[
-: ''Initial state'' : 
+: ''Connected state'' : 
 [FIG(steps)[
 = [1099] If [VAR[reply]] is not [[null]]:
 == [1100] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''[CODE[USER]] reply state''.
@@ -2750,8 +2755,8 @@ over [VAR[ftp]].
 [FIG(steps)[
 = [1109] If [VAR[reply]] is not [[null]]:
 == [1111] If [VAR[reply]]'s [F[first code]] is [CODE[2]]:
-=== [1126] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''[CODE[TYPE]] reply state''.
-=== [1127] [[Send FTP command][send FTP command]] [CODE[TYPE]] and [CODE[I]].
+=== [1157] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''authenticated state''.
+=== [1126] Resolve [VAR[ftp]]'s [F[established promise][FTP connection's established promise]].
 == [1112] Otherwise, [VAR[reply]]'s [F[first code]] is [CODE[3]]:
 === [1118] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''before [CODE[PASS]] reply state''.
 === [1119] [[Send FTP command][send FTP command]] [CODE[PASS]] with
@@ -2766,8 +2771,8 @@ over [VAR[ftp]].
 [FIG(steps)[
 = [1120] If [VAR[reply]] is not [[null]]:
 == [1121] If [VAR[reply]]'s [F[first code]] is [CODE[2]]:
-=== [1128] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''[CODE[TYPE]] reply state''.
-=== [1129] [[Send FTP command][send FTP command]] [CODE[TYPE]] with [CODE[I]].
+=== [1127] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''authenticated state''.
+=== [1158] Resolve [VAR[ftp]]'s [F[established promise][FTP connection's established promise]].
 == [1122] Otherwise:
 === [1123] [[Request FTP authentication][request FTP authentication]] for [VAR[ftp]].
 = [1124] Otherwise:
@@ -2781,10 +2786,12 @@ over [VAR[ftp]].
 [F[remote address or domain][transport's remote address or domain]] is an 
 [[IPv6 address]]:
 === [1140] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''[CODE[PASV]] reply state''.
-=== [1138] [[Send FTP command][send FTP command]] [CODE[EPSV]] with [CODE[null]].
+=== [1138] [[Send FTP command][send FTP command]] [CODE[EPSV]] with [CODE[null]]
+over [VAR[ftp]].
 == [1139] Otherwise:
 === [1132] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''[CODE[EPSV]] reply state''.
-=== [1136] [[Send FTP command][send FTP command]] [CODE[PASV]] with [CODE[null]].
+=== [1136] [[Send FTP command][send FTP command]] [CODE[PASV]] with [CODE[null]]
+over [VAR[ftp]].
 = [1134] Otherwise:
 == [1135] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
 ]FIG]
@@ -2798,13 +2805,15 @@ where [VAR[digits]] represents one or more bytes in range [0x30, 0x39]:
 === [1133] Let [VAR[p1]] and [VAR[p2]] be the first such match's last two
 [VAR[digits]] substrings, respectively, interpreted as decimal integers encoded in [[UTF-8]].
 === [1143] Let [VAR[port]] be [VAR[p1]] × 256 + [VAR[p2]].
-=== [1144] Let [VAR[promise]] be the result of
-[[establishing an FTP data connection][establish an FTP data connection]] for
+=== [1144] 
+[[Establish an FTP data connection][establish an FTP data connection]] for
 [VAR[ftp]]'s [F[transport][FTP connection's transport]]'s
 [F[remote address or domain][transport's remote address or domain]]
 and [VAR[port]].
-=== [1152] Scheduled to run these substeps when [VAR[promise]] is resolved:
+===
 @@
+== [1154] Otherwise:
+=== [1155] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
 = [1142] Otherwise:
 == [1145] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
 ]FIG]
@@ -2817,13 +2826,15 @@ and [VAR[port]].
 where [VAR[digits]] represents one or more bytes in range [0x30, 0x39]:
 === [1148] Let [VAR[port]] be the first such match's [VAR[digits]] substring,
 interpreted as a decimal integer encoded in [[UTF-8]].
-=== [1149] Let [VAR[promise]] be the result of
-[[establishing an FTP data connection][establish an FTP data connection]] for
+=== [1149] 
+[[Establish an FTP data connection][establish an FTP data connection]] for
 [VAR[ftp]]'s [F[transport][FTP connection's transport]]'s
 [F[remote address or domain][transport's remote address or domain]]
 and [VAR[port]].
-=== [1153] Scheduled to run these substeps when [VAR[promise]] is resolved:
+===
 @@
+== [1152] Otherwise:
+=== [1153] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
 = [1150] Otherwise:
 == [1151] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
 ]FIG]
@@ -2832,8 +2843,17 @@ and [VAR[port]].
 @@
 ]FIG]
 
+[1074] To [DFN[send an FTP request]] [VAR[request]] over [VAR[ftp]],
+run these steps:
+[FIG(steps)[
+= [1159] Assertion: [VAR[ftp]]'s [F[state][FTP connection's state]] has to be
+''authenticated state''.
+= [1128] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''[CODE[TYPE]] reply state''.
+= [1129] [[Send FTP command][send FTP command]] [CODE[TYPE]] with [CODE[I]] over [VAR[ftp]].
 
 
+@@
+]FIG]
 
 
 @@
@@ -2848,8 +2868,6 @@ and [VAR[port]].
 = [VAR[ファイルパス引数]]を、[VAR[パス引数]]に設定します。
 = [VAR[ファイルパス引数]]の末尾が [CODE[/]] なら、これを削除します。
 
-@@ [[Chrome]] では[VAR[ポート]]が1024[[未満]]か [[port blocking]] 対象なら、
-異常終了とし、ここで停止します。
 
 
 = [VAR[UA]] が [[Firefox]] か [[IE]] なら、
@@ -2979,6 +2997,7 @@ are defined in the [CITE[URL Standard]].
 [981] The term [DFN[[[ICANN DOMAINS]]]] is defined in the [CITE[Public Suffix List]].
 
 [354] The terms
+[DFN[[[bad ports]]]],
 [DFN[[[request]]]],
 [DFN[[F[current url]]]],
 [DFN[[F[method][request method]]]],
