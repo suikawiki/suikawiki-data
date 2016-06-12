@@ -262,6 +262,19 @@ followed by [VAR[canonicalized pattern]], optionally followed by a [CODE[.]] cha
 == [904] [VAR[url]]'s [F[port]], [[serialized][serialize an integer]]
 ]FIG]
 
+[622] The [DFN[effective port]] of [VAR[url]] is the value returned by these steps:
+[FIG(steps)[
+= [623] Let [VAR[port]] be [VAR[url]]'s [F[port][URL's port]].
+= [624] If [VAR[port]] is [[null]]:
+== [625] Set [VAR[port]] to the value determined by the [VAR[url]]'s [F[scheme][URL scheme]]:
+[FIG(switch)[
+: [CODE(URI)@en[ftp]] : [[21]]
+: [CODE(URI)@en[http]] : [[80]]
+: [CODE(URI)@en[https]] : [[443]]
+]FIG]
+= [626] Return [VAR[port]].
+]FIG]
+
 [1057] The [DFN[[F[pathquery]]]] of a [[URL record]] [VAR[url]] is the concatenation of:
 [FIG(list)[
 = [846] [CODE[/]]
@@ -494,7 +507,7 @@ with a [[URL record]] [VAR[url]], run rhese steps:
 [FIG(steps)[
 = [552] Set [VAR[effective port]] be the [[effective port]] of [VAR[url]].
 = [553] Set [VAR[addr]] to the result of applying [[name resolution steps]] 
-to [VAR[url]]'s [F[host]].
+to [VAR[url]]'s [F[host][URL's host]].
 = [554] If [VAR[addr]] is an [[error]]:
 == [555] Return a [[failure]] and abort these steps.
 = [557] If [VAR[ws]] flag is set, [[wait for other connections]]
@@ -507,7 +520,8 @@ to [VAR[addr]] and [VAR[effective port]].
 [FIG(steps)[
 = [559] Return the result of
 [[establishing a UNIX socket domain transport][establish a UNIX socket domain transport]]
-with [VAR[protocol]]'s [F[path]].
+with [VAR[proxy]]'s [F[path][proxy's path]], [VAR[url]]'s [F[host][URL's host]],
+and [VAR[url]]'s [[effective port]].
 ]FIG]
 : [CODE[http]] or [CODE[https]] :
 [FIG(steps)[
@@ -540,7 +554,7 @@ to [VAR[proxy addr]] and [VAR[proxy port]].
 ]FIG]
 == [578] Set [VAR[transport]] to the result of
 [[establishing an HTTP [CODE(HTTP)[CONNECT]] transport][establish an HTTP [CODE(HTTP)@en[CONNECT]] transport]]
-with [VAR[http]] and [VAR[url]]'s [F[hostport]].
+with [VAR[http]] and [VAR[url]].
 @@ [VAR[credentials]] flag and proxy credentials
 == [579] If [VAR[transport]] is a [[failure]] whose HTTP response's [F[status]] is
 [CODE[407]]:
@@ -548,6 +562,11 @@ with [VAR[http]] and [VAR[url]]'s [F[hostport]].
 @@ Show proxy auth dialog
 = [580] Otherwise:
 == [581] Set [VAR[transport]]'s [F[request mode]] to ''HTTP proxy''.
+== [576] Set [VAR[transport]]'s 
+[F[remote address or domain][transport's remote address or domain]] to [VAR[url]]'s
+[F[host][URL's host]].
+== [909] Set [VAR[transport]]'s [F[remote port][transport's remote port]] to
+[VAR[url]]'s [[effective port]].
 = [548] Return [VAR[transport]].
 ]FIG]
 : [CODE[socks4]] :
@@ -619,14 +638,6 @@ in [VAR[user agent]].
 ]FIG]
 ==== [929] Set [VAR[transport]] to a [[failure]].
 == [603] If [VAR[transport]] is not a [[failure]]:
-=== [909] If [VAR[addr]] is [[null]]:
-==== [910] Set [VAR[transport]]'s
-[F[remote address or domain][transport's remote address or domain]] to
-[VAR[url]]'s [F[host]].
-=== [911] Otherwise:
-==== [912] Set [VAR[transport]]'s
-[F[remote address or domain][transport's remote address or domain]] to [VAR[addr]].
-=== [913] Set [VAR[transport]]'s [F[remote port][transport's remote port]] to [VAR[port]].
 === [605] Return [VAR[transport]] and abort these steps.
 = [606] Return a [[failure]].
 ]FIG]
@@ -726,8 +737,13 @@ run these steps:
 == [674] Let [VAR[transport]] be a [[transport]] representing the
 [[TCP connection]], with following states:
 [FIG(list members)[
+[FIGCAPTION[
+[[Transport][transport]]
+]FIGCAPTION]
 : [F[protocol][transport's protocol]] : [CODE[tcp]]
 : [F[endpoint type][transport's endpoint type]] : [CODE[client]]
+: [F[remote address or domain][transport's remote address or domain]] : [VAR[addr]]
+: [F[remote port][transport's remote port]] : [VAR[port]]
 ]FIG]
 == [630] Disable the [CODE[SO_OOBINLINE]] option of [VAR[transport]]'s connection.
 == [631] Enable the [CODE[SO_NODELAY]] option of [VAR[transport]]'s connection.
@@ -796,19 +812,6 @@ dependent.  An example of such steps is:
 = [703] [[TCP]] で受信したデータの処理を以後行わないことにします。
 ]FIG]
 
-[622] The [DFN[effective port]] of [VAR[url]] is the value returned by these steps:
-[FIG(steps)[
-= [623] Let [VAR[port]] be [VAR[url]]'s [F[port][URL's port]].
-= [624] If [VAR[port]] is [[null]]:
-== [625] Set [VAR[port]] to the value determined by the [VAR[url]]'s [F[scheme][URL scheme]]:
-[FIG(switch)[
-: [CODE(URI)@en[ftp]] : [[21]]
-: [CODE(URI)@en[http]] : [[80]]
-: [CODE(URI)@en[https]] : [[443]]
-]FIG]
-= [626] Return [VAR[port]].
-]FIG]
-
 ** HTTP [CODE(HTTP)@en[CONNECT]]
 
 [633] A [[transport]] whose [F[protocol][transport's protocol]] is
@@ -819,7 +822,7 @@ dependent.  An example of such steps is:
 ]FIG]
 
 [739] To [DFN[establish an HTTP [CODE(HTTP)@en[CONNECT]] transport]]
-for [VAR[target]] over an [[HTTP connection]] [VAR[http]], run these steps:
+with [[HTTP connection]] [VAR[http]] and [[URL record]] [VAR[url]], run these steps:
 [FIG(steps)[
 = [740] Let [VAR[transport]] be a [[transport]]:
 [FIG(list members)[
@@ -830,15 +833,18 @@ for [VAR[target]] over an [[HTTP connection]] [VAR[http]], run these steps:
 If [VAR[http]]'s [F[protocol][connection's protocol]] is [CODE[http2]], [CODE[http2connect]].
 Otherwise, [CODE[http1connect]].
 : [F[endpoint type][transport's endpoint type]] : [CODE[client]]
+: [F[remote address or domain][transport's remote address or domain]] : 
+[VAR[url]]'s [F[host][url's host]]
+: [F[remote port][transport's remote port]] : [VAR[url]]'s [[effective port]]
 : [F[http][transport's http]] : [VAR[http]]
 ]FIG]
 = [766] Send an [[HTTP request]] over [VAR[http]]:
 [FIG(list members)[
 : [F[method][request method]] : [CODE[CONNECT]]
-: [F[request target]] : [VAR[target]]
+: [F[request target]] : [VAR[url]]'s [F[hostport]]
 : [F[header list]] :
 [FIG(list members)[
-: [CODE[Host]] : [VAR[target]]
+: [CODE[Host]] : [VAR[url]]'s [F[hostport]]
 : [CODE[Proxy-Connection]] : [CODE[keep-alive]]
 : [CODE[User-Agent]] : [[default `[CODE[User-Agent]]` value]]
 ]FIG]
@@ -907,7 +913,7 @@ Otherwise, [CODE[http1connect]].
 [743] A [[transport]] whose [F[protocol][transport's protocol]] is
 [CODE[socks4]] has following additional states:
 [FIG(list members)[
-: [F[transport]] : A [[transport]].
+: [DFN[[F[transport][socks4 transport's transport]]]] : A [[transport]].
 ]FIG]
 
 [774] To [DFN[establish a SOCKS4 transport]]
@@ -931,7 +937,9 @@ to [[IPv4 address]] [VAR[address]] and [[port]] [VAR[port]] over
 ]FIGCAPTION]
 : [F[protocol][transport's protocol]] : [CODE[socks4]]
 : [F[endpoint type][transport's endpoint type]] : [CODE[client]]
-: [F[transport]] : [VAR[transport]]
+: [F[remote address or domain][transport's remote address or domain]] : [VAR[address]]
+: [F[remote port][transport's remote port]] : [VAR[port]]
+: [F[transport][socks4 transport's transport]] : [VAR[transport]]
 ]FIG]
 ]FIG]
 
@@ -945,7 +953,7 @@ to [[IPv4 address]] [VAR[address]] and [[port]] [VAR[port]] over
 [775] A [[transport]] whose [F[protocol][transport's protocol]] is
 [CODE[socks5]] has following additional states:
 [FIG(list members)[
-: [F[transport]] : A [[transport]].
+: [DFN[[F[transport][socks5 transport's transport]]]] : A [[transport]].
 ]FIG]
 
 [784] To [DFN[establish a SOCKS5 transport]]
@@ -988,7 +996,9 @@ run these steps:
 ]FIGCAPTION]
 : [F[protocol][transport's protocol]] : [CODE[socks5]]
 : [F[endpoint type][transport's endpoint type]] : [CODE[client]]
-: [F[transport]] : [VAR[transport]]
+: [F[remote address or domain][transport's remote address or domain]] : [VAR[host]]
+: [F[remote port][transport's remote port]] : [VAR[port]]
+: [F[transport][socks5 transport's transport]] : [VAR[transport]]
 ]FIG]
 ]FIG]
 
@@ -999,8 +1009,8 @@ run these steps:
 
 ** UNIX domain socket の場合
 
-[805] To [DFN[establish a UNIX domain socket connection]] for [[path]] [VAR[path]],
-run these steps:
+[805] To [DFN[establish a UNIX domain socket connection]] for [[byte string]] [VAR[path]]
+with [[host]] [VAR[host]] and [[integer]] [VAR[port]], run these steps:
 [FIG(steps)[
 = [807] [[ソケットAPI]]を使って新たに接続します。
 [FIG(list members)[
@@ -1015,8 +1025,10 @@ with following states:
 [FIGCAPTION[
 [[Transport][transport]]
 ]FIGCAPTION]
-: [F[protocol][connection's protocol]] : [CODE[unix]]
+: [F[protocol][transport's protocol]] : [CODE[unix]]
 : [F[endpoint type][transport's endpoint type]] : [CODE[client]]
+: [F[remote address or domain][transport's remote address or domain]] : [VAR[host]]
+: [F[remote port][transport's remote port]] : [VAR[port]]
 ]FIG]
 ]FIG]
 
@@ -1119,6 +1131,10 @@ with following states:
 ]FIGCAPTION]
 : [F[protocol][transport's protocol]] : [CODE[tls]]
 : [F[endpoint type][transport's endpoint type]] : [CODE[client]]
+: [F[remote address or domain][transport's remote address or domain]] : [VAR[transport]]'s
+[F[remote address or domain][transport's remote address or domain]]
+: [F[remote port][transport's remote port]] : [VAR[transport]]'s 
+[F[remote port][transport's remote port]]
 : [F[http protocol][transport's http protocol]] : [VAR[protocol]]
 : [F[is ev]] : [VAR[ev]]
 : [F[remote certificates]] : [VAR[certs]]
@@ -2576,9 +2592,7 @@ is [[false]]:
 
 [573] To [DFN[establish a FTP connection]] with
 a [[transport]] [VAR[transport]],
-an [[IPv4 address]] or [[IPv6 address]] [VAR[address]],
-an [[integer]] [VAR[port]], and
-a [[string]] [VAR[user]], a [[string]] [VAR[password]],
+a [[string]] [VAR[user]], and a [[string]] [VAR[password]],
 run these steps:
 [FIG(steps)[
 
@@ -2593,6 +2607,14 @@ run these steps:
 : [F[endpoint type][FTP connection's endpoint type]] : [CODE[client]]
 : [F[transport][FTP connection's transport]] : [VAR[transport]]
 ]FIG]
+]FIG]
+
+@@
+[910] To [DFN[establish a FTP data connection]] with ...
+[FIG(steps)[
+= [VAR[transport]]'s [F[remote address or domain][transport's remote address or domain]]
+
+@@
 ]FIG]
 
 @@
