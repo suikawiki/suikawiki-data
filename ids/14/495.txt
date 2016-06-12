@@ -2567,6 +2567,8 @@ is [[false]]:
 : [DFN[[F[read buffer][FTP connection's read buffer]]]] : A [[byte string]].
 Initially, an empty [[byte string]].
 : [DFN[[F[state][FTP connection's state]]]] : Initially, ''before reply''.
+: [DFN[[F[username][FTP connection's username]]]] : A [[string]].
+: [DFN[[F[password][FTP connection's password]]]] : A [[string]].
 ]FIG]
 
 [1068] An [DFN[FTP reply]] has following states:
@@ -2574,6 +2576,9 @@ Initially, an empty [[byte string]].
 : [DFN[[F[code][FTP reply's code]]]] : A [[string]].
 : [DFN[[F[text][FTP reply's text]]]] : A [[byte string]].
 ]FIG]
+
+[1110] The [[FTP reply]]'s [DFN[[F[first code]]]] is its [F[code][FTP reply's code]]'s
+first character.
 
 @@ [574] 
 [FIG(steps)[
@@ -2601,7 +2606,7 @@ Initially, an empty [[byte string]].
 
 [573] To [DFN[establish a FTP connection]] with
 a [[transport]] [VAR[transport]],
-a [[string]] [VAR[user]], and a [[string]] [VAR[password]],
+a [[string]] [VAR[username]], and a [[string]] [VAR[password]],
 run these steps:
 [FIG(steps)[
 = [575] Let [VAR[ftp]] be a [[FTP connection]].
@@ -2611,6 +2616,8 @@ run these steps:
 ]FIGCAPTION]
 : [F[endpoint type][FTP connection's endpoint type]] : [CODE[client]]
 : [F[transport][FTP connection's transport]] : [VAR[transport]]
+: [F[username][FTP connection's username]] : [VAR[username]]
+: [F[password][FTP connection's password]] : [VAR[password]]
 ]FIG]
 = [1074] Let [VAR[promise]] be a [[promise]].
 = [1067] Let [VAR[current code]] be [[null]].
@@ -2678,6 +2685,16 @@ it notifies of 正常終了の受信 or 中断 with [VAR[reset flag]]:
 @@
 ]FIG]
 
+[1104] To [DFN[send FTP command]] [VAR[command]] with argument [VAR[text]] over [VAR[ftp]],
+run these steps:
+[FIG(steps)[
+= [1105] If [VAR[text]] is [[null]]:
+== [1106] Send [VAR[text]] followed by [CODE[0x0D]] [CODE[0x0A]] over [VAR[ftp]].
+= [1107] Otherwise:
+== [1108] Send [VAR[text]] followed by [VAR[text]] followed by [CODE[0x0D]] [CODE[0x0A]]
+over [VAR[ftp]].
+]FIG]
+
 [1061] To [DFN[set FTP state]] of [[FTP connection]] [VAR[ftp]] to [VAR[state]],
 run these steps:
 [FIG(steps)[
@@ -2692,68 +2709,49 @@ run these steps with [[FTP reply]] [VAR[reply]],
 switched by [VAR[ftp]]'s [F[state][FTP connection's state]]:
 [FIG(switch)[
 : ''Before reply state'' : 
-If [VAR[reply]] is not [[null]], [[set FTP state]] of [VAR[ftp]] to
-''before [CODE[USER]] state''.
-Otherwise, [[abort FTP connection]] [VAR[ftp]].
-:  :
+[FIG(steps)[
+= [1099] If [VAR[reply]] is not [[null]]:
+== [1100] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''before [CODE[USER]] reply state''.
+== [1103] [[Send FTP command][send FTP command]] [CODE[USER]] and
+[[utf-8 encoded][utf-8 encode]] [VAR[ftp]]'s [F[username][FTP connection's username]]
+over [VAR[ftp]].
+= [1101] Otherwise:
+== [1102] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
+]FIG]
+: ''Before [CODE[USER]] reply state'' :
+[FIG(steps)[
+= [1109] If [VAR[reply]] is not [[null]]:
+== [1111] If [VAR[reply]]'s [F[first code]] is [CODE[2]]:
+===
+@@
+== [1112] Otherwise, [VAR[reply]]'s [F[first code]] is [CODE[3]]:
+=== [1118] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''before [CODE[PASS]] reply state''.
+=== [1119] [[Send FTP command][send FTP command]] [CODE[PASS]] and
+[[utf-8 encoded][utf-8 encode]] [VAR[ftp]]'s [F[password][FTP connection's password]]
+over [VAR[ftp]].
+== [1113] Otherwise:
+=== [1116] [[Request FTP authentication][request FTP authentication]] for [VAR[ftp]].
+= [1114] Otherwise:
+== [1115] [[Request FTP authentication][request FTP authentication]] for [VAR[ftp]].
+]FIG]
+: ''Before [CODE[PASS]] reply state'' :
+[FIG(steps)[
+= [1120] If [VAR[reply]] is not [[null]]:
+== [1121] If [VAR[reply]]'s [F[first code]] is [CODE[2]]:
+===
+@@
+== [1122] Otherwise:
+=== [1123] [[Request FTP authentication][request FTP authentication]] for [VAR[ftp]].
+= [1124] Otherwise:
+== [1125] [[Request FTP authentication][request FTP authentication]] for [VAR[ftp]].
+]FIG]
+
 
 @@
 ]FIG]
 
 
 [FIG(steps)[
-= [VAR[UA]] が [[IE]] で、 [VAR[返答]]の[F[符号]]の先頭が [CODE[2]] 以外なら、
-== [CODE[401]] [[応答]]を返し、ここで停止します。
-= [[命令]]を送信します。[CODE[USER]]、[VAR[利用者名]]を[[UTF-8符号化]]した結果を引数とします。
-= [VAR[返答]]を、返答の取得の結果に設定します。
-= [VAR[返答]]の[F[符号]]の先頭が [CODE[1]] なら、
-== [VAR[UA]] が [[IE]] なら、
-=== [CODE[401]] [[応答]]を返し、ここで停止します。
-== [VAR[UA]] が [[Chrome]] なら、
-=== 命令を送信します。 [CODE[QUIT]]、[[null]] を引数とします。
-== ここで停止します。
-= それ以外で、[VAR[返答]]の[F[符号]]の先頭が [CODE[4]] か [CODE[5]] なら、
-== [VAR[UA]] が [[IE]] なら、
-=== [[ネットワークエラー]]を返し、ここで停止します。
-== [VAR[UA]] が [[Chrome]] なら、
-=== 命令を送信します。 [CODE[QUIT]]、[[null]] を引数とします。
-== [CODE[401]] [[応答]]を返し、ここで停止します。
-= それ以外で、[VAR[返答]]の[F[符号]]の先頭が [CODE[3]] なら、
-== [VAR[合言葉]]が [[null]] なら、
-=== [VAR[UA]] が [[Firefox]] なら、
-==== [VAR[合言葉]]を、モーダルダイアログの結果に設定します。
-==== [VAR[合言葉]]が [[null]] なら、
-===== 接続を閉じて、ここで停止します。
-=== [VAR[UA]] が [[Chrome]] なら、
-==== [VAR[合言葉]]を、 [[空文字列]]に設定します。
-== [[命令]]を送信します。 [CODE[PASS]]、[VAR[合言葉]]を[[UTF-8符号化]]した結果を引数とします。
-== [VAR[返答]]を、返答の取得の結果に設定します。
-== [VAR[返答]]の[F[符号]]の先頭が [CODE[1]] か [CODE[3]] で [VAR[UA]] が [[Chrome]] なら、
-=== 異常終了とし、ここで停止します。
-== [VAR[返答]]の[F[符号]]の先頭が [CODE[3]] で [VAR[UA]] が [[Firefox]] なら、
-=== 命令を送信します。 [CODE[ACCT]]、[CODE[noaccount]] を引数とします。
-===
-@@@
-== [VAR[返答]]の[F[符号]]の先頭が [CODE[2]] 以外なら、
-=== [CODE[401]] [[応答]]を返し、ここで停止します。
-=
-@@ [[Chrome]] は [CODE[USER]] や [CODE[PASS]] で切断され[VAR[利用者名]]が
-[CODE[anonymous]] なら、 [CODE[401]] 応答を返します。
-= [VAR[UA]] が [[Firefox]] か [[Chrome]] なら、
-== 命令を送信します。 [CODE[SYST]]、[[null]] を引数とします。
-== [VAR[返答]]を、返答の取得の結果に設定します。
-== [VAR[返答]]の[F[符号]]の先頭が  [CODE[2]] でも [CODE[5]] でもないなら、
-=== [VAR[UA]] が [[Chrome]] なら、
-==== 異常終了とし、ここで停止します。
-=== [VAR[UA]] が [[Firefox]] なら、
-==== [CODE[401]] [[応答]]を返します。
-==== ここで停止します。
-==
-@@ [[Chrome]] は結果が [[VMS]] ([[ASCII大文字・小文字不区別]]で [CODE[vms]] が含まれる) ならパスの区切り文字を [[VMS]] 風に変換して送信します。
-= [VAR[UA]] が [[Firefox]] なら、
-== 命令を送信します。 [CODE[FEAT]]、[[null]] を引数とします。
-==
-@@
 = [VAR[UA]] が [[Firefox]] か [[Chrome]] なら、
 == 命令を送信します。 [CODE[PWD]]、[[null]] を引数とします。
 == [VAR[返答]]を、返答の取得の結果に設定します。
@@ -2965,6 +2963,9 @@ Otherwise, [[abort FTP connection]] [VAR[ftp]].
 ]FIG]
 
 @@
+[1117] To [DFN[request FTP authentication]] of [VAR[ftp]],
+
+@@
 [1093] To [DFN[abort FTP connection]] [VAR[ftp]]
 
 [7] 異常終了とするとは、次のようにします。
@@ -2980,7 +2981,7 @@ Otherwise, [[abort FTP connection]] [VAR[ftp]].
 * References
 
 [1044] The terms
-[DFN[[[encoding]]]] and
+[DFN[[[encoding]]]], [DFN[[[utf-8 encode]]]], and
 [DFN[[[decode]]]] are defined in the [CITE[Encoding Standard]].
 
 [621] The terms 
@@ -2994,7 +2995,7 @@ Otherwise, [[abort FTP connection]] [VAR[ftp]].
 [DFN[[[URL parser]]]],
 [DFN[[[URL record]]]],
 [DFN[[F[scheme][URL scheme]]]], [DFN[[F[host]]][URL's host]], [DFN[[F[port]]][URL's port]], and
-[DFN[[F[query]]]]
+[DFN[[F[query][URL query]]]]
 are defined in the [CITE[URL Standard]].
 
 [981] The term [DFN[[[ICANN DOMAINS]]]] is defined in the [CITE[Public Suffix List]].
