@@ -2560,10 +2560,17 @@ is [[false]]:
 
 * FTP
 
-[639] A [DFN[FTP connection]] has following states:
+[639] An [DFN[FTP connection]] has following states:
 [FIG(list members)[
 : [DFN[[F[endpoint type][FTP connection's endpoint type]]]] : [CODE[client]]
 : [DFN[[F[transport][FTP connection's transport]]]] : A [[transport]].
+: [DFN[[F[state][FTP connection's state]]]] : Initially, ''before reply''.
+]FIG]
+
+[1068] An [DFN[FTP reply]] has following states:
+[FIG(list members)[
+: [DFN[[F[code][FTP reply's code]]]] : A [[string]].
+: [DFN[[F[text][FTP reply's text]]]] : A [[byte string]].
 ]FIG]
 
 @@ [574] 
@@ -2603,21 +2610,61 @@ run these steps:
 : [F[endpoint type][FTP connection's endpoint type]] : [CODE[client]]
 : [F[transport][FTP connection's transport]] : [VAR[transport]]
 ]FIG]
+= [1074] Let [VAR[promise]] be a [[promise]].
+= [1061] Let [VAR[buffer]] be an empty [[byte string]].
+= [1067] Let [VAR[current code]] be [[null]].
+= [1066] Let [VAR[current text]] be an empty [[byte string]].
 = [911] Configure [VAR[transport]] to run these substeps whenever
 it notifies of [[バイト]]の受信 with [VAR[byte]] and [VAR[urgent data flag]]:
 [FIG(steps)[
 = [912] If [VAR[urgent data flag]] is set, abort these substeps.
-
-@@
+= [1062] Append [VAR[byte]] to [VAR[buffer]].
+= [1063] If [VAR[byte]] contains a [CODE[0x0A]] byte:
+== [1064] Split [VAR[buffer]] into two substrings at the first [CODE[0x0A]] byte.
+Set [VAR[line]] to the first substring and [VAR[buffer]] to the second substring,
+not including the [CODE[0x0A]] separator.
+== [1065] Remove the [CODE[0x0D]] byte at the end of [VAR[line]], if any.
+== [1075] If [VAR[line]] has three [CODE[0x30]]-[CODE[0x39]] bytes followed by
+a [CODE[0x20]] or [CODE[0x2D]] byte at the beginning:
+=== [1076] Let [VAR[code]] be the first three bytes of [VAR[line]].
+=== [1069] Let [VAR[continue]] be whether the fourth byte of [VAR[line]] is [CODE[0x2D]] or not.
+=== [1077] Remove first four bytes from [VAR[line]].
+=== [1078] If [VAR[current code]] is [[null]]:
+==== [1079] Set [VAR[current code]] to [VAR[code]].
+==== [1081] Set [VAR[current text]] to [VAR[line]] followed by [CODE[0x0D]] [CODE[0x0A]].
+=== [1082] Otherwise, [VAR[current code]] is [VAR[code]]:
+==== [1083] Append [VAR[line]] followed by [CODE[0x0D]] [CODE[0x0A]] to [VAR[current text]].
+=== [1084] Otherwise:
+==== [1085] Set [VAR[current code]] to an [[error]].
+=== [1086] If [VAR[current code]] is not an [[error]]:
+==== [1087] Let [VAR[reply]] be an [[FTP reply]]:
+[FIG(list members)[
+: [F[code][FTP reply's code]] : A string obtained by replacing bytes
+in [VAR[current code]] by [[code point]]s with same values.
+: [F[text][FTP reply's text]] : [VAR[current text]]
+]FIG]
+==== [1091] Run the [[FTP client state machine]] with [VAR[ftp]] and [VAR[reply]].
+== [1070] Otherwise:
+=== [1072] Set [VAR[current code]] be [[null]].
+=== [1071] Set [VAR[current text]] be an empty [[byte string]].
 ]FIG]
 = [913] Configure [VAR[transport]] to run these substeps whenever
 it notifies of 正常終了の受信 or 中断 with [VAR[reset flag]]:
 [FIG(steps)[
 = [1060] Set [VAR[is abort]] be whether the notification is about 中断 or not.
-
+= [1090] Let [VAR[exit]] be
 @@
+=
+@@
+= [1089] Reject [VAR[promise]] with [VAR[exit]].
 ]FIG]
+= [1088] Return [VAR[promise]].
 ]FIG]
+
+@@ 
+[1073] [VAR[UA]] が [[Chrome]] で、[CODE[RETR]] と [CODE[LIST]] 以外で2つ目の[[返答]]を受信したら、
+異常終了として、ここで停止します。
+
 
 @@
 [910] To [DFN[establish a FTP data connection]] with ...
@@ -2626,6 +2673,97 @@ it notifies of 正常終了の受信 or 中断 with [VAR[reset flag]]:
 
 @@
 ]FIG]
+
+[1092] The [DFN[FTP client state machine]] of [[FTP connection]] [VAR[ftp]]
+run these steps with [[FTP reply]] [VAR[reply]],
+switched by [VAR[ftp]]'s [F[state][FTP connection's state]]:
+[FIG(switch)[
+: Before reply state : 
+If [VAR[reply]] is not [[null]], set [VAR[ftp]]'s [F[state][FTP connection's state]]
+to the ''before [CODE[USER]] state''.
+Otherwise, [[abort FTP connection]] [VAR[ftp]].
+:  :
+
+@@
+]FIG]
+
+
+[FIG(steps)[
+= [VAR[UA]] が [[IE]] で、 [VAR[返答]]の[F[符号]]の先頭が [CODE[2]] 以外なら、
+== [CODE[401]] [[応答]]を返し、ここで停止します。
+= [[命令]]を送信します。[CODE[USER]]、[VAR[利用者名]]を[[UTF-8符号化]]した結果を引数とします。
+= [VAR[返答]]を、返答の取得の結果に設定します。
+= [VAR[返答]]の[F[符号]]の先頭が [CODE[1]] なら、
+== [VAR[UA]] が [[IE]] なら、
+=== [CODE[401]] [[応答]]を返し、ここで停止します。
+== [VAR[UA]] が [[Chrome]] なら、
+=== 命令を送信します。 [CODE[QUIT]]、[[null]] を引数とします。
+== ここで停止します。
+= それ以外で、[VAR[返答]]の[F[符号]]の先頭が [CODE[4]] か [CODE[5]] なら、
+== [VAR[UA]] が [[IE]] なら、
+=== [[ネットワークエラー]]を返し、ここで停止します。
+== [VAR[UA]] が [[Chrome]] なら、
+=== 命令を送信します。 [CODE[QUIT]]、[[null]] を引数とします。
+== [CODE[401]] [[応答]]を返し、ここで停止します。
+= それ以外で、[VAR[返答]]の[F[符号]]の先頭が [CODE[3]] なら、
+== [VAR[合言葉]]が [[null]] なら、
+=== [VAR[UA]] が [[Firefox]] なら、
+==== [VAR[合言葉]]を、モーダルダイアログの結果に設定します。
+==== [VAR[合言葉]]が [[null]] なら、
+===== 接続を閉じて、ここで停止します。
+=== [VAR[UA]] が [[Chrome]] なら、
+==== [VAR[合言葉]]を、 [[空文字列]]に設定します。
+== [[命令]]を送信します。 [CODE[PASS]]、[VAR[合言葉]]を[[UTF-8符号化]]した結果を引数とします。
+== [VAR[返答]]を、返答の取得の結果に設定します。
+== [VAR[返答]]の[F[符号]]の先頭が [CODE[1]] か [CODE[3]] で [VAR[UA]] が [[Chrome]] なら、
+=== 異常終了とし、ここで停止します。
+== [VAR[返答]]の[F[符号]]の先頭が [CODE[3]] で [VAR[UA]] が [[Firefox]] なら、
+=== 命令を送信します。 [CODE[ACCT]]、[CODE[noaccount]] を引数とします。
+===
+@@@
+== [VAR[返答]]の[F[符号]]の先頭が [CODE[2]] 以外なら、
+=== [CODE[401]] [[応答]]を返し、ここで停止します。
+=
+@@ [[Chrome]] は [CODE[USER]] や [CODE[PASS]] で切断され[VAR[利用者名]]が
+[CODE[anonymous]] なら、 [CODE[401]] 応答を返します。
+= [VAR[UA]] が [[Firefox]] か [[Chrome]] なら、
+== 命令を送信します。 [CODE[SYST]]、[[null]] を引数とします。
+== [VAR[返答]]を、返答の取得の結果に設定します。
+== [VAR[返答]]の[F[符号]]の先頭が  [CODE[2]] でも [CODE[5]] でもないなら、
+=== [VAR[UA]] が [[Chrome]] なら、
+==== 異常終了とし、ここで停止します。
+=== [VAR[UA]] が [[Firefox]] なら、
+==== [CODE[401]] [[応答]]を返します。
+==== ここで停止します。
+==
+@@ [[Chrome]] は結果が [[VMS]] ([[ASCII大文字・小文字不区別]]で [CODE[vms]] が含まれる) ならパスの区切り文字を [[VMS]] 風に変換して送信します。
+= [VAR[UA]] が [[Firefox]] なら、
+== 命令を送信します。 [CODE[FEAT]]、[[null]] を引数とします。
+==
+@@
+= [VAR[UA]] が [[Firefox]] か [[Chrome]] なら、
+== 命令を送信します。 [CODE[PWD]]、[[null]] を引数とします。
+== [VAR[返答]]を、返答の取得の結果に設定します。
+== [VAR[UA]] が [[Chrome]] なら、
+=== [VAR[返答]]の[F[符号]]の先頭が [CODE[2]] 以外なら、
+==== 異常終了とし、ここで停止します。
+=== それ以外なら、
+==== [VAR[パス接頭辞]]を、[VAR[返答]]の[F[残り]]に設定します。
+====
+@@ ただし[F[残り]]の先頭が [CODE["]] なら、次の [CODE["]] の直前までとします。
+また改行があれば、その前までとします。
+==== [VAR[パス接頭辞]]が空なら、異常終了とし、ここで停止します。
+==== [VAR[パス接頭辞]]の末尾に [CODE[/]] がなければ、追加します。
+= [VAR[UA]] が [[Firefox]] なら、
+== 命令を送信します。 [CODE[TYPE]]、[VAR[型]]を引数とします。
+== [VAR[返答]]を、返答の取得の結果に設定します。
+== [VAR[返答]]の[F[符号]]の先頭が [CODE[2]] 以外なら、
+=== 異常終了とし、ここで停止します。
+]FIG]
+
+
+
+
 
 @@
 [FIG(steps)[
@@ -2813,6 +2951,9 @@ it notifies of 正常終了の受信 or 中断 with [VAR[reset flag]]:
 == ここで停止します。
 ]FIG]
 
+@@
+[1093] To [DFN[abort FTP connection]] [VAR[ftp]]
+
 [7] 異常終了とするとは、次のようにします。
 [FIG(steps)[
 = [VAR[UA]] が [[Chrome]] なら、
@@ -2820,115 +2961,6 @@ it notifies of 正常終了の受信 or 中断 with [VAR[reset flag]]:
 = 接続を閉じます。
 = [[ネットワークエラー]]を返します。
 ]FIG]
-
-[2] 返答の取得は、次のようにします。
-[FIG(steps)[
-= [VAR[改行]]を、[VAR[UA]] が [[Chrome]] なら [CODE[0x0D]] [CODE[0x0A]]、
-それ以外なら省略可能な [CODE[0x0D]] と必須の [CODE[0x0A]] に設定します。
-= 接続から[VAR[改行]]に一致するバイト列が送られるのを待ちます。
-= [VAR[行]]を、[VAR[改行]]に最初に一致する直前までに設定します。
-= 接続のうち[VAR[改行]]に最初に一致する部分までを既読として除去します。
-= [VAR[行]]が3つの[[ASCII数字]]の後に [CODE[-]] から始まるなら、
-==
-@@
-==- 次の行の「残り」と、改行を区切りに連結します。
-==- 「符号」は、
-==-- IE なら、最後のものを採用します。
-==-- Firefox なら、最初のものを採用します。
-==-- Chrome なら、異なる返答は無視します。
-= [VAR[行]]が3つの[[ASCII数字]]の後に [CODE[0x20]] から始まるなら、
-== [VAR[UA]] が [[Chrome]] でないか、先頭の[[ASCII数字]]が [1, 5] の範囲内なら、
-=== [VAR[返答]]を、返答とします。
-=== [VAR[返答]]の[F[符号]]を、[VAR[行]]の先頭の3つの[[ASCII数字]]の列とします。
-=== [VAR[返答]]の[F[残り]]を、[VAR[行]]の [CODE[0x20]] の直後より後すべてとします。
-=== [VAR[返答]]を返します。
-= 最初に戻ります。
-=
-@@ [VAR[UA]] が [[Chrome]] で、[CODE[RETR]] と [CODE[LIST]] 以外で2つ目の[[返答]]を受信したら、
-異常終了として、ここで停止します。
-]FIG]
-
-[3] 接続の確立は、次のようにします。
-[FIG(steps)[
-= [VAR[ポート]]を、[VAR[URL]] の[F[ポート]]に設定します。
-= [VAR[ポート]]が [[null]] なら、
-== [VAR[ポート]]を、 [N[21]] に設定します。
-= [VAR[接続]]を、[VAR[ホスト]]と[VAR[ポート]]に[[TCP接続]]を確立した結果に設定します。
-= [VAR[接続]]が失敗なら、
-== [[ネットワークエラー]]を返し、ここで停止します。
-= [VAR[返答]]を、返答の取得の結果に設定します。
-= [VAR[UA]] が [[IE]] で、 [VAR[返答]]の[F[符号]]の先頭が [CODE[2]] 以外なら、
-== [CODE[401]] [[応答]]を返し、ここで停止します。
-= [[命令]]を送信します。[CODE[USER]]、[VAR[利用者名]]を[[UTF-8符号化]]した結果を引数とします。
-= [VAR[返答]]を、返答の取得の結果に設定します。
-= [VAR[返答]]の[F[符号]]の先頭が [CODE[1]] なら、
-== [VAR[UA]] が [[IE]] なら、
-=== [CODE[401]] [[応答]]を返し、ここで停止します。
-== [VAR[UA]] が [[Chrome]] なら、
-=== 命令を送信します。 [CODE[QUIT]]、[[null]] を引数とします。
-== ここで停止します。
-= それ以外で、[VAR[返答]]の[F[符号]]の先頭が [CODE[4]] か [CODE[5]] なら、
-== [VAR[UA]] が [[IE]] なら、
-=== [[ネットワークエラー]]を返し、ここで停止します。
-== [VAR[UA]] が [[Chrome]] なら、
-=== 命令を送信します。 [CODE[QUIT]]、[[null]] を引数とします。
-== [CODE[401]] [[応答]]を返し、ここで停止します。
-= それ以外で、[VAR[返答]]の[F[符号]]の先頭が [CODE[3]] なら、
-== [VAR[合言葉]]が [[null]] なら、
-=== [VAR[UA]] が [[Firefox]] なら、
-==== [VAR[合言葉]]を、モーダルダイアログの結果に設定します。
-==== [VAR[合言葉]]が [[null]] なら、
-===== 接続を閉じて、ここで停止します。
-=== [VAR[UA]] が [[Chrome]] なら、
-==== [VAR[合言葉]]を、 [[空文字列]]に設定します。
-== [[命令]]を送信します。 [CODE[PASS]]、[VAR[合言葉]]を[[UTF-8符号化]]した結果を引数とします。
-== [VAR[返答]]を、返答の取得の結果に設定します。
-== [VAR[返答]]の[F[符号]]の先頭が [CODE[1]] か [CODE[3]] で [VAR[UA]] が [[Chrome]] なら、
-=== 異常終了とし、ここで停止します。
-== [VAR[返答]]の[F[符号]]の先頭が [CODE[3]] で [VAR[UA]] が [[Firefox]] なら、
-=== 命令を送信します。 [CODE[ACCT]]、[CODE[noaccount]] を引数とします。
-===
-@@@
-== [VAR[返答]]の[F[符号]]の先頭が [CODE[2]] 以外なら、
-=== [CODE[401]] [[応答]]を返し、ここで停止します。
-=
-@@ [[Chrome]] は [CODE[USER]] や [CODE[PASS]] で切断され[VAR[利用者名]]が
-[CODE[anonymous]] なら、 [CODE[401]] 応答を返します。
-= [VAR[UA]] が [[Firefox]] か [[Chrome]] なら、
-== 命令を送信します。 [CODE[SYST]]、[[null]] を引数とします。
-== [VAR[返答]]を、返答の取得の結果に設定します。
-== [VAR[返答]]の[F[符号]]の先頭が  [CODE[2]] でも [CODE[5]] でもないなら、
-=== [VAR[UA]] が [[Chrome]] なら、
-==== 異常終了とし、ここで停止します。
-=== [VAR[UA]] が [[Firefox]] なら、
-==== [CODE[401]] [[応答]]を返します。
-==== ここで停止します。
-==
-@@ [[Chrome]] は結果が [[VMS]] ([[ASCII大文字・小文字不区別]]で [CODE[vms]] が含まれる) ならパスの区切り文字を [[VMS]] 風に変換して送信します。
-= [VAR[UA]] が [[Firefox]] なら、
-== 命令を送信します。 [CODE[FEAT]]、[[null]] を引数とします。
-==
-@@
-= [VAR[UA]] が [[Firefox]] か [[Chrome]] なら、
-== 命令を送信します。 [CODE[PWD]]、[[null]] を引数とします。
-== [VAR[返答]]を、返答の取得の結果に設定します。
-== [VAR[UA]] が [[Chrome]] なら、
-=== [VAR[返答]]の[F[符号]]の先頭が [CODE[2]] 以外なら、
-==== 異常終了とし、ここで停止します。
-=== それ以外なら、
-==== [VAR[パス接頭辞]]を、[VAR[返答]]の[F[残り]]に設定します。
-====
-@@ ただし[F[残り]]の先頭が [CODE["]] なら、次の [CODE["]] の直前までとします。
-また改行があれば、その前までとします。
-==== [VAR[パス接頭辞]]が空なら、異常終了とし、ここで停止します。
-==== [VAR[パス接頭辞]]の末尾に [CODE[/]] がなければ、追加します。
-= [VAR[UA]] が [[Firefox]] なら、
-== 命令を送信します。 [CODE[TYPE]]、[VAR[型]]を引数とします。
-== [VAR[返答]]を、返答の取得の結果に設定します。
-== [VAR[返答]]の[F[符号]]の先頭が [CODE[2]] 以外なら、
-=== 異常終了とし、ここで停止します。
-]FIG]
-
 
 
 
