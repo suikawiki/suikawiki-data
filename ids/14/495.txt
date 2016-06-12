@@ -2566,7 +2566,7 @@ is [[false]]:
 : [DFN[[F[transport][FTP connection's transport]]]] : A [[transport]].
 : [DFN[[F[read buffer][FTP connection's read buffer]]]] : A [[byte string]].
 Initially, an empty [[byte string]].
-: [DFN[[F[state][FTP connection's state]]]] : Initially, ''before reply''.
+: [DFN[[F[state][FTP connection's state]]]] : Initially, ''initial state''.
 : [DFN[[F[username][FTP connection's username]]]] : A [[string]].
 : [DFN[[F[password][FTP connection's password]]]] : A [[string]].
 ]FIG]
@@ -2602,6 +2602,34 @@ first character.
 : [[Chrome]] : [CODE[chrome@example.com]]
 : [[IE]] : [CODE[User@]]
 ]FIG]
+
+= [VAR[パス]]に [CODE[;]] が含まれるなら、
+== [VAR[引数]]を、[VAR[パス]]のうち、 [CODE[;]] とそれ以降に設定します。
+[VAR[UA]] が [[Chrome]] なら最後の [CODE[;]] 以降、それ以外なら最初の [CODE[;]]
+以降とします。
+== [VAR[パス]]から[VAR[引数]]を削除します。
+= [VAR[種別]]を、不明に設定します。
+== [VAR[UA]] が [[Firefox]] なら、
+=== [VAR[URL]] の[F[パス]]を、 [VAR[パス]]に設定します。
+=== [VAR[URL]] への[[リダイレクト]]を返し、ここで停止します。
+== [VAR[UA]] が [[Chrome]] なら、
+=== [VAR[引数]]が [CODE[;type=a]] なら、
+==== [VAR[型]]を、 [CODE[A]] に設定します。
+==== [VAR[種別]]を、[[ファイル]]に設定します。
+=== それ以外で、 [VAR[引数]]が [CODE[;type=i]] なら、
+==== [VAR[型]]を、 [CODE[I]] に設定します。
+==== [VAR[種別]]を、[[ファイル]]に設定します。
+=== それ以外で、 [VAR[引数]]が [CODE[;type=d]] なら、
+==== [VAR[種別]]を、[[ディレクトリー]]に設定します。
+== [VAR[UA]] が [[IE]] なら、
+=== [VAR[引数]]が [CODE[;type=A]] から始まる ([[ASCII大文字・小文字不区別]]) なら、
+==== [VAR[型]]を、[CODE[A]] に設定します。
+=== それ以外で、[VAR[引数]]が [CODE[;type=I]] から始まる ([[ASCII大文字・小文字不区別]]) なら、
+==== [VAR[型]]を、[CODE[I]] に設定します。
+=== それ以外なら、
+==== [[ネットワークエラー]]を返し、ここで停止します。
+= [VAR[パス]]から、先頭の [CODE[/]] を除去します。
+
 ]FIG]
 
 [573] To [DFN[establish a FTP connection]] with
@@ -2708,22 +2736,22 @@ run these steps:
 run these steps with [[FTP reply]] [VAR[reply]],
 switched by [VAR[ftp]]'s [F[state][FTP connection's state]]:
 [FIG(switch)[
-: ''Before reply state'' : 
+: ''Initial state'' : 
 [FIG(steps)[
 = [1099] If [VAR[reply]] is not [[null]]:
-== [1100] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''before [CODE[USER]] reply state''.
+== [1100] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''[CODE[USER]] reply state''.
 == [1103] [[Send FTP command][send FTP command]] [CODE[USER]] and
 [[utf-8 encoded][utf-8 encode]] [VAR[ftp]]'s [F[username][FTP connection's username]]
 over [VAR[ftp]].
 = [1101] Otherwise:
 == [1102] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
 ]FIG]
-: ''Before [CODE[USER]] reply state'' :
+: ''[CODE[USER]] reply state'' :
 [FIG(steps)[
 = [1109] If [VAR[reply]] is not [[null]]:
 == [1111] If [VAR[reply]]'s [F[first code]] is [CODE[2]]:
-===
-@@
+=== [1126] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''[CODE[TYPE]] reply state''.
+=== [1127] [[Send FTP command][send FTP command]] [CODE[TYPE]] and [CODE[I]].
 == [1112] Otherwise, [VAR[reply]]'s [F[first code]] is [CODE[3]]:
 === [1118] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''before [CODE[PASS]] reply state''.
 === [1119] [[Send FTP command][send FTP command]] [CODE[PASS]] and
@@ -2734,42 +2762,31 @@ over [VAR[ftp]].
 = [1114] Otherwise:
 == [1115] [[Request FTP authentication][request FTP authentication]] for [VAR[ftp]].
 ]FIG]
-: ''Before [CODE[PASS]] reply state'' :
+: ''[CODE[PASS]] reply state'' :
 [FIG(steps)[
 = [1120] If [VAR[reply]] is not [[null]]:
 == [1121] If [VAR[reply]]'s [F[first code]] is [CODE[2]]:
-===
-@@
+=== [1128] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''[CODE[TYPE]] reply state''.
+=== [1129] [[Send FTP command][send FTP command]] [CODE[TYPE]] and [CODE[I]].
 == [1122] Otherwise:
 === [1123] [[Request FTP authentication][request FTP authentication]] for [VAR[ftp]].
 = [1124] Otherwise:
 == [1125] [[Request FTP authentication][request FTP authentication]] for [VAR[ftp]].
 ]FIG]
-
-
+: ''[CODE[TYPE]] reply state'' :
+[FIG(steps)[
+= [1130] If [VAR[reply]] is not [[null]]:
+== [1133] If [VAR[reply]]'s [F[first code]] is [CODE[2]]:
+===
 @@
+== [1134] Otherwise:
+=== [1135] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
+= [1131] Otherwise:
+== [1132] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
 ]FIG]
 
 
-[FIG(steps)[
-= [VAR[UA]] が [[Firefox]] か [[Chrome]] なら、
-== 命令を送信します。 [CODE[PWD]]、[[null]] を引数とします。
-== [VAR[返答]]を、返答の取得の結果に設定します。
-== [VAR[UA]] が [[Chrome]] なら、
-=== [VAR[返答]]の[F[符号]]の先頭が [CODE[2]] 以外なら、
-==== 異常終了とし、ここで停止します。
-=== それ以外なら、
-==== [VAR[パス接頭辞]]を、[VAR[返答]]の[F[残り]]に設定します。
-====
-@@ ただし[F[残り]]の先頭が [CODE["]] なら、次の [CODE["]] の直前までとします。
-また改行があれば、その前までとします。
-==== [VAR[パス接頭辞]]が空なら、異常終了とし、ここで停止します。
-==== [VAR[パス接頭辞]]の末尾に [CODE[/]] がなければ、追加します。
-= [VAR[UA]] が [[Firefox]] なら、
-== 命令を送信します。 [CODE[TYPE]]、[VAR[型]]を引数とします。
-== [VAR[返答]]を、返答の取得の結果に設定します。
-== [VAR[返答]]の[F[符号]]の先頭が [CODE[2]] 以外なら、
-=== 異常終了とし、ここで停止します。
+@@
 ]FIG]
 
 
@@ -2778,42 +2795,6 @@ over [VAR[ftp]].
 
 @@
 [FIG(steps)[
-= [VAR[ホスト]]を、[F[URL]] の[F[ホスト]]に設定します。
-= [VAR[型]]を、 [CODE[I]] に設定します。
-= [VAR[パス接頭辞]]を、[[空文字列]]に設定します。
-= [VAR[パス]]を、 [VAR[URL]] の[F[パス]]に設定します。
-= [VAR[パス]]に [CODE[;]] が含まれるなら、
-== [VAR[引数]]を、[VAR[パス]]のうち、 [CODE[;]] とそれ以降に設定します。
-[VAR[UA]] が [[Chrome]] なら最後の [CODE[;]] 以降、それ以外なら最初の [CODE[;]]
-以降とします。
-== [VAR[パス]]から[VAR[引数]]を削除します。
-= [VAR[種別]]を、不明に設定します。
-== [VAR[UA]] が [[Firefox]] なら、
-=== [VAR[URL]] の[F[パス]]を、 [VAR[パス]]に設定します。
-=== [VAR[URL]] への[[リダイレクト]]を返し、ここで停止します。
-== [VAR[UA]] が [[Chrome]] なら、
-=== [VAR[引数]]が [CODE[;type=a]] なら、
-==== [VAR[型]]を、 [CODE[A]] に設定します。
-==== [VAR[種別]]を、[[ファイル]]に設定します。
-=== それ以外で、 [VAR[引数]]が [CODE[;type=i]] なら、
-==== [VAR[型]]を、 [CODE[I]] に設定します。
-==== [VAR[種別]]を、[[ファイル]]に設定します。
-=== それ以外で、 [VAR[引数]]が [CODE[;type=d]] なら、
-==== [VAR[種別]]を、[[ディレクトリー]]に設定します。
-== [VAR[UA]] が [[IE]] なら、
-=== [VAR[引数]]が [CODE[;type=A]] から始まる ([[ASCII大文字・小文字不区別]]) なら、
-==== [VAR[型]]を、[CODE[A]] に設定します。
-=== それ以外で、[VAR[引数]]が [CODE[;type=I]] から始まる ([[ASCII大文字・小文字不区別]]) なら、
-==== [VAR[型]]を、[CODE[I]] に設定します。
-=== それ以外なら、
-==== [[ネットワークエラー]]を返し、ここで停止します。
-= [VAR[パス]]から、先頭の [CODE[/]] を除去します。
-= 再利用できる接続がなければ、接続を確立します。
-= [VAR[UA]] が [[IE]] か [[Firefox]] なら、
-== 命令を送信します。 [CODE[TYPE]]、[VAR[型]]を引数とします。
-== [VAR[返答]]を、返答の取得の結果に設定します。
-== [VAR[返答]]の[F[符号]]の先頭が [CODE[2]] 以外なら、
-=== 異常終了とし、ここで停止します。
 = [VAR[UA]] が [[Firefox]] なら、
 == [VAR[パス引数]]を、[VAR[パス]]に設定します。
 = それ以外で、[VAR[UA]] が [[IE]] なら、
