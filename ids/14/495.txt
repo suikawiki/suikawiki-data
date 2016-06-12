@@ -2605,36 +2605,9 @@ first character.
 : [[IE]] : [CODE[User@]]
 ]FIG]
 
-= [VAR[パス]]に [CODE[;]] が含まれるなら、
-== [VAR[引数]]を、[VAR[パス]]のうち、 [CODE[;]] とそれ以降に設定します。
-[VAR[UA]] が [[Chrome]] なら最後の [CODE[;]] 以降、それ以外なら最初の [CODE[;]]
-以降とします。
-== [VAR[パス]]から[VAR[引数]]を削除します。
-= [VAR[種別]]を、不明に設定します。
-== [VAR[UA]] が [[Firefox]] なら、
-=== [VAR[URL]] の[F[パス]]を、 [VAR[パス]]に設定します。
-=== [VAR[URL]] への[[リダイレクト]]を返し、ここで停止します。
-== [VAR[UA]] が [[Chrome]] なら、
-=== [VAR[引数]]が [CODE[;type=a]] なら、
-==== [VAR[型]]を、 [CODE[A]] に設定します。
-==== [VAR[種別]]を、[[ファイル]]に設定します。
-=== それ以外で、 [VAR[引数]]が [CODE[;type=i]] なら、
-==== [VAR[型]]を、 [CODE[I]] に設定します。
-==== [VAR[種別]]を、[[ファイル]]に設定します。
-=== それ以外で、 [VAR[引数]]が [CODE[;type=d]] なら、
-==== [VAR[種別]]を、[[ディレクトリー]]に設定します。
-== [VAR[UA]] が [[IE]] なら、
-=== [VAR[引数]]が [CODE[;type=A]] から始まる ([[ASCII大文字・小文字不区別]]) なら、
-==== [VAR[型]]を、[CODE[A]] に設定します。
-=== それ以外で、[VAR[引数]]が [CODE[;type=I]] から始まる ([[ASCII大文字・小文字不区別]]) なら、
-==== [VAR[型]]を、[CODE[I]] に設定します。
-=== それ以外なら、
-==== [[ネットワークエラー]]を返し、ここで停止します。
-= [VAR[パス]]から、先頭の [CODE[/]] を除去します。
-
 ]FIG]
 
-[573] To [DFN[establish a FTP connection]] with
+[573] To [DFN[establish an FTP connection]] with
 a [[transport]] [VAR[transport]],
 a [[string]] [VAR[username]], and a [[string]] [VAR[password]],
 run these steps:
@@ -2707,7 +2680,7 @@ with [VAR[exit]].
 異常終了として、ここで停止します。
 
 
-[910] To [DFN[establish a FTP data connection]] for [VAR[host]] and [VAR[port]],
+[910] To [DFN[establish an FTP data connection]] for [VAR[host]] and [VAR[port]],
 run these steps:
 [FIG(steps)[
 = [1156] If [VAR[port]] is less than [N[1024]], is greater than [N[65535]],
@@ -2745,7 +2718,7 @@ switched by [VAR[ftp]]'s [F[state][FTP connection's state]]:
 [FIG(steps)[
 = [1099] If [VAR[reply]] is not [[null]]:
 == [1100] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''[CODE[USER]] reply state''.
-== [1103] [[Send FTP command][send FTP command]] [CODE[USER]] and
+== [1103] [[Send FTP command][send FTP command]] `[CODE[USER]]` and
 [[UTF-8 encoded][UTF-8 encode]] [VAR[ftp]]'s [F[username][FTP connection's username]]
 over [VAR[ftp]].
 = [1101] Otherwise:
@@ -2759,7 +2732,7 @@ over [VAR[ftp]].
 === [1126] Resolve [VAR[ftp]]'s [F[established promise][FTP connection's established promise]].
 == [1112] Otherwise, [VAR[reply]]'s [F[first code]] is [CODE[3]]:
 === [1118] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''before [CODE[PASS]] reply state''.
-=== [1119] [[Send FTP command][send FTP command]] [CODE[PASS]] with
+=== [1119] [[Send FTP command][send FTP command]] `[CODE[PASS]]` with
 [[UTF-8 encoded][UTF-8 encode]] [VAR[ftp]]'s [F[password][FTP connection's password]]
 over [VAR[ftp]].
 == [1113] Otherwise:
@@ -2786,11 +2759,11 @@ over [VAR[ftp]].
 [F[remote address or domain][transport's remote address or domain]] is an 
 [[IPv6 address]]:
 === [1140] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''[CODE[PASV]] reply state''.
-=== [1138] [[Send FTP command][send FTP command]] [CODE[EPSV]] with [CODE[null]]
+=== [1138] [[Send FTP command][send FTP command]] `[CODE[EPSV]]` with [CODE[null]]
 over [VAR[ftp]].
 == [1139] Otherwise:
 === [1132] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''[CODE[EPSV]] reply state''.
-=== [1136] [[Send FTP command][send FTP command]] [CODE[PASV]] with [CODE[null]]
+=== [1136] [[Send FTP command][send FTP command]] `[CODE[PASV]]` with [CODE[null]]
 over [VAR[ftp]].
 = [1134] Otherwise:
 == [1135] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
@@ -2838,6 +2811,13 @@ and [VAR[port]].
 = [1150] Otherwise:
 == [1151] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
 ]FIG]
+: ''Authenticated state'' :
+[[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
+: [CODE[TYPE]] reply state :
+[FIG(steps)[
+@@
+
+]FIG]
 
 
 @@
@@ -2848,8 +2828,26 @@ run these steps:
 [FIG(steps)[
 = [1159] Assertion: [VAR[ftp]]'s [F[state][FTP connection's state]] has to be
 ''authenticated state''.
+= [1164] Let [VAR[object type]] be ''unknown''.
+= [1165] Let [VAR[type]] be `[CODE[I]]`.
+= [1160] Let [VAR[path]] be concatenation of [VAR[request]]'s [F[url][request's url]]'s 
+[F[path]]'s items, separated with [CODE[/]], in order.  This can be the [[empty string]].
+= [1161] If [VAR[path]] contains a [CODE[;]] character:
+== [1162] Let [VAR[param]] be the first [CODE[;]] character and the following characters
+in [VAR[path]].  Remove them from [VAR[path]].
+== [1163] Switch by [VAR[param]]:
+[FIG(switch)[
+: [CODE[;type=a]] : Set [VAR[object type]] to ''file''.  Set [VAR[type]] to `[CODE[A]]`.
+: [CODE[;type=i]] : Set [VAR[object type]] to ''file''.
+: [CODE[;type=d]] : Set [VAR[object type]] to ''directory''.
+]FIG]
+= [1166] Set [VAR[path]] be the result of applying [[UTF-8 encode]] to [VAR[path]].
+= [1167] Set [VAR[path]] be the result of applying [[percent decode]] to [VAR[path]].
+= [1168] If the last byte of [VAR[path]], if any, is 0x2F:
+== [1169] Set [VAR[object type]] to ''directory''.
 = [1128] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''[CODE[TYPE]] reply state''.
-= [1129] [[Send FTP command][send FTP command]] [CODE[TYPE]] with [CODE[I]] over [VAR[ftp]].
+= [1129] [[Send FTP command][send FTP command]] `[CODE[TYPE]]` with [VAR[type]] over 
+[VAR[ftp]].
 
 
 @@
@@ -2858,17 +2856,6 @@ run these steps:
 
 @@
 [FIG(steps)[
-= [VAR[UA]] が [[Firefox]] なら、
-== [VAR[パス引数]]を、[VAR[パス]]に設定します。
-= それ以外で、[VAR[UA]] が [[IE]] なら、
-== [VAR[パス引数]]を、[CODE[/]] と[VAR[パス]]を連結したものに設定します。
-= それ以外で、[VAR[UA]] が [[Chrome]] なら、
-== [VAR[パス引数]]を、[VAR[パス接頭辞]]に[VAR[パス]]を連結したものに設定します。
-= [VAR[パス引数]]を、[VAR[パス引数]]を[[パーセント復号]]した[[バイト列]]に設定します。
-= [VAR[ファイルパス引数]]を、[VAR[パス引数]]に設定します。
-= [VAR[ファイルパス引数]]の末尾が [CODE[/]] なら、これを削除します。
-
-
 
 = [VAR[UA]] が [[Firefox]] か [[IE]] なら、
 == 命令を送信します。 [CODE[SIZE]]、[VAR[ファイルパス引数]]を引数とします。
@@ -2987,6 +2974,7 @@ run these steps:
 [DFN[[[IPv4 serializer]]]],
 [DFN[[[IPv6 address]]]], [DFN[[[domain]]]],
 [DFN[[[host]]]], [DFN[[[host parser]]]], [DFN[[[equals][host equivalence]]]],
+[DFN[[[percent decode]]]],
 [DFN[scheme][URL scheme (syntax)]],
 [DFN[[[URL parser]]]],
 [DFN[[[URL record]]]],
