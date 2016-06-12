@@ -2579,10 +2579,11 @@ Initially, an unresolved [[promise]].
 ''file'', or ''directory''.  Initially, ''unknown''.
 : [DFN[[F[file length][FTP connection's file length]]]] : Either an [[integer]] or
 [[null]].  Initially, [[null]].
+: [DFN[[F[data length][FTP connection's data length]]]] : An [[integer]].
 : [DFN[[F[data transport][FTP connection's data transport]]]] : A [[transport]] or [[null]].
 Initially, [[null]].
 : [DFN[[F[data state][FTP connection's data state]]]] : 
-Either ''initial state'' or ''data state''.  Initially, ''initial state''.
+Either ''initial state'', ''data state'', or ''exit state''.
 : [DFN[[F[data connected promise][FTP connection's data connected promise]]]] : A [[promise]].
 ]FIG]
 
@@ -2682,10 +2683,7 @@ it notifies of 正常終了の受信 or 中断 with [VAR[reset flag]]:
 = [1060] Set [VAR[is abort]] be whether the notification is about 中断 or not.
 = [1090] Let [VAR[exit]] be
 @@
-=
-@@
-= [1089] Reject [VAR[ftp]]'s [F[established promise][FTP connection's established promise]]
-with [VAR[exit]].
+= [1272] Run the [[FTP client state machine]] with [VAR[ftp]] and [[null]].
 ]FIG]
 = [1088] Return [VAR[ftp]].
 ]FIG]
@@ -2698,86 +2696,6 @@ run these steps:
 = [1107] Otherwise:
 == [1108] Send [VAR[text]] followed by [VAR[text]] followed by [CODE[0x0D]] [CODE[0x0A]]
 over [VAR[ftp]].
-]FIG]
-
-[910] To [DFN[establish an FTP data connection]] for [VAR[ftp]] and [VAR[port]],
-run these steps:
-[FIG(steps)[
-= [1243] Set [VAR[ftp]]'s [F[data connected promise][FTP connection's data connected promise]]
-to an unresolved [[promise]].
-= [1188] If [VAR[port]] is less than [N[1024]], is greater than [N[65535]],
-or is one of [[bad ports]]:
-== [1189] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
-= [1184] Let [VAR[host]] be [VAR[ftp]]'s [F[transport][FTP connection's transport]]'s
-[F[remote address or domain][transport's remote address or domain]].
-= [1185] Let [VAR[proxy]] be [VAR[ftp]]'s [F[transport][FTP connection's transport]]'s
-[F[proxy configuration][transport's proxy configuration]].
-= [1187] Let [VAR[url]] be a [[URL record]] whose [F[scheme][URL scheme]] is [CODE[ftp][ftp:]],
-[F[host][URL's host]] is [VAR[host]], and [F[port][URL's port]] is [VAR[port]].
-= [1186] Let [VAR[transport]] be the result of 
-[[creating a transport for proxy][create a transport for a proxy configuration]]
-[VAR[proxy]] with [VAR[url]].
-= [1156] If [VAR[transport]] is a [[failure]]:
-== [1190] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
-= [1191] Set [VAR[ftp]]'s [F[data transport][FTP connection's data transport]] to
-[VAR[transport]].
-= [1201] Set [VAR[ftp]]'s [F[data state][FTP connection's data state]] to ''initial state''.
-= [1228] Schedule to run these substeps when [VAR[ftp]]'s 
-[F[data connected promise][FTP connection's data connected promise]] is resolved:
-[FIG(steps)[
-= [1229] [VAR[ftp]]'s 要求の送信完了の通知.
-= [1232] Set [VAR[ftp]]'s [F[response][FTP connection's response]] to a [[response]].
-[FIG(list members)[
-[FIGCAPTION[
-[[Response][response]]
-]FIGCAPTION]
-: [F[status][status code]] : [CODE[200]]
-: [F[status text][reason phrase]] : [CODE[OK]]
-: [F[body][response body]] :
-@@ stream
-]FIG]
-= [1230] [VAR[ftp]]'s 応答のヘッダー受信完了の通知 with [VAR[ftp]]'s [F[response][FTP connection's response]].
-= [1231] [VAR[ftp]]'s データ開始の通知.
-=
-@@ If length is zero
-= [1205] Set [VAR[ftp]]'s [F[data state][FTP connection's data state]] to ''data state''.
-]FIG]
-= [1195] Configure [VAR[transport]] to run these substeps whenever
-it notifies of [[バイト]]の受信 with [VAR[byte]] and [VAR[urgent data flag]]:
-[FIG(steps)[
-= [1196] If [VAR[urgent data flag]] is set, abort these steps.
-= [1200] If [VAR[ftp]]'s [F[data state][FTP connection's data state]] is ''initial state'':
-== [1255] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
-= [1256] Otherwise:
-== [1233] [VAR[ftp]]'s データ受信の通知 with [VAR[byte]].
-==
-@@ If length is ...
-]FIG]
-= [1197] Configure [VAR[transport]] to run these substeps whenever
-it notifies of 正常終了の受信 or 中断 with [VAR[reset flag]]:
-[FIG(steps)[
-= [1198] Set [VAR[is abort]] be whether the notification is about 中断 or not.
-= [1199] Let [VAR[exit]] be
-@@
-= [1239] If [VAR[ftp]]'s [F[data transport]] is [VAR[transport]]:
-== [1202] If [VAR[ftp]]'s [F[data state][FTP connection's data state]] is
-''initial state'':
-=== [1203] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
-== [1204] Otherwise:
-=== [1234] [VAR[ftp]]'s データ終了の通知.
-===
-@@ If length is ...
-===
-@@ If [VAR[is abort]], set incomplete 
-=== [1235] [VAR[ftp]]'s 完了の通知 with [VAR[ftp]]'s [F[response][FTP connection's response]]
-and [VAR[exit]].
-=== [1236] [VAR[ftp]]'s [F[transport][FTP connection's transport]]'s 正常終了の送信の指示.
-=== [1237] [VAR[ftp]]'s [F[data transport][FTP connection's data transport]]'s
-正常終了の送信の指示.
-= [1240] Otherwise:
-== [1241] [VAR[transport]]'s 正常終了の送信の指示.
-]FIG]
-= [1242] Resolve [VAR[ftp]]'s [F[data connected promise][FTP connection's data connected promise]].
 ]FIG]
 
 [1061] To [DFN[set FTP state]] of [[FTP connection]] [VAR[ftp]] to [VAR[state]],
@@ -2919,6 +2837,8 @@ encoded in [[UTF-8]].
 [VAR[ftp]]'s [F[data state][FTP connection's data state]] is not ''initial state'':
 == [1207] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
 = [1208] Otherwise:
+== [1228] Schedule to run the [VAR[data connected steps]] with [VAR[ftp]] when [VAR[ftp]]'s 
+[F[data connected promise][FTP connection's data connected promise]] is resolved.
 == [1180] [[Send FTP command][send FTP command]] `[CODE[RETR]]` with [VAR[ftp]]'s
 [F[path][FTP connection's path]] over [VAR[ftp]].
 ]FIG]
@@ -2944,25 +2864,15 @@ or if [VAR[ftp]]'s [F[object type][FTP connection's object type]] is ''file'':
 [FIG(steps)[
 = [1216] If [VAR[reply]] is not [[null]] and
 [VAR[reply]]'s [F[first code]] is [CODE[2]]:
-==
-@@wait
-== [1219] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''[CODE[LIST]] reply state''.
-== [1220] If [VAR[ftp]]'s [F[data connection][FTP connection's data state]] is [[null]] or
+== [1257] Set [VAR[ftp]]'s [F[file length][FTP connection's file length]] to [[null]].
+== [1258] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''[CODE[LIST]] reply state''.
+== [1219] If [VAR[ftp]]'s [F[data connection][FTP connection's data connection]] is [[null]] or
 [VAR[ftp]]'s [F[data state][FTP connection's data state]] is not ''initial state'':
-=== [1221] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
-== [1222] Otherwise:
-=== [1223] Set [VAR[ftp]]'s [F[data state][FTP connection's data state]] to ''data state''.
-=== [1224] [[Send FTP command][send FTP command]] `[CODE[LIST]]` with [[null]] over [VAR[ftp]].
-===
-@@
-If ?raw, plain text.  Otherwise, FTP directory list.
-===
-@@
-[VAR[ftp]]'s [F[path][FTP connection's path]]
-==
-@@ If path does not end with a 0x2F, append a 0x2F byte to path.
-=== 
-@@ event
+=== [1259] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
+== [1260] Otherwise:
+=== [1261] Schedule to run the [VAR[data connected steps]] with [VAR[ftp]] when [VAR[ftp]]'s 
+[F[data connected promise][FTP connection's data connected promise]] is resolved.
+=== [1262] [[Send FTP command][send FTP command]] `[CODE[LIST]]` with [[null]].
 = [1217] Otherwise:
 == [1218] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
 ]FIG]
@@ -2971,6 +2881,114 @@ If ?raw, plain text.  Otherwise, FTP directory list.
 = [1225] If [VAR[reply]]'s [F[first code]] is not [CODE[1]] or [CODE[2]]:
 == [1226] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
 ]FIG]
+]FIG]
+
+
+[910] To [DFN[establish an FTP data connection]] for [VAR[ftp]] and [VAR[port]],
+run these steps:
+[FIG(steps)[
+= [1243] Set [VAR[ftp]]'s [F[data connected promise][FTP connection's data connected promise]]
+to an unresolved [[promise]].
+= [1188] If [VAR[port]] is less than [N[1024]], is greater than [N[65535]],
+or is one of [[bad ports]]:
+== [1189] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
+= [1184] Let [VAR[host]] be [VAR[ftp]]'s [F[transport][FTP connection's transport]]'s
+[F[remote address or domain][transport's remote address or domain]].
+= [1185] Let [VAR[proxy]] be [VAR[ftp]]'s [F[transport][FTP connection's transport]]'s
+[F[proxy configuration][transport's proxy configuration]].
+= [1187] Let [VAR[url]] be a [[URL record]] whose [F[scheme][URL scheme]] is [CODE[ftp][ftp:]],
+[F[host][URL's host]] is [VAR[host]], and [F[port][URL's port]] is [VAR[port]].
+= [1186] Let [VAR[transport]] be the result of 
+[[creating a transport for proxy][create a transport for a proxy configuration]]
+[VAR[proxy]] with [VAR[url]].
+= [1156] If [VAR[transport]] is a [[failure]]:
+== [1190] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
+= [1191] Set [VAR[ftp]]'s [F[data transport][FTP connection's data transport]] to
+[VAR[transport]].
+= [1201] Set [VAR[ftp]]'s [F[data state][FTP connection's data state]] to ''initial state''.
+= [1195] Configure [VAR[transport]] to run these substeps whenever
+it notifies of [[バイト]]の受信 with [VAR[byte]] and [VAR[urgent data flag]]:
+[FIG(steps)[
+= [1196] If [VAR[urgent data flag]] is set, abort these steps.
+= [1200] If [VAR[ftp]]'s [F[data state][FTP connection's data state]] is ''initial state'':
+== [1255] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
+= [1256] Otherwise:
+== [1222] Increment [VAR[ftp]]'s [F[data length][FTP connection's data length]].
+== [1233] [VAR[ftp]]'s データ受信の通知 with [VAR[byte]].
+== [1220] If [VAR[ftp]]'s [F[file length][FTP connection's file length]] is not [[null]] and
+[VAR[ftp]]'s [F[file length][FTP connection's file length]] is
+[VAR[ftp]]'s [F[data length][FTP connection's data length]]:
+=== [1223] Set [F[data state][FTP connection's data state]] to ''exit state''.
+=== [1224] [VAR[ftp]]'s データ終了の通知.
+=== [1269] [VAR[ftp]]'s [F[data transport][FTP connection's data transport]]'s
+正常終了の送信の指示.
+=== [1270] Set [VAR[ftp]]'s [F[data transport][FTP connection's data transport]] to [[null]].
+]FIG]
+= [1197] Configure [VAR[transport]] to run these substeps whenever
+it notifies of 正常終了の受信 or 中断 with [VAR[reset flag]]:
+[FIG(steps)[
+= [1198] Set [VAR[is abort]] be whether the notification is about 中断 or not.
+= [1199] Let [VAR[exit]] be
+@@
+= [1239] If [VAR[ftp]]'s [F[data transport]] is [VAR[transport]] or
+[VAR[ftp]]'s [F[data state][FTP connection's data state]] is ''exit state'':
+== [1202] If [VAR[ftp]]'s [F[data state][FTP connection's data state]] is
+''initial state'':
+=== [1203] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
+== [1204] Otherwise:
+=== [1271] If [VAR[ftp]]'s [F[data state][FTP connection's data state]] is 
+''data state'':
+==== [1234] [VAR[ftp]]'s データ終了の通知.
+==== [1276] If
+[VAR[ftp]]'s [F[file length][FTP connection's file length]] is not [[null]] and
+[VAR[ftp]]'s [F[file length][FTP connection's file length]] is greater than
+[VAR[ftp]]'s [F[data length][FTP connection's data length]]:
+===== [1277] 
+@@ Set response's [F[incomplete message]] flag.
+==== [1236] [VAR[ftp]]'s [F[transport][FTP connection's transport]]'s 正常終了の送信の指示.
+=== [1235] [VAR[ftp]]'s 完了の通知 with [VAR[ftp]]'s [F[response][FTP connection's response]]
+and [VAR[exit]].
+=== [1237] [VAR[ftp]]'s [F[data transport][FTP connection's data transport]]'s
+正常終了の送信の指示.
+= [1240] Otherwise:
+== [1241] [VAR[transport]]'s 正常終了の送信の指示.
+]FIG]
+= [1242] Resolve [VAR[ftp]]'s [F[data connected promise][FTP connection's data connected promise]].
+]FIG]
+
+[1211] The [DFN[data connected steps]] with [VAR[ftp]] are these steps:
+[FIG(steps)[
+= [1229] [VAR[ftp]]'s 要求の送信完了の通知.
+= [1232] Set [VAR[ftp]]'s [F[response][FTP connection's response]] to a [[response]].
+[FIG(list members)[
+[FIGCAPTION[
+[[Response][response]]
+]FIGCAPTION]
+: [F[status][status code]] : [CODE[200]]
+: [F[status text][reason phrase]] : [CODE[OK]]
+: [F[body][response body]] :
+@@ stream
+]FIG]
+=
+@@
+If ?raw, plain text.  Otherwise, FTP directory list.
+=
+@@
+base is: [VAR[ftp]]'s [F[path][FTP connection's path]]
+If path does not end with a 0x2F, append a 0x2F byte to path.
+= [1230] [VAR[ftp]]'s 応答のヘッダー受信完了の通知 with [VAR[ftp]]'s [F[response][FTP connection's response]].
+= [1221] Set [VAR[ftp]]'s [F[data length][FTP connection's data length]] to [N[0]].
+= [1231] [VAR[ftp]]'s データ開始の通知.
+= [1263] If [VAR[ftp]]'s [F[file length][FTP connection's file length]] is not [[null]] and
+[VAR[ftp]]'s [F[file length][FTP connection's file length]] is
+[VAR[ftp]]'s [F[data length][FTP connection's data length]]:
+== [1264] Set [F[data state][FTP connection's data state]] to ''exit state''.
+== [1265] [VAR[ftp]]'s データ終了の通知.
+== [1267] [VAR[ftp]]'s [F[data transport][FTP connection's data transport]]'s
+正常終了の送信の指示.
+== [1268] Set [VAR[ftp]]'s [F[data transport][FTP connection's data transport]] to [[null]].
+= [1266] Otherwise:
+== [1205] Set [VAR[ftp]]'s [F[data state][FTP connection's data state]] to ''data state''.
 ]FIG]
 
 [1074] To [DFN[send an FTP request]] [VAR[request]] over [VAR[ftp]],
@@ -3016,8 +3034,13 @@ Set [VAR[ftp]]'s [F[object type][FTP connection's object type]] to ''directory''
 = [1194] [VAR[ftp]]'s [F[transport][FTP connection's transport]]'s 中断の指示.
 = [1192] If [VAR[ftp]]'s [F[data transport][FTP connection's data transport]] is not [[null]]:
 == [1193] [VAR[ftp]]'s [F[data transport][FTP connection's data transport]]'s 中断の指示.
-= 
-@@ end events
+= [1274] If 
+@@ requested
+=== [1273] [VAR[ftp]]'s 完了の通知 with [VAR[ftp]]'s [F[response][FTP connection's response]]
+and [VAR[exit]].
+= [1275] Otherwise:
+== [1089] Reject [VAR[ftp]]'s [F[established promise][FTP connection's established promise]]
+@@ with [VAR[exit]].
 ]FIG]
 
 @@ [1250] Timeout
