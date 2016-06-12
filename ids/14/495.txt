@@ -2751,6 +2751,8 @@ it notifies of 正常終了の受信 or 中断 with [VAR[reset flag]]:
 ==
 @@ If length is ...
 ==
+@@ If [VAR[is abort]], set incomplete 
+==
 @@ end event
 == [1211] Set [VAR[ftp]]'s [F[data state][FTP connection's data state]] to ''exit state''.
 ==
@@ -2838,8 +2840,6 @@ where [VAR[digits]] represents one or more bytes in range [0x30, 0x39]:
 === [1144] 
 [[Establish an FTP data connection][establish an FTP data connection]] for [VAR[ftp]] and
 and [VAR[port]].
-===
-@@
 == [1154] Otherwise:
 === [1155] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
 = [1142] Otherwise:
@@ -2857,8 +2857,6 @@ interpreted as a decimal integer encoded in [[UTF-8]].
 === [1149] 
 [[Establish an FTP data connection][establish an FTP data connection]] for
 [VAR[ftp]] and [VAR[port]].
-===
-@@
 == [1152] Otherwise:
 === [1153] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
 = [1150] Otherwise:
@@ -2930,9 +2928,16 @@ encoded in [[UTF-8]].
 == [1222] Otherwise:
 === [1223] Set [VAR[ftp]]'s [F[data state][FTP connection's data state]] to ''[CODE[LIST]] data state''.
 === [1224] [[Send FTP command][send FTP command]] `[CODE[LIST]]` with [[null]] over [VAR[ftp]].
+===
+@@
+If ?raw, plain text.  Otherwise, FTP directory list.
+===
+@@
+[VAR[ftp]]'s [F[path][FTP connection's path]]
+==
+@@ If path does not end with a 0x2F, append a 0x2F byte to path.
 === 
 @@ event
-?raw
 = [1217] Otherwise:
 == [1218] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
 ]FIG]
@@ -2972,60 +2977,6 @@ Set [VAR[ftp]]'s [F[object type][FTP connection's object type]] to ''directory''
 = [1128] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''[CODE[TYPE]] reply state''.
 = [1129] [[Send FTP command][send FTP command]] `[CODE[TYPE]]` with [VAR[type]] over 
 [VAR[ftp]].
-]FIG]
-
-
-@@
-[FIG(steps)[
-
-== [VAR[UA]] が [[Chrome]] なら、
-=== 命令を送信します。 [CODE[LIST]] と [CODE[-l]] を引数とします。
-@@ [[VMS]] なら、 [CODE[-l]] ではなく [CODE[*.*;0]] を指定します。
-== それ以外なら、
-=== 命令を送信します。 [CODE[LIST]] と [[null]] を引数とします。
-== [VAR[返答]]を、返答の取得の結果に設定します。
-== [VAR[UA]] が [[Firefox]] なら、
-=== [VAR[返答]]の[F[符号]]の先頭が [CODE[2]] なら、
-==== 何かを待ち続けます。
-=== それ以外で、[VAR[返答]]の[F[符号]]の先頭が [CODE[1]] 以外なら、
-==== 異常終了とし、ここで停止します。
-=== それ以外なら、
-==== [VAR[種別]]がファイル以外なら、
-===== [VAR[URL]] の[F[パス]]を、[VAR[パス]]に [CODE[/]] を連結したものに設定します。
-===== [VAR[URL]] への[[リダイレクト]]を返し、ここで停止します。
-==== それ以外なら、
-===== [VAR[データ接続]]から受信したデータを [CODE(MIME)@en[application/http-index-format]]
-に変換したものを返し、ここで停止します。
-[CODE(HTTP)@en[Content-Type]] を、 [CODE(MIME)@en[application/http-index-format]]
-に設定します。
-応答の[F[状態]]を [CODE[200]]、[F[理由句]]を [CODE[OK]] に設定します。
-以後返答を受信したら、[VAR[返信]]の[F[符号]]の先頭が [CODE[2]] 以外なら、
-[[ネットワークエラー]]として扱います。
-== [VAR[UA]] が [[IE]] なら、
-=== [VAR[返答]]の[F[符号]]の先頭が [CODE[1]] か [CODE[2]] 以外なら、
-==== 異常終了とし、ここで停止します。
-=== それ以外なら、
-==== [VAR[種別]]がファイル以外なら、
-===== [VAR[URL]] の[F[パス]]を、[VAR[パス]]に [CODE[/]] と[VAR[引数]]を連結したものに設定します。
-===== [VAR[URL]] について再帰的に本アルゴリズムを実行します。 (同じ接続を再利用します。)
-その結果を返し、ここで停止します。
-==== それ以外なら、
-===== [VAR[データ接続]]から受信したデータを返し、ここで停止します。
-[[FTP]] [[ディレクトリー]]一覧としてレンダリングします。
-[VAR[パス]]の末尾が [CODE[/]] でない場合、 [CODE[/]] を付加したものを[[ディレクトリー]]の[[パス]]とみなします。
-以後返答を受信し、その[F[符号]]の先頭が [CODE[2]] 以外なら、
-[[ネットワークエラー]]として扱います。
-== [VAR[UA]] が [[Chrome]] なら、
-=== [VAR[返答]]の[F[符号]]の先頭が [CODE[1]] か [CODE[2]] 以外なら、
-==== 異常終了とし、ここで停止します。
-=== それ以外なら、
-==== [VAR[データ接続]]から受信したデータを返し、ここで停止します。
-[VAR[URL]] の[F[クエリー]]が [CODE[raw]] なら、テキストとしてレンダリングします。
-それ以外なら、 [[FTP]] [[ディレクトリー]]一覧としてレンダリングします。
-応答の[F[状態]]を [CODE[0]]、[F[理由句]]を[[空文字列]]に設定します。
-= [VAR[UA]] が [[Chrome]] なら、
-== [CODE[QUIT]]
-== ここで停止します。
 ]FIG]
 
 @@
@@ -3096,7 +3047,8 @@ is defined in the [CITE[DOM Standard]].
 
 [1007] [[WPAD]] is defined by the [[Internet Draft]].
 
-[1008] Someday [[PAC]] might be defined at somewhere.
+[1008] [[PAC]] is defined by <https://developer.mozilla.org/en-US/docs/Mozilla/Projects/Necko/Proxy_Auto-Configuration_(PAC)_file>
+and <https://bugzilla.mozilla.org/show_bug.cgi?id=78176>.
 
 * XXX
 
