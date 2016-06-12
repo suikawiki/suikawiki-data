@@ -2564,6 +2564,8 @@ is [[false]]:
 [FIG(list members)[
 : [DFN[[F[endpoint type][FTP connection's endpoint type]]]] : [CODE[client]]
 : [DFN[[F[transport][FTP connection's transport]]]] : A [[transport]].
+: [DFN[[F[read buffer][FTP connection's read buffer]]]] : A [[byte string]].
+Initially, an empty [[byte string]].
 : [DFN[[F[state][FTP connection's state]]]] : Initially, ''before reply''.
 ]FIG]
 
@@ -2611,17 +2613,19 @@ run these steps:
 : [F[transport][FTP connection's transport]] : [VAR[transport]]
 ]FIG]
 = [1074] Let [VAR[promise]] be a [[promise]].
-= [1061] Let [VAR[buffer]] be an empty [[byte string]].
 = [1067] Let [VAR[current code]] be [[null]].
 = [1066] Let [VAR[current text]] be an empty [[byte string]].
 = [911] Configure [VAR[transport]] to run these substeps whenever
 it notifies of [[バイト]]の受信 with [VAR[byte]] and [VAR[urgent data flag]]:
 [FIG(steps)[
 = [912] If [VAR[urgent data flag]] is set, abort these substeps.
-= [1062] Append [VAR[byte]] to [VAR[buffer]].
+= [1062] Append [VAR[byte]] to [VAR[ftp]]'s [F[read buffer][FTP connection's read buffer]].
+= [1094] Optionally, abort these substeps.
 = [1063] If [VAR[byte]] contains a [CODE[0x0A]] byte:
-== [1064] Split [VAR[buffer]] into two substrings at the first [CODE[0x0A]] byte.
-Set [VAR[line]] to the first substring and [VAR[buffer]] to the second substring,
+== [1064] Split [VAR[ftp]]'s [F[read buffer][FTP connection's read buffer]]
+into two substrings at the first [CODE[0x0A]] byte.
+Set [VAR[line]] to the first substring and [VAR[ftp]]'s 
+[F[read buffer][FTP connection's read buffer]] to the second substring,
 not including the [CODE[0x0A]] separator.
 == [1065] Remove the [CODE[0x0D]] byte at the end of [VAR[line]], if any.
 == [1075] If [VAR[line]] has three [CODE[0x30]]-[CODE[0x39]] bytes followed by
@@ -2674,13 +2678,22 @@ it notifies of 正常終了の受信 or 中断 with [VAR[reset flag]]:
 @@
 ]FIG]
 
+[1061] To [DFN[set FTP state]] of [[FTP connection]] [VAR[ftp]] to [VAR[state]],
+run these steps:
+[FIG(steps)[
+= [1096] If [VAR[ftp]]'s [F[read buffer][FTP connection's read buffer]] is not empty:
+== [1097] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
+= [1098] Otherwise:
+== [1095] Set [VAR[ftp]]'s [F[state][FTP connection's state]] to [VAR[state]].
+]FIG]
+
 [1092] The [DFN[FTP client state machine]] of [[FTP connection]] [VAR[ftp]]
 run these steps with [[FTP reply]] [VAR[reply]],
 switched by [VAR[ftp]]'s [F[state][FTP connection's state]]:
 [FIG(switch)[
-: Before reply state : 
-If [VAR[reply]] is not [[null]], set [VAR[ftp]]'s [F[state][FTP connection's state]]
-to the ''before [CODE[USER]] state''.
+: ''Before reply state'' : 
+If [VAR[reply]] is not [[null]], [[set FTP state]] of [VAR[ftp]] to
+''before [CODE[USER]] state''.
 Otherwise, [[abort FTP connection]] [VAR[ftp]].
 :  :
 
