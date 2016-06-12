@@ -2741,7 +2741,7 @@ switched by [VAR[ftp]]'s [F[state][FTP connection's state]]:
 = [1099] If [VAR[reply]] is not [[null]]:
 == [1100] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''[CODE[USER]] reply state''.
 == [1103] [[Send FTP command][send FTP command]] [CODE[USER]] and
-[[utf-8 encoded][utf-8 encode]] [VAR[ftp]]'s [F[username][FTP connection's username]]
+[[UTF-8 encoded][UTF-8 encode]] [VAR[ftp]]'s [F[username][FTP connection's username]]
 over [VAR[ftp]].
 = [1101] Otherwise:
 == [1102] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
@@ -2754,8 +2754,8 @@ over [VAR[ftp]].
 === [1127] [[Send FTP command][send FTP command]] [CODE[TYPE]] and [CODE[I]].
 == [1112] Otherwise, [VAR[reply]]'s [F[first code]] is [CODE[3]]:
 === [1118] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''before [CODE[PASS]] reply state''.
-=== [1119] [[Send FTP command][send FTP command]] [CODE[PASS]] and
-[[utf-8 encoded][utf-8 encode]] [VAR[ftp]]'s [F[password][FTP connection's password]]
+=== [1119] [[Send FTP command][send FTP command]] [CODE[PASS]] with
+[[UTF-8 encoded][UTF-8 encode]] [VAR[ftp]]'s [F[password][FTP connection's password]]
 over [VAR[ftp]].
 == [1113] Otherwise:
 === [1116] [[Request FTP authentication][request FTP authentication]] for [VAR[ftp]].
@@ -2767,7 +2767,7 @@ over [VAR[ftp]].
 = [1120] If [VAR[reply]] is not [[null]]:
 == [1121] If [VAR[reply]]'s [F[first code]] is [CODE[2]]:
 === [1128] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''[CODE[TYPE]] reply state''.
-=== [1129] [[Send FTP command][send FTP command]] [CODE[TYPE]] and [CODE[I]].
+=== [1129] [[Send FTP command][send FTP command]] [CODE[TYPE]] with [CODE[I]].
 == [1122] Otherwise:
 === [1123] [[Request FTP authentication][request FTP authentication]] for [VAR[ftp]].
 = [1124] Otherwise:
@@ -2775,14 +2775,57 @@ over [VAR[ftp]].
 ]FIG]
 : ''[CODE[TYPE]] reply state'' :
 [FIG(steps)[
-= [1130] If [VAR[reply]] is not [[null]]:
-== [1133] If [VAR[reply]]'s [F[first code]] is [CODE[2]]:
-===
+= [1130] If [VAR[reply]] is not [[null]] and
+[VAR[reply]]'s [F[first code]] is [CODE[2]]:
+== [1137] If [VAR[ftp]]'s [F[transport][FTP connection's transport]]'s
+[F[remote address or domain][transport's remote address or domain]] is an 
+[[IPv6 address]]:
+=== [1140] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''[CODE[PASV]] reply state''.
+=== [1138] [[Send FTP command][send FTP command]] [CODE[EPSV]] with [CODE[null]].
+== [1139] Otherwise:
+=== [1132] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''[CODE[EPSV]] reply state''.
+=== [1136] [[Send FTP command][send FTP command]] [CODE[PASV]] with [CODE[null]].
+= [1134] Otherwise:
+== [1135] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
+]FIG]
+: ''[CODE[PASV]] reply state'' :
+[FIG(steps)[
+= [1141] If [VAR[reply]] is not [[null]] and
+[VAR[reply]]'s [F[first code]] is [CODE[2]] :
+== [1131] If [VAR[reply]]'s [F[text]] matches to the pattern
+[CODE[0x28 [VAR[digits]] 0x2C [VAR[digits]] 0x2C [VAR[digits]] 0x2C [VAR[digits]] 0x2C [VAR[digits]] 0x2C [VAR[digits]] 0x29]],
+where [VAR[digits]] represents one or more bytes in range [0x30, 0x39]:
+=== [1133] Let [VAR[p1]] and [VAR[p2]] be the first such match's last two
+[VAR[digits]] substrings, respectively, interpreted as decimal integers encoded in [[UTF-8]].
+=== [1143] Let [VAR[port]] be [VAR[p1]] × 256 + [VAR[p2]].
+=== [1144] Let [VAR[promise]] be the result of
+[[establishing an FTP data connection][establish an FTP data connection]] for
+[VAR[ftp]]'s [F[transport][FTP connection's transport]]'s
+[F[remote address or domain][transport's remote address or domain]]
+and [VAR[port]].
+=== [1152] Scheduled to run these substeps when [VAR[promise]] is resolved:
 @@
-== [1134] Otherwise:
-=== [1135] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
-= [1131] Otherwise:
-== [1132] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
+= [1142] Otherwise:
+== [1145] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
+]FIG]
+: ''[CODE[EPSV]] reply state'' :
+[FIG(steps)[
+= [1146] If [VAR[reply]] is not [[null]] and
+[VAR[reply]]'s [F[first code]] is [CODE[2]] :
+== [1147] If [VAR[reply]]'s [F[text]] matches to the pattern
+[CODE[0x28 0x7C 0x7C 0x7C [VAR[digits]] 0x7C 0x29]],
+where [VAR[digits]] represents one or more bytes in range [0x30, 0x39]:
+=== [1148] Let [VAR[port]] be the first such match's [VAR[digits]] substring,
+interpreted as a decimal integer encoded in [[UTF-8]].
+=== [1149] Let [VAR[promise]] be the result of
+[[establishing an FTP data connection][establish an FTP data connection]] for
+[VAR[ftp]]'s [F[transport][FTP connection's transport]]'s
+[F[remote address or domain][transport's remote address or domain]]
+and [VAR[port]].
+=== [1153] Scheduled to run these substeps when [VAR[promise]] is resolved:
+@@
+= [1150] Otherwise:
+== [1151] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
 ]FIG]
 
 
@@ -2804,60 +2847,14 @@ over [VAR[ftp]].
 = [VAR[パス引数]]を、[VAR[パス引数]]を[[パーセント復号]]した[[バイト列]]に設定します。
 = [VAR[ファイルパス引数]]を、[VAR[パス引数]]に設定します。
 = [VAR[ファイルパス引数]]の末尾が [CODE[/]] なら、これを削除します。
-= [VAR[UA]] が [[Chrome]] なら、
-== [VAR[種別]]が[[ディレクトリー]]以外なら、
-=== 命令を送信します。 [CODE[SIZE]]、[VAR[ファイルパス引数]]を引数とします。
-=== [VAR[返答]]を、返答の取得の結果に設定します。
-=== [VAR[返答]]の[F[符号]]が [CODE[550]] 以外なら、
-==== [VAR[返答]]の[F[符号]]の先頭が [CODE[1]]、[CODE[2]]、[CODE[3]]、[CODE[4]] のいずれでもないか、
-[VAR[返答]]の[F[残り]]が [[ASCII数字]]列でないなら、
-===== 異常終了とし、ここで停止します。
-== [VAR[種別]]が[[ファイル]]以外なら、
-=== 命令を送信します。 [CODE[CWD]]、[VAR[パス引数]]を引数とします。
-=== [VAR[返答]]を、返答の取得の結果に設定します。
-=== [VAR[返答]]の[F[符号]]の先頭が [CODE[2]] なら、
-==== [VAR[種別]]を、[[ディレクトリー]]に設定します。
-=== それ以外で、[VAR[返答]]の[F[符号]]が [CODE[451]] か [CODE[550]] なら、
-==== [VAR[種別]]が[[ディレクトリー]]なら、
-===== 異常終了とし、ここで停止します。
-==== それ以外なら、
-===== [VAR[種別]]を、[[ファイル]]に設定します。
-=== それ以外で、[VAR[返答]]の[F[符号]]の先頭が [CODE[5]] 以外なら、
-==== 異常終了とし、ここで停止します。
-= [VAR[UA]] が [[Chrome]] で [[IPv6]] なら、
-==
-@@
-= それ以外なら、
-== 命令を送信します。 [CODE[PASV]]、[[null]] を引数とします。
-== [VAR[返答]]を、返答の取得の結果に設定します。
-== 
-[FIG(list)[
-- [VAR[返答]]の[F[符号]]の先頭が [CODE[2]] 以外
-- [VAR[UA]] が [[IE]] で、[VAR[返答]]の[F[符号]]が [CODE[227]] 以外
-- [VAR[UA]] の規則により[VAR[返答]]の[F[残り]]を構文解析できない場合
--- [VAR[UA]] により構文解析方法は異なるが、
-[CODE[\([0-9]+,[0-9]+,[0-9]+,[0-9]+,[0-9]+,[0-9]+\)]] が含まれかつそれより前に [CODE[(]]
-が含まれないかつどこにも改行を含まないなら、構文解析できる
-]FIG]
-... のいずれかを満たすなら、
-=== 異常終了とし、ここで停止します。
-== [VAR[UA]] が [[IE]] なら、
-=== [VAR[IPアドレス]]を、得られた最初の4つの十進数が表す [[IPv4アドレス]]に設定します。
-=== [VAR[IPアドレス]]が接続先の [[IPアドレス]]と異なるなら、
-==== 異常終了とし、ここで停止します。
-== [VAR[ポート]]を、得られた最後の2つの十進数が表す[[ポート]]に設定します。
-== 
+
 @@ [[Chrome]] では[VAR[ポート]]が1024[[未満]]か [[port blocking]] 対象なら、
 異常終了とし、ここで停止します。
-== [VAR[データ接続]]を、[VAR[ホスト]]と[VAR[ポート]]へ[[TCP接続]]を確立した結果に設定します。
-[VAR[UA]] が [[Chrome]] なら、結果を待ちます。それ以外なら、[[並列に]]行います。
-[VAR[データ接続]]が得られた時、失敗なら、異常終了とし、ここで停止します。
+
+
 = [VAR[UA]] が [[Firefox]] か [[IE]] なら、
 == 命令を送信します。 [CODE[SIZE]]、[VAR[ファイルパス引数]]を引数とします。
-= [VAR[UA]] が [[Firefox]] なら、
-== 命令を送信します。 [CODE[MDTM]]、[VAR[ファイルパス引数]]を引数とします。
-== 
-@@
+
 = [VAR[種別]]が[[ファイル]]か不明なら、
 == 命令を送信します。 [CODE[RETR]]、[VAR[ファイルパス引数]]を引数とします。
 == [VAR[返答]]を、返答の取得の結果に設定します。
@@ -2962,7 +2959,7 @@ over [VAR[ftp]].
 * References
 
 [1044] The terms
-[DFN[[[encoding]]]], [DFN[[[utf-8 encode]]]], and
+[DFN[[[encoding]]]], [DFN[[[UTF-8]]]], [DFN[[[UTF-8 encode]]]], and
 [DFN[[[decode]]]] are defined in the [CITE[Encoding Standard]].
 
 [621] The terms 
