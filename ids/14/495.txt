@@ -16,6 +16,15 @@ The [VAR[skip DNS cache]] flag is set to whether the request's [F[cache mode]]
 is either one of [CODE[no-cache]], [CODE[reload]], and [CODE[no-store]], or not.
 = [823] If [VAR[transport]] is a [[failure]]:
 == [824] Return a [[failure]].
+= [932] Otherwise, if [VAR[transport]]'s [F[http protocol][transport's http protocol]]
+is [CODE[ftp]]:
+== [934] If the [[HTTP-network-or-cache fetch]] steps set credentials to the request:
+=== [935] Set [VAR[username]] and [VAR[password]] to the appropriate values.
+== [1285] Otherwise:
+=== [1286] Set [VAR[username]] to [CODE[anonymous]].
+=== [1287] Set [VAR[password]] to [CODE[User@]].
+== [933] Return the result of [[initiating an FTP connection][initiate an FTP connection]]
+with [VAR[transport]], [VAR[username]], and [VAR[password]].
 = [825] Otherwise:
 == [826] Return an [[HTTP connection]]:
 [FIG(list members)[
@@ -85,17 +94,22 @@ run these steps:
 [F[http protocol][transport's http protocol]] is [CODE[http2]]:
 == 
 @@
-= [541] If [VAR[connection]]'s [F[transport][connection's transport]]'s
+= [930] If [VAR[connection]]'s [F[transport][connection's transport]]'s
+[F[http protocol][transport's http protocol]] is [CODE[ftp]]:
+==
+@@
+= [931] Otherwise:
+== [541] If [VAR[connection]]'s [F[transport][connection's transport]]'s
 [F[request mode]] is ''HTTP proxy'':
-== [845] Let [VAR[target]] be the result of applying [[URL serializer]] to
+=== [845] Let [VAR[target]] be the result of applying [[URL serializer]] to
 [VAR[request]]'s [F[current url]] with [VAR[exclude fragment flag]] set.
-= [843] Otherwise:
-== [844] Let [VAR[target]] be [VAR[request]]'s [F[current url]]'s [F[pathquery]].
-= [901] Let [VAR[host header]] be [VAR[request]]'s [F[current url]]'s [F[hostport]].
-= [900] Append [CODE[Host]]/[VAR[host header]] to [VAR[request]]'s [F[header list][request's header list]].
-= [905] Append [CODE[Connection]]/[CODE[keep-alive]] to [VAR[request]]'s
+== [843] Otherwise:
+=== [844] Let [VAR[target]] be [VAR[request]]'s [F[current url]]'s [F[pathquery]].
+== [901] Let [VAR[host header]] be [VAR[request]]'s [F[current url]]'s [F[hostport]].
+== [900] Append [CODE[Host]]/[VAR[host header]] to [VAR[request]]'s [F[header list][request's header list]].
+== [905] Append [CODE[Connection]]/[CODE[keep-alive]] to [VAR[request]]'s
 [F[header list][request's header list]].
-= [840] Send an [[HTTP request]] over [VAR[connection]].
+== [840] Send an [[HTTP request]] over [VAR[connection]].
 [FIG(list members)[
 [FIGCAPTION[
 [[HTTP request]]
@@ -501,8 +515,8 @@ A [[domain]] or [[null]].  Unless stated otherwise, the value is [[null]].
 An [[integer]] or [[null]].
 : [DFN[[F[proxy configuration][transport's proxy configuration]]]] : A [[proxy configuration]].
 : [DFN[[F[http protocol][transport's http protocol]]]] :
-Either [CODE[http1]] or [CODE[http2]].
-Unless stated otherwise, the value is [CODE[http1]].
+Either [CODE[http1]], [CODE[http2]], or [CODE[ftp]].
+Initially, [CODE[http1]].
 :[VAR[送信閉じ済みフラグ]]:初期状態では未設定。
 :[VAR[受信閉じ済みフラグ]]:初期状態では未設定。
 :[VAR[送信待ちバッファー]]:初期状態では空のリスト。
@@ -647,6 +661,9 @@ and [VAR[skip DNS cache]] flags, run these steps:
 ==== [602] Set [VAR[transport]] to the result of running the [[TLS steps]] for
 [VAR[transport]], [VAR[url]]'s [F[host]], [VAR[credentials]] flag, and [VAR[ws]] flag,
 in [VAR[user agent]].
+=== [603] Otherwise, if [VAR[transport]]'s [F[request mode]] is '''not''' ''HTTP proxy'' and
+[VAR[url]]'s [F[scheme][URL scheme]] is [CODE(URI)@en[ftp][ftp:]]:
+==== [929] Set [VAR[transport]]'s [F[http protocol][transport's http protocol]] to [CODE[ftp]].
 == [927] If [VAR[transport]] is not a [[failure]]:
 === [1182] Set [VAR[transport]]'s [F[proxy configuration][transport's proxy configuration]]
 to [VAR[proxy]].
@@ -2606,31 +2623,6 @@ Either ''initial state'', ''data state'', or ''exit state''.
 
 [1110] The [[FTP reply]]'s [DFN[[F[first code]]]] is its [F[code][FTP reply's code]]'s
 first character.
-
-@@ [574] 
-[FIG(steps)[
-= [VAR[利用者名]]を、 [[null]] に設定します。
-= [VAR[合言葉]]を、 [[null]] に設定します。
-= [VAR[credentials]] が [[null]] でなければ、
-== [VAR[UA]] が [[IE]] で [VAR[credentials]] が[[匿名]]なら、
-=== [VAR[利用者名]]を [CODE[Anonymous]] に設定します。
-=== [VAR[合言葉]]を [CODE[ieuser@microsoft.com]] に設定します。
-== それ以外なら、
-=== [VAR[利用者名]]を、 [VAR[credentials]] の[F[利用者名]]に設定します。
-=== [VAR[合言葉]]を、 [VAR[credentials]] の[F[合言葉]]に設定します。
-= それ以外で、 [VAR[URL]] の[F[利用者名]]が[[空文字列]]でなければ、
-== [VAR[利用者名]]を、[VAR[URL]] の[F[利用者名]]に設定します。
-== [VAR[合言葉]]を、 [VAR[URL]] の[F[合言葉]]に設定します。
-= それ以外なら、
-== [VAR[利用者名]]を、 [CODE[anonymous]] に設定します。
-== [VAR[合言葉]]を、 [VAR[UA]] により次の値に設定します。
-[FIG(switch)[
-: [[Firefox]] : [CODE[mozilla@example.com]]
-: [[Chrome]] : [CODE[chrome@example.com]]
-: [[IE]] : [CODE[User@]]
-]FIG]
-
-]FIG]
 
 [573] To [DFN[initiate an FTP connection]] with
 a [[transport]] [VAR[transport]],
