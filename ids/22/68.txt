@@ -30,6 +30,8 @@
 -- [115] [CITE@en[RFC 7540 - Hypertext Transfer Protocol Version 2 (HTTP/2)]] ([TIME[2015-05-15 10:14:54 +09:00]] 版) <https://tools.ietf.org/html/rfc7540#section-10.8>
 - [203] [CITE@en-US[Fetch Standard]] ([TIME[2016-04-19 01:53:35 +09:00]] 版) <https://fetch.spec.whatwg.org/#connections>
 - [230] [CITE@en[Resource Hints]] ([TIME[2016-05-21 01:13:13 +09:00]]) <https://w3c.github.io/resource-hints/#dfn-initiate-a-preconnect>
+- [234] [CITE@en[RFC 6455 - The WebSocket Protocol]] ([TIME[2015-03-11 20:42:50 +09:00]] 版) <http://tools.ietf.org/html/rfc6455#section-4>
+- [235] [CITE[RFC Errata Report]] ([TIME[2015-05-16 22:26:12 +09:00]] 版) <http://www.rfc-editor.org/errata_search.php?rfc=6455>
 ]REFS]
 
 * 状態
@@ -323,6 +325,37 @@
 [92] [[HTTP/2]] [[クライアント]]は、既存の[[接続]]が[[ストリーム識別子]]空間を使い果たしつつある場合や、
 [[TLSセッション]]の鍵の更新のため必要な場合、
 [[エラー]]を検出した場合には、代替となる[[接続]]を新たに開くことができます [SRC[>>90]]。
+
+*** 他の接続を待つ
+
+[237] [[WebSocket]] に関しては、他の接続が閉じられるのを待つ処理が明文化されています。
+
+[236] [DFN[他の接続を待つ]]場合は、次のようにしなければ[MUST[なりません]] [SRC[>>234]]。
+[FIG(steps)[
+= [[ホスト]]から、 [[IPアドレス]]を得ます ([[名前解決]])。
+= [[ホスト]]から[[IPアドレス]]を得られない場合 (例えば[[名前解決]]を[[プロキシ]]に委ねている場合)、
+== [VAR[host]] を、[[ホスト]]に設定します。
+== [VAR[n]] を、十分小さな値とする[SHOULD[べきです]]。例えば開いている[[タブ]]数を考慮して決めます。
+= それ以外の場合、
+== [VAR[host]] を、[[IPアドレス]]に設定します。
+== [VAR[n]] を、1 に設定します。
+= 同じ [VAR[host]] と[[ポート]]への状態が [CODE[[[CONNECTING]]]]
+である[[WebSocket接続]]があるか調べます。
+= その数が [VAR[n]] [[未満]]となるまで、待ちます。
+]FIG]
+
+[238] この制限は、[[著者]]が多数の [[WebSocket接続]]を開いて [[DoS攻撃]]することを難しくするためのものです
+[SRC[>>234]]。
+
+;; [239] [[ホスト]]のみで制限する実装と[[ホスト]]と[[ポート]]の組で制限する実装があります
+[SRC[>>235]]。
+
+;; [240] これをうまく使うとある[[ホスト]]とある[[ホスト]]が同じ [[IPアドレス]]かどうかをある程度の精度で推測できるかもしれませんが、
+それによって何か問題になることはあまり無さそうです。
+
+[241] [[HTTP/1]] (非 [[WebSocket]]) と [[HTTP/2]] に関しては明文規定はありませんが、
+[VAR[n]] 以外は同様に処理するべきものと思われます。 
+([[プロキシ]]への接続と[[起源サーバー]]への接続とでも [VAR[n]] は違いそうです。)
 
 ** 接続の再利用
 
@@ -1294,3 +1327,7 @@ programs for the purpose of communication.
 > (HTTP) Connect through this Unix domain socket, instead of using the network. (Added in 7.40.0)
 
 ]FIG]
+
+[242] [CITE@en[Issue 170165 - chromium - Websocket handshake delay when server is unavailable - Monorail]]
+( ([TIME[2016-06-16 19:51:11 +09:00]]))
+<https://bugs.chromium.org/p/chromium/issues/detail?id=170165>
