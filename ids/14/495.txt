@@ -240,15 +240,21 @@ a [[domain]] to a pair of ([F[address]] ([[IPv4 address]], [[IPv6 address]], or 
 in [VAR[user agent]] are these steps:
 [FIG(steps)[
 = [616] If [VAR[host]] is a [[domain]]:
-== [1283] Let [VAR[cached]] be [VAR[user agent]]'s [F[DNS cache]]'s entry for [VAR[host]].
-== [1284] If [VAR[cached]] is [[null]] and [VAR[skip DNS cache]] is [[false]]:
+== [1309] If [VAR[skip DNS cache]] is [[false]]:
+=== [1283] Let [VAR[cached]] be [VAR[user agent]]'s [F[DNS cache]]'s entry for [VAR[host]].
+== [1310] Otherwise:
+=== [1311] Let [VAR[cached]] be [[null]].
+== [1284] If [VAR[cached]] is [[null]] or [VAR[cached]]'s [F[expires]] is less than
+the current time:
 === [617] Let [VAR[addr]] be the result of applying [[platform]]'s [[name resolution]]
 steps to [VAR[host]].
 === [1280] Let [VAR[now]] be the current time.
 === [1281] Let [VAR[timeout]] be [N[60]] seconds.
 === [1279] Set [VAR[user agent]]'s [F[DNS cache]]'s entry for [VAR[host]]
 to ([VAR[addr]], [VAR[now]] + [VAR[timeout]]).
-== [1282] Return [VAR[addr]].
+=== [1282] Return [VAR[addr]].
+== [1312] Otherwise:
+=== [1313] Return [VAR[cached]]'s [F[address]].
 = [618] Otherwise:
 == [619] Return [VAR[host]].
 ]FIG]
@@ -402,14 +408,14 @@ values of these fields in implementation-dependent ways.
 
 ** Proxy configuration environment variables
 
-[836] If a [[user agent]] supports [[environment variable]]s, 
+[836] If a [[user agent]] [VAR[user agent]] supports [[environment variable]]s, 
 it [MUST[MUST]] run these steps upon initialization:
 [FIG(steps)[
-= [1021] Set the [[user agent]]'s [F[HTTP proxy]] to the result of
+= [1021] Set [VAR[user agent]]'s [F[HTTP proxy]] to the result of
 [[parsing environment variable][parse an environment variable]] [CODE[http_proxy]].
-= [1022] Set the [[user agent]]'s [F[HTTPS proxy]] to the result of
+= [1022] Set [VAR[user agent]]'s [F[HTTPS proxy]] to the result of
 [[parsing environment variable][parse an environment variable]] [CODE[https_proxy]].
-= [1023] Set the [[user agent]]'s [F[FTP proxy]] to the result of
+= [1023] Set [VAR[user agent]]'s [F[FTP proxy]] to the result of
 [[parsing environment variable][parse an environment variable]] [CODE[ftp_proxy]].
 = [1037] Let [VAR[no_proxy]] be the result of
 [[getting the environment variable][get an environment variable]] [CODE[no_proxy]].
@@ -420,7 +426,7 @@ by a [CODE[,]] character:
 from [VAR[value]].
 === [1041] Let [VAR[host]] be the result of applying the [[host parser]] to [VAR[value]].
 === [1042] If [VAR[host]] is not an error,
-append [VAR[host]] to the [[user agent]]'s [F[no proxy hosts]].
+append [VAR[host]] to [VAR[user agent]]'s [F[no proxy hosts]].
 ]FIG]
 
 [1024] To [DFN[parse an environment variable]] whose name is [VAR[name]],
@@ -499,29 +505,30 @@ When a [[PAC]] script file is [[fetch]]ed, the [[user agent]]'s
 
 ** Choosing proxy configurations
 
-[1010] To [DFN[get proxies]] for [[URL record]] [VAR[url]], run these steps:
+[1010] To [DFN[get proxies]] for [[URL record]] [VAR[url]] in [[user agent]]
+[VAR[user agent]], run these steps:
 [FIG(steps)[
-= [1018] For each [[host]] [VAR[host]] in the [[user agent]]'s [F[no proxy hosts]]:
+= [1018] For each [[host]] [VAR[host]] in [VAR[user agent]]'s [F[no proxy hosts]]:
 == [1019] If [VAR[host]] [[equals][host equivalence]] [VAR[url]]'s [F[host]]:
 === [1020] Return a list whose only member is a [[proxy configuration]]
 whose [F[protocol][proxy's protocol]] is [CODE[tcp]] and abort these steps.
-= [544] If the [[user agent]]'s [F[[[PAC]] script]] is not [[null]]:
-== [545] Process the [[user agent]]'s [F[[[PAC]] script]] with [VAR[url]].
+= [544] If [VAR[user agent]]'s [F[[[PAC]] script]] is not [[null]]:
+== [545] Process [VAR[user agent]]'s [F[[[PAC]] script]] with [VAR[url]].
 == [1011] Return the result of the previous step and abort these steps.
-= [609] If the [[user agent]]'s [F[SOCKS proxy]] is not [[null]]:
-== [610] Return a list whose only member is the [[user agent]]'s [F[SOCKS proxy]]
+= [609] If [VAR[user agent]]'s [F[SOCKS proxy]] is not [[null]]:
+== [610] Return a list whose only member is [VAR[user agent]]'s [F[SOCKS proxy]]
 and abort these steps.
 = [611] If [VAR[url]]'s [F[scheme][URL scheme]] is [CODE[http][http:]] and 
-the [[user agent]]'s [F[HTTP proxy]] is not [[null]]:
-== [1012] Return a list whose only member is the [[user agent]]'s [F[HTTP proxy]]
+[VAR[user agent]]'s [F[HTTP proxy]] is not [[null]]:
+== [1012] Return a list whose only member is [VAR[user agent]]'s [F[HTTP proxy]]
 and abort these steps.
 = [1013] If [VAR[url]]'s [F[scheme][URL scheme]] is [CODE[https][https:]] and 
-the [[user agent]]'s [F[HTTPS proxy]] is not [[null]]:
-== [1014] Return a list whose only member is the [[user agent]]'s [F[HTTPS proxy]]
+[VAR[user agent]]'s [F[HTTPS proxy]] is not [[null]]:
+== [1014] Return a list whose only member is [VAR[user agent]]'s [F[HTTPS proxy]]
 and abort these steps.
 = [1015] If [VAR[url]]'s [F[scheme][URL scheme]] is [CODE[ftp][ftp:]] and 
-the [[user agent]]'s [F[FTP proxy]] is not [[null]]:
-== [1016] Return a list whose only member is the [[user agent]]'s [F[FTP proxy]]
+[VAR[user agent]]'s [F[FTP proxy]] is not [[null]]:
+== [1016] Return a list whose only member is [VAR[user agent]]'s [F[FTP proxy]]
 and abort these steps.
 = [546] Return a list whose only member is a [[proxy configuration]]
 whose [F[protocol][proxy's protocol]] is [CODE[tcp]].
@@ -700,7 +707,7 @@ with [VAR[transport]], [VAR[url]]'s [F[host]], and [VAR[effective port]].
 and a [[user agent]] [VAR[user agent]], optionally with [VAR[credentials]], [VAR[ws]],
 and [VAR[skip DNS cache]] flags, run these steps:
 [FIG(steps)[
-= [1009] Let [VAR[proxies]] be the result of [[getting proxies][get proxies]] for [VAR[url]].
+= [1009] Let [VAR[proxies]] be the result of [[getting proxies][get proxies]] for [VAR[url]] in [VAR[user agent]].
 = [908] Let [VAR[addr]] be [[null]].
 = [914] Let [VAR[port]] be [VAR[url]]'s [F[port]].
 = [547] For each [VAR[proxy]] in [VAR[proxies]], in order, run these substeps:
