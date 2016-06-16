@@ -12,6 +12,8 @@ run these steps:
 = [808] Let [VAR[transport]] be the result of
 [[establishing a transport][establish a transport]]
 for the request's [F[current url]], [VAR[credentials]] flag, and the [[user agent]].
+The [VAR[skip DNS cache]] flag is set to whether the request's [F[cache mode]]
+is either one of [CODE[no-cache]], [CODE[reload]], and [CODE[no-store]], or not.
 = [823] If [VAR[transport]] is a [[failure]]:
 == [824] Return a [[failure]].
 = [825] Otherwise:
@@ -30,6 +32,8 @@ for the request's [F[current url]], [VAR[credentials]] flag, and the [[user agen
 = [821] Let [VAR[transport]] be the result of
 [[establishing a transport][establish a transport]]
 for [VAR[url]] and the [[user agent]], with [VAR[ws]] flag set.
+The [VAR[skip DNS cache]] flag is set to whether the request's [F[cache mode]]
+is either one of [CODE[no-cache]], [CODE[reload]], and [CODE[no-store]], or not.
 = [827] If [VAR[transport]] is a [[failure]]:
 == [828] Return a [[failure]].
 = [829] Otherwise:
@@ -184,19 +188,29 @@ with [VAR[credentials]] flag, with [VAR[not retryable]] flag set.
 
 ** Name resolution
 
-[615] The [DFN[name resolution steps]] for [VAR[host]] are these steps:
+[1278] A [[user agent]] has [DFN[[F[DNS cache]]]], which is a map from
+a [[domain]] to a pair of ([F[address]] ([[IPv4 address]], [[IPv6 address]], or [[failure]]),
+[F[expires]] ([[time]])).
+
+[615] The [DFN[name resolution steps]] for [VAR[host]] with [VAR[skip DNS cache]]
+in [VAR[user agent]] are these steps:
 [FIG(steps)[
 = [616] If [VAR[host]] is a [[domain]]:
-== [617] Return the result of applying [[platform]]'s [[name resolution]]
+== [1283] Let [VAR[cached]] be [VAR[user agent]]'s [F[DNS cache]]'s entry for [VAR[host]].
+== [1284] If [VAR[cached]] is [[null]] and [VAR[skip DNS cache]] is [[false]]:
+=== [617] Let [VAR[addr]] be the result of applying [[platform]]'s [[name resolution]]
 steps to [VAR[host]].
+=== [1280] Let [VAR[now]] be the current time.
+=== [1281] Let [VAR[timeout]] be [N[60]] seconds.
+=== [1279] Set [VAR[user agent]]'s [F[DNS cache]]'s entry for [VAR[host]]
+to ([VAR[addr]], [VAR[now]] + [VAR[timeout]]).
+== [1282] Return [VAR[addr]].
 = [618] Otherwise:
 == [619] Return [VAR[host]].
 ]FIG]
 
 ;; [620] These steps return an [[IPv4 address]], an [[IPv6 address]],
-or an [[error]].
-
-@@ caching of the result
+or a [[failure]].
 
 ** Verification of service identity
 
@@ -503,7 +517,8 @@ Unless stated otherwise, the value is [CODE[none]].
 ]FIG]
 
 [1054] To [DFN[create a transport for a proxy configuration]] [VAR[proxy]]
-with a [[URL record]] [VAR[url]] and optional [VAR[ws]] flag in [VAR[user agent]],
+with a [[URL record]] [VAR[url]] and optional [VAR[ws]] and [VAR[skip DNS cache]]
+flags in [VAR[user agent]],
 run rhese steps:
 [FIG(steps)[
 = [549] If [VAR[user agent]] does not support [VAR[proxy]]'s [F[protocol]]:
@@ -514,7 +529,7 @@ run rhese steps:
 [FIG(steps)[
 = [552] Set [VAR[effective port]] be the [[effective port]] of [VAR[url]].
 = [553] Set [VAR[addr]] to the result of applying [[name resolution steps]] 
-to [VAR[url]]'s [F[host][URL's host]].
+to [VAR[url]]'s [F[host][URL's host]] with [VAR[skip DNS cache]] in [VAR[user agent]].
 = [554] If [VAR[addr]] is an [[error]]:
 == [555] Return a [[failure]] and abort these steps.
 = [557] [[Wait for other connections][wait for other connections]] of
@@ -539,7 +554,7 @@ and [VAR[url]]'s [[effective port]].
 == [563] If [VAR[proxy]]'s [F[protocol]] is [CODE[http]], set [VAR[proxy port]] to [N[80]].
 == [564] If [VAR[proxy]]'s [F[protocol]] is [CODE[https]], set [VAR[proxy port]] to [N[443]].
 = [565] Let [VAR[proxy addr]] be the result of applying [[name resolution steps]] 
-to [VAR[proxy]]'s [F[host]].
+to [VAR[proxy]]'s [F[host]] with [VAR[skip DNS cache]] in [VAR[user agent]].
 = [566] If [VAR[proxy addr]] is an [[error]]:
 == [567] Return a [[failure]] and abort these steps.
 = [568] Let [VAR[transport]] be the result of 
@@ -580,7 +595,7 @@ with [VAR[http]] and [VAR[url]].
 [FIG(steps)[
 = [582] Let [VAR[effective port]] be the [[effective port]] of [VAR[url]].
 = [583] Set [VAR[addr]] to the result of applying [[name resolution steps]] 
-to [VAR[url]]'s [F[host]].
+to [VAR[url]]'s [F[host]] with [VAR[skip DNS cache]] in [VAR[user agent]].
 = [584] If [VAR[addr]] is ''not'' an [[IPv4 address]]:
 == [585] Return a [[failure]] and abort these steps.
 = [587] [[Wait for other connections][wait for other connections]] of
@@ -588,7 +603,7 @@ to [VAR[url]]'s [F[host]].
 = [588] Let [VAR[proxy port]] be [VAR[proxy]]'s [F[port]].
 = [589] If [VAR[proxy port]] is [[null]], set [VAR[proxy port]] to [N[1080]].
 = [590] Let [VAR[proxy addr]] be the result of applying [[name resolution steps]] 
-to [VAR[proxy]]'s [F[host]].
+to [VAR[proxy]]'s [F[host]] with [VAR[skip DNS cache]] in [VAR[user agent]].
 = [591] Let [VAR[transport]] be the result of 
 [[establishing a TCP connection][establish a TCP connection]]
 to [VAR[proxy addr]] and [VAR[proxy port]].
@@ -604,7 +619,7 @@ with [VAR[transport]], [VAR[addr]], and [VAR[effective port]].
 = [595] Let [VAR[proxy port]] be [VAR[proxy]]'s [F[port]].
 = [597] If [VAR[proxy port]] is [[null]], set [VAR[proxy port]] to [N[1080]].
 = [596] Let [VAR[proxy addr]] be the result of applying [[name resolution steps]] 
-to [VAR[proxy]]'s [F[host]].
+to [VAR[proxy]]'s [F[host]] with [VAR[skip DNS cache]] in [VAR[user agent]].
 = [598] Let [VAR[transport]] be the result of 
 [[establishing a TCP transport][establish a TCP transport]]
 to [VAR[proxy addr]] and [VAR[proxy port]].
@@ -617,8 +632,8 @@ with [VAR[transport]], [VAR[url]]'s [F[host]], and [VAR[effective port]].
 ]FIG]
 
 [542] To [DFN[establish a transport]] for an [[URL record]] [VAR[url]]
-and a [[user agent]] [VAR[user agent]], optionally with [VAR[credentials]]
-and [VAR[ws]] flags, run these steps:
+and a [[user agent]] [VAR[user agent]], optionally with [VAR[credentials]], [VAR[ws]],
+and [VAR[skip DNS cache]] flags, run these steps:
 [FIG(steps)[
 = [1009] Let [VAR[proxies]] be the result of [[getting proxies][get proxies]] for [VAR[url]].
 = [908] Let [VAR[addr]] be [[null]].
@@ -626,7 +641,7 @@ and [VAR[ws]] flags, run these steps:
 = [547] For each [VAR[proxy]] in [VAR[proxies]], in order, run these substeps:
 == [1053] Set [VAR[transport]] to the result of 
 [[creating a transport for proxy][create a transport for a proxy configuration]]
-[VAR[proxy]] with [VAR[url]] and [VAR[ws]].
+[VAR[proxy]] with [VAR[url]], [VAR[ws]], and [VAR[skip DNS cache]].
 == [600] If [VAR[transport]] is not a [[failure]]:
 === [601] If [VAR[url]]'s [F[scheme][URL scheme]] is [CODE(URI)@en[https][https:]]:
 ==== [602] Set [VAR[transport]] to the result of running the [[TLS steps]] for
