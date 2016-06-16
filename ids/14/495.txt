@@ -112,10 +112,7 @@ run these steps:
 = [931] Otherwise:
 == [541] If [VAR[connection]]'s [F[transport][connection's transport]]'s
 [F[request mode]] is ''HTTP proxy'':
-===
-@@ no userinfo
-=== [845] Let [VAR[target]] be the result of applying [[URL serializer]] to
-[VAR[request]]'s [F[current url]] with [VAR[exclude fragment flag]] set.
+=== [845] Let [VAR[target]] be [VAR[request]]'s [F[originpathquery]].
 == [843] Otherwise:
 === [844] Let [VAR[target]] be [VAR[request]]'s [F[current url]]'s [F[pathquery]].
 == [901] Let [VAR[host header]] be [VAR[request]]'s [F[current url]]'s [F[hostport]].
@@ -333,6 +330,14 @@ followed by [VAR[canonicalized pattern]], optionally followed by a [CODE[.]] cha
 == [850] [VAR[url]]'s [F[query]]
 ]FIG]
 
+[1299] The [DFN[[F[originpathquery]]]] of a [[URL record]] [VAR[url]] is the
+value returned by these steps:
+[FIG(steps)[
+= [1300] Set [VAR[clone]] be a copy of [VAR[url]].
+= [1301] [[Strip [VAR[clone]] for use as a referrer][Strip [VAR[url]] for use as a referrer]].
+= [1302] Return the result of applying the [[URL serializer]] to [VAR[clone]].
+]FIG]
+
 * Proxies
 
 ** Proxy configuration data structures
@@ -544,6 +549,19 @@ whose [[request target]] is an [[absolute URL]].
 : [DFN[[F[HTTPS state]]][transport's HTTPS state]] :
 An [[HTTPS state]] value.  Either [CODE[none]], [CODE[deprecated]], or [CODE[modern]].
 Unless stated otherwise, the value is [CODE[none]].
+]FIG]
+
+[38] An [DFN[exit status]] has following states:
+[FIG(list members)[
+[FIGCAPTION[
+[[Exit status][exit status]]
+]FIGCAPTION]
+:リセット:[[真]]か[[偽]]。既定値は[[偽]]。
+:失敗:[[真]]か[[偽]]。
+:[[WebSocket]] cleanly:[[真]]か[[偽]]か null。既定値は null。
+:[[WebSocket]] [[状態符号]]:[[整数]]か null。既定値は null。
+:[[WebSocket]] 理由:[[文字列]]か null。既定値は null。
+: [DFN[[F[can retry][exit's can retry]]]] : A [[boolean]].  Initially, [[false]].
 ]FIG]
 
 [1054] To [DFN[create a transport for a proxy configuration]] [VAR[proxy]]
@@ -1320,28 +1338,13 @@ If protocol is http2 and after preface, connection error PROTOCOL_ERROR
 = [737] そうでなければ、与えられた [[credentials]] を [[TLS]] の処理に引渡します。
 ]FIG]
 
-* HTTP
+* HTTP/1
 
 [355] An [DFN[HTTP connection]] has following states:
 [FIG(list members)[
 : [DFN[[F[endpoint type][connection's endpoint type]]]] : [CODE[client]] or [CODE[server]].
 : [DFN[[F[transport][connection's transport]]]] : A [[transport]].
 ]FIG]
-
-[38] An [DFN[exit status]] has following states:
-[FIG(list members)[
-[FIGCAPTION[
-[[Exit status][exit status]]
-]FIGCAPTION]
-:リセット:[[真]]か[[偽]]。既定値は[[偽]]。
-:失敗:[[真]]か[[偽]]。
-:[[WebSocket]] cleanly:[[真]]か[[偽]]か null。既定値は null。
-:[[WebSocket]] [[状態符号]]:[[整数]]か null。既定値は null。
-:[[WebSocket]] 理由:[[文字列]]か null。既定値は null。
-: [DFN[[F[can retry][exit's can retry]]]] : A [[boolean]].  Initially, [[false]].
-]FIG]
-
-* HTTP/1
 
 [34] An [[HTTP connection]] whose [F[protocol][connection's protocol]] is [CODE[http1]]
 has following additional states:
@@ -2616,7 +2619,8 @@ Initially, an empty [[byte string]].
 : [DFN[[F[password][FTP connection's password]]]] : A [[string]].
 : [DFN[[F[established promise][FTP connection's established promise]]]] : A [[promise]].
 Initially, an unresolved [[promise]].
-: [DFN[[F[path][FTP connection's path]]]] : A [[byte string]].
+: [DFN[[F[path][FTP connection's path]]]] : A [[byte string]] or [[null]].
+Initially, [[null]].
 : [DFN[[F[object type][FTP connection's object type]]]] : Either ''unknown'',
 ''file'', or ''directory''.  Initially, ''unknown''.
 : [DFN[[F[file length][FTP connection's file length]]]] : Either an [[integer]] or
@@ -2726,7 +2730,7 @@ over [VAR[ftp]].
 
 [1068] An [DFN[FTP reply]] has following states:
 [FIG(list members)[
-[FIGCAPTION]
+[FIGCAPTION[
 [[FTP reply]]
 ]FIGCAPTION]
 
@@ -2995,16 +2999,16 @@ it notifies of [[バイト]]の受信 with [VAR[byte]] and [VAR[urgent data flag
 === [1270] Set [VAR[ftp]]'s [F[data transport][FTP connection's data transport]] to [[null]].
 ]FIG]
 = [1197] Configure [VAR[transport]] to run these substeps whenever
-it notifies of 正常終了の受信 or 中断 with [VAR[reset flag]]:
+it notifies of 正常終了の受信 or 中断 with [VAR[is reset]]:
 [FIG(steps)[
 = [1198] Set [VAR[is abort]] be whether the notification is about 中断 or not.
-= [1199] Let [VAR[exit]] be
-@@
+= [1199] Let [VAR[exit]] be an [[exit status]] whose [F[失敗]] is [VAR[is abort]]
+and [F[リセット]] is [VAR[is reset]].
 = [1239] If [VAR[ftp]]'s [F[data transport]] is [VAR[transport]] or
 [VAR[ftp]]'s [F[data state][FTP connection's data state]] is ''exit state'':
 == [1202] If [VAR[ftp]]'s [F[data state][FTP connection's data state]] is
 ''initial state'':
-=== [1203] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
+=== [1203] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]] with [VAR[exit]].
 == [1204] Otherwise:
 === [1271] If [VAR[ftp]]'s [F[data state][FTP connection's data state]] is 
 ''data state'':
@@ -3069,18 +3073,19 @@ If path does not end with a 0x2F, append a 0x2F byte to path.
 = [1238] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
 ]FIG]
 
-[1093] To [DFN[abort FTP connection]] [VAR[ftp]], run these steps:
+[1093] To [DFN[abort FTP connection]] [VAR[ftp]] with optional [VAR[exit]], run these steps:
 [FIG(steps)[
+= [1297] If [VAR[exit]] is not specified, set [VAR[exit]] to an [[exit status]]
+whose [F[失敗]] is [[true]].
 = [1194] [VAR[ftp]]'s [F[transport][FTP connection's transport]]'s 中断の指示.
 = [1192] If [VAR[ftp]]'s [F[data transport][FTP connection's data transport]] is not [[null]]:
 == [1193] [VAR[ftp]]'s [F[data transport][FTP connection's data transport]]'s 中断の指示.
-= [1274] If 
-@@ requested
-=== [1273] [VAR[ftp]]'s 完了の通知 with [VAR[ftp]]'s [F[response][FTP connection's response]]
+= [1274] If [VAR[ftp]]'s [F[path][FTP connection's path]] is not [[null]]:
+== [1273] [VAR[ftp]]'s 完了の通知 with [VAR[ftp]]'s [F[response][FTP connection's response]]
 and [VAR[exit]].
 = [1275] Otherwise:
 == [1089] Reject [VAR[ftp]]'s [F[established promise][FTP connection's established promise]]
-@@ with [VAR[exit]].
+with [VAR[exit]].
 ]FIG]
 
 @@ [1250] Timeout
@@ -3100,7 +3105,7 @@ and [VAR[exit]].
 [DFN[[[host]]]], [DFN[[[host parser]]]], [DFN[[[equals][host equivalence]]]],
 [DFN[[[percent decode]]]],
 [DFN[scheme][URL scheme (syntax)]], [DFN[[[network scheme]]]],
-[DFN[[[URL parser]]]],
+[DFN[[[URL parser]]]], [DFN[[[URL serializer]]]],
 [DFN[[[URL record]]]],
 [DFN[[F[scheme][URL scheme]]]], [DFN[[F[host]]][URL's host]], [DFN[[F[port]]][URL's port]], and
 [DFN[[F[query][URL query]]]]
@@ -3139,6 +3144,9 @@ is defined in the [CITE[DOM Standard]].
 
 [1008] [[PAC]] is defined by <https://developer.mozilla.org/en-US/docs/Mozilla/Projects/Necko/Proxy_Auto-Configuration_(PAC)_file>
 and <https://bugzilla.mozilla.org/show_bug.cgi?id=78176>.
+
+[1298] The term [DFN[[[Strip [VAR[url]] for use as a referrer]]]]
+is defined in the [CITE[Referrer Policy]].
 
 * XXX
 
