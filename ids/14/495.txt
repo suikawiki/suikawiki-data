@@ -16,6 +16,10 @@ The [VAR[skip DNS cache]] flag is set to whether the request's [F[cache mode]]
 is either one of [CODE[no-cache]], [CODE[reload]], and [CODE[no-store]], or not.
 = [823] If [VAR[transport]] is a [[failure]]:
 == [824] Return a [[failure]].
+= [1296] Otherwise, if [VAR[transport]]'s [F[http protocol][transport's http protocol]]
+is [CODE[http2]]:
+==
+@@
 = [932] Otherwise, if [VAR[transport]]'s [F[http protocol][transport's http protocol]]
 is [CODE[ftp]]:
 == [934] If the [[HTTP-network-or-cache fetch]] steps set credentials to the request:
@@ -23,8 +27,16 @@ is [CODE[ftp]]:
 == [1285] Otherwise:
 === [1286] Set [VAR[username]] to [CODE[anonymous]].
 === [1287] Set [VAR[password]] to [CODE[User@]].
-== [933] Return the result of [[initiating an FTP connection][initiate an FTP connection]]
+== [933] Let [VAR[connection]] be the result of 
+[[initiating an FTP connection][initiate an FTP connection]]
 with [VAR[transport]], [VAR[username]], and [VAR[password]].
+== [1291] Wait until [VAR[connection]]'s [F[established promise][FTP connection's established promise]]
+is resolved or rejected.
+== [1292] If [VAR[connection]]'s [F[established promise][FTP connection's established promise]]
+is resolved:
+=== [1293] Return [VAR[ftp]].
+== [1294] Otherwise:
+=== [1295] Return a [[failure]].
 = [825] Otherwise:
 == [826] Return an [[HTTP connection]]:
 [FIG(list members)[
@@ -96,11 +108,12 @@ run these steps:
 @@
 = [930] If [VAR[connection]]'s [F[transport][connection's transport]]'s
 [F[http protocol][transport's http protocol]] is [CODE[ftp]]:
-==
-@@
+== [1289] [[Send an FTP request][send an FTP request]] [VAR[request]] over [VAR[connection]].
 = [931] Otherwise:
 == [541] If [VAR[connection]]'s [F[transport][connection's transport]]'s
 [F[request mode]] is ''HTTP proxy'':
+===
+@@ no userinfo
 === [845] Let [VAR[target]] be the result of applying [[URL serializer]] to
 [VAR[request]]'s [F[current url]] with [VAR[exclude fragment flag]] set.
 == [843] Otherwise:
@@ -197,6 +210,9 @@ with [VAR[credentials]] flag, with [VAR[not retryable]] flag set.
 
 @@
 [539] [[WebSocket]] client/server steps
+
+[1290] A [[response]] has the [DFN[[F[incomplete message][response's incomplete message]]]]
+flag, which is initially unset.
 
 * Domain names
 
@@ -2611,18 +2627,13 @@ Initially, [[null]].
 : [DFN[[F[data state][FTP connection's data state]]]] : 
 Either ''initial state'', ''data state'', or ''exit state''.
 : [DFN[[F[data connected promise][FTP connection's data connected promise]]]] : A [[promise]].
+: [DFN[[F[is unauthorized][FTP connection's is unauthorized]]]] : A [[boolean]].
+Initially, [[false]].
 ]FIG]
 
 [1227] An [[FTP connection]] has similar notification hooks as [[HTTP connection]].
 
-[1068] An [DFN[FTP reply]] has following states:
-[FIG(list members)[
-: [DFN[[F[code][FTP reply's code]]]] : A [[string]].
-: [DFN[[F[text][FTP reply's text]]]] : A [[byte string]].
-]FIG]
-
-[1110] The [[FTP reply]]'s [DFN[[F[first code]]]] is its [F[code][FTP reply's code]]'s
-first character.
+** Control connections
 
 [573] To [DFN[initiate an FTP connection]] with
 a [[transport]] [VAR[transport]],
@@ -2699,15 +2710,6 @@ run these steps:
 over [VAR[ftp]].
 ]FIG]
 
-[1061] To [DFN[set FTP state]] of [[FTP connection]] [VAR[ftp]] to [VAR[state]],
-run these steps:
-[FIG(steps)[
-= [1096] If [VAR[ftp]]'s [F[read buffer][FTP connection's read buffer]] is not empty:
-== [1097] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
-= [1098] Otherwise:
-== [1095] Set [VAR[ftp]]'s [F[state][FTP connection's state]] to [VAR[state]].
-]FIG]
-
 [1244] To [DFN[switch to passive mode]] with [VAR[ftp]], run these steps:
 [FIG(steps)[
 = [1137] If [VAR[ftp]]'s [F[transport][FTP connection's transport]]'s
@@ -2720,6 +2722,28 @@ over [VAR[ftp]].
 == [1132] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''[CODE[EPSV]] reply state''.
 == [1136] [[Send FTP command][send FTP command]] `[CODE[PASV]]` with [CODE[null]]
 over [VAR[ftp]].
+]FIG]
+
+[1068] An [DFN[FTP reply]] has following states:
+[FIG(list members)[
+[FIGCAPTION]
+[[FTP reply]]
+]FIGCAPTION]
+
+: [DFN[[F[code][FTP reply's code]]]] : A [[string]].
+: [DFN[[F[text][FTP reply's text]]]] : A [[byte string]].
+]FIG]
+
+[1110] The [[FTP reply]]'s [DFN[[F[first code]]]] is its [F[code][FTP reply's code]]'s
+first character.
+
+[1061] To [DFN[set FTP state]] of [[FTP connection]] [VAR[ftp]] to [VAR[state]],
+run these steps:
+[FIG(steps)[
+= [1096] If [VAR[ftp]]'s [F[read buffer][FTP connection's read buffer]] is not empty:
+== [1097] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
+= [1098] Otherwise:
+== [1095] Set [VAR[ftp]]'s [F[state][FTP connection's state]] to [VAR[state]].
 ]FIG]
 
 [1092] The [DFN[FTP client state machine]] of [[FTP connection]] [VAR[ftp]]
@@ -2884,6 +2908,51 @@ or if [VAR[ftp]]'s [F[object type][FTP connection's object type]] is ''file'':
 ]FIG]
 ]FIG]
 
+[1074] To [DFN[send an FTP request]] [VAR[request]] over [VAR[ftp]],
+run these steps:
+[FIG(steps)[
+= [1288] If [VAR[ftp]]'s [F[is unauthorized][FTP connection's is unauthorized]] is [[true]]:
+== Return a [[response]] and abort these steps:
+[FIG(list members)[
+[FIGCAPTION[
+[[Response][response]]
+]FIGCAPTION]
+: [F[status][status code]] : [CODE[401]]
+: [F[status text][reason phrase]] : [CODE[Unauthorized]]
+: [F[header list]] :
+[FIG(list members)[
+: [CODE[WWW-Authenticate]] : [CODE[[[Basic]] [[realm]]=""]]
+]FIG]
+]FIG]
+= [1159] Assertion: [VAR[ftp]]'s [F[state][FTP connection's state]] has to be
+''authenticated state''.
+= [1165] Let [VAR[type]] be `[CODE[I]]`.
+= [1160] Let [VAR[path]] be concatenation of [VAR[request]]'s [F[url][request's url]]'s 
+[F[path]]'s items, separated with [CODE[/]], in order.  This can be the [[empty string]].
+= [1161] If [VAR[path]] contains a [CODE[;]] character:
+== [1162] Let [VAR[param]] be the first [CODE[;]] character and the following characters
+in [VAR[path]].  Remove them from [VAR[path]].
+== [1163] Switch by [VAR[param]]:
+[FIG(switch)[
+: [CODE[;type=a]] :
+Set [VAR[ftp]]'s [F[object type][FTP connection's object type]] to ''file''.
+Set [VAR[type]] to `[CODE[A]]`.
+: [CODE[;type=i]] :
+Set [VAR[ftp]]'s [F[object type][FTP connection's object type]] to ''file''.
+: [CODE[;type=d]] :
+Set [VAR[ftp]]'s [F[object type][FTP connection's object type]] to ''directory''.
+]FIG]
+= [1166] Set [VAR[path]] be the result of applying [[UTF-8 encode]] to [VAR[path]].
+= [1167] Set [VAR[path]] be the result of applying [[percent decode]] to [VAR[path]].
+= [1168] If the last byte of [VAR[path]], if any, is 0x2F:
+== [1169] Set [VAR[ftp]]'s [F[object type][FTP connection's object type]] to ''directory''.
+= [1164] Set [VAR[ftp]]'s [F[path][FTP connection's path]] to [VAR[path]].
+= [1128] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''[CODE[TYPE]] reply state''.
+= [1129] [[Send FTP command][send FTP command]] `[CODE[TYPE]]` with [VAR[type]] over 
+[VAR[ftp]].
+]FIG]
+
+** Data connections
 
 [910] To [DFN[establish an FTP data connection]] for [VAR[ftp]] and [VAR[port]],
 run these steps:
@@ -2944,8 +3013,8 @@ it notifies of 正常終了の受信 or 中断 with [VAR[reset flag]]:
 [VAR[ftp]]'s [F[file length][FTP connection's file length]] is not [[null]] and
 [VAR[ftp]]'s [F[file length][FTP connection's file length]] is greater than
 [VAR[ftp]]'s [F[data length][FTP connection's data length]]:
-===== [1277] 
-@@ Set response's [F[incomplete message]] flag.
+===== [1277] Set [VAR[ftp]]'s [F[response][FTP connection's response]]'s
+[F[incomplete message][response's incomplete message]] flag.
 ==== [1236] [VAR[ftp]]'s [F[transport][FTP connection's transport]]'s 正常終了の送信の指示.
 === [1235] [VAR[ftp]]'s 完了の通知 with [VAR[ftp]]'s [F[response][FTP connection's response]]
 and [VAR[exit]].
@@ -2992,41 +3061,11 @@ If path does not end with a 0x2F, append a 0x2F byte to path.
 == [1205] Set [VAR[ftp]]'s [F[data state][FTP connection's data state]] to ''data state''.
 ]FIG]
 
-[1074] To [DFN[send an FTP request]] [VAR[request]] over [VAR[ftp]],
-run these steps:
-[FIG(steps)[
-= [1159] Assertion: [VAR[ftp]]'s [F[state][FTP connection's state]] has to be
-''authenticated state''.
-= [1165] Let [VAR[type]] be `[CODE[I]]`.
-= [1160] Let [VAR[path]] be concatenation of [VAR[request]]'s [F[url][request's url]]'s 
-[F[path]]'s items, separated with [CODE[/]], in order.  This can be the [[empty string]].
-= [1161] If [VAR[path]] contains a [CODE[;]] character:
-== [1162] Let [VAR[param]] be the first [CODE[;]] character and the following characters
-in [VAR[path]].  Remove them from [VAR[path]].
-== [1163] Switch by [VAR[param]]:
-[FIG(switch)[
-: [CODE[;type=a]] :
-Set [VAR[ftp]]'s [F[object type][FTP connection's object type]] to ''file''.
-Set [VAR[type]] to `[CODE[A]]`.
-: [CODE[;type=i]] :
-Set [VAR[ftp]]'s [F[object type][FTP connection's object type]] to ''file''.
-: [CODE[;type=d]] :
-Set [VAR[ftp]]'s [F[object type][FTP connection's object type]] to ''directory''.
-]FIG]
-= [1166] Set [VAR[path]] be the result of applying [[UTF-8 encode]] to [VAR[path]].
-= [1167] Set [VAR[path]] be the result of applying [[percent decode]] to [VAR[path]].
-= [1168] If the last byte of [VAR[path]], if any, is 0x2F:
-== [1169] Set [VAR[ftp]]'s [F[object type][FTP connection's object type]] to ''directory''.
-= [1164] Set [VAR[ftp]]'s [F[path][FTP connection's path]] to [VAR[path]].
-= [1128] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''[CODE[TYPE]] reply state''.
-= [1129] [[Send FTP command][send FTP command]] `[CODE[TYPE]]` with [VAR[type]] over 
-[VAR[ftp]].
-]FIG]
+** Termination
 
 [1117] To [DFN[request FTP authentication]] of [VAR[ftp]], run these steps:
 [FIG(steps)[
-=
-@@
+= [574] Set [VAR[ftp]]'s [F[is unauthorized][FTP connection's is unauthorized]] to [[true]].
 = [1238] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
 ]FIG]
 
