@@ -361,9 +361,25 @@ value returned by these steps:
 = [1302] Return the result of applying the [[URL serializer]] to [VAR[clone]].
 ]FIG]
 
+[1056] The [DFN[proxy environment variable parser]] for string [VAR[value]]
+[MUST[MUST]] run these steps:
+[FIG(steps)[
+= [1028] If [VAR[value]] does not begin with a [[scheme][URL scheme (syntax)]]
+followed by [CODE[://]]:
+== [1316] prepend [CODE[http://]] to [VAR[value]].
+= [1029] Return the result of applying the [[URL parser]] to [VAR[value]].
+]FIG]
+
+;; [1318] These steps can return a [[failure]].
+
 * Proxies
 
-** Proxy configuration data structures
+[1314] A [[user agent]] [VAR[user agent]] has [DFN[[F[get proxies]]]] steps,
+which are invoked with [VAR[user agent]] and [[URL record]] [VAR[url]].
+The [F[get proxies]] steps must return a list of zero or more [[proxy configuration]]
+objects.
+
+;; [1052] [VAR[url]]'s [F[scheme][URL scheme]] has to be a [[network scheme]].
 
 [612] A [DFN[proxy configuration]] has [DFN[[F[protocol][proxy's protocol]]]], which is one of:
 [CODE[tcp]],
@@ -391,25 +407,23 @@ The initial value of the [F[password]] is [[null]].
 [614] A [[proxy configuration]] whose [F[protocol][proxy's protocol]] is
 [CODE[unix]] has [DFN[[F[path][proxy's path]]]], whose value is a [[byte string]].
 
+[1315] The [F[get proxies]] steps are implementation dependent.  Following
+subsections include examples of such steps.
 
-[1000] A [[user agent]] has following fields:
+** Proxy configurations from environment variables
+
+[1043] This subsection applies to a [[user agent]] that supports [[environment variable]]
+based proxy configurations.
+
+[1317] A [[user agent]] has following states:
 [FIG(list members)[
 : [DFN[[F[HTTP proxy]]]] : A [[proxy configuration]] or [[null]].
 : [DFN[[F[HTTPS proxy]]]] : A [[proxy configuration]] or [[null]].
 : [DFN[[F[FTP proxy]]]] : A [[proxy configuration]] or [[null]].
-: [DFN[[F[SOCKS proxy]]]] : A [[proxy configuration]] or [[null]].
-: [DFN[[F[[[PAC]] [[URL]]]]  : A [[URL record]] or [[null]].
-: [DFN[[F[use [[WPAD]] flag]]]] : A [[boolean]].
 : [DFN[[F[no proxy hosts]]]] : A list of [[host]]s.
 ]FIG]
 
-[1043] A [[user agent]] [MAY[MAY]] allow the [[user]] to configure
-values of these fields in implementation-dependent ways.
-
-** Proxy configuration environment variables
-
-[836] If a [[user agent]] [VAR[user agent]] supports [[environment variable]]s, 
-it [MUST[MUST]] run these steps upon initialization:
+[836] Upon initialization, a [[user agent]] [MUST[MUST]] run these steps:
 [FIG(steps)[
 = [1021] Set [VAR[user agent]]'s [F[HTTP proxy]] to the result of
 [[parsing environment variable][parse an environment variable]] [CODE[http_proxy]].
@@ -480,44 +494,12 @@ whose name is [VAR[name]]:
 == [1051] Return [[null]].
 ]FIG]
 
-[1056] When the [DFN[proxy environment variable parser]] is applied to
-a string [VAR[value]], the implementation [MUST[MUST]] run these steps:
-[FIG(steps)[
-= [1028] If [VAR[value]] does not begin with a [[scheme][URL scheme (syntax)]]
-followed by [CODE[://]],
-prepend [CODE[http://]] to [VAR[value]].
-= [1029] Return the result of applying the [[URL parser]] to [VAR[value]].
-]FIG]
-
-** Fetching PAC scripts
-
-[1004] A [[user agent]] has a [F[[[PAC]] script]], which is initially [[null]].
-
-[1001] If [F[use [[WPAD]] flag]] is [[true]], the [[user agent]] [MUST[MUST]]
-send appropriate [[WPAD]] request.
-
-[1003] If a [[PAC]] [[URL]] is provided by [[WPAD]] processing,
-the [[user agent]] [MUST[MUST]] [[fetch]] the [[PAC]] file.
-Otherwise, if [F[[[PAC]] [[URL]]]] is not [[null]],
-the [[user agent]] [MUST[MUST]] [[fetch]] the [F[[[PAC]] [[URL]]]].
-When a [[PAC]] script file is [[fetch]]ed, the [[user agent]]'s
-[F[[[PAC]] script]] [MUST[MUST]] be set to the file.
-
-** Choosing proxy configurations
-
-[1010] To [DFN[get proxies]] for [[URL record]] [VAR[url]] in [[user agent]]
-[VAR[user agent]], run these steps:
+[1000] The [F[get proxies]] steps for [VAR[url]] are these steps:
 [FIG(steps)[
 = [1018] For each [[host]] [VAR[host]] in [VAR[user agent]]'s [F[no proxy hosts]]:
 == [1019] If [VAR[host]] [[equals][host equivalence]] [VAR[url]]'s [F[host]]:
 === [1020] Return a list whose only member is a [[proxy configuration]]
 whose [F[protocol][proxy's protocol]] is [CODE[tcp]] and abort these steps.
-= [544] If [VAR[user agent]]'s [F[[[PAC]] script]] is not [[null]]:
-== [545] Process [VAR[user agent]]'s [F[[[PAC]] script]] with [VAR[url]].
-== [1011] Return the result of the previous step and abort these steps.
-= [609] If [VAR[user agent]]'s [F[SOCKS proxy]] is not [[null]]:
-== [610] Return a list whose only member is [VAR[user agent]]'s [F[SOCKS proxy]]
-and abort these steps.
 = [611] If [VAR[url]]'s [F[scheme][URL scheme]] is [CODE[http][http:]] and 
 [VAR[user agent]]'s [F[HTTP proxy]] is not [[null]]:
 == [1012] Return a list whose only member is [VAR[user agent]]'s [F[HTTP proxy]]
@@ -534,7 +516,38 @@ and abort these steps.
 whose [F[protocol][proxy's protocol]] is [CODE[tcp]].
 ]FIG]
 
-;; [1052] [VAR[url]]'s [F[scheme][URL scheme]] has to be a [[network scheme]].
+** Proxy configurations from PAC
+
+[1319] This subsection applies to a [[user agent]] which is configured to
+use a [[PAC]] script to choose appropriate proxies.
+
+[1320] A [[user agent]] has following states, whose values can be configured by
+the [[user]]:
+[FIG(list members)[
+: [DFN[[F[[[PAC]] [[URL]]]]  : A [[URL record]] or [[null]].
+: [DFN[[F[use [[WPAD]] flag]]]] : A [[boolean]].
+]FIG]
+
+[1004] A [[user agent]] has a [F[[[PAC]] script]], which is initially [[null]].
+
+[1001] The [[user agent]] [MUST[MUST]] send appropriate [[WPAD]] request
+if its [F[use [[WPAD]] flag]] is [[true]].
+
+[1003] If a [[PAC]] [[URL]] is provided by [[WPAD]] processing,
+the [[user agent]] [MUST[MUST]] [[fetch]] the [[PAC]] file.
+Otherwise, if [F[[[PAC]] [[URL]]]] is not [[null]],
+the [[user agent]] [MUST[MUST]] [[fetch]] the [F[[[PAC]] [[URL]]]].
+When a [[PAC]] script file is [[fetch]]ed, the [[user agent]]'s
+[F[[[PAC]] script]] [MUST[MUST]] be set to the file.
+
+[1321] The [F[get proxies]] steps for [VAR[url]] are these steps:
+[FIG(steps)[
+= [544] If [VAR[user agent]]'s [F[[[PAC]] script]] is not [[null]]:
+== [545] Process [VAR[user agent]]'s [F[[[PAC]] script]] with [VAR[url]].
+== [1011] Return the result of the previous step and abort these steps.
+= [1322] Return a list whose only member is a [[proxy configuration]]
+whose [F[protocol][proxy's protocol]] is [CODE[tcp]].
+]FIG]
 
 * Transports
 
