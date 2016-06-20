@@ -48,22 +48,18 @@
 [59] [CODE[blogspot.com]] や [CODE[github.io]] などがあります。
 ]EG]
 
-[60] [[public suffix]] や [[eTLD]] というとき、普通は両方を合わせて指しています。
+[60] [[public suffix]] や [[eTLD]] というとき、特に注記がなければ普通はこれら両方を合わせて指しています。
 
-* 文脈
+* 演算
+
+** PSL に含まれるか否か
 
 [21] [CODE(HTTP)@en[Set-Cookie:]] [[ヘッダー]]の [CODE(HTTP)@en[Domain]]
 [[属性]]の処理では、 [[PSL]] を参照して検査します。
 [[Cookie]] の[[利用者エージェント]]は、できれば最新の [[public suffix]]
 のリストを使う[['''べきです''']] [SRC[>>20]]。
 
-[24] [CODE(JS)@en[[[document.domain]]]] の[[設定器]]は、
-新しい値が適切かどうか [[Public Suffix List]] によって検査しなければ[['''なりません''']]
-[SRC[>>23]]。
-
-;; [CODE(JS)@en[[[document.domain]]]] では比較方法も規定されています。
-
-;; [43] これより、[[関連する類似起源閲覧文脈群の単位]]の決定に [[PSL]] が影響します。
+** PSL ICANN DOMAINS か否か
 
 [41] [[Chrome]] は、[[ワイルドカード証明書]]について、
 [[ワイルドカード]] + [[ICANN DOMAINS]] になっていると一致させません。
@@ -73,11 +69,17 @@
 
 ;; [[ワイルドカード証明書]]を参照。
 
-[65] [[WPAD]] の処理にも [[PSL]] を適用して良さそうなものですが、
-実装は他の方法を採っているようです。
+** PSL に含まれるか、 [CODE[.]] + 入力が PSL と末尾一致するかのいずれかであるか否か
 
-[67] [CODE[includeSubDomains]] の処理にも適用されても良いのかもしれませんが、
-そうはなっていないようです。
+[24] [CODE(JS)@en[[[document.domain]]]] の[[設定器]]は、
+新しい値が適切かどうか [[Public Suffix List]] によって検査しなければ[['''なりません''']]
+[SRC[>>23]]。
+
+;; [CODE(JS)@en[[[document.domain]]]] では比較方法も規定されています。
+
+;; [43] これより、[[関連する類似起源閲覧文脈群の単位]]の決定に [[PSL]] が影響します。
+
+** ドメインの public suffix
 
 [42] [[eTLD+1]] は、その定義より、 [[PSL]] に依存して決まります。
 [[DMARC]] の [[Organizational Domain]] も同じ意味のようです。
@@ -93,8 +95,16 @@
 [49] [[Chrome]] は、[[アドレスバー]]の入力が [[URL]] か[[検索]]語か判断するために
 [[PSL]] を使っています [SRC[>>45]]。
 
-[44] [[Let's Encrypt]] は[[証明書]]発行頻度制限に [[PSL]] を使っています [SRC[>>45]]。
+[44] [[Let's Encrypt]] は[[証明書]]発行頻度制限に [[PSL]]
+([[eTLD+1]]) を使っています [SRC[>>45]]。
 
+** 不適用
+
+[65] [[WPAD]] の処理にも [[PSL]] を適用して良さそうなものですが、
+実装は他の方法を採っているようです。
+
+[67] [CODE[includeSubDomains]] の処理にも適用されても良いのかもしれませんが、
+そうはなっていないようです。
 
 * データファイル
 
@@ -109,6 +119,24 @@
 [[ライブラリー]]自体は頻繁に更新されていても[[パッケージマネージャー]]の都合や自社独自の指針などで依存[[ライブラリー]]をたまにしか更新できないような場合、
 誤った結果を返したり、場合によっては[[セキュリティー]]的に問題のある状態となることもありますから、
 注意が必要です。
+
+* 変化
+
+[70] [[PSL]] の内容が変化する (のを実装がデータファイル更新により適用する) ことで、
+プロトコル要素の処理が変化します。それによって、それまで可能だった操作があるときから不可能になったり、
+その逆になったりすることがあります。
+
+[EG[
+[71] 例えばある時点まで [CODE(JS)@en[document.domain]] の設定により通信できていた
+[[Webサイト]]同士が、ある時から通信できなくなるかもしれません。
+]EG]
+
+[72] ある意味でこれは非互換な変更が予期せぬタイミングで突然発生するものですが、
+実用上はそれが問題となることはまずありません。 [[PSL]] は[[ドメイン名]]管理機関の意向に従い変更されますから、
+そもそもそれと矛盾する形で利用されているのはおかしな話です。
+
+;; [73] ただ、新規に追加された [[gTLD]] と矛盾する[[内部名]]を使っていたケースでは、
+問題が発生する可能性はあります。
 
 * 歴史
 
@@ -321,5 +349,26 @@ interoperability will be difficult or impossible to guarantee.
 >       public suffix is that designation can change over time as the
 >       registration policy for the zone changes, such as the case of the
 >       "uk" TLD around the time this document is published.
+
+]FIG]
+
+
+[FIG(quote)[
+[FIGCAPTION[
+[69] [CITE@en[RFC 6265 - HTTP State Management Mechanism]]
+( ([TIME[2016-06-14 16:06:09 +09:00]]))
+<https://tools.ietf.org/html/rfc6265#section-5.3>
+]FIGCAPTION]
+
+> 
+>            NOTE: A "public suffix" is a domain that is controlled by a
+>            public registry, such as "com", "co.uk", and "pvt.k12.wy.us".
+>            This step is essential for preventing attacker.com from
+>            disrupting the integrity of example.com by setting a cookie
+>            with a Domain attribute of "com".  Unfortunately, the set of
+>            public suffixes (also known as "registry controlled domains")
+>            changes over time.  If feasible, user agents SHOULD use an
+>            up-to-date public suffix list, such as the one maintained by
+>            the Mozilla project at <http://publicsuffix.org/>.
 
 ]FIG]
