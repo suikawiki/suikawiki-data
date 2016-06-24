@@ -69,6 +69,7 @@ URI 符号化の意味の encode は必ず [Q[escaped encoding]]
 ]HISTORY]
 
 [77] 何を [CODE[%]] を使って[[符号化]]し、何を元のまま残すかは、文脈によります。
+個々の事情があるので、無条件にどれが正しいというものでもありません。
 
 [EG[
 [78] 例えば [CODE(URI)@en[[[https:]]]] [[URL]] の [[path segment]] 部分では、
@@ -77,6 +78,8 @@ URI 符号化の意味の encode は必ず [Q[escaped encoding]]
 [CODE[[[@]]]] は区切りとして使われませんから、 [CODE[[[@]]]]
 のままでも構いませんし、 [CODE[[[%40]]]] でも構いません。
 ]EG]
+
+;; >>59 を参照。
 
 [108] [DFN[[RUBYB[パーセント符号化バイト]@en[percent-encoded byte]]]]は、
 [CODE[%]] の後に[[ASCII十六進数字]]が2つ続くものです [SRC[>>43]]。
@@ -400,7 +403,7 @@ segment ではない[[相対参照]] (例えば [CODE(URI)[%2E/]])
 [[UTF-8 decode without BOM]] 以外の方法で扱うのは安全ではないかもしれないので、
 避ける[SHOULD[べき]]だ [SRC[>>43]] とされています。
 
-[130] [VAR[[[符号位置]]]]の[VAR[符号化集合]]に関する[DFN[[RUBYB[UTF-8パーセント符号化]@en[UTF-8 percent encode]]は、
+[130] [VAR[[[符号位置]]]]の[VAR[符号化集合]]に関する[DFN[[RUBYB[UTF-8パーセント符号化]@en[UTF-8 percent encode]]]]は、
 次のようにします [SRC[>>43]]。
 [FIG(steps)[
 = [131] [VAR[符号位置]]が[VAR[符号化集合]]に含まれ''ない''なら、
@@ -582,6 +585,26 @@ segment ではない[[相対参照]] (例えば [CODE(URI)[%2E/]])
 [REFS[
 - [CITE@en[Compare character sets]] ([TIME[2016-06-07 17:13:21 +09:00]]) <https://chars.suikawiki.org/set/compare?expr=$url:simple-encode-set&expr=$url:default-encode-set&expr=$url:userinfo-encode-set&expr=-$url:form:unencoded-byte-char&expr=-$rfc7230:tchar|[%]&expr=-$rfc3986:unreserved|[%25]&expr=-$ecma262:escape-not-escaped&expr=-%24ecma262%3AunescapedURISet&expr=-%24ecma262%3AunescapedURIComponentSet>
 ]REFS]
+
+** 各実装の符号化演算
+
+[171] 歴代の [[URL]] の[[仕様書]]の[[パーセント符号化]]の規定があまり明確でなかったこともあり、
+[[パーセント符号化]]が文脈によって色々な使われ方をしていることもあり、
+各種[[プログラミング言語]]や[[ライブラリー]]、[[フレームワーク]]等の[[パーセント符号化]]・[[パーセント復号]]の演算も多種多様で混乱しており、
+利用する時は正しい物を注意深く選択しなければなりません。
+
+[172] 例えば [[PHP]] の [CODE[http_build_query]] [SRC[>>170]] は、
+符号化の方式を指定するオプションを用意していますが、
+[CODE[PHP_QUERY_RFC1738]] は「[[RFC 1738]] + [CODE(MIME)@en[application/x-www-form-urlencoded]]」、
+[CODE[PHP_QUERY_RFC3986]] は「[[RFC 3986]]」の方式と説明されています。
+[[RFC 3986]] は古い [[URL]] の仕様書で、 [[RFC 1738]] は更に何代か古い [[URL]]
+の[[仕様書]]です。
+前者が実はただの[[パーセント符号化]]ではなく 
+[CODE(MIME)@en[application/x-www-form-urlencoded]] 方式だという重要な情報は定数名に現れず、
+ドキュメントを読まないとわかりません。
+また [[RFC 1738]] と [[RFC 3986]] とで [CODE(ABNF)@en[reserved]]
+の定義が異なるためにどの文字を[[パーセント符号化]]するかが両方式では違っているということのようです。
+しかし、これではいつどちらを使うべきなのかがさっぱりわかりません。
 
 * 歴史
 
@@ -831,3 +854,17 @@ encoding for unsafe octets is recommended.
 [157] [CITE[技術/HTTP/URLエンコードで 0x20(スペース) を "+" にすべきか "%20" にすべきか - Glamenv-Septzen.net]]
 ([TIME[2016-06-24 20:24:28 +09:00]])
 <http://www.glamenv-septzen.net/view/1170>
+
+[FIG(quote)[
+[FIGCAPTION[
+[170] [CITE@en[PHP: http_build_query - Manual]]
+([TIME[2016-06-24 13:08:18 +09:00]])
+<http://php.net/manual/en/function.http-build-query.php>
+]FIGCAPTION]
+
+> enc_type
+> By default, PHP_QUERY_RFC1738.
+> If enc_type is PHP_QUERY_RFC1738, then encoding is performed per » RFC 1738 and the application/x-www-form-urlencoded media type, which implies that spaces are encoded as plus (+) signs.
+> If enc_type is PHP_QUERY_RFC3986, then encoding is performed according to » RFC 3986, and spaces will be percent encoded (%20).
+
+]FIG]
