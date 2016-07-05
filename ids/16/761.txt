@@ -105,8 +105,7 @@
 - [[応答]]
 - [[a known definite encoding]]
 - [[AppCache]] から [[fetch]] したか否か
-- 失敗 ([[DNS]] エラー、 [CODE(HTTP)[[[4xx]]]] や [CODE(HTTP)[[[5xx]]]]
-など) か否か
+
 [EG[
 [24] [CODE(HTMLe)@en[[[object]]]] [[要素]]や [CODE(HTMLe)@en[[[embed]]]] の処理では、
 [[資源]]の [[fetch]] が開始されてから [[navigate]] が呼び出されることがあります。
@@ -374,7 +373,7 @@
 
 [FIG(steps)[
 = [146] [VAR[新しい[[資源]]]]の[F[応答]]が [[null]] でなければ、
-== [201] [VAR[新しい[[資源]]]]の[F[応答]]について[[navigate応答の処理]]を実行します [SRC[>>12]]。
+== [201] [VAR[新しい[[資源]]]]の[F[応答]]と[VAR[[[navigate]]する[[閲覧文脈]]]]について[[navigate応答の処理]] (>>26) を実行します [SRC[>>12]]。
 = [147] それ以外で、 [VAR[新しい[[資源]]]]の [F[URL]] の [F[scheme][URL scheme]]
 が [CODE(URI)@en[javascript][javascript:]] なら、
 == [148] [[[CODE(URI)@en[javascript:]] URLへのnavigate]]を実行します [SRC[>>12]]。
@@ -399,7 +398,7 @@
 [[fetch scheme]] なら、
 == [198] [VAR[新しい[[資源]]]]と[VAR[[[navigate]]する[[閲覧文脈]]]]について[[navigate fetchの処理]]を実行します。
 = [199] それ以外なら、
-== [202] [VAR[新しい[[資源]]]]の[F[URL]]と[VAR[閲覧文脈]]について[[navigate URL schemeの処理]]を実行します。
+== [202] [VAR[新しい[[資源]]]]の[F[URL]]と[VAR[[[navigate]]する[[閲覧文脈]]]]について[[navigate URL schemeの処理]]を実行します。
 ]FIG]
 
 [214] 以前は、 [[Webブラウザー]]依存の条件 (>>206) 次第で[[閲覧文脈]]外 (>>48) または[[非文書表示]]に移れることになっていました。
@@ -446,55 +445,65 @@
 = [152] [VAR[要求]]を [[fetch]] します。 [[process response]] は、 >>156 とします。
 ]FIG]
 
-[156] [[process response]] は、次のようにしなければ[['''なりません''']]。
+[156] [[process response]] は、[VAR[応答]]について次のようにします [SRC[>>12]]。
 [FIG(steps)[
-= [362] 与えられた[[応答]]が[[リダイレクト]]なら、
-== [363] [[リダイレクト]]先の [[URL]] に[[素片識別子]]があれば、
-=== [364] その [[URL]] を[VAR[新しい[[資源]]]]の [[URL]] に設定します。 [SRC[>>12]]
-== [365] それ以外なら、
-=== [366] [[リダイレクト]]先の [[URL]] に現在の[VAR[新しい[[資源]]]] の [[URL]] を
-(あれば) 付け足し、これを[VAR[新しい[[資源]]]]に設定します。 [SRC[>>12]]
-== [367] [[リダイレクト]]先の[[要求メソッド]]を[VAR[新しい[[資源]]]]の[[要求メソッド]]に設定します。
-== [368] 改めて [[URL]] に基づく処理 (>>162) に移り、こちらはここで終わります [SRC[>>12]]。
-= [369] [VAR[新しい[[資源]]]]の[[応答]]を与えられた[[応答]]に設定します。
-= '''Fallback in prefer-online mode''': 
+= [362] [VAR[応答]]の[F[location URL]]が[[失敗]]なら、
+== [363] [VAR[要求]]と[VAR[応答]]について、[[HTTPリダイレクトfetch]]を実行します。
+[[process response]] は、 >>156 とします。
+= [364] それ以外で、[VAR[応答]]の[F[location URL]]が [[URL記録]]なら、
+[VAR[応答]]の[F[location URL]]の[F[scheme][URL scheme]]により、
+[FIG(switch)[
+: [[HTTP(S) scheme]] :
+[VAR[要求]]と[VAR[応答]]について、[[HTTPリダイレクトfetch]]を実行します。
+[[process response]] は、 >>156 とします。
+: [CODE(URI)@en[blob]], [CODE(URI)@en[file]], [CODE(URI)@en[filesystem]], [CODE(URI)@en[javascript]] :
+[VAR[応答]]を、[[ネットワークエラー]]に設定します。
+: その他の [[fetch scheme]] :
+[[navigate fetchの処理]]を実行します。
+[FIG(list members)[
+[FIGCAPTION[
+[[要求]]
+]FIGCAPTION]
+: [F[URL][要求URL]] : [VAR[応答]]の[F[location URL]]
+]FIG]
+: それ以外 :
+[[navigate URL schemeの処理]]を実行します。[VAR[応答]]の[F[location URL]]と[VAR[閲覧文脈]]を引き渡します。
+こちらはここで終わります。
+]FIG]
+= [365] '''Fallback in prefer-online mode''': 
 [FIG(list)[
-- [VAR[新しい[[資源]]]]を [[AppCache]] から [[fetch]] した場合で、
-- [VAR[新しい[[資源]]]]の[[要求メソッド]]が [CODE(HTTP)@en[[[GET]]]] で、
-- [VAR[新しい[[資源]]]]の [[URL]] と[[同じ起源]]の [[URL]] を持つ [[relevant application cache]]  があり、
-- その [[AppCache]] [[エントリー]]のいずれかが[VAR[新しい[[資源]]]]の [[URL]] を持ち、
+- [VAR[応答]]を [[AppCache]] から [[fetch]] した場合で、
+- [VAR[要求]]の[F[メソッド][要求メソッド]]が [CODE(HTTP)@en[[[GET]]]] で、
+- [VAR[応答]]の[F[URL]]と[[同じ起源]]の [[URL]] を持つ [[relevant application cache]]  があり、
+- その [[AppCache]] [[エントリー]]のいずれかの[F[URL]]が[VAR[応答]]の[F[URL]]で、
 - ただしその[[エントリー]]は [[foreign]] ではなく、
 - その [[mode]] が [[prefer-online]] であり、
 - [VAR[取り消し]]フラグが理由 [[end-user abort]] で設定されておらず、
-- [VAR[新しい[[資源]]]]の失敗フラグが設定されているなら、
+- [VAR[応答]]が[[ネットワークエラー]]か[VAR[応答]]の[F[状態][状態符号]]が非[[OK状態]]
 ]FIG]
-== [[最適AppCache]]から[VAR[新しい[[資源]]]]の [[URL]] で識別されるエントリーを得ます [SRC[>>12]]。
-== そのエントリーが [[foreign]] でないなら、
-=== エントリーの[[応答]]を[VAR[新しい[[資源]]]]の[[応答]]とします [SRC[>>12]]。
-=== [[process response body]] と [[process response end-of-file]] 
-をそれぞれ実行する[[タスク]]を[[ネットワークタスク源]]で[[タスクキュー]]に追加します。
-=== [[利用者]]に対して失敗したこととキャッシュを使うことを示して構いません [SRC[>>12]]。
-= '''Fallback for fallback entries''':
+... のすべてを満たすなら、
+== [366] [[最適AppCache]]から[VAR[応答]]の[F[URL]]で識別されるエントリーを得ます。
+== [367] そのエントリーが [[foreign]] でないなら、
+=== [368] [VAR[応答]]を、そのエントリーの[[応答]]に設定します。
+=== [[利用者]]に対して失敗したこととキャッシュを使うことを示して構いません。
+= [369] '''Fallback for fallback entries''':
 [FIG(list)[
-- [VAR[新しい[[資源]]]]を [[AppCache]] から [[fetch]] しなかった場合で、
-- [VAR[新しい[[資源]]]]の[[要求メソッド]]が [CODE(HTTP)@en[[[GET]]]] で、
-- [VAR[新しい[[資源]]]]の [[URL]] が [[relevant application cache]] の [[fallback namespace]]
+- [VAR[応答]]を [[AppCache]] から [[fetch]] しなかった場合で、
+- [VAR[要求]]の[F[メソッド][要求メソッド]]が [CODE(HTTP)@en[[[GET]]]] で、
+- [VAR[応答]]の[F[URL]]が [[relevant application cache]] の [[fallback namespace]]
 に一致する場合で、
-- その[[最適AppCache]]の [[online whitelist]] に[VAR[新しい[[資源]]]]の [[URL]] と[[同じ起源]]の [[URL]] を持ち、[VAR[新しい[[資源]]]]の [[URL]] の先頭と一致するようなエントリーが無く、
+- その[[最適AppCache]]の [[online whitelist]] に[VAR[応答]]の[F[URL]]と[[同じ起源]]の [[URL]] を持ち、
+[VAR[応答]]の[F[URL]]の先頭と一致するようなエントリーが無く、
 - [VAR[取り消し]]フラグが理由 [[end-user abort]] で設定されておらず、
-- [VAR[新しい[[資源]]]]の失敗フラグが設定されているなら、
+- [VAR[応答]]が[[ネットワークエラー]]か[VAR[応答]]の[F[状態][状態符号]]が非[[OK状態]]
 ]FIG]
-== [[最適AppCache]]の [[fallback namespace]] に対する [[fallback resource]] を得ます [SRC[>>12]]。
-== そのエントリーが [[foreign]] でないなら、
-=== エントリーの[[応答]]を[VAR[新しい[[資源]]]]の[[応答]]とします [SRC[>>12]]。
-=== [[process response body]] と [[process response end-of-file]] 
-をそれぞれ実行する[[タスク]]を[[ネットワークタスク源]]で[[タスクキュー]]に追加します。
-=== [[利用者]]に対して失敗したことと [[fallback resource]] を使うことを示して構いません [SRC[>>12]]。
-= [VAR[新しい[[資源]]]]の[[応答]]の処理 (>>26) を行います。
+... のすべてを満たすなら、
+== [424] [[最適AppCache]]の [[fallback namespace]] に対する [[fallback resource]] を得ます。
+== [425] そのエントリーが [[foreign]] でないなら、
+=== [426] [VAR[応答]]を、そのエントリーの[[応答]]に設定します。
+=== [427] [[利用者]]に対して失敗したことと [[fallback resource]] を使うことを示して構いません。
+= [428] [VAR[応答]]と[VAR[閲覧文脈]]について[[navigate応答の処理]] (>>26) をします。
 ]FIG]
-
-[157] [[process response body]] と [[process response end-of-file]] は、
-[VAR[新しい[[資源]]]]の[[応答]]を処理 (>>26) の一部を構成するものです。
 
 [HISTORY[
 [370] 以前は[[安全なメソッド]]と [CODE(HTTP)@en[POST]] の場合を除き、
@@ -507,7 +516,7 @@
 
 * 応答の処理
 
-[26] [[応答]][VAR[応答]]に関する[DFN[[RUBYB[navigate応答の処理]@en[process a navigate response]]]]は、次のようにしなければ[MUST[なりません]]。
+[26] [VAR[応答]]と[VAR[閲覧文脈]]に関する[DFN[[RUBYB[navigate応答の処理]@en[process a navigate response]]]]は、次のようにします。
 [FIG(steps)[
 = [25] [VAR[取り消し]]フラグが設定されていれば、終わりとします (>>109 へ)。
 = [52] それ以外で、[VAR[応答]]が[[ネットワークエラー]]なら、[[非文書表示]] (>>47) 
@@ -515,9 +524,12 @@
 = [51] それ以外で、[VAR[応答]]の[F[状態][状態符号]]が [CODE(HTTP)[204]] か [CODE(HTTP)[205]]
 なら、終わりとします (>>109 へ) [SRC[>>12]]。
 = [53] それ以外で、[VAR[応答]]が [CODE(HTTP)@en[[[Content-Disposition:]] [[attachment]]]] 
-なら、[[ダウンロード]]とします [SRC[>>12]] ([[閲覧文脈]]外の処理 >>48)。
+なら、[[ダウンロード]]とします [SRC[>>12]] ([VAR[閲覧文脈]]外の処理 >>48)。
 = [158] それ以外なら、[[MIME型]]依存の処理 (>>44) に進みます [SRC[>>12]]。
 ]FIG]
+
+;; [157] [[navigate応答の処理]]は、[[navigate]] 本体の他に、 
+[[[CODE(URI)@en[javascript:]] URLへのnavigate]] からも呼び出されます。
 
 [183] [[Webブラウザー]]によっては、[VAR[応答]]の[F[状態][状態符号]]が
 [CODE[4[VAR[xx]]]] や [CODE[5[VAR[xx]]]] で[F[本体][応答本体]]が一定サイズ以下の時、
@@ -563,9 +575,9 @@
 
 [46] [[利用者エージェント]]は、[[MIME型]]と設定に基づき次のいずれかの処理を行わなければ[['''なりません''']] [SRC[>>12]]。
 [FIG(list)[
-- [[閲覧文脈]]内で[[文書]]を[[レンダリング]]する (>>30)
-- [[閲覧文脈]]内で非[[文書]]を表示する (>>47)
-- [[閲覧文脈]]に影響しない処理を行う (>>48)
+- [VAR[閲覧文脈]]内で[[文書]]を[[レンダリング]]する (>>30)
+- [VAR[閲覧文脈]]内で非[[文書]]を表示する (>>47)
+- [VAR[閲覧文脈]]に影響しない処理を行う (>>48)
 ]FIG]
 
 [50] いずれを選択するかは実装や設定に依存します (>>206)。 [[HTML Standard]]
@@ -1213,6 +1225,15 @@
 それが使われることがあります。
 ただしどの条件で使われるかや、使われる場合にどのような [[navigate]]
 が行われるかの詳細は、 [[HTML Standard]] では規定されていません。
+
+[429] [VAR[URL]]と[VAR[閲覧文脈]]に関する[[navigate URL schemeの処理]]は、
+次のようにします [SRC[>>12]]。
+[FIG(steps)[
+= [430] [VAR[URL]] が[VAR[閲覧文脈]]外で処理されるなら、そのようにします。
+= [431] それ以外なら、 [VAR[URL]] を[VAR[閲覧文脈]]で[[非文書表示]]します。
+]FIG]
+
+[432] [[取扱器]]に委ねる場合は、新しい [[navigate]] を実行します [SRC[>>12]]。
 
 [207] 多くの [[Webブラウザー]]は、 [[URL]] [VAR[URL]] の処理方法を次のように決定するようです。
 [FIG(steps)[
