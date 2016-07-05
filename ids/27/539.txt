@@ -32,6 +32,8 @@
 
 [29] [[時差]]の扱いの規定はありません。
 
+[42] [CODE(perl)[Image::ExifTool]] は、 [CODE[0000:00:00 00:00:00]] という値を不明の意味で使うようです。
+
 * 秒の小数部
 
 [11] [[Exif]] の [[ASCII]] 形式を使います。 [[NULL]] で終端する[[文字列]]です。 [SRC[>>9]]
@@ -101,3 +103,137 @@
 - [CODE[SubsecTimeDigitized]] 
 ]FIG]
 
+* 時間帯の扱い
+
+[36] [[Exif]] は [[GPS]] の日時 ([[UTC]] 固定) を除き、[[時間帯]]・[[時差]]の扱いを規定していません。
+
+[37] 一般的には[[カメラ]]等撮影機器の時刻設定に従うようです。つまり[[地方時]]によって記録されます。
+しかし中には [[UTC]] 固定の機器もあるようです。
+
+[34] [[Exif]] の拡張にあたる [[TIFF/EP]] には [CODE[TimeZoneOffset]] が追加されています。
+しかし一般的な [[Exif]] の実装はこれに対応していないようです。また [[TIFF/EP]]
+制定後の本家 [[Exif]] の改訂でも取り込まれていません。
+
+[35] [[Exif]] と共に [[XMP]] が[[メタデータ]]埋め込みに使われていることがあります。
+[[XMP]] の[[日時]]には[[時差]]を記述できます。従ってそちらの情報を使うこともできます。
+ただ [[Exif]] で [[XMP]] で情報に齟齬がある場合にどう処理するべきかは明らかではありません。
+
+[38] [[GPS]] の日時が埋め込まれている場合、それを使うことができます。
+ただし [[GPS]] の測位と撮影の時刻が実際にはどれだけ離れているか定かではありません。
+[[GPS]] の日時を撮影時刻に使うよりは、撮影日時と [[GPS]] の日時を比較して、
+15分単位の[[時間帯]]のいずれかに所属するとみなして[[時差]]を求め、
+撮影日時がその[[時差]]を持つものとみなすのが良いのでしょうか。
+
+[39] [[利用者]]が日時設定 (特に日付) を杜撰にしている例はよくあるようですから、
+[[時差]]計算時には注意が必要です。
+
+[40] そもそも滅茶苦茶な値が記録されているケース (>>16) すらあります。
+
+* メモ
+
+[30] [CITE[software - Is there any hope for Exif TimeZoneOffset as a standard? - Photography Stack Exchange]]
+([TIME[2016-07-05 22:11:08 +09:00]])
+<http://photo.stackexchange.com/questions/62082/is-there-any-hope-for-exif-timezoneoffset-as-a-standard>
+
+[31] [CITE[travel - What do you do with your camera clock time in relation to time zones? - Photography Stack Exchange]]
+([TIME[2016-07-05 22:12:42 +09:00]])
+<http://photo.stackexchange.com/questions/21740/what-do-you-do-with-your-camera-clock-time-in-relation-to-time-zones>
+
+[15] [CITE[デジカメの日付が狂っていて写真のexif辛い問題をRubyで処理 - Qiita]]
+([TIME[2016-07-05 16:31:43 +09:00]])
+<http://qiita.com/okitan/items/9a0178b10b9023249f08>
+
+[16] [CITE[Issue 53106 - android - Nexus 4 camera writes incorrect "date/time digitized" in EXIF - Android Open Source Project - Issue Tracker - Google Project Hosting]]
+([TIME[2016-07-05 16:40:28 +09:00]])
+<https://code.google.com/p/android/issues/detail?id=53106>
+
+[17] [CITE[Issue 42246 - android - Nexus 4 - Exif Tag - Digicam - Date Time Digitized - - Android Open Source Project - Issue Tracker - Google Project Hosting]]
+([TIME[2016-07-05 16:40:55 +09:00]])
+<https://code.google.com/p/android/issues/detail?id=42246>
+
+[18] [CITE[Instagramの変なExif情報への対処: 三日画師のかすかだり]]
+([TIME[2016-07-05 16:59:35 +09:00]])
+<http://mikkagashi.cocolog-nifty.com/kasukadari/2012/04/instagramexif-8.html>
+
+[FIG(quote)[
+[FIGCAPTION[
+[21] [CITE[画像ファイルのEXIFタグから撮影日時と位置情報を取得する際のTips - Qiita]]
+([TIME[2016-07-05 18:40:37 +09:00]])
+<http://qiita.com/k-holy/items/b8ca56d8026413dd1878>
+]FIGCAPTION]
+
+> タイムゾーンについては、EXIFの規格上では TimeZoneOffset というヘッダが用意されているようですが、実際にはあまり普及していないようです。
+
+]FIG]
+
+
+[FIG(quote)[
+[FIGCAPTION[
+[22] [CITE[画像ファイルのEXIFタグから撮影日時と位置情報を取得する際のTips - Qiita]]
+([TIME[2016-07-05 18:41:06 +09:00]])
+<http://qiita.com/k-holy/items/b8ca56d8026413dd1878>
+]FIGCAPTION]
+
+> 大抵のJPEGファイルには、DateTime、DateTimeOriginal、DateTimeDigitizedの3つのタイムスタンプが埋め込まれていて、どれも同じ日時を指しています。写真が撮影された日時を示すのはDateTimeOriginalです。GIMPなどで写真を編集すると、DateTimeOriginalは保持してDateTimeが変更されます。
+> これらの日時情報にはタイムゾーン情報が無く、現地時間が保存されます。iPhoneやAndroid端末を持って国外へ行くと、現地でタイムゾーン情報を取得した以降に撮影した写真の日時は現地時間になります。東へ向かって旅行してタイムゾーンを跨ぐと、後に撮影した写真の日時が先の写真よりも前になるので注意が必要です。
+
+]FIG]
+
+
+[23] [CITE@ja[Galaxy Nexusの写真の撮影日時が世界時間 - docomo 解決済 | 教えて!goo]]
+([TIME[2016-07-05 18:45:33 +09:00]])
+<http://oshiete.goo.ne.jp/qa/7411418.html>
+
+[FIG(quote)[
+[FIGCAPTION[
+[24] [CITE@ja['''['''新機能''']''' 写真の地図配置 - matoyanさんの日記 - ヤマレコ]]
+([TIME[2016-07-05 18:49:54 +09:00]])
+<http://www.yamareco.com/modules/diary/67-detail-25882>
+]FIGCAPTION]
+
+> 自動配置の場合は、デジカメの撮影時刻とGPSの時刻を照らし合わせて
+> 場所を特定します。
+> 写真のファイルに埋めこまれているEXIFという情報を使っているので、
+> 画像編集ソフトなどで縮小などの編集をされていてEXIFが欠落している写真は
+> 自動配置できません。
+> 写真を選んで地図をクリックすることで、手動でも配置できます。
+
+]FIG]
+
+
+[FIG(quote)[
+[FIGCAPTION[
+[25] [CITE@ja[ヤマレコにおけるExif情報の使い方 - chusakaiさんの日記 - ヤマレコ]]
+([TIME[2016-07-05 18:49:44 +09:00]])
+<http://www.yamareco.com/modules/diary/9108-detail-46937>
+]FIGCAPTION]
+
+> 
+>     GPSの時刻に対する、写真の時刻:
+>     ※海外などの時差がある場所に行った場合や、カメラの時刻設定にズレがあるときに設定してください
+>     修正幅は23時間59分59秒のプラスマイナス
+>     (使い方の例は「カメラ時計がどうやら5分遅れてたみたい!」
+>       前述の設定で-5分とすると考えてくれた!)のようなやり方です
+
+]FIG]
+
+
+[32] [CITE[where does EXIF:TimeZoneOffset (0x882a) come from]]
+([TIME[2016-07-05 22:18:15 +09:00]])
+<http://u88.n24.queensu.ca/exiftool/forum/index.php?topic=3323.0>
+
+[FIG(quote)[
+[FIGCAPTION[
+[33] [CITE[EXIF Tags]]
+([TIME[2016-05-07 01:16:12 +09:00]])
+<http://owl.phy.queensu.ca/~phil/exiftool/TagNames/EXIF.html>
+]FIGCAPTION]
+
+> 0x882a	TimeZoneOffset	int16s'''['''n''']'''	ExifIFD	(1 or 2 values: 1. The time zone offset of DateTimeOriginal from GMT in hours, 2. If present, the time zone offset of ModifyDate)
+
+]FIG]
+
+
+[41] [CITE[Image::ExifTool - search.cpan.org]]
+([TIME[2016-07-05 22:42:00 +09:00]])
+<http://search.cpan.org/dist/Image-ExifTool/lib/Image/ExifTool.pod>
