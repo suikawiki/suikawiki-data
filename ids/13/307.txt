@@ -16,10 +16,17 @@
 次のようにしなければ[MUST[なりません]] [SRC[>>2]]。
 [FIG(steps)[
 = [4] [VAR[URL群]]を、任意の個数の [CODE(DOMi)@en[USVString]] が[[引数]]として指定されたと解釈した結果に設定します。
+= [72] [[現職設定群オブジェクト]]の[F[大域オブジェクト]]が 
+[CODE(DOMi)@en[ServiceWorkerGlobalScope]] で、 その [F[importscripts allowed flag]] が[[偽]]なら、
+== [73] [CODE(DOMe)@en[[[InvalidStateError]]]] [[例外]]を[[投げ]]、ここで停止します
+[SRC[>>22]]。
 = [66] [[ワーカー大域適用範囲にスクリプトを輸入]]します。
 [VAR[URL群]]を引き渡します。
 [VAR[[[fetchの実行]]]]は、[[文脈オブジェクト]]に依存して決まる処理とします。
 ]FIG]
+
+[27] [CODE(DOMi)@en[[[ServiceWorkerGlobalScope]]]] [[オブジェクト]]は
+[DFN[[F[importscripts allowed flag]]]] を持ちます。初期状態では未設定です [SRC[>>28]]。
 
 [67] [DFN[[RUBYB[ワーカー大域適用範囲にスクリプトを輸入]@en[import scripts into worker global scope]]]]するには、
 [VAR[URL群]]と[VAR[[[fetchの実行]]]]について次のようにします。
@@ -27,7 +34,8 @@
 [FIG(steps)[
 = [57] [[文脈オブジェクト]]の[F[[[型]]]]が [CODE[[[module]]]] なら、
 == [58] [CODE(DOMe)@en[[[TypeError]]]] [[例外]]を[[投げ]]、停止します。
-= [24] [[状態を検証]]します。
+= 
+@@ [24] [[状態を検証]]します。
 = [5] [VAR[URL群]]が空なら、
 == [68] ここで停止します。
 = [62] [VAR[設定群オブジェクト]]を、[[現職設定群オブジェクト]]に設定します。
@@ -36,15 +44,9 @@
 == [70] [VAR[項目]]が[[失敗]]なら、
 === [7] [CODE(DOMe)@en[[[SyntaxError]]]] [[例外]]を[[投げ]]、ここで停止します。
 = [9] [VAR[URL群]]の各[VAR[項目]]について、
-== [10] [VAR[応答]]を、[VAR[項目]]と[VAR[設定群オブジェクト]]について[[fetch結果を取得]]した結果に設定します。
-== [25] [VAR[応答]]について[[fetch結果を後処理]]します。
-== [17] [VAR[スクリプト]]を、[[古典スクリプトを作成]]した結果に設定します。
-[FIG(list members)[
-: [VAR[ソーステキスト]] : [VAR[応答]]の[F[[[非安全応答]]]]の[F[[[本体]]]]を
-[[UTF-8復号]]した結果。
-: [VAR[設定群オブジェクト]] : [VAR[設定群オブジェクト]]
-: [VAR[エラーミュート]]フラグ: [VAR[応答]]が [F[[[CORS-cross-origin]]]] なら[[真]]
-]FIG]
+== [71] [VAR[スクリプト]]を、[[古典ワーカーで輸入されたスクリプトをfetch]]した結果に設定します。
+[VAR[URL]]、[VAR[設定群オブジェクト]]、[VAR[fetchの実行]]を引き渡します。
+[[例外]]が[[投げ]]られれば、[[再び投げ]]ます。
 == [15] [VAR[結果]]を、[VAR[スクリプト]]について、
 [VAR[エラーを再度投げる]]フラグを設定して[[古典スクリプトを実行]]した結果に設定します。
 == [13] [VAR[結果]]が何も返されなければ、ここで停止します。
@@ -55,90 +57,13 @@
 [[fetch]] の開始は同時なので、[[スクリプト]]実行中に[[ネットワーク]]から取得されることを期待できます。
 後の[[スクリプト]]は、前の[[スクリプト]]が実行完了していることを前提にできます。
 
-[26] [DFN[[RUBYB[状態の検証]@en[validate the state]]]] [SRC[>>2]] は、
-[VAR[設定群オブジェクト]]の[[大域オブジェクト]]が
-[CODE(DOMi)@en[[[ServiceWorkerGlobalScope]]]] で、
-その [[importscripts allowed flag]] が未設定なら、
-[CODE(DOMe)@en[[[InvalidStateError]]]] [[例外]]を[[投げます]] [SRC[>>22]]。
+[HISTORY[
+[26] 以前は[DFN[[RUBYB[状態の検証]@en[validate the state]]]]、
+[DFN[[RUBYB[fetch結果の取得]@en[get a fetch result]]]]、
+[DFN[[RUBYB[fetch結果の後処理]@en[postprocess the fetch result]]]]という引数が規定されていましたが、
+廃止されました。後2者は[[fetchの処理]]に統合されました。
+]HISTORY]
 
-[27] [CODE(DOMi)@en[[[ServiceWorkerGlobalScope]]]] [[オブジェクト]]は
-[[importscripts allowed flag]] を持ちます。初期状態では未設定です [SRC[>>28]]。
-
-[8] [VAR[URL]]と[VAR[設定群オブジェクト]]についての[DFN[[RUBYB[fetch結果の取得]@en[get a fetch result]]]]は、次のようにします。
-[FIG(steps)[
-= [29] [VAR[設定群オブジェクト]]の[[大域オブジェクト]]が
-[CODE(DOMi)@en[[[ServiceWorkerGlobalScope]]]] なら、 [SRC[>>22]]
-== [32] [VAR[設定群オブジェクト]]の[[大域オブジェクト]]の[[サービスワーカー]]の
-[[imported scripts updated flag]] が未設定なら、
-=== [33] 新しい[[要求]]を [[fetch]] します。
-[FIG(list members middle)[
-[FIGCAPTION[
-[[要求]]
-]FIGCAPTION]
-:[F[[[URL]]]]: [VAR[URL]]
-:[F[[[クライアント]]]]: [VAR[設定群オブジェクト]]
-:[F[[[型]]]]: [CODE[[[script]]]]
-:[F[[[終点]]]]: [CODE[[[script]]]]
-:[F[[[同期フラグ]]]]: 設定する
-:[F[[[credentials mode]]]]: [CODE[[[include]]]]
-:[F[[[URL credentials利用フラグ]]]]: 設定する
-]FIG]
-== [34] それ以外なら、
-=== [35] [VAR[設定群オブジェクト]]の[[大域オブジェクト]]の[[サービスワーカー]]の[[スクリプト資源写像]]に [VAR[URL]] についての[[記録]]があれば、
-==== [36] その[[記録]]の[[値]]を使います。
-=== [37] それ以外なら、
-==== [38] [[null]] を使います。
-= [30] それ以外なら、
-== [31] 新しい[[要求]]を [[fetch]] します [SRC[>>2]]。
-[FIG(list members middle)[
-[FIGCAPTION[
-[[要求]]
-]FIGCAPTION]
-:[F[[[URL]]]]: [VAR[URL]]
-:[F[[[クライアント]]]]: [VAR[設定群オブジェクト]]
-:[F[[[型]]]]: [CODE[[[script]]]]
-:[F[[[終点]]]]: [CODE[[[script]]]]
-:[F[[[同期フラグ]]]]: 設定する
-:[F[[[credentials mode]]]]: [CODE[[[include]]]]
-:[F[[[URL credentials利用フラグ]]]]: 設定する
-]FIG]
-]FIG]
-
-[11] [VAR[応答]]について[DFN[[RUBYB[fetch結果の前処理]@en[postprocess the fetch result]]]]は、
-次のようにします。
-[FIG(steps)[
-= [39] [VAR[設定群オブジェクト]]の[[大域オブジェクト]]が
-[CODE(DOMi)@en[[[ServiceWorkerGlobalScope]]]] なら、 [SRC[>>22]]
-== [42] [VAR[設定群オブジェクト]]の[[大域オブジェクト]]の[[サービスワーカー]]の
-[[imported scripts updated flag]] が未設定なら、
-=== [43] [VAR[応答]]の[[非安全応答]]の[[状態]]が[[OK状態]]でなければ、
-==== [44] [CODE(DOMe)@en[[[NetworkError]]]] [[例外]]を[[投げ]]、停止します。 [SRC[>>2]]
-=== [45] それ以外なら、
-==== [49] [VAR[設定群オブジェクト]]の[[大域オブジェクト]]の[[サービスワーカー]]の[[スクリプト資源写像]]に[[解決]]結果の [[URL]] についての[[記録]]があれば、
-===== [50] その[[記録]]の[[値]]を、 [[fetch]] で得られた[[資源]]とします。
-==== [51] それ以外なら、
-===== [52] [VAR[設定群オブジェクト]]の[[大域オブジェクト]]の[[サービスワーカー]]の[[スクリプト資源写像]]に[[記録]]を追加します。
-[FIG(list members)[
-[FIGCAPTION[
-[[記録]]
-]FIGCAPTION]
-:[[鍵]]:[[解決]]結果の [[URL]]
-:[[値]]:[[fetch]] で得られた[[資源]]
-]FIG]
-== [46] それ以外なら、
-=== [47] [[null]] を使う場合 (>>38)、
-==== [48] [CODE(DOMe)@en[[[NetworkError]]]] [[例外]]を[[投げ]]、停止します。
-= [40] それ以外なら、
-== [41] [VAR[応答]]の[[非安全応答]]の[[状態]]が[[OK状態]]でなければ、
-=== [12] [CODE(DOMe)@en[[[NetworkError]]]] [[例外]]を[[投げ]]、停止します。 [SRC[>>2]]
-]FIG]
-
-;; [53] [[サービスワーカー]]への保存時には、[[リダイレクト]]があっても元の [[URL]]
-で[[記録]]が作られるようです。
-
-;; [20] [[HTML Standard]] 仕様上は[[スクリプトの作成]]を使って規定されていますが、
-[[スクリプトの作成]]と本[[メソッド]]のエラー処理の規定が矛盾しており、
-[[スクリプトの作成]]を使わないで[[スクリプト]]を作って実行するのが想定された動きと思われます。
 
 * 歴史
 
