@@ -47,79 +47,67 @@
 = [97] [VAR[対象起源]]を、必須の第2引数を [CODE(IDL)@en[USVString]] として解釈した結果に設定します。
 = [98] [VAR[transfer]] を、第3引数を [CODE[[[sequence]]<[[object]]>]] として解釈した結果に設定します。
 既定値は、[[空リスト]]とします。
+= [106] [VAR[対象窓]]を、[[文脈オブジェクト]]に設定します。
+= [108] [VAR[対象Realm]] を、[VAR[対象窓]]の[F[Realm]]に設定します。
 = [83] [VAR[現職設定群オブジェクト]]を、[[現職設定群オブジェクト]]に設定します。
-= [106] [VAR[窓]]を、[[文脈オブジェクト]]に設定します。
-= [99] [VAR[対象起源]]が [CODE[*]] でも [CODE[/]] でもなければ、
-== [100] [VAR[URL]] を、[VAR[対象起源]]に[[URL構文解析器]]を適用した結果に設定します。
-== [101] [VAR[URL]] が[[失敗]]なら、
-=== [102] [CODE(DOMe)@en[SyntaxError]] [CODE(DOMi)@en[DOMException]] を[[投げ]]、
+= [109] [VAR[対象起源]]により、
+[FIG(switch)[
+: [CODE[*]] :
+[VAR[対象起源]]はそのまま [CODE[*]] とします。
+: [CODE[/]] :
+[VAR[対象起源]]を、[VAr[現職設定群オブジェクト]]の[F[起源]]に設定します。
+: それ以外 :
+[FIG(steps)[
+= [100] [VAR[URL]] を、[VAR[対象起源]]に[[URL構文解析器]]を適用した結果に設定します。
+= [101] [VAR[URL]] が[[失敗]]なら、
+== [102] [CODE(DOMe)@en[SyntaxError]] [CODE(DOMi)@en[DOMException]] を[[投げ]]、
 ここで停止します。
-== [103] [VAR[対象起源]]を、[VAR[URL]] の[F[起源][URLの起源]]に設定します。
-= [104] [VAR[new ports]] を、空の[[配列]]に設定します。
-= [105] [VAR[transfer map]] を、空の[[写像]]群に設定します。
-= 第3引数が指定されていれば、
-== 同じ [CODE(DOMi)@en[[[Transferable]]]] が重複して指定されていれば、
-[CODE(JS)@en[[[DataCloneError]]]] [[例外]]を[[投げ]]、ここで停止します。
-== [CODE(DOMi)@en[[[Transferable]]]] のいずれかが [[neutered]] であれば、
-[CODE(JS)@en[[[DataCloneError]]]] [[例外]]を[[投げ]]、ここで停止します。
-== 各 [CODE(DOMi)@en[[[Transferable]]]] について、
-=== [VAR[transfer map]] に、本 [CODE(DOMi)@en[[[Transferable]]]] から新しい
-placeholder object への[[写像]]を追加します。
-=== 本 [CODE(DOMi)@en[[[Transferable]]]] が [CODE(DOMi)@en[[[MessagePort]]]] なら、
-[VAR[new ports]] の末尾に placeholder object を追加します。
-= 第1引数の[[構造化クローン]]を得ます。 [[transfer map]] には [VAR[transfer map]]
-を使います。成功すれば、 [VAR[message clone]] を、実行結果に設定します。
-[[例外]]が投げられたなら、[[伝播]]させ、ここで停止します。
-= 第3引数が指定されていれば、
-== [VAR[new owner]] を、[[文脈オブジェクト]]の[[環境設定群オブジェクト]]とします。
-== 各 [CODE(DOMi)@en[[[Transferable]]]] について、
-=== [VAR[new owner]] へと [[transfer]] し、新しいオブジェクトを得ます。
-=== [VAR[new ports]] と [VAR[message clone]] に本オブジェクトの placeholder object
-があれば、それを新しいオブジェクトに置き換えます。
-= [85] [VAR[new ports]] を[[凍結配列]]にします。
-= [CODE(DOMm)@en[[[postMessage]]]] [[メソッド]]はここで終わります。
+= [103] [VAR[対象起源]]を、[VAR[URL]] の[F[起源][URLの起源]]に設定します。
+]FIG]
+]FIG]
+= [99] [VAR[複製記録]]を、 [CODE[[[StructuredCloneWithTransfer]]([VAR[メッセージ]], [VAR[transfer]], [VAR[対象Realm]])]]
+に設定します。[[例外]]が[[投げ]]られれば、[[再び投げ]]、ここで停止します。
+= [105] [VAR[メッセージ複製]]を、[VAR[複製記録]]の[F(ss)[Clone]]に設定します。
+= [85] [VAR[新ポート群]]を、[VAR[複製記録]]の[F(ss)[TransferList]]の
+[CODE(DOMi)@en[MessagePort]] をすべて同じ順に含めた[[凍結配列]]に設定します。
+= [110] [[並列に]]、続きの処理 (>>81) を行います。
+= [104] [CODE(DOMm)@en[[[postMessage]]]] [[メソッド]]はここで終わります。
 ]FIG]
 
-[81] 更に、[VAR[窓]]、[VAR[new ports]]、[VAR[message clone]]、[VAR[現職設定群オブジェクト]]を使って、
-[[並列に]]、次のようにしなければ[MUST[なりません]] [SRC[>>18]]。
+[81] 続きの処理は、[VAR[対象窓]]、[VAR[新ポート群]]、[VAR[メッセージ複製]]、
+[VAR[現職設定群オブジェクト]]について、次のようにしなければ[MUST[なりません]] [SRC[>>18]]。
 [FIG(steps)[
-= [82] [VAR[対象起源]]が [CODE[/]] で、[VAR[窓]]の[F[文書]]の[F[起源][文書の起源]]が[VAR[現職設定群オブジェクト]]の[F[有責文書]]の[F[起源][文書の起源]]と[[同じ起源]]でなければ、
-== [91] ここで停止します。
-= [92] それ以外で、[VAR[対象起源]]が [CODE[*]] 以外で、
-[VAR[窓]]の[F[文書]]の[F[起源][文書の起源]]が[VAR[対象起源]]と[[同じ起源]]でなければ、
+= [82] [VAR[対象起源]]が [CODE[*]] 以外で、
+[VAR[対象窓]]の[F[文書]]の[F[起源][文書の起源]]が[VAR[対象起源]]と[[同じ起源]]でなければ、
 == [93] ここで停止します。
-= [94] [[イベント]]を作成します。
+= [91] [VAR[対象窓]]の[F[文書]]の[F[イベントループ]]の[[タスクキューに追加]]します。
+[FIG(list members)[
+[FIGCAPTION[
+[[タスク]]
+]FIGCAPTION]
+: [F[タスク源]] :[[投稿済みメッセージタスク源]]
+: [F[処理]] :
+[FIG(steps)[
+= [92] [[イベント]]を [[dispatch]] します。
 [FIG(list members)[
 [FIGCAPTION[
 [[イベント]]
 ]FIGCAPTION]
 :[[インターフェイス]]:[CODE(DOMi)@en[[[MessageEvent]]]]
 :[[イベント型]]:[CODE(DOMe)@en[[[message]]]]
-:[[イベント対象]]:[[対象オブジェクト]]
+:[[イベント対象]]: [VAR[対象窓]]
 :[[trusted]]:[[真]]
 :[[bubbles]]:[[偽]]
 :[[cancelable]]:[[偽]]
-:[[既定動作]]:なし
-:[CODE(DOMa)@en[[[data]]]]:[VAR[message clone]]
-:[CODE(DOMa)@en[[[origin]]]]:[VAR[現職設定群オブジェクト]]の[[起源]]の[[Unicode直列化]]
-:[CODE(DOMa)@en[[[source]]]]:[VAR[現職設定群オブジェクト]]の[[大域オブジェクト]]の
-[CODE(DOMi)@en[[[WindowProxy]]]] [[オブジェクト]]
-:[CODE(DOMa)@en[[[ports]]]]:[VAR[new ports]]
-]FIG]
-= [[タスク]]を[[タスクキュー]]に追加します。
-[FIG(list members)[
-[FIGCAPTION[
-[[タスク]]
-]FIGCAPTION]
-:[[タスク源]]:[[投稿済みメッセージタスク源]]
-:処理:
-[FIG(steps)[
-= 作成した[[イベント]]を [[dispatch]] します。
+:[CODE(DOMa)@en[[[data]]]]:[VAR[メッセージ複製]]
+:[CODE(DOMa)@en[[[origin]]]]:[VAR[現職設定群オブジェクト]]の[F[起源]]の[F[Unicode直列化]]
+:[CODE(DOMa)@en[[[source]]]]:[VAR[現職設定群オブジェクト]]の[F[大域オブジェクト]]の
+[F[[CODE(DOMi)@en[WindowProxy]]]]
+:[CODE(DOMa)@en[[[ports]]]]:[VAR[新ポート群]]
 ]FIG]
 ]FIG]
 ]FIG]
-
-;; [19] [VAR[new ports]] は [VAR[new owner]] の側の環境に属する[[配列]]と思われます。
+]FIG]
 
 [33] 送信したメッセージは、 [CODE(DOMi)@en[[[Window]]]] の [CODE(DOMe)@en[[[message]]]]
 [[イベント]]として受信することができます。
