@@ -16,6 +16,7 @@
 - [96] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2016-08-01 13:15:24 +09:00]]) <https://html.spec.whatwg.org/#global-object>
 -- [201] '''[CITE@en-US-x-hixie[HTML Standard]] ([TIME[2014-04-03 03:44:44 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#entry-settings-object>'''
 -- [204] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2014-04-03 03:44:44 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#candidate-entry-settings-object>
+-- [209] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2014-04-03 03:44:44 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#incumbent-settings-object>
 - [69] [CITE@en[Upgrade Insecure Requests]] ([TIME[2015-10-07 03:24:10 +09:00]] 版) <https://w3c.github.io/webappsec-upgrade-insecure-requests/#nesting>
 ]REFS]
 
@@ -200,16 +201,6 @@
 [74] [[JavaScript]] の[[仕様書]]上の概念では、 [[Realm]] の [F(ss)[HostDefined]]
 が[F[設定群オブジェクト]]を表しています。
 
-* スタック
-
-[54] [[JavaScript実行文脈スタック]]上の状態に応じて、
-[[入口設定群オブジェクト]]や[[現職設定群オブジェクト]]が決まります。
-
-[HISTORY[
-[40] かつては[[関連する類似起源閲覧文脈の単位]]ごとに1つ、
-[[スクリプト設定群オブジェクトのスタック]]があるとされていました。
-]HISTORY]
-
 * 設定群オブジェクトの選択
 
 [97] 色々な場面で[[設定群オブジェクト]]や[[大域オブジェクト]]や [[Realm]] を参照するに当たり、
@@ -258,6 +249,12 @@
 [108] [[入口設定群オブジェクト]]は[[ハイパーリンク]]をたどる処理の定義でも参照されていて、
 [[入口設定群オブジェクト]]があれば[[スクリプト]]からの呼び出しということで[[例外]]を投げ、
 そうでなければ何もしないという判断に使われています。
+
+[40] かつては[[関連する類似起源閲覧文脈の単位]]ごとに1つ、
+[[スクリプト設定群オブジェクトのスタック]]があるとされていました。
+その後 [[JavaScript実行文脈スタック]]上の状態に応じて、
+[[入口設定群オブジェクト]]や[[現職設定群オブジェクト]]が決まると改められました。
+
 ]HISTORY]
 
 * 入口設定群オブジェクト
@@ -303,6 +300,59 @@
 
 ]HISTORY]
 
+* 現職設定群オブジェクト
+
+[153] [[JavaScript実行文脈]]は、[[コード評価状態]]において、
+[DFN[[F[[RUBYB[[[現職決定時に飛ばす計数器]]]@en[skip-when-determining-incumbent counter]]]]]]を持ちます。
+初期値は [N[0]] です。 [SRC[>>96]]
+
+;; [[コールバックの実行]]時に変化します。
+
+[154] [[イベントループ]]は、[DFN[[F[[RUBYB[[[バックアップ現職設定群オブジェクトスタック]]]@en[backup incumbent settings object stack]]]]]]を持ちます。
+初期状態は、[[空]]です。 [SRC[>>96]]
+
+
+
+[HISTORY[
+[130] かつての定義:
+[DFN[[RUBYB[[[現職設定群オブジェクト]]]@en[incumbent settings object]]]]は、
+[[スクリプト設定群オブジェクトのスタック]]に一番最近追加された[[スクリプト設定群オブジェクト]]です。
+[[スクリプト設定群オブジェクト]]がなければ、[[現職設定群オブジェクト]]はありません。 [SRC[>>209]]
+
+[54] その後の定義:
+[DFN[[RUBYB[[[現職設定群オブジェクト]]]@en[incumbent settings object]]]]は、
+次のようにして得られるものです [SRC[>>209]]。
+
+[FIG(steps)[
+= [125] [VAR[結果]]を、 [CODE[[[GetActiveScriptOrModule]]()]]
+[[抽象操作]]の結果に設定します。
+= [126] [VAR[結果]]が null なら、
+== [127] [[現職設定群オブジェクト]]はありません。
+= [128] それ以外なら、
+== [129] [VAR[結果]]の [CODE[[F(ss)[[[HostDefined]]]]]] 
+の[[スクリプト]]の[F[[[設定群オブジェクト]]]]を返します。
+]FIG]
+
+
+[131] [[入口設定群オブジェクト]]は、[[スクリプト設定群オブジェクトのスタック]]のうち[[候補入口設定群オブジェクト]]とされているもののみから一番最近のものを選んでいますから、
+[[現職設定群オブジェクト]]と同じになることもあれば、違うこともあります。
+
+[132] [[スクリプト設定群オブジェクトのスタック]]は[[関連する類似起源閲覧文脈の単位]]ごとにありますから、
+[[現職設定群オブジェクト]]も[[関連する類似起源閲覧文脈の単位]]ごとに存在します。
+]FIG]
+
+[133] [[現職設定群オブジェクト]]は、[[API]] の[[起源]]の検査などに使われます。
+
+[134] 本来、[[同一起源ポリシー]]により、[[スクリプト]]が呼び出せるのは同じ[[起源]]の[[スクリプト]]だけのはずですから、どの[[環境設定群オブジェクト]]でも
+([[大域オブジェクト]]の[[環境設定群オブジェクト]]や[[入口設定オブジェクト]]でも)
+良さそうなものです。しかし [CODE(JS)@en[[[document.domain]]]] に値が設定されると[[実効スクリプト起源]]が変化しますから、
+それ以前に異なる[[大域オブジェクト]]由来の[[関数]]への参照を取得していれば、
+異なる[[実効スクリプト起源]]を持つ[[スクリプト]]を実行できることになります。
+また [CODE(JS)@en[[[document.domain]]]] 設定以後は異なる[[起源]]で同じ[[実効スクリプト起源]]の[[スクリプト]]にアクセスできるようになります。
+従って再帰的な[[関数]]呼び出しによって [[API]] の呼び出し元とみなすべき[[起源]]や[[実効スクリプト起源]]は変化することがあるのです。
+
+
+
 * 現在設定群オブジェクト
 
 [119] [DFN[[RUBYB[現在Realm記録]@en[current Realm Record]]]] 
@@ -346,6 +396,72 @@
 には常に1:1:1対応関係があります。
 
 * 歴史
+
+** 現職設定群オブジェクト
+
+[REFS[
+- [136] [CITE@en[Web Applications 1.0 r7954 Try to clean up text where I referred to scripts that called a method, etc. Introduces the term 'incumbent script'.]]
+( ([TIME[2013-06-12 06:45:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=7953&to=7954>
+- [137] [CITE@en[Web Applications 1.0 r8114     Try to clean up the incumbent script situation.]]
+( ([TIME[2013-08-02 04:44:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=8113&to=8114>
+- [138] [CITE@en[Web Applications 1.0 r8129 Work in progress for integration with WebIDL (script execution stuff)]]
+( ([TIME[2013-08-06 05:33:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=8128&to=8129>
+- [139] [CITE[IRC logs: freenode / #whatwg / 20130804]]
+( ([TIME[2013-08-06 20:50:44 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20130804>
+- [140] [CITE@en[Web Applications 1.0 r8169     Maintain the stack of incumbent scripts across calls to showModalDialog(), but empty it while that call is running, since showModalDialog() can resume out of order (you can call window.close() on a 'parent' modal window). (Untested.)]]
+( ([TIME[2013-09-04 05:43:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=8168&to=8169>
+- [141] [CITE[IRC logs: freenode / #whatwg / 20131107]]
+( ([TIME[2013-11-09 12:27:06 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20131107>
+- [142] [CITE@en[Web Applications 1.0 r8247     The bulk of this is editorial: refactoring how scripts are defined so that all the common stuff is in a shared 'settings object' rather than being duplicated per script. But this also cleans up how postMessage() interacts with the event loop and a few other things I've since forgotten.]]
+( ([TIME[2013-10-31 08:18:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=8246&to=8247>
+- [143] [CITE@en[Web Applications 1.0 r8262 Move the spec from a stack of incumbent scripts to a stack of script settings object. This should in theory have no concrete effects (though I may have changed some of the origin used for Web Workers started from document.domain-affected scripts that were called from other scripts with different original origins).]]
+( ([TIME[2013-11-09 08:21:00 +09:00]] 版))
+<http://html5.org/tools/web-apps-tracker?from=8261&to=8262>
+]REFS]
+
+[144] 当初は[DFN[[RUBYB[[[現職スクリプト]]]@en[incumbent script]]]]が規定されていましたが、
+[[スクリプト設定群オブジェクト]]が新設されて[[現職設定群オブジェクト]]へと置き換えられました。
+
+[145] [CITE@en[Bug 18242 – Not clear what "script that invoked the method" means exactly in the case of e.g. a.setTimeout(b.postMessage, 0) // called from c]]
+([TIME[2015-05-20 13:09:17 +09:00]] 版)
+<https://www.w3.org/Bugs/Public/show_bug.cgi?id=18242>
+
+[146] [CITE@en[Rewrite script execution on top of ES · whatwg/html@4891d18]]
+([TIME[2015-12-22 23:22:40 +09:00]] 版)
+<https://github.com/whatwg/html/commit/4891d18aaf2df1d40aa61f467a5a10cfc19dd85d>
+
+[147] [CITE@en[26603 – Consider merging the concept of incumbent global with the current realm]]
+([TIME[2015-12-22 23:26:15 +09:00]] 版)
+<https://www.w3.org/Bugs/Public/show_bug.cgi?id=26603>
+
+[148] [CITE@en[26603 – Consider merging the concept of incumbent global with the current realm]]
+([TIME[2015-12-22 23:39:52 +09:00]] 版)
+<https://www.w3.org/Bugs/Public/show_bug.cgi?id=26603>
+
+[149] [CITE@en[24403 – WebIDL callbacks should probably default to pushing a new entry settings object]]
+( ([TIME[2016-06-03 17:57:35 +09:00]]))
+<https://www.w3.org/Bugs/Public/show_bug.cgi?id=24403>
+
+[150] [CITE@en[26603 – Consider merging the concept of incumbent global with the current realm]]
+( ([TIME[2016-06-16 12:34:37 +09:00]]))
+<https://www.w3.org/Bugs/Public/show_bug.cgi?id=26603>
+
+[151] [CITE@en[27204 – Provide guidance on entry vs incumbent settings objects]]
+( ([TIME[2016-06-16 12:35:19 +09:00]]))
+<https://www.w3.org/Bugs/Public/show_bug.cgi?id=27204>
+
+[152] [CITE@en[Merge pull request #128 from domenic/prepare-callbacks]]
+([[bzbarsky]]著, [TIME[2016-06-15 18:04:41 +09:00]])
+<https://github.com/heycam/webidl/commit/91ad860e5d80ee03ed558ec7724a618fb42dc2f2>
+
+**
 
 [REFS[
 - [246] [CITE@en[Web Applications 1.0 r7236     Recast how the origin handling is done for data: URLs in workers, and fix the shared worker origin handling for data: URLs so that you can actually reconnect to a data: shared worker.]]
