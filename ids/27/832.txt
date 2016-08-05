@@ -1,6 +1,7 @@
 * 仕様書
 
 [REFS[
+- [99] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2016-08-05 16:28:45 +09:00]]) <https://html.spec.whatwg.org/#performing-structured-clones-from-other-specifications>
 - [22] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2014-04-03 03:44:44 +09:00]] 版) <https://www.whatwg.org/specs/web-apps/current-work/#jump-to-a-code-entry-point>
 - [68] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2016-02-24 02:49:49 +09:00]] 版) <https://html.spec.whatwg.org/#import-scripts-into-worker-global-scope>
 - [164] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2016-03-27 03:13:07 +09:00]] 版) <https://html.spec.whatwg.org/#running-script>
@@ -188,7 +189,7 @@
 
 * 準備と後片付け
 
-[94] [[環境設定群オブジェクト]][VAR[設定群オブジェクト]]についての[DFN[[RUBYB[[[スクリプト実行の準備]]]@en[prepare to run script]]]]は、
+[94] [[環境設定群オブジェクト]][VAR[設定群オブジェクト]]についての[DFN[[RUBYB[[[スクリプトを走らせる準備]]]@en[prepare to run script]]]]は、
 次のようにします [SRC[>>22]]。
 
 [FIG(steps)[
@@ -198,12 +199,7 @@
 (新たな[[走っているJavaScript実行文脈]]となります。)
 ]FIG]
 
-[HISTORY[
-[154] 以前は現[[スクリプトを実行できるか検査]]と合わせて[DFN[[RUBYB[[[コールバックを走らせる準備]]]@en[prepare to run a callback]]]]と呼ばれていました。
-]HISTORY]
-
-[95] [[環境設定群オブジェクト]][VAR[設定群オブジェクト]]について[DFN[[RUBYB[[[スクリプトを走らせた後の片付け]]]@en[clean up after running a script]]]]
-(旧[DFN[[RUBYB[[[コールバックを走らせた後の片付け]]]@en[clean up after running a callback]]]]) は、
+[95] [[環境設定群オブジェクト]][VAR[設定群オブジェクト]]について[DFN[[RUBYB[[[スクリプトを走らせた後の片付け]]]@en[clean up after running a script]]]]は、
 次のようにします [SRC[>>22]]。
 
 [FIG(steps)[
@@ -221,11 +217,51 @@
 [[コールバック関数の呼び出し]]や
 [CODE[EnqueueJob]] による[[マイクロタスク]]でも呼び出されます。
 
-@@ [64] コールバック実行準備
-[SRC[>>62]]
+[65] [DFN[[RUBYB[コールバックを走らせる準備]@en[prepare to run a callback]]]]は、
+[[環境設定群オブジェクト]][VAR[設定群]]について、次のようにします [SRC[>>62]]。
+[FIG(steps)[
+= [66] [VAR[設定群]]を、[[イベントループ]]の[F[バックアップ現職設定群オブジェクトスタック]]に
+[[push]] します。
+= [67] [VAR[文脈]]を、[[最上スクリプト持ち実行文脈]]に設定します。
+= [64] [VAR[文脈]]が [CODE[null]] 以外なら、
+== [69] [VAR[文脈]]の[F[現職決定時に飛ばす計数器]]を[[インクリメント]]します。
+]FIG]
 
+[70] [DFN[[RUBYB[コールバックを走らせた後の片付け]@en[clean up after running a callback]]]]は、
+[[環境設定群オブジェクト]][VAR[設定群]]について、次のようにします [SRC[>>62]]。
+[FIG(steps)[
+= [72] [VAR[文脈]]を、[[最上スクリプト持ち実行文脈]]に設定します。
+= [73] [VAR[文脈]]が [CODE[null]] でなければ、
+== [74] [VAR[文脈]]の[F[現職決定時に飛ばす計数器]]を[[デクリメント]]します。
+= [75] [[イベントループ]]の[F[バックアップ現職設定群オブジェクトスタック]]から[VAR[設定群]]を削除します。
+(スタックの最上にあるはずです。)
+]FIG]
+
+[100] これらの処理は、次の場面で呼び出されます。
+[FIG(list)[
+- [[利用者エージェント]]からの[[構造化クローン]]の前後 [SRC[>>99]]
+- [CODE[PromiseJobs]] からの実行
+- [[古典スクリプトの実行]] ☆
+- [[モジュールスクリプトの実行]] ☆
+- [[利用者オブジェクトの操作の呼び出し]]
+- [[利用者オブジェクトの属性値の取得]]
+- [[利用者オブジェクトの属性値の設定]]
+- [[コールバック関数の呼び出し]]
+]FIG]
+
+;; [105] ☆は、[[スクリプト]]の準備と片付けのみ行います。
+それ以外は、[[スクリプト]]と[[コールバック]]の準備と片付けの両方を行います。
+両方を行う場合であっても、使用する[VAR[設定群]]は異なることがあります。
 
 [HISTORY[
+[98] [[スクリプト]]や[[コールバック]]の実行に関する処理は幾度もの改訂を経ており、
+処理内容も用語も大きく変化しています。
+
+[154] かつては、後の[[スクリプトを走らせる準備]]と[[スクリプトを実行できるか検査]]とを合わせて[DFN[[RUBYB[[[コールバックを走らせる準備]]]@en[prepare to run a callback]]]]と呼んでいました。
+[[スクリプトを走らせた後の片付け]]は、
+[DFN[[RUBYB[[[コールバックを走らせた後の片付け]]]@en[clean up after running a callback]]]]と呼ばれていました。
+(これらは現在のコールバックの準備と片付けとは別物でした。)
+
 [104] [[JavaScript実行文脈スタック]]と[[スクリプト設定群オブジェクトのスタック]]が統合される前は、次のように規定されていました。
 
 [35] [[JavaScript]] の [CODE(JS)[[[SourceElements]]]] が評価される時には、
