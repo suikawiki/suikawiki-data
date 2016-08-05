@@ -5,9 +5,11 @@
 - [68] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2016-02-24 02:49:49 +09:00]] 版) <https://html.spec.whatwg.org/#import-scripts-into-worker-global-scope>
 - [164] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2016-03-27 03:13:07 +09:00]] 版) <https://html.spec.whatwg.org/#running-script>
 - [76] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-12-22 10:28:15 +09:00]] 版) <https://html.spec.whatwg.org/#script-corresponding-to-the-running-execution-context>
+- [62] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2016-08-01 13:15:24 +09:00]]) <https://html.spec.whatwg.org/#concept-incumbent-everything>
+- [303] [CITE[Web IDL (Second Edition)]] ([TIME[2015-02-03 13:44:14 +09:00]] 版) <http://heycam.github.io/webidl/#es-invoking-callback-functions>
 ]REFS]
 
-* スクリプトの実行
+* 古典スクリプトの実行
 
 [23] [DFN[[RUBYB[古典スクリプトの実行]@en[run a classic script]]]] [SRC[>>22]]
 (旧[DFN[[RUBYB[[[コード入口点に飛ぶ]]]@en[jump to a code entry-point]]]])
@@ -61,6 +63,8 @@
 ;; [79] この手続きが返す値が使われるのは、 [CODE(URI)@en[[[javascript:]]]]
 [[URL]] の実行の時だけのようです。
 
+* モジュールスクリプトの実行
+
 [80] [[モジュールスクリプト]][VAR[スクリプト]]について[DFN[[RUBYB[モジュールスクリプトを実行]@en[run a module script]]]]するとは、
 次のようにしなければ[['''なりません''']] [SRC[>>22]]。
 
@@ -71,16 +75,118 @@
 = [93] [VAR[実現値化状態]]を、[CODE[[VAR[記録]].[CODE[[[ModuleDeclarationInstantiation]]]]()]]
 に設定します。
 = [110] [VAR[実現値化状態]]が [[abrupt completion]] なら、
-== [111] [VAR[スクリプト]]について[CODE[[VAR[実現値化状態]].[F(ss)[[[value]]]]]]の[[例外を報告]]します。
+== [111] [VAR[スクリプト]]について[CODE[[VAR[実現値化状態]].[F(ss)[value]]]]の[[例外を報告]]します。
 == [112] ここで停止します。
 = [113] [VAR[設定群オブジェクト]]について[[スクリプトを実行する準備]]をします。
 = [114] [VAR[評価状態]]を、[CODE[[VAR[記録]].[CODE[[[ModuleEvalution]]]]()]]
 に設定します。
 = [115] [VAR[評価状態]]が[[走っているスクリプトの実行中断]]ではなく、
 [[abrupt completion]] であるなら、
-== [116] [VAR[スクリプト]]について[CODE[[VAR[評価状態]].[F(ss)[[[value]]]]]]の[[例外を報告]]します。
+== [116] [VAR[スクリプト]]について[CODE[[VAR[評価状態]].[F(ss)[value]]]]の[[例外を報告]]します。
 = [153] [VAR[設定群オブジェクト]]について[[コールバックを走らせた後の片付け]]をします。
 ]FIG]
+
+* コールバック関数の実行
+
+[3] [[コールバック関数]]の[DFN[[RUBYB[呼び出し]@en[invoke]]]] [SRC[>>303]] は、
+次の[[引数]]に関する操作です。
+[FIG(list members)[
+: [VAR[呼び出し可能]] : [[コールバック関数]]として使用する、[[コールバック関数型]]の値。
+: [VAR[this]] : [[コールバック関数]]の [CODE(JS)@en[this]] として使う値。
+[[既定値]]は [CODE(JS)@en[undefined]] [SRC[>>303]]。
+: [VAR[引数リスト]] : [[コールバック関数]]の[[引数]]の[[リスト]]。
+各値は、[[IDL値]]か、省略を表す特殊値「[RUBYB[なし]@en[missing]]」のいずれかです [SRC[>>303]]。
+]FIG]
+
+[4] 次のようにします [SRC[>>303]]。
+[FIG(steps)[
+= [17] [VAR[F]] を、[VAR[呼び出し可能]]の [[JavaScript]] [[オブジェクト]]に設定します。
+= [18] [VAR[F]] に [CODE[IsCallable]] を適用した結果が[[偽]]なら、
+== [7] [VAR[呼び出し可能]]の[F[返り型]]が [CODE(IDL)@en[void]] なら、
+=== [10] ここで停止します。
+== [13] それ以外なら、
+=== [15] [CODE(JS)@en[undefined]] を[VAR[呼び出し可能]]の[F[返り型]]に[[変換][変換 (WebIDL)]]した結果を返し、ここで停止します。
+= [5] [VAR[realm]] を、 [VAR[F]] の[F[Realm]]に設定します。
+= [16] [VAR[関連設定群]]を、 [VAR[realm]] の[F[設定群オブジェクト]]に設定します。
+= [19] [VAR[蓄積設定群]]を、[VAR[値]]の[F[コールバック文脈]]に設定します。
+= [20] [VAR[関連設定群]]について[[スクリプトを走らせる準備]]を実行します。
+= [21] [VAR[蓄積設定群]]について[[コールバック実行の準備]]を実行します。
+= [42] [VAR[リスト]]を、空の[[リスト]]に設定します。
+= [59] [VAR[数]]を、 [N[0]] に設定します。
+= [60] [VAR[引数リスト]]の各値[VAR[値]]について、順に、
+== [27] [VAR[値]]が「なし」なら、
+=== [28] [VAR[リスト]]の末尾に [CODE(JS)@en[undefined]] を追加します。
+== [29] それ以外なら、
+=== [31] [VAR[結果]]を、[VAR[値]]を [[JavaScript]] に[[変換][変換 (WebIDL)]]した結果に設定します。
+=== [32] [VAR[結果]]が [[abrupt completion]] なら、
+==== [33] >>43 に飛びます。
+=== [34] それ以外なら、
+==== [35] [VAR[リスト]]の末尾に[VAR[結果]]の[F(ss)[値]]を追加します。
+=== [37] [VAR[数]]を[[インクリメント]]します。
+= [38] [VAR[リスト]]の末尾の値を削除して要素数が[VAR[数]]となるようにします。
+= [39] [VAR[結果]]を、[CODE[[[Call]]([VAR[F]], [VAR[this]], [VAR[リスト]])]]
+の結果に設定します。
+= [40] [VAR[結果]]が [[abrupt completion]] 以外なら、
+== [41] [VAR[結果]]を、[VAR[結果]]の[F(ss)[値]]を[VAR[呼び出し可能]]の[F[返り型]]に[[変換][変換 (WebIDL)]]した結果に設定します。
+= [57] [VAR[蓄積設定群]]について[[コールバックを走らせた後の片付け]]を実行します。
+= [43] [VAR[関連設定群]]について[[スクリプトを走らせた後の片付け]]を実行します。
+= [44] [VAR[結果]]が [[abrupt completion]] なら、
+== [47] [VAR[呼び出し可能]]の[F[返り型]]が[[約束型]]なら、
+=== [50] [VAR[結果]]を、[CODE[[[%Promise%]].[[reject]]]] の[[初期値]]を呼び出した結果に設定します。
+[FIG(list members)[
+: [VAR[[CODE(JS)[this]]]] : [CODE[%Promise%]]
+: [VAR[引数リスト]] :
+[FIG(list)[
+= [VAR[結果]]の[F(ss)[値]]
+]FIG]
+]FIG]
+=== [51] [VAR[結果]]を[VAR[返り型]]に[[変換][変換 (WebIDL)]]した結果を返します。
+== [48] それ以外なら、
+=== [49] [VAR[結果]]を返します。
+= [45] それ以外なら、
+== [46] [VAR[結果]]を返します。
+]FIG]
+
+[9] つまり[[コールバック関数]]を実行するものですが、
+[[JavaScript]] と [[Web IDL]] の値の変換、
+[[JavaScript実行文脈スタック]]の操作、
+[[例外]]の [CODE(DOMi)@en[[[Promise]]]] 化を適宜処理するものです。
+
+[11] [F(ss)[[[Call]]]] の呼び出しは、
+途中で[[走っているスクリプトの実行中断]]が発生することがあります。
+
+[58] 似たような処理が[[利用者オブジェクト]]についても規定されています。
+
+[61] [[コールバック関数の呼び出し]]は、次の場面で行われます。
+[FIG(list)[
+- [[Web IDL]] [[iterator]] の [CODE(IDL)@en[[[forEach]]]] [SRC[[[Web IDL]]]]
+- [[イベントハンドラー]]の呼び出し [SRC[[[HTML Standard]]]]
+- [[タイマー]]の呼び出し [SRC[[[HTML Standard]]]]
+- [[アニメーションフレームコールバック]]の呼び出し [SRC[[[HTML Standard]]]]
+- [[カスタム要素反応群の呼び出し]]からの[[コールバック反応]]の呼び出し [SRC[[[HTML Standard]]]]
+
+;; [8] [[変異観察器]]、[[Geolocation API]] の[[コールバック]]、
+[CODE(DOMm)@en[[[getAsString]]]] の[[コールバック]]、
+[CODE(DOMm)@en[[[toBlob]]]] の[[コールバック]]、
+[CODE(DOMi)@en[[[PortCollection]]]] の [CODE(DOMm)@en[[[iterate]]]] の[[コールバック]]、
+[CODE(DOMi)@en[[[RTCPeerConnection]]]] の[[コールバック]]、
+[CODE(DOMi)@en[[[NSResolver]]]] でも同様の処理を挟む必要がありそうですが、
+明文化されていません。
+
+[HISTORY[
+- [CODE(DOMm)@en[setImmediate]]
+]HISTORY]
+]FIG]
+
+;; [12] [CODE(JS)@en[[[Promise]]]] の[[コールバック]]は、
+[[JavaScriptジョブの実行]]で処理されます。
+
+;; [14] [[カスタム要素構築器]]は、[[要素の格上げ]]で呼び出されます。
+他の[[コールバック]]とは違った処理となっています。
+
+@@ [6] [[コールバックインターフェイス]]
+
+* 準備と後片付け
 
 [94] [[環境設定群オブジェクト]][VAR[設定群オブジェクト]]についての[DFN[[RUBYB[[[スクリプト実行の準備]]]@en[prepare to run script]]]]は、
 次のようにします [SRC[>>22]]。
@@ -115,6 +221,10 @@
 [[コールバック関数の呼び出し]]や
 [CODE[EnqueueJob]] による[[マイクロタスク]]でも呼び出されます。
 
+@@ [64] コールバック実行準備
+[SRC[>>62]]
+
+
 [HISTORY[
 [104] [[JavaScript実行文脈スタック]]と[[スクリプト設定群オブジェクトのスタック]]が統合される前は、次のように規定されていました。
 
@@ -147,4 +257,4 @@
 
 * 歴史
 
-[2] [[スクリプト]]も参照。
+[2] [[スクリプト]]、[[コールバック関数]]も参照。
