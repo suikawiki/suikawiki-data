@@ -14,6 +14,8 @@
 - [59] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-04-25 04:40:19 +09:00]] 版) <https://html.spec.whatwg.org/#garbage-collection-and-browsing-contexts>
 - [24] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-12-22 10:28:15 +09:00]] 版) <https://html.spec.whatwg.org/#javascript-execution-context's-settings-object>
 - [96] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2016-08-01 13:15:24 +09:00]]) <https://html.spec.whatwg.org/#global-object>
+-- [201] '''[CITE@en-US-x-hixie[HTML Standard]] ([TIME[2014-04-03 03:44:44 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#entry-settings-object>'''
+-- [204] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2014-04-03 03:44:44 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#candidate-entry-settings-object>
 - [69] [CITE@en[Upgrade Insecure Requests]] ([TIME[2015-10-07 03:24:10 +09:00]] 版) <https://w3c.github.io/webappsec-upgrade-insecure-requests/#nesting>
 ]REFS]
 
@@ -227,10 +229,69 @@
 現在走っている[[コールバック]]を元々[[スケジューリング]]した[[著者]]の[[スクリプト]]や[[関数]]に関するものです。
 : [DFN[[RUBYB[現在]@en[current]]]] :
 現在走っている[[関数オブジェクト]] ([[JavaScript]] 以外で実装されている[[利用者エージェント]]の組み込みの[[関数]]を含む。) に関するものです。
-: (ある[[プラットフォームオブジェクト]]に) [DFN[関連]@en[relevant]] :
+: (ある[[プラットフォームオブジェクト]]に) [DFN[[RUBYB[関連]@en[relevant]]]] :
 現在走っている[[関数オブジェクト]]の [CODE(JS)@en[this]] 値やいずれかの[[引数]]などの[[プラットフォームオブジェクト]]の[F[Realm]]
 のもの。
 ]FIG]
+
+[75] 一般に、'''[[現在]]'''を使う[SHOULD[べきです]] [SRC[>>96]]。
+
+[98] 同じ[[オブジェクト]]を何度も返すような場合、その[[オブジェクト]]の作成には、
+[[文脈オブジェクト]]の'''[[関連]]'''を使う[SHOULD[べきです]] [SRC[>>96]]。
+(これは、違う [[Realm]] の[[オブジェクト]]をずっと保持し続けなければならないのを防ぐためです。
+[SRC[>>96]])
+
+[99] [[後方互換性]]のため、この原則に従わないものも少なくありません。
+この原則は2016年の [[HTML Standard]] の改訂で整備され、
+既存の[[メソッド]]等も ([[Web互換性]]を失わない範囲で) 整理されています。
+
+[HISTORY[
+
+[105] [[入口設定群オブジェクト]]は、[[関連する類似起源閲覧文脈の単位]]内の[[スクリプト]]の[[基底URL]]の[[解決]]その他に用いられます。
+
+[106] [[現職設定群オブジェクト]]は、候補かどうかを問わず一番最近追加された[[スクリプト設定群オブジェクト]]です。
+
+[107] [[現職設定群オブジェクト]]と[[入口設定群オブジェクト]]の使い分けは明確には説明されていないのですが、
+[FIG(list)[
+- [[入口設定群オブジェクト]]を使うのは
+-- [[API]] 内での[[相対URL]]の[[解決]]
+-- [[API]] 内で扱う対象が[[同じ起源]]かどうかの判定
+- [[現職設定群オブジェクト]]を使うのは
+-- [[閲覧文脈]]や[[ワーカー]]が[[同じ起源]]かどうかの判定
+]FIG]
+... となっているようです。
+
+[108] [[入口設定群オブジェクト]]は[[ハイパーリンク]]をたどる処理の定義でも参照されていて、
+[[入口設定群オブジェクト]]があれば[[スクリプト]]からの呼び出しということで[[例外]]を投げ、
+そうでなければ何もしないという判断に使われています。
+]HISTORY]
+
+* 入口設定群オブジェクト
+
+[100] [DFN[[RUBYB[[[入口設定群オブジェクト]]]@en[entry settings object]]]]は、
+[[JavaScript実行文脈スタック]]中の[[JavaScript実行文脈]]の[F[[[設定群オブジェクト]]]]で[F[[[候補入口設定群オブジェクト]]]]フラグが立っているもののうち、
+スタック上で最上に位置するものです [SRC[>>201]]。
+
+[HISTORY[
+[101] [DFN[[RUBYB[[[入口設定群オブジェクト]]]@en[entry settings object]]]]は、
+[[スクリプト設定群オブジェクトのスタック]]で一番最近追加された[[候補入口設定群オブジェクト]]たる[[スクリプト設定群オブジェクト]]です。
+そのような[[スクリプト設定群オブジェクト]]がなければ、[[入口設定群オブジェクト]]はありません。 [SRC[>>201]]
+]HISTORY]
+
+** 候補
+
+[102] [[JavaScript実行文脈スタック]]中にある[[JavaScript実行文脈]]の[F[[[設定群オブジェクト]]]]として設定された[[スクリプト設定群オブジェクト]]には、
+[DFN[[RUBYB[[[候補入口設定群オブジェクト]]]@en[candidate entry settings object]]]] [SRC[>>204]] というフラグがあります。
+
+;; [103] 同じ[[スクリプト設定群オブジェクト]]が複数回[[JavaScript実行文脈スタック]]上に現れることがありますから、
+このフラグは[[環境設定群オブジェクト]]自体のフラグというよりは、
+[[スタック]]上のエントリーに属するフラグです。
+
+[104] このフラグは[[コールバックを走らせる準備]]の手順内で[[実行文脈]]が [[push]]
+される時に付与されます。 [[JavaScript]] の [CODE(JS)@en[[[SourceElements]]]] の評価によって [[push]]
+される際には付与されません。おおよそ、[[利用者エージェント]]から[[スクリプト]]を呼び出す際の[[スクリプト設定群オブジェクト]]が候補になるといえます。
+
+
 
 * 関連
 
@@ -373,6 +434,28 @@
 <https://lists.w3.org/Archives/Public/www-archive/2015Sep/0020.html>
 
 [28] [CITE@en[Move 'HTTPS state' from Window to Document · whatwg/html@68390ce]] ([TIME[2015-11-06 23:34:31 +09:00]] 版) <https://github.com/whatwg/html/commit/68390cea99f9f19881a16e1c8adaf1b130b4d1cc>
+
+**
+
+[109] [CITE[Issue 360891 - chromium - Javascript run via V8 Microtask callback has no "entered" DOM Window - An open-source project to help move the web forward. - Google Project Hosting]]
+( ([TIME[2014-04-10 04:51:48 +09:00]] 版))
+<https://code.google.com/p/chromium/issues/detail?id=360891>
+
+[110] [CITE@en[Rewrite script execution on top of ES · whatwg/html@4891d18]]
+([TIME[2015-12-22 23:16:26 +09:00]] 版)
+<https://github.com/whatwg/html/commit/4891d18aaf2df1d40aa61f467a5a10cfc19dd85d>
+
+[111] [CITE@en[Formalize '''[''''''['''Realm''']'''''']''' internal slot of ordinary objects · Issue #573 · tc39/ecma262]]
+( ([TIME[2016-06-07 10:24:30 +09:00]]))
+<https://github.com/tc39/ecma262/issues/573>
+
+[112] [CITE@en[27203 – Evaluate entry settings object usage]]
+( ([TIME[2016-06-16 12:34:59 +09:00]]))
+<https://www.w3.org/Bugs/Public/show_bug.cgi?id=27203>
+
+[113] [CITE@en[27204 – Provide guidance on entry vs incumbent settings objects]]
+( ([TIME[2016-06-16 12:35:24 +09:00]]))
+<https://www.w3.org/Bugs/Public/show_bug.cgi?id=27204>
 
 ** 
 
