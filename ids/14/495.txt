@@ -142,27 +142,15 @@ is "[CODE[ws][ws:]]", and to "[CODE[https][https:]]" otherwise.
 : [F[redirect mode]] : [CODE[error]]
 : [F[WebSocket subprotocols]] : [VAR[protocols]]
 ]FIG]
-= [1339] Let [VAR[response]] be the result of [[fetching][fetch]] [VAR[request]].
-= [1340] If [VAR[response]] is a [[network error]] or its [F[status][status code]]
-is not [CODE[101]]:
-== [1342] [[Fail the WebSocket connection][fail the WebSocket connection]]
-and abort these steps.
-= [1346] Now, [[The WebSocket Connection is Established]].
+= [1339] [[Fetch][fetch]] [VAR[request]].
 ]FIG]
-
-[1343] The [[Extensions In Use]] for [VAR[connection]] is
-[VAR[response]]'s [F[header list][response's header list]]'s
-`[CODE[Sec-WebSocket-Extensions]]` header's value, if any, or [CODE[null]].
-
-[1345] The [[Subprotocol In Use]] for [VAR[connection]] is
-[VAR[response]]'s [F[header list][response's header list]]'s
-`[CODE[Sec-WebSocket-Protocol]]` header's value, if any, or [CODE[null]].
 
 [838] To make an HTTP request over [VAR[connection]] using [VAR[request]]
 in [[HTTP-network fetch]], 
 with [VAR[credentials]] flag and optional [VAR[not retryable]] flag,
 run these steps:
 [FIG(steps)[
+= [1344] Configure [VAR[connection]] such that any notification is handled by >>839.
 = [837] If [VAR[connection]]'s [F[transport][connection's transport]]'s
 [F[http protocol][transport's http protocol]] is [CODE[http2]]:
 == 
@@ -191,7 +179,10 @@ run these steps:
 : [F[本体]] : [VAR[request]]'s [F[body][request body]]
 : [F[mode][request mode]] : [VAR[request]]'s [F[mode][request mode]]
 ]FIG]
-= [839] Process notifications from [VAR[connection]] as follows:
+]FIG]
+
+[839] Any notification [VAR[msg]] from [VAR[connection]] is processed as follows,
+switched by [VAR[msg]]'s type:
 [FIG(switch)[
 : 要求の本体の一部の送信の通知 : Process [VAR[transmitted]] as follows:
 [FIG(steps)[
@@ -210,7 +201,7 @@ run these steps:
 [VAR[http response]]'s [F[状態符号]] is [CODE[407]]:
 == [857] Set [VAR[response]] to a [[network error]].
 = [858] Otherwise:
-== [841] Set [VAR[response]] to a [[response]].
+== [841] Set [VAR[response]] to a [[response]]:
 [FIG(list members)[
 [FIGCAPTION[
 [[Response][response]]
@@ -258,7 +249,6 @@ with [VAR[credentials]] flag, with [VAR[not retryable]] flag set.
 === [853] Return a [[network error]].
 ]FIG]
 ]FIG]
-]FIG]
 
 @@ TLS client certificate dialog
 
@@ -266,6 +256,23 @@ with [VAR[credentials]] flag, with [VAR[not retryable]] flag set.
 [357] [[HTTP]] [CODE(HTTP)[[[CONNECT]]]] プロキシからの応答の受信
 - [CODE(HTTP)[[[407]]]] なら、...
 - その他非 [CODE(HTTP)[[[200]]]] なら、[[ネットワークエラー]]
+
+@@
+[FIG[
+= [1340] If [VAR[response]] is a [[network error]] or its [F[status][status code]]
+is not [CODE[101]]:
+== [1342] [[Fail the WebSocket connection][fail the WebSocket connection]]
+and abort these steps.
+= [1346] Now, [[The WebSocket Connection is Established]].
+
+[1343] The [[Extensions In Use]] for [VAR[connection]] is
+[VAR[response]]'s [F[header list][response's header list]]'s
+`[CODE[Sec-WebSocket-Extensions]]` header's value, if any, or [CODE[null]].
+
+[1345] The [[Subprotocol In Use]] for [VAR[connection]] is
+[VAR[response]]'s [F[header list][response's header list]]'s
+`[CODE[Sec-WebSocket-Protocol]]` header's value, if any, or [CODE[null]].
+]FIG]
 
 @@
 [539] [[WebSocket]] server steps
@@ -2009,7 +2016,7 @@ extension header value.
 == [375] [VAR[要求締め切り]]フラグを設定します。
 == [376] [VAR[状態]]を、「トンネル」に設定します。
 = [143] それ以外で、[VAR[WebSocket接続の状態]]が [CODE[CONNECTING]] で、
-[VAR[応答]]の[[状態符号]]が [CODE(HTTP)[[[101]]]] なら、
+[VAR[応答]]の[[状態符号]]が [CODE(HTTP)[101]] なら、
 == [144] If one of following conditions are true:
 [FIG(list)[
 - [299] [VAR[応答]]に [CODE(HTTP)@en[[[Upgrade:]]]] [[ヘッダー]]が無いか、 
