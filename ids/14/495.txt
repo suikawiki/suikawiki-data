@@ -142,7 +142,8 @@ is "[CODE[ws][ws:]]", and to "[CODE[https][https:]]" otherwise.
 : [F[redirect mode]] : [CODE[error]]
 : [F[WebSocket subprotocols]] : [VAR[protocols]]
 ]FIG]
-= [1339] [[Fetch][fetch]] [VAR[request]] with [VAR[[[process response]]]] >>1348.
+= [1339] [[Fetch][fetch]] [VAR[request]] with [VAR[[[process response]]]] >>1348
+and [VAR[[[process response done]]]] >>1342.
 ]FIG]
 
 [1348] The [[process response]] with [VAR[response]] is as follows:
@@ -151,27 +152,32 @@ is "[CODE[ws][ws:]]", and to "[CODE[https][https:]]" otherwise.
 its [F[status][status code]] is [CODE[101]]:
 == [1346] [[The WebSocket Connection is Established]] with:
 [FIG(list members)[
-: [[Extensions In Use]] :
+: [VAR[[[Extensions In Use]]]] :
 [VAR[response]]'s [F[header list][response's header list]]'s
 `[CODE[Sec-WebSocket-Extensions]]` header's value, if any, or [CODE[null]]
-: [[Subprotocol In Use]] :
+: [VAR[[[Subprotocol In Use]]]] :
 [VAR[response]]'s [F[header list][response's header list]]'s
 `[CODE[Sec-WebSocket-Protocol]]` header's value, if any, or [CODE[null]]
 ]FIG]
 ]FIG]
 
+[1342] The [[process response done]] with [VAR[response]] is as follows:
+[FIG(steps)[
+= [1345] Let [VAR[exit status]] be [VAR[response]]'s [F[exit status][response's exit status]].
+= [1350] If [VAR[exit status]] is [CODE[null]]:
+== [1351] Set [VAR[exit status]] to an [[exit status]] whose [F[失敗]] is [[false]].
+= [1343] [[The WebSocket Connection Is Closed]] with:
+[FIG(list members)[
+: [VAR[[[Fail The WebSocket Connection]]]] : [VAR[exit status]]'s [F[失敗]]
+: [VAR[cleanly]] : [VAR[exit status]]'s [F[WebSocket cleanly]] is [[true]]
+: [VAR[[[The WebSocket Connection Close Code]]]] : [VAR[exit status]]'s [F[WebSocket状態符号]]
+: [VAR[[[The WebSocket Connection Close Reason]]]] : [VAR[exit status]]'s [F[WebSocket理由文字列]]
+]FIG]
+]FIG]
+
+
+
 @@ a WebSocket message has been received with type Text/Binary and data data
-
-@@ the WebSocket closing handshake is started
-
-@@ the WebSocket connection is closed
-fail the WebSocket connection
-the WebSocket connection was closed   after   flagged as full
-:
-closed cleanly
-WebSocket connection close code
-WebSocket connection close reason
-
 
 
 [838] To make an HTTP request over [VAR[connection]] using [VAR[request]]
@@ -259,6 +265,8 @@ switched by [VAR[msg]]'s type:
 = 
 @@ Set [VAR[response]]'s [F[body][response body]] stream's done flag
 ]FIG]
+: [CODE[wsclosing]] の通知 :
+[[The WebSocket Closing Handshake Is Started]].
 : 完了の通知 : Process [VAR[http response]] and [VAR[exit status]] as follows:
 [FIG(steps)[
 = [851] If [VAR[exit status]]'s [F[失敗]] is true:
@@ -1773,8 +1781,8 @@ extension header value.
 :返答:[[真]]か[[偽]]。既定値は[[偽]]。
 :データ:[[バイト列]]。既定値は空。
 ]FIG]
-- [329] WebSocket終了開始の通知
--- [317] [[WebSocket]] で [[Closeフレーム]]を初めに送信または受信したときに発火されます。
+- [329] [CODE[wsclosing]] の通知
+-- [317] When a [[WebSocket]] [[Close frame]] is sent or received for the first time.
 - [358] 完了の通知
 [FIG(list members)[
 :[[応答]]:[VAR[応答]]。
@@ -1789,7 +1797,7 @@ extension header value.
 データ受信の通知は、0回以上の任意の回数行います。
 データ受信の通知のかわりに 0回以上の ping の通知がある場合があります。
 [[トンネル]]では最初にデータ開始の通知、最後にデータ終了の通知があります。
-完了の通知の前に、WebSocket終了開始の通知があるかもしれません。
+完了の通知の前に、 [CODE[wsclosing]] の通知があるかもしれません。
 
 [FIG(flow)[
 :initial:要求の送信
@@ -3264,7 +3272,12 @@ are defined by [[HTTP]].
 [[URL scheme]]s [CODE(URI)@en[ws][ws:]] and [CODE(URI)@en[wss][wss:]], and
 the terms
 [DFN[[[The WebSocket Connection is Established]]]],
-[DFN[[[Extensions In Use]]]], and [DFN[[[Subprotocol In Use]]]]
+[DFN[[[Extensions In Use]]]], [DFN[[[Subprotocol In Use]]]]
+[DFN[[[The WebSocket Closing Handshake Is Started]]]],
+[DFN[[[The WebSocket Connection Is Closed]]]],
+[DFN[[[The WebSocket Connection Close Code]]]],
+[DFN[[[The WebSocket Connection Close Reason]]]], and
+[DFN[[[Fail The WebSocket Connection]]]]
 are defined by [[RFC 6455]].
 
 [354] The terms
@@ -3293,8 +3306,8 @@ are defined by [[RFC 6455]].
 [DFN[[[obtain a WebSocket connection]]]],
 [DFN[[[basic fetch]]]], [DFN[[[HTTP fetch]]]], [DFN[[[HTTP-network-or-cache fetch]]]],
 [DFN[[[HTTP-network fetch]]]],
-[DFN[[[establish a WebSocket connection]]]], and
-[DFN[[[fail the WebSocket connection]]]]
+[DFN[[[process response]]]], [DFN[[[process response done]]]], and
+[DFN[[[establish a WebSocket connection]]]]
 are defined in the [CITE[Fetch Standard]].
 
 [961] The term 
