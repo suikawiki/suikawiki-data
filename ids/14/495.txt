@@ -2414,7 +2414,8 @@ and [VAR[フレーム]]の [[mask]] が 1 なら、
 == [176] [VAR[先頭フレーム]]を、[VAR[フレーム]]に設定します。
 = [195] [VAR[一時バッファー]]を、空に設定します。
 = [160] [VAR[フレーム]]の長さが0なら、
-== [190] [[WebSocketフレーム]]の処理 (>>189) を行います。途中で停止したら、ここで停止します。
+== [190] Let [VAR[result]] be result of [[processing a WebSocket frame][process a WebSocket frame]].
+== [1361] If [VAR[result]] is [[failure]], abort these steps.
 == [192] [VAR[フレーム]]を、 null に設定します。
 == [191] [VAR[状態]]を、「WebSocket フレーム前」に設定します。
 == [193] [VAR[一時バッファー]]を、空に設定します。
@@ -2450,7 +2451,8 @@ and [VAR[フレーム]]の [[mask]] が 1 なら、
 を使って[VAR[一時バッファー]]の末尾のバイトを [[XOR]] したものに置き換えます。
 = [167] [VAR[一時バッファー]]の[[長さ]]が[VAR[フレーム]]の[[長さ]]と等しくなければ、
 ここで停止します。
-= [188] [[WebSocketフレーム]]の処理 (>>189) を行います。途中で停止したら、ここで停止します。
+= [188] Let [VAR[result]] be result of [[processing a WebSocket frame][process a WebSocket frame]].
+= [1362] If [VAR[result]] is [[failure]], abort these steps.
 = [184] [VAR[フレーム]]を、 null に設定します。
 = [185] [VAR[状態]]を、「WebSocket フレーム前」に設定します。
 = [186] [VAR[一時バッファー]]を、空に設定します。
@@ -2658,25 +2660,27 @@ is [[false]]:
 == 値の末尾から 0x20 と 0x09 をすべて除去します。
 ]FIG]
 
-** WebSocket フレームの処理
+** WebSocket frames
 
-[189] [[WebSocketフレーム]]の処理は、次のようにします。
+[189] To [DFN[process a WebSocket frame]], switch by [VAR[connection]]'s 
+[F[frame][connection's frame]]'s [F[opcode]]:
+[FIG(switch)[
+: [N[8]] :
 [FIG(steps)[
-= [168] [VAR[フレーム]]の [[opcode]] が 8 なら、
-== [199] [VAR[一時バッファー]]の長さが1なら、
-=== [201] 理由[[空文字列]]で失敗とします。ここで停止します。
-== [202] [VAR[一時バッファー]]が空でないなら、
-=== [203] [VAR[フレーム]]の[[状態符号]]を、
+= [199] [VAR[一時バッファー]]の長さが1なら、
+== [201] 理由[[空文字列]]で失敗とします。ここで停止します。
+= [202] [VAR[一時バッファー]]が空でないなら、
+== [203] [VAR[フレーム]]の[[状態符号]]を、
 [VAR[一時バッファー]]の先頭2バイトを[[ネットワークバイト順]]の[[符号無し16ビット整数]]として解釈した値とします。
-=== [206] [VAR[フレーム]]の[[状態符号]]が [CODE[[[1005]]]] か [CODE[[[1006]]]] なら、
-==== [207] 理由[[空文字列]]で失敗とします。ここで停止します。
-=== [208] [VAR[フレーム]]の[[理由]]を、[VAR[一時バッファー]]から先頭2バイトを除いたものを入力として
+== [206] [VAR[フレーム]]の[[状態符号]]が [CODE[[[1005]]]] か [CODE[[[1006]]]] なら、
+=== [207] 理由[[空文字列]]で失敗とします。ここで停止します。
+== [208] [VAR[フレーム]]の[[理由]]を、[VAR[一時バッファー]]から先頭2バイトを除いたものを入力として
 [[utf-8復号器]]をエラーモード致死的で実行した出力とします。
-=== [209] 失敗の場合は、理由 [CODE[Invalid UTF-8 in Close frame]] で失敗とします。ここで停止します。
-== [213] [VAR[WebSocket接続の状態]]が [CODE[CLOSING]] でなければ、
-=== [210] [VAR[WebSocket接続の状態]]を、 [CODE[CLOSING]] に設定します。
-=== [211] [VAR[要求]]について、 [CODE[wsclosing]] を通知します。
-=== [216] [[WebSocketフレーム]]を作成します。
+== [209] 失敗の場合は、理由 [CODE[Invalid UTF-8 in Close frame]] で失敗とします。ここで停止します。
+= [213] [VAR[WebSocket接続の状態]]が [CODE[CLOSING]] でなければ、
+== [210] [VAR[WebSocket接続の状態]]を、 [CODE[CLOSING]] に設定します。
+== [211] [VAR[要求]]について、 [CODE[wsclosing]] を通知します。
+== [216] [[WebSocketフレーム]]を作成します。
 [FIG(list members)[
 :[[FIN]]:1
 :[[RSV1]]:0
@@ -2690,13 +2694,13 @@ is [[false]]:
 [VAR[フレーム]]の[[状態符号]]を表す[[16ビット符号無し整数]] ([[ネットワークバイト順]]) と、
 それに続けて理由
 ]FIG]
-=== [307] 作成した [[WebSocketフレーム]]のデータの各[[バイト]]について、
+== [307] 作成した [[WebSocketフレーム]]のデータの各[[バイト]]について、
 先頭から [VAR[i]] バイト目 (先頭が0バイト) であれば、
 [[マスクキー]]の [VAR[i]] [[mod]] 4 バイト目 (先頭が0バイト)
 と [[XOR]] した結果に差し替えます。
-=== [308] [VAR[connection]]'s [F[transport][connection's transport]] で、作成した[[WebSocketフレーム]]を送信することにします。
-== [218] [VAR[状態]]を、「WebSocket切断待ち」に設定します。
-== [228] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+== [308] [VAR[connection]]'s [F[transport][connection's transport]] で、作成した[[WebSocketフレーム]]を送信することにします。
+= [218] [VAR[状態]]を、「WebSocket切断待ち」に設定します。
+= [228] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
 [[exit status]]:
 [FIG(list members)[
 [FIGCAPTION[
@@ -2707,13 +2711,15 @@ is [[false]]:
 :状態符号:[VAR[フレーム]]の[[状態符号]] (なければ [CODE[1005]])
 :理由:[VAR[フレーム]]の理由 (なければ[[空文字列]])
 ]FIG]
-== [219] [VAR[connection]]'s [F[endpoint type][connection's endpoint type]] is [CODE[server]]:
-=== [311] 次の要求に進みます。
-== [312] それ以外なら、
-=== [313] [VAR[切断タイマー]]で、 1s 後に次の要求に進むことにします。
-= [168] [VAR[フレーム]]の [[opcode]] が 9 なら、
-== [222] [VAR[要求]]について、 ping を通知します。[VAR[一時バッファー]]をデータとして引き渡します。
-== [223] [[WebSocketフレーム]]を作成します。
+= [219] [VAR[connection]]'s [F[endpoint type][connection's endpoint type]] is [CODE[server]]:
+== [311] 次の要求に進みます。
+= [312] それ以外なら、
+== [313] [VAR[切断タイマー]]で、 1s 後に次の要求に進むことにします。
+]FIG]
+: [N[9]] :
+[FIG(steps)[
+= [222] [VAR[要求]]について、 ping を通知します。[VAR[一時バッファー]]をデータとして引き渡します。
+= [223] [[WebSocketフレーム]]を作成します。
 [FIG(list members)[
 :[[FIN]]:1
 :[[RSV1]]:0
@@ -2725,39 +2731,50 @@ is [[false]]:
 :[[マスクキー]]:無作為に決定した4バイトのバイト列
 :データ:[VAR[一時バッファー]]
 ]FIG]
-== [309] 作成した [[WebSocketフレーム]]のデータの各[[バイト]]について、
+= [309] 作成した [[WebSocketフレーム]]のデータの各[[バイト]]について、
 先頭から [VAR[i]] バイト目 (先頭が0バイト) であれば、
 [[マスクキー]]の [VAR[i]] [[mod]] 4 バイト目 (先頭が0バイト)
 と [[XOR]] した結果に差し替えます。
-== [310] [VAR[connection]]'s [F[transport][connection's transport]] で、作成した[[WebSocketフレーム]]を送信することにします。
-= [168] [VAR[フレーム]]の [[opcode]] が 10 なら、
-== [221] [VAR[要求]]について、 ping を通知します。返答フラグを設定し、
+= [310] [VAR[connection]]'s [F[transport][connection's transport]] で、作成した[[WebSocketフレーム]]を送信することにします。
+]FIG]
+: [N[10]] :
+[FIG(steps)[
+= [221] [VAR[要求]]について、 ping を通知します。返答フラグを設定し、
 [VAR[一時バッファー]]をデータとして引き渡します。
-= [168] [VAR[フレーム]]の [[opcode]] が 0, 1, 2 なら、
-== [169] [VAR[フレーム]]の [[opcode]] が 0 なら、
-=== [177] [VAR[先頭フレーム]]のデータの末尾に[VAR[一時バッファー]]を追加します。
-=== [194] ただし実装の扱える長さを超える場合は、失敗とします。ここで停止します。
-== [197] それ以外なら、
-=== [198] [VAR[フレーム]]のデータを、[VAR[一時バッファー]]に設定します。
-== [181] [VAR[フレーム]]の FIN が 1 なら、
-=== [533] Let [VAR[data type]] be [[Binary]].
-=== [182] [VAR[フレーム]]の [[opcode]] が 0 なら[VAR[先頭フレーム]]の [[opcode]]、
+]FIG]
+: [N[0]], [N[1]], or [N[2]] :
+[FIG(steps)[
+= [169] [VAR[フレーム]]の [[opcode]] が 0 なら、
+== [177] [VAR[先頭フレーム]]のデータの末尾に[VAR[一時バッファー]]を追加します。
+== [194] ただし実装の扱える長さを超える場合は、失敗とします。ここで停止します。
+= [197] それ以外なら、
+== [198] [VAR[フレーム]]のデータを、[VAR[一時バッファー]]に設定します。
+= [181] [VAR[フレーム]]の FIN が 1 なら、
+== [533] Let [VAR[data type]] be [[Binary]].
+== [182] [VAR[フレーム]]の [[opcode]] が 0 なら[VAR[先頭フレーム]]の [[opcode]]、
 それ以外なら[VAR[フレーム]]の [[opcode]] が 1 なら、
-==== [534] Set [VAR[data type]] to [[Text]].
-==== [180] [[utf8復号器]]を実行します。
+=== [168] Set [VAR[encoder]] be a [CODE(DOMi)@en[TextDecoder]] with:
+[FIG(list members middle)[
+: [F[encoding][TextDecoder's encoding]] : [[UTF-8]]
+: [F[error mode][TextDecoder's error mode]] : [CODE[fatal]]
+: [F[ignore BOM flag][TextDecoder's ignore BOM flag]] : [[true]]
+]FIG]
+=== [534] Set [VAR[data type]] to [[Text]].
+=== [180] [[utf8復号器]]を実行します。
 入力を、[VAR[フレーム]]の [[opcode]] が 0 なら[VAR[先頭フレーム]]のデータ、
 それ以外なら[VAR[フレーム]]のデータとします。
 エラーモードを致死的に設定します。
-==== [178] 失敗なら、理由 [CODE[Invalid UTF-8 in text frame]] で失敗とします。ここで停止します。
-==== [183] [VAR[フレーム]]の [[opcode]] が 0 なら[VAR[先頭フレーム]]のデータ、
+=== [178] 失敗なら、理由 [CODE[Invalid UTF-8 in text frame]] で失敗とします。ここで停止します。
+=== [183] [VAR[フレーム]]の [[opcode]] が 0 なら[VAR[先頭フレーム]]のデータ、
 それ以外なら[VAR[フレーム]]のデータを、結果に設定します。
-=== [179] [VAR[要求]]について、 [CODE[datastart]] を通知します
+== [179] [VAR[要求]]について、 [CODE[datastart]] を通知します
 with [VAR[data type]]。
-=== [531] [VAR[要求]]について、 [CODE[data]] を通知します。
+== [531] [VAR[要求]]について、 [CODE[data]] を通知します。
 [VAR[フレーム]]の [[opcode]] が 0 なら[VAR[先頭フレーム]]のデータ、
 それ以外なら[VAR[フレーム]]のデータを引き渡します。
-=== [532] [VAR[要求]]について、 [CODE[dataend]] を通知します。
-=== [187] [VAR[先頭フレーム]]を、 null に設定します。
+== [532] [VAR[要求]]について、 [CODE[dataend]] を通知します。
+== [187] [VAR[先頭フレーム]]を、 null に設定します。
+]FIG]
 ]FIG]
 
 * HTTP/2
@@ -3253,8 +3270,13 @@ with [VAR[exit]].
 * References
 
 [1044] The terms
-[DFN[[[encoding]]]], [DFN[[[UTF-8]]]], [DFN[[[UTF-8 encode]]]], and
-[DFN[[[decode]]]] are defined in the [CITE[Encoding Standard]].
+[DFN[[[encoding]]]], [DFN[[[UTF-8]]]], [DFN[[[UTF-8 encode]]]],
+[DFN[[[decode]]]],
+[DFN[[CODE(DOMi)@en[TextDecoder]]]],
+[DFN[[F[encoding][TextDecoder's encoding]]]],
+[DFN[[F[error mode][TextDecoder's error mode]]]], and
+[DFN[[F[ignore BOM flag][TextDecoder's ignore BOM flag]]]] 
+are defined in the [CITE[Encoding Standard]].
 
 [621] The terms 
 [DFN[[[C0 controls and space]]]],
