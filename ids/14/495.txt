@@ -175,17 +175,13 @@ its [F[status][status code]] is [CODE[101]]:
 ]FIG]
 ]FIG]
 
-
-
-@@ a WebSocket message has been received with type Text/Binary and data data
-
-
 [838] To make an HTTP request over [VAR[connection]] using [VAR[request]]
 in [[HTTP-network fetch]], 
 with [VAR[credentials]] flag and optional [VAR[not retryable]] flag,
 run these steps:
 [FIG(steps)[
-= [1344] Configure [VAR[connection]] such that any notification is handled by >>839.
+= [1344] Configure [VAR[connection]] such that any notification is handled by >>839,
+which uses [VAR[websocket data type]] and [VAR[websocket data]].
 = [837] If [VAR[connection]]'s [F[transport][connection's transport]]'s
 [F[http protocol][transport's http protocol]] is [CODE[http2]]:
 == 
@@ -255,14 +251,33 @@ switched by [VAR[msg]]'s type:
 === [894] Process the PKP headers of [VAR[response]], if any.
 = [842] Now ''headers are transmitted''.  Return [VAR[response]].
 ]FIG]
-: データ受信の通知 : Process [VAR[data]] as follows:
+: [CODE[datastart]] の通知 : Process [VAR[data type]] as follows:
 [FIG(steps)[
-= 
+= [537] If [VAR[request]]'s [F[mode][request mode]] is [CODE[websocket]]:
+== [1360] Set [VAR[websocket data type]] to [VAR[data type]].
+== [1349] If [VAR[data type]] is [[Text]]:
+=== [538] Set [VAR[websocket data]] to the [[empty string]].
+== [1352] Otherwise:
+=== [1353] Set [VAR[websocket data]] to the [[empty byte string]].
+]FIG]
+: [CODE[data]] の通知 : Process [VAR[data]] as follows:
+[FIG(steps)[
+= [1354] If [VAR[request]]'s [F[mode][request mode]] is [CODE[websocket]]:
+== [1356] Append [VAR[data]] to [VAR[websocket data]].
+= [1355] Otherwise:
+== 
 @@ Write [VAR[data]] to [VAR[response]]'s [F[body][response body]] stream
 ]FIG]
-: データ終了の通知 :
+: [CODE[dataend]] の通知 :
 [FIG(steps)[
-= 
+= [1357] If [VAR[request]]'s [F[mode][request mode]] is [CODE[websocket]]:
+== [1359] [[A WebSocket Message Has Been Received]] with:
+[FIG(list members)[
+: [VAR[type]] : [VAR[websocket data type]]
+: [VAR[data]] : [VAR[websocket data]]
+]FIG]
+= [1358] Otherwise:
+== 
 @@ Set [VAR[response]]'s [F[body][response body]] stream's done flag
 ]FIG]
 : [CODE[wsclosing]] の通知 :
@@ -1718,7 +1733,7 @@ extension header value.
 === [277] [VAR[送信待ちフレーム]]が null なら、[VAR[送信待ちフレーム]]を作成した[[WebSocketフレーム]]に設定します。
 == [290] それ以外なら、
 === [297] [VAR[WebSocket接続の状態]]を、 [CODE[[[CLOSING]]]] に設定します。
-=== [174] [VAR[要求]]について、WebSocket終了開始を通知します。
+=== [174] [VAR[要求]]について、 [CODE[wsclosing]] を通知します。
 === [284] [VAR[connection]]'s [F[transport][connection's transport]] で、作成した [[WebSocketフレーム]]のバイト列を送信することとします。
 === [315] [VAR[切断タイマー]]により20s後に次の要求に進むことにします。
 = [72] [VAR[要求締め切り]]フラグを設定します。
@@ -1757,13 +1772,13 @@ extension header value.
 ]FIG]
 - [377] [CODE[datastart]] の通知
 [FIG(list members)[
-: [VAR[Type]] : [[Text]] or [[Binary]].  Initially, [[Text]].
+: [VAR[data type]] : [[Text]] or [[Binary]].  Initially, [[Text]].
 ]FIG]
 -- [535] When a [[response body]] is started, [[tunnel]] has opened,
 or a [[WebSocket message]] is started.
 - [528] [CODE[data]] の通知
 [FIG(list members)[
-: [F[data]] : A [[string]] or a [[byte string]].
+: [VAR[data]] : A [[string]] or a [[byte string]].
 ]FIG]
 -- [529] When a chunk of data is received as part of [[response body]],
 [[tunnel]], or [[WebSocket message]].
@@ -2660,7 +2675,7 @@ is [[false]]:
 === [209] 失敗の場合は、理由 [CODE[Invalid UTF-8 in Close frame]] で失敗とします。ここで停止します。
 == [213] [VAR[WebSocket接続の状態]]が [CODE[CLOSING]] でなければ、
 === [210] [VAR[WebSocket接続の状態]]を、 [CODE[CLOSING]] に設定します。
-=== [211] [VAR[要求]]について、WebSocket終了開始を通知します。
+=== [211] [VAR[要求]]について、 [CODE[wsclosing]] を通知します。
 === [216] [[WebSocketフレーム]]を作成します。
 [FIG(list members)[
 :[[FIN]]:1
@@ -2725,8 +2740,10 @@ is [[false]]:
 == [197] それ以外なら、
 === [198] [VAR[フレーム]]のデータを、[VAR[一時バッファー]]に設定します。
 == [181] [VAR[フレーム]]の FIN が 1 なら、
+=== [533] Let [VAR[data type]] be [[Binary]].
 === [182] [VAR[フレーム]]の [[opcode]] が 0 なら[VAR[先頭フレーム]]の [[opcode]]、
 それ以外なら[VAR[フレーム]]の [[opcode]] が 1 なら、
+==== [534] Set [VAR[data type]] to [[Text]].
 ==== [180] [[utf8復号器]]を実行します。
 入力を、[VAR[フレーム]]の [[opcode]] が 0 なら[VAR[先頭フレーム]]のデータ、
 それ以外なら[VAR[フレーム]]のデータとします。
@@ -2734,9 +2751,12 @@ is [[false]]:
 ==== [178] 失敗なら、理由 [CODE[Invalid UTF-8 in text frame]] で失敗とします。ここで停止します。
 ==== [183] [VAR[フレーム]]の [[opcode]] が 0 なら[VAR[先頭フレーム]]のデータ、
 それ以外なら[VAR[フレーム]]のデータを、結果に設定します。
-=== [179] [VAR[要求]]について、 [CODE[data]] を通知します。
+=== [179] [VAR[要求]]について、 [CODE[datastart]] を通知します
+with [VAR[data type]]。
+=== [531] [VAR[要求]]について、 [CODE[data]] を通知します。
 [VAR[フレーム]]の [[opcode]] が 0 なら[VAR[先頭フレーム]]のデータ、
 それ以外なら[VAR[フレーム]]のデータを引き渡します。
+=== [532] [VAR[要求]]について、 [CODE[dataend]] を通知します。
 === [187] [VAR[先頭フレーム]]を、 null に設定します。
 ]FIG]
 
@@ -3268,6 +3288,7 @@ are defined by [[HTTP]].
 the terms
 [DFN[[[The WebSocket Connection is Established]]]],
 [DFN[[[Extensions In Use]]]], [DFN[[[Subprotocol In Use]]]]
+[DFN[[[A WebSocket Message Has Been Received]]]],
 [DFN[[[The WebSocket Closing Handshake Is Started]]]],
 [DFN[[[The WebSocket Connection Is Closed]]]],
 [DFN[[[The WebSocket Connection Close Code]]]],
@@ -3324,7 +3345,6 @@ is defined in the [CITE[Referrer Policy]].
 @@
 [65] 
 - reset vs abort
-- [[flagged as full]]
 - [CODE[451]]
 - streamed receiving of WS data frames
 
