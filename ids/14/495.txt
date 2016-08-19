@@ -152,6 +152,7 @@ run these steps:
 : [F[要求対象]] : [VAR[target]]
 : [F[ヘッダーリスト]] : [VAR[request]]'s [F[header list][request's header list]]
 : [F[本体]] : [VAR[request]]'s [F[body][request body]]
+: [F[mode][request mode]] : [VAR[request]]'s [F[mode][request mode]]
 ]FIG]
 = [839] Process notifications from [VAR[connection]] as follows:
 [FIG(switch)[
@@ -1420,6 +1421,7 @@ has following additional states:
 A [[boolean]].  Initially, '''[[true]]'''.
 :[VAR[要求の転送済]]:[[非負整数]]。初期値は 0。
 :[VAR[要求の処理完了]]:[[Promise]] か null。初期値は null。
+: [DFN[[F[WebSocket key]]]] : A byte string or [CODE[null]].  Initially, [CODE[null]].
 :[VAR[WebSocket接続の状態]]:[CODE[CONNECTING]]、[CODE[OPEN]]、
 [CODE[CLOSING]]、[CODE[CLOSED]]、null のいずれか。初期値は null。
 :[VAR[フレーム]]:[[WebSocketフレーム]]または null。初期値は null。
@@ -1443,7 +1445,8 @@ Initially, [[null]].
 :[[プロトコルの版]]:[CODE[1.1]]。
 :[[ヘッダーリスト]]:0個以上の[[ヘッダー]]のリスト。
 :[[本体]]:バイト列。初期値は空。
-: [DFN[[F[WebSocket subprotocols]]]] : A list of zero or more strings.
+: [F[mode][request mode]] : A [[mode][request mode]] value.
+: [DFN[[F[WebSocket subprotocols]]]] : A list of zero or more [[byte string]]s.
 ]FIG]
 
 [63] [[応答]]は、次のようなデータ構造です。
@@ -1472,30 +1475,31 @@ A [[boolean]].  Initially, [[false]].
 ]FIG]
 ... を指示できます。
 
-[42] 要求の送信は、次のようにします。この処理は、[[要求]]である[VAR[送信する要求]]と、
-[VAR[WebSocket]] フラグを入力として受け取ります。
+[42] 要求の送信は、次のようにします。この処理は、[[要求]]である[VAR[送信する要求]]を入力として受け取ります。
 [FIG(steps)[
-= [90] 前提として、[VAR[送信する要求]]は次の条件を満たす必要があります。
+= [90] Assert: The following conditions have to be [[true]]:
 [FIG(list)[
-- [93] [[要求メソッド]]が空ではない。
-- [94] [[要求メソッド]]に 0x09, 0x0A, 0x0D, 0x20 が含まれない。
-- [95] [[要求対象]]が空ではない。
-- [96] [[要求対象]]に 0x0A, 0x0D が含まれない。
-- [97] [[要求対象]]の先頭と末尾が 0x09, 0x20 でない。
-- [99] すべての[[ヘッダー]]について、
+- [93] [VAR[送信する要求]]'s [[要求メソッド]]が空ではない。
+- [94] [VAR[送信する要求]]'s [[要求メソッド]]に 0x09, 0x0A, 0x0D, 0x20 が含まれない。
+- [95] [VAR[送信する要求]]'s [[要求対象]]が空ではない。
+- [96] [VAR[送信する要求]]'s [[要求対象]]に 0x0A, 0x0D が含まれない。
+- [97] [VAR[送信する要求]]'s [[要求対象]]の先頭と末尾が 0x09, 0x20 でない。
+- [99] [VAR[送信する要求]]'s すべての[[ヘッダー]]について、
 -- [100] 名前に 0x3A が含まれない。
 -- [101] 名前が空ではない。
 -- [103] 名前に 0x0A, 0x0D が含まれない。
 -- [102] 名前の先頭と末尾が 0x09, 0x20 でない。
 -- [104] 値に 0x0A, 0x0D が含まれない。
 -- [105] 値の先頭と末尾が 0x09, 0x20 でない。
-- [298] [CODE(HTTP)@en[[[Transfer-Encoding:]]]] [[ヘッダー]]がない。
-- [91] [VAR[WebSocket]] フラグが設定されていれば、
--- [92] [[本体]]が空である。
-- [261] [[本体]]が空の場合、
--- [262] [CODE(HTTP)@en[[[Content-Length:]]]] [[ヘッダー]]がないか、値が [CODE[0]] である。
-- [267] [[本体]]が空でない場合、
--- [263] [CODE(HTTP)@en[[[Content-Length:]]]] [[ヘッダー]]があって、値が[[本体]]のバイト数である。
+- [298] [VAR[送信する要求]]'s [CODE(HTTP)@en[[[Transfer-Encoding:]]]] [[ヘッダー]]がない。
+- [91] If [VAR[送信する要求]]'s [F[mode][request mode]] is [CODE[websocket]]:
+-- [92] [VAR[送信する要求]]'s [[本体]] is empty.
+- [1334] For each [VAR[protocol]] in [VAR[送信する要求]]'s [F[WebSocket subprotocols]]:
+-- [1335] [VAR[protocol]] does not contain [N[0x09]], [N[0x0A]], [N[0x0D]], or [N[0x20]].
+- [261] [VAR[送信する要求]]'s [[本体]]が空の場合、
+-- [262] [VAR[送信する要求]]'s [CODE(HTTP)@en[[[Content-Length:]]]] [[ヘッダー]]がないか、値が [CODE[0]] である。
+- [267] [VAR[送信する要求]]'s [[本体]]が空でない場合、
+-- [263] [VAR[送信する要求]]'s [CODE(HTTP)@en[[[Content-Length:]]]] [[ヘッダー]]があって、値が[[本体]]のバイト数である。
 ]FIG]
 = [74] [VAR[要求締め切り]]フラグが設定されているなら、
 == [75] エラーを返し、ここで停止します。
@@ -1508,15 +1512,23 @@ A [[boolean]].  Initially, [[false]].
 = [77] [VAR[要求]]に [CODE(HTTP)@en[[[Connection:]]]] [[ヘッダー]]があって
 [CODE(HTTP)@en[[[close]]]] ([[ASCII大文字・小文字不区別]]) [[接続オプション]]が指定されていれば、
 == [78] [VAR[要求締め切り]]フラグを設定します。
-= [98] [VAR[WebSocket]] フラグが設定されていれば、
-== [258] [VAR[WebSocket接続の状態]]を、 [CODE[[[CONNECTING]]]] に設定します。
-== [265] 16バイトの無作為に決定したバイト列を [[RFC 4648]] [[Base64]]
-[[符号化]]したものを[VAR[要求]]の [CODE(HTTP)@en[[[Sec-WebSocket-Key:]]]]
-[[ヘッダー]]として追加します。
-== [266] [VAR[要求]]に [CODE(HTTP)@en[[[Sec-WebSocket-Version:]]]]
-[[ヘッダー]]を値 [CODE[[[13]]]] で追加します。
+= [98] If [VAR[要求]]'s [F[mode][request mode]] is [CODE[websocket]]:
+== [258] Set [VAR[connection]]'s [VAR[WebSocket接続の状態]] to [CODE[CONNECTING]].
+== [1331] Set [VAR[connection]]'s [F[WebSocket key]] be a nonce consisting of a randomly selected 16-byte value that has been [[base64]]-encoded (see section 4 of [[RFC 4648]]).
+== [265] [[Append][append (header list)]] 
+`[CODE[Sec-WebSocket-Key]]`/[VAR[connection]]'s [F[WebSocket key]]
+to [VAR[要求]]'s [F[header list][request's header list]].
+== [266] [[Append][append (header list)]] `[CODE[Sec-WebSocket-Version]]`/`[CODE[13]]` 
+to [VAR[要求]]'s [F[header list][request's header list]].
+== [1332] For each [VAR[protocol]] in [VAR[要求]]'s [F[WebSocket subprotocols]],
+[[combine][combine (header list)]] `[CODE[Sec-WebSocket-Protocol]]`/[VAR[protocol]]
+in [VAR[要求]]'s [F[header list][request's header list]].
 == [264] 
-@@ 拡張
+@@ Let [VAR[permessageDeflate]] be a user-agent defined "[CODE[permessage-deflate]]"
+extension header value.
+== [1333] [[Append][append (header list)]] 
+`[CODE[Sec-WebSocket-Extensions]]`/[VAR[permessageDeflate]] to 
+[VAR[要求]]'s [F[header list][request's header list]].
 = [57] [VAR[要求の送信状態]]を、送信中に設定します。
 = [45] [VAR[要求の処理完了]]を、新しい [[Promise]] に設定します。
 = [48] [VAR[要求の処理完了]]を返します。
@@ -3181,17 +3193,20 @@ are defined by [CITE[URL Standard]].
 [1330] The headers
 `[DFN[[CODE[Sec-WebSocket-Accept]]]]`,
 `[DFN[[CODE[Sec-WebSocket-Extensions]]]]`,
+`[DFN[[CODE[Sec-WebSocket-Key]]]]`,
 `[DFN[[CODE[Sec-WebSocket-Protocol]]]]`,
 `[DFN[[CODE[Sec-WebSocket-Version]]]]`
 are defined by [[RFC 6455]].
 
 [354] The terms
 [DFN[[[bad ports]]]],
+[DFN[[[append][append (header list)]]]], [DFN[[[combine][combine (header list)]]]]
 [DFN[[[request]]]],
 [DFN[[F[current url][request's current url]]]],
 [DFN[[F[method][request method]]]],
 [DFN[[F[header list][request's header list]]]],
 [DFN[[F[body][request body]]]],
+[DFN[[F[mode][request mode]]]],
 [DFN[[[response]]]],
 [DFN[[F[status][status code]]]],
 [DFN[[F[status message]]]],
