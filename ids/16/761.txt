@@ -98,8 +98,6 @@
 : [F[応答]] : [[応答]]または [[null]]。
 ([CODE(HTMLe)@en[embed]]/[CODE(HTMLe)@en[object]] の [[fetch]] の結果、
 [[ネットワークエラー]]など。)
-: [F[ナビゲーション型]] : [CODE[form-submission]] または [CODE[other]]。
-[[既定値]]は [CODE[other]]。
 
 - ([[リダイレクト]]前の) 最初の [[URL]]
 - [[応答]]
@@ -131,6 +129,8 @@
 [[a known definite encoding]] も指定されます。
 ]EG]
 ]FIG]
+: [VAR[ナビゲーション型]] : [CODE[form-submission]] または [CODE[other]]。
+[[既定値]]は [CODE[other]]。
 :[15] [DFN[[VAR[[RUBYB[始点閲覧文脈]@en[source browsing context]]]]]]:
 [[navigate]] の開始に責任を持つ[[閲覧文脈]]です [SRC[>>12]]。
 [VAR[[[始点閲覧文脈]]]]は、 [VAR[[[navigate]] する[[閲覧文脈]]]]について
@@ -376,7 +376,14 @@
 
 [FIG(steps)[
 = [146] [VAR[新しい[[資源]]]]の[F[応答]]が [[null]] でなければ、
-== [201] [VAR[新しい[[資源]]]]の[F[応答]]と[VAR[[[navigate]]する[[閲覧文脈]]]]について[[navigate応答の処理]] (>>26) を実行します [SRC[>>12]]。
+== [201] [[navigate応答の処理]] (>>26) を実行します [SRC[>>12]]。
+[FIG(list members)[
+: [VAR[要求]] : [CODE[null]]
+: [VAR[応答]] : [VAR[新しい[[資源]]]]の[F[応答]]
+: [VAR[閲覧文脈]] : [VAR[[[navigate]]する[[閲覧文脈]]]]
+: [VAR[始点閲覧文脈]] : [VAR[始点閲覧文脈]]
+: [VAR[ナビゲーション型]] : [VAR[ナビゲーション型]]
+]FIG]
 = [147] それ以外で、 [VAR[新しい[[資源]]]]の [F[URL]] の [F[scheme][URL scheme]]
 が [CODE(URI)@en[javascript][javascript:]] なら、
 == [148] [[[CODE(URI)@en[javascript:]] URLへのnavigate]]を実行します [SRC[>>12]]。
@@ -392,14 +399,20 @@
 - [[利用者エージェント]]が[[AppCache]]を使わないモードでなければ、
 ]FIG]
 ... [[最適AppCache]]からの[VAR[新しい[[資源]]]]の [[fetch]] を呼び出します [SRC[>>12]]。
-=- [150] この時、[VAR[新しい[[資源]]]]の[F[フォーム提出アルゴリズム]]フラグが[[真]]なら、
+=- [150] この時、[VAR[ナビゲーション型]]が [CODE[form-submission]] なら、
 [[fetch]] の呼び出し元の[[起源]]は[VAR[始点文書]]の[[起源]]に (あれば)
 します [SRC[>>12]]。
 ==
 @@
 = [154] [VAR[新しい[[資源]]]]の[F[要求]]の[F[URL][要求URL]]の[F[scheme][URL scheme]]が
 [[fetch scheme]] なら、
-== [198] [VAR[新しい[[資源]]]]と[VAR[[[navigate]]する[[閲覧文脈]]]]について[[navigate fetchの処理]]を実行します。
+== [198] [[navigate fetchの処理]]を実行します。
+[FIG(list members middle)[
+: [VAR[要求]] : [VAR[新しい[[資源]]]]の[F[要求]]
+: [VAR[閲覧文脈]] : [VAR[[[navigate]]する[[閲覧文脈]]]]
+: [VAR[始点閲覧文脈]] : [VAR[始点閲覧文脈]]
+: [VAR[ナビゲーション型]] : [VAR[ナビゲーション型]]
+]FIG]
 = [199] それ以外なら、
 == [202] [VAR[新しい[[資源]]]]の[F[URL]]と[VAR[[[navigate]]する[[閲覧文脈]]]]について[[navigate URL schemeの処理]]を実行します。
 ]FIG]
@@ -409,7 +422,8 @@
 [CODE(URI)@en[about:blank]] 以外の [CODE(URI)@en[about:]] [[URL]]
 の表示や、一部の [CODE(URI)@en[http:]] [[URL]] で[[アプリ]]が起動される機能が認められない形になってしまいました。
 
-[398] [VAR[要求]]と[VAR[閲覧文脈]]についての
+[398] [VAR[要求]]、[VAR[閲覧文脈]]、[VAR[始点閲覧文脈]]、
+[VAR[ナビゲーション型]]についての
 [DFN[[RUBYB[navigate fetchの処理]@en[process a navigate fetch]]]]は、
 次のようにします [SRC[>>12]]。
 
@@ -430,7 +444,7 @@
 @@ [VAR[始点文書]]の[F[起源][文書の起源]]があり、かつ、
 - [274] 次のいずれかを満たす:
 -- [271] 本[[要求]]の[[メソッド]]が [CODE(HTTP)@en[[[GET]]]] ''以外''の場合
--- [272] [VAR[新しい[[資源]]]]の[F[フォーム提出アルゴリズム]]フラグが[[真]]の場合
+-- [272] [VAR[ナビゲーション型]]が [CODE[form-submission]] の場合
 ]FIG]
 ... あるいは:
 [FIG(list)[
@@ -445,10 +459,16 @@
 ... なら、その[[閲覧文脈適用範囲起源]]
 : [F[キャッシュモード]] : [VAR[キャッシュ上書き]]により定める [SRC[仕様書に規定なし]]
 ]FIG]
-= [152] [VAR[要求]]を [[fetch]] します。 [[process response]] は、 >>156 とします。
+= [443] [VAR[要求]]、[VAR[ナビゲーション型]]、
+[VAR[始点閲覧文脈]]、[VAR[閲覧文脈]]について
+[[Should navigation request of type from source in target be blocked by Content Security Policy?]]
+を実行した結果が [CODE[Blocked]] なら、
+== [444] [[ネットワークエラー]]について >>156 を実行します。
+= [445] それ以外なら、
+== [152] [VAR[要求]]を [[fetch]] します。 [[process response]] は、 >>156 とします。
 ]FIG]
 
-[156] [[process response]] は、[VAR[応答]]について次のようにします [SRC[>>12]]。
+[156] 次の処理は、[VAR[応答]]について次のようにします [SRC[>>12]]。
 [FIG(steps)[
 = [362] [VAR[応答]]の[F[location URL]]が[[失敗]]なら、
 == [363] [VAR[要求]]と[VAR[応答]]について、[[HTTPリダイレクトfetch]]を実行します。
@@ -464,10 +484,16 @@
 : その他の [[fetch scheme]] :
 [[navigate fetchの処理]]を実行します。
 [FIG(list members)[
+: [VAR[要求]] :
+[FIG(list members)[
 [FIGCAPTION[
 [[要求]]
 ]FIGCAPTION]
 : [F[URL][要求URL]] : [VAR[応答]]の[F[location URL]]
+]FIG]
+: [VAR[閲覧文脈]] : [VAR[閲覧文脈]]
+: [VAR[始点閲覧文脈]] : [VAR[始点閲覧文脈]]
+: [VAR[ナビゲーション型]] : [VAR[ナビゲーション型]]
 ]FIG]
 : それ以外 :
 [[navigate URL schemeの処理]]を実行します。[VAR[応答]]の[F[location URL]]と[VAR[閲覧文脈]]を引き渡します。
@@ -505,7 +531,14 @@
 == [425] そのエントリーが [[foreign]] でないなら、
 === [426] [VAR[応答]]を、そのエントリーの[[応答]]に設定します。
 === [427] [[利用者]]に対して失敗したことと [[fallback resource]] を使うことを示して構いません。
-= [428] [VAR[応答]]と[VAR[閲覧文脈]]について[[navigate応答の処理]] (>>26) をします。
+= [428] [[navigate応答の処理]] (>>26) を実行します。
+[FIG(list members middle)[
+: [VAR[要求]] : [VAR[要求]]
+: [VAR[応答]] : [VAR[応答]]
+: [VAR[閲覧文脈]] : [VAR[閲覧文脈]]
+: [VAR[始点閲覧文脈]] : [VAR[始点閲覧文脈]]
+: [VAR[ナビゲーション型]] : [VAR[ナビゲーション型]]
+]FIG]
 ]FIG]
 
 [HISTORY[
@@ -519,11 +552,22 @@
 
 * 応答の処理
 
-[26] [VAR[応答]]と[VAR[閲覧文脈]]に関する[DFN[[RUBYB[navigate応答の処理]@en[process a navigate response]]]]は、次のようにします。
+[26] [VAR[要求]]、[VAR[応答]]、[VAR[閲覧文脈]]、[VAR[始点閲覧文脈]]、
+[VAR[ナビゲーション型]]に関する[DFN[[RUBYB[navigate応答の処理]@en[process a navigate response]]]]は、次のようにします。
 [FIG(steps)[
 = [25] [VAR[取り消し]]フラグが設定されていれば、終わりとします (>>109 へ)。
-= [52] それ以外で、[VAR[応答]]が[[ネットワークエラー]]なら、[[非文書表示]] (>>47) 
-によることとします [SRC[>>12]]。
+= [52] それ以外で、
+[FIG(list)[
+- [435] [VAR[応答]]が[[ネットワークエラー]]
+- [441] 
+@@ [CODE(HTTP)@en[X-Frame-Options:]] 違反
+- [442] [VAR[要求]]、[VAR[応答]]、[VAR[ナビゲーション型]]、[VAR[始点閲覧文脈]]、
+[VAR[閲覧文脈]]について
+[[Should navigation response to navigation request of type from source in target be blocked by Content Security Policy?]]
+が [CODE[Blocked]] を返す場合
+]FIG]
+... のいずれかの場合、
+== [440] [[非文書表示]] (>>47) によることとします [SRC[>>12]]。
 = [51] それ以外で、[VAR[応答]]の[F[状態][状態符号]]が [CODE(HTTP)[204]] か [CODE(HTTP)[205]]
 なら、終わりとします (>>109 へ) [SRC[>>12]]。
 = [53] それ以外で、[VAR[応答]]が [CODE(HTTP)@en[[[Content-Disposition:]] [[attachment]]]] 
@@ -599,9 +643,6 @@
 [399] この段階に達した時点で、 [CODE[webNavigation]] [[API]] の
 [CODE[onCommitted]] を呼び出せるものと思われます。
 [VAR[遷移型]]と[VAR[遷移修飾子群]]と現在時刻を引き渡します。
-
-[435] [CODE(HTTP)@en[X-Frame-Options:]] の処理もこの付近で実行されるものと思われますが、
-現状どこにも明文規定がありません。
 
 * 閲覧文脈内の文書表示
 
