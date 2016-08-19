@@ -1052,13 +1052,13 @@ Otherwise, [CODE[http1connect]].
 = [748] Otherwise:
 == [749] Return a [[failure]].
 ]FIG]
-: [750] [[要求]]のデータ受信の通知 :
+: [750] [[要求]]の [CODE[data]] の通知 :
 [FIG(steps)[
 = [751] If [VAR[transport]]'s [F[established][transport's established]] is [[true]]:
 -= [752] データの各バイトについて、順に、
 -== [753] バイトの受信を通知します。当該バイトの値を渡します。
 ]FIG]
-: [754] [[要求]]のデータ終了の通知 :
+: [754] [[要求]]の [CODE[dataend]] の通知 :
 [FIG(steps)[
 = [755] If [VAR[transport]]'s [F[established][transport's established]] is [[true]]:
 -= [756] [VAR[受信閉じ済みフラグ]]を設定します。
@@ -1755,27 +1755,21 @@ extension header value.
 :[[応答]]:[VAR[応答]]。
 :[[WebSocket接続確立]]:[[真]]か[[偽]]。既定値は[[偽]]。
 ]FIG]
-- [377] データ開始の通知
--- [535] [[応答本体]]や[[トンネル]]、
-[[バイナリー]]の[[WebSocketメッセージ]]の受信開始前に発火されます。
-- [528] データ受信の通知
+- [377] [CODE[datastart]] の通知
 [FIG(list members)[
-:データ:[[バイト列]]。
+: [VAR[Type]] : [[Text]] or [[Binary]].  Initially, [[Text]].
 ]FIG]
--- [529] [[応答本体]]や[[トンネル]]、
-[[バイナリー]]の[[WebSocketメッセージ]]として[[バイト列]]を受信した際に発火されます。
-- [378] データ終了の通知
--- [536] [[応答本体]]や[[トンネル]]、
-[[バイナリー]]の[[WebSocketメッセージ]]の受信終了後に発火されます。
-- [531] 文字列開始の通知
--- [537] [[テキスト]]の[[WebSocketメッセージ]]の受信開始前に発火されます。
-- [532] 文字列受信の通知
+-- [535] When a [[response body]] is started, [[tunnel]] has opened,
+or a [[WebSocket message]] is started.
+- [528] [CODE[data]] の通知
 [FIG(list members)[
-:データ:[[文字列]]。
+: [F[data]] : A [[string]] or a [[byte string]].
 ]FIG]
--- [534] [[テキスト]]の[[WebSocketメッセージ]]の[[文字列]]を受信した際に発火されます。
-- [533] 文字列終了の通知
--- [538] [[テキスト]]の[[WebSocketメッセージ]]の受信終了後に発火されます。
+-- [529] When a chunk of data is received as part of [[response body]],
+[[tunnel]], or [[WebSocket message]].
+- [378] [CODE[dataend]] の通知
+-- [536] When a [[response body]] is ended, [[tunnel]] has closed,
+or a [[WebSocket message]] is ended.
 - [250] ping の通知
 [FIG(list members)[
 :返答:[[真]]か[[偽]]。既定値は[[偽]]。
@@ -1794,9 +1788,9 @@ extension header value.
 その途中で失敗の通知で中断するかのいずれかです。
 送信の通知と受信の通知はどちらもそれぞれ進行し、相互の順序は不定です。
 送信の完了は通知されないことがあります (失敗の場合)。
-データ受信の通知は、0回以上の任意の回数行います。
-データ受信の通知のかわりに 0回以上の ping の通知がある場合があります。
-[[トンネル]]では最初にデータ開始の通知、最後にデータ終了の通知があります。
+[CODE[data]] の通知は、0回以上の任意の回数行います。
+[CODE[data]] の通知のかわりに 0回以上の ping の通知がある場合があります。
+[[トンネル]]では最初に [CODE[datastart]] の通知、最後に [CODE[dataend]] の通知があります。
 完了の通知の前に、 [CODE[wsclosing]] の通知があるかもしれません。
 
 [FIG(flow)[
@@ -1845,7 +1839,8 @@ extension header value.
 
 ]FIG]
 
-;; [253] 図の「受信」は、データ受信、ping の受信、WebSocket終了開始、データ開始、データ終了を表します。
+;; [253] 図の「受信」は、 [CODE[data]] 、ping の受信、 [CODE[wsclosing]],
+[CODE[datastart]], [CODE[dataend]] を表します。
 
 ** The state machine
 
@@ -1952,8 +1947,8 @@ extension header value.
 [[exit status]] whose [F[失敗]] is [[true]].
 === [433] 次の要求に進みます。
 == それ以外なら、
-=== [367] [VAR[要求]]についてデータ開始を通知します。
-=== [922] [VAR[要求]]についてデータ受信を通知します。[VAR[一時バッファー]]を引渡します。
+=== [367] [VAR[要求]]について [CODE[datastart]] を通知します。
+=== [922] [VAR[要求]]について [CODE[data]] を通知します。[VAR[一時バッファー]]を引渡します。
 === [452] [VAR[残り長さ]]を、 null に設定します。
 === [485] [VAR[状態]]を、「応答本体」に設定します。
 ]FIG]
@@ -1977,9 +1972,9 @@ extension header value.
 == [436] 次の要求に進みます。
 = [924] Otherwise:
 == [925] [VAR[要求]]について[VAR[応答]]のヘッダー受信完了を通知します。
-== [920] [VAR[要求]]についてデータ開始を通知します。
-== [530] [VAR[要求]]についてデータ受信を通知します。[VAR[一時バッファー]]を引渡します。
-== [921] [VAR[要求]]についてデータ終了を通知します。
+== [920] [VAR[要求]]について [CODE[datastart]] を通知します。
+== [530] [VAR[要求]]について [CODE[data]] を通知します。[VAR[一時バッファー]]を引渡します。
+== [921] [VAR[要求]]について [CODE[dataend]] を通知します。
 == [918] 中断なら、
 === [919] Set [VAR[connection]]'s [F[response][connection's response]]'s
 [F[incomplete message][response's incomplete message]] flag to [[true]].
@@ -2037,7 +2032,7 @@ extension header value.
 = [540] それ以外で、[VAR[要求]]の[[要求メソッド]]が [CODE(HTTP)[[[CONNECT]]]] で、
 [VAR[応答]]の[[状態符号]]が [CODE(HTTP)[[[200]]]] なら、
 == [373] [VAR[要求]]について[[応答]]のヘッダー受信完了を通知します。
-== [374] [VAR[要求]]についてデータ開始を通知します。
+== [374] [VAR[要求]]について [CODE[datastart]] を通知します。
 == [375] [VAR[要求締め切り]]フラグを設定します。
 == [376] [VAR[状態]]を、「トンネル」に設定します。
 = [143] それ以外で、[VAR[WebSocket接続の状態]]が [CODE[CONNECTING]] で、
@@ -2105,7 +2100,7 @@ in [VAR[応答]]'s [F[header list][response's header list]] results in [CODE[nul
 === [383] [VAR[一時バッファー]]を、空バイト列に設定します。
 = [344] それ以外なら、
 == [345] [VAR[要求]]について[[応答]]のヘッダー受信完了を通知します。
-== [385] [VAR[要求]]についてデータ開始を通知します。
+== [385] [VAR[要求]]について [CODE[datastart]] を通知します。
 == [346] 
 [FIG(list)[
 - [348] [VAR[応答]]の[[状態符号]]が [CODE(HTTP)[[[204]]]], [CODE(HTTP)[[[205]]]],
@@ -2135,11 +2130,11 @@ in [VAR[応答]]'s [F[header list][response's header list]] results in [CODE[nul
 
 [6] バイトを受信したら、
 [FIG(steps)[
-= [451] [VAR[要求]]についてデータ受信を通知します。受信したバイトを引渡します。
+= [451] [VAR[要求]]について [CODE[data]] を通知します。受信したバイトを引渡します。
 = [453] [VAR[残り長さ]]が[[正]]なら、
 == [454] [VAR[残り長さ]]を1減らします。
 == [386] [VAR[残り長さ]]が0なら、
-=== [387] [VAR[要求]]についてデータ終了を通知します。
+=== [387] [VAR[要求]]について [CODE[dataend]] を通知します。
 === [251] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
 [[exit status]].
 === [83] [VAR[応答]]に [CODE(HTTP)@en[[[Connection:]]]] [[ヘッダー]]があって
@@ -2158,7 +2153,7 @@ in [VAR[応答]]'s [F[header list][response's header list]] results in [CODE[nul
 == [389] Set [VAR[connection]]'s [F[response][connection's response]]'s
 [F[incomplete message][response's incomplete message]] flag to [[true]].
 == [390] [VAR[要求の送信状態]]を送信済みに設定します。
-== [395] [VAR[要求]]についてデータ終了を通知します。
+== [395] [VAR[要求]]について [CODE[dataend]] を通知します。
 == [455] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
 [[exit status]].
 == [391] [VAR[応答]]の[[プロトコルの版]]が [CODE[1.1]] なら、
@@ -2170,7 +2165,7 @@ in [VAR[応答]]'s [F[header list][response's header list]] results in [CODE[nul
 === [399] Otherwise:
 ==== [916] Set [VAR[connection]]'s [F[response][connection's response]]'s
 [F[incomplete message][response's incomplete message]] flag to [[true]].
-== [401] [VAR[要求]]についてデータ終了を通知します。
+== [401] [VAR[要求]]について [CODE[dataend]] を通知します。
 == [402] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
 [[exit status]].
 = [403] [VAR[要求締め切り]]フラグを設定します。
@@ -2189,7 +2184,7 @@ in [VAR[応答]]'s [F[header list][response's header list]] results in [CODE[nul
 [F[incomplete message][response's incomplete message]] flag to [[true]].
 == [VAR[要求締め切り]]フラグを設定します。
 == [VAR[要求の送信状態]]を送信済みに設定します。
-== [405] [VAR[要求]]についてデータ終了を通知します。
+== [405] [VAR[要求]]について [CODE[dataend]] を通知します。
 == [406] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
 [[exit status]].
 == [393] 次の要求に進みます。
@@ -2201,7 +2196,7 @@ in [VAR[応答]]'s [F[header list][response's header list]] results in [CODE[nul
 [F[incomplete message][response's incomplete message]] flag to [[true]].
 = [460] [VAR[要求締め切り]]フラグを設定します。
 = [461] [VAR[要求の送信状態]]を送信済みに設定します。
-= [407] [VAR[要求]]についてデータ終了を通知します。
+= [407] [VAR[要求]]について [CODE[dataend]] を通知します。
 = [408] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
 [[exit status]].
 = [409] 次の要求に進みます。
@@ -2221,12 +2216,12 @@ in [VAR[応答]]'s [F[header list][response's header list]] results in [CODE[nul
 [F[incomplete message][response's incomplete message]] flag to [[true]].
 === [469] [VAR[要求締め切り]]フラグを設定します。
 === [470] [VAR[要求の送信状態]]を送信済みに設定します。
-=== [410] [VAR[要求]]についてデータ終了を通知します。
+=== [410] [VAR[要求]]について [CODE[dataend]] を通知します。
 === [411] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
 [[exit status]].
 === [412] 次の要求に進みます。
 == [428] それ以外で、[VAR[残り長さ]]が 0 なら、
-=== [431] [VAR[要求]]についてデータ終了を通知します。
+=== [431] [VAR[要求]]について [CODE[dataend]] を通知します。
 === [429] [VAR[状態]]を、「trailer 前」に設定します。
 === [430] [VAR[一時バッファー]]を、空に設定します。
 == [471] それ以外なら、
@@ -2242,7 +2237,7 @@ in [VAR[応答]]'s [F[header list][response's header list]] results in [CODE[nul
 [F[incomplete message][response's incomplete message]] flag to [[true]].
 = [477] [VAR[要求締め切り]]フラグを設定します。
 = [478] [VAR[要求の送信状態]]を送信済みに設定します。
-= [413] [VAR[要求]]についてデータ終了を通知します。
+= [413] [VAR[要求]]について [CODE[dataend]] を通知します。
 = [414] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
 [[exit status]].
 = [415] 次の要求に進みます。
@@ -2262,7 +2257,7 @@ in [VAR[応答]]'s [F[header list][response's header list]] results in [CODE[nul
 [F[incomplete message][response's incomplete message]] flag to [[true]].
 = [482] [VAR[要求締め切り]]フラグを設定します。
 = [483] [VAR[要求の送信状態]]を送信済みに設定します。
-= [416] [VAR[要求]]についてデータ終了を通知します。
+= [416] [VAR[要求]]について [CODE[dataend]] を通知します。
 = [417] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
 [[exit status]].
 = [418] 次の要求に進みます。
@@ -2272,7 +2267,7 @@ in [VAR[応答]]'s [F[header list][response's header list]] results in [CODE[nul
 
 [124] バイトを受信したら、
 [FIG(steps)[
-= [249] [VAR[要求]]についてデータ受信を通知します。受信したバイトを引渡します。
+= [249] [VAR[要求]]について [CODE[data]] を通知します。受信したバイトを引渡します。
 = [486] [VAR[残り長さ]]を1減らします。
 = [487] [VAR[残り長さ]]が0なら、
 == [488] [VAR[状態]]を、「塊後」に設定します。
@@ -2284,7 +2279,7 @@ in [VAR[応答]]'s [F[header list][response's header list]] results in [CODE[nul
 [F[incomplete message][response's incomplete message]] flag to [[true]].
 = [490] [VAR[要求締め切り]]フラグを設定します。
 = [491] [VAR[要求の送信状態]]を送信済みに設定します。
-= [419] [VAR[要求]]についてデータ終了を通知します。
+= [419] [VAR[要求]]について [CODE[dataend]] を通知します。
 = [420] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
 [[exit status]].
 = [421] 次の要求に進みます。
@@ -2303,7 +2298,7 @@ in [VAR[応答]]'s [F[header list][response's header list]] results in [CODE[nul
 [F[incomplete message][response's incomplete message]] flag to [[true]].
 == [498] [VAR[要求締め切り]]フラグを設定します。
 == [499] [VAR[要求の送信状態]]を送信済みに設定します。
-== [422] [VAR[要求]]についてデータ終了を通知します。
+== [422] [VAR[要求]]について [CODE[dataend]] を通知します。
 == [423] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
 [[exit status]].
 == [424] 次の要求に進みます。
@@ -2315,7 +2310,7 @@ in [VAR[応答]]'s [F[header list][response's header list]] results in [CODE[nul
 [F[incomplete message][response's incomplete message]] flag to [[true]].
 = [501] [VAR[要求締め切り]]フラグを設定します。
 = [502] [VAR[要求の送信状態]]を送信済みに設定します。
-= [425] [VAR[要求]]についてデータ終了を通知します。
+= [425] [VAR[要求]]について [CODE[dataend]] を通知します。
 = [426] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
 [[exit status]].
 = [427] 次の要求に進みます。
@@ -2533,12 +2528,12 @@ is [[false]]:
 
 [111] バイトを受信したら、
 [FIG(steps)[
-= [484] [VAR[要求]]についてデータ受信を通知します。受信したバイトを引渡します。
+= [484] [VAR[要求]]について [CODE[data]] を通知します。受信したバイトを引渡します。
 ]FIG]
 
 [112] 正常終了か中断を受信したら、
 [FIG(steps)[
-= [371] [VAR[要求]]についてデータ終了を通知します。
+= [371] [VAR[要求]]について [CODE[dataend]] を通知します。
 = [328] [VAR[要求締め切り]]フラグを設定します。
 = [321] 正常終了なら、
 == [325] [VAR[状態]]を、「トンネル送信中」に設定します。
@@ -2553,12 +2548,12 @@ is [[false]]:
 
 [364] バイトを受信したら、
 [FIG(steps)[
-= [366] [VAR[要求]]についてデータ受信を通知します。受信したバイトを引渡します。
+= [366] [VAR[要求]]について [CODE[data]] を通知します。受信したバイトを引渡します。
 ]FIG]
 
 [365] 正常終了か中断を受信したら、
 [FIG(steps)[
-= [372] [VAR[要求]]についてデータ終了を通知します。
+= [372] [VAR[要求]]について [CODE[dataend]] を通知します。
 = [328] [VAR[要求締め切り]]フラグを設定します。
 = [369] [VAR[要求の送信状態]]を送信済みに設定します。
 = [511] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
@@ -2739,7 +2734,7 @@ is [[false]]:
 ==== [178] 失敗なら、理由 [CODE[Invalid UTF-8 in text frame]] で失敗とします。ここで停止します。
 ==== [183] [VAR[フレーム]]の [[opcode]] が 0 なら[VAR[先頭フレーム]]のデータ、
 それ以外なら[VAR[フレーム]]のデータを、結果に設定します。
-=== [179] [VAR[要求]]について、データ受信を通知します。
+=== [179] [VAR[要求]]について、 [CODE[data]] を通知します。
 [VAR[フレーム]]の [[opcode]] が 0 なら[VAR[先頭フレーム]]のデータ、
 それ以外なら[VAR[フレーム]]のデータを引き渡します。
 === [187] [VAR[先頭フレーム]]を、 null に設定します。
@@ -3133,12 +3128,12 @@ it notifies of [[バイト]]の受信 with [VAR[byte]] and [VAR[urgent data flag
 == [1255] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
 = [1256] Otherwise:
 == [1222] Increment [VAR[ftp]]'s [F[data length][FTP connection's data length]].
-== [1233] [VAR[ftp]]'s データ受信の通知 with [VAR[byte]].
+== [1233] [VAR[ftp]]'s [CODE[data]] の通知 with [VAR[byte]].
 == [1220] If [VAR[ftp]]'s [F[file length][FTP connection's file length]] is not [[null]] and
 [VAR[ftp]]'s [F[file length][FTP connection's file length]] is
 [VAR[ftp]]'s [F[data length][FTP connection's data length]]:
 === [1223] Set [F[data state][FTP connection's data state]] to ''exit state''.
-=== [1224] [VAR[ftp]]'s データ終了の通知.
+=== [1224] [VAR[ftp]]'s [CODE[dataend]] の通知.
 === [1269] [VAR[ftp]]'s [F[data transport][FTP connection's data transport]]'s
 正常終了の送信の指示.
 === [1270] Set [VAR[ftp]]'s [F[data transport][FTP connection's data transport]] to [[null]].
@@ -3157,7 +3152,7 @@ and [F[リセット]] is [VAR[is reset]].
 == [1204] Otherwise:
 === [1271] If [VAR[ftp]]'s [F[data state][FTP connection's data state]] is 
 ''data state'':
-==== [1234] [VAR[ftp]]'s データ終了の通知.
+==== [1234] [VAR[ftp]]'s [CODE[dataend]] の通知.
 ==== [1276] If
 [VAR[ftp]]'s [F[file length][FTP connection's file length]] is not [[null]] and
 [VAR[ftp]]'s [F[file length][FTP connection's file length]] is greater than
@@ -3197,12 +3192,12 @@ base is: [VAR[ftp]]'s [F[path][FTP connection's path]]
 If path does not end with a 0x2F, append a 0x2F byte to path.
 = [1230] [VAR[ftp]]'s 応答のヘッダー受信完了の通知 with [VAR[ftp]]'s [F[response][FTP connection's response]].
 = [1221] Set [VAR[ftp]]'s [F[data length][FTP connection's data length]] to [N[0]].
-= [1231] [VAR[ftp]]'s データ開始の通知.
+= [1231] [VAR[ftp]]'s [CODE[datastart]] の通知.
 = [1263] If [VAR[ftp]]'s [F[file length][FTP connection's file length]] is not [[null]] and
 [VAR[ftp]]'s [F[file length][FTP connection's file length]] is
 [VAR[ftp]]'s [F[data length][FTP connection's data length]]:
 == [1264] Set [F[data state][FTP connection's data state]] to ''exit state''.
-== [1265] [VAR[ftp]]'s データ終了の通知.
+== [1265] [VAR[ftp]]'s [CODE[dataend]] の通知.
 == [1267] [VAR[ftp]]'s [F[data transport][FTP connection's data transport]]'s
 正常終了の送信の指示.
 == [1268] Set [VAR[ftp]]'s [F[data transport][FTP connection's data transport]] to [[null]].
