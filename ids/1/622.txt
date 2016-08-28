@@ -7,6 +7,7 @@
 - [22] [CITE@en-us[UTS #46: Unicode IDNA Compatibility Processing]] ([TIME[2010-10-30 01:01:25 +09:00]] 版)
 -- [25] <http://www.unicode.org/reports/tr46/#Compatibility_Processing>
 -- [44] '''<http://www.unicode.org/reports/tr46/#Processing>'''
+-- [95] [CITE@en-us[UTS #46: Unicode IDNA Compatibility Processing]] ([TIME[2010-10-30 01:01:25 +09:00]] 版) <http://unicode.org/reports/tr46/#ToASCII>
 -- [17] '''<http://www.unicode.org/reports/tr46/#ToUnicode>'''
 -- [23] '''<http://www.unicode.org/reports/tr46/#IDNA2008_Preprocessing>'''
 - [76] [CITE@en[URL Standard]] ([TIME[2016-08-25 16:02:43 +09:00]]) <https://url.spec.whatwg.org/#concept-domain-to-unicode>
@@ -60,12 +61,16 @@
 : [VAR[ドメイン名]] : [[Unicode文字列]]
 : [VAR[[[UseSTD3ASCIIRules]]]] : [[boolean]]
 : [VAR[処理オプション]] : [DFN[[RUBYB[[[移行的処理]]]@en[Transitional Processing]]]]または[DFN[[RUBYB[[[非移行的処理]]]@en[Nontransitional Processing]]]]
+: [VAR[Punycode符号化]] : [[boolean]] (既定値は[[偽]])
+: [VAR[VerifyDnsLength]] : [[boolean]]
 ]FIG]
 
 [64] [[移行的処理]]と[[非移行的処理]]の違いは [[IDNA2003]] と [[IDNA2008]]
 で [[Aラベル]] ([[ACEラベル]]) への変換結果が変わってしまう4文字の扱いだけ [SRC[>>25]] です。
 [[移行的処理]]はこの4文字を [[IDNA2003]] 風に[[写像]]して他の文字に変えたり削除したりしますが、
 [[非移行的処理]]ではそのまま残します。
+
+[107] [[Web]] では、 [VAR[[[UseSTD3ASCIIRules]]]] と [VAR[VerifyDnsLength]] は常に[[偽]]です。
 
 [45] [[出力]]は、 ([[Unicode文字列]], [[boolean]]) の組です。
 [[Unicode文字列]]は、変換結果です。 [[boolean]] は、[[誤り]]の有無を表します。
@@ -104,6 +109,7 @@
 ==== [39] [VAR[誤り]]を、[[真]]に設定します。
 === [51] それ以外の場合、
 ==== [29] [VAR[ラベル群]]における[VAR[ラベル]]を、[VAR[結果]]で置き換えます。
+以後[VAR[ラベル]]は[VAR[結果]]とします。
 ==== [30] [VAR[結果]]を、
 [VAR[ラベル]]が[[非移行的処理]]、[VAR[[[UseSTD3ASCIIRules]]]] についての[[妥当性基準]]に合致するか否かに設定します。
 ==== [52] [VAR[結果]]が[[偽]]なら、
@@ -113,11 +119,27 @@
 [VAR[ラベル]]が[VAR[処理オプション]]、[VAR[[[UseSTD3ASCIIRules]]]] についての[[妥当性基準]]に合致するか否かに設定します。
 === [54] [VAR[結果]]が[[偽]]なら、
 ==== [55] [VAR[誤り]]を、[[真]]に設定します。
+== [96] [VAR[Punycode符号化]]が[[真]]の場合 [SRC[>>95]]、
+=== [97] [VAR[ラベル]]に[[非ASCII文字]]が含まれるなら、
+==== [98] [VAR[符号化ラベル]]を、 [CODE[xn--]] の後に[VAR[ラベル]]に[[Punycode符号化]]を適用した結果を連結したものに設定します。
+==== [99] [VAR[ラベル群]]の[VAR[ラベル]]を、[VAR[符号化ラベル]]で置き換えます。
+以後[VAR[ラベル]]は[VAR[符号化ラベル]]とします。
+== [100] [VAR[VerifyDnsLength]] が[[真]]なら、
+=== [101] [VAR[ラベル]]の長さが[[範囲]] [ [N[1]], [N[63]] ] に含まれなければ、
+==== [102] [VAR[誤り]]を、[[真]]に設定します。
 = [57] [VAR[結果]]を、[VAR[ラベル群]]の各項目を [CODE[.][U+002E]] で連結した結果に設定します。
+= [103] [VAR[VerifyDnsLength]] が[[真]]の場合 [SRC[>>95]]、
+== [104] [VAR[結果]]の長さ (末尾が [CODE[U+002E]] の場合、それを無視した長さ)
+が[[範囲]] [ [N[1]], [N[253]] ] に含まれなければ、
+=== [105] [VAR[誤り]]を、[[真]]に設定します。
 = [56] ([VAR[結果]]、[VAR[誤り]]) を返します。
 ]FIG]
 
 [33] [VAR[誤り]]が[[真]]なら[[成功]]、そうでなければ[[失敗]]です。 [SRC[>>44]]
+
+;; [106] [[仕様書]]では、 [VAR[Punycode符号化]]と [VAR[VerifyDnsLength]]
+の処理は[[Unicode IDNA互換性処理]]自体ではなく、それを呼び出す [[ToASCII]]
+演算の一部として定義されています。
 
 [65] 実装は、[[利用者]]に[[表示]]する時には、更に変更を加えても構いません。
 例えば[VAR[誤り]]が[[真]]に設定される原因の部分を [CODE[U+FFFD]]
