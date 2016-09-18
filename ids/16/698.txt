@@ -46,16 +46,34 @@
 
 * 処理
 
+[133] [[内容属性]][VAR[内容属性]]を[[反映]]する [CODE(DOMi)@en[DOMTokenList]] の
+[[IDL属性]][VAR[IDL属性]]は、
+すべて[[読み取り専用]]で、 [CODE(IDL xattr)@en[SameObject]] となっています。
+[VAR[IDL属性]]を持つ[[要素]][VAR[要素]]は、次のような [CODE(DOMi)@en[DOMTokenList]]
+[[オブジェクト]]を保持し、[VAR[IDL属性]]の[[取得器]]はこの[[オブジェクト]]を返さなければ[MUST[なりません]]
+[SRC[>>6]]。
+[FIG(list members)[
+[FIGCAPTION[
+[134] [CODE(DOMi)@en[DOMTokenList]]
+]FIGCAPTION]
+
+: [F[関連付けられた[[要素]]]] : [VAR[要素]]
+: [F[関連付けられた[[属性]]の[[局所名]]]] : [VAR[内容属性]]の[F[局所名]]
+]FIG]
+
+[132] それ以外の場合は、次のようにします。
+
 [69] [[IDL属性]][VAR[IDL属性]]と[[内容属性]][VAR[内容属性]]の[[取得器]]は、
 次のようにしなければ[MUST[なりません]] [SRC[>>6]]。
 [FIG(steps)[
 = [71] [[文脈オブジェクト]]の[F[属性リスト]]に[VAR[内容属性]]が含まれなければ、
+[VAR[IDL属性]]の[F[型][型 (Web IDL)]]により、
 [FIG(switch)[
-: [VAR[IDL属性]]の[F[型][型 (Web IDL)]]が [CODE(IDL)@en[USVString]] または [CODE(IDL)@en[DOMString]] の場合 :
+: [CODE(IDL)@en[USVString]]、[CODE(IDL)@en[DOMString]] :
 [[空文字列]]を返します。
-: [VAR[IDL属性]]の[F[型][型 (Web IDL)]]が [CODE(IDL)@en[boolean]] の場合 :
+: [CODE(IDL)@en[boolean]] :
 [[偽]]を返します。
-: [VAR[IDL属性]]の[F[型][型 (Web IDL)]]が [CODE(IDL)@en[long]] または [CODE(IDL)@en[unsigned lon]] の場合 :
+: [CODE(IDL)@en[long]]、[CODE(IDL)@en[unsigned long]]、[CODE(IDL)@en[double]]、[CODE(IDL)@en[unrestricted double]] :
 [VAR[内容属性]]の既定値を返します。
 ]FIG]
 = [73] それ以外なら、
@@ -121,15 +139,30 @@
 [FIG(list)[
 - [VAR[結果]]が[[失敗]]
 - [VAR[結果]]が [ [N[0]], [N[2147483647]] ] の範囲外の値
-- [VAR[IDL属性]]の [F[limited to only non-negative numbers greater than zero]] が[[真]]で、
-[VAR[結果]]が [N[1]]
+- [VAR[結果]]が [N[0]] で、
+[VAR[IDL属性]]の [F[limited to only non-negative numbers greater than zero]] が[[真]]または
+[VAR[IDL属性]]の [F[limited to only non-negative numbers greater than zero with fallback]] 
+が[[真]]
 ]FIG]
 ... のいずれかの場合、
 == [112] [VAR[内容属性]]の既定値を返します。
 = [113] それ以外なら、
 == [114] [VAR[結果]]を返します。
 ]FIG]
-
+: [VAR[IDL属性]]の[F[型][型 (Web IDL)]]が [CODE(IDL)@en[double]]、 [CODE(IDL)@en[unrestricted double]] の場合 :
+[FIG(steps)[
+= [123] [VAR[結果]]を、[VAR[値]]に [[rules for parsing floating-point number values]] を適用した結果に設定します。
+= [124] 
+[FIG(list)[
+- [VAR[結果]]が[[失敗]]
+- [VAR[結果]]が [N[0]] より大きくなく、 [VAR[IDL属性]]の
+[F[limited to numbers greater than zero]] が[[真]]
+]FIG]
+... のいずれかの場合、
+== [125] [VAR[内容属性]]の既定値を返します。
+= [126] それ以外なら、
+== [127] [VAR[結果]]を返します。
+]FIG]
 
 ]FIG]
 
@@ -157,13 +190,23 @@
 ]FIG]
 : [CODE(IDL)@en[unsigned long]] :
 [FIG(steps)[
-= [118] [VAR[IDL属性]]の [F[limited to only non-negative numbers greater than zero]] が[[真]]で
-[VAR[値]]が [N[1]] なら、
-== [119] [CODE(DOMe)@en[IndexSizeError]] [[例外]]を[[投げ]]、ここで停止します。
-= [115] [VAR[値]]が [ [N[0]], [N[2147483647]] ] の範囲外なら、
+= [118] [VAR[値]]が [N[0]] の場合、
+== [120] [VAR[IDL属性]]の [F[limited to only non-negative numbers greater than zero]] が[[真]]なら、
+=== [119] [CODE(DOMe)@en[IndexSizeError]] [[例外]]を[[投げ]]、ここで停止します。
+== [121] それ以外で、[VAR[IDL属性]]の [F[limited to only non-negative numbers greater than zero with fallback]] が[[真]]なら、
+=== [122] [VAR[値]]を、[VAR[内容属性]]の既定値に設定します。
+= [115] それ以外で、[VAR[値]]が [ [N[0]], [N[2147483647]] ] の範囲外なら、
 == [116] [VAR[値]]を、[VAR[内容属性]]の既定値に設定します。
 = [117] [[文脈オブジェクト]]の[VAR[内容属性]][[属性]]を、[VAR[値]]に [[serialize an integer]]
 を適用した結果に設定します。
+]FIG]
+: [CODE(IDL)@en[double]]、[CODE(IDL)@en[unrestricted double]] :
+[FIG(steps)[
+= [129] [VAR[値]]が [N[0]] より大きくない場合、
+== [130] [VAR[IDL属性]]の [F[limited to numbers greater than zero]] が[[真]]なら、
+=== [131] ここで停止します。
+= [128] [[文脈オブジェクト]]の[VAR[内容属性]][[属性]]を、[VAR[値]]の
+[[best representation of the number as a floating-point number]] に設定します。
 ]FIG]
 
 ]FIG]
