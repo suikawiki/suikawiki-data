@@ -3326,59 +3326,73 @@ with [VAR[exit]].
 a [[transport]] [VAR[transport]], run these steps:
 [FIG(steps)[
 = [1391] Let [VAR[url]] be [VAR[request]]'s [F[target url][request's target url]].
-= [1379] Let [VAR[vars]] be a [[map]] with following name/value pairs:
-[FIG(list members)[
-: [CODE(CGI)@en[CONTENT_LENGTH]] : @@ [VAR[request]]'s body length
-: [CODE[PATH_INFO]] : [VAR[url]]'s [F[path][URL path]]
-@@ , percent-decoded
-: [CODE[REMOTE_ADDR]] : [CODE[127.0.0.1]]
-: [CODE[REQUEST_METHOD]] : [VAR[request]]'s [F[method][request's method]]
-: [CODE[SCRIPT_NAME]] : The [[empty string]]
-: [CODE[SERVER_NAME]] : @@ XXX, serialized
-: [CODE[SERVER_PORT]] : @@ XXX, serialized
-: [CODE[SERVER_PROTOCOL]] : Switch by [VAR[request]]'s [F[version][request's version]]:
+= [1409] Set [VAR[request version]] to the appropriate value
+by [VAR[request]]'s [F[version][request's version]]:
 [FIG(switch)[
 : [CODE[0.9]] : [CODE[HTTP/0.9]]
 : [CODE[1.0]] : [CODE[HTTP/1.0]]
 : [CODE[1.1]] : [CODE[HTTP/1.1]]
 : [CODE[2.0]] : [CODE[HTTP/2.0]]
 ]FIG]
+= [1379] Let [VAR[vars]] be a [[map]] with following name/value pairs:
+[FIG(list members)[
+: [CODE(CGI)@en[CONTENT_LENGTH]] : [VAR[request]]'s [F[body length][request's body length]], 
+[[serialized][serialize an integer]].
+: [CODE[PATH_INFO]] : [VAR[url]]'s [F[path][URL path]], 
+[[UTF-8 encoded][UTF-8 encode]] and [[percent-decoded][percent-decode]]
+: [CODE[REQUEST_METHOD]] : [VAR[request]]'s [F[method][request's method]]
+: [CODE[SCRIPT_NAME]] : The [[empty string]]
+: [CODE[SERVER_PROTOCOL]] : [VAR[request version]]
 ]FIG]
 = [1382] If [VAR[transport]]'s [F[protocol][transport's protocol]] is [CODE[tls]]:
 == [1383] Set [VAR[transport]] to [VAR[transport]]'s [F[transport][transport's transport]].
 == [1388] If [VAR[url]]'s [F[scheme][URL scheme]] is [CODE(URI)@en[https][https:]]:
 === [1386] Set [VAR[vars]]' [CODE[HTTPS]] to [CODE[ON]].
 = [1384] If [VAR[transport]]'s [F[protocol][transport's protocol]] is [CODE[tcp]]:
-== [1385] Set [VAR[vars]]' [CODE[REMOTE_ADDR]] to [VAR[transport]]'s [F[remote address or domain][transport's remote address or domain]]
-@@ , serialized.
+== [1385] Set [VAR[vars]]' [CODE[REMOTE_ADDR]] to [VAR[transport]]'s 
+[F[remote address or domain][transport's remote address or domain]], 
+[[serialized][host serializer]].
+== [1407] Set [VAR[vars]]' [CODE[SERVER_NAME]] to [VAR[transport]]'s 
+[F[local address or domain][transport's local address or domain]],
+[[serialized][host serializer]].
+== [1408] Set [VAR[vars]]' [CODE[SERVER_PORT]] to [VAR[transport]]'s
+[F[local port][transport's local port]], [[serialized][serialize an integer]].
+= [1404] Otherwise:
+== [1405] Set [VAR[vars]]'s [CODE[REMOTE_ADDR]] to [CODE[127.0.0.1]].
+== [1406] Set [VAR[vars]]'s [CODE[SERVER_NAME]] to [CODE[127.0.0.1]].
 = [1387] If [VAR[url]]'s [F[scheme][URL scheme]] is [[HTTP(S) scheme]]:
-== [1403] Set [VAR[vars]]' [CODE[REQUEST_URI]] to [VAR[url]]
-@@ , serialized
+== [1403] Set [VAR[vars]]' [CODE[REQUEST_URI]] to [VAR[url]], [[serialized][URL serializer]] and [[UTF-8 encoded][UTF-8 encode]].
 = [1389] Otherwise:
 == [1390] Set [VAR[vars]]' [CODE[REQUEST_URI]] to [VAR[request]]'s
-[F[target url][request's target url]]'s [F[pathquery]].
+[F[target url][request's target url]]'s [F[pathquery]] and [[UTF-8 encoded][UTF-8 encode]].
 = [1392] If [VAR[url]]'s [F[query][URL query]] is not [CODE[null]]:
-== [1393] Set [VAR[vars]]' [CODE[QUERY_STRING]] to [VAR[url]]'s [F[query][URL query]].
-= [1394] If [VAR[request]] has a [CODE(HTTP)@en[Content-Type][Content-Type:]] header:
-== [1395] Set [VAR[vars]]' [CODE(CGI)@en[CONTENT_TYPE]] to [VAR[request]]'s 
-[CODE(HTTP)@en[Content-Type][Content-Type:]] header value
-@@, combined.
+== [1393] Set [VAR[vars]]' [CODE[QUERY_STRING]] to [VAR[url]]'s [F[query][URL query]], [[UTF-8 encoded][UTF-8 encode]].
 = [1396] For each [VAR[header name]] in [VAR[vars]]' [F[header list][request's header list]],
 without any duplicate:
 == [1397] If [VAR[header name]] is a string of one or more [[ASCII alphanumeric]] and/or
-[CODE[-]] characters:
+[CODE[-]] characters and not [[ASCII case-insensitively][ASCII case-insensitive]]
+equal to [CODE[Content-Length]]:
 === [1398] Let [VAR[key]] be [VAR[header name]], [[converted to ASCII uppercase]].
 === [1399] Replace any [CODE[-]] in [VAR[header name]] by [CODE[_]].
-=== [1400] Prepend [CODE[HTTP_]] to [VAR[header name]].
+=== [1400] If [VAR[header name]] is not [CODE[CONTENT_TYPE]]:
+==== [1394] Prepend [CODE[HTTP_]] to [VAR[header name]].
 === [1401] Let [VAR[value]] be the header values in [VAR[vars]]'s 
 [F[header list][request's header list]] whose name is 
 [[ASCII case-insensitively][ASCII case-insensitive]] equal to [VAR[header name]], in order,
-@@combined
+[[combined]].
 === [1402] Set [VAR[vars]]' [VAR[key]] to [VAR[value]].
 = [1381] Return [VAR[vars]].
 ]FIG]
 
 @@ [[ASCII alphanumeric]], [[converted to ASCII uppercase]]
+[[combined]]
+[F[target url][request's target url]]
+[F[local address or domain][transport's local address or domain]]
+[[host serializer]]
+[[URL serializer]]
+[[percent-decode]]
+[[serialize an integer]]
+[F[body length][request's body length]]
 
 * References
 
