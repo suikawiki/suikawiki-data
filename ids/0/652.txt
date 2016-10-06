@@ -424,13 +424,139 @@ SIP CGI ではその区別を要求しています。
 
 - [23] しかし、 >>14 のような、 HTTP 鯖とまったく関係ない変数は別として、実際問題、 HTTP 鯖ソフトウェアが設定する環境変数が CGI メタ変数 (独自拡張を含む。) の実装なのか、鯖の別の機能の実装 (がたまたま CGI スクリプトから利用できるだけ) なのか、区別がつきませんよね。 CGI と関係のない鯖の機能で実装されているなら CGI メタ変数ではないと言うこともできるし、 CGI スクリプトから利用できる (している) 以上 CGI メタ変数だとも言える。その辺は結局言葉遊びというか、定義の問題になってしまうのか。。。 どうしようもないので >>7 の表ではかなり定義を曖昧に、広い範囲の環境変数を広義の CGI メタ変数として含めています。 SSI の変数なんて CGI とは関係ないとはいえ、 SSI からの CGI スクリプト呼出しでは現実に同じ名前空間に存在しているわけですし、別の鯖の実装では普通に (SSI 経由でなくても) CGI スクリプトから利用できたりするから、 CGI メタ変数であるかどうかの判断なんてもうどうでもよくなってしまう。
 
-* CGI の肝はメタ変数。メタ変数の説明次第で CGI 解説文がトンデモかどうか判断できる。
+* 実装ごとの提供メタ変数
+
+[13] 
+[FIG(table)[
+
+:name: [[メタ変数]]名
+:wsgi: [[WSGI]]
+:psgi: [[PSGI]]
+:starman: [[Starman]] ([[PSGI]])
+:twiggy: [[Twiggy]] ([[PSGI]])
+:ascgi: [CODE(perl)@en[HTTP::Request::AsCGI]]
+
+:name: [CODE(CGI)@en[GATEWAY_INTERFACE]]
+:ascgi: ○
+
+:name: [CODE(CGI)@en[SERVER_NAME]]
+:psgi: ○
+:ascgi: ○
+:starman: ○
+:twiggy: ○
+:wsgi: ○
+
+:name: [CODE(CGI)@en[SERVER_PORT]]
+:psgi: ○
+:ascgi: ○
+:starman: ○
+:twiggy: ○
+:wsgi: ○
+
+:name: [CODE(CGI)@en[SERVER_PROTOCOL]]
+:psgi: ○
+:ascgi: ○
+:starman: ○
+:twiggy: ○
+:wsgi: ○
+
+:name: [CODE(CGI)@en[SERVER_SOFTWARE]]
+:ascgi: ○
+
+:name: [CODE(CGI)@en[REMOTE_ADDR]]
+:ascgi: ○
+:starman: ○
+:twiggy: ○
+
+:name: [CODE(CGI)@en[REMOTE_HOST]]
+:ascgi: ○
+:starman: ○
+
+:name: [CODE(CGI)@en[REMOTE_PORT]]
+:ascgi: ○
+:starman: ○
+
+:name: [CODE(CGI)@en[HTTPS]]
+:ascgi: ○
+:wsgi: [[TLS]] 利用時 [SHOULD[SHOULD]]
+
+:name: [CODE(CGI)@en[SSL_PROTOCOL]]
+:wsgi: [[TLS]] 利用時 [SHOULD[SHOULD]]
+
+:name: [CODE(CGI)@en[REQUEST_METHOD]]
+:psgi: ○
+:ascgi: ○
+:starman: ○
+:twiggy: ○
+:wsgi: ○
+
+:name: [CODE(CGI)@en[REQUEST_URI]]
+:psgi: ○
+:ascgi: ○
+:starman: ○
+:twiggy: ○
+
+:name: [CODE(CGI)@en[SCRIPT_NAME]]
+:psgi: ○
+:ascgi: ○
+:starman: ○
+:twiggy: ○
+:wsgi: 必要に応じて
+
+:name: [CODE(CGI)@en[PATH_INFO]]
+:psgi: ○
+:ascgi: ○
+:starman: ○
+:twiggy: ○
+:wsgi: 必要に応じて
+
+:name: [CODE(CGI)@en[QUERY_STRING]]
+:psgi: ○
+:ascgi: ○
+:starman: ○
+:twiggy: ○
+:wsgi: 必要に応じて
+
+:name: [CODE(CGI)@en[HTTP_[VAR[*]]]]
+:psgi: 必要に応じて
+:ascgi: 必要に応じて
+:starman: 必要に応じて
+:twiggy: 必要に応じて
+:wsgi: 必要に応じて
+
+:name: [CODE(CGI)@en[HTTP_HOST]]
+:ascgi: ○
+:psgi: 必要に応じて
+:starman: 必要に応じて
+:twiggy: 必要に応じて
+:wsgi: 必要に応じて
+
+:name: [CODE(CGI)@en[CONTENT_TYPE]]
+:psgi: 必要に応じて
+:ascgi: 必要に応じて
+:starman: 必要に応じて
+:twiggy: 必要に応じて
+:wsgi: 必要に応じて
+
+:name: [CODE(CGI)@en[CONTENT_LENGTH]]
+:psgi: 必要に応じて
+:ascgi: 必要に応じて
+:starman: 必要に応じて
+:twiggy: 必要に応じて
+:wsgi: 必要に応じて
+
+
+]FIG]
+
+* メモ
+
+** CGI の肝はメタ変数。メタ変数の説明次第で CGI 解説文がトンデモかどうか判断できる。
 
 - [6] よく、「CGI 環境変数の説明」などと称して、色々な[[環境変数]]の一覧を示している文書があります。そしてそのような文書にはたいてい、 [CODE[TZ]] のように''たまたまそのサーバーで設定されていた''だけの環境変数が載っていたりします。筆者がちゃんとわかっているかを判断する一つの材料となります。
 - [7] また、 >>6 ほどではありませんが重要なポイントとして、一般的な CGI のめた変数と、 HTTP_[CODE[*]] のめた変数をきちんと区別して扱っているかも要注意でしょう。厳しいことを言えば、このメタ変数群と [[HTTP]] 頭欄の関係に全く触れていなければその時点で HTTP CGI の説明として失格です。
 - [11] [CODE[環境変数はブラウザが送る]]と思っている人がいます。仕組みを知らない証拠です。
 
-* memo
+** memo
 
 [2]
 [NCSA] では[[環境変数]]とされていましたが、
