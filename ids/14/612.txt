@@ -80,6 +80,7 @@
 [42] [[ワーカー]] ([CODE(DOMi)@en[[[WorkerGlobalScope]]]]) は、
 それぞれ別個の[[イベントループ]]を有します [SRC[>>40, >>204]]。
 :[[現在走っているタスク]]:動作中の[[タスク]]または[[マイクロタスク]]が高々1つ存在します。
+: [F[[[一時停止]]中]] :
 :[[termination nesting level]] [SRC[>>90]]:[[モーダルダイアログ]]の表示を制御するものです。
 :[[マイクロタスクチェックポイントを行っている]]フラグ:[[マイクロタスク]]参照。
 :[F[[[環境設定群オブジェクト]]群]]:
@@ -422,32 +423,6 @@
 
 ;; [[ワーカー]]参照。
 
-* 利用者インターフェイスの無効化
-
-[114] [[イベントループ]]とは直接関係ありませんが、[[利用者インターフェイス]]が[RUBYB[無効化]@en[disabled]]されることがあります。
-
-[HISTORY[
-[115] [CODE(DOMm)@en[[[showModalDialog]]]] による[[モーダルダイアログ]]の表示中は、その呼び出し元と同じ[[起源]]の[[閲覧文脈]]
-(正確には「[[背景閲覧文脈]]のリストに含まれる[[閲覧文脈]]」) の[[利用者インターフェイス]]を無効化しなければ[['''なりません''']]
-[SRC[<http://www.whatwg.org/specs/web-apps/current-work/#dom-showmodaldialog>]]。
-
-[116] これはすなわち [SRC[<http://www.whatwg.org/specs/web-apps/current-work/#dom-showmodaldialog>]]、
-[FIG(list)[
-- [117] [[利用者]]が [[navigate]] できなくする[['''べきです''']]
-- [118] [[利用者]]の操作によって[[イベント]]が送られないようにする[['''べきです''']]
-- [119] [[利用者]]が内容を編集できないようにする[['''べきです''']]
-- [120] [[利用者]]以外からの[[イベント]]の発生は止めません
-- [121] [[スクリプト]]の実行は中断しません
-- [122] [[アニメーション]]の実行は止めません
-]FIG]
-
-[123] ということで、[[一時停止]]と似ていますが、[[同期区間]]などを実行しないこと、
-[[利用者]]からの[[イベント]]を無視することが違っています。
-]HISTORY]
-
-[146] [[inert]] も類似した状況を作り出します。 [[inert]] は [DEL[[CODE(HTMLa)@en[[[inert]]]] [[属性]]や]]
-[CODE(HTMLe)@en[[[dialog]]]] [[要素]]によって発生します。
-
 * 待ち
 
 [70] 仕様上、特定の条件が満たされるまで[RUBY[待つ]@en[wait]]ことが求められている場合があります。
@@ -615,6 +590,15 @@
 
 @@ XXX 一覧
 
+* 関連
+
+[54] [CODE(JS)@en[[[window.length]]]] は同じ[[イベントループ]]で動作しているかどうかによって挙動が変わり得ます。
+
+[128] [[最上位閲覧文脈]]はそれぞれ[F[[RUBYB[[[セッション履歴イベントループ]]]@en[session history event loop]]]]を持ちます。
+[[セッション履歴イベントループ]]はメインやワーカーの[[イベントループ]]とは異なり履歴管理専用で、とても単純になっています。
+
+;; 用語定義上は[[セッション履歴イベントループ]]は[[イベントループ]]ではありません。
+
 * 歴史
 
 [4] [[イベント・ループ]]の概念は [[Web Applications 1.0]] ([[HTML Living Standard]])
@@ -721,30 +705,12 @@
 - [64] [CITE@en[Web Applications 1.0 r8850 Teach the event loop that it might not have a task to run]] ([TIME[2014-11-20 07:20:00 +09:00]] 版) <https://html5.org/r/8850>
 ]REFS]
 
-* 関連
-
-[54] [CODE(JS)@en[[[window.length]]]] は同じ[[イベントループ]]で動作しているかどうかによって挙動が変わり得ます。
-
-[128] [[最上位閲覧文脈]]はそれぞれ[F[[RUBYB[[[セッション履歴イベントループ]]]@en[session history event loop]]]]を持ちます。
-[[セッション履歴イベントループ]]はメインやワーカーの[[イベントループ]]とは異なり履歴管理専用で、とても単純になっています。
-
-;; 用語定義上は[[セッション履歴イベントループ]]は[[イベントループ]]ではありません。
-
-* メモ
 
 [1] [CITE@en[Timing and Synchronization in JavaScript - Opera Developer Community]] ([TIME[2009-06-07 11:12:38 +09:00]] 版) <http://dev.opera.com/articles/view/timing-and-synchronization-in-javascript/>
 
 @@ [83] [[IndexedDB]]
 
 [77] [CITE@en[Web Applications 1.0 r2074 Define event loops, task queues, etc; Make 'fetching' use this mechanism (everything will in due course); Fix some cross-references around 'interactive content'.]]
-([TIME[2008-08-16 09:52:00 +09:00]] 版)
-<https://html5.org/r/2074>
-
-[78] [CITE@en[Web Applications 1.0 r2074 Define event loops, task queues, etc; Make 'fetching' use this mechanism (everything will in due course); Fix some cross-references around 'interactive content'.]]
-([TIME[2008-08-16 09:52:00 +09:00]] 版)
-<https://html5.org/r/2074>
-
-[79] [CITE@en[Web Applications 1.0 r2074 Define event loops, task queues, etc; Make 'fetching' use this mechanism (everything will in due course); Fix some cross-references around 'interactive content'.]]
 ([TIME[2008-08-16 09:52:00 +09:00]] 版)
 <https://html5.org/r/2074>
 
@@ -774,9 +740,37 @@
 
 [226] [CITE@en[Remove the storage mutex due to lack of implementation · whatwg/html@1b918cf]] ([TIME[2015-12-16 14:38:10 +09:00]] 版) <https://github.com/whatwg/html/commit/1b918cf72fcbba011f83b92ab5d1f483fb1cafa3>
 
+** [CODE(DOMm)@en[showModalDialog]] の廃止
+
 [227] [CITE@en[Remove showModalDialog() · whatwg/html@eec9646]]
 ([TIME[2015-12-16 14:57:48 +09:00]] 版)
 <https://github.com/whatwg/html/commit/eec96462b5bd1c7f904a4880bc04dade6efcd597>
+
+*** 利用者インターフェイスの無効化
+
+[114] [[イベントループ]]とは直接関係ありませんが、[[利用者インターフェイス]]が[RUBYB[無効化]@en[disabled]]されることがあります。
+
+[115] [CODE(DOMm)@en[[[showModalDialog]]]] による[[モーダルダイアログ]]の表示中は、その呼び出し元と同じ[[起源]]の[[閲覧文脈]]
+(正確には「[[背景閲覧文脈]]のリストに含まれる[[閲覧文脈]]」) の[[利用者インターフェイス]]を無効化しなければ[['''なりません''']]
+[SRC[<http://www.whatwg.org/specs/web-apps/current-work/#dom-showmodaldialog>]]。
+
+[116] これはすなわち [SRC[<http://www.whatwg.org/specs/web-apps/current-work/#dom-showmodaldialog>]]、
+[FIG(list)[
+- [117] [[利用者]]が [[navigate]] できなくする[['''べきです''']]
+- [118] [[利用者]]の操作によって[[イベント]]が送られないようにする[['''べきです''']]
+- [119] [[利用者]]が内容を編集できないようにする[['''べきです''']]
+- [120] [[利用者]]以外からの[[イベント]]の発生は止めません
+- [121] [[スクリプト]]の実行は中断しません
+- [122] [[アニメーション]]の実行は止めません
+]FIG]
+
+[123] ということで、[[一時停止]]と似ていますが、[[同期区間]]などを実行しないこと、
+[[利用者]]からの[[イベント]]を無視することが違っています。
+
+[146] [[inert]] も類似した状況を作り出します。 [[inert]] は [DEL[[CODE(HTMLa)@en[[[inert]]]] [[属性]]や]]
+[CODE(HTMLe)@en[[[dialog]]]] [[要素]]によって発生します。
+
+**
 
 [228] [CITE@en[Integrate with the ES job queue · whatwg/html@12db63c]] ([TIME[2015-12-22 14:38:12 +09:00]] 版) <https://github.com/whatwg/html/commit/12db63c7c038b9d8f1d3501d6661d89d495abeac>
 
