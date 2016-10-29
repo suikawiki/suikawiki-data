@@ -4,6 +4,8 @@
 - [20] [CITE@en[Pointer Lock]] ([TIME[2016-10-19 08:10:29 +09:00]]) <https://w3c.github.io/pointerlock/>
 -- [21] [CITE@en[Pointer Lock]] ([TIME[2016-10-19 08:10:29 +09:00]]) <https://w3c.github.io/pointerlock/#h-pointerlockchange-and-pointerlockerror-events>
 -- [31] [CITE@en[Pointer Lock]] ([TIME[2016-10-19 08:10:29 +09:00]]) <https://w3c.github.io/pointerlock/#widl-Element-requestPointerLock-void>
+-- [59] [CITE@en[Pointer Lock]] ([TIME[2016-10-19 08:10:29 +09:00]]) <https://w3c.github.io/pointerlock/#h-extensions-to-the-document-interface>
+-- [62] [CITE@en[Pointer Lock]] ([TIME[2016-10-19 08:10:29 +09:00]]) <https://w3c.github.io/pointerlock/#widl-Document-exitPointerLock-void>
 ]REFS]
 
 * API
@@ -13,6 +15,7 @@
 [30] 
 [FIG(short list)[
 - [CODE(DOMm)@en[requestPointerLock]]
+- [CODE(DOMm)@en[exitPointerLock]]
 ]FIG]
 
 ** イベント
@@ -51,7 +54,17 @@
 [[Pointer Lock]] が有効な間は[[鍵盤]]操作で変更するようにしなければならず、
 [[Webブラウザー]]とそのような[[ソフトウェア]]とで協調が必要です [SRC[>>21]]。
 
+[60] [CODE[Document]] [[インターフェイス]]は、
+[DFN[[CODE(DOMa)@en[onpointerlockchange]]]],
+[DFN[[CODE(DOMa)@en[onpointerlockerror]]]]
+両[[IDL属性]]を持ちます。それぞれ、
+[CODE[pointerlockchange]],
+[CODE[pointerlockerror]]
+各[[イベント]]の[[イベントハンドラーIDL属性]]です。 [SRC[>>59]]
+
 * 処理
+
+** 固定状態への移行
 
 [32] [CODE(DOMm)@en[requestPointerLock]] [[メソッド]]は、
 次のようにしなければ[MUST[なりません]] [SRC[>>31]]。
@@ -73,8 +86,9 @@
 = [33] それ以外の場合、
 == [49] [[対象][Pointer Lock対象]]が [CODE[null]] でないなら、
 === [50] [CODE[pointerlockchange]] [[イベント]]を[[対象][Pointer Lock対象]]について通知 (>>25) します。
-
-== [34] [RUBYB[対象]@en[target]]を、[[文脈オブジェクト]]に設定します。
+== [66] それ以外の場合、
+=== [67] [[元のマウスカーソル位置]]を、現在の[[マウスカーソル]]の位置に設定します。
+== [34] [[対象][Pointer Lock状態]]を、[[文脈オブジェクト]]に設定します。
 == [41] [CODE[pointerlockchange]] [[イベント]]を[[文脈オブジェクト]]について通知 (>>25) します。
 ]FIG]
 
@@ -99,6 +113,43 @@
 [51] [[対象][Pointer Lock対象]]が他の[[要素]]に変わる場合、新旧両[[要素]]で
 [CODE[pointerlockchange]] を[[発火]]しなければならないことになりますが、
 その順序は不明です。また新旧が同じ場合にどうするべきなのかも不明です。
+
+** 固定状態
+
+[52] [[利用者エージェント]]は[F[[DFN[[RUBYB[対象]@en[target]]]]][Pointer Lock対象]]を持ちます。
+初期状態は [CODE[null]] です。これが非 [CODE[null]] の値なら、
+[DFN[[RUBYB[固定状態]@en[locked state]]]]です。
+
+[53] [[固定状態]]では、[[利用者]]の動作に起因して[[利用者エージェント]]が[[発火]]するすべての[[マウスイベント]]の[[対象][イベント対象]]は、
+[[対象][Pointer Lock対象]]としなければ[MUST[なりません]] [SRC[>>31]]。
+
+;; [57] [[合成マウスイベント]]には適用されません [SRC[>>31]]。
+
+[54] [[固定状態]]では、[[マウスカーソル]]を隠さなければ[MUST[なりません]] [SRC[>>31]]。
+
+[58] [[固定状態]]では、[[利用者エージェント]]は[[マウスカーソル]]の概念が必要な[[マウスイベント]]
+([CODE[mouseover]], [CODE[mouseout]], [CODE[drag]], [CODE[drop]] など)
+を[[発火]]しては[MUST[なりません]] [SRC[>>31]]。
+
+[55] [[固定状態]]では、[[マウス]]の[[押下]]や[[移動]]によって[[窓][窓 (Web)]]が[[フォーカス]]を失っては[MUST[なりません]] [SRC[>>31]]。
+
+;; [56] [[プラットフォーム]]がそのような機能を提供していることが前提ですが、
+一般的な[[ウィンドウマネージャー]]はそのような [[API]] が提供されているようです。
+
+** 固定状態の終了
+
+[61] [CODE(DOMm)@en[exitPointerLock]] は、次のようにしなければなりません [SRC[>>62]]。
+[FIG(steps)[
+= [63] [[対象][Pointer Lock対象]]が [CODE[null]] ではなく、
+[[対象][Pointer Lock対象]]の[F[影を含む根]]が[[文脈オブジェクト]]なら、
+== [65] [CODE[pointerlockchange]] [[イベント]]を[[対象][Pointer Lock対象]]について通知 (>>25) します。
+== [64] [[対象][Pointer Lock対象]]を、 [CODE[null]] に設定します。
+== [68] [[マウスカーソル]]の位置を、[[元のマウスカーソル位置]]に設定します。
+]FIG]
+
+[69] [[利用者エージェント]]は、[DFN[元のマウスカーソル位置]]を持ちます。
+[[固定状態]]が終了すると、開始前の位置で再度[[マウスカーソル]]が表示されるようになります
+[SRC[>>62]]。[[座標]]の他、[[マルチディスプレイ]]の場合はどの[[画面]]に表示されていたかも復元されることが当然に期待されるものと思われます。
 
 * 歴史
 
