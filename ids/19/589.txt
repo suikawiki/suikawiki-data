@@ -8,6 +8,7 @@
 --- [65] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2012-03-28 21:58:58 +09:00]] 版) <https://www.whatwg.org/specs/web-apps/current-work/#port-message-queue>
 --- [66] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2013-02-09 02:07:40 +09:00]] 版) <https://www.whatwg.org/specs/web-apps/current-work/#unshipped-port-message-queue>
 --- [92] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2016-12-05 14:51:53 +09:00]]) <https://html.spec.whatwg.org/#dom-messageport-postmessage>
+--- [108] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2016-12-05 14:51:53 +09:00]]) <https://html.spec.whatwg.org/#ports-and-garbage-collection>
 ]REFS]
 
 * 作成
@@ -255,6 +256,45 @@
 ]FIG]
 ]FIG]
 
+** ごみ収集
+
+[107] [CODE(DOMi)@en[[[MessagePort]]]] が [[entangle]] されると、
+その [CODE(DOMi)@en[[[MessagePort]]]] と [[entangle]] された [CODE(DOMi)@en[[[MessagePort]]]]
+が最初の [CODE(DOMi)@en[[[MessagePort]]]] への[[強参照]]を持つか、
+または最初の [CODE(DOMi)@en[[[MessagePort]]]] の[[所有者]]が
+最初の [CODE(DOMi)@en[[[MessagePort]]]] への[[強参照]]を持つかのいずれかであるかのように扱われなければ[['''なりません''']]。
+従って [CODE(DOMi)@en[[[MessagePort]]]] を受け取って[[事象聴取器]]を登録してからその
+[CODE(DOMi)@en[[[MessagePort]]]] への明示的な参照を捨てたとしても、
+その[[事象聴取器]]が[[メッセージ]]を受信できる限りにおいて[[通信路]]は維持されることになります。
+もちろん[[通信路]]の両端で同様に参照が破棄された場合にはいずれの側も[[アプリケーション]]から到達できなくなりますから、
+両 [CODE(DOMi)@en[[[MessagePort]]]] を[[ごみ収集]]することができます。
+[SRC[>>108]]
+
+[109] 未実行の[[タスク]]と [CODE(DOMi)@en[MessagePort]] の[[ごみ収集]]の関係として、
+次のように規定されています。
+[FIG(list)[
+- [113] 当該[[オブジェクト]]で[[イベント]]を[[ディスパッチ]]する[[タスク]]が[[タスクキュー]]に入っているなら、[[ごみ収集]]しては[MUST[ならない]] [SRC[>>108]]。
+- [114] 当該[[オブジェクト]]の[F[[[ポートメッセージキュー]]の状態]]が[[有効]]で、
+[F[ポートメッセージキュー]]が空ではないなら、[[ごみ収集]]しては[MUST[ならない]] [SRC[>>108]]。
+]FIG]
+
+[115] このうち >>113 は通常の[[タスク]]であれば当然に[[タスク]]から[[イベント対象]]への[[強い参照]]が維持されているはずと考えられるところ、
+[CODE(DOMe)@en[message][onmessage]] については実行時点で含まれる[[ポートメッセージキュー]]の
+[CODE(DOMi)@en[MessagePort]] を[[イベント対象]]とする (>>71)
+との変則的な規定があるための条件なのでしょうか。
+
+[116] >>114 は、逆に言えば[[ポートメッセージキュー]]が無効の場合は実行されずに捨てられる
+(かもしれない) し、空になったら捨てられる (かもしれない) ということです。
+
+[117] >>113 は >>114 に含まれるようにも読めますが、[[イベントループ]]が[[タスク]]を実行しようとして[[ポートメッセージキュー]]から取り出した瞬間に空になって
+[CODE(DOMi)@en[MessagePort]] が破棄されないために >>113 が必要なのでしょうか。
+
+
+[112] [CODE(DOMi)@en[[[MessagePort]]]] が不要になったら、明示的に閉じて [[disentangle]]
+することが[RUBYB[強く勧められています]@en[strongly encouraged]]。
+明示的に閉じずないと必ずしも即座に[[ごみ収集]]されるとは限らないため、
+[[メモリー]]を無駄にすることとなります。 [SRC[>>108]]
+
 * [CODE(DOMi)@en[MessageChannel]] インターフェイス [CODE(DOMa)@en[port1]] 属性、 [CODE(DOMa)@en[port2]] 属性
 
 [27] [CODE(DOMi)@en[MessageChannel]] [[インターフェイス]]の
@@ -310,9 +350,11 @@ open と closed の2つの状態を持っていました。
 closed から open へと遷移することとされていました。
 
 [REFS[
+- [110] [CITE@en[Web Applications 1.0 r2024 Simplify garbage collection for ports even further. Define dicarding of Document objects better for ports. Prevent inactive documents from receiving messages.]] ([TIME[2008-08-06 16:57:00 +09:00]] 版) <http://html5.org/tools/web-apps-tracker?from=2023&to=2024>
 - [74] [CITE@en[Web Applications 1.0 r2085 Further work on the event loop front. (WebSockets, postMessage, MessagePorts, setTimeout)]]
 ([TIME[2008-08-19 18:30:00 +09:00]] 版)
 <https://html5.org/r/2085>
+- [111] [CITE@en[Web Applications 1.0 r2357    Define MessagePort such that they won't be garbage collected while a message is outstanding. (credit: ap)]] ([TIME[2008-10-21 04:18:00 +09:00]] 版) <http://html5.org/tools/web-apps-tracker?from=2356&to=2357>
 - [75] [CITE@en['''['''gwr''']''' (2) MessagePorts shouldn't be GCed even when their queue is clo…]] ([[Hixie]]著, [TIME[2008-10-21 19:24:55 +09:00]]) <https://github.com/whatwg/html/commit/7c0d06509cbfc808e06aac3b4ae8edafbf0a771c>
 - [76] [CITE@en[Web Applications 1.0 r2531    Simplify the way messages in ports are handled when the destination's document is not available.]]
 ([TIME[2008-12-16 10:01:00 +09:00]] 版)
