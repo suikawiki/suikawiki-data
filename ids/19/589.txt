@@ -41,6 +41,28 @@
 [33] [CODE(DOMi)@en[MessagePort]] [[インターフェイス]]は、
 [[文書環境]]と[[ワーカー環境]]に[[晒され]]ています [SRC[>>32]]。
 
+[96] [CODE(DOMi)@en[MessageChannel]] [[オブジェクト]]を作成すると、
+[CODE[port1]] と [CODE[port2]] の2つの [[IDL属性]]から
+[CODE(DOMi)@en[MessagePort]] にアクセスできます。
+
+[98] [CODE(DOMm)@en[postMessage]] [[メソッド]]で送信する [CODE(DOMi)@en[MessagePort]]
+を指定できます。
+
+[97] [CODE(DOMm)@en[postMessage]] の受信や[[ワーカー]]の作成で
+[CODE(DOMi)@en[MessageEvent]] [[イベント]]が[[発火]]された時は、
+[CODE(DOMa)@en[ports]] [[IDL属性]]で [CODE(DOMi)@en[MessagePort]]
+の[[配列]]にアクセスできます。
+
+[100] [[ワーカー]]は、[F[暗示的ポート]]として [CODE(DOMi)@en[MessagePort]]
+を持ちます。
+
+[101] [CODE(DOMi)@en[SharedWorker]] [[オブジェクト]]は、
+[CODE(DOMa)@en[port]] [[IDL属性]]で [CODE(DOMi)@en[MessagePort]]
+を持ちます。
+
+[99] [[ワーカー]]は、[[ワーカーのポート群]]として [CODE(DOMi)@en[MessagePort]]
+のリストを保持しています。
+
 * 状態
 
 [38] [CODE(DOMi)@en[EventTarget]] としての状態に加えて、
@@ -103,21 +125,21 @@
 
 ** entangle
 
-[43] [VAR[ポート1]]と[VAR[ポート2]]の [DFN[entangle]] は、次のようにしなければ[MUST[なりません]]
+[43] 2つの [CODE(DOMi)@en[MessagePort]] を関連付けた状態とすることを
+[DFN[entangle]] といいます。
+[VAR[ポート1]]と[VAR[ポート2]]の [[entangle]] は、次のようにしなければ[MUST[なりません]]
 [SRC[>>32]]。
 
 [FIG(steps)[
 = [44] [VAR[ポート1]]の [F[[[entangle]] されたポート]]が [CODE[null]] でなければ、
-== [45] [VAR[ポート1]]の [F[[[entangle]] されたポート]]の[F[[[entangle]] されたポート]]を、
-[CODE[null]] に設定します。
+== [45] [VAR[ポート1]]の [[disentangle]] を実行します。
 = [46] [VAR[ポート2]]の [F[[[entangle]] されたポート]]が [CODE[null]] でなければ、
-== [47] [VAR[ポート2]]の [F[[[entangle]] されたポート]]の[F[[[entangle]] されたポート]]を、
-[CODE[null]] に設定します。
+== [47] [VAR[ポート2]]の [[disentangle]] を実行します。
 = [48] [VAR[ポート1]]の [F[[[entangle]] されたポート]]を、[VAR[ポート2]]に設定します。
 = [49] [VAR[ポート2]]の [F[[[entangle]] されたポート]]を、[VAR[ポート1]]に設定します。
 ]FIG]
 
-[51] この処理は次の場面で呼び出されます。
+[51] [[entangle]] は、次の場面で呼び出されます。
 [FIG(middle list)[
 - [CODE(DOMi)@en[MessagePort]] の [F(ss)[Transfer]]
 - [CODE(DOMi)@en[MessageChannel]] [[コンストラクター]]
@@ -127,6 +149,31 @@
 
 [50] この処理が済んだ状態を、[VAR[ポート1]]と[VAR[ポート2]]が 
 [DFN[[RUBYB[entangle されている]@en[entangled]]]]といいます [SRC[>>32]]。
+
+[102] [[entangle]] 状態を解除することを、 [DFN[disentangle]] [SRC[>>32]] といいます。
+[CODE(DOMi)@en[MessagePort]] [VAR[ポート]]の [[disentangle]] は、
+次のようにしなければなりません。
+
+[FIG(steps)[
+= [103] [VAR[ポート]]の [F[[[entangle]] されたポート]]の [F[[[entangle]] されたポート]]を、
+[CODE[null]] に設定します。
+= [104] [VAR[ポート]]の [F[[[entangle]] されたポート]]を、 [CODE[null]] に設定します。
+]FIG]
+
+[105] [[disentangle]] は、次の場面で呼び出されます。
+[FIG(list middle)[
+- [[entangle]]
+- [CODE(DOMm)@en[close][MessagePort]] [[メソッド]]
+- [[ワーカーを走らせる]]処理の最後の破棄の段階
+]FIG]
+
+[106] [[entangle]] の中から [[disentangle]] が呼び出される、つまり [[entangle]]
+関係が書き換えられて他の [CODE(DOMi)@en[MessagePort]] と関連付けられた状態になるのは、
+[F(ss)[Transfer]] からの呼び出しの場合のみです。すなわち [CODE(DOMm)@en[postMessage]]
+により [CODE(DOMi)@en[MessagePort]] が送られて、他方の
+[CODE(DOMi)@en[MessagePort]] の接続先が新しい方に差し替えられる場合です。
+これ以外で [[disentangle]] された [CODE(DOMi)@en[MessagePort]] は、二度と
+[CODE(DOMi)@en[entangle]] されることはありません。
 
 ** transfer
 
@@ -247,8 +294,7 @@
 
 [FIG(steps)[
 = [94] [[文脈オブジェクト]]の[F[[[entangle]] されたポート]]が [CODE[null]] 以外なら、
-== [95] [[文脈オブジェクト]]と[[文脈オブジェクト]]の[F[[[entangle]] されたポート]]を
-[[disentangle]] します。
+== [95] [[文脈オブジェクト]]の [[disentangle]] を実行します。
 ]FIG]
 
 * 歴史
