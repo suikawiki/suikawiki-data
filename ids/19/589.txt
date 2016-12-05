@@ -5,6 +5,8 @@
 - [31] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2016-12-05 14:51:53 +09:00]]) <https://html.spec.whatwg.org/#channel-messaging>
 -- [26] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2016-12-05 14:51:53 +09:00]]) <https://html.spec.whatwg.org/#message-channels>
 -- [32] '''[CITE@en-US-x-hixie[HTML Standard]] ([TIME[2016-12-05 14:51:53 +09:00]]) <https://html.spec.whatwg.org/#message-ports>'''
+--- [65] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2012-03-28 21:58:58 +09:00]] 版) <https://www.whatwg.org/specs/web-apps/current-work/#port-message-queue>
+--- [66] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2013-02-09 02:07:40 +09:00]] 版) <https://www.whatwg.org/specs/web-apps/current-work/#unshipped-port-message-queue>
 ]REFS]
 
 * 作成
@@ -47,7 +49,11 @@
 他の [CODE(DOMi)@en[MessagePort]] [[オブジェクト]]。
 : [F[ポートメッセージキュー]] :
 [[タスク源]]。初期状態は空。 
-[SRC[>>32]]
+[SRC[>>65]]
+: [F[[[ポートメッセージキュー]]の状態]] :
+初期状態では[RUBYB[[[無効]]]@en[disabled]]です。
+一旦これを[RUBYB[[[有効]]]@en[enabled]]にすると、[[無効]]には戻せません。
+[SRC[>>65]]
 : [DFN[[F[[RUBYB[既に出荷済み][has been shipped]]][has been shipped]]]]フラグ :
 初期状態は[[偽]]。 
 [SRC[>>32]]
@@ -57,7 +63,9 @@
 
 ]FIG]
 
-[64] [[仕様書]]の規定は複雑でわかりにくいですが:
+[64] このうち2つの状態が、 [CODE(DOMm)@en[postMessage]] の結果生じる
+[CODE(DOMe)@en[message][onmessage]] [[イベント]]の実行タイミングに影響します。
+[[仕様書]]の規定は複雑でわかりにくいですが:
 [FIG(list)[
 - [F[既に出荷済み]]フラグが[[偽]]
 -- [F[ポートメッセージキュー]]の[F[状態][ポートメッセージキュー]]が[[有効]]
@@ -128,13 +136,13 @@
 [F(ss)[Transfer]] [[内部メソッド]]は、 [VAR[対象realm]]について、
 次のようにしなければ[MUST[なりません]] [SRC[>>32]]。
 [FIG(steps)[
-= [54] [[文脈オブジェクト]]の[F[既に出荷済み]]フラグを、[[真]]に設定します。
+= [54] [[文脈オブジェクト]]を[[出荷]]します。
 = [55] [VAR[新]]を、 [CODE(DOMi)@en[MessagePort]] [[オブジェクト]]に設定します。
 [FIG(list members)[ [56] [CODE(DOMi)@en[MessagePort]]
 : [F[realm][Realm]] : [VAR[対象realm]]
 : [F[所有者][MessagePort]] : [VAR[対象realm]]の[F[設定群オブジェクト]]
-: [F[既に出荷済み]]フラグ : [[真]]
 ]FIG]
+= [84] [VAR[新]]を[[出荷]]します。
 = [57] [[文脈オブジェクト]]の[F[ポートメッセージキュー]]内の[[タスク]]を、
 すべて[VAR[新]]の[F[ポートメッセージキュー]]に移動します。
 この時、移動した[[タスク]]の[F[文書]]を、
@@ -142,11 +150,30 @@
 = [58] [VAR[遠隔ポート]]を、
 [[文脈オブジェクト]]の [F[[[entangle]] されたポート]]に設定します。
 = [59] [VAR[遠隔ポート]]が [CODE[null]] 以外なら、
-== [60] [VAR[遠隔ポート]]の[F[既に出荷済み]]フラグを、[[真]]に設定します。
-== [61] [VAR[遠隔ポート]]と[VAR[新]]を [[entangele]] します。
+== [60] [VAR[遠隔ポート]]を[[出荷]]します。
+== [61] [VAR[遠隔ポート]]と[VAR[新]]を [[entangle]] します。
 = [62] [[文脈オブジェクト]]の [F(ss)[Detached]] [[内部スロット]]を、[[真]]に設定します。
 = [63] [VAR[新]]を返します。
 ]FIG]
+
+** ポートの状態の変更
+
+[85] [CODE(DOMi)@en[MessagePort]] [VAR[ポート]]の[[出荷]]は、
+次のようにしなければ[MUST[なりません]] [SRC[>>32]]。
+[FIG(steps)[
+= [86] [VAR[ポート]]の[F[既に出荷済み]]フラグを、[[真]]に設定します。
+]FIG]
+
+[67] [CODE(DOMi)@en[MessagePort]] [VAR[ポート]]の[F[ポートメッセージキュー]]の有効化は、
+次のようにしなければ[MUST[なりません]] [SRC[>>32]]。
+[FIG(steps)[
+= [68] [VAR[イベントループ]]を、[VAR[ポート]]の[F[所有者][MessagePort]]の[F[有責イベントループ]]に設定します。
+= [69] [VAR[イベントループ]]の[F[[[タスク源]]群]]に、
+[VAR[ポート]]の[F[ポートメッセージキュー]]を追加します。
+= [70] [VAR[ポート]]の[F[ポートメッセージキュー]]の[F[状態][ポートメッセージキューの状態]]を[[有効]]に設定します。
+]FIG]
+
+[71] その他の操作は[[タスクキュー]]、[[タスク源]]を参照。
 
 * [CODE(DOMi)@en[MessageChannel]] インターフェイス [CODE(DOMa)@en[port1]] 属性、 [CODE(DOMa)@en[port2]] 属性
 
@@ -169,6 +196,45 @@
 ]EG]
 
 * 歴史
+
+
+
+[REFS[
+- [72] [CITE@en['''['''''']''' (0) Simplify message ports: use queueing instead of transient 'act…]] ([[Hixie]]著, [TIME[2008-08-06 16:24:38 +09:00]]) <https://github.com/whatwg/html/commit/ebefa1c712950ea904e2e4877caa13db8b1d9104>
+]REFS]
+
+[73] [[ポートメッセージキュー]]はここで導入されました。
+open と closed の2つの状態を持っていました。
+この時同時に追加された [CODE[start]] [[メソッド]]を呼び出すか、
+[CODE[onmessage]] [[IDL属性]]に値を設定するかのいずれかにより、
+closed から open へと遷移することとされていました。
+
+[REFS[
+- [74] [CITE@en[Web Applications 1.0 r2085 Further work on the event loop front. (WebSockets, postMessage, MessagePorts, setTimeout)]]
+([TIME[2008-08-19 18:30:00 +09:00]] 版)
+<https://html5.org/r/2085>
+- [75] [CITE@en['''['''gwr''']''' (2) MessagePorts shouldn't be GCed even when their queue is clo…]] ([[Hixie]]著, [TIME[2008-10-21 19:24:55 +09:00]]) <https://github.com/whatwg/html/commit/7c0d06509cbfc808e06aac3b4ae8edafbf0a771c>
+- [76] [CITE@en[Web Applications 1.0 r2531    Simplify the way messages in ports are handled when the destination's document is not available.]]
+([TIME[2008-12-16 10:01:00 +09:00]] 版)
+<https://html5.org/r/2531>
+- [77] [CITE@en[Web Applications 1.0 r2912 Implicitly open the port message queue of dedicated workers. (Before, they would never actually receive messages, oops...)]]
+([TIME[2009-03-26 08:08:00 +09:00]] 版)
+<https://html5.org/r/2912>
+- [78] [CITE@en[Web Applications 1.0 r6384 Give more explanation about how workers work.]]
+([TIME[2011-08-09 05:10:00 +09:00]] 版)
+<https://html5.org/r/6384>
+- [79] [CITE@en[Web Applications 1.0 r7669     Make MessagePort objects synchronised until they are posted through another port.]] ([TIME[2013-01-30 05:59:00 +09:00]] 版) <http://html5.org/tools/web-apps-tracker?from=7668&to=7669>
+- [80] [CITE@en[Web Applications 1.0 r8153  Disabled port message queues shouldn't have their messages dispatched when they're still unshipped, nor should they stall the entire message queueing mechanism.]]
+([TIME[2013-08-27 02:59:00 +09:00]] 版)
+<https://html5.org/r/8153>
+- [81] [CITE@en[Web Applications 1.0 r8154 Reorganise the stuff about port message queues to be clearer.]]
+([TIME[2013-08-27 03:02:00 +09:00]] 版)
+<https://html5.org/r/8154>
+- [82] [CITE@en['''['''giow''']''' (0) Make sure subsequent owners of an ill-fated port's friend …]] ([[Hixie]]著, [TIME[2013-12-12 04:51:50 +09:00]]) <https://github.com/whatwg/html/commit/3d29c3388dd70a93f4d1704f6f3ba5a32a7dd20e>
+- [83] [CITE@en[Web Applications 1.0 r8864 Fix the mess I made of port message queues. I'm pretty sure originally they weren't task sources and I corrupted them at some point to be that without changing what I was putting in them. Anyway at this point it's easier just to say that they're real task sources and thus have tasks, even if those tasks have to now be a little more complicated than ideal.]]
+([TIME[2014-11-27 09:29:00 +09:00]] 版)
+<https://html5.org/r/8864>
+]REFS]
 
 [1] [CITE[IRC logs: freenode / #whatwg / 20130604]]
 ( ([TIME[2013-06-06 22:25:38 +09:00]] 版))
