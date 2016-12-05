@@ -7,6 +7,7 @@
 -- [32] '''[CITE@en-US-x-hixie[HTML Standard]] ([TIME[2016-12-05 14:51:53 +09:00]]) <https://html.spec.whatwg.org/#message-ports>'''
 --- [65] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2012-03-28 21:58:58 +09:00]] 版) <https://www.whatwg.org/specs/web-apps/current-work/#port-message-queue>
 --- [66] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2013-02-09 02:07:40 +09:00]] 版) <https://www.whatwg.org/specs/web-apps/current-work/#unshipped-port-message-queue>
+--- [92] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2016-12-05 14:51:53 +09:00]]) <https://html.spec.whatwg.org/#dom-messageport-postmessage>
 ]REFS]
 
 * 作成
@@ -92,9 +93,9 @@
 
 [35] 加えて、次の[[メンバー][インターフェイスメンバー]]があります。
 [FIG(short list)[
-- [CODE(DOMm)@en[close]]
+- [CODE(DOMm)@en[close][MessagePort]]
 - [CODE(DOMm)@en[postMessage]]
-- [CODE(DOMm)@en[start]]
+- [CODE(DOMm)@en[start][MessagePort]]
 - [CODE(DOMa)@en[onmessage]]
 ]FIG]
 
@@ -158,7 +159,25 @@
 
 ** ポートの状態の変更
 
-[85] [CODE(DOMi)@en[MessagePort]] [VAR[ポート]]の[[出荷]]は、
+[67] [CODE(DOMi)@en[MessagePort]] [VAR[ポート]]の[DFN[[F[ポートメッセージキュー]]の有効化]]は、
+次のようにしなければ[MUST[なりません]] [SRC[>>32]]。
+[FIG(steps)[
+= [70] [VAR[ポート]]の[F[[[ポートメッセージキュー]]の状態]]を、[[有効]]に設定します。
+= [68] [VAR[イベントループ]]を、[VAR[ポート]]の[F[所有者][MessagePort]]の[F[有責イベントループ]]に設定します。
+= [69] [VAR[イベントループ]]の[F[[[タスク源]]群]]に、
+[VAR[ポート]]の[F[ポートメッセージキュー]]を追加します。
+]FIG]
+
+[91] 次の場面で呼び出されます。
+[FIG(list middle)[
+- [CODE(DOMm)@en[start][MessagePort]]
+- [CODE(DOMa)@en[onmessage]]
+- [[ワーカーを走らせる]]
+]FIG]
+
+-*-*-
+
+[85] [CODE(DOMi)@en[MessagePort]] [VAR[ポート]]の[DFN[出荷]]は、
 次のようにしなければ[MUST[なりません]] [SRC[>>32]]。
 [FIG(steps)[
 = [86] [VAR[ポート]]の[F[既に出荷済み]]フラグを、[[真]]に設定します。
@@ -170,16 +189,24 @@
 
 ;; それぞれの項も参照。
 
-[67] [CODE(DOMi)@en[MessagePort]] [VAR[ポート]]の[F[ポートメッセージキュー]]の有効化は、
-次のようにしなければ[MUST[なりません]] [SRC[>>32]]。
-[FIG(steps)[
-= [68] [VAR[イベントループ]]を、[VAR[ポート]]の[F[所有者][MessagePort]]の[F[有責イベントループ]]に設定します。
-= [69] [VAR[イベントループ]]の[F[[[タスク源]]群]]に、
-[VAR[ポート]]の[F[ポートメッセージキュー]]を追加します。
-= [70] [VAR[ポート]]の[F[ポートメッセージキュー]]の[F[状態][ポートメッセージキューの状態]]を[[有効]]に設定します。
-]FIG]
+** ポートメッセージキューの操作
 
-[71] その他の操作は[[タスクキュー]]、[[タスク源]]を参照。
+[71] [[イベント]][VAR[e]]を [CODE(DOMi)@en[MessagePort]] 
+[VAR[ポート]]の[DFN[ポートメッセージキューに追加]]するには、
+次のようにしなければ[MUST[なりません]] [SRC[>>92]]。
+
+[FIG(steps)[
+= [138] 
+[VAR[ポート]]の[F[ポートメッセージキュー]]に[[タスク]]を追加します。
+[FIG(list members)[ [139] [[タスク]]
+: [F[処理]] :
+[FIG(steps)[
+= [140] [VAR[対象]]を、本[[タスク]]の[F[ポートメッセージキュー]]の
+[F[[CODE(DOMi)@en[MessagePort]]]] に設定します。
+= [141] [VAR[e]] を[VAR[[[対象][イベント対象]]]]において [[dispatch]] します。
+]FIG]
+]FIG]
+]FIG]
 
 * [CODE(DOMi)@en[MessageChannel]] インターフェイス [CODE(DOMa)@en[port1]] 属性、 [CODE(DOMa)@en[port2]] 属性
 
@@ -212,9 +239,19 @@
 == [90] [[文脈オブジェクト]]の[[ポートメッセージキューの有効化]]を実行します。
 ]FIG]
 
+* [CODE(DOMi)@en[MessagePort]] インターフェイス [CODE(DOMm)@en[close][MessagePort]] メソッド
+
+[93] [CODE(DOMi)@en[MessagePort]] [[インターフェイス]]の
+[DFN[[CODE(DOMm)@en[close][MessagePort]]]]
+[[メソッド]]は、次のようにしなければ[MUST[なりません]] [SRC[>>32]]。
+
+[FIG(steps)[
+= [94] [[文脈オブジェクト]]の[F[[[entangle]] されたポート]]が [CODE[null]] 以外なら、
+== [95] [[文脈オブジェクト]]と[[文脈オブジェクト]]の[F[[[entangle]] されたポート]]を
+[[disentangle]] します。
+]FIG]
+
 * 歴史
-
-
 
 [REFS[
 - [72] [CITE@en['''['''''']''' (0) Simplify message ports: use queueing instead of transient 'act…]] ([[Hixie]]著, [TIME[2008-08-06 16:24:38 +09:00]]) <https://github.com/whatwg/html/commit/ebefa1c712950ea904e2e4877caa13db8b1d9104>
