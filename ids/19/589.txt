@@ -43,7 +43,7 @@
 [38] [CODE(DOMi)@en[EventTarget]] としての状態に加えて、
 次の状態を持ちます。
 [FIG(list members)[
-: [F[[[entangle]] された [CODE(DOMi)@en[MessagePort]]]] [SRC[>>32]] :
+: [F[[[entangle]] されたポート]] [SRC[>>32]] :
 他の [CODE(DOMi)@en[MessagePort]] [[オブジェクト]]。
 : [F[ポートメッセージキュー]] :
 [[タスク源]]。初期状態は空。 
@@ -69,6 +69,35 @@
 - [CODE(DOMa)@en[onmessage]]
 ]FIG]
 
+* 処理
+
+** entangle
+
+[43] [VAR[ポート1]]と[VAR[ポート2]]の [DFN[entangle]] は、次のようにしなければ[MUST[なりません]]
+[SRC[>>32]]。
+
+[FIG(steps)[
+= [44] [VAR[ポート1]]の [F[[[entangle]] されたポート]]が [CODE[null]] でなければ、
+== [45] [VAR[ポート1]]の [F[[[entangle]] されたポート]]の[F[[[entangle]] されたポート]]を、
+[CODE[null]] に設定します。
+= [46] [VAR[ポート2]]の [F[[[entangle]] されたポート]]が [CODE[null]] でなければ、
+== [47] [VAR[ポート2]]の [F[[[entangle]] されたポート]]の[F[[[entangle]] されたポート]]を、
+[CODE[null]] に設定します。
+= [48] [VAR[ポート1]]の [F[[[entangle]] されたポート]]を、[VAR[ポート2]]に設定します。
+= [49] [VAR[ポート2]]の [F[[[entangle]] されたポート]]を、[VAR[ポート1]]に設定します。
+]FIG]
+
+[51] この処理は次の場面で呼び出されます。
+[FIG(middle list)[
+- [CODE(DOMi)@en[MessagePort]] の [F(ss)[Transfer]]
+- [CODE(DOMi)@en[MessageChannel]] [[コンストラクター]]
+- [[ワーカーを走らせる]]
+- [CODE(DOMi)@en[SharedWorker]] [[コンストラクター]]
+]FIG]
+
+[50] この処理が済んだ状態を、[VAR[ポート1]]と[VAR[ポート2]]が 
+[DFN[[RUBYB[entangle されている]@en[entangled]]]]といいます [SRC[>>32]]。
+
 * [CODE(DOMi)@en[MessageChannel]] インターフェイス [CODE(DOMa)@en[port1]] 属性、 [CODE(DOMa)@en[port2]] 属性
 
 [27] [CODE(DOMi)@en[MessageChannel]] [[インターフェイス]]の
@@ -88,6 +117,35 @@
 以後のこちら側の送受信には [CODE[port2]] を使うことになります。
 逆に [CODE[port2]] を渡したら、 [CODE[port1]] を使うことになります。
 ]EG]
+
+** transfer
+
+[52] [CODE(DOMi)@en[MessagePort]] [[オブジェクト]]は、 [[transferable object]]
+です。 [SRC[>>32]]
+
+[53] [CODE(DOMi)@en[MessagePort]] [[オブジェクト]]の
+[F(ss)[Transfer]] [[内部メソッド]]は、 [VAR[対象realm]]について、
+次のようにしなければ[MUST[なりません]] [SRC[>>32]]。
+[FIG(steps)[
+= [54] [[文脈オブジェクト]]の[F[既に出荷済み]]フラグを、[[真]]に設定します。
+= [55] [VAR[新]]を、 [CODE(DOMi)@en[MessagePort]] [[オブジェクト]]に設定します。
+[FIG(list members)[ [56] [CODE(DOMi)@en[MessagePort]]
+: [F[realm][Realm]] : [VAR[対象realm]]
+: [F[所有者][MessagePort]] : [VAR[対象realm]]の[F[設定群オブジェクト]]
+: [F[既に出荷済み]]フラグ : [[真]]
+]FIG]
+= [57] [[文脈オブジェクト]]の[F[ポートメッセージキュー]]内の[[タスク]]を、
+すべて[VAR[新]]の[F[ポートメッセージキュー]]に移動します。
+この時、移動した[[タスク]]の[F[文書]]を、
+[VAR[新]]の[F[所有者][MessagePort]]の[F[有責文書]]に設定します。
+= [58] [VAR[遠隔ポート]]を、
+[[文脈オブジェクト]]の [F[[[entangle]] されたポート]]に設定します。
+= [59] [VAR[遠隔ポート]]が [CODE[null]] 以外なら、
+== [60] [VAR[遠隔ポート]]の[F[既に出荷済み]]フラグを、[[真]]に設定します。
+== [61] [VAR[遠隔ポート]]と[VAR[新]]を [[entangele]] します。
+= [62] [[文脈オブジェクト]]の [F(ss)[Detached]] [[内部スロット]]を、[[真]]に設定します。
+= [63] [VAR[新]]を返します。
+]FIG]
 
 * 歴史
 
