@@ -8,6 +8,8 @@
 - [1] '''[CITE@en-US-x-hixie[HTML Standard]] ([TIME[2012-03-28 21:58:58 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#task-queue>'''
 - [19] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2012-03-28 21:58:58 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#the-event-loop>
 - [10] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#worker-event-loop>
+- [44] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2012-03-28 21:58:58 +09:00]] 版) <https://www.whatwg.org/specs/web-apps/current-work/#task-source>
+- [45] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2013-02-09 02:07:40 +09:00]] 版) <https://www.whatwg.org/specs/web-apps/current-work/#unshipped-port-message-queue>
 ]REFS]
 
 * 意味
@@ -24,10 +26,14 @@
 
 ;;
 [7] 同じく[[タスク]]の[[キュー]]であっても、
-[[セッション履歴探索キュー]]、
-[[マイクロタスクキュー]]、
-[[ポートメッセージキュー]]、
-[[未出荷済みポートメッセージキュー]]は定義上[[タスクキュー]]とは異なるものです。
+[FIG(list middle)[
+- [[セッション履歴探索キュー]]
+- [[マイクロタスクキュー]]
+- [[ポートメッセージキュー]]
+- [[未出荷済みポートメッセージキュー]]
+- [[pending application cache download process tasks]]
+]FIG]
+... は定義上[[タスクキュー]]とは異なるものです。
 ([[タスクキュー]]は[[データ型]]ではなく、[[イベントループ]]のフィールド名と捉えるべきもののようです。)
 
 * 追加
@@ -50,6 +56,21 @@
 [[利用者]]の操作には反応を返すようにしつつ、それが無い時に他の処理を実行する、
 というようにできます。 [SRC[>>1]]
 ]EG]
+
+
+[47] 同じ[[タスク源]]の[[タスク]]は、同じ[[タスクキュー]]に追加され[['''なければなりません''']]。
+[SRC[>>44]]
+
+;; [48] [[利用者エージェント]]は1つの[[イベントループ]]に複数の[[タスクキュー]]を持つことができ、
+好きな[[タスクキュー]]に好きな[[タスク]]を入れて[[優先度付きキュー]]として処理できます。
+ただし、 >>47 の制約があり、同じ[[タスク源]]にある[[タスク]]については実行順序が入れ替わらないことが保証されています。
+
+[32] [[タスク]]は原則として追加された順番に実行されていきますが、
+未実行の[[タスク]]が入っていて実行待ちをしているのがこの[[タスクキュー]]です。
+[[タスクキュー]]の個数は実装依存で、 [[Webブラウザー]]によって単一だったり、複数だったりします。
+[[タスクキュー]]が複数あっても、同じ[[タスク源]]の[[タスク]]は同じ[[タスクキュー]]に入るので、
+順序が保存されます。異なる[[タスク源]]の[[タスク]]の順序が保存されるかは実装依存です。
+
 
 [14] [CODE(DOMi)@en[[[WorkerGlobalScope]]]] は [DFN[[[closing]]]]
 フラグを持ちます [SRC[>>10]]。
@@ -150,31 +171,108 @@
 
 ;; [[ポートメッセージキュー]]、[CODE(DOMi)@en[MessagePort]] 参照。
 
-* 関連
+* タスク源
 
-[3] [[イベントループ]]は、1つ以上の[[タスクキュー]]を持ちます [SRC[>>1]]。
+[46] 各[[タスク]]は、何らかの[DFN[[RUBYB[タスク源]@en[task source]]]]から[RUBYB[来る]@en[come]]ものと定義されます
+[SRC[>>44]]。
 
-[31] [[イベントループ]]が複数存在する場合には、それぞれがそれぞれの[[タスクキュー]]を持ちます。
+[61] [[タスクキュー]]は[[タスク源]]によって分けられており、
+同じ[[タスク源]]の[[タスク]]同士の実行順序は[[タスクキュー]]への追加順序となることが保証されます。
 
-[32] [[タスク]]は原則として追加された順番に実行されていきますが、
-未実行の[[タスク]]が入っていて実行待ちをしているのがこの[[タスクキュー]]です。
-[[タスクキュー]]の個数は実装依存で、 [[Webブラウザー]]によって単一だったり、複数だったりします。
-[[タスクキュー]]が複数あっても、同じ[[タスク源]]の[[タスク]]は同じ[[タスクキュー]]に入るので、
-順序が保存されます。異なる[[タスク源]]の[[タスク]]の順序が保存されるかは実装依存です。
+[62] [[タスク源]]は、追加時に[[タスクキュー]]の決定に使われる他、
+何らかの理由で[[タスクキュー]]から[[タスク]]を削除する条件として使われることもあります。
 
-[34] [[セッション探索履歴キュー]]は[[タスクキュー]]のように機能しますが、
-[[イベントループ]]ではなく[[最上位閲覧文脈]]に属しています。
+[49] [[タスク源]]としては次のものがあります。
+[FIG(list middle)[
+- [[DOM操作タスク源]]
+- [[利用者対話タスク源]]
+- [[ネットワーク処理タスク源]]
+- [[履歴探索タスク源]]
+- [[媒体要素イベントタスク源]]
+- [[画布blob直列化タスク源]]
+- [[画布更新タスク源]]
+- [[タイマー・タスク源]]
+- [[遠隔イベント・タスク源]]
+- [[WebSocketタスク源]]
+- [[投稿済みメッセージタスク源]]
+- [[ポート・メッセージ・キュー]]
+- [[未出荷ポート・メッセージ・キュー]]
+- [[[CODE(DOMi)@en[XMLHttpRequest]]タスク源]]
+- [[[CODE(DOMi)@en[FileReader]]タスク源]]
+- [[データベース・アクセス・タスク源]]
+- [[埋め込みタスク源]]
+- [[WebGLタスク源]]
+- [[マイクロタスクタスク源]]
+- [[フォント読み込みタスク源]]
+- [[application life-cycle task source]]
 
-[35] [[port message queue]] と [[unshipped port message queue]] は、
-特殊な[[タスク源]]でもある[[タスク]]の[[キュー]]です。
+[HISTORY[
+- [[雛形タスク源]]
+- [[[CODE(DOMi)@en[FileSaver]]タスク源]]
+- [[装置タスク源]]
+- [[[CODE(DOMi)@en[PendingOp]]タスク源]]
+]HISTORY]
+]FIG]
 
-[36] [[pending application cache download process tasks]] は[[タスクキュー]]のように[[タスク]]が追加されますが、
-実行はされません。[[タスク]]の実行タイミングを遅延させるために使われます。
+[50] ほとんどの[[タスク源]]は[[イベントループ]]に1つずつ存在していますが、
+[[ポートメッセージキュー]]は[[著者]]が [CODE(DOMi)@en[[[MessagePort]]]]
+[[オブジェクト]]を作成することによって任意個作成されます。
+[[媒体要素イベントタスク源]]と
+[[[CODE(DOMi)@en[XMLHttpRequest]]タスク源]] もオブジェクトごとに存在します。
+[[[CODE(DOMi)@en[FileReader]]タスク源]]、[[[CODE(DOMi)@en[FileSaver]]タスク源]]もオブジェクトごとに存在するようです。
+
+[51] [[ポートメッセージキュー]]と[[未出荷ポートメッセージキュー]]は特別な関係にあります。
+[CODE(DOMi)@en[[[MessagePort]]]] は他の[[閲覧文脈]]に転送することができますが、
+それまでは[[未出荷ポートメッセージキュー]]にも属します。また[[タスク]]の削除は、どちらからも削除します。
+なお[[未出荷ポートメッセージキュー]]は[[イベントループ]]ごとに1つだけあります。
+[SRC[>>45]]
+[[仕様書]]ではこれらは[[タスク源]]である[[キュー]]とされていますが、
+実質的に[[タスクキュー]]の特殊形というべきものです。[[タスクキュー]]も参照。
+
+;; [52] 転送していない [CODE(DOMi)@en[[[MessagePort]]]] では必ず同じ順序で[[タスク]]が実行されることを保証し、
+転送してしまった [CODE(DOMi)@en[[[MessagePort]]]] では任意の実行順序となることを認めるためにこのような複雑な構造になっています。
+
+[53] [[タスク源]]の一覧は >>54 にあります。
+
+[REFS[
+- [54] [CITE[data-web-defs/data/browsers.json at master · manakai/data-web-defs]] ([TIME[2014-04-09 13:08:57 +09:00]] 版) <https://github.com/manakai/data-web-defs/blob/master/data/browsers.json>
+]REFS]
+
+** マイクロタスクとの関係
+
+[58] [[マイクロタスク]]の[[タスク源]]はすべて[[マイクロタスクタスク源]]と定義されています。
+
+[59] [[マイクロタスク]]には[[タスクキュー]]とは別の[[マイクロタスクキュー]]が存在しています。
+これは[[マイクロタスク源]]の[[タスク]] ([[マイクロタスク]]) を実行する[[タスクキュー]]とは別のものです。
+
+* イベント順との関係
+
+[55] [[DOM3イベント]]は[[イベント]]同士の関係を[[イベント順]]により規定しています。
+[[DOM3イベント]]は[[イベント・ループ]]や[[タスク]]という概念を使っておらず、
+この[[イベント順]]は適宜[[タスク源]]として使うことによって[[イベント・ループ]]と互換性がある形で実装できる、
+としています。
+
+[REFS[
+- [56] [CITE@en-US[Document Object Model (DOM) Level 3 Events Specification]] ([TIME[2012-03-21 00:00:37 +09:00]] 版) <http://dev.w3.org/2006/webapi/DOM-Level-3-Events/html/DOM3-Events.html#event-order-and-loops>
+]REFS]
+
+;; [57] 具体的にどう対応付けるのかは説明を読んでもあんまりよくわかりません。 [[HTML]]
+は[[マウス]]も[[鍵盤]]も同じ[[利用者対話タスク源]]で扱っていますが、
+[[DOM3イベント]]は独立してるからそれぞれ別の[[タスク源]]だ、とか言っていますし、
+[[焦点]]の変更など独立した操作がそれぞれ[[タスク源]]だ、とか訳のわからないことも言ってます。
 
 * 歴史
 
-[6] [CITE@en[Web Applications 1.0 r2074 Define event loops, task queues, etc; Make 'fetching' use this mechanism (everything will in due course); Fix some cross-references around 'interactive content'.]]
+[REFS[
+- [6] [CITE@en[Web Applications 1.0 r2074 Define event loops, task queues, etc; Make 'fetching' use this mechanism (everything will in due course); Fix some cross-references around 'interactive content'.]]
 ([TIME[2008-08-16 09:52:00 +09:00]] 版)
 <https://html5.org/r/2074>
+- [60] [CITE[IRC logs: freenode / #whatwg / 20100824]]
+([TIME[2010-09-02 21:15:06 +09:00]] 版)
+<http://krijnhoetmer.nl/irc-logs/whatwg/20100824>
+- [16] [CITE@en[Web Applications 1.0 r7992     Make <form> submission more like reality.]] ([TIME[2013-06-20 06:37:00 +09:00]] 版) <http://html5.org/tools/web-apps-tracker?from=7991&to=7992>
+- [19] [CITE@en[Fix #19: Remove majority of "DOM Event Architecture" section · w3c/uievents@6cb42db]]
+([TIME[2016-03-08 18:11:43 +09:00]] 版)
+<https://github.com/w3c/uievents/commit/6cb42db4054c5502d28c3f53c6ae64da5e475747>
+]REFS]
 
-[16] [CITE@en[Web Applications 1.0 r7992     Make <form> submission more like reality.]] ([TIME[2013-06-20 06:37:00 +09:00]] 版) <http://html5.org/tools/web-apps-tracker?from=7991&to=7992>
