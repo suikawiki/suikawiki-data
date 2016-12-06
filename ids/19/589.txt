@@ -73,22 +73,54 @@
 他の [CODE(DOMi)@en[MessagePort]] [[オブジェクト]]。
 >>107 も参照。
 : [F[ポートメッセージキュー]] :
-[[タスク源]]。初期状態は空。 
-[SRC[>>65]]
+[[タスク源]]。
+初期状態は空。 
 : [F[[[ポートメッセージキュー]]の状態]] :
-初期状態では[RUBYB[[[無効]]]@en[disabled]]です。
-一旦これを[RUBYB[[[有効]]]@en[enabled]]にすると、[[無効]]には戻せません。
-[SRC[>>65]]
-: [DFN[[F[[RUBYB[既に出荷済み][has been shipped]]][has been shipped]]]]フラグ :
-初期状態は[[偽]]。 
-[SRC[>>32]]
+[[有効]]か[[無効]]かのいずれか。
+初期状態は[[無効]]。
+: [F[既に出荷済み]]フラグ :
+[[ブール型]]。
+初期状態は[[偽]]。
 : [DFN[[F[[RUBYB[所有者]@en[owner]]][MessagePort]]]] :
 [[環境設定群オブジェクト]]。
 [SRC[>>32]]
 
 ]FIG]
 
-[64] このうち2つの状態が、 [CODE(DOMm)@en[postMessage]] の結果生じる
+* メンバー
+
+[34] [CODE(DOMi)@en[EventTarget]] を[[継承]]しています [SRC[>>32]]。
+
+[35] 加えて、次の[[メンバー][インターフェイスメンバー]]があります。
+[FIG(short list)[
+- [CODE(DOMm)@en[close][MessagePort]]
+- [CODE(DOMm)@en[postMessage]]
+- [CODE(DOMm)@en[start][MessagePort]]
+- [CODE(DOMa)@en[onmessage]]
+]FIG]
+
+* ポートメッセージキュー
+
+[135] [CODE(DOMi)@en[MessagePort]] [[オブジェクト]]は、
+[DFN[[F[[RUBYB[[[ポートメッセージキュー]]]@en[port message queue]]]]]]を持ちます。
+初期状態は空です。 [SRC[>>65]]
+
+[136] [CODE(DOMi)@en[MessagePort]] [[オブジェクト]]の[F[ポートメッセージキュー]]は、
+[RUBYB[[[無効]]]@en[disabled]]または[RUBYB[[[有効]]]@en[enabled]]のいずれかの状態にあります。
+初期状態は[[無効]]です。一旦これを[[有効]]にすると、[[無効]]には戻せません。
+[SRC[>>65]]
+
+[137] [CODE(DOMi)@en[MessagePort]] [[オブジェクト]]は、
+[DFN[[F[[RUBYB[既に出荷済み][has been shipped]]][has been shipped]]]]フラグを持ちます。
+初期状態は[[偽]]です。  
+[SRC[>>32]]
+
+@@
+[142] 未出荷済み
+
+-*-*-
+
+[64] 2つの状態が、 [CODE(DOMm)@en[postMessage]] の結果生じる
 [CODE(DOMe)@en[message][onmessage]] [[イベント]]の実行タイミングに影響します。
 [[仕様書]]の規定は複雑でわかりにくいですが:
 [FIG(list)[
@@ -111,17 +143,22 @@
 出荷済みなら[[ポートメッセージキュー]]扱い、
 未出荷なら[[未出荷済みポートメッセージキュー]]扱いになる、ということです。
 
-* メンバー
+[143] [[ポートメッセージキュー]]と[[未出荷済みポートメッセージキュー]]は、
+[[タスク]]の[[キュー]]であるにも関わらず、[[タスク源]]である [SRC[>>32]]
+と規定されています。それでいて、[[イベントループ]]によって
+(実行されるべき[[タスク]]のリストとして) 使われる [SRC[>>32]] ともされていて、
+[[イベントループ]]の持つ[[タスクキュー]]の一種であるかのようにも捉えられます。
 
-[34] [CODE(DOMi)@en[EventTarget]] を[[継承]]しています [SRC[>>32]]。
+[144] [[仕様書]]の履歴を辿ってみると、元は[[ポートメッセージキュー]]はその名の通り
+[CODE(DOMe)@en[message]] ''[[イベント]]''の[[キュー]]でした。
+この[[キュー]]に追加された[[イベント]]は、(準備が整い次第)
+[[イベント]]を[[発火]]する[[タスク]]が[[イベントループ]]の[[タスクキューに追加][タスクをキューに追加]]され、
+[[ポートメッセージキュー]]からは削除されることになっていました。
 
-[35] 加えて、次の[[メンバー][インターフェイスメンバー]]があります。
-[FIG(short list)[
-- [CODE(DOMm)@en[close][MessagePort]]
-- [CODE(DOMm)@en[postMessage]]
-- [CODE(DOMm)@en[start][MessagePort]]
-- [CODE(DOMa)@en[onmessage]]
-]FIG]
+[145] これがその後の改訂 [SRC[>>133]] で、[[ポートメッセージキュー]]自体が[[タスク]]の[[キュー]]になりました。
+[[コミットメッセージ]]で [CODE(DOMi)@en[MessagePort]] 
+が他の[[イベントループ]]に渡った時に[[イベント]]が失われないための変更だと説明されており、
+[CODE(DOMi)@en[MessagePort]] の [[Transfer]] で[[イベント]]を新[[イベントループ]]下に移動させることが狙いだったようです。
 
 * 処理
 
@@ -398,15 +435,16 @@ closed から open へと遷移することとされていました。
 - [76] [CITE@en[Web Applications 1.0 r2531    Simplify the way messages in ports are handled when the destination's document is not available.]]
 ([TIME[2008-12-16 10:01:00 +09:00]] 版)
 <https://html5.org/r/2531>
+- [133] r2532 [CITE@en['''['''gw''']''' (2) Drop MessagePort.onclose. Make MessagePort's message queue a…]] ([[Hixie]]著, [TIME[2008-12-16 10:33:52 +09:00]]) <https://github.com/whatwg/html/commit/7ec8efc310084ea89b71358dd070f535a1e43904>
+]REFS]
+
+[134] これまで[[投稿済みメッセージタスク源]]が使われていましたが、
+>>133 により、使われなくなりました。
+
+[REFS[
 - [77] [CITE@en[Web Applications 1.0 r2912 Implicitly open the port message queue of dedicated workers. (Before, they would never actually receive messages, oops...)]]
 ([TIME[2009-03-26 08:08:00 +09:00]] 版)
 <https://html5.org/r/2912>
-]REFS]
-
-[134] [[投稿済みメッセージタスク源]]が使われていましたが、
-この頃、使われなくなりました。
-
-[REFS[
 - [78] [CITE@en[Web Applications 1.0 r6384 Give more explanation about how workers work.]]
 ([TIME[2011-08-09 05:10:00 +09:00]] 版)
 <https://html5.org/r/6384>
