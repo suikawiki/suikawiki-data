@@ -7,9 +7,28 @@
 - [18] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#crossDocumentMessages>
 - [111] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2016-12-05 14:51:53 +09:00]]) <https://html.spec.whatwg.org/#dom-messageport-postmessage>
 - [138] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2016-12-06 07:17:59 +09:00]]) <https://html.spec.whatwg.org/#dom-broadcastchannel-postmessage>
+- [156] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2016-12-06 07:17:59 +09:00]]) <https://html.spec.whatwg.org/#dom-dedicatedworkerglobalscope-postmessage>
+- [158] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2016-12-06 07:17:59 +09:00]]) <https://html.spec.whatwg.org/#dom-worker-postmessage>
 ]REFS]
 
+* 文脈
+
+[112] [CODE(DOMi)@en[Window]] [[オブジェクト]]、
+[CODE(DOMi)@en[MessagePort]] [[オブジェクト]]、
+[CODE(DOMi)@en[DedicatedWorkerGlobalScope]] [[オブジェクト]]、
+[CODE(DOMi)@en[Worker]] [[オブジェクト]]、
+[CODE(DOMi)@en[BroadcastChannel]] [[オブジェクト]]に存在します。
+
+[159] [CODE(DOMi)@en[SharedWorker]] [[オブジェクト]]には存在しませんが、
+かわりに [CODE(DOMa)@en[port][MessagePort]] [[IDL属性]]があって、
+[CODE(DOMi)@en[MessagePort]] [[オブジェクト]]にアクセスできます。
+
 * 引数
+
+[160] 第1引数は送信するデータです。 [CODE(DOMm)@en[postMessage]] [[メソッド]]ではこれを
+「メッセージ」と呼んでいます。
+
+[161] 第2引数と第3引数は、[[文脈オブジェクト]]によって異なります。
 
 ** [CODE(DOMi)@en[Window]] オブジェクトの場合
 
@@ -41,7 +60,7 @@
 [31] 第3引数には、 [CODE[[[Transferable]]]] の[[配列]]を指定できます。
 該当するものがなければ、省略できます。
 
-** [CODE(DOMi)@en[MessagePort]] の場合
+** [CODE(DOMi)@en[MessagePort]] と [CODE(DOMi)@en[DedicatedWorkerGlobalScope]] と [CODE(DOMi)@en[Worker]] の場合
 
 [113] 第1引数には、投函したいデータを指定します。ただし、そのものではなく、
 [[構造化クローン]]が投函されることになります。メッセージとしては任意の [[JavaScript]]
@@ -55,12 +74,6 @@
 [139] 第1引数には、投函したいデータを指定します。ただし、そのものではなく、
 [[構造化クローン]]が投函されることになります。メッセージとしては任意の [[JavaScript]]
 の値を指定できます。
-
-* 文脈
-
-[112] [CODE(DOMi)@en[Window]] [[オブジェクト]]、
-[CODE(DOMi)@en[MessagePort]] [[オブジェクト]]、
-[CODE(DOMi)@en[BroadcastChannel]] [[オブジェクト]]に存在します。
 
 * 処理
 
@@ -121,7 +134,7 @@
 [[イベント]]
 ]FIGCAPTION]
 :[[インターフェイス]]:[CODE(DOMi)@en[[[MessageEvent]]]]
-:[[イベント型]]:[CODE(DOMe)@en[[[message]]]]
+: [F[イベント型]] : [CODE(DOMe)@en[message][onmessage]]
 :[[イベント対象]]: [VAR[対象窓]]
 :[[trusted]]:[[真]]
 :[[bubbles]]:[[偽]]
@@ -136,24 +149,35 @@
 ]FIG]
 ]FIG]
 
-[33] 送信したメッセージは、 [CODE(DOMi)@en[[[Window]]]] の [CODE(DOMe)@en[[[message]]]]
+[33] 送信したメッセージは、 [CODE(DOMi)@en[[[Window]]]] の [CODE(DOMe)@en[message][onmessage]]
 [[イベント]]として受信することができます。
 
-;; [CODE(DOMe)@en[[[message]]]] を参照。
+;; [CODE(DOMe)@en[message][onmessage]] を参照。
 
-** [CODE(DOMi)@en[MessagePort]] の場合
+** [CODE(DOMi)@en[MessagePort]] と [CODE(DOMi)@en[DedicatedWorkerGlobalScope]] と [CODE(DOMi)@en[Worker]] の場合
 
-[115] [CODE(DOMi)@en[MessagePort]] [[オブジェクト]]の
+[115] [CODE(DOMi)@en[MessagePort]] [[オブジェクト]]と
+[CODE(DOMi)@en[Worker]] [[オブジェクト]]と
+[CODE(DOMi)@en[DedicatedWorkerGlobalScope]] [[オブジェクト]]の
 [CODE(DOMm)@en[postMessage]] は、
-次のようにしなければ[MUST[なりません]] [SRC[>>111]]。
+次のようにしなければ[MUST[なりません]] [SRC[>>111, >>156, >>158]]。
 
 [FIG(steps)[
+= [157] [VAR[ポート]]を、[[文脈オブジェクト]]により、次の値に設定します。
+[FIG(switch)[
+: [CODE(DOMi)@en[MessagePort]] :
+[[文脈オブジェクト]]
+: [CODE(DOMi)@en[DedicatedWorkerGlobalScope]] :
+[[ 文脈オブジェクト]]の[F[暗示的ポート]]
+: [CODE(DOMi)@en[Worker]] :
+[[ 文脈オブジェクト]]の[F[暗示的ポート]]
+]FIG]
 = [116] [VAR[メッセージ]]を、必須の第1引数を [CODE[any]]
 として解釈した結果に設定します。
 = [117] [VAR[transfer]] を、省略可能な第2引数を[[オブジェクト]]の[[配列]]として解釈した結果に設定します。
-= [120] [VAR[transfer]] に[[文脈オブジェクト]]が含まれる場合、
+= [120] [VAR[transfer]] に[VAR[ポート]]が含まれる場合、
 == [121] [CODE[DataCloneError]] を[[投げ]]、ここで停止します。
-= [118] [VAR[対象ポート]]を、[[文脈オブジェクト]]の[F[[[entangle]] されているポート]]に設定します。
+= [118] [VAR[対象ポート]]を、[VAR[ポート]]の[F[[[entangle]] されているポート]]に設定します。
 = [122] [VAR[対象ポート]]が [CODE[null]] 以外で、
 [VAR[transfer]] に[VAR[対象ポート]]が含まれるなら、
 == [123] [VAR[doomed]] を、[[真]]に設定します。
@@ -162,10 +186,10 @@
 = [126] それ以外の場合、
 == [119] [VAR[doomed]] を、[[偽]]に設定します。
 = [127] [VAR[対象ポート]]が [CODE[null]] 以外で、 [VAR[doomed]] が[[偽]]なら、
-== [125] [VAR[対象realm]]を、[VAR[対象ポート]]の[F[所有者][MessagePort]]の[F[Realm]]に設定します。
+== [125] [VAR[対象Realm]]を、[VAR[対象ポート]]の[F[所有者][MessagePort]]の[F[Realm]]に設定します。
 = [128] それ以外なら、
-== [129] [VAR[対象realm]]を、何らかの [[Realm]] に設定します。
-= [130] [VAR[複製記録]]を、 [CODE[[[StructuredCloneWithTransfer]] ([VAR[メッセージ]]、[VAR[transfer]]、[VAR[対象realm]])]] の結果に設定します。
+== [129] [VAR[対象Realm]]を、何らかの [[Realm]] に設定します。
+= [130] [VAR[複製記録]]を、 [CODE[[[StructuredCloneWithTransfer]] ([VAR[メッセージ]]、[VAR[transfer]]、[VAR[対象Realm]])]] の結果に設定します。
 [[例外]]が[[投げ]]られれば、[[再び投げ]]、ここで停止します。
 = [131] [VAR[メッセージ複製]]を、[VAR[複製記録]]の [F(ss)[Clone]] に設定します。
 = [132] [VAR[新ポート群]]を、
