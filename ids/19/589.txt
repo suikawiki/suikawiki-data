@@ -9,6 +9,7 @@
 --- [66] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2013-02-09 02:07:40 +09:00]] 版) <https://www.whatwg.org/specs/web-apps/current-work/#unshipped-port-message-queue>
 --- [92] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2016-12-05 14:51:53 +09:00]]) <https://html.spec.whatwg.org/#dom-messageport-postmessage>
 --- [108] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2016-12-05 14:51:53 +09:00]]) <https://html.spec.whatwg.org/#ports-and-garbage-collection>
+- [149] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2016-12-06 07:17:59 +09:00]]) <https://html.spec.whatwg.org/#the-worker's-ports>
 ]REFS]
 
 * 作成
@@ -64,8 +65,12 @@
 [CODE(DOMa)@en[port]] [[IDL属性]]で [CODE(DOMi)@en[MessagePort]]
 を持ちます。
 
-[99] [[ワーカー]]は、[[ワーカーのポート群]]として [CODE(DOMi)@en[MessagePort]]
-のリストを保持しています。
+[99] [CODE(DOMi)@en[WorkerGlobalScope]] は、
+[F[[DFN[[RUBYB[[[ワーカーのポート群]]]@en[the worker's ports]]]]]]として 
+[CODE(DOMi)@en[MessagePort]] のリストを保持しています [SRC[>>149]]。
+
+[150] 同様に [CODE(DOMi)@en[Window]] も[DFN[[F[ポート群]]]]を持つと考えられます
+(>>107)。
 
 * 状態
 
@@ -183,16 +188,21 @@
 
 [43] 2つの [CODE(DOMi)@en[MessagePort]] を関連付けた状態とすることを
 [DFN[entangle]] といいます。
-[VAR[ポート1]]と[VAR[ポート2]]の [[entangle]] は、次のようにしなければ[MUST[なりません]]
-[SRC[>>32]]。
+[VAR[ポート1]]と[VAR[ポート2]]の [[entangle]] は、次のようにしなければ[MUST[なりません]]。
 
 [FIG(steps)[
 = [44] [VAR[ポート1]]の [F[[[entangle]] されたポート]]が [CODE[null]] でなければ、
-== [45] [VAR[ポート1]]の [[disentangle]] を実行します。
+== [45] [VAR[ポート1]]の [[disentangle]] を実行します。 [SRC[>>32]]
 = [46] [VAR[ポート2]]の [F[[[entangle]] されたポート]]が [CODE[null]] でなければ、
-== [47] [VAR[ポート2]]の [[disentangle]] を実行します。
-= [48] [VAR[ポート1]]の [F[[[entangle]] されたポート]]を、[VAR[ポート2]]に設定します。
-= [49] [VAR[ポート2]]の [F[[[entangle]] されたポート]]を、[VAR[ポート1]]に設定します。
+== [47] [VAR[ポート2]]の [[disentangle]] を実行します。 [SRC[>>32]]
+= [48] [VAR[ポート1]]の [F[[[entangle]] されたポート]]を、[VAR[ポート2]]に設定します。 [SRC[>>32]]
+= [49] [VAR[ポート2]]の [F[[[entangle]] されたポート]]を、[VAR[ポート1]]に設定します。 [SRC[>>32]]
+= [151] [VAR[ポート1]]の[F[所有者][MessagePort]]と[VAR[ポート2]]の[F[所有者][MessagePort]]が異なるなら、
+(>>107)
+== [152] [VAR[ポート1]]の[F[所有者][MessagePort]]の[F[大域オブジェクト]]の[F[ポート群]]に、
+[VAR[ポート1]]を追加します。
+== [153] [VAR[ポート2]]の[F[所有者][MessagePort]]の[F[大域オブジェクト]]の[F[ポート群]]に、
+[VAR[ポート2]]を追加します。
 ]FIG]
 
 [51] [[entangle]] は、次の場面で呼び出されます。
@@ -213,7 +223,11 @@
 [FIG(steps)[
 = [103] [VAR[ポート]]の [F[[[entangle]] されたポート]]の [F[[[entangle]] されたポート]]を、
 [CODE[null]] に設定します。
+= [155] [VAR[ポート]]の [F[[[entangle]] されたポート]]の[F[所有者][MessagePort]]の[F[大域オブジェクト]]の[F[ポート群]]から、
+[VAR[ポート]]の [F[[[entangle]] されたポート]]を (あれば) 削除します (>>107)。
 = [104] [VAR[ポート]]の [F[[[entangle]] されたポート]]を、 [CODE[null]] に設定します。
+= [154] [VAR[ポート]]の[F[所有者][MessagePort]]の[F[大域オブジェクト]]の[F[ポート群]]から、
+[VAR[ポート]]を (あれば) 削除します (>>107)。
 ]FIG]
 
 [105] [[disentangle]] は、次の場面で呼び出されます。
@@ -365,6 +379,17 @@
 2つの方法が認められているものと思われます。2つの方法は完全に等価なわけではありませんが、
 [[著者]]の[[スクリプト]]から直接観測可能な挙動としては同一です。
 
+[139] [[ワーカー]]に関しては、 [CODE(DOMi)@en[WorkerGlobalScope]]
+の[F[ワーカーのポート群]]として当該[[ワーカー]]外に [[entangle]] されたすべての
+[CODE(DOMi)@en[MessagePort]] のリストを[[大域オブジェクト]]が保持することになっています。
+これは事実上 >>119 を求めるものです (他の等価な実装方法も理論上はあり得ますが...)。
+[[文書環境]]に関しても、同様に [CODE(DOMi)@en[MessagePort]] のリストを保持するのが現実的でしょう。
+
+[157] 実装上は、 [[disentangle]] されないまま両端とも[[スクリプト]]から参照されなくなった時に、
+[F[ポート群]]から除去されてこれらが[[ごみ収集]]されるよう、注意が必要です。
+
+[148] 同じ環境内のポート同士は、 >>118 の方法を採っても、 >>119 の方法に準ずることにしても良さそうです。
+
 [121] [CODE(DOMi)@en[MessagePort]] が[[ごみ収集]]されないということは、
 そこに登録された[[イベントリスナー]]が[[ごみ収集]]されないということです。
 つまりこの要件は、[[イベントリスナー]]を登録した後に [CODE(DOMi)@en[MessagePort]]
@@ -401,6 +426,10 @@
 (無効のまま [CODE(DOMi)@en[MessagePort]] が破棄されたなら、有効化する手段がなくなるので、
 捨てても捨てなくても観測できません。)
 
+[156] 現実には [CODE(DOMi)@en[MessagePort]] が無効のまま破棄された時、
+[[タスクキュー]]内に[[ポートメッセージキュー]]の[[タスク]]
+(が[[イベント対象]]として保持している [CODE(DOMi)@en[MessagePort]] 自身への参照)
+も[[ごみ収集]]されるよう、注意する必要があります。
 
 * [CODE(DOMi)@en[MessageChannel]] インターフェイス [CODE(DOMa)@en[port1]] 属性、 [CODE(DOMa)@en[port2]] 属性
 
