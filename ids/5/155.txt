@@ -6,6 +6,7 @@
 [REFS[
 - [18] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#crossDocumentMessages>
 - [111] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2016-12-05 14:51:53 +09:00]]) <https://html.spec.whatwg.org/#dom-messageport-postmessage>
+- [138] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2016-12-06 07:17:59 +09:00]]) <https://html.spec.whatwg.org/#dom-broadcastchannel-postmessage>
 ]REFS]
 
 * 引数
@@ -49,10 +50,17 @@
 [114] 第2引数には、 [CODE[[[Transferable]]]] の[[配列]]を指定できます。
 該当するものがなければ、省略できます。
 
+** [CODE(DOMi)@en[BroadcastChannel]] オブジェクトの場合
+
+[139] 第1引数には、投函したいデータを指定します。ただし、そのものではなく、
+[[構造化クローン]]が投函されることになります。メッセージとしては任意の [[JavaScript]]
+の値を指定できます。
+
 * 文脈
 
 [112] [CODE(DOMi)@en[Window]] [[オブジェクト]]、
-[CODE(DOMi)@en[MessagePort]] [[オブジェクト]]に存在します。
+[CODE(DOMi)@en[MessagePort]] [[オブジェクト]]、
+[CODE(DOMi)@en[BroadcastChannel]] [[オブジェクト]]に存在します。
 
 * 処理
 
@@ -170,6 +178,47 @@
 == [136] [VAR[e]] の [F[[CODE[data][MessageEvent]]]] を、 [VAR[メッセージ複製]]に設定します。
 == [137] [VAR[e]] の [F[[CODE[ports]]]] を、[VAR[新ポート群]]に設定します。
 == [142] [VAR[e]] を[VAR[対象ポート]]の[[ポートメッセージキューに追加]]します。
+]FIG]
+
+]FIG]
+
+** [CODE(DOMi)@en[BroadcastChannel]] オブジェクトの場合
+
+[140] [CODE(DOMi)@en[BroadcastChannel]] [[オブジェクト]]の
+[CODE(DOMm)@en[postMessage]] は、
+次のようにしなければ[MUST[なりません]] [SRC[>>138]]。
+
+[FIG(steps)[
+= [141] [VAR[メッセージ]]を、必須の第1引数を [CODE[any]]
+として解釈した結果に設定します。
+= [143] [VAR[始点]]を、[[文脈オブジェクト]]に設定します。
+= [145] [VAR[始点]]の[F[閉じ済みフラグ]]が[[真]]なら、
+== [146] [CODE(DOMe)@en[InvalidStateError]] を[[投げ]]、ここで停止します。
+= [144] [VAR[始点設定群]]を、[VAR[始点]]の[F[[[[CODE(DOMi)@en[BroadcastChannel]]設定群オブジェクト]]]]に設定します。
+= [147] [VAR[始点通信路]]を、[VAR[始点]]の[F[通信路名]]に設定します。
+= [148] [VAR[対象Realm]]を、[[利用者エージェント]]定義の[[Realm]]に設定します。
+= [149] [VAR[複製メッセージ]]を、[CODE[[[StructuredClone]]([VAR[メッセージ]]、[VAR[対象Realm]])]] の結果に設定します。
+[[例外]]が[[投げ]]られれば、[[再び投げ]]、ここで停止します。
+= [150] [VAR[終点群]]を、[VAR[始点設定群]]と[VAR[始点通信路]]の[[[CODE(DOMi)@en[BroadcastChannel]]すべてのリスト]]に設定します。
+= [151] [VAR[終点群]]から、[VAR[始点]]を除去します。
+= [152] [VAR[終点群]]の各項目[VAR[終点]]について、順に、
+== [153] [[タスクをキューに追加]]します。
+[FIG(list members)[
+: [VAR[イベントループ]] : 
+[VAR[終点]]の[F[[[[CODE(DOMi)@en[BroadcastChannel]]設定群オブジェクト]]]]の[F[有責イベントループ]]
+: [VAR[処理]] :
+[FIG(steps)[
+= [154] [VAR[対象Realm]]を、[VAR[終点]]の[F[関連設定群オブジェクト]]の[F[Realm]]に設定します。
+= [155] [[イベントを発火]]します。
+[FIG(list members)[
+: [F[イベント型]] : [CODE(DOMe)@en[message]]
+: [F[イベントインターフェイス]] :  [CODE(DOMi)@en[MessageEvent]]
+: [F[[CODE(DOMa)@en[data][MessageEvent]]]] : [CODE[[[StrucutredCone]]([VAR[複製メッセージ]], [VAR[対象Realm]])]]
+: [F[[CODE(DOMa)@en[origin][MessageEvent]]]] : [VAR[始点設定群]]の[F[起源]]の[F[Unicode直列化]]
+]FIG]
+]FIG]
+: [VAR[タスク源]] : [[DOM操作タスク源]]
+: [VAR[文脈]] : [VAR[終点]]の[F[[[[CODE(DOMi)@en[BroadcastChannel]]設定群オブジェクト]]]]
 ]FIG]
 
 ]FIG]
