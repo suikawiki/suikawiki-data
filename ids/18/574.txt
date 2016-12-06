@@ -5,11 +5,12 @@
 * 仕様書
 
 [REFS[
-- [1] '''[CITE@en-US-x-hixie[HTML Standard]] ([TIME[2012-03-28 21:58:58 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#task-queue>'''
-- [19] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2012-03-28 21:58:58 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#the-event-loop>
-- [10] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2016-12-06 07:17:59 +09:00]]) <https://html.spec.whatwg.org/#worker-event-loop>
-- [44] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2012-03-28 21:58:58 +09:00]] 版) <https://www.whatwg.org/specs/web-apps/current-work/#task-source>
-- [45] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2013-02-09 02:07:40 +09:00]] 版) <https://www.whatwg.org/specs/web-apps/current-work/#unshipped-port-message-queue>
+- [9] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2016-12-06 07:17:59 +09:00]]) <https://html.spec.whatwg.org/#event-loops>
+-- [1] '''[CITE@en-US-x-hixie[HTML Standard]] ([TIME[2012-03-28 21:58:58 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#task-queue>'''
+-- [19] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2012-03-28 21:58:58 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#the-event-loop>
+-- [10] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2016-12-06 07:17:59 +09:00]]) <https://html.spec.whatwg.org/#worker-event-loop>
+-- [44] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2012-03-28 21:58:58 +09:00]] 版) <https://www.whatwg.org/specs/web-apps/current-work/#task-source>
+-- [45] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2013-02-09 02:07:40 +09:00]] 版) <https://www.whatwg.org/specs/web-apps/current-work/#unshipped-port-message-queue>
 ]REFS]
 
 * 意味
@@ -22,7 +23,7 @@
 
 * 文脈
 
-[18] [[イベントループ]]は、1つ[[以上]]の[[タスクキュー]]を持ちます [SRC[>>1]]。
+[18] [[イベントループ]]は、1つ[[以上]]の[DFN[[F[タスクキュー群]]]]を持ちます [SRC[>>1]]。
 
 [31] [[イベントループ]]がいくつ[[タスクキュー]]を持つかは、[[実装依存]]です。
 
@@ -142,7 +143,45 @@
 削除されます。しかし条件を満たさない[[タスク]]は[[イベントループ]]に無視されることになっていますから、
 厳密には [[FIFO]] とは言えません。
 
-;; [[イベントループ]]参照。
+[20] [VAR[イベントループ]]について[DFN[タスクキューからタスクを選択]]するには、
+次のようにしなければ[MUST[なりません]]。
+[FIG(steps)[
+= [70] [VAR[タスクキュー]]を、
+[VAR[イベントループ]]の[F[タスクキュー群]]から[[実装依存]]の方法で選んだ[[タスクキュー]]に設定します
+[SRC[>>9]]。
+= [72] [VAR[タスクキュー]]に含まれる[VAR[タスク]]について、順に、
+== [73] [VAR[タスク]]の[F[文書]]が [CODE[null]] か、
+[VAR[タスク]]の[F[文書]]が[F[完全に活性]]なら [SRC[>>9]]、
+=== [74] [VAR[タスク]]を返し、ここで停止します。
+== [75] それ以外なら、
+=== [76] [CODE[null]] を返し、ここで停止します。
+= [77] [CODE[null]] を返します。
+]FIG]
+
+[21] 同じ[[タスクキュー]]の[[タスク]]は、[[完全に活性]]でない[[文書]]に関するものを除き、
+実行順序が保証されています。異なる[[タスクキュー]]の[[タスク]]同士がどの順序で実行されるかは、
+[[実装依存]]です。
+
+[69] この辺の処理は、[[プラットフォーム]]の影響を受けることもあるでしょうし、
+あるいは何を優先的に実行するかは[[実装の品質]]の問題であって (>>12)
+[[Webブラウザー事業者]]が工夫して競合するべき点でもあるでしょうから、
+仕様としてはあまり具体的に規定せず、かなり自由度を持たせているようです。
+何をどのような順序で処理するかが[[相互運用性]]にあまり影響しないということもあります。
+
+
+
+
+
+[71] [CODE(HTMLe)@en[[[script]]]] [[要素]]に関する[[構文解析器]]の処理では、
+[[タスク]]の実行がブロックされることがあります。その場合、
+[[イベントループ]]は当該[[構文解析器]]に[[字句化]]を実行させる[[タスク]]を走らせないことが要請されます。
+
+;; [CODE(HTMLe)@en[[[script]]]] 参照。
+
+[79] [[WebSocketメッセージ受信]]における[[タスク]]の実行では、
+[[タスク]]の実行に必要な [[I/O]] 処理を待つ間他の[[タスクキュー]]を実行するような効率化が推奨されています。
+
+
 
 * 削除
 
