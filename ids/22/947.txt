@@ -6,6 +6,50 @@
 
 [10] 2. 設定 → 「Heroku Deployment」 → 「Step 2: Associate a Heroku SSH key with your account」
 
+[11] 3. [CODE[Makefile]] に [[Heroku]] 用の書き換えを追加 (一例):
+
+[FIG[
+[PRE(code)[
+create-commit-for-heroku:
+	git config --global user.email "dummy@test"
+	git config --global user.name "dummy"
+	git remote rm origin
+	rm -fr deps/pmtar/.git deps/pmpp/.git modules/*/.git
+	git add -f deps/pmtar/* #deps/pmpp/*
+	#rm -fr ./t_deps/modules
+	#git rm -r t_deps/modules
+	git rm .gitmodules
+	git rm modules/* --cached
+	git add -f modules/*/*
+	git commit -m "for heroku"
+]PRE]
+]FIG]
+
+;; [12] [[submodule]] やビルド結果など、 [[CircleCI]] 側で用意して [[Heroku]]
+側では [[pull]] するだけで良い状態にするための変更を加える。
+
+[13] 4. [CODE[circle.yml]] (一例):
+
+[FIG[
+[PRE(code)[
+dependencies:
+  override:
+    - make deps
+test:
+  override:
+    - make test
+deployment:
+  heroku:
+    branch: master
+    commands:
+      - "'''['''[ ! -s \"$(git rev-parse --git-dir)/shallow\" ]''']''' || git fetch --unshallow"
+      - make create-commit-for-heroku
+      - git push git@heroku.com:[VAR[HEROKUAPPNAME]].git +`git rev-parse HEAD`:refs/heads/master
+]PRE]
+]FIG]
+
+;; [14] [CODE[deployment:]] の部分がポイント。他は何でも良い。
+
 * メモ
 
 [1] [CITE@en-US[Continuous Integration and Deployment on CircleCI just got better: now it’s free. | The Circle Blog]]
