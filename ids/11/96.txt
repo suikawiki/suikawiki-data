@@ -4,12 +4,7 @@
 
 [REFS[
 - [42] '''[CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#workers>'''
--- [44] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#dom-workerglobalscope-close>
 -- [48] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#run-a-worker>
--- [77] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#kill-a-worker>
--- [78] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#terminate-a-worker>
--- [95] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#dom-worker-terminate>
--- [202] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2016-12-06 07:17:59 +09:00]]) <https://html.spec.whatwg.org/#worker-event-loop>
 - [181] [CITE@en[High Resolution Time Level 2]] ([TIME[2016-02-26 04:49:50 +09:00]]) <https://w3c.github.io/hr-time/#h-time-origin-1>
 ]REFS]
 
@@ -53,7 +48,7 @@
 * 作成
 
 [98] [[ワーカー]]を作成する [[API]] ([CODE(JS)@en[[[new Worker]]]],
-[CODE(JS)@en[[[new SharedWorker]]]], [CODE(JS)@en[[[new ServiceWorker]]]])
+[CODE(JS)@en[[[new SharedWorker]]]])
 は、関係するオブジェクトを作った後 (それぞれの項を参照。)、
 [[ワーカーを走らせる]]手続きを実行します。
 
@@ -171,6 +166,10 @@
 
 * 実行
 
+[40] [[専用ワーカー]]と[[共有ワーカー]]は、本項の通り実行されます。
+
+;; [[サービスワーカー]]は別の方法で実行されます。[[サービスワーカー]]参照。
+
 [104] [[ワーカー]]は、[F[[[ワーカーの[CODE(DOMi)@en[Document]]群]]]]が空でなくなると、
 [DFN[[[permissible worker]]]] となります [SRC[>>42]]。
 [CODE(JS)@en[[[new Worker]]]] や [CODE(JS)@en[[[new SharedWorker]]]] で最初に作られた時か、
@@ -216,7 +215,7 @@
 
 [66] [VAR[内側設定群]]の[F[大域オブジェクト]]の [F[[[closing flag]]]]
 が[[偽]]で、[[ワーカー]]が [[suspendable worker]] である間は、
-実行を[RUBYB[一時中断]@en[suspend]]しなければ[['''なりません''']] [SRC[>>48]]。
+実行を[DFN[[RUBYB[一時中断]@en[suspend]]]]しなければ[MUST[なりません]] [SRC[>>48]]。
 その後 [F[[[closing flag]]]] が[[真]]となるか、 [[suspendable worker]]
 でなくなったなら、一時中断を解除しなければ[['''なりません''']] [SRC[>>48]]。
 
@@ -311,95 +310,12 @@
 = [187] [F[サービスワーカークライアント]]が[VAR[ワーカー大域適用範囲]]の[F[設定群オブジェクト]]であるような
 [CODE(DOMi)@en[ServiceWorkerContainer]] の[F[クライアントメッセージキュー]]を有効化します。
 = [71] [VAR[内側設定群]]の[F[有責イベントループ]]を (破棄されるまで) 実行します。
-= [72] 破棄の処理に続きます (>>73)。
+= [72] [[ワーカーの終了]]の処理をします。
 ]FIG]
 
-* 破棄
+* 終了と破棄
 
-[203] [CODE(DOMi)@en[WorkerGlobalScope]] [[オブジェクト]]は、
-[DFN[[F[[RUBYB[[[閉じ中]]]@en[closing]]]]]]フラグを持ちます。
-初期状態は[[偽]]です。 [SRC[>>202]]
-
-;; [[タスクをキューに追加]]等[[タスクキュー]]への追加の発生時に参照されます。
-
-[45] [CODE(DOMi)@en[[[WorkerGlobalScope]]]] [[インターフェイス]]の
-[DFN[[CODE(DOMm)@en[[[close]]]]]] [[メソッド]]は、次のようにしなければ[['''なりません''']]
-[SRC[>>44]]。
-[FIG(steps)[
-= [99] [[原子的]]に:
-== [46] [[文脈オブジェクト]]の[F[[[イベントループ]]]]の[F[[[タスクキュー]]]]の[[タスク]]をすべて捨てます。
-== [47] [[文脈オブジェクト]]の [F[[[closing flag]]]] を[[真]]に設定します。
-]FIG]
-
--*-*-
-
-[62] 以降、[[サービスワーカー]]については[[サービスワーカーの終端]]を参照。
-
-[84] [[利用者エージェント]]は、いつでも[[ワーカーを殺す]]処理を実行して構いません。
-例えば次の時に実行できます。 [SRC[>>77]]
-[FIG(list)[
-- [85] [[利用者]]に要求された時
-- [86] [[CPU]] の [[quota]] 超過時
-- [87] [F[[[closing flag]]]] が[[真]]に設定されてもなお走り続けている場合で、
-[[active needed worker]] でなくなった時
-]FIG]
-
-[79] [DFN[[RUBYB[ワーカーを殺す]@en[kill a worker]]]]には、
-[[並列に]]次のようにしなければ[['''なりません''']] [SRC[>>77]]。
-[FIG(steps)[
-= [80] [[ワーカー]]の [F[[CODE(DOMi)@en[[[WorkerGlobalScope]]]]]]
-の [F[[[closing flag]]]] を[[真]]に設定します。
-= [81] [[ワーカー]]の [F[[CODE(DOMi)@en[[[WorkerGlobalScope]]]]]]
-の[F[[[イベントループ]]]]の[F[[[タスクキュー]]]]の[[タスク]]をすべて捨てます。
-= [82] [[利用者エージェント]]定義の時間、待ちます。
-= [83] [[ワーカー]]で動作中の[[スクリプト]]について、
-[[走っているスクリプトの実行中断]]を実行します。
-]FIG]
-
-;; [93] [[run a worker]] のメインの[[スクリプト]]や [CODE(DOMm)@en[[[importScripts]]]]
-の[[スクリプト]]が実行停止されることがあります。
-その他の[[スクリプト]]も (明記されていませんが) 停止するはずです。
-
-[96] [CODE(DOMi)@en[[[Worker]]]] [[インターフェイス]]の 
-[DFN[[CODE(DOMm)@en[[[terminate]]]]]] [[メソッド]]は、
-[F[関連付けられた[[ワーカー]]]]について[[ワーカーを停止]]しなければ[['''なりません''']]
-[SRC[>>95]]。
-
-;; [97] [CODE(DOMi)@en[[[SharedWorker]]]] にはありません。
-
-[88] [DFN[[RUBYB[ワーカーを停止]@en[terminate a worker]]]]するには、
-[[並列に]]次のようにしなければ[['''なりません''']] [SRC[>>78]]。
-[FIG(steps)[
-= [89] [[ワーカー]]の [F[[CODE(DOMi)@en[[[WorkerGlobalScope]]]]]]
-の [F[[[closing flag]]]] を[[真]]に設定します。
-= [90] [[ワーカー]]の [F[[CODE(DOMi)@en[[[WorkerGlobalScope]]]]]] 
-の[F[[[イベントループ]]]]の[F[[[タスクキュー]]]]の[[タスク]]をすべて捨てます。
-= [91] [[ワーカー]]で動作中の[[スクリプト]]について、
-[[走っているスクリプトの実行中断]]を実行します。
-= [92] [[ワーカー]]の [F[[CODE(DOMi)@en[[[WorkerGlobalScope]]]]]]
-が [CODE(DOMi)@en[[[DedicatedWorkerGlobalScope]]]] なら、
-[[ワーカー]]の[F[暗示的なポート]]が [[entangle]] されている [[port message queue]]
-を空にします。
-]FIG]
-
-;; [94] [[run a worker]] のメインの[[スクリプト]]や [CODE(DOMm)@en[[[importScripts]]]]
-の[[スクリプト]]が実行停止されることがあります。
-その他の[[スクリプト]]も (明記されていませんが) 停止するはずです。
-
-[73] 破棄の処理 (>>72 から呼び出されます。) は、次のようにしなければ[['''なりません''']]
-[SRC[>>48]]。
-[FIG(steps)[
-= [74] [VAR[内側設定群]]の[F[[[活性タイマーのリスト]]]]を空にします。
-= [75] [VAR[ワーカー大域適用範囲]]の[F[ポート群][ワーカーのポート群]]の各[VAR[ポート]]について、
-== [201] [VAR[ポート]]の [[disentangle]] を実行します。
-= [76] [[ワーカーの[CODE(DOMi)@en[Document]]群]]を空にします。
-]FIG]
-
-[40] [F[[[Blob URL Store]]]] 内の [[Blob URL]] は (暗黙に) 破棄されると思われます。
-
-[111] [CODE(DOMi)@en[[[Worker]]]] や [CODE(DOMi)@en[[[SharedWorker]]]]
-への参照を破棄すると、その[[ワーカー]]に[[スクリプト]]からアクセスする手段がなくなるかもしれませんが、
-それによって[[ワーカー]]が破棄されるわけではありません。
+[73] [[ワーカーの終了]]を参照。
 
 * 歴史
 
