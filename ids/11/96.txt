@@ -82,13 +82,11 @@
 ]FIG]
 = [192] それ以外なら、
 == [193] [VAR[ワーカー大域適用範囲]]を、 [CODE(DOMi)@en[SharedWorkerGlobalScope]] に設定します。
-= [164] [VAR[文書群]]を、[VAR[外側設定群]]の
-[F[[[list of relevant [CODE(DOMi)@en[Document]] objects to add]]]] に設定します。
-= [176] [VAR[外側設定群]]の[F[大域オブジェクト]]が [CODE(DOMi)@en[WorkerGlobalScope]] なら、
-== [177] [VAR[親ワーカー大域適用範囲]]を、
-[VAR[外側設定群]]の[F[大域オブジェクト]]に設定します。
-= [178] それ以外なら、
-== [175] [VAR[親ワーカー大域適用範囲]]を、 [[null]] に設定します。
+= [164] [VAR[所有子]]を、[VAR[外側設定群]]の[[追加する関連所有子]]に設定します。
+= [176] [VAR[所有子]]が [CODE(DOMi)@en[WorkerGlobalScope]] の場合、
+== [177] [VAR[親ワーカー大域適用範囲]]を、[VAR[所有子]]に設定します。
+= [178] それ以外の場合、
+== [175] [VAR[親ワーカー大域適用範囲]]を、 [CODE[null]] に設定します。
 = [53] [CODE[[[InitializeHostDefinedRealm]]]] [[抽象操作]]を実行します。
 [FIG(list members)[
 : [[大域オブジェクト]] : [VAR[ワーカー大域適用範囲]]
@@ -153,9 +151,9 @@
 = [140] [VAR[ワーカー大域適用範囲]]の[F[暗示的ポート]]を、[VAR[内側ポート]]に設定します。
 = [141] [VAR[外側ポート]]と[VAR[内側ポート]]を [[entangle]] します。
 = [200] [VAR[内側ポート]]を[[出荷]]します。 [SRC[[[仕様書]]になし]]
-= [142] [VAR[文書群]]の各[[文書]]を[VAR[ワーカー大域適用範囲]]の[[ワーカーの[CODE(DOMi)@en[Document]]群のリストに追加]]します。
-= [143] [VAR[親ワーカー大域適用範囲]]が null でなければ、
-== [144] [VAR[親ワーカー大域適用範囲]]の[F[[[ワーカーのワーカー群]]]]のリストに[VAR[ワーカー大域適用範囲]]を追加します。
+= [142] [VAR[所有子]]を[VAR[ワーカー大域適用範囲]]の[F[所有子集合]]に[[追加][set append]]します。
+= [143] [VAR[親ワーカー大域適用範囲]]が [CODE[null]] で''ない''場合、
+== [144] [VAR[ワーカー大域適用範囲]]を[VAR[親ワーカー大域適用範囲]]の[F[ワーカー集合]]に[[追加][set append]]します。
 = [126] [VAR[ワーカー大域適用範囲]]の[F[型][スクリプトの型]]を、
 [VAR[オプション型]]の [F[[CODE[type]]]] に設定します。
 = [149] [VAR[ワーカー大域適用範囲]]に新しい [CODE(DOMi)@en[[[WorkerGlobalScope]]]]
@@ -181,9 +179,9 @@
 -*-*-
 
 [45] [CODE(DOMi)@en[WorkerGlobalScope]] は、
-[DFN[[F[[RUBYB[[[所有者集合]]]@en[owner set]]]]]]
+[DFN[[F[[RUBYB[[[所有子集合]]]@en[owner set]]]]]]
 (旧[DFN[[F[[RUBYB[[[ワーカーの[CODE(DOMi)@en[Document]]群]]]@en[the worker's [CODE[Document]]s]]]]]]) を持ちます。
-[F[所有者集合]]は、[[文書]]または [CODE(DOMi)@en[WorkerGlobalScope]]
+[F[所有子集合]]は、[[文書]]または [CODE(DOMi)@en[WorkerGlobalScope]]
 の[[集合]]で、初期状態は[[空][空集合]]です。 [SRC[>>42]]
 
 [FIG(switch)[
@@ -218,29 +216,21 @@
 
 -*-*-
 
-[104] [[ワーカー]]は、[F[[[ワーカーの[CODE(DOMi)@en[Document]]群]]]]が空でなくなると、
-[DFN[[[permissible worker]]]] となります [SRC[>>42]]。
-[CODE(JS)@en[[[new Worker]]]] や [CODE(JS)@en[[[new SharedWorker]]]] で最初に作られた時か、
-[CODE(JS)@en[[[new SharedWorker]]]] で既存の[[共有ワーカー]]を利用する際に、
-[F[[[ワーカーの[CODE(DOMi)@en[Document]]群]]]]に[[文書]]が追加されます。
+[104] [[ワーカー]]は、 [DFN[[F[permissible worker]]]] であるか、そうでないかのいずれかです。
+[SRC[>>42]]
 
-[118] [[文書を捨てる]]操作は、[F[所有者集合]]から[[文書]]を削除します。
-これにより、次の通り [[permissible worker]] でなくなることがあります。
-[FIG(list)[
-- [105] [[共有ワーカー]]は、
-[F[[[ワーカーの[CODE(DOMi)@en[Document]]群]]]]が空になった後、
-[[利用者エージェント]]にまだ [F[[[completely loaded]]]] でない[[文書]]の[F[[[閲覧文脈]]]]が存在しなくなるか、
-[[利用者エージェント]]定義の短い時間が経過したなら、
-[[permissible worker]] ではなくなります [SRC[>>42]]。
-- [106] それ以外の[[ワーカー]]は、
-[F[[[ワーカーの[CODE(DOMi)@en[Document]]群]]]]が空になったら、
-[[permissible worker]] ではなくなります [SRC[>>42]]。
-]FIG]
+[79] [[ワーカー]]の [CODE(DOMi)@en[WorkerGlobalScope]] の[F[所有者集合]]が[[空]]で''ない''場合、
+[F[permissible worker]] です。 [SRC[>>42]]
 
-;; [107] >>105 は [[navigate]] により[[共有ワーカー]]が短時間で再起動する無駄を防ぐための措置です。
-[[フレーム]]等を考慮すると、[[起源]]に関係なくすべての[[閲覧文脈]]の[F[[[文書]]]]を考慮する必要がありそうです。
+;; [80] つまり[[文書]]や他の[[ワーカー]]から参照されている[[ワーカー]]が該当します。
 
-;; [108] 仕様上は「complete loaded」とありますが、 [F[[[completely loaded]]]] と同義と思われます。
+[81] [[共有ワーカー]]の [CODE(DOMi)@en[WorkerGlobalScope]] の[F[所有者集合]]が[[空]]となってから[[利用者エージェント]]定義の短い時間が経過して''いない''場合で、
+[F[completely loaded]] で''ない''[F[文書]]の[[閲覧文脈]]が[[利用者エージェント]]に存在する場合、
+[F[permissible worker]] です。 [SRC[>>42]]
+
+;; [82] つまり[[共有ワーカー]]の参照元が消失しても、
+新たな参照元が登場する可能性が残っている間は、該当します。
+[[起源]]などの制約がありませんが、[[フレーム]]などで間接的にアクセスされる可能性があるからでしょう。
 
 ;; [120] [[コンストラクター]]で作られた時点では必ず [[permissible worker]]
 のはずですが (他の[[ワーカー]]内から[[コンストラクター]]を呼び出した場合で、
@@ -251,11 +241,12 @@
 ;; [114] [[permissible worker]] は、 [[active needed worker]] と [[suspendable worker]]
 のどちらかです。
 
-[109] [[ワーカー]]は、[F[[[ワーカーの[CODE(DOMi)@en[Document]]群]]]]のいずれかの[[文書]]が[[完全に活性]]なら、
-[DFN[[[active needed worker]]]] です [SRC[>>42]]。
+[109] [[ワーカー]]は、[F[所有者集合]]のいずれかが[F[完全に活性]]な[[文書]]か
+[[[F[active needed]] worker]] なら、 [DFN[[[[F[active needed]] worker]]]] です。 [SRC[>>42]]
 
 ;; [110] 定義上、必ず [[permissible worker]] です。
 
+@@
 ;; [56] [[active needed worker]] でなくなった場合の処理 >>87
 
 [113] [[ワーカー]]は、[[active needed worker]] ではなく、
