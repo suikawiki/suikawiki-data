@@ -4,7 +4,6 @@
 - [44] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#dom-workerglobalscope-close>
 - [202] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2016-12-06 07:17:59 +09:00]]) <https://html.spec.whatwg.org/#worker-event-loop>
 - [48] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#run-a-worker>
-- [77] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#kill-a-worker>
 - [78] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#terminate-a-worker>
 - [95] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#dom-worker-terminate>
 - [1] [CITE@en[Service Workers Nightly]] ([TIME[2017-02-16 20:10:49 +09:00]]) <https://w3c.github.io/ServiceWorker/#service-worker-lifetime>
@@ -29,31 +28,6 @@
 ]FIG]
 
 * ワーカーの終了
-
-[84] [[利用者エージェント]]は、いつでも[[ワーカーを殺す]]処理を実行して構いません。
-例えば次の時に実行できます。 [SRC[>>77]]
-[FIG(list)[
-- [85] [[利用者]]に要求された時
-- [86] [[CPU]] の [[quota]] 超過時
-- [87] [F[[[closing flag]]]] が[[真]]に設定されてもなお走り続けている場合で、
-[[active needed worker]] でなくなった時
-]FIG]
-
-[79] [DFN[[RUBYB[ワーカーを殺す]@en[kill a worker]]]]には、
-[[並列に]]次のようにしなければ[['''なりません''']] [SRC[>>77]]。
-[FIG(steps)[
-= [80] [[ワーカー]]の [F[[CODE(DOMi)@en[[[WorkerGlobalScope]]]]]]
-の [F[[[closing flag]]]] を[[真]]に設定します。
-= [81] [[ワーカー]]の [F[[CODE(DOMi)@en[[[WorkerGlobalScope]]]]]]
-の[F[[[イベントループ]]]]の[F[[[タスクキュー]]]]の[[タスク]]をすべて捨てます。
-= [82] [[利用者エージェント]]定義の時間、待ちます。
-= [83] [[ワーカー]]で動作中の[[スクリプト]]について、
-[[走っているスクリプトの実行中断]]を実行します。
-]FIG]
-
-;; [93] [[run a worker]] のメインの[[スクリプト]]や [CODE(DOMm)@en[[[importScripts]]]]
-の[[スクリプト]]が実行停止されることがあります。
-その他の[[スクリプト]]も (明記されていませんが) 停止するはずです。
 
 [96] [CODE(DOMi)@en[[[Worker]]]] [[インターフェイス]]の 
 [DFN[[CODE(DOMm)@en[[[terminate]]]]]] [[メソッド]]は、
@@ -94,6 +68,10 @@
 [40] [F[[[Blob URL Store]]]] 内の [[Blob URL]] は (暗黙に) 破棄されると思われます。
 
 [7] [[ワーカーを走らせる]]処理から呼び出されます。
+
+[87] [[利用者エージェント]]は、[[ワーカー]]が [F[closing flag]]
+が[[真]]に設定されてもなお走り続けている場合で、 [[active needed worker]] でなくなった時、
+[[ワーカーを停止]]させても構いません。 [SRC[>>78]]
 
 [111] [CODE(DOMi)@en[[[Worker]]]] や [CODE(DOMi)@en[[[SharedWorker]]]]
 への参照を破棄すると、その[[ワーカー]]に[[スクリプト]]からアクセスする手段がなくなるかもしれませんが、
@@ -142,7 +120,39 @@
 
 [6] [[ワーカー]]の歴史も参照。
 
-
 [20] [CITE@en[Editorial: restructure ownership of workers to parent-owners]]
 ([[annevk]]著, [TIME[2017-04-14 14:47:44 +09:00]])
 <https://github.com/whatwg/html/commit/59a4750f475acd789ee436b4906972ba2081d8b3>
+
+** ワーカーを殺す
+
+- [77] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#kill-a-worker>
+
+[84] [[利用者エージェント]]は、いつでも[[ワーカーを殺す]]処理を実行して構いません。
+例えば次の時に実行できます。 [SRC[>>77]]
+[FIG(list)[
+- [85] [[利用者]]に要求された時
+- [86] [[CPU]] の [[quota]] 超過時
+- [87] [F[[[closing flag]]]] が[[真]]に設定されてもなお走り続けている場合で、
+[[active needed worker]] でなくなった時
+]FIG]
+
+[79] [DFN[[RUBYB[ワーカーを殺す]@en[kill a worker]]]]には、
+[[並列に]]次のようにしなければ[['''なりません''']] [SRC[>>77]]。
+[FIG(steps)[
+= [80] [[ワーカー]]の [F[[CODE(DOMi)@en[[[WorkerGlobalScope]]]]]]
+の [F[[[closing flag]]]] を[[真]]に設定します。
+= [81] [[ワーカー]]の [F[[CODE(DOMi)@en[[[WorkerGlobalScope]]]]]]
+の[F[[[イベントループ]]]]の[F[[[タスクキュー]]]]の[[タスク]]をすべて捨てます。
+= [82] [[利用者エージェント]]定義の時間、待ちます。
+= [83] [[ワーカー]]で動作中の[[スクリプト]]について、
+[[走っているスクリプトの実行中断]]を実行します。
+]FIG]
+
+;; [93] [[run a worker]] のメインの[[スクリプト]]や [CODE(DOMm)@en[[[importScripts]]]]
+の[[スクリプト]]が実行停止されることがあります。
+その他の[[スクリプト]]も (明記されていませんが) 停止するはずです。
+
+[21] [CITE@en[Remove overly permissive "kill a worker" algorithm]]
+([[annevk]]著, [TIME[2017-04-19 16:37:30 +09:00]])
+<https://github.com/whatwg/html/commit/77c694e25adabfc5706b5885fbcc1b0d3d5c4416>
