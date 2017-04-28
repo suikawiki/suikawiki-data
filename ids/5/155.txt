@@ -82,69 +82,69 @@
 [21] [CODE(DOMi)@en[[[Window]]]] [[インターフェイス]]の
 [CODE(DOMm)@en[[[postMessage]]]] [[メソッド]]は、
 次のようにしなければ[MUST[なりません]] [SRC[>>18]]。
+
 [FIG(steps)[
 = [96] [VAR[メッセージ]]を、必須の第1引数を [CODE(IDL)@en[any]] として解釈した結果に設定します。
 = [97] [VAR[対象起源]]を、必須の第2引数を [CODE(IDL)@en[USVString]] として解釈した結果に設定します。
 = [98] [VAR[transfer]] を、第3引数を [CODE[[[sequence]]<[[object]]>]] として解釈した結果に設定します。
-既定値は、[[空リスト]]とします。
+[[既定値]]は、[[空リスト]]とします。
 = [106] [VAR[対象窓]]を、[[文脈オブジェクト]]に設定します。
 = [108] [VAR[対象Realm]] を、[VAR[対象窓]]の[F[Realm]]に設定します。
-= [83] [VAR[現職設定群オブジェクト]]を、[[現職設定群オブジェクト]]に設定します。
+= [83] [VAR[現職設定群]]を、[[現職設定群オブジェクト]]に設定します。
 = [109] [VAR[対象起源]]により、
 [FIG(switch)[
 : [CODE[*]] :
 [VAR[対象起源]]はそのまま [CODE[*]] とします。
 : [CODE[/]] :
-[VAR[対象起源]]を、[VAR[現職設定群オブジェクト]]の[F[起源]]に設定します。
+[VAR[対象起源]]を、[VAR[現職設定群]]の[F[起源]]に設定します。
 : それ以外 :
 [FIG(steps)[
 = [100] [VAR[URL]] を、[VAR[対象起源]]に[[URL構文解析器]]を適用した結果に設定します。
-= [101] [VAR[URL]] が[[失敗]]なら、
+= [101] [VAR[URL]] が[[失敗]]の場合、
 == [102] [CODE(DOMe)@en[SyntaxError]] [CODE(DOMi)@en[DOMException]] を[[投げ]]、
 ここで停止します。
 = [103] [VAR[対象起源]]を、[VAR[URL]] の[F[起源][URLの起源]]に設定します。
 ]FIG]
 ]FIG]
-= [99] [VAR[複製記録]]を、 [CODE[[[StructuredCloneWithTransfer]]([VAR[メッセージ]], [VAR[transfer]], [VAR[対象Realm]])]]
-に設定します。[[例外]]が[[投げ]]られれば、[[再び投げ]]、ここで停止します。
-= [105] [VAR[メッセージ複製]]を、[VAR[複製記録]]の[F(ss)[Deserialized]]に設定します。
-= [85] [VAR[新ポート群]]を、[VAR[複製記録]]の[F(ss)[TransferredValues]]の
-[CODE(DOMi)@en[MessagePort]] をすべて同じ順に含めた[[凍結配列]]に設定します。
-= [110] [[並列に]]、続きの処理 (>>81) を行います。
-= [104] [CODE(DOMm)@en[[[postMessage]]]] [[メソッド]]はここで終わります。
+= [99] [VAR[直列化結果]]を、 [VAR[メッセージ]]と [VAR[transfer]] に
+[CODE[StructuredSerializeWithTransfer]] を適用した結果に設定します。
+[[例外]]が[[投げ]]られれば、[[再び投げ]]、ここで停止します。
+= [130] [[タスクをキューに追加]]します。
+[FIG(list members)[
+: [VAR[[[タスク源]]]] :[[投稿済みメッセージタスク源]]
+: [VAR[処理]] :
+[FIG(steps)[
+= [82] [VAR[対象起源]]が [CODE[*]] ''以外''で、
+[VAR[対象窓]]の[F[文書]]の[F[起源][文書の起源]]が[VAR[対象起源]]と[[同じ起源]]で''な''ければ、
+== [93] ここで停止します。
+= [81] [VAR[起源]]を、[VAR[現職設定群]]の[F[起源]]の[F[Unicode直列化]]に設定します。
+= [104] [VAR[始点]]を、[VAR[現職設定群]]の[F[大域オブジェクト]]に設定します。
+= [110] [VAR[記録]]を、[VAR[直列化結果]]と[VAR[対象Realm]]について
+[CODE[StructuredDeserializeWithTransfer]] した結果に設定します。
+[[例外]]が[[投げ]]られた場合、
+[FIG(steps)[
+= [131] [[イベントを発火]]します。
+[FIG(list members)[
+: [VAR[[[対象][イベント対象]]]] : [VAR[対象窓]]
+: [VAR[[[型][イベント型]]]] : [CODE[messageerror]]
+: [VAR[インターフェイス][イベントインターフェイス]] : [CODE(DOMi)@en[MessageEvent]]
+: [CODE[origin][origin (MessageEvent)]] : [VAR[起源]]
+: [CODE[source][source (MessageEvent)]] : [VAR[始点]]
+]FIG]
+= [132] ここで停止します。
+]FIG]
+= [91] [[イベントを発火]]します。
+[FIG(list members)[
+: [VAR[[[対象][イベント対象]]]] : [VAR[対象窓]]
+: [VAR[[[型][イベント型]]]] : [CODE(DOMe)@en[message][onmessage]]
+: [VAR[インターフェイス][イベントインターフェイス]] : [CODE(DOMi)@en[MessageEvent]]
+: [CODE[origin][origin (MessageEvent)]] : [VAR[起源]]
+: [CODE[source][source (MessageEvent)]] : [VAR[始点]]
+: [CODE[data][data (MessageEvent)]] : [VAR[記録]]の[F(ss)[Deserialized]]
+: [CODE[ports]] : [VAR[記録]]の[F(ss)[TransferredValues]]の
+[CODE(DOMi)@en[MessagePort]] をすべて同じ順に含めた[[凍結配列]]
 ]FIG]
 
-[81] 続きの処理は、[VAR[対象窓]]、[VAR[新ポート群]]、[VAR[メッセージ複製]]、
-[VAR[現職設定群オブジェクト]]について、次のようにしなければ[MUST[なりません]] [SRC[>>18]]。
-[FIG(steps)[
-= [82] [VAR[対象起源]]が [CODE[*]] 以外で、
-[VAR[対象窓]]の[F[文書]]の[F[起源][文書の起源]]が[VAR[対象起源]]と[[同じ起源]]でなければ、
-== [93] ここで停止します。
-= [91] [VAR[対象窓]]の[F[文書]]の[F[イベントループ]]の[[タスクキューに追加]]します。
-[FIG(list members)[
-[FIGCAPTION[
-[[タスク]]
-]FIGCAPTION]
-: [F[タスク源]] :[[投稿済みメッセージタスク源]]
-: [F[処理]] :
-[FIG(steps)[
-= [92] [[イベント]]を [[dispatch]] します。
-[FIG(list members)[
-[FIGCAPTION[
-[[イベント]]
-]FIGCAPTION]
-:[[インターフェイス]]:[CODE(DOMi)@en[[[MessageEvent]]]]
-: [F[イベント型]] : [CODE(DOMe)@en[message][onmessage]]
-:[[イベント対象]]: [VAR[対象窓]]
-:[[trusted]]:[[真]]
-:[[bubbles]]:[[偽]]
-:[[cancelable]]:[[偽]]
-:[CODE(DOMa)@en[[[data]]]]:[VAR[メッセージ複製]]
-:[CODE(DOMa)@en[[[origin]]]]:[VAR[現職設定群オブジェクト]]の[F[起源]]の[F[Unicode直列化]]
-:[CODE(DOMa)@en[[[source]]]]:[VAR[現職設定群オブジェクト]]の[F[大域オブジェクト]]の
-[F[[CODE(DOMi)@en[WindowProxy]]]]
-:[CODE(DOMa)@en[[[ports]]]]:[VAR[新ポート群]]
-]FIG]
 ]FIG]
 ]FIG]
 ]FIG]
