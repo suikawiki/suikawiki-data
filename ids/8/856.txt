@@ -16,7 +16,9 @@
 [62] その他に、 [CODE(DOMm)@en[[[createImageBitmap]]]] で [CODE(DOMi)@en[[[Blob]]]] 
 の場合にも、[[画像]]の sniffing が行われます。
 
-;; [103] [[HTTP/0.9]]、 [CODE(URI)@en[file:]]、 [CODE(URI)@en[ftp:]]、 [[Widgets]] も参照。
+[HISTORY[
+[103] かつては [[Widgets]] の [[MIME型]]の決定でも参照されていました。
+]HISTORY]
 
 * プロトコル
 
@@ -26,7 +28,7 @@
 - [CODE(HTTP)@en[[[X-Content-Type-Options:]]]]
 ]FIG]
 
-** 算出型
+** sniffing 手法の選択
 
 [51] [VAR[応答]]の[DFN[[RUBYB[算出MIME型]@en[computed MIME type]]]]は、
 [DFN[MIME type sniffing algorithm]] により次のように決定されます [SRC[>>50]]。
@@ -43,57 +45,32 @@
 [DFN[rules for identifying an unknown MIME type]]、
 == [82] [VAR[[DFN[sniff-scriptable flag]]]] を、 [VAR[no-sniff flag]] の[[否定]]に設定します。
 == [115] [VAR[sniff-scriptable flag]] が[[真]]の場合、
-===
-@@ scriptable 型の表に一致すれば、型を返します。
-== 
-@@ その他の型の表に一致すれば、型を返します。
-==
-@@ [[BOM]]
-=== [124] [CODE(MIME)@en[text/plain]] を返し、ここで停止します。
-==
-@@ [[image type pattern matching algorithm]]
-== [116] [VAR[結果]]が [CODE[null]] でない場合、
-=== [117] [VAR[結果]]を返し、ここで停止します。
-==
-@@ [[audio or video type pattern matching algorithm]]
-== [118] [VAR[結果]]が [CODE[null]] でない場合、
-=== [119] [VAR[結果]]を返し、ここで停止します。
-==
-@@ [[archive type pattern matching algorithm]]
-== [120] [VAR[結果]]が [CODE[null]] でない場合、
-=== [121] [VAR[結果]]を返し、ここで停止します。
-==
-@@ [[binary data bytes]] を含まない場合、
-=== [122] [CODE(MIME)@en[text/plain]] を返し、ここで停止します。
-== [123] [CODE(MIME)@en[application/octet-stream]] を返し、ここで停止します。
+=== [128] [VAR[条件]]を、「未知」に設定します。
+== [129] それ以外の場合、
+=== [130] [VAR[条件]]を、「未知 ([VAR[no-sniff flag]])」に設定します。
 = [53] それ以外で、 [VAR[no-sniff flag]] が[[真]]の場合、
-== [97] [VAR[型]]を返します。
+== [97] [VAR[条件]]を、「[VAR[no-sniff flag]]」に設定します。
 = [98] それ以外で、 [VAR[check-for-apache-bug flag]] が[[真]]の場合:
 [DFN[rules for distinguishing if a resource is text or binary]]、
-==
-@@ [[BOM]]
-=== [CODE(MIME)@en[text/plain]] を返し、ここで停止します。
-==
-@@ [[binary data bytes]] を含まない場合、
-=== [125] [CODE(MIME)@en[text/plain]] を返し、ここで停止します。
-== [126] [CODE(MIME)@en[application/octet-stream]] を返し、ここで停止します。
+== [116] [VAR[条件]]を、「[VAR[check-for-apache-bug flag]]」に設定します。
 = [105] それ以外で、 [VAR[型]]が [[XML MIME型]]の場合、
-== [106] [VAR[型]]を返します。
+== [106] [VAR[条件]]を、「[[XML MIME型]]」に設定します。
 = [107] それ以外で、 [VAR[型]]の [F[MIME type portion]] が
 [CODE(MIME)@en[text/html]] の場合、
-== 
-@@ [[rules for distinguishing if a resource is a feed or HTML]]
+== [117] [VAR[条件]]を、「[CODE(MIME)@en[text/html]]」に設定します。
 = [108] それ以外で、[VAR[型]]が[[利用者エージェント]]の対応する[[画像型]]の場合、
-==
-@@ [[image type pattern matching algorithm]]
-== [109] [VAR[結果]]が [CODE[null]] でない場合、
-=== [110] [VAR[結果]]を返し、ここで停止します。
+== [118] [VAR[条件]]を、「[[画像型]]」に設定します。
 = [111] それ以外で、[VAR[型]]が[[利用者エージェント]]の対応する[[音声または動画型]]の場合、
-==
-@@ [[audio or video type pattern matching algorithm]]
-== [112] [VAR[結果]]が [CODE[null]] でない場合、
-=== [113] [VAR[結果]]を返し、ここで停止します。
-= [114] [VAR[型]]を返します。
+== [119] [VAR[条件]]を、「[[音声または動画型]]」に設定します。
+= [124] [VAR[条件]]を、表 (>>127) の「対象」が「全」で「条件」[[列]]が[VAR[条件]]の[[行]]に設定します。
+= [126] [VAR[応答]]と[VAR[型]]について[VAR[条件]]の sniffing を実行した結果を返します。
+]FIG]
+
+[131] [VAR[応答]]について [DFN[rules for sniffing images specifically]]
+は、次のようにします [SRC[>>50]]。
+
+[FIG(steps)[
+@@
 ]FIG]
 
 [FIG(table)[ [127] 実施する sniffing の種別 (「場面」は最初に一致したものが該当)
@@ -113,7 +90,7 @@
 :default: 既定値
 
 :target: [[全][MIME type sniffing algorithm]]
-:context: 未知 ([VAR[no-sniff flag]] [[真]])
+:context: 未知 ([VAR[no-sniff flag]])
 :non-scriptable: ○
 :bom: ○
 :image: ○
@@ -134,13 +111,13 @@
 :default: [[○][text/plain]]
 
 :target: [[全][MIME type sniffing algorithm]]
-:context: [VAR[check-for-apache-bug flag]] [[真]]
+:context: [VAR[check-for-apache-bug flag]]
 :bom: ○
 :binary: [[○][application/octet-stream]]
 :default: [[○][text/plain]]
 
 :target: [[全][MIME type sniffing algorithm]]
-:context: [VAR[no-sniff flag]] [[真]]
+:context: [VAR[no-sniff flag]]
 :supplied: ○
 
 :target: [[全][MIME type sniffing algorithm]]
@@ -162,16 +139,58 @@
 :supplied: ○
 
 :target: [[画像][rules for sniffing images specifically]]
+:context: [[XML MIME型]]
+:supplied: ○
+
+:target: [[画像][rules for sniffing images specifically]]
+:context: その他
 :image: ○
 :supplied: ○
 
 :target: [[音声・動画][rules for sniffing audio and video specifically]]
+:context: [[XML MIME型]]
+:supplied: ○
+
+:target: [[音声・動画][rules for sniffing audio and video specifically]]
+:context: その他
 :audio or video: ○
 :supplied: ○
 
 :target: [[フォント][rules for sniffing fonts specifically]]
+:context: [[XML MIME型]]
+:supplied: ○
+
+:target: [[フォント][rules for sniffing fonts specifically]]
+:context: その他
 :font: ○
 :supplied: ○
+
+]FIG]
+
+** sniffing
+
+[125] [VAR[応答]]と[VAR[型]]について[VAR[条件]]の sniffing は、次のようにします。
+
+[FIG(steps)[
+
+@@ [[rules for distinguishing if a resource is a feed or HTML]]
+==
+@@ [[image type pattern matching algorithm]]
+== [109] [VAR[結果]]が [CODE[null]] でない場合、
+=== [110] [VAR[結果]]を返し、ここで停止します。
+==
+@@ [[audio or video type pattern matching algorithm]]
+== [112] [VAR[結果]]が [CODE[null]] でない場合、
+=== [113] [VAR[結果]]を返し、ここで停止します。
+= [114] [VAR[型]]を返します。
+
+@@ [[archive type pattern matching algorithm]]
+== [120] [VAR[結果]]が [CODE[null]] でない場合、
+=== [121] [VAR[結果]]を返し、ここで停止します。
+==
+@@ [[binary data bytes]] を含まない場合、
+=== [122] [CODE(MIME)@en[text/plain]] を返し、ここで停止します。
+== [123] [CODE(MIME)@en[application/octet-stream]] を返し、ここで停止します。
 
 ]FIG]
 
