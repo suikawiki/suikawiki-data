@@ -354,6 +354,8 @@
 : [VAR[スクリプト]] : [VAR[結果]]
 : [VAR[終点]] : [VAR[終点]]
 : [VAR[祖先リスト]] : [VAR[祖先リスト]]の末尾に [VAR[URL]] を追加した[[リスト]]
+: [VAR[fetchの実行]] : [VAR[fetchの実行]]
+: [VAR[最上位モジュールfetch]]フラグ : [[真]]
 : [VAR[続きの処理]] : >>160
 ]FIG]
 ]FIG]
@@ -362,38 +364,6 @@
 
 [FIG(steps)[
 = [237] [VAR[最終結果]]を返します。
-]FIG]
-
-@@
-== [43] [[モジュールスクリプトの子孫をfetch]]します。
-[FIG(list members)[
-: [VAR[fetchの実行]] : [VAR[fetchの実行]]
-: [VAR[最上位モジュールfetch]]フラグ : [[真]]
-]FIG]
-その続きの処理は、[VAR[子孫の結果]]について次のようにします [SRC[>>4]]。
-[FIG(steps)[
-= [229] [VAR[結果]]の[F[実現値化状態]]が [CODE[errored]] の場合、
-== [230] [VAR[実現値化状態]]を、新しい [CODE[Completion]] に設定します。
-[FIG(list members)[ [231] [CODE[Completion]]
-: [F(ss)[Type]] : [CODE[throw]]
-: [F(ss)[Value]] : [VAR[結果]]の[F[実現値化誤り]]
-: [F(ss)[Target]] : [CODE[empty]]
-]FIG]
-= [232] それ以外の場合、
-== [233] [VAR[実現値化状態]]を、[VAR[結果]]の[F[モジュール記録]]の 
-[CODE[ModuleDeclarationInstantiation]] を実行した結果に設定します。
-= [153] [VAR[結果]]の[[未実現値化包括的子孫モジュールスクリプト群]]の各[[モジュールスクリプト]][VAR[スクリプト]]について、
-== [154] [VAR[実現値化状態]]が [[abrupt completion]] なら、
-=== [217] [VAR[スクリプト]]の[F[モジュール記録]]の[F(ss)[HostDefined]]を、[[未定義]]に設定します。
-=== [155] [VAR[スクリプト]]の[F[実現値化状態]]を、 [CODE[errored][実現値化状態]]
-に設定します。
-=== [156] [VAR[スクリプト]]の[F[実現値化エラー]]を、
-[VAR[実現値化状態]]の[F(ss)[値]]に設定します。
-=== [157] [VAR[スクリプト]]の[F[モジュール記録]]を、 [CODE[null]] に設定します。
-== [158] それ以外なら、
-=== [159] [VAR[スクリプト]]の[F[実現値化状態]]を、 [CODE[instantiated][実現値化状態]]
-に設定します。
-= [161] [VAR[子孫の結果]]について[VAR[続きの処理]]を実行します。
 ]FIG]
 
 [167] [VAR[スクリプト]]の[DFN[[RUBYB[[[未実現値化包括的子孫モジュールスクリプト群]]]@en[uninstantiated inclusive descendant module scripts]]]]は、
@@ -417,22 +387,29 @@
 のものの[[集合]]を返します。
 ]FIG]
 
-[44] [DFN[[RUBYB[モジュールスクリプトの子孫のfetch]@en[fetch the descendants of a module script]]]]は、
-[VAR[スクリプト]]と[VAR[終点]]と[VAR[祖先リスト]]と[VAR[fetchの実行]]と[VAR[続きの処理]]を受け取り、次のようにします [SRC[>>4]]。
+[44] 
+[DFN[[RUBYB[モジュールスクリプトの子孫をfetchして実現値化]@en[fetch the descendants of and instantiate a module script]]]]
+(旧[DFN[[RUBYB[モジュールスクリプトの子孫のfetch]@en[fetch the descendants of a module script]]]])
+は、[VAR[スクリプト]]と[VAR[終点]]と[VAR[祖先リスト]]と[VAR[fetchの実行]]と[VAR[続きの処理]]を受け取り、次のようにします [SRC[>>4]]。
 
 [FIG(steps)[
+= [238] [VAR[スクリプト]]の[F[状態][実現値化状態]]が
+[CODE[instantiated][実現値化状態]] または [CODE[errored][実現値化状態]] の場合、
+== [239] [VAR[スクリプト]]について[VAR[続きの処理]]を実行し、ここで停止します。
 = [46] [VAR[記録]]を、[VAR[スクリプト]]の[F[[[モジュール記録]]]]に設定します。
-= [47] [CODE[[VAR[記録]].[F(ss)[RequestedModules]]]] が空なら、
-== [48] [VAR[スクリプト]]に関して[VAR[続きの処理]]を実行し、ここで停止します。
-= [49] [VAR[URL群]]を、空のリストに設定します。
-= [50] [CODE[[VAR[記録]].[F(ss)[RequestedModules]]]] の各文字列[VAR[披要求]]について順に、
+= [47] [CODE[[VAR[記録]].[F(ss)[RequestedModules]]]] が[[空][空リスト]]の場合、
+== [48] [VAR[スクリプト]]について[VAR[続きの処理]]を実行し、ここで停止します。
+= [49] [VAR[URL群]]を、[[空リスト]]に設定します。
+= [50] [CODE[[VAR[記録]].[F(ss)[RequestedModules]]]] の各[VAR[披要求]]について、順に、
 == [51] [VAR[URL]] を、[VAR[スクリプト]]と[VAR[被要求]]について[[モジュール指定子を解決]]した結果に設定します。
-== [52] [VAR[URL]] が[[誤り]]なら、
-=== [53] [VAR[スクリプト]]についての新しい [CODE(JS)@en[TypeError]] を[[例外を報告]]します。
+== [52] [VAR[URL]] が[[失敗]]の場合、
+=== [240] [VAR[誤り]]を、新しい [CODE(JS)@en[TypeError]] に設定します。
+=== [241] [VAR[スクリプト]]と[VAR[誤り]]について[[モジュールスクリプトをエラーにする]]処理を実行します。
 === [55] [VAR[スクリプト]]について[VAR[続きの処理]]を実行し、ここで停止します。
-== [98] [VAR[URL]] が[VAR[祖先リスト]]に含まれなければ、
-=== [57] [VAR[URL]] を [VAR[URL群]]に追加します。
-= [58] [VAR[URL群]]の各値 [VAR[URL]] について順に、
+== [98] [VAR[祖先リスト]]が [VAR[URL]] を[[含ま][含む]]ない場合、
+=== [57] [VAR[URL]] を [VAR[URL群]]の[[末尾に追加]]します。
+= [53] [VAR[子孫の結果]]を、 [CODE[null]] に設定します。
+= [58] [VAR[URL群]]の各 [VAR[URL]] について、順に、
 == [62] [VAR[結果群]]を、[[空]]の[[写像]]に設定します。
 == [59] [[内部モジュールスクリプトグラフfetch手続き]]を実行します。
 [FIG(list members)[
@@ -453,8 +430,8 @@
 ;; [45] [[モジュールスクリプトグラフのfetch]]の他、 [CODE(HTMLe)@en[[[script]]]]
 [[要素]]の処理から呼び出されることもあります。
 
-[60] [[モジュールスクリプトグラフのfetch]]の処理の続きは、
-[VAR[結果]]について次のようにします [SRC[>>4]]。
+[60] 続きの処理は、[VAR[結果]]について次のようにします [SRC[>>4]]。
+
 [FIG(steps)[
 = [67] [VAR[結果群]]に[F[キー]]が [VAR[URL]] で[F[値]]が[VAR[結果]]の項目を追加します。
 = [61] [VAR[結果群]]の項目数と [VAR[URL群]]の項目数が等しければ、
@@ -463,6 +440,34 @@
 == [65] それ以外なら、
 === [68] [VAR[スクリプト]]について[VAR[続きの処理]]を実行します。
 ]FIG]
+
+
+
+@@
+= [229] [VAR[結果]]の[F[実現値化状態]]が [CODE[errored]] の場合、
+== [230] [VAR[実現値化状態]]を、新しい [CODE[Completion]] に設定します。
+[FIG(list members)[ [231] [CODE[Completion]]
+: [F(ss)[Type]] : [CODE[throw]]
+: [F(ss)[Value]] : [VAR[結果]]の[F[実現値化誤り]]
+: [F(ss)[Target]] : [CODE[empty]]
+]FIG]
+= [232] それ以外の場合、
+== [233] [VAR[実現値化状態]]を、[VAR[結果]]の[F[モジュール記録]]の 
+[CODE[ModuleDeclarationInstantiation]] を実行した結果に設定します。
+= [153] [VAR[結果]]の[[未実現値化包括的子孫モジュールスクリプト群]]の各[[モジュールスクリプト]][VAR[スクリプト]]について、
+== [154] [VAR[実現値化状態]]が [[abrupt completion]] なら、
+=== [217] [VAR[スクリプト]]の[F[モジュール記録]]の[F(ss)[HostDefined]]を、[[未定義]]に設定します。
+=== [155] [VAR[スクリプト]]の[F[実現値化状態]]を、 [CODE[errored][実現値化状態]]
+に設定します。
+=== [156] [VAR[スクリプト]]の[F[実現値化エラー]]を、
+[VAR[実現値化状態]]の[F(ss)[値]]に設定します。
+=== [157] [VAR[スクリプト]]の[F[モジュール記録]]を、 [CODE[null]] に設定します。
+== [158] それ以外なら、
+=== [159] [VAR[スクリプト]]の[F[実現値化状態]]を、 [CODE[instantiated][実現値化状態]]
+に設定します。
+= [161] [VAR[子孫の結果]]について[VAR[続きの処理]]を実行します。
+
+
 
 [69] [DFN[[RUBYB[単一モジュールスクリプトのfetch]@en[fetch a single module script]]]]は、
 [VAR[URL]]、[VAR[credentialsモード]]、[VAR[暗号学的nonce]]、[VAR[構文解析器状態]]、
