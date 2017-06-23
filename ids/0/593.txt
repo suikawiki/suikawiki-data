@@ -779,3 +779,44 @@ correct even if the cache does not understand the extension(s).
 [62] [CITE@en[EventSource has no need to set Cache-Control · whatwg/html@6f47a53]]
 ([TIME[2016-03-08 18:38:37 +09:00]] 版)
 <https://github.com/whatwg/html/commit/6f47a53c915ba001cb9e8f7d106a4dcab2a03f98>
+
+[FIG(quote)[
+[FIGCAPTION[
+[63] [CITE@ja[CDN切り替え作業における、Web版メルカリの個人情報流出の原因につきまして - Mercari Engineering Blog]]
+( ([TIME[2017-06-23 11:54:35 +09:00]]))
+<http://tech.mercari.com/entry/2017/06/22/204500>
+]FIGCAPTION]
+
+> 切り替え前のCDNプロバイダはCache-Controlヘッダではなく、CDNの設定でキャッシュを制御することで、メルカリWeb版においては全くキャッシュが行われないようにしていました。
+> 切り替え後のCDNプロバイダでは、Cache-Controlヘッダでキャッシュの制御が可能であるため(この制御はnginxの設定により行います)、CDNの設定によるキャッシュ無効化は行わず切り替えを行いました。切替前の検証では手元のマシンのhostsファイルを編集し、数回アクセスを行い問題なく動作していることを確認しました。
+> 問題発覚後に切り替え後CDNのキャッシュの仕様を再度確認したところ、キャッシュをしないのは
+> Cache-Control: private
+> が含まれている場合のみとわかりました。Expiresヘッダが過去の日付であっても、Cache-Controlヘッダが存在している場合は利用されないという仕様になっておりました。このためCDNのサーバ上にお客さまの情報が含まれたキャッシュが作成され、別のお客さまへ配信される事態に至りました。
+
+]FIG]
+
+
+[FIG(quote)[
+[FIGCAPTION[
+[64] [CITE@ja[キャッシュの詳細  |  Cloud CDN のドキュメント  |  Google Cloud Platform]]
+( ([TIME[2016-11-03 02:59:38 +09:00]]))
+<https://cloud.google.com/cdn/docs/caching?hl=ja>
+]FIGCAPTION]
+
+> 次の条件をすべて満たしている場合にのみ、Cloud CDN キャッシュにレスポンスが保存されます。
+> キャッシュが有効になっているバックエンド サービスから提供されている。
+> GET リクエストに対するレスポンスである。
+> ステータス コードが 200、203、300、301、302、307 または 410 である。
+> Cache-Control: public ディレクティブが設定されている。
+> Cache-Control: s-maxage、Cache-Control: max-age または Expires ヘッダーがある。
+> Content-Length ヘッダーまたは Transfer-Encoding ヘッダーがある。
+> サービス自身が生成した Date ヘッダーがある。HTTP(S) ロードバランサを経由せずに、VM インスタンスに直接リクエストを送信すると、このヘッダーの有無を確認できます。ロードバランサが独自の Date ヘッダーを追加する場合がありますが、このヘッダーだけではキャッシュの条件を満たしません。
+> レスポンスがキャッシュに保存されるかどうか確認する方法があります。次の条件を満たす場合、レスポンスはキャッシュに保存されません。
+> Set-Cookie ヘッダーがある。
+> 本体が 4 MB を超えている。
+> Vary ヘッダーに Accept、Accept-Encoding、Origin 以外の値が設定されている。
+> Cache-Control: no-store、no-cache または private ディレクティブが設定されている。
+> 対応するリクエストに Cache-Control: no-store ディレクティブが設定されている。
+> Cloud CDN でキャッシュに保存するレスポンスを増やすため、これらの要件は今後緩和される可能性があります。レスポンスがキャッシュに保存されないようにするには、次の操作を行います。どのキャッシュにもレスポンスを保存しない場合には(ウェブブラウザのキャッシュを含む)、Cache-Control: no-store ヘッダーを追加します。Cloud CDN のキャッシュに保存しない場合には、Cache-Control: private ヘッダーを追加します。
+
+]FIG]
