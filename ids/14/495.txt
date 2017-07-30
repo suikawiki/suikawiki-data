@@ -1726,20 +1726,36 @@ extension header value.
 = [275] [VAR[connection]]'s [F[transport][connection's transport]] で [[WebSocketフレーム]]のバイト列を送信することとします。
 ]FIG]
 
-[107] [[トンネル]]への[[バイト]]の送信は、次のようにします。
+[107] If a request whose [F[method]] is [CODE[CONNECT]] has been sent and
+a response whose [F[status]] is [CODE[200]] has been received, and
+the connection is not yet closed,
+one or more bytes can be sent over the connection.
+That is, to send a byte string [VAR[bytes]] over [[tunnel]] connection [VAR[connection]],
+run these steps:
+
 [FIG(steps)[
-= [108] [VAR[状態]]が「トンネル」か「トンネル送信中」以外なら、
-== [335] エラーを返し、ここで停止します。
-= [109] [VAR[connection]]'s [F[transport][connection's transport]] で指定された[[バイト]]の送信を指示します。
+= [335] Assert:
+@@ In CONNECT mode
+= [109] [VAR[connection]]'s [F[transport][connection's transport]] で
+[VAR[bytes]] の送信を指示します。
 = [110] エラーが返されたら、ここで停止します。
 ]FIG]
 
-[50] [[接続]]の正常終了は、次のようにします。引数として[[非負整数]]または null
+[1443] To close a [[tunnel]] connection [VAR[connection]], run these steps:
+
+[FIG(steps)[
+= [1444] [VAR[connection]]'s [F[transport][connection's transport]] で正常終了の送信を指示します。
+]FIG]
+
+[50] WebSocket connection の正常終了は、次のようにします。引数として[[非負整数]]または null
 である[VAR[状態符号]]と、
 [[バイト列]]である[VAR[理由]]を受け取ります。
+
 [FIG(steps)[
-= [286] 前提として、次の条件を満たす必要があります。
+= [286] Assert:
 [FIG(list)[
+- [321] 
+@@ In WS mode
 - [285] [VAR[状態符号]]は2[SUP[16]] [[以下]]
 - [283] [VAR[理由]]の長さは 2[SUP[63]] [[未満]]かつ実装の扱える範囲内である
 - [276] [VAR[状態符号]]が null なら、[VAR[理由]]は空である
@@ -1770,14 +1786,17 @@ extension header value.
 === [174] [VAR[要求]]について、 [CODE[wsclosing]] を通知します。
 === [284] [VAR[connection]]'s [F[transport][connection's transport]] で、作成した [[WebSocketフレーム]]のバイト列を送信することとします。
 === [315] [VAR[切断タイマー]]により20s後に次の要求に進むことにします。
-= [72] [VAR[要求締め切り]]フラグを設定します。
-= [66] [VAR[状態]]が「初期」か「要求待ち」か「トンネル」か「トンネル送信中」なら、
-== [55] [VAR[connection]]'s [F[transport][connection's transport]] で正常終了の送信を指示します。
-= [362] [VAR[状態]]が「トンネル」なら、
-== [363] [VAR[状態]]を、「トンネル受信中」に設定します。
 ]FIG]
 
-;; [73] これにより[[要求]]の送信側は閉じられますが、[[応答]]の受信はまだ続くかもしれません。
+[73] To close connection [VAR[connection]], run these steps:
+
+[FIG(steps)[
+= [108] Assert: 
+@@ Not sending a body, CONNECT, or WS mode
+= [72] [VAR[要求締め切り]]フラグを設定します。
+= [66] [VAR[状態]]が「初期」か「要求待ち」なら、
+== [55] [VAR[connection]]'s [F[transport][connection's transport]] で正常終了の送信を指示します。
+]FIG]
 
 [52] [[接続]]の中断は、次のようにします。
 [FIG(steps)[
@@ -1905,8 +1924,6 @@ or a [[WebSocket message]] is ended.
 [40] 正常終了の受信の通知があると、次のようにします。
 [FIG(steps)[
 = [54] [VAR[状態]]により決まる正常終了処理を行います。
-= [322] [VAR[状態]]が「トンネル送信中」以外なら、
-== [224] [VAR[connection]]'s [F[transport][connection's transport]] を閉じることにします。
 ]FIG]
 
 [13] 中断の通知があると、次のようにします。
@@ -1921,13 +1938,6 @@ or a [[WebSocket message]] is ended.
 = [41] それ以外なら、
 == [525] [VAR[状態]]により決まる中断処理を行います。
 = [225] [VAR[connection]]'s [F[transport][connection's transport]] を破棄します。
-]FIG]
-
-@@
-[318] 送信するものがなくなった通知があると、次のようにします。
-[FIG(steps)[
-= [319] [VAR[状態]]が「トンネル」か「トンネル送信中」なら、
-== [320] [VAR[要求]]について送信するものがなくなったことを通知します。
 ]FIG]
 
 [252] [[WebSocketフレーム]]は、次のようなデータ構造です。
@@ -2084,6 +2094,7 @@ or a [[WebSocket message]] is ended.
 == [374] [VAR[要求]]について [CODE[datastart]] を通知します。
 == [375] [VAR[要求締め切り]]フラグを設定します。
 == [376] [VAR[状態]]を、「トンネル」に設定します。
+== [362] Set [VAR[残り長さ]] to [CODE[null]].
 = [143] それ以外で、[VAR[WebSocket接続の状態]]が [CODE[CONNECTING]] で、
 [VAR[応答]]の[[状態符号]]が [CODE(HTTP)[101]] なら、
 == [144] If one of following conditions are true:
@@ -2627,26 +2638,6 @@ is [[false]]:
 == [324] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
 [[exit status]] whose [F[失敗]] is [[true]].
 = [327] 次の要求に進みます。
-]FIG]
-
-*** 「トンネル受信中」状態
-
-[364] バイトを受信したら、
-[FIG(steps)[
-= [366] [VAR[要求]]について [CODE[data]] を通知します。受信したバイトを引渡します。
-]FIG]
-
-[365] 正常終了か中断を受信したら、
-[FIG(steps)[
-= [372] [VAR[要求]]について [CODE[dataend]] を通知します。
-= [328] [VAR[要求締め切り]]フラグを設定します。
-= [369] Set [VAR[connection]]'s [F[write mode]] to "sent".
-= [511] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
-[[exit status]].
-= [368] If 中断:
-== [923] Set [VAR[connection]]'s [F[exit status][connection's exit status]]'s
-[F[異常]] to [[true]].
-= [370] 次の要求に進みます。
 ]FIG]
 
 *** 「停止済み」状態
