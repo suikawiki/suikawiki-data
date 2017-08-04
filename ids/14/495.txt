@@ -25,7 +25,7 @@ for [[origin]] [VAR[origin]] from the [[user agent]]'s [F[connection pool]], run
 == [1306] Return [[null]].
 = [1307] Otherwise:
 == [1308] Return a [[connection]] whose
-[F[要求締め切り]] is [[false]],
+[F[to be closed]] is [[false]],
 [F[状態]] is 「初期」 or 「要求待ち」, and
 [F[WebSocket接続の状態]] is [[null]] in the [[user agent]]'s [F[connection pool]],
 if any, or [[null]].
@@ -1523,7 +1523,8 @@ has following additional states:
 :[VAR[状態]]:後述の状態遷移における状態のいずれか。初期値は「初期」。
 : [F[write mode]] : 
 One of [CODE[null]], "raw", or "sent".  Initially, [CODE[null]].
-:[VAR[要求締め切り]]フラグ:初期値は未設定です。
+: [F[to be closed]] :
+A [[boolean]].  Initially, [[false]].
 :[VAR[要求]]:[[要求]]か null。初期値は null です。
 :[VAR[応答]]:[[応答]]か null。初期値は null です。
 :[VAR[一時バッファー]]:バイト列。初期値は空。
@@ -1618,7 +1619,7 @@ A [[boolean]].  Initially, [[false]].
 - [267] [VAR[送信する要求]]'s [[本体]]が空でない場合、
 -- [263] [VAR[送信する要求]]'s [CODE(HTTP)@en[[[Content-Length:]]]] [[ヘッダー]]があって、値が[[本体]]のバイト数である。
 ]FIG]
-= [74] [VAR[要求締め切り]]フラグが設定されているなら、
+= [74] If [VAR[connection]]'s [F[to be closed]] flag is [[true]]:
 == [75] エラーを返し、ここで停止します。
 = [58] [VAR[状態]]が「初期」か「要求待ち」でなければ、
 == [35] エラーを返し、ここで停止します。
@@ -1628,7 +1629,7 @@ A [[boolean]].  Initially, [[false]].
 = [59] [VAR[状態]]を、「応答前」に設定します。
 = [77] [VAR[要求]]に [CODE(HTTP)@en[[[Connection:]]]] [[ヘッダー]]があって
 [CODE(HTTP)@en[[[close]]]] ([[ASCII大文字・小文字不区別]]) [[接続オプション]]が指定されていれば、
-== [78] [VAR[要求締め切り]]フラグを設定します。
+== [78] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 = [98] If [VAR[要求]]'s [F[mode][request mode]] is [CODE[websocket]]:
 == [258] Set [VAR[connection]]'s [VAR[WebSocket接続の状態]] to [CODE[CONNECTING]].
 == [1331] Set [VAR[connection]]'s [F[WebSocket key]] be a nonce consisting of a randomly selected 16-byte value that has been [[base64]]-encoded (see section 4 of [[RFC 4648]]).
@@ -1793,7 +1794,7 @@ run these steps:
 [FIG(steps)[
 = [108] Assert: 
 @@ Not sending a body, CONNECT, or WS mode
-= [72] [VAR[要求締め切り]]フラグを設定します。
+= [72] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 = [66] [VAR[状態]]が「初期」か「要求待ち」なら、
 == [55] [VAR[connection]]'s [F[transport][connection's transport]] で正常終了の送信を指示します。
 ]FIG]
@@ -1932,7 +1933,7 @@ or a [[WebSocket message]] is ended.
 == [360] [VAR[要求]]が null でなければ、
 === [361] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
 [[exit status]] whose [F[リセット]] and [F[失敗]] are [[true]].
-== [522] [VAR[要求締め切り]]フラグを設定します。
+== [522] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 == [523] Set [VAR[connection]]'s [F[write mode]] to "sent".
 == [524] 次の要求に進みます。
 = [41] それ以外なら、
@@ -1960,7 +1961,7 @@ or a [[WebSocket message]] is ended.
 
 [69] 正常終了か中断を受信したら、
 [FIG(steps)[
-= [VAR[要求締め切り]]フラグを設定します。
+= [366] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 = [1436] Set [VAR[connection]]'s [F[write mode]] to "sent".
 = 次の要求に進みます。
 ]FIG]
@@ -1971,18 +1972,18 @@ or a [[WebSocket message]] is ended.
 
 [33] 正常終了か中断を受信したら、
 [FIG(steps)[
-= [VAR[要求締め切り]]フラグを設定します。
+= [368] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 = [1437] Set [VAR[connection]]'s [F[write mode]] to "sent".
 = 次の要求に進みます。
 ]FIG]
 
-*** 「要求送信中」状態、「トンネル送信中」状態
+*** 「要求送信中」状態
 
 [56] バイトを受信したら、何もせずに無視します。
 
 [67] 正常終了 or 中断を受信したら、
 [FIG(steps)[
-= [76] [VAR[要求締め切り]]フラグを設定します。
+= [76] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 = [586] Set [VAR[connection]]'s [F[write mode]] to "sent".
 = [604] 次の要求に進みます。
 ]FIG]
@@ -2011,7 +2012,7 @@ or a [[WebSocket message]] is ended.
 [8] 正常終了か中断を受信したら、
 [FIG(steps)[
 = [132] [VAR[一時バッファー]]が[[空文字列]]なら、
-== [134] [VAR[要求締め切り]]フラグを設定します。
+== [134] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 == [135] Set [VAR[connection]]'s [F[write mode]] to "sent".
 == [322] 
 @@ writable stream cancel
@@ -2032,7 +2033,7 @@ or a [[WebSocket message]] is ended.
 === [919] Set [VAR[connection]]'s [F[response][connection's response]]'s
 [F[incomplete message][response's incomplete message]] flag to [[true]].
 === [928] Set [VAR[connection]]'s [F[write mode]] to "sent".
-== [926] [VAR[要求締め切り]]フラグを設定します。
+== [926] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 == [437] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
 [[exit status]].
 == [438] 次の要求に進みます。
@@ -2058,7 +2059,7 @@ or a [[WebSocket message]] is ended.
 [[exit status]].
 = [141] [VAR[残り長さ]]が[[正]]で[VAR[応答]]の[[プロトコルの版]]が [CODE[1.1]] なら、
 == [441] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to [[true]].
-= [142] [VAR[要求締め切り]]フラグを設定します。
+= [142] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 = [443] Set [VAR[connection]]'s [F[write mode]] to "sent".
 = [444] 次の要求に進みます。
 ]FIG]
@@ -2073,7 +2074,7 @@ or a [[WebSocket message]] is ended.
 = [115] それ以外なら、
 == [32] [VAR[残り長さ]]を、[VAR[応答]]の [CODE(HTTP)@en[[[Content-Length:]]]] [[ヘッダー]]の処理の結果とします。
 = [448] [VAR[残り長さ]]がエラーなら、
-== [449] [VAR[要求締め切り]]フラグを設定します。
+== [449] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 == [450] Set [VAR[connection]]'s [F[write mode]] to "sent".
 == [446] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
 [[exit status]] whose [F[失敗]] is [[true]].
@@ -2082,7 +2083,7 @@ or a [[WebSocket message]] is ended.
 [VAR[応答]]の[[状態符号]]が [CODE(HTTP)[[[200]]]] なら、
 == [373] [VAR[要求]]について[[応答]]のヘッダー受信完了を通知します。
 == [374] [VAR[要求]]について [CODE[datastart]] を通知します。
-== [375] [VAR[要求締め切り]]フラグを設定します。
+== [375] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 == [376] [VAR[状態]]を、「トンネル」に設定します。
 == [362] Set [VAR[残り長さ]] to [CODE[null]].
 = [143] それ以外で、[VAR[WebSocket接続の状態]]が [CODE[CONNECTING]] で、
@@ -2120,14 +2121,14 @@ in [VAR[応答]]'s [F[header list][response's header list]] results in [CODE[nul
 :[[状態符号]]:[CODE[[[1006]]]]。
 :理由:[[空文字列]]。
 ]FIG]
-=== [245] [VAR[要求締め切り]]フラグを設定します。
+=== [245] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 === [246] Set [VAR[connection]]'s [F[write mode]] to "sent".
 === [247] 次の要求に進みます。
 == [146] それ以外なら、
 === [291] [VAR[WebSocket接続の状態]]を、 [CODE[OPEN]] に設定します。
 === [256] [VAR[要求]]について[[応答]]のヘッダー受信完了を通知,
 with [VAR[WebSocket connection established]] set to [[true]].
-=== [292] [VAR[要求締め切り]]フラグを設定します。
+=== [292] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 === [293] [VAR[状態]]を、「WebSocketフレーム前」に設定します。
 === [147] [VAR[一時バッファー]]を、空に設定します。
 === [294] [VAR[送信待ちフレーム]]が null 以外なら、
@@ -2158,11 +2159,11 @@ with [VAR[WebSocket connection established]] set to [[true]].
 [[exit status]].
 === [79] [VAR[応答]]に [CODE(HTTP)@en[[[Connection:]]]] [[ヘッダー]]があって
 [CODE(HTTP)@en[[[close]]]] ([[ASCII大文字・小文字不区別]]) [[接続オプション]]が指定されていれば、
-==== [80] [VAR[要求締め切り]]フラグを設定します。
+==== [80] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 === [81] それ以外で、[VAR[応答]]の[[プロトコルの版]]が [CODE[1.0]] で、
 [CODE(HTTP)@en[[[keep-alive]]]] ([[ASCII大文字・小文字不区別]]) [[接続オプション]]が指定された
 [CODE(HTTP)@en[[[Connection:]]]] [[ヘッダー]]がなければ、
-==== [82] [VAR[要求締め切り]]フラグを設定します。
+==== [82] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 === [343] 次の要求に進みます。
 == [116] それ以外で、 [VAR[残り長さ]]が「chunked」なら、
 === [117] [VAR[状態]]を、「塊前」に設定します。
@@ -2183,11 +2184,11 @@ with [VAR[WebSocket connection established]] set to [[true]].
 [[exit status]].
 === [83] [VAR[応答]]に [CODE(HTTP)@en[[[Connection:]]]] [[ヘッダー]]があって
 [CODE(HTTP)@en[[[close]]]] ([[ASCII大文字・小文字不区別]]) [[接続オプション]]が指定されていれば、
-==== [84] [VAR[要求締め切り]]フラグを設定します。
+==== [84] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 === [85] それ以外で、[VAR[応答]]の[[プロトコルの版]]が [CODE[1.0]] で、
 [CODE(HTTP)@en[[[keep-alive]]]] ([[ASCII大文字・小文字不区別]]) [[接続オプション]]が指定された
 [CODE(HTTP)@en[[[Connection:]]]] [[ヘッダー]]がなければ、
-==== [86] [VAR[要求締め切り]]フラグを設定します。
+==== [86] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 === [244] 次の要求に進みます。
 ]FIG]
 
@@ -2212,7 +2213,7 @@ with [VAR[WebSocket connection established]] set to [[true]].
 == [401] [VAR[要求]]について [CODE[dataend]] を通知します。
 == [402] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
 [[exit status]].
-= [403] [VAR[要求締め切り]]フラグを設定します。
+= [403] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 = [404] 次の要求に進みます。
 ]FIG]
 
@@ -2226,7 +2227,7 @@ with [VAR[WebSocket connection established]] set to [[true]].
 = [458] それ以外なら、
 == [917] Set [VAR[connection]]'s [F[response][connection's response]]'s
 [F[incomplete message][response's incomplete message]] flag to [[true]].
-== [VAR[要求締め切り]]フラグを設定します。
+== [369] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 == [1441] Set [VAR[connection]]'s [F[write mode]] to "sent".
 == [405] [VAR[要求]]について [CODE[dataend]] を通知します。
 == [406] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
@@ -2238,7 +2239,7 @@ with [VAR[WebSocket connection established]] set to [[true]].
 [FIG(steps)[
 = [459] Set [VAR[connection]]'s [F[response][connection's response]]'s
 [F[incomplete message][response's incomplete message]] flag to [[true]].
-= [460] [VAR[要求締め切り]]フラグを設定します。
+= [460] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 = [461] Set [VAR[connection]]'s [F[write mode]] to "sent".
 = [407] [VAR[要求]]について [CODE[dataend]] を通知します。
 = [408] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
@@ -2258,7 +2259,7 @@ with [VAR[WebSocket connection established]] set to [[true]].
 == [467] [VAR[残り長さ]]がエラー ([[桁溢れ]]) なら、
 === [468] Set [VAR[connection]]'s [F[response][connection's response]]'s
 [F[incomplete message][response's incomplete message]] flag to [[true]].
-=== [469] [VAR[要求締め切り]]フラグを設定します。
+=== [469] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 === [470] Set [VAR[connection]]'s [F[write mode]] to "sent".
 === [410] [VAR[要求]]について [CODE[dataend]] を通知します。
 === [411] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
@@ -2279,7 +2280,7 @@ with [VAR[WebSocket connection established]] set to [[true]].
 [FIG(steps)[
 = [476] Set [VAR[connection]]'s [F[response][connection's response]]'s
 [F[incomplete message][response's incomplete message]] flag to [[true]].
-= [477] [VAR[要求締め切り]]フラグを設定します。
+= [477] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 = [478] Set [VAR[connection]]'s [F[write mode]] to "sent".
 = [413] [VAR[要求]]について [CODE[dataend]] を通知します。
 = [414] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
@@ -2299,7 +2300,7 @@ with [VAR[WebSocket connection established]] set to [[true]].
 [FIG(steps)[
 = [481] Set [VAR[connection]]'s [F[response][connection's response]]'s
 [F[incomplete message][response's incomplete message]] flag to [[true]].
-= [482] [VAR[要求締め切り]]フラグを設定します。
+= [482] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 = [483] Set [VAR[connection]]'s [F[write mode]] to "sent".
 = [416] [VAR[要求]]について [CODE[dataend]] を通知します。
 = [417] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
@@ -2321,7 +2322,7 @@ with [VAR[WebSocket connection established]] set to [[true]].
 [FIG(steps)[
 = [489] Set [VAR[connection]]'s [F[response][connection's response]]'s
 [F[incomplete message][response's incomplete message]] flag to [[true]].
-= [490] [VAR[要求締め切り]]フラグを設定します。
+= [490] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 = [491] Set [VAR[connection]]'s [F[write mode]] to "sent".
 = [419] [VAR[要求]]について [CODE[dataend]] を通知します。
 = [420] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
@@ -2340,7 +2341,7 @@ with [VAR[WebSocket connection established]] set to [[true]].
 = [496] それ以外なら、
 == [497] Set [VAR[connection]]'s [F[response][connection's response]]'s
 [F[incomplete message][response's incomplete message]] flag to [[true]].
-== [498] [VAR[要求締め切り]]フラグを設定します。
+== [498] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 == [499] Set [VAR[connection]]'s [F[write mode]] to "sent".
 == [422] [VAR[要求]]について [CODE[dataend]] を通知します。
 == [423] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
@@ -2352,7 +2353,7 @@ with [VAR[WebSocket connection established]] set to [[true]].
 [FIG(steps)[
 = [500] Set [VAR[connection]]'s [F[response][connection's response]]'s
 [F[incomplete message][response's incomplete message]] flag to [[true]].
-= [501] [VAR[要求締め切り]]フラグを設定します。
+= [501] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 = [502] Set [VAR[connection]]'s [F[write mode]] to "sent".
 = [425] [VAR[要求]]について [CODE[dataend]] を通知します。
 = [426] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
@@ -2370,7 +2371,7 @@ with [VAR[WebSocket connection established]] set to [[true]].
 = [1421] Otherwise:
 == [1422] Set [VAR[connection]]'s [F[response][connection's response]]'s
 [F[incomplete message][response's incomplete message]] flag to [[true]].
-== [1423] [VAR[要求締め切り]]フラグを設定します。
+== [1423] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 == [1424] Set [VAR[connection]]'s [F[write mode]] to "sent".
 == [1425] [VAR[要求]]について [CODE[dataend]] を通知します。
 == [1426] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
@@ -2383,7 +2384,7 @@ with [VAR[WebSocket connection established]] set to [[true]].
 [FIG(steps)[
 = [1429] Set [VAR[connection]]'s [F[response][connection's response]]'s
 [F[incomplete message][response's incomplete message]] flag to [[true]].
-= [1430] [VAR[要求締め切り]]フラグを設定します。
+= [1430] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 = [1431] Set [VAR[connection]]'s [F[write mode]] to "sent".
 = [1432] [VAR[要求]]について [CODE[dataend]] を通知します。
 = [1433] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
@@ -2399,11 +2400,11 @@ with [VAR[WebSocket connection established]] set to [[true]].
 = [VAR[一時バッファー]]の末尾が 0x0A 0x0A または 0x0A 0x0D 0x0A なら、
 == [VAR[応答]]に [CODE(HTTP)@en[[[Connection:]]]] [[ヘッダー]]があって
 [CODE(HTTP)@en[[[close]]]] ([[ASCII大文字・小文字不区別]]) [[接続オプション]]が指定されていれば、
-=== [VAR[要求締め切り]]フラグを設定します。
+=== [193] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 == [503] [VAR[終了]]を、新しい終了に設定します。
 == [504] 次の要求に進みます。
 = それ以外で、 [VAR[一時バッファー]]の長さが 2[SUP[18]]‐1 なら、
-== [VAR[要求締め切り]]フラグを設定します。
+== [365] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 == [1442] Set [VAR[connection]]'s [F[write mode]] to "sent".
 == [505] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
 [[exit status]].
@@ -2412,7 +2413,7 @@ with [VAR[WebSocket connection established]] set to [[true]].
 
 [129] 正常終了か中断を受信したら、
 [FIG(steps)[
-= [509] [VAR[要求締め切り]]フラグを設定します。
+= [509] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 = [510] Set [VAR[connection]]'s [F[write mode]] to "sent".
 = [507] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
 [[exit status]].
@@ -2614,8 +2615,7 @@ is [[false]]:
 [112] 正常終了か中断を受信したら、
 [FIG(steps)[
 = [371] [VAR[要求]]について [CODE[dataend]] を通知します。
-= [328] [VAR[要求締め切り]]フラグを設定します。
-= [325] [VAR[状態]]を、「トンネル送信中」に設定します。
+= [328] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 = [323] 中断の場合、
 == [326] Set [VAR[connection]]'s [F[write mode]] to "sent".
 == [324] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
@@ -2630,7 +2630,7 @@ is [[false]]:
 [FIG(steps)[
 = [131] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
 [[exit status]] whose [F[失敗]] is [[true]].
-= [339] [VAR[要求締め切り]]フラグを設定します。
+= [339] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 = [340] Set [VAR[connection]]'s [F[write mode]] to "sent".
 = [319] 
 @@ Abort writable stream, if any.
@@ -2655,7 +2655,7 @@ and [VAR[connection]]'s [F[write mode]] is "sent":
 == [515] [VAR[要求の処理完了]]が null でなければ、
 === [516] [VAR[要求の処理完了]]を[[解決]]します。
 === [517] [VAR[要求の処理完了]]を null に設定します。
-== [518] [VAR[要求締め切り]]フラグが設定されていれば、
+== [518] If [VAR[connection]]'s [F[to be closed]] flag is [[true]]:
 === [351] [VAR[connection]]'s [F[transport][connection's transport]] の正常終了の送信を指示します。
 === [350] これ以後 [VAR[connection]]'s [F[transport][connection's transport]] の受信終了を指示して構いません。
 === [352] [VAR[状態]]を、「停止済み」に設定します。
