@@ -1930,15 +1930,10 @@ or a [[WebSocket message]] is ended.
 [13] 中断の通知があると、次のようにします。
 [FIG(steps)[
 = [359] リセットフラグが設定されていれば、
-== [360] [VAR[要求]]が null でなければ、
-=== [361] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+== [328] [[Connection error][connection error]] [VAR[connection]] with a new
 [[exit status]] whose [F[リセット]] and [F[失敗]] are [[true]].
-== [522] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
-== [523] Set [VAR[connection]]'s [F[write mode]] to "sent".
-== [524] 次の要求に進みます。
-= [41] それ以外なら、
+= [41] Otherwise:
 == [525] [VAR[状態]]により決まる中断処理を行います。
-= [225] [VAR[connection]]'s [F[transport][connection's transport]] を破棄します。
 ]FIG]
 
 [252] [[WebSocketフレーム]]は、次のようなデータ構造です。
@@ -1961,9 +1956,8 @@ or a [[WebSocket message]] is ended.
 
 [69] 正常終了か中断を受信したら、
 [FIG(steps)[
-= [366] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
-= [1436] Set [VAR[connection]]'s [F[write mode]] to "sent".
-= 次の要求に進みます。
+= [366] [[Connection error][connection error]] [VAR[connection]] with a new [[exit status]]
+(whose [F[失敗]] is [[false]]).
 ]FIG]
 
 *** 「要求待ち」状態
@@ -1972,9 +1966,8 @@ or a [[WebSocket message]] is ended.
 
 [33] 正常終了か中断を受信したら、
 [FIG(steps)[
-= [368] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
-= [1437] Set [VAR[connection]]'s [F[write mode]] to "sent".
-= 次の要求に進みます。
+= [326] [[Connection error][connection error]] [VAR[connection]] with a new [[exit status]]
+(whose [F[失敗]] is [[false]]).
 ]FIG]
 
 *** 「要求送信中」状態
@@ -1983,9 +1976,8 @@ or a [[WebSocket message]] is ended.
 
 [67] 正常終了 or 中断を受信したら、
 [FIG(steps)[
-= [76] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
-= [586] Set [VAR[connection]]'s [F[write mode]] to "sent".
-= [604] 次の要求に進みます。
+= [76] [[Connection error][connection error]] [VAR[connection]] with a new [[exit status]]
+(whose [F[失敗]] is [[false]]).
 ]FIG]
 
 *** 「応答前」状態
@@ -2029,10 +2021,11 @@ or a [[WebSocket message]] is ended.
 == [141] If 中断:
 === [142] [[Connection error][connection error]] with a new [[exit status]]
 (whose [F[失敗]] is [[false]]).
-== [926] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
-== [437] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to a new
+== [322] Otherwise:
+=== [926] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
+=== [437] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to a new
 [[exit status]].
-== [438] 次の要求に進みます。
+=== [438] 次の要求に進みます。
 ]FIG]
 
 *** 「応答ヘッダー」状態
@@ -2183,15 +2176,26 @@ with [VAR[WebSocket connection established]] set to [[true]].
 == [391] [VAR[応答]]の[[プロトコルの版]]が [CODE[1.1]] なら、
 === [392] Set [VAR[connection]]'s [F[失敗]] to [[true]].
 == [134] [[Connection error][connection error]] [VAR[connection]] with [VAR[exit status]].
-= [400] それ以外なら、
-== [396] 中断なら、
-=== [398] [VAR[残り長さ]]が0なら、
-==== [397] Set [VAR[connection]]'s [F[write mode]] to "sent".
-=== [399] Otherwise:
-==== [916] Set [VAR[connection]]'s [F[response][connection's response]]'s
+= [390] Otherwise, [VAR[残り長さ is [N[0]]:
+== [441] [VAR[要求]]について [CODE[dataend]] を通知します。
+== [442] If 中断:
+=== [444] [[Connection error][connection error]] [VAR[connection]] with a new [[exit status]]
+(whose [F[失敗]] is [[false]]).
+== [445] Otherwise:
+=== [469] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to a new
+[[exit status]].
+=== [470] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
+=== [477] 次の要求に進みます。
+= [400] Otherwise:
+== [396] If 中断:
+=== [916] Set [VAR[connection]]'s [F[response][connection's response]]'s
 [F[incomplete message][response's incomplete message]] flag to [[true]].
 == [401] [VAR[要求]]について [CODE[dataend]] を通知します。
-== [402] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
+== [397] If 中断:
+=== [398] [[Connection error][connection error]] [VAR[connection]] with a new [[exit status]]
+(whose [F[失敗]] is [[false]]).
+== [399] Otherwise:
+== [402] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to a new
 [[exit status]].
 == [403] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 == [404] 次の要求に進みます。
@@ -2569,12 +2573,13 @@ is [[false]]:
 [112] 正常終了か中断を受信したら、
 [FIG(steps)[
 = [371] [VAR[要求]]について [CODE[dataend]] を通知します。
-= [328] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
-= [323] 中断の場合、
-== [326] Set [VAR[connection]]'s [F[write mode]] to "sent".
-== [324] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to an
-[[exit status]] whose [F[失敗]] is [[true]].
-= [327] 次の要求に進みます。
+= [478] If 中断:
+== [482] [[Connection error][connection error]] [VAR[connection]].
+= [483] Otherwise:
+== [323] Set [VAR[connection]]'s [F[exit status][connection's exit status]] to a new
+[[exit status]].
+== [324] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
+== [327] 次の要求に進みます。
 ]FIG]
 
 *** 「停止済み」状態
