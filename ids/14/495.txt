@@ -1536,9 +1536,8 @@ A [[boolean]].  Initially, '''[[true]]'''.
 :[VAR[要求の処理完了]]:[[Promise]] か null。初期値は null。
 : [DFN[[F[WebSocket key]]]] : A byte string or [CODE[null]].  Initially, [CODE[null]].
 :[VAR[WebSocket接続の状態]]:[CODE[CONNECTING]]、[CODE[OPEN]]、
-[CODE[CLOSING]]、[CODE[CLOSED]]、null のいずれか。初期値は null。
+[CODE[CLOSING]]、null のいずれか。初期値は null。
 :[VAR[フレーム]]:[[WebSocketフレーム]]または null。初期値は null。
-:[VAR[送信待ちフレーム]]:[[WebSocketフレーム]]または null。初期値は null。
 : [F[WebSocket data type]] : [[Text]], [[Binary]], or [CODE[null]].
 Initially, [CODE[null]].
 : [F[decoder][connection's decoder]] : A [CODE(DOMi)@en[TextDecoder]] or [CODE[null]]. 
@@ -1579,17 +1578,6 @@ A [[boolean]].  Initially, [[false]].
 ]FIG]
 
 ** アプリケーションからの指示
-
-[49] [[HTTP connection]]に対して[[アプリケーション]]は、
-[FIG(list)[
-- [[要求]]の送信 (>>42)
-- [[WebSocket]] メッセージ送信 (>>259)
-- ping 送信 (>>260)
-- [[トンネル]]への[[バイト]]送信 (>>107)
-- [[接続]]の正常終了 (>>50)
-- 接続の中断 (>>52)
-]FIG]
-... を指示できます。
 
 [42] 要求の送信は、次のようにします。この処理は、
 [VAR[connection]] and [[要求]]である[VAR[送信する要求]]を入力として受け取ります。
@@ -1755,14 +1743,14 @@ run these steps:
 [FIG(steps)[
 = [286] Assert:
 [FIG(list)[
-- [321] 
-@@ In WS mode
+- [321] [VAR[WebSocket接続の状態]]が [CODE[OPEN]] or [CODE[CLOSING]]
 - [285] [VAR[状態符号]]は2[SUP[16]] [[以下]]
 - [283] [VAR[理由]]の長さは 2[SUP[63]] [[未満]]かつ実装の扱える範囲内である
 - [276] [VAR[状態符号]]が null なら、[VAR[理由]]は空である
 ]FIG]
-= [279] [VAR[WebSocket接続の状態]]が [CODE[[[OPEN]]]] か [CODE[[[CONNECTING]]]] なら、
-== [281] [[WebSocketフレーム]]を作成します。
+= [49] If [VAR[WebSocket接続の状態]] is [CODE[CLOSING]]:
+== [277] Abort these steps.
+= [281] [[WebSocketフレーム]]を作成します。
 [FIG(list members)[
 :[[FIN]]:1
 :[[RSV1]]:0
@@ -1776,17 +1764,14 @@ run these steps:
 そうでなければ、[VAR[状態符号]]を表す[[16ビット符号無し整数]] ([[ネットワークバイト順]]) と、
 それに続けて[VAR[理由]]
 ]FIG]
-== [282] 作成した [[WebSocketフレーム]]のデータの各[[バイト]]について、
+= [282] 作成した [[WebSocketフレーム]]のデータの各[[バイト]]について、
 先頭から [VAR[i]] バイト目 (先頭が0バイト) であれば、
 [[マスクキー]]の [VAR[i]] [[mod]] 4 バイト目 (先頭が0バイト)
 と [[XOR]] した結果に差し替えます。
-== [280] [VAR[WebSocket接続の状態]]が [CODE[[[CONNECTING]]]] なら、
-=== [277] [VAR[送信待ちフレーム]]が null なら、[VAR[送信待ちフレーム]]を作成した[[WebSocketフレーム]]に設定します。
-== [290] それ以外なら、
-=== [297] [VAR[WebSocket接続の状態]]を、 [CODE[[[CLOSING]]]] に設定します。
-=== [174] [VAR[要求]]について、 [CODE[wsclosing]] を通知します。
-=== [284] [VAR[connection]]'s [F[transport][connection's transport]] で、作成した [[WebSocketフレーム]]のバイト列を送信することとします。
-=== [315] [VAR[切断タイマー]]により20s後に次の要求に進むことにします。
+= [297] [VAR[WebSocket接続の状態]]を、 [CODE[[[CLOSING]]]] に設定します。
+= [174] [VAR[要求]]について、 [CODE[wsclosing]] を通知します。
+= [284] [VAR[connection]]'s [F[transport][connection's transport]] で、作成した [[WebSocketフレーム]]のバイト列を送信することとします。
+= [315] [VAR[切断タイマー]]により20s後に次の要求に進むことにします。
 ]FIG]
 
 [73] To close connection [VAR[connection]], run these steps:
@@ -2109,10 +2094,6 @@ with [VAR[WebSocket connection established]] set to [[true]].
 === [292] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 === [293] [VAR[状態]]を、「WebSocketフレーム前」に設定します。
 === [147] [VAR[一時バッファー]]を、空に設定します。
-=== [294] [VAR[送信待ちフレーム]]が null 以外なら、
-==== [296] [VAR[WebSocket接続の状態]]を、 [CODE[[[CLOSING]]]] に設定します。
-==== [295] [VAR[connection]]'s [F[transport][connection's transport]] で、[VAR[送信待ちフレーム]]のバイト列を送信することにします。
-==== [316] [VAR[切断タイマー]]により20s後に次の要求に進むことにします。
 = [106] それ以外で、 [VAR[応答]]の[[状態符号]]が [CODE(HTTP)[[[1xx]]]] なら、
 == [337] [VAR[要求]]の[[要求メソッド]]が [CODE(HTTP)[[[CONNECT]]]] か、
 [VAR[WebSocket接続の状態]]が [CODE[CONNECTING]] なら、
