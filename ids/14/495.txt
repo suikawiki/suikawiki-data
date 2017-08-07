@@ -1519,10 +1519,11 @@ If protocol is http2 and after preface, connection error PROTOCOL_ERROR
 
 [34] An [[HTTP connection]] whose [F[protocol][connection's protocol]] is [CODE[http1]]
 has following additional states:
+
 [FIG(list members)[
 :[VAR[状態]]:後述の状態遷移における状態のいずれか。初期値は「初期」。
 : [F[write mode]] : 
-One of [CODE[null]], "raw", or "sent".  Initially, [CODE[null]].
+One of [CODE[null]], "raw", "websocket", or "sent".  Initially, [CODE[null]].
 : [F[to be closed]] :
 A [[boolean]].  Initially, [[false]].
 :[VAR[要求]]:[[要求]]か null。初期値は null です。
@@ -1633,7 +1634,11 @@ extension header value.
 == [1333] [[Append][append (header list)]] 
 `[CODE[Sec-WebSocket-Extensions]]`/[VAR[permessageDeflate]] to 
 [VAR[要求]]'s [F[header list][request's header list]].
-= [57] Set [VAR[connection]]'s [F[write mode]] to "raw".
+== [57] Set [VAR[connection]]'s [F[write mode]] to "websocket".
+= [491] Otherwise, if [VAR[送信する要求]]'s 要求メソッド is [CODE[CONNECT]]:
+== [498] Set [VAR[connection]]'s [F[write mode]] to "before tunnel data".
+= [35] Otherwise:
+== [57] Set [VAR[connection]]'s [F[write mode]] to "raw".
 = [45] [VAR[要求の処理完了]]を、新しい [[Promise]] に設定します。
 = [48] [VAR[要求の処理完了]]を返します。
 = [46] [[並列に]]、[VAR[要求]]のバイト列の送信を行います。
@@ -1651,10 +1656,7 @@ extension header value.
 == エラーが返されたら、ここで停止します。
 == [VAR[要求の転送済]]を、1だけ大きな値に設定します。
 == [VAR[要求]]について要求の本体の一部の送信を通知して構いません。
-= [1435] Set [VAR[connection]]'s [F[write mode]] to "sent".
-= [VAR[要求]]について要求の送信完了を通知します。
-= [520] [VAR[状態]]が「要求送信中」なら、
-== [521] 次の要求に進みます。
+= [75] Run the [[sent steps]] for [VAR[connection]].
 ]FIG]
 
 [259] [[WebSocket]] メッセージ送信は、次のようにします。
@@ -2002,7 +2004,7 @@ or a [[WebSocket message]] is ended.
 = [VAR[要求]]の[[要求メソッド]]が [CODE(HTTP)@en[[[PUT]]]] か [CODE(HTTP)@en[[[CONNECT]]]] なら、
 == [363] [[Connection error][connection error]] [VAR[connection]].
 = [924] Otherwise:
-== [925] [VAR[要求]]について[VAR[応答]]のヘッダー受信完了を通知します。
+== [280] Run the [[headers received steps]] for [VAR[connection]].
 == [920] [VAR[要求]]について [CODE[datastart]] を通知します。
 == [530] [VAR[要求]]について [CODE[data]] を通知します。[VAR[一時バッファー]]を引渡します。
 == [918] 中断なら、
@@ -2049,7 +2051,8 @@ or a [[WebSocket message]] is ended.
 == [449] [[Connection error][connection error]] [VAR[connection]].
 = [540] それ以外で、[VAR[要求]]の[[要求メソッド]]が [CODE(HTTP)[[[CONNECT]]]] で、
 [VAR[応答]]の[[状態符号]]が [CODE(HTTP)[[[200]]]] なら、
-== [373] [VAR[要求]]について[[応答]]のヘッダー受信完了を通知します。
+== [290] Run the [[headers received steps]] for [VAR[connection]],
+with [VAR[tunnel]] flag set to [[true]].
 == [374] [VAR[要求]]について [CODE[datastart]] を通知します。
 == [375] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 == [376] [VAR[状態]]を、「トンネル」に設定します。
@@ -2077,7 +2080,7 @@ in [VAR[応答]]'s [F[header list][response's header list]] results in [CODE[nul
 [[failure]], or the empty byte sequence
 ]FIG]
 ... then run these substeps:
-=== [145] [VAR[要求]]について[[応答]]のヘッダー受信完了を通知します。
+=== [294] Run the [[headers received steps]] for [VAR[connection]].
 === [248] Let [VAR[exit status]] be a new [[exit status]]:
 [FIG(list members)[
 [FIGCAPTION[
@@ -2091,8 +2094,8 @@ in [VAR[応答]]'s [F[header list][response's header list]] results in [CODE[nul
 === [245] [[Connection error][connection error]] [VAR[connection]] with [VAR[exit status]].
 == [146] それ以外なら、
 === [291] [VAR[WebSocket接続の状態]]を、 [CODE[OPEN]] に設定します。
-=== [256] [VAR[要求]]について[[応答]]のヘッダー受信完了を通知,
-with [VAR[WebSocket connection established]] set to [[true]].
+=== [296] Run the [[headers received steps]] for [VAR[connection]],
+with [VAR[WebSocket]] flag set to [[true]].
 === [292] Set [VAR[connection]]'s [F[to be closed]] flag to [[true]].
 === [293] [VAR[状態]]を、「WebSocketフレーム前」に設定します。
 === [147] [VAR[一時バッファー]]を、空に設定します。
@@ -2105,7 +2108,7 @@ with [VAR[WebSocket connection established]] set to [[true]].
 === [382] [VAR[状態]]を、「応答前」に設定します。
 === [383] [VAR[一時バッファー]]を、空バイト列に設定します。
 = [344] それ以外なら、
-== [345] [VAR[要求]]について[[応答]]のヘッダー受信完了を通知します。
+=== [316] Run the [[headers received steps]] for [VAR[connection]].
 == [385] [VAR[要求]]について [CODE[datastart]] を通知します。
 == [346] 
 [FIG(list)[
@@ -2130,6 +2133,20 @@ with [VAR[WebSocket connection established]] set to [[true]].
 === [117] [VAR[状態]]を、「塊前」に設定します。
 == [88] それ以外なら、
 === [16] [VAR[状態]]を、「応答本体」に設定します。
+]FIG]
+
+[295] The [DFN[headers received steps]] for [VAR[connection]], with
+optional [VAR[WebSocket]] and [VAR[tunnel]] flags (both defaulted to [[false]])
+are these steps:
+
+[FIG(steps)[
+= [319] If [VAR[connection]]'s [F[write mode]] is "before tunnel data":
+== [256] If [VAR[tunnel]] is [[true]]:
+=== [345] Set [VAR[connection]]'s [F[write mode]] to "raw".
+== [373] Otherwise:
+=== [490] Run the [[sent steps]] for [VAR[connection]].
+= [145] [VAR[要求]]について[[応答]]のヘッダー受信完了を通知,
+with [VAR[WebSocket connection established]] set to [VAR[WebSocket]].
 ]FIG]
 
 *** 「応答本体」状態
@@ -2592,6 +2609,7 @@ flag ([[false]] if omitted) are these steps:
 @@ If [VAR[connection]]'s transport writable stream is not yet closed,
 close the writer.
 = [340] Set [VAR[connection]]'s [F[write mode]] to "sent".
+= [279] [VAR[要求]]について要求の送信完了を通知します。
 = [433] If [VAR[状態]] is 「要求送信中」:
 == [432] Run the [[end of stream steps]] for [VAR[connection]].
 ]FIG]
