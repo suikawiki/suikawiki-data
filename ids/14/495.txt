@@ -1546,6 +1546,9 @@ Initially, [CODE[null]].
 : [F[exit status][connection's exit status]] :  An [[exit status]] or [[null]].
 Initially, [[null]].
 :[VAR[切断タイマー]]:タイマー。
+: [DFN[[F[stream request method]]]] : A byte string or [CODE[null]].  Initially, [CODE[null]].
+: [DFN[[F[stream received]]]] : A [[boolean]].  Initially, [[false]].
+: [DFN[[F[stream sent]]]] : A [[boolean]].  Initially, [[false]].
 ]FIG]
 
 [314] タイマーは、初期状態では動作していません。時間と動作が設定されると、
@@ -1611,6 +1614,7 @@ A [[boolean]].  Initially, [[false]].
 - [58] [VAR[状態]]が「初期」か「要求待ち」.
 ]FIG]
 = [61] [VAR[要求]]を、[VAR[送信する要求]]に設定します。
+= [135] Set [VAR[connection]]'s [F[stream request method]] to [VAR[送信する要求]]'s [F[要求メソッド]].
 = [64] [VAR[応答]]を、新しい[[応答]]に設定します。
 = [60] [VAR[一時バッファー]]を、空バイト列に設定します。
 = [59] [VAR[状態]]を、「応答前」に設定します。
@@ -1635,7 +1639,7 @@ extension header value.
 `[CODE[Sec-WebSocket-Extensions]]`/[VAR[permessageDeflate]] to 
 [VAR[要求]]'s [F[header list][request's header list]].
 == [57] Set [VAR[connection]]'s [F[write mode]] to "websocket".
-= [491] Otherwise, if [VAR[送信する要求]]'s 要求メソッド is [CODE[CONNECT]]:
+= [491] Otherwise, if [VAR[connection]]'s [F[stream request method]] is [CODE[CONNECT]]:
 == [498] Set [VAR[connection]]'s [F[write mode]] to "before tunnel data".
 = [35] Otherwise:
 == [57] Set [VAR[connection]]'s [F[write mode]] to "raw".
@@ -1985,9 +1989,10 @@ whose [F[失敗]] is 中断.
 == [VAR[状態]]を、「応答ヘッダー」に設定します。
 == [VAR[一時バッファー]]を、空に設定します。
 = [28] それ以外で、[VAR[一時バッファー]]の長さが8バイトなら、
-== [VAR[要求]]の[[要求メソッド]]が [CODE(HTTP)@en[[[PUT]]]] か [CODE(HTTP)@en[[[CONNECT]]]] なら、
+== [236] If [VAR[connection]]'s [F[stream request method]] is [CODE[PUT]] or
+[CODE[CONNECT]]:
 === [320] [[Connection error][connection error]] [VAR[connection]].
-== それ以外なら、
+== [237] Otherwise:
 === [367] [VAR[要求]]について [CODE[datastart]] を通知します。
 === [922] [VAR[要求]]について [CODE[data]] を通知します。[VAR[一時バッファー]]を引渡します。
 === [452] [VAR[残り長さ]]を、 null に設定します。
@@ -2001,7 +2006,8 @@ whose [F[失敗]] is 中断.
 == [434] If not 中断 and [VAR[connection]]'s [F[response received][connection's response received]] is [[false]]:
 === [915] Set [VAR[exit status]]'s [F[can retry][exit's can retry]] to [[true]].
 == [136] [[Connection error]] [VAR[connection]] with [VAR[exit status]].
-= [VAR[要求]]の[[要求メソッド]]が [CODE(HTTP)@en[[[PUT]]]] か [CODE(HTTP)@en[[[CONNECT]]]] なら、
+= [240] If [VAR[connection]]'s [F[stream request method]] is [CODE[PUT]] or
+[CODE[CONNECT]]:
 == [363] [[Connection error][connection error]] [VAR[connection]].
 = [924] Otherwise:
 == [280] Run the [[headers received steps]] for [VAR[connection]].
@@ -2047,7 +2053,7 @@ a new [[exit status]] whose [F[失敗]] is [[true]].
 == [32] [VAR[残り長さ]]を、[VAR[応答]]の [CODE(HTTP)@en[[[Content-Length:]]]] [[ヘッダー]]の処理の結果とします。
 = [448] [VAR[残り長さ]]がエラーなら:
 == [449] [[Connection error][connection error]] [VAR[connection]].
-= [540] それ以外で、[VAR[要求]]の[[要求メソッド]]が [CODE(HTTP)[[[CONNECT]]]] で、
+= [540] Otherwise, if [VAR[connection]]'s [F[stream request method]] is [CODE[CONNECT]] and
 [VAR[応答]]の[[状態符号]]が [CODE(HTTP)[[[200]]]] なら、
 == [290] Run the [[headers received steps]] for [VAR[connection]],
 with [VAR[tunnel]] flag set to [[true]].
@@ -2098,7 +2104,7 @@ with [VAR[WebSocket]] flag set to [[true]].
 === [293] [VAR[状態]]を、「WebSocketフレーム前」に設定します。
 === [147] [VAR[一時バッファー]]を、空に設定します。
 = [106] それ以外で、 [VAR[応答]]の[[状態符号]]が [CODE(HTTP)[[[1xx]]]] なら、
-== [337] [VAR[要求]]の[[要求メソッド]]が [CODE(HTTP)[[[CONNECT]]]] か、
+== [337] If [VAR[connection]]'s [F[stream request method]] is [CODE[CONNECT]] or
 [VAR[WebSocket接続の状態]]が [CODE[CONNECTING]] なら、
 === [224] [[Connection error][connection error]] [VAR[connection]].
 == [341] それ以外なら、
@@ -2112,7 +2118,7 @@ with [VAR[WebSocket]] flag set to [[true]].
 [FIG(list)[
 - [348] [VAR[応答]]の[[状態符号]]が [CODE(HTTP)[[[204]]]], [CODE(HTTP)[[[205]]]],
 [CODE(HTTP)[[[304]]]] のいずれかの場合か、
-- [349] [VAR[要求]]の[[要求メソッド]]が [CODE(HTTP)@en[[[HEAD]]]] の場合
+- [349] [VAR[connection]]'s [F[stream request method]] is [CODE[HEAD]]
 ]FIG]
 ... のいずれかの場合、
 === [347] [VAR[残り長さ]]を、0に設定します。
