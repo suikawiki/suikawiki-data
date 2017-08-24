@@ -344,17 +344,65 @@ URI で安全とは言えません。
 
 * Web Base64 API
 
-[858] [DFN[[CODE(JS)@en[[[btoa()]]]]]] と [DFN[[CODE(JS)@en[[[atob()]]]]]] は、 [[Base64]]
-の[[符号化]]と[[復号]]を行う[[関数]]です。
+[87] [[Web]] では、 [[エラー処理]]を含め正確な[[アルゴリズム]]として[[符号化]]と[[復号]]を定義した
+[DFN[forgiving base64]] [SRC[>>86]] を用いています。
+
+[88] 正常な入力のみに限ったとき、 [[RFC 4648]] 第4章の [[Base64]] と等価です。
 
 ** 仕様書
 
 [REFS[
-- [857] '''[CITE@en-US-x-hixie[HTML Standard]] ([TIME[2014-04-03 03:44:44 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#atob>'''
-- [860] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2014-04-03 03:44:44 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#apis-available-to-workers>
+- [86] '''[CITE@en[Infra Standard]] ([TIME[2017-08-17 16:48:46 +09:00]]) <https://infra.spec.whatwg.org/#forgiving-base64>'''
+- [857] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2014-04-03 03:44:44 +09:00]] 版) <https://www.whatwg.org/specs/web-apps/current-work/#atob>
+- [860] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2014-04-03 03:44:44 +09:00]] 版) <https://www.whatwg.org/specs/web-apps/current-work/#apis-available-to-workers>
 ]REFS]
 
 ** 定義
+
+[89] [DFN[forgiving-base64 encode]] は、[[バイト列]][VAR[データ]]を次のようにします
+[SRC[>>86]]。
+
+[FIG(steps)[
+= [90] [VAR[データ]]に [[RFC 4648]] 第4章 [[Base64]] を適用した結果を返します。
+]FIG]
+
+-*-*-
+
+[91] [DFN[forgiving-base64 decode]] は、[[文字列]][VAR[データ]]を次のようにします
+[SRC[>>86]]。
+
+[FIG(steps)[
+= [92] [VAR[データ]]から[[ASCII空白]]をすべて削除します。
+= [93] [VAR[データ]]の[F[長さ]] [[%]] [N[4]] が [N[0]] の場合、
+== [94] [VAR[データ]]の末尾が [CODE[==]] か [CODE[=]] なら、これを削除します。
+= [95] [VAR[データ]]の[F[長さ]] [[%]] [N[4]] が [N[1]] の場合、
+== [96] [[失敗]]を返し、ここで停止します。
+= [97] [VAR[データ]]に [CODE[+]]、[CODE[/]]、[[ASCII英数字]]のいずれでもない[[符号位置]]が含まれる場合、
+== [98] [[失敗]]を返し、ここで停止します。
+= [99] [VAR[出力]]を、新しい[[空バイト列]]に設定します。
+= [100] [VAR[バッファー]]を、新しい空[[ビット列]]に設定します。
+= [101] [VAR[データ]]に含まれる[[符号位置]][VAR[符号位置]について、順に、
+== [102] [VAR[n]] を、[[RFC 4648]] Table 1: The Base 64 Alphabet の第2列が[VAR[符号位置]]である[[行]]の第1列の値に設定します。
+== [103] [VAR[バッファー]]の末尾に、[VAR[n]] と等しく6ビットで[[大エンディアン]]の[[ビット列]]を追加します。
+== [104] [VAR[バッファー]]の[F[長さ]]が24ビットの場合、
+=== [105] [VAR[バッファー]]を3桁の[[大エンディアン]][[8ビット整数]]と解釈したものを、
+[VAR[出力]]の末尾に順に追加します。
+=== [106] [VAR[バッファー]]を、空に設定します。
+= [107] [VAR[バッファー]]の[F[長さ]]が12ビットの場合、
+== [108] [VAR[バッファー]]の先頭8ビットを
+1桁の[[大エンディアン]][[8ビット整数]]と解釈したものを、
+[VAR[出力]]の末尾に順に追加します。
+= [109] [VAR[バッファー]]の[F[長さ]]が18ビットの場合、
+== [110] [VAR[バッファー]]の先頭16ビットを
+2桁の[[大エンディアン]][[8ビット整数]]と解釈したものを、
+[VAR[出力]]の末尾に順に追加します。
+= [111] [VAR[出力]]を返します。
+]FIG]
+
+*** API
+
+[858] [DFN[[CODE(JS)@en[[[btoa()]]]]]] と [DFN[[CODE(JS)@en[[[atob()]]]]]] は、 [[Base64]]
+の[[符号化]]と[[復号]]を行う[[関数]]です。
 
 [859] [DFN[[CODE(DOMi)@en[[[WindowBase64]]]]]] [[インターフェイス]]の[[メソッド]] [DFN[[CODE(DOMm)@en[[[btoa]]]]]]
 と [DFN[[CODE(DOMm)@en[[[atob]]]]]] は、いずれも [CODE(DOMi)@en[[[DOMString]]]] を[[引数]]とし、
@@ -363,21 +411,20 @@ URI で安全とは言えません。
 [CODE(DOMi)@en[[[Window]]]] [SRC[>>857]] と [CODE(DOMi)@en[[[WorkerGlobalScope]]]] [SRC[>>860]]
 に[[実装]]されています。
 
+-*-*-
+
 [861] [CODE(DOMm)@en[[[btoa]]]] は、[[引数]]の [[U+0000]]-[[U+00FF]] を [[0x00]]-[[0xFF]]
-の[[オクテット列]]とみなし、 [[RFC 4648]] [[Base64]] により[[符号化]]します。
+の[[オクテット列]]とみなし、  [[forgiving-base64 encode]] します。
 [[引数]]にそれ以外の[[符号位置]]が含まれていれば、 [CODE(DOMc)@en[[[InvalidCharacterError]]]]
 [[例外]]を投げます。 [SRC[>>857]]
 
 [862] [CODE(DOMm)@en[[[atob]]]] は、[[引数]]を次のように処理した結果を返します [SRC[>>857]]。
 [FIG[
-= [863] [[空白文字]]をすべて削除します。
-= [864] [[文字]]数が4の倍数であり、末尾が [CODE[[[=]]]] か [CODE[[[==]]]] なら、これらを削除します。
-= [865] [[文字]]数を4で割ると1文字余るなら、 [CODE(DOMc)@en[[[InvalidCharacterError]]]] [[例外]]を投げて終わります。
-= [866] [[ASCIIラテン文字]]、[[ASCII数字]]、 [CODE(char)[[[+]]]]、[CODE(char)[[[/]]]] 以外が含まれていれば、
-[CODE(DOMc)@en[[[InvalidCharacterError]]]] [[例外]]を投げて終わります。
-= [867] [[Base64]] [[復号]]し、得られた[[オクテット列]]の [[0x00]]-[[0xFF]] を
-[[U+0000]]-[[U+00FF]] に置き換えた[[文字列]]を返します。[[復号]]結果が8ビットの倍数にならないときは、
-余ったビットは捨てます。
+= [112] [[forgibing-base64 decode]] します。
+= [866] 結果が[[失敗]]の場合、
+== [113] [CODE(DOMc)@en[[[InvalidCharacterError]]]] [[例外]]を投げて終わります。
+= [867] 得られた[[オクテット列]]の [[0x00]]-[[0xFF]] を
+[[U+0000]]-[[U+00FF]] に置き換えた[[文字列]]を返します。
 ]FIG]
 
 ** 歴史
