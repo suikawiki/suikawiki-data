@@ -192,25 +192,42 @@ HTTP 頭欄なのに HTTP で使ってもらえないなんて不憫だね。
 [SRC[>>85]]。
 
 [FIG(steps)[
-= [109] [VAR[文書]]を、[VAR[要素]]の[F[節点文書]]に設定します。
-= [116] [VAR[文書]]の[F[更新処理済み]]フラグが設定されていれば、
-== [110] ここで停止します。
-= [113] [VAR[入力]]を、 [VAR[要素]]の [CODE(HTMLa)@en[content][<meta content>]]
+= [153] [VAR[入力]]を、[VAR[要素]]の [CODE(HTMLa)@en[content][<meta content>]]
 [[属性値]]に設定します。
-= [114] [VAR[入力]]が [CODE[null]] または[[空文字列]]なら、
-== [115] ここで停止します。
+= [154] [VAR[入力]]が [CODE[null]] または[[空文字列]]の場合、
+== [155] ここで停止します。
+= [152] [[共有宣言的更新手順群]]を実行します。
+[FIG(list members)[
+: [VAR[文書]] : [VAR[要素]]の[F[節点文書]]
+: [VAR[入力]] : [VAR[入力]]
+: [VAR[メタ要素]] : [[真]]
+]FIG]
+]FIG]
+
+[151] [DFN[[RUBYB[共有宣言的更新手順群]@en[shared declarative refresh steps]]]]は、
+[VAR[文書]]、[VAR[入力]]、[VAR[メタ要素]]について、次のようにします [SRC[>>85]]。
+
+[FIG(steps)[
+= [116] [VAR[文書]]の[F[これから宣言的に更新する]]フラグが[[真]]の場合、
+== [110] ここで停止します。
 = [124] [VAR[時間]]と [VAR[URL]] を、
 [VAR[文書]]と[VAR[入力]]を処理 (>>125) した結果に設定します。
 = [123] [VAR[URL]] が[[失敗]]なら、
 == [126] ここで停止します。
-= [111] [VAR[文書]]の[F[更新処理済み]]フラグを設定します。
+= [111] [VAR[文書]]の[F[これから宣言的に更新する]]フラグを、[[真]]に設定します。
 = [127] 次のいずれか1つ[[以上]]を実行します。
 =- 自動 [[navigate]] (>>92)
 =- 手動 [[navigate]] の[[利用者インターフェイス]]を提示 (>>93)
 =- 何もしない (>>94)
 ]FIG]
 
-[112] [[文書]]は、[DFN[[F[更新処理済み]]]]フラグを持ちます。
+;; [156] この処理は、 [CODE(HTMLe)@en[meta]] [[要素]]が[[文書に挿入]]された場合の他に、
+[[navigate]] において [CODE(HTTP)@en[Refresh:]] [[ヘッダー][HTTPヘッダー]]が指定されていた場合にも、実行されます。
+
+[112] [[文書]]は、
+[DFN[[F[[RUBYB[これから宣言的に更新する]@en[will declaratively refresh]]]]]]フラグを持ちます。
+初期値は[[偽]]です。 [SRC[[CITE[HTML Standard]]]]
+
 
 [125] [VAR[文書]]と[VAR[入力]]の処理は、次のようにしなければ[MUST[なりません]] [SRC[>>85]]。
 [FIG(steps)[
@@ -233,14 +250,17 @@ HTTP 頭欄なのに HTTP で使ってもらえないなんて不憫だね。
 [136] 次のようにしなければ[MUST[なりません]]。
 [FIG(steps)[
 = [131] [VAR[利用者による停止]]フラグを、[[偽]]に設定します。
-= [137] [VAR[[DFN[[RUBYB[更新の期限が到来]@en[refresh has come due]]]]]]を、[VAR[時間]][[秒]] 
+= [113] [VAR[メタ要素]]が[[真]]の場合、
+== [137] [VAR[[DFN[[RUBYB[更新の期限が到来]@en[refresh has come due]]]]]]を、[VAR[時間]][[秒]] 
 ([[利用者]]および[[利用者エージェント]]の都合により調整可能。) 待つ[[タイマー]]に設定します。
 [SRC[>>85]]
-= [138] [VAR[文書]]の [F[completely loaded]] が[[真]]なら、
-== [139] [VAR[更新の期限が到来]]の計測を開始します。
-= [140] それ以外なら、
-== [141] [VAR[文書]]の [F[[[completely loaded]] から起算する[[タイマー]]群]]に、
+== [138] [VAR[文書]]の [F[completely loaded]] が[[真]]なら、
+=== [139] [VAR[更新の期限が到来]]の計測を開始します。
+== [140] それ以外なら、
+=== [141] [VAR[文書]]の [F[[[completely loaded]] から起算する[[タイマー]]群]]に、
 [VAR[更新の期限が到来]]を追加します。
+= [114] それ以外の場合、
+== [115] [VAR[更新の起源が到来]]したとします。
 ]FIG]
 
 [88] 待つ時間は[[利用者]]や[[利用者エージェント]]による調整が認められています。
@@ -256,7 +276,8 @@ HTTP 頭欄なのに HTTP で使ってもらえないなんて不憫だね。
 = [132] 
 [FIG(list)[
 - [134] [VAR[利用者による停止]]が[[偽]]
-- [135] [VAR[文書]]の[F[活性砂箱化フラグ集合]]の 
+- [109] [VAR[メタ要素]]が[[真]]の場合、
+-- [135] [VAR[文書]]の[F[活性砂箱化フラグ集合]]の 
 [F[sandboxed automatic features browsing context flag]] が設定されてい''ない''
 ]FIG]
 ... をすべて満たす場合、
@@ -518,3 +539,15 @@ HTTP 頭欄なのに HTTP で使ってもらえないなんて不憫だね。
 [147] [CITE@en[Allow ".9" as the time in refresh <meta> by domenic · Pull Request #2852 · whatwg/html]]
 ([TIME[2017-07-25 16:43:42 +09:00]])
 <https://github.com/whatwg/html/pull/2852>
+
+[148] [CITE@en[Ensure Refresh pragma always uses a URL record]]
+([[annevk]]著, [TIME[2017-08-02 22:50:21 +09:00]])
+<https://github.com/whatwg/html/commit/64ea79523e6565070c9f5af7397a8104d7841cf9>
+
+[149] [CITE@en[Ensure Refresh pragma always uses a URL record by annevk · Pull Request #2865 · whatwg/html]]
+([TIME[2017-08-28 23:52:50 +09:00]])
+<https://github.com/whatwg/html/pull/2865>
+
+[150] [CITE@en[Define the HTTP Refresh header]]
+([[annevk]]著, [TIME[2017-08-10 01:57:03 +09:00]])
+<https://github.com/whatwg/html/commit/7e9f6b6ffe2119f43f909f71773a25a7e8a61ca7>
