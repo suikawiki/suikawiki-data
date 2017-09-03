@@ -37,9 +37,11 @@
 ;; [18] [[UTS #46]] の [[ToUnicode]] [[演算]]は、[[ラベル]]ではなく[[ドメイン名]]全体に対して定義されています。
 
 [73] 次の場面で呼び出されます。
-[FIG(short list)[
+
+[FIG(short list)[ [124] [[ToUnicode]] する場面
 - [[IDNA2008前処理]]
 - [[ドメインをUnicodeに]]
+- [[妥当なドメイン]]
 ]FIG]
 
 [74] テストデータ:
@@ -58,9 +60,12 @@
 [[Unicode]] 化して[[正規化]]した状態にするということですね。
 
 [41] [[入力]]は、次のものです [SRC[>>44]]。
-[FIG(list members middle)[
+[FIG(list members)[
 : [VAR[ドメイン名]] : [[Unicode文字列]]
 : [VAR[[[UseSTD3ASCIIRules]]]] : [[boolean]]
+: [VAR[[[CheckBidi]]]] : [[boolean]]
+: [VAR[[[CheckJoiners]]]] : [[boolean]]
+: [DFN[[VAR[[[CheckHyphens]]]]]] : [[boolean]]
 : [VAR[処理オプション]] : [DFN[[RUBYB[[[移行的処理]]]@en[Transitional Processing]]]]または[DFN[[RUBYB[[[非移行的処理]]]@en[Nontransitional Processing]]]]
 : [VAR[Punycode符号化]] : [[boolean]] (既定値は[[偽]])
 : [VAR[VerifyDnsLength]] : [[boolean]]
@@ -112,12 +117,14 @@
 ==== [29] [VAR[ラベル群]]における[VAR[ラベル]]を、[VAR[結果]]で置き換えます。
 以後[VAR[ラベル]]は[VAR[結果]]とします。
 ==== [30] [VAR[結果]]を、
-[VAR[ラベル]]が[[非移行的処理]]、[VAR[[[UseSTD3ASCIIRules]]]] についての[[妥当性基準]]に合致するか否かに設定します。
+[VAR[ラベル]]が[[非移行的処理]]、[VAR[[[UseSTD3ASCIIRules]]]]、
+[VAR[[[CheckHyphens]]]] についての[[妥当性基準]]に合致するか否かに設定します。
 ==== [52] [VAR[結果]]が[[偽]]なら、
 ===== [53] [VAR[誤り]]を、[[真]]に設定します。
 == [31] それ以外の場合、
 === [32] [VAR[結果]]を、
-[VAR[ラベル]]が[VAR[処理オプション]]、[VAR[[[UseSTD3ASCIIRules]]]] についての[[妥当性基準]]に合致するか否かに設定します。
+[VAR[ラベル]]が[VAR[処理オプション]]、[VAR[[[UseSTD3ASCIIRules]]]]、
+[VAR[[[CheckHyphens]]]] についての[[妥当性基準]]に合致するか否かに設定します。
 === [54] [VAR[結果]]が[[偽]]なら、
 ==== [55] [VAR[誤り]]を、[[真]]に設定します。
 == [96] [VAR[Punycode符号化]]が[[真]]の場合 [SRC[>>95]]、
@@ -234,24 +241,34 @@
 
 * ドメインをUnicodeに
 
-[77] [DFN[[RUBYB[ドメインをUnicodeに]@en[domain to Unicode]]]]する操作は、
-[VAR[ドメイン]]を次のようにします [SRC[>>76]]。
+[77] [DFN[[RUBYB[ドメインをUnicodeに]@en[domain to Unicode]]]]する[[演算]]は、
+[[ドメイン]][VAR[ドメイン]]を、次のようにします [SRC[>>76]]。
+
 [FIG(steps)[
 = [78] ([VAR[結果]]、[VAR[誤り]]) を、 [[UTS #46]] [[ToUnicode]] の結果に設定します。
 [FIG(list members middle)[
+
 : [VAR[ドメイン名]] : [VAR[ドメイン]]
+: [VAR[[[CheckHyphens]]]] : [[偽]]
+: [VAR[[[CheckBidi]]]] : [[真]]
+: [VAR[[[CheckJoiners]]]] : [[真]]
 : [VAR[[[UseSTD3ASCIIRules]]]] : [[偽]]
+
 ]FIG]
-= [79] [VAR[誤り]]が[[真]]なら、
+= [79] [VAR[誤り]]が[[真]]の場合、
 == [80] [[構文違反]]を報告します。
 = [81] [VAR[結果]]を返します。
 ]FIG]
 
-[82] 次の場面で呼び出されます。
-[FIG(middle list)[
-- [[ホスト構文解析器]] ([VAR[Unicodeフラグ]]設定時)
+[82] この[[演算]]は、次の場面で呼び出されます。
+
+[FIG(middle list)[ [123] [[ドメインをUnicodeに]]する場面
 - [[URLのレンダリング]]における[[ホスト]]の[[表示]]
+
+[HISTORY[
 - [[起源のUnicode直列化]]
+- [[ホスト構文解析器]] ([VAR[Unicodeフラグ]]設定時)
+]HISTORY]
 ]FIG]
 
 * 関連
@@ -406,3 +423,27 @@
 [122] [CITE@en[IDNA: use proposed UTS46 flags to avoid breaking YouTube]]
 ([[annevk]]著, [TIME[2017-06-02 06:24:01 +09:00]])
 <https://github.com/whatwg/url/commit/dc9d83106cada9af507bf37dee3973de97b020fd>
+
+[125] [CITE@en[IDNA / UTS #46 "should" requirements (Bidi and Joiners) · Issue #110 · whatwg/url]]
+([TIME[2017-09-03 21:20:31 +09:00]])
+<https://github.com/whatwg/url/issues/110>
+
+[126] [CITE@en[IDNA: realign once UTS46 revision 18 is final · Issue #313 · whatwg/url]]
+([TIME[2017-09-03 21:23:48 +09:00]])
+<https://github.com/whatwg/url/issues/313>
+
+[127] [CITE@en[Address several IDNA issues by annevk · Pull Request #309 · whatwg/url]]
+([TIME[2017-09-03 21:24:25 +09:00]])
+<https://github.com/whatwg/url/pull/309>
+
+[128] [CITE@en[IDNA · Issue #53 · whatwg/url]]
+([TIME[2017-09-03 21:27:04 +09:00]])
+<https://github.com/whatwg/url/issues/53>
+
+[129] [CITE@en[IDNA: UTS46 revision 19 is part of Unicode 10]]
+([[annevk]]著, [TIME[2017-06-23 02:33:33 +09:00]])
+<https://github.com/whatwg/url/commit/b128ba9111c68ad767b472d77d0ada9ef85366ef>
+
+[130] [CITE@en[IDNA: UTS46 revision 19 is part of Unicode 10 by annevk · Pull Request #325 · whatwg/url]]
+([TIME[2017-09-03 21:31:43 +09:00]])
+<https://github.com/whatwg/url/pull/325>
