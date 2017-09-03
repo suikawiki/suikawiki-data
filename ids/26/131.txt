@@ -337,6 +337,137 @@
 [VAR[スクリプト]]の[F[モジュール記録]]の [F(ss)[Status]] が
 [CODE[instantiated]] または [CODE[evaluated]] であることをいいます。[SRC[>>164]]
 
+-*-*-
+
+[262] 
+[DFN[[RUBYB[内部モジュールスクリプトグラフfetch手続き]@en[internal module script graph fetching procedure]]]]は、
+次のようにします。 [SRC[>>164]]
+
+[[引数]]として、次のものを受け取ります。
+[VAR[URL]],
+[VAR[fetchクライアント設定群オブジェクト]],
+[VAR[終点]],
+[VAR[暗号学的nonce]],
+[VAR[構文解析器状態]],
+[VAR[credentialsモード]],
+[VAR[モジュール写像設定群オブジェクト]],
+[VAR[祖先リスト]],
+[VAR[参照子]],
+[VAR[最上位モジュールfetchフラグ]],
+[VAR[fetchの実行]],
+[VAR[続きの処理]]。
+
+[FIG(steps)[
+= [263] [[単一モジュールスクリプトのfetch]]を実行します。
+[VAR[URL]],
+[VAR[fetchクライアント設定群オブジェクト]],
+[VAR[終点]],
+[VAR[暗号学的nonce]],
+[VAR[構文解析器状態]],
+[VAR[credentialsモード]],
+[VAR[モジュール写像設定群オブジェクト]],
+[VAR[参照子]],
+[VAR[最上位モジュールfetchフラグ]],
+[VAR[fetchの実行]]を引き渡します。
+[VAR[続きの処理]]は、 >>264 とします。
+]FIG]
+
+[264] その続きの処理は、[VAR[結果]]について、次のようにします [SRC[>>164]]。
+
+[FIG(steps)[
+= [265] [VAR[結果]]が [CODE[null]] か、
+[VAR[結果]]の[F[エラーである][モジュールスクリプトがエラーである]]が[[真]]か、
+[VAR[結果]]の[F[実現値化されている][モジュールスクリプトが実現値化されている]]が[[真]]の場合、
+== [266] [VAR[結果]]について、[VAR[続きの処理]]を実行します。
+= [267] それ以外の場合、
+== [272] [VAR[祖先リスト]]を、[VAR[祖先リスト]]の末尾に [VAR[URL]] を追加した[[リスト]]に設定します。
+== [268] [VAR[最上位モジュールfetchフラグ]]が設定されている場合、
+=== [269] [VAR[結果]]と[VAR[祖先リスト]]について、
+[[モジュールスクリプトの子孫のfetchと実現値化]]を実行します。
+[VAR[続きの処理]]を引き渡します。
+== [270] それ以外の場合、
+=== [271] [VAR[結果]]と[VAR[祖先リスト]]について、
+[[モジュールスクリプトの子孫のfetch]]を実行します。
+[VAR[続きの処理]]を引き渡します。
+
+]FIG]
+
+[273] 
+[DFN[[RUBYB[単一モジュールスクリプトのfetch]@en[fetch a single module script]]]]は、
+次のようにします。 [SRC[>>164]]
+
+[[引数]]として、次のものを受け取ります。
+[VAR[URL]],
+[VAR[fetchクライアント設定群オブジェクト]],
+[VAR[終点]],
+[VAR[暗号学的nonce]],
+[VAR[構文解析器状態]],
+[VAR[credentialsモード]],
+[VAR[モジュール写像設定群オブジェクト]],
+[VAR[参照子]],
+[VAR[最上位モジュールfetchフラグ]],
+[VAR[fetchの実行]],
+[VAR[続きの処理]]。
+
+[FIG(steps)[
+= [274] [VAR[モジュール写像]]を、[VAR[モジュール写像設定群オブジェクト]]の[F[モジュール写像]]に設定します。
+= [275] [VAR[モジュール写像]] [ [VAR[URL]] ] が [CODE[fetching]] の場合、
+
+@@
+If moduleMap[url] is "fetching", wait in parallel until that entry's value changes, then queue a task on the networking task source to proceed with running the following steps.
+
+= [276] [VAR[モジュール写像]] [ [VAR[URL]] ] が存在する場合、
+== [277] [VAR[モジュール写像]] [ [VAR[URL]] ] について、[VAR[続きの処理]]を実行します。
+= [278] それ以外の場合、
+== [279] [VAR[モジュール写像]] [ [VAR[URL]] ] を、 [CODE[fetching]] に設定します。
+@@
+
+== [280] [VAR[要求]]を、新しい[[要求]]に設定します。
+[FIG(list members)[ [281] [[要求]]
+: [F[URL][要求URL]] : [VAR[URL]]
+: [F[終点][要求終点]] : [VAR[終点]]
+: [F[モード][要求モード]] : [CODE[cors]]
+: [F[credentialsモード]] : [VAR[credentialsモード]]
+: [F[暗号学的nonceメタデータ]] : [VAR[暗号学的nonce]]
+: [F[構文解析器メタデータ]] : [VAR[構文解析器状態]]
+: [F[参照子]] : [VAR[参照子]]
+: [F[クライアント][要求クライアント]] : [VAR[fetchクライアント設定群オブジェクト]]
+]FIG]
+= [282] [VAR[fetchの実行]]をします。
+[FIG(list members)[
+: [VAR[要求]] : [VAR[要求]]
+: [VAR[最上位である]]フラグ : [VAR[最上位モジュールfetchフラグ]]
+: [VAR[続きの処理]] : >>283
+]FIG]
+
+]FIG]
+
+[283] その続きの処理は、[VAR[応答]]について、次のようにします。 [SRC[>>164]]
+
+[FIG(steps)[
+= [284] [VAR[応答]]の[F[型][応答型]]が [CODE[error]]、
+[VAR[応答]]の[F[状態][応答符号]]が [[OK状態]]で''ない''、
+[VAR[応答]]の[F[ヘッダーリスト]]について[[extract a MIME type]]して[[引数]]を無視すると
+[[JavaScript MIME型]]と''ならない''、の''いずれか''が[[真]]の場合、
+== [285] [CODE[null]] について、[VAR[続きの処理]]を実行します。
+= [286] それ以外の場合、
+== [287] [VAR[ソーステキスト]]を、[VAR[応答]]の[F[本体][応答本体]]を [[UTF-8復号]]した結果に設定します。
+== [288] [VAR[モジュールスクリプト]]を、
+[[モジュールスクリプトの作成]]の結果に設定します。
+[FIG(list members)[
+: [VAR[ソース]] : [VAR[ソーステキスト]]
+: [VAR[環境設定群オブジェクト]] : [VAR[モジュール写像設定群オブジェクト]]
+: [VAR[スクリプト基底URL]] : [VAR[応答]]の[F[URL][応答URL]]
+: [VAR[暗号学的nonce]] : [VAR[暗号学的nonce]]
+: [VAR[構文解析器状態]] : [VAR[構文解析器状態]]
+: [VAR[credentialsモード]] : [VAR[credentialsモード]]
+]FIG]
+== [289] [VAR[モジュール写像]] [ [VAR[URL]] ] を、[VAR[モジュールスクリプト]]に設定します。
+@@
+== [290] [VAR[モジュールスクリプト]]について、[VAR[続きの処理]]を実行します。
+]FIG]
+
+
 @@
 
 * fetchの実行
