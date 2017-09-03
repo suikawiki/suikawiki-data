@@ -14,6 +14,39 @@
 - [110] [CITE@en[URL Standard]] ([TIME[2016-08-25 16:02:43 +09:00]]) <https://url.spec.whatwg.org/#dom-url-domaintounicode>
 ]REFS]
 
+
+* ドメインをUnicodeに
+
+[77] [DFN[[RUBYB[ドメインをUnicodeに]@en[domain to Unicode]]]]する[[演算]]は、
+[[ドメイン]][VAR[ドメイン]]を、次のようにします [SRC[>>76]]。
+
+[FIG(steps)[
+= [78] ([VAR[結果]]、[VAR[誤り]]) を、 [[UTS #46]] [[ToUnicode]] の結果に設定します。
+[FIG(list members middle)[
+
+: [VAR[ドメイン名]] : [VAR[ドメイン]]
+: [VAR[[[CheckHyphens]]]] : [[偽]]
+: [VAR[[[CheckBidi]]]] : [[真]]
+: [VAR[[[CheckJoiners]]]] : [[真]]
+: [VAR[[[UseSTD3ASCIIRules]]]] : [[偽]]
+
+]FIG]
+= [79] [VAR[誤り]]が[[真]]の場合、
+== [80] [[構文違反]]を報告します。
+= [81] [VAR[結果]]を返します。
+]FIG]
+
+[82] この[[演算]]は、次の場面で呼び出されます。
+
+[FIG(middle list)[ [123] [[ドメインをUnicodeに]]する場面
+- [[URLのレンダリング]]における[[ホスト]]の[[表示]]
+
+[HISTORY[
+- [[起源のUnicode直列化]]
+- [[ホスト構文解析器]] ([VAR[Unicodeフラグ]]設定時)
+]HISTORY]
+]FIG]
+
 * UTS #46 の ToUnicode 演算
 
 [19] [[UTS #46]] の [DFN[ToUnicode]] [[演算]]は、
@@ -21,6 +54,9 @@
 [FIG(list members middle)[
 : [VAR[ドメイン名]] : [[Unicode文字列]]
 : [VAR[[[UseSTD3ASCIIRules]]]] : [[boolean]]
+: [VAR[[[CheckHyphens]]]] : [[boolean]]
+: [VAR[[[CheckBidi]]]] : [[boolean]]
+: [VAR[[[CheckJoiners]]]] : [[boolean]]
 ]FIG]
 
 [38] 次のようにします [SRC[>>17]]。
@@ -29,6 +65,9 @@
 [FIG(list members middle)[
 : [VAR[ドメイン名]] : [VAR[ドメイン名]]
 : [VAR[[[UseSTD3ASCIIRules]]]] : [VAR[[[UseSTD3ASCIIRules]]]]
+: [VAR[[[CheckHyphens]]]] : [VAR[[[CheckHyphens]]]]
+: [VAR[[[CheckBidi]]]] : [VAR[[[CheckBidi]]]]
+: [VAR[[[CheckJoiners]]]] : [VAR[[[CheckJoiners]]]]
 : [VAR[処理オプション]] : [[非移行的処理]]
 ]FIG]
 = [71] ([VAR[ドメイン名]]、[VAR[誤り]]) を返します。
@@ -36,13 +75,7 @@
 
 ;; [18] [[UTS #46]] の [[ToUnicode]] [[演算]]は、[[ラベル]]ではなく[[ドメイン名]]全体に対して定義されています。
 
-[73] 次の場面で呼び出されます。
-
-[FIG(short list)[ [124] [[ToUnicode]] する場面
-- [[IDNA2008前処理]]
-- [[ドメインをUnicodeに]]
-- [[妥当なドメイン]]
-]FIG]
+[73] 利用される場面は、 >>72 を参照。
 
 [74] テストデータ:
 
@@ -75,8 +108,6 @@
 で [[Aラベル]] ([[ACEラベル]]) への変換結果が変わってしまう4文字の扱いだけ [SRC[>>25]] です。
 [[移行的処理]]はこの4文字を [[IDNA2003]] 風に[[写像]]して他の文字に変えたり削除したりしますが、
 [[非移行的処理]]ではそのまま残します。
-
-[107] [[Web]] では、 [VAR[[[UseSTD3ASCIIRules]]]] と [VAR[VerifyDnsLength]] は常に[[偽]]です。
 
 [45] [[出力]]は、 ([[Unicode文字列]], [[boolean]]) の組です。
 [[Unicode文字列]]は、変換結果です。 [[boolean]] は、[[誤り]]の有無を表します。
@@ -118,13 +149,17 @@
 以後[VAR[ラベル]]は[VAR[結果]]とします。
 ==== [30] [VAR[結果]]を、
 [VAR[ラベル]]が[[非移行的処理]]、[VAR[[[UseSTD3ASCIIRules]]]]、
-[VAR[[[CheckHyphens]]]] についての[[妥当性基準]]に合致するか否かに設定します。
+[VAR[[[CheckHyphens]]]]、
+[VAR[[[CheckBidi]]]]、
+[VAR[[[CheckJoiners]]]] についての[[妥当性基準]]に合致するか否かに設定します。
 ==== [52] [VAR[結果]]が[[偽]]なら、
 ===== [53] [VAR[誤り]]を、[[真]]に設定します。
 == [31] それ以外の場合、
 === [32] [VAR[結果]]を、
 [VAR[ラベル]]が[VAR[処理オプション]]、[VAR[[[UseSTD3ASCIIRules]]]]、
-[VAR[[[CheckHyphens]]]] についての[[妥当性基準]]に合致するか否かに設定します。
+[VAR[[[CheckHyphens]]]]、
+[VAR[[[CheckBidi]]]]、
+[VAR[[[CheckJoiners]]]] についての[[妥当性基準]]に合致するか否かに設定します。
 === [54] [VAR[結果]]が[[偽]]なら、
 ==== [55] [VAR[誤り]]を、[[真]]に設定します。
 == [96] [VAR[Punycode符号化]]が[[真]]の場合 [SRC[>>95]]、
@@ -153,16 +188,11 @@
 例えば[VAR[誤り]]が[[真]]に設定される原因の部分を [CODE[U+FFFD]]
 に置き換えたりすることが[RUBYB[推奨]@en[recommend]]されます。 [SRC[>>44]]
 
-
-[72] [[Unicode IDNA互換性処理]]は、次の場面で呼び出されます。
-[FIG(list short)[
-- [[UTS #46]] [[ToUnicode]]
-- [[UTS #46]] [[ToASCII]]
-]FIG]
-
-
 [35] この[[算法]]は[[冪等]]です。 [SRC[>>44]]
 
+[107] 利用される場面は、 >>72 を参照。
+
+-*-*-
 
 [37] 誤りとなる場合の処理は、 [[Chrome]] も [[Firefox]] も、[[仕様書]]とは少しずつ違うようです。
 両者も互いに異なります。[[非ASCII文字]]を含む場合、含まない場合、
@@ -239,36 +269,49 @@
 禁止されている[[文字]]を [CODE(char)[[[U+FFFD]]]] に置き換えたり、
 [[妥当性検証]]で失敗した[[ラベル]]を [CODE(char)[[[U+FFFD]]]] その他の表示により[[利用者]]に示したりするのがよいとされています。 [SRC[>>44]]
 
-* ドメインをUnicodeに
+* 文脈
 
-[77] [DFN[[RUBYB[ドメインをUnicodeに]@en[domain to Unicode]]]]する[[演算]]は、
-[[ドメイン]][VAR[ドメイン]]を、次のようにします [SRC[>>76]]。
+[72] [[Unicode IDNA互換性処理]]とそれを使った [[ToUnicode]], [[ToASCII]]
+は、次の場面で呼び出されます。
 
-[FIG(steps)[
-= [78] ([VAR[結果]]、[VAR[誤り]]) を、 [[UTS #46]] [[ToUnicode]] の結果に設定します。
-[FIG(list members middle)[
+[FIG(table cols)[
+:x: 場面
+:std3: [VAR[[[UseSTD3ASCIIRules]]]] 
+:bidi: [VAR[[[CheckBidi]]]]
+:joiners: [VAR[[[CheckJoiners]]]]
+:hyphens: [VAR[[[CheckHyphens]]]]
+:pr: [VAR[処理オプション]]
+:pu: [VAR[Punycode符号化]]
+:l: [VAR[VerifyDnsLength]]
 
-: [VAR[ドメイン名]] : [VAR[ドメイン]]
-: [VAR[[[CheckHyphens]]]] : [[偽]]
-: [VAR[[[CheckBidi]]]] : [[真]]
-: [VAR[[[CheckJoiners]]]] : [[真]]
-: [VAR[[[UseSTD3ASCIIRules]]]] : [[偽]]
+:x: [[UTS #46]] [[ToUnicode]]
+:std3: [[引数]]
+:bidi: [[引数]]
+:joiners: [[引数]]
+:hyphens: [[引数]]
+:pr: [[非移行的処理]]
+:pu: [[偽]]
+:l: [[偽]]
 
-]FIG]
-= [79] [VAR[誤り]]が[[真]]の場合、
-== [80] [[構文違反]]を報告します。
-= [81] [VAR[結果]]を返します。
-]FIG]
+:x: [[IDNA2008前処理]] (→ [[ToUnicode]])
 
-[82] この[[演算]]は、次の場面で呼び出されます。
+:x: [[ドメインをUnicodeに]] (→ [[ToUnicode]])
 
-[FIG(middle list)[ [123] [[ドメインをUnicodeに]]する場面
-- [[URLのレンダリング]]における[[ホスト]]の[[表示]]
+:x: [[妥当なドメイン]] (→ [[ToUnicode]])
 
-[HISTORY[
-- [[起源のUnicode直列化]]
-- [[ホスト構文解析器]] ([VAR[Unicodeフラグ]]設定時)
-]HISTORY]
+-*-*-
+
+:x: [[UTS #46]] [[ToASCII]]
+:std3: [[引数]]
+:bidi: [[引数]]
+:joiners: [[引数]]
+:hyphens: [[引数]]
+:pr: [[引数]]
+:pu: [[真]]
+:l: [[引数]]
+
+:x: [[ドメインをASCIIに]] (→ [[ToASCII]])
+
 ]FIG]
 
 * 関連
