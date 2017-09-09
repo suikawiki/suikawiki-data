@@ -109,6 +109,11 @@ if (document.all) {
 について要求されているようですが、 [CODE(JS)@en[[[document.all]]]] 以外で [CODE(DOMi)@en[[[HTMLAllCollection]]]]
 は使われていないので (今後も使われる見込みはないので)、実質的にそれと同じです。
 
+-*-*-
+
+[94] [CODE[HTMLAllCollection]] [[インターフェイス]]を[[実装]]する[[オブジェクト]]は、
+[[legacy platform object]] です [SRC[[CITE[HTML Standard]]]]。
+
 * 索引による要素へのアクセス
 
 [61] [CODE(DOMi)@en[HTMLAllCollection]] の [[supported property indices]]
@@ -228,27 +233,50 @@ if (document.all) {
 ;; [32] なお、同じ条件の [CODE(DOMi)@en[HTMLCollection]] を返すことになっても、
 毎回同じ[[オブジェクト]]を返すことは求められていないようです。
 
-* [CODE(DOMm)@en[item]] メソッド
+* [CODE(DOMm)@en[item]] メソッドと legacycaller
 
 [25] [CODE(DOMi)@en[HTMLAllCollection]] の [CODE(DOMm)@en[item][item (DOM)]]
-[[メソッド]]と [[legacycaller]] は、次のようにしなければ[MUST[なりません]] [SRC[>>13]]。
+[[メソッド]]は、次のようにしなければ[MUST[なりません]] [SRC[>>13]]。
 
 [FIG(steps)[
 = [26] [VAR[名前]]を、第1引数を[[省略可能]]な[[文字列]]と解釈した結果に設定します。
-= [86] [VAR[名前]]により、
-[FIG(switch)[
-: [82] 未指定の場合 :
-[[null]] を返してここで停止します。
-: [83] [[配列索引特性名]]の場合 :
+= [97] [VAR[名前]]が省略されている場合、
+== [98] [CODE[null]] を返します。
+= [99] それ以外の場合、
+== [95] [[文脈オブジェクト]]と[VAR[名前]]について
+[[get the "all"-indexed or named element(s)]]
+した結果を返します。
+]FIG]
+
+[83] [CODE(DOMi)@en[HTMLAllCollection]] [[オブジェクト]]の
+[F(ss)[Call]] は、[VAR[this]]、[VAR[引数リスト]]について、次のようにします
+[SRC[>>13]]。
+
 [FIG(steps)[
-= [84] [VAR[索引]]を、[VAR[名前]]に [CODE[ToUint32]] を適用した結果に設定します。
-= [85] [VAR[索引]]について [[get the "all"-indexed element]] を実行した結果を返します。
-ただし[VAR[コレクション]]は[[文脈オブジェクト]]とします。
+= [100] [VAR[引数リスト]]の[F[サイズ]]が [N[0]] の場合、
+== [101] [CODE[null]] を返します。
+= [105] それ以外の場合、
+== [102] [VAR[名前]]を、
+[VAR[引数リスト]] [ [N[0]] ] を [CODE[DOMString]] に[[変換][変換 (Web IDL)]]した結果に設定します。
+== [103] [VAR[結果]]を、[[文脈オブジェクト]]と[VAR[名前]]について
+[[get the "all"-indexed or named element(s)]] した結果に設定します。
+== [104] [VAR[結果]]を [[JavaScript値]] に[[変換][変換 (Web IDL)]]した結果を返します。
 ]FIG]
-: [87] それ以外の場合 :
-[VAR[名前]]について [[get the "all"-named element(s)]] を実行した結果を返します。
-[VAR[コレクション]]は、[[文脈オブジェクト]]とします。
-]FIG]
+
+;; [106] [[文脈オブジェクト]]の結果が返され、 [CODE[this]] は無視されます。
+
+[96] [CODE(DOMi)@en[HTMLAllCollection]] [VAR[コレクション]]と[VAR[名前]]について
+[DFN[get the "all"-indexed or named element(s)]] するには、
+次のようにします [SRC[>>13]]。
+
+[FIG(steps)[
+= [86] [VAR[名前]]が[[配列索引特性名]]の場合、
+== [84] [VAR[索引]]を、[VAR[名前]]に [CODE[ToUint32]] を適用した結果に設定します。
+== [85] [VAR[コレクション]]と[VAR[索引]]について 
+[[get the "all"-indexed element]] を実行した結果を返します。
+= [87] それ以外の場合、
+== [82] [VAR[コレクション]]と[VAR[名前]]について 
+[[get the "all"-named element(s)]] を実行した結果を返します。
 ]FIG]
 
 [88] つまり [CODE(DOMm)@en[item][item (DOM)]] [[メソッド]]は[[引数]]によって
@@ -396,3 +424,11 @@ if (document.all) {
 [92] [CITE@en[Remove <applet> (except for parsing rules) · Issue #454 · whatwg/html]]
 ([TIME[2017-08-25 23:41:45 +09:00]])
 <https://github.com/whatwg/html/issues/454>
+
+[93] [CITE@en[Editorial: switch HTMLAllCollection legacycaller to custom '''[''''''['''Call''']'''''']''']]
+([[tobie]]著, [TIME[2017-09-09 06:21:15 +09:00]])
+<https://github.com/whatwg/html/commit/0679448c59cb4cd69019be1e1f35fee1bcbc9c66>
+
+[107] [CITE@en[Add HTMLAllCollection '''[''''''['''Call''']'''''']''', remove legacycaller special operation by tobie · Pull Request #2932 · whatwg/html]]
+([TIME[2017-09-09 17:37:22 +09:00]])
+<https://github.com/whatwg/html/pull/2932>
