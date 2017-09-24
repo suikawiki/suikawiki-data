@@ -1,6 +1,7 @@
 * 仕様書
 
 [REFS[
+- [20] '''[CITE@en[RFC 1950 - ZLIB Compressed Data Format Specification version 3.3]] ([TIME[2017-09-17 17:15:13 +09:00]]) <https://tools.ietf.org/html/rfc1950>'''
 - [2] [CITE@en[RFC 7230 - Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing]] ([TIME[2014-06-07 01:59:35 +09:00]] 版) <https://tools.ietf.org/html/rfc7230#section-4.2.2>
 - [6] [CITE@en[RFC 7230 - Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing]] ([TIME[2014-06-07 01:59:35 +09:00]] 版) <https://tools.ietf.org/html/rfc7230#section-8.5>
 - [7] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#page-12>
@@ -17,6 +18,15 @@
 - [[PNG]]
 ]FIG]
 
+* 符号化 (圧縮)
+
+[22] [[圧縮器]]は、
+[[RFC 1950]] のすべての要件を満たすデータを生成しなければなりません。 [SRC[>>20]]
+
+* 復号 (展開)
+
+[23] [[展開器]]は、[[RFC 1950]] に適合する任意のデータを受理し展開できなければなりません。
+[SRC[>>20]]
 
 * 転送符号化 [CODE[deflate]]
 
@@ -40,16 +50,25 @@
 [16] [CODE(HTTP)@en[[[gdiff]]]] や [CODE(HTTP)@en[[[diffe]]]] は[[圧縮]]によって大きくサイズを削減できますから、
 [CODE(HTTP)@en[[[deflate]]]] も実装することが[RUBYB[強く推奨]@en[strongly recommended]]されています [SRC[>>15]]。
 
-** 歴史
+* 歴史
 
-[89] [[IANA登録簿]]には [[RFC 2616]] を出典として登録されています [SRC[>>88]]。
+[24] 3.1 版が最初の公開版です。 [SRC[>>20]]
+
+[25] 3.2 版で用語の変更と [[Adler-32]] コード例の改訂がありました。 [SRC[>>20]]
+
+[26] 3.3 版で [[preset dictionary]] が導入され、 [[RFC]] 化されました。 [SRC[>>20]]
+
+
+[21] [[ランダムアクセス]]は設計上の想定外とされています [SRC[>>20]]。
+
+
+[89] [[実現値操作]] [CODE[deflate]] は[[IANA登録簿]]には [[RFC 2616]] を出典として登録されています [SRC[>>88]]。
 [[RFC 723x]] 出版後も出典は更新されていません。 [TIME[2014-11-19T16:22:24.500Z]]
 
 [REFS[
 - [88] [CITE[Instance Manipulation Values]] ([TIME[2014-01-31 02:45:13 +09:00]] 版) <http://www.iana.org/assignments/inst-man-values/inst-man-values.xhtml>
 ]REFS]
 
-* メモ
 
 [11] [CITE[zlib Home Site]]
 ( ([TIME[2014-03-27 06:36:36 +09:00]] 版))
@@ -84,5 +103,32 @@
 ]FIGCAPTION]
 
 > "gzip" is the gzip format, and "deflate" is the zlib format. They should probably have called the second one "zlib" instead to avoid confusion with the raw deflate compressed data format. While the HTTP 1.1 RFC 2616 correctly points to the zlib specification in RFC 1950 for the "deflate" transfer encoding, there have been reports of servers and browsers that incorrectly produce or expect raw deflate data per the deflate specficiation in RFC 1951, most notably Microsoft. So even though the "deflate" transfer encoding using the zlib format would be the more efficient approach (and in fact exactly what the zlib format was designed for), using the "gzip" transfer encoding is probably more reliable due to an unfortunate choice of name on the part of the HTTP 1.1 authors.
+
+]FIG]
+
+
+[FIG(quote)[
+[FIGCAPTION[
+[19] ([TIME[2017-06-20 10:35:40 +09:00]])
+<http://cpansearch.perl.org/src/OALDERS/HTTP-Message-6.13/lib/HTTP/Message.pm>
+]FIGCAPTION]
+
+> 		    require IO::Uncompress::Inflate;
+> 		    my $output;
+> 		    my $status = IO::Uncompress::Inflate::inflate($content_ref, \$output, Transparent => 0);
+> 		    my $error = $IO::Uncompress::Inflate::InflateError;
+> 		    unless ($status) {
+> 			# "Content-Encoding: deflate" is supposed to mean the
+> 			# "zlib" format of RFC 1950, but Microsoft got that
+> 			# wrong, so some servers sends the raw compressed
+> 			# "deflate" data.  This tries to inflate this format.
+> 			$output = undef;
+> 			require IO::Uncompress::RawInflate;
+> 			unless (IO::Uncompress::RawInflate::rawinflate($content_ref, \$output)) {
+> 			    $self->push_header("Client-Warning" =>
+> 				"Could not raw inflate content: $IO::Uncompress::RawInflate::RawInflateError");
+> 			    $output = undef;
+> 			}
+> 		    }
 
 ]FIG]
