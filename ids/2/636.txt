@@ -6,6 +6,9 @@
 
 [REFS[
 - [19] '''[CITE@en[RFC 1952 - GZIP file format specification version 4.3]] ([TIME[2014-11-02 13:39:48 +09:00]] 版) <https://tools.ietf.org/html/rfc1952>'''
+- [141] [CITE[The gzip file format]]
+([TIME[2002-07-03 05:38:22 +09:00]])
+<http://www.gzip.org/format.txt>
 - [8] [CITE@en[RFC 7230 - Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing]] ([TIME[2014-06-07 01:59:35 +09:00]] 版) <https://tools.ietf.org/html/rfc7230#section-4.2.3>
 - [11] [CITE@en[RFC 7230 - Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing]] ([TIME[2014-06-07 01:59:35 +09:00]] 版) <https://tools.ietf.org/html/rfc7230#section-8.5>
 - [12] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#page-12>
@@ -21,6 +24,13 @@
 
 [133] [[メンバー]]数が1個以外のものが使われることもあるようですが、
 [[相互運用性]]は高くないようです [SRC[>>136]]。
+
+[142] 圧縮データの末尾は検知可能であり 
+([[gzip]] で用いる圧縮形式はそのようなものでなければならず)、
+[[記録]]指向の[[ファイルシステム]]や、
+特定ブロック長の倍数でしか読めない[[装置]]由来の場合の圧縮データを扱う[[展開器]]は、
+末尾を検知して以後を読み飛ばさなければなりません。
+([[gzip]] コマンドにもそのような機能が備わっています。) [SRC[>>141]]
 
 [REFS[
 - [136] [CITE[reading multi-member gzip files - Google グループ]] ([TIME[2017-09-25 00:07:06 +09:00]]) <https://groups.google.com/forum/#!topic/golang-nuts/VFfzYiI2rDc>
@@ -182,23 +192,28 @@
 
 [95] テキストファイルの[[改行]]の決定に便利かもしれません。 [SRC[>>19]]
 
-[96] 次の値が定義されています [SRC[>>19]]。
+[96] 次の値が定義されています。
 
-- [N[0]] - [[FAT]]
-- [N[1]] - [[Amiga]]
-- [N[2]] - [[VMS]] ([[OpenVMS]] 含む)
-- [N[3]] - [[Unix]]
-- [N[4]] - [[VM/CMS]]
-- [N[5]] - [[Atari TOS]]
-- [N[6]] - [[HPFS]]
-- [N[7]] - [[Macintosh]]
-- [N[8]] - [[Z-System]]
-- [N[9]] - [[CP/M]]
-- [N[10]] - [[TOPS-20]]
-- [N[11]] - [[NTFS]]
-- [N[12]] - [[QDOS]]
-- [N[13]] - [[Acorn RISCOS]]
-- [N[255]] - 未知
+- [N[0]] - [[FAT]] [SRC[>>19, >>141]], [[VFAT]] [SRC[>>141]], [[NTFS]] [SRC[>>141]]
+- [N[1]] - [[Amiga]] [SRC[>>19, >>141]]
+- [N[2]] - [[VMS]] [SRC[>>19, >>141]]
+- [N[3]] - [[Unix]] [SRC[>>19, >>141]]
+- [N[4]] - [[VM/CMS]] [SRC[>>19, >>141]]
+- [N[5]] - [[Atari]] [SRC[>>19, >>141]]
+- [N[6]] - [[HPFS]] [SRC[>>19, >>141]]
+- [N[7]] - [[Macintosh]] [SRC[>>19, >>141]]
+- [N[8]] - [[Z-System]] [SRC[>>19, >>141]]
+- [N[9]] - [[CP/M]] [SRC[>>19, >>141]]
+- [N[10]] - [[TOPS-20]] [SRC[>>19, >>141]]
+- [N[11]] - [[NTFS]] [SRC[>>19, >>141]]
+- [N[12]] - [[QDOS]] [SRC[>>19, >>141]]
+- [N[13]] - [[Acorn RISC OS]] [SRC[>>19, >>141]]
+- [N[14]] - [[VFAT]] [SRC[>>141]]
+- [N[15]] - [[MVS]] [SRC[>>141]] ([[PRIMOS]] にも使われる [SRC[>>141]])
+- [N[16]] - [[BeOS]] [SRC[>>141]]
+- [N[17]] - [[Tandem/NSK]]
+- [N[18]] - [[THEOS]]
+- [N[255]] - 未知 [SRC[>>19]]
 
 [112] [[圧縮器]]は、これを常に [N[255]] として構いません。 [SRC[>>19]]
 
@@ -230,11 +245,45 @@
 
 [105] 通常は2つの [[ASCII文字]]が割り当てられます。
 割当は [[Jean-Loup Gailly]] <gzip@prep.ai.mit.edu> が管理しています。  [SRC[>>19]]
+追加要求は <support@gzip.org> に送信することになっています [SRC[>>141]]。
 
-[107] [[SI1]] = [N[0x41]], [[SI2]] = [N[0x70]] ([CODE[AP]])
+[143] ([N[0x41]], [N[0x43]]) = [CODE[AC]]
+は、 [[Acorn]] RISC OS/BBC MOS [RUBYB[ファイル型情報]@en[file type information]]
+を表します (Kevin Bracey)。 [SRC[>>141]]
+
+[107] ([N[0x41]], [N[0x70]]) = [CODE[Ap]]
 は、 [[Apollo]] [RUBYB[ファイル型情報]@en[file type information]] を表します。 [SRC[>>19]]
+([[David Sundstrom]]) [SRC[>>141]]
+
+[140] ([N[66]], [N[67]]) = [CODE[BC]] は、
+[[BGZF]] が使っています [SRC[>>138]]。
+
+[144] ([N[0x63]], [N[0x70]]) = [CODE[cp]] は、
+[[cpio]] で圧縮した[[ファイル]]を表します
+([[Geoffrey Dairiki]])。 [SRC[>>141]]
+
+[145] ([N[0x1D]], [N[0x53]]) = [CODE[gs]] ([[ママ]]) は、
+[[gzsig]] <http://www.monkey.org/~dugsong/gzsig-0.1.tar.gz>
+([[Dug Song]]) で使っています。 [SRC[>>141]]
+
+[146] ([N[0x4B]], [N[0x4E]]) = [CODE[KN]] は、
+KeyNote assertion ([[RFC 2704]]) <http://www.cis.upenn.edu/~keynote/>
+([[Dug Song]]) で使っています。 [SRC[>>141]]
+
+[147] ([N[0x4D]], [N[0x63]]) = [CODE[Mc]] は、
+[[Macintosh]] 情報 (Type および Creator) を表します
+([[Cary Scofield]])。 [SRC[>>141]]
+
+[148] ([N[0x52]], [N[0x4F]]) = [CODE[RO]] は、
+[[Acorn]] Risc OS [RUBYB[ファイル型情報]@en[file type information]]を表します
+([[Adam Goodfellow]])。 [SRC[>>141]]
 
 [106] [[SI2]] = [N[0]] の ID は、将来用に予約されています。 [SRC[>>19]]
+
+[REFS[
+- [137] [CITE@en[samtools/hts-specs: Specifications of SAM/BAM and related high-throughput sequencing file formats]] ([TIME[2017-09-25 00:12:17 +09:00]]) <https://github.com/samtools/hts-specs>
+-- [138] [CITE[Sequence Alignment/Map Format Specification]] ([TIME[2017-08-31 02:41:46 +09:00]]) <https://samtools.github.io/hts-specs/SAMv1.pdf#page=11>
+]REFS]
 
 -*-*-
 
@@ -503,3 +552,5 @@
 > Now if a request contains a Content-Encoding: gzip header, the body will be automatically decompressed. Few browsers have the ability to gzip request bodies. However, some special applications actually do support request compression, for instance some WebDAV clients.
 
 ]FIG]
+
+
