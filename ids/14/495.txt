@@ -362,6 +362,8 @@ and a [[boolean]] [VAR[skip DNS cache]] and returns a [[IP address]] or [[failur
 If the platform does not support a feature equivalent to
 [VAR[skip DNS cache]], it [MAY[MUST]] be ignored.
 
+;; [509] It asynchronously returns.
+
 [615] The [[user agent]] [VAR[user agent]]'s [DFN[name resolution steps]]
 for [[host]] [VAR[host]] and optional [[boolean]] [VAR[skip DNS cache]] (whose
 default is [[false]]) are:
@@ -389,7 +391,7 @@ to ([VAR[addr]], [VAR[DNS cache timeout]] after [VAR[now]]).
 == [619] Return [VAR[host]].
 ]FIG]
 
-;; [620] These steps return an [[IP address]] or [[failure]].
+;; [508] These steps asynchronously return an [[IP address]] or [[failure]].
 
 ** Verification of service identity
 
@@ -701,10 +703,9 @@ whose [F[protocol][proxy's protocol]] is [CODE[tcp]].
 * Transports
 
 [640] A [DFN[transport]] has following states:
-[FIG(list members)[
-[FIGCAPTION[
-[[Transport][transport]]
-]FIGCAPTION]
+
+[FIG(list members)[ [408] [[Transport][transport]]
+
 : [DFN[[F[protocol]]][transport's protocol]] :
 One of 
 [CODE[tcp]],
@@ -717,13 +718,13 @@ One of
 : [DFN[[F[endpoint type][transport's endpoint type]]]] :
 Either [CODE[client]] or [CODE[server]].
 : [DFN[[F[remote address or domain][transport's remote address or domain]]]] :
-A [[domain]] or [[null]].  Unless stated otherwise, the value is [[null]].
+A [[host]] or [CODE[null]].  The default is [CODE[null]].
 : [DFN[[F[remote port][transport's remote port]]]] :
-An [[integer]] or [[null]].
+A [[port]] or [CODE[null]].  The default is [CODE[null]].
 : [DFN[[F[proxy configuration][transport's proxy configuration]]]] : A [[proxy configuration]].
 : [DFN[[F[http protocol][transport's http protocol]]]] :
 Either [CODE[http1]], [CODE[http2]], or [CODE[ftp]].
-Initially, [CODE[http1]].
+Tehe default is [CODE[http1]].
 :[VAR[送信閉じ済みフラグ]]:初期状態では未設定。
 :[VAR[受信閉じ済みフラグ]]:初期状態では未設定。
 :[VAR[送信待ちバッファー]]:初期状態では空のリスト。
@@ -734,20 +735,19 @@ a [[request]] has to be sent over the [[transport]] as an [[HTTP request]]
 whose [[request target]] is an [[absolute URL]].
 : [DFN[[F[HTTPS state]]][transport's HTTPS state]] :
 An [[HTTPS state]] value.  Either [CODE[none]], [CODE[deprecated]], or [CODE[modern]].
-Unless stated otherwise, the value is [CODE[none]].
+The default is [CODE[none]].
 ]FIG]
 
 [38] An [DFN[exit status]] has following states:
-[FIG(list members)[
-[FIGCAPTION[
-[[Exit status][exit status]]
-]FIGCAPTION]
+
+[FIG(list members)[ [469] [[Exit status][exit status]]
+
 :リセット:[[真]]か[[偽]]。既定値は[[偽]]。
 :失敗:[[真]]か[[偽]]。
 :[[WebSocket]] cleanly:[[真]]か[[偽]]か null。既定値は null。
 :[[WebSocket]] [[状態符号]]:[[整数]]か null。既定値は null。
 :[[WebSocket]] 理由:[[文字列]]か null。既定値は null。
-: [DFN[[F[can retry][exit's can retry]]]] : A [[boolean]].  Initially, [[false]].
+: [DFN[[F[can retry][exit's can retry]]]] : A [[boolean]].  The default is [[false]].
 ]FIG]
 
 [1054] To [DFN[create a transport for a proxy configuration]] [VAR[proxy]]
@@ -869,7 +869,9 @@ with [VAR[transport]], [VAR[url]]'s [F[host]], and [VAR[effective port]].
 and a [[user agent]] [VAR[user agent]], optionally with [VAR[credentials]], [VAR[ws]],
 [VAR[[CODE[acceptSslCerts]]]],
 and [VAR[skip DNS cache]] flags, run these steps:
+
 [FIG(steps)[
+= [936] Assert: [VAR[url]]'s [F[scheme][URL scheme]] has to be a [[network scheme]].
 = [1009] Let [VAR[proxies]] be the result of [[getting proxies][get proxies]] for [VAR[url]] in [VAR[user agent]].
 = [908] Let [VAR[addr]] be [[null]].
 = [914] Let [VAR[port]] be [VAR[url]]'s [F[port]].
@@ -892,7 +894,7 @@ to [VAR[proxy]].
 = [606] Return a [[failure]].
 ]FIG]
 
-;; [936] [VAR[url]]'s [F[scheme][URL scheme]] has to be a [[network scheme]].
+;; [507] These steps asynchronously return.
 
 [642] [[アプリケーション]]は、 [[transport]] に次の指示を行えます。
 [FIG(list)[
@@ -979,23 +981,23 @@ to [VAR[proxy]].
 
 ** TCP
 
-[627] To [DFN[establish a TCP transport]] to [VAR[addr]] and [VAR[port]],
-run these steps:
+[627] To [DFN[establish a TCP transport]] to [[IP address]] [VAR[addr]] and 
+[[port]] [VAR[port]], run these steps:
+
 [FIG(steps)[
 = [1416] If [VAR[addr]] is [CODE[127.0.53.53]]:
 == [1417] Return a [[failure]] and abort these steps.
-= [628] Connect to address [VAR[addr]] and port [VAR[port]] using [[TCP]].
+= [628] Connect to [VAR[addr]] and [VAR[port]] using [[TCP]].
 = [641] If a [[TCP connection]] has been established:
-== [674] Let [VAR[transport]] be a [[transport]] representing the
+== [674] Let [VAR[transport]] be a new [[transport]] representing the
 [[TCP connection]], with following states:
-[FIG(list members)[
-[FIGCAPTION[
-[[Transport][transport]]
-]FIGCAPTION]
+[FIG(list members)[ [406] [[Transport][transport]]
+
 : [F[protocol][transport's protocol]] : [CODE[tcp]]
 : [F[endpoint type][transport's endpoint type]] : [CODE[client]]
 : [F[remote address or domain][transport's remote address or domain]] : [VAR[addr]]
 : [F[remote port][transport's remote port]] : [VAR[port]]
+
 ]FIG]
 == [630] Disable the [CODE[SO_OOBINLINE]] option of [VAR[transport]]'s connection.
 == [631] Enable the [CODE[SO_NODELAY]] option of [VAR[transport]]'s connection.
@@ -1005,15 +1007,43 @@ run these steps:
 == [819] Return a [[failure]].
 ]FIG]
 
+;; [510] These steps asynchronously return.
+
+[411] A TCP server, whenever it accepts a connection from
+[[IP address]] [VAR[remote addr]] and [[port]] [VAR[remote port]],
+[MUST[MUST]] run the [[TCP after accept steps]] with [VAR[remote addr]] and [VAR[remote port]].
+
+[524] The [DFN[TCP after accept steps]] with 
+[[IP address]] [VAR[addr]] and [[port]] [VAR[port]] are:
+
+[FIG(steps)[
+= [414] Let [VAR[transport]] be a new [[transport]] representing the
+[[TCP connection]], with following states:
+[FIG(list members)[ [417] [[Transport][transport]]
+
+: [F[protocol][transport's protocol]] : [CODE[tcp]]
+: [F[endpoint type][transport's endpoint type]] : [CODE[server]]
+: [F[remote address or domain][transport's remote address or domain]] : [VAR[remote addr]]
+: [F[remote port][transport's remote port]] : [VAR[remote port]]
+
+]FIG]
+= [420] Disable the [CODE[SO_OOBINLINE]] option of [VAR[transport]]'s connection.
+= [424] Enable the [CODE[SO_NODELAY]] option of [VAR[transport]]'s connection.
+= [437] Run the [[TCP keep alive steps]] for [VAR[transport]].
+= [460] Optionally, run implementation dependent steps (e.g. [[DoS]] protection).
+= [446] Return [VAR[transport]].
+]FIG]
+
 [634] The [DFN[TCP keep alive steps]] for [VAR[transport]] are implementation
 dependent.  An example of such steps is:
+
 [FIG(steps)[
 = [635] Enable the [CODE[SO_KEEPALIVE]] option of [VAR[transport]].
 = [636] Set [CODE[TCP_KEEPIDLE]] option of [VAR[transport]]'s connection to 45 (seconds).
 = [637] Set [CODE[TCP_KEEPINTVL]] option of [VAR[transport]]'s connection to 45 (seconds).
 ]FIG]
 
-@@ [675] XXX server accept steps
+-*-*-
 
 [676] [[TCP]] の[[セグメント]]を受信したら、次のようにします。
 [FIG(steps)[
@@ -1195,6 +1225,8 @@ to [[IPv4 address]] [VAR[address]] and [[port]] [VAR[port]] over
 ]FIG]
 ]FIG]
 
+;; [511] These steps asynchronously return.
+
 @@ [742] XXX server
 
 [783] 接続確立後は、指示は[VAR[transport]]への指示とし、
@@ -1254,15 +1286,18 @@ run these steps:
 ]FIG]
 ]FIG]
 
+;; [520] These steps asynchronously return.
+
 @@ [782] XXX server
 
 [804] 接続確立後は、指示は[VAR[transport]]への指示とし、
 [VAR[transport]]からの通知があればそれを通知します。
 
-** UNIX domain socket の場合
+** Unix domain sockets
 
-[805] To [DFN[establish a UNIX domain socket connection]] for [[byte string]] [VAR[path]]
+[805] To [DFN[establish a Unix domain socket connection]] for [[byte string]] [VAR[path]]
 with [[host]] [VAR[host]] and [[integer]] [VAR[port]], run these steps:
+
 [FIG(steps)[
 = [807] [[ソケットAPI]]を使って新たに接続します。
 [FIG(list members)[
@@ -1284,7 +1319,26 @@ with following states:
 ]FIG]
 ]FIG]
 
-@@ [608] XXX server
+;; [522] These steps asynchronously return.
+
+[604] A Unix domain socket server, whenever it accepts a connection,
+[MUST[MUST]] run the [[Unix domain socket after accept steps]].
+
+[586] The [DFN[Unix domain socket after accept steps]] are:
+
+[FIG(steps)[
+= [608] Let [VAR[transport]] be a new [[transport]] representing the
+Unix domain socket connection, with following states:
+[FIG(list members)[ [620] [[Transport][transport]]
+
+: [F[protocol][transport's protocol]] : [CODE[unix]]
+: [F[endpoint type][transport's endpoint type]] : [CODE[server]]
+
+]FIG]
+= [675] Return [VAR[transport]].
+]FIG]
+
+-*-*-
 
 [810] バイトが送信可能かどうかは、 [CODE[[[send]]]] によりバイト列を送信できるかどうかとします。
 
@@ -1436,6 +1490,8 @@ or [[false]] otherwise.
 @@ unset EV flag (and set HTTPS state to deprecated?)
 = [987] Return [[true]].
 ]FIG]
+
+;; [523] These steps asynchronously return.
 
 @@ [938] [[HTTPS state]] steps
 
