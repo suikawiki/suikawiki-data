@@ -717,14 +717,10 @@ One of
 [CODE[socks5]].
 : [DFN[[F[endpoint type][transport's endpoint type]]]] :
 Either [CODE[client]] or [CODE[server]].
-: [DFN[[F[remote address or domain][transport's remote address or domain]]]] :
-A [[host]] or [CODE[null]].  The default is [CODE[null]].
-: [DFN[[F[remote port][transport's remote port]]]] :
-A [[port]] or [CODE[null]].  The default is [CODE[null]].
-: [DFN[[F[proxy configuration][transport's proxy configuration]]]] : A [[proxy configuration]].
 : [DFN[[F[http protocol][transport's http protocol]]]] :
 Either [CODE[http1]], [CODE[http2]], or [CODE[ftp]].
-Tehe default is [CODE[http1]].
+The default is [CODE[http1]].
+: [DFN[[F[proxy configuration][transport's proxy configuration]]]] : A [[proxy configuration]].
 :[VAR[送信閉じ済みフラグ]]:初期状態では未設定。
 :[VAR[受信閉じ済みフラグ]]:初期状態では未設定。
 :[VAR[送信待ちバッファー]]:初期状態では空のリスト。
@@ -737,6 +733,9 @@ whose [[request target]] is an [[absolute URL]].
 An [[HTTPS state]] value.  Either [CODE[none]], [CODE[deprecated]], or [CODE[modern]].
 The default is [CODE[none]].
 ]FIG]
+
+;; [819] There are also [F[protocol][transport's protocol]] dependent 
+additional states.
 
 [38] An [DFN[exit status]] has following states:
 
@@ -981,40 +980,76 @@ to [VAR[proxy]].
 
 ** TCP
 
+[1435] A [[transport]] whose [F[protocol][transport's protocol]] is
+[CODE[tcp]] has following additional states:
+
+[FIG(list members)[
+
+: [DFN[[F[[[remote host]]][transport's remote host]]]] :  A [[host]].
+: [DFN[[F[[[remote port]]][transport's remote port]]]] :  A [[port]].
+: [DFN[[F[[[local host]]][transport's local host]] :      A [[host]].
+: [DFN[[F[[[local port]]][transport's local port]] :      A [[port]].
+
+]FIG]
+
+[742] The underlying [[platform]] is expected to provide the way to
+[DFN[TCP connect]] to [[host]] [VAR[host]] and [[port]] [VAR[port]].
+It asynchronously returns a [[TCP connection]] or [[failure]].
+A [DFN[TCP connection]] has [F[local host]], which is an [[IP address]],
+and [F[local port]], which is a [[port]].
+
+[1437] To [DFN[set TCP options]] of [[TCP connection]] [VAR[tcp]],
+run these steps:
+
+[FIG(steps)[
+= [420] Disable the [CODE[SO_OOBINLINE]] option of [VAR[tcp]].
+= [424] Enable the [CODE[SO_NODELAY]] option of [VAR[tcp]].
+= [437] Run the implementation dependent steps for setting TCP keep alive options, e.g.:
+== [635] Enable the [CODE[SO_KEEPALIVE]] option of [VAR[transport]].
+== [636] Set [CODE[TCP_KEEPIDLE]] option of [VAR[tcp]] to [N[45]] seconds.
+== [637] Set [CODE[TCP_KEEPINTVL]] option of [VAR[tcp]] to [N[45]] seconds.
+]FIG]
+
+
 [627] To [DFN[establish a TCP transport]] to [[IP address]] [VAR[addr]] and 
 [[port]] [VAR[port]], run these steps:
 
 [FIG(steps)[
 = [1416] If [VAR[addr]] is [CODE[127.0.53.53]]:
 == [1417] Return a [[failure]] and abort these steps.
-= [628] Connect to [VAR[addr]] and [VAR[port]] using [[TCP]].
-= [641] If a [[TCP connection]] has been established:
-== [674] Let [VAR[transport]] be a new [[transport]] representing the
-[[TCP connection]], with following states:
+= [628] Let [VAR[tcp]] be the result of invoking
+[[TCP connect]] with [VAR[addr]] and [VAR[port]].
+= [629] If [VAR[tcp]] is [[failure]]:
+== [782] Return [[failure]] and abort these steps.
+= [674] Let [VAR[transport]] be a new [[transport]]:
 [FIG(list members)[ [406] [[Transport][transport]]
 
 : [F[protocol][transport's protocol]] : [CODE[tcp]]
 : [F[endpoint type][transport's endpoint type]] : [CODE[client]]
-: [F[remote address or domain][transport's remote address or domain]] : [VAR[addr]]
+: [F[remote host][transport's remote host]] : [VAR[addr]]
 : [F[remote port][transport's remote port]] : [VAR[port]]
+: [F[local host][transport's local host]] : [VAR[tcp]]'s [F[local address]]
+: [F[local port][transport's local port]] : [VAR[tcp]]'s [F[local port]]
+: [F[tcp][transport's tcp connection]] : [VAR[tcp]]
 
 ]FIG]
-== [630] Disable the [CODE[SO_OOBINLINE]] option of [VAR[transport]]'s connection.
-== [631] Enable the [CODE[SO_NODELAY]] option of [VAR[transport]]'s connection.
-== [632] Run the [[TCP keep alive steps]] for [VAR[transport]].
-== [818] Return [VAR[transport]].
-= [629] Otherwise:
-== [819] Return a [[failure]].
+= [641] [[Set TCP options][set TCP options]] of [VAR[tcp]].
+= [818] Return [VAR[transport]].
 ]FIG]
 
 ;; [510] These steps asynchronously return.
 
-[411] A TCP server, whenever it accepts a connection from
+[411] Whenever it accepts a connection from
 [[IP address]] [VAR[remote addr]] and [[port]] [VAR[remote port]],
-[MUST[MUST]] run the [[TCP after accept steps]] with [VAR[remote addr]] and [VAR[remote port]].
+a TCP server listening [[IP address]] [VAR[addr]] and [[port]] [VAR[port]]
+[MUST[MUST]] run the [[TCP after accept steps]] with
+[VAR[addr]], [VAR[port]], [VAR[remote addr]], and [VAR[remote port]].
 
 [524] The [DFN[TCP after accept steps]] with 
-[[IP address]] [VAR[addr]] and [[port]] [VAR[port]] are:
+[[IP address]] [VAR[addr]],
+[[port]] [VAR[port]],
+[[IP address]] [VAR[remote addr]], and
+[[port]] [VAR[remote port]] are:
 
 [FIG(steps)[
 = [414] Let [VAR[transport]] be a new [[transport]] representing the
@@ -1023,24 +1058,15 @@ to [VAR[proxy]].
 
 : [F[protocol][transport's protocol]] : [CODE[tcp]]
 : [F[endpoint type][transport's endpoint type]] : [CODE[server]]
-: [F[remote address or domain][transport's remote address or domain]] : [VAR[remote addr]]
+: [F[remote host][transport's remote host]] : [VAR[remote addr]]
 : [F[remote port][transport's remote port]] : [VAR[remote port]]
+: [F[local host][transport's local host]] : [VAR[addr]]
+: [F[local port][transport's local port]] : [VAR[port]]
 
 ]FIG]
-= [420] Disable the [CODE[SO_OOBINLINE]] option of [VAR[transport]]'s connection.
-= [424] Enable the [CODE[SO_NODELAY]] option of [VAR[transport]]'s connection.
-= [437] Run the [[TCP keep alive steps]] for [VAR[transport]].
+= [1436] [[Set TCP options][set TCP options]] of [VAR[tcp]].
 = [460] Optionally, run implementation dependent steps (e.g. [[DoS]] protection).
 = [446] Return [VAR[transport]].
-]FIG]
-
-[634] The [DFN[TCP keep alive steps]] for [VAR[transport]] are implementation
-dependent.  An example of such steps is:
-
-[FIG(steps)[
-= [635] Enable the [CODE[SO_KEEPALIVE]] option of [VAR[transport]].
-= [636] Set [CODE[TCP_KEEPIDLE]] option of [VAR[transport]]'s connection to 45 (seconds).
-= [637] Set [CODE[TCP_KEEPINTVL]] option of [VAR[transport]]'s connection to 45 (seconds).
 ]FIG]
 
 -*-*-
@@ -1098,6 +1124,7 @@ dependent.  An example of such steps is:
 
 [633] A [[transport]] whose [F[protocol][transport's protocol]] is
 [CODE[http1connect]] or [CODE[http2connect]] has following additional states:
+
 [FIG(list members)[
 : [DFN[[F[http][transport's http]]]] : An [[HTTP connection]].
 : [DFN[[F[established][transport's established]]]] :  A [[boolean]].  Initially, [[false]].
@@ -1510,6 +1537,9 @@ TCP or Unix domain socket.
 [[TCP after accept steps]], if the underlying transport protocol is TCP, or
 [[Unix domain socket after accept steps]], otherwise.
 = [1424] Start TLS over [VAR[transport]].
+=- [706] Optionally, perform implementation dependent verification of the client certificates.
+=-
+@@ OCSP stapling
 =
 @@ If failed, ...
 = [1433] Let [VAR[protocol]] be [CODE[http/1.1]].
@@ -1529,21 +1559,17 @@ TCP or Unix domain socket.
 : [F[http protocol][transport's http protocol]] : [VAR[protocol]]
 : [F[remote certificates]] : [VAR[certs]]
 
-]FIG]
-= [1434] Return [VAR[transport]].
-]FIG]
-
-;; [1427] These steps asynchronously return.
-
-@@ server:
-[706] 確立の完了時に、次の情報をアプリケーションに引渡します。
-[FIG(list)[
+@@
 - [[TLS]] の版
 - 選択された [[cipher suite]] と引数
 - [[SNI]] ホスト名
 ]FIG]
+=
+@@ Verify TLS version and cipher suites.
+= [1434] Return [VAR[transport]].
+]FIG]
 
-@@ server: OCSP stapling
+;; [1427] These steps asynchronously return.
 
 -*-*-
 
@@ -3519,8 +3545,6 @@ equal to [CODE[Content-Length]]:
 @@ [[ASCII alphanumeric]], [[converted to ASCII uppercase]]
 [[combined]]
 [F[target url][request's target url]]
-[F[local address or domain][transport's local address or domain]]
-[[host serializer]]
 [[URL serializer]]
 [[percent-decode]]
 [[serialize an integer]]
