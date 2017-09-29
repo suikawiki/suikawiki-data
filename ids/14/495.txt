@@ -116,8 +116,10 @@ in [VAR[user agent]], run these steps:
 conditions is ''not'' less than [VAR[n]]:
 [FIG(list)[
 - It is in [VAR[user agent]]'s [F[connection pool]].
-- Its [F[remote address or domain][transport's remote address or domain]] is [VAR[host]].
-- Its [F[remote port][transport's remote port]] is [VAR[port]].
+-
+@@ Its [F[remote host][transport's remote host]] is [VAR[host]].
+-
+@@ Its [F[remote port][transport's remote port]] is [VAR[port]].
 - Its [F[WebSocket接続の状態]] is [CODE[CONNECTING]].
 ]FIG]
 
@@ -817,11 +819,6 @@ with [VAR[http]] and [VAR[url]].
 @@ Show proxy auth dialog
 = [580] Otherwise:
 == [581] Set [VAR[transport]]'s [F[request mode]] to ''HTTP proxy''.
-== [576] Set [VAR[transport]]'s 
-[F[remote address or domain][transport's remote address or domain]] to [VAR[url]]'s
-[F[host][URL's host]].
-== [909] Set [VAR[transport]]'s [F[remote port][transport's remote port]] to
-[VAR[url]]'s [[effective port]].
 = [548] Return [VAR[transport]].
 ]FIG]
 : [CODE[socks4]] :
@@ -864,6 +861,8 @@ with [VAR[transport]], [VAR[url]]'s [F[host]], and [VAR[effective port]].
 
 ]FIG]
 
+;; [634] These steps asynchronously return.
+
 [542] To [DFN[establish a transport]] for an [[URL record]] [VAR[url]]
 and a [[user agent]] [VAR[user agent]], optionally with [VAR[credentials]], [VAR[ws]],
 [VAR[[CODE[acceptSslCerts]]]],
@@ -894,6 +893,8 @@ to [VAR[proxy]].
 ]FIG]
 
 ;; [507] These steps asynchronously return.
+
+-*-*-
 
 [642] [[アプリケーション]]は、 [[transport]] に次の指示を行えます。
 [FIG(list)[
@@ -989,14 +990,18 @@ to [VAR[proxy]].
 : [DFN[[F[[[remote port]]][transport's remote port]]]] :  A [[port]].
 : [DFN[[F[[[local host]]][transport's local host]] :      A [[host]].
 : [DFN[[F[[[local port]]][transport's local port]] :      A [[port]].
+: [DFN[[F[[[tcp connection]]][transport's tcp connection]] : A [[TCP connection]].
 
 ]FIG]
 
-[742] The underlying [[platform]] is expected to provide the way to
-[DFN[TCP connect]] to [[host]] [VAR[host]] and [[port]] [VAR[port]].
-It asynchronously returns a [[TCP connection]] or [[failure]].
-A [DFN[TCP connection]] has [F[local host]], which is an [[IP address]],
-and [F[local port]], which is a [[port]].
+[742] To [DFN[TCP connect]] to [[host]] [VAR[host]] and [[port]] [VAR[port]],
+establish a connection to [VAR[host]] and [VAR[port]] as described in TCP
+specifications and asynchronously returns a new [[TCP connection]]
+representing the connection if the connection is established,
+or [[failure]] if the connection cannot be established.
+A [DFN[TCP connection]] has 
+[DFN[[F[[[local address]]][TCP connection's local address]]]], which is an [[IP address]],
+and [DFN[[F[[[local port]]][TCP connection's local port]]]], which is a [[port]].
 
 [1437] To [DFN[set TCP options]] of [[TCP connection]] [VAR[tcp]],
 run these steps:
@@ -1004,8 +1009,8 @@ run these steps:
 [FIG(steps)[
 = [420] Disable the [CODE[SO_OOBINLINE]] option of [VAR[tcp]].
 = [424] Enable the [CODE[SO_NODELAY]] option of [VAR[tcp]].
-= [437] Run the implementation dependent steps for setting TCP keep alive options, e.g.:
-== [635] Enable the [CODE[SO_KEEPALIVE]] option of [VAR[transport]].
+= [437] Run the implementation dependent steps for setting [[TCP keep alive]] options, e.g.:
+== [635] Enable the [CODE[SO_KEEPALIVE]] option of [VAR[tcp]].
 == [636] Set [CODE[TCP_KEEPIDLE]] option of [VAR[tcp]] to [N[45]] seconds.
 == [637] Set [CODE[TCP_KEEPINTVL]] option of [VAR[tcp]] to [N[45]] seconds.
 ]FIG]
@@ -1030,7 +1035,7 @@ run these steps:
 : [F[remote port][transport's remote port]] : [VAR[port]]
 : [F[local host][transport's local host]] : [VAR[tcp]]'s [F[local address]]
 : [F[local port][transport's local port]] : [VAR[tcp]]'s [F[local port]]
-: [F[tcp][transport's tcp connection]] : [VAR[tcp]]
+: [F[tcp connection][transport's tcp connection]] : [VAR[tcp]]
 
 ]FIG]
 = [641] [[Set TCP options][set TCP options]] of [VAR[tcp]].
@@ -1039,13 +1044,15 @@ run these steps:
 
 ;; [510] These steps asynchronously return.
 
-[411] Whenever it accepts a connection from
+[411] Whenever it accepts a [[TCP connection]] [VAR[tcp]] from
 [[IP address]] [VAR[remote addr]] and [[port]] [VAR[remote port]],
 a TCP server listening [[IP address]] [VAR[addr]] and [[port]] [VAR[port]]
 [MUST[MUST]] run the [[TCP after accept steps]] with
+[VAR[tcp]],
 [VAR[addr]], [VAR[port]], [VAR[remote addr]], and [VAR[remote port]].
 
 [524] The [DFN[TCP after accept steps]] with 
+[[TCP connection]] [VAR[tcp]],
 [[IP address]] [VAR[addr]],
 [[port]] [VAR[port]],
 [[IP address]] [VAR[remote addr]], and
@@ -1062,6 +1069,7 @@ a TCP server listening [[IP address]] [VAR[addr]] and [[port]] [VAR[port]]
 : [F[remote port][transport's remote port]] : [VAR[remote port]]
 : [F[local host][transport's local host]] : [VAR[addr]]
 : [F[local port][transport's local port]] : [VAR[port]]
+: [F[tcp connection][transport's tcp connection]] : [VAR[tcp]]
 
 ]FIG]
 = [1436] [[Set TCP options][set TCP options]] of [VAR[tcp]].
@@ -1134,18 +1142,14 @@ a TCP server listening [[IP address]] [VAR[addr]] and [[port]] [VAR[port]]
 with [[HTTP connection]] [VAR[http]] and [[URL record]] [VAR[url]], run these steps:
 [FIG(steps)[
 = [740] Let [VAR[transport]] be a [[transport]]:
-[FIG(list members)[
-[FIGCAPTION[
-[[Transport][transport]]
-]FIGCAPTION]
+[FIG(list members)[ [632] [[Transport][transport]]
+
 : [F[protocol][transport's protocol]] :
 If [VAR[http]]'s [F[protocol][connection's protocol]] is [CODE[http2]], [CODE[http2connect]].
 Otherwise, [CODE[http1connect]].
 : [F[endpoint type][transport's endpoint type]] : [CODE[client]]
-: [F[remote address or domain][transport's remote address or domain]] : 
-[VAR[url]]'s [F[host][url's host]]
-: [F[remote port][transport's remote port]] : [VAR[url]]'s [[effective port]]
 : [F[http][transport's http]] : [VAR[http]]
+
 ]FIG]
 = [766] Send an [[HTTP request]] over [VAR[http]]:
 [FIG(list members)[
@@ -1220,7 +1224,8 @@ Otherwise, [CODE[http1connect]].
 ** SOCKS4
 
 [743] A [[transport]] whose [F[protocol][transport's protocol]] is
-[CODE[socks4]] has following additional states:
+[CODE[socks4]] has following additional state:
+
 [FIG(list members)[
 : [DFN[[F[transport][socks4 transport's transport]]]] : A [[transport]].
 ]FIG]
@@ -1228,7 +1233,9 @@ Otherwise, [CODE[http1connect]].
 [774] To [DFN[establish a SOCKS4 transport]]
 to [[IPv4 address]] [VAR[address]] and [[port]] [VAR[port]] over 
 [[transport]] [VAR[transport]], run these steps:
+
 [FIG(steps)[
+
 = [776] [VAR[transport]]で 0x04 0x01 [VAR[p[SUB[1]]]] [VAR[p[SUB[2]]]] [VAR[a[SUB[1]]]] [VAR[a[SUB[2]]]]
 [VAR[a[SUB[3]]]] [VAR[a[SUB[4]]]] 0x00 を送信します。
 =- [VAR[p[SUB[1]]]] [VAR[p[SUB[2]]]] は[VAR[port]]を[[16ビット符号無し整数]]
@@ -1239,17 +1246,15 @@ to [[IPv4 address]] [VAR[address]] and [[port]] [VAR[port]] over
 = [778] 受信した最初の2バイトが 0x00 0x5A でなければ、
 == [779] [VAR[transport]]の中断を指示します。
 == [780] Return a [[failure]] and abort these steps.
-= [781] Return a [[transport]]:
-[FIG(list members)[
-[FIGCAPTION[
-[[Transport][transport]]
-]FIGCAPTION]
+= [781] Return a new [[transport]]:
+[FIG(list members)[ [630] [[Transport][transport]]
+
 : [F[protocol][transport's protocol]] : [CODE[socks4]]
 : [F[endpoint type][transport's endpoint type]] : [CODE[client]]
-: [F[remote address or domain][transport's remote address or domain]] : [VAR[address]]
-: [F[remote port][transport's remote port]] : [VAR[port]]
 : [F[transport][socks4 transport's transport]] : [VAR[transport]]
+
 ]FIG]
+
 ]FIG]
 
 ;; [511] These steps asynchronously return.
@@ -1260,7 +1265,8 @@ to [[IPv4 address]] [VAR[address]] and [[port]] [VAR[port]] over
 ** SOCKS5
 
 [775] A [[transport]] whose [F[protocol][transport's protocol]] is
-[CODE[socks5]] has following additional states:
+[CODE[socks5]] has following additional state:
+
 [FIG(list members)[
 : [DFN[[F[transport][socks5 transport's transport]]]] : A [[transport]].
 ]FIG]
@@ -1268,7 +1274,9 @@ to [[IPv4 address]] [VAR[address]] and [[port]] [VAR[port]] over
 [784] To [DFN[establish a SOCKS5 transport]]
 to destination [VAR[host]] and [[port]] [VAR[port]] over [[transport]] [VAR[transport]],
 run these steps:
+
 [FIG(steps)[
+
 = [785] If [VAR[host]] is a [[domain]] whose length is greater than [N[255]]:
 == [803] Return a [[failure]] and abort these steps.
 = [786] [VAR[transport]]で 0x05 0x01 0x00 を送信します。
@@ -1299,15 +1307,12 @@ run these steps:
 == [800] [VAR[transport]]の中断を指示します。
 == [801] Return a [[failure]] and abort these steps.
 = [802] Return a [[transport]]:
-[FIG(list members)[
-[FIGCAPTION[
-[[Transport][transport]]
-]FIGCAPTION]
+[FIG(list members)[ [576] [[Transport][transport]]
+
 : [F[protocol][transport's protocol]] : [CODE[socks5]]
 : [F[endpoint type][transport's endpoint type]] : [CODE[client]]
-: [F[remote address or domain][transport's remote address or domain]] : [VAR[host]]
-: [F[remote port][transport's remote port]] : [VAR[port]]
 : [F[transport][socks5 transport's transport]] : [VAR[transport]]
+
 ]FIG]
 ]FIG]
 
@@ -1330,17 +1335,15 @@ with [[host]] [VAR[host]] and [[integer]] [VAR[port]], run these steps:
 : [[ソケット型]] : [CODE[[[SOCK_STREAM]]]]
 ]FIG]
 = [806] If failed, return a [[failure]] and abort these steps.
-= [820] Return a [[connection endpoint]] representing the socket,
+= [820] Return a new [[transport]] representing the socket,
 with following states:
-[FIG(list members)[
-[FIGCAPTION[
-[[Transport][transport]]
-]FIGCAPTION]
+[FIG(list members)[ [631] [[Transport][transport]]
+
 : [F[protocol][transport's protocol]] : [CODE[unix]]
 : [F[endpoint type][transport's endpoint type]] : [CODE[client]]
-: [F[remote address or domain][transport's remote address or domain]] : [VAR[host]]
-: [F[remote port][transport's remote port]] : [VAR[port]]
+
 ]FIG]
+
 ]FIG]
 
 ;; [522] These steps asynchronously return.
@@ -1461,10 +1464,6 @@ with following states:
 
 : [F[protocol][transport's protocol]] : [CODE[tls]]
 : [F[endpoint type][transport's endpoint type]] : [CODE[client]]
-: [F[remote address or domain][transport's remote address or domain]] : [VAR[transport]]'s
-[F[remote address or domain][transport's remote address or domain]]
-: [F[remote port][transport's remote port]] : [VAR[transport]]'s 
-[F[remote port][transport's remote port]]
 : [F[http protocol][transport's http protocol]] : [VAR[protocol]]
 : [F[is ev]] : [VAR[ev]]
 : [F[remote certificates]] : [VAR[certs]]
@@ -1552,10 +1551,6 @@ TCP or Unix domain socket.
 
 : [F[protocol][transport's protocol]] : [CODE[tls]]
 : [F[endpoint type][transport's endpoint type]] : [CODE[server]]
-: [F[remote address or domain][transport's remote address or domain]] : [VAR[transport]]'s
-[F[remote address or domain][transport's remote address or domain]]
-: [F[remote port][transport's remote port]] : [VAR[transport]]'s 
-[F[remote port][transport's remote port]]
 : [F[http protocol][transport's http protocol]] : [VAR[protocol]]
 : [F[remote certificates]] : [VAR[certs]]
 
@@ -3091,9 +3086,9 @@ over [VAR[ftp]].
 
 [1244] To [DFN[switch to passive mode]] with [VAR[ftp]], run these steps:
 [FIG(steps)[
-= [1137] If [VAR[ftp]]'s [F[transport][FTP connection's transport]]'s
-[F[remote address or domain][transport's remote address or domain]] is an 
-[[IPv6 address]]:
+= [1137] 
+@@ If [VAR[ftp]]'s [F[transport][FTP connection's transport]]
+is IPv6:
 == [1140] [[Set FTP state][set FTP state]] of [VAR[ftp]] to ''[CODE[PASV]] reply state''.
 == [1138] [[Send FTP command][send FTP command]] `[CODE[EPSV]]` with [CODE[null]]
 over [VAR[ftp]].
@@ -3342,7 +3337,7 @@ to an unresolved [[promise]].
 or is one of [[bad ports]]:
 == [1189] [[Abort FTP connection][abort FTP connection]] [VAR[ftp]].
 = [1184] Let [VAR[host]] be [VAR[ftp]]'s [F[transport][FTP connection's transport]]'s
-[F[remote address or domain][transport's remote address or domain]].
+@@ remote host.
 = [1185] Let [VAR[proxy]] be [VAR[ftp]]'s [F[transport][FTP connection's transport]]'s
 [F[proxy configuration][transport's proxy configuration]].
 = [1187] Let [VAR[url]] be a [[URL record]] whose [F[scheme][URL scheme]] is [CODE[ftp][ftp:]],
@@ -3502,10 +3497,10 @@ by [VAR[request]]'s [F[version][request's version]]:
 ==== [1414] Set [VAR[vars]]' [VAR[scheme key name]] to [CODE[https]].
 = [1384] If [VAR[transport]]'s [F[protocol][transport's protocol]] is [CODE[tcp]]:
 == [1385] Set [VAR[vars]]' [CODE[REMOTE_ADDR]] to [VAR[transport]]'s 
-[F[remote address or domain][transport's remote address or domain]], 
+[F[remote host][transport's remote host]], 
 [[serialized][host serializer]].
 == [1407] Set [VAR[vars]]' [CODE[SERVER_NAME]] to [VAR[transport]]'s 
-[F[local address or domain][transport's local address or domain]],
+[F[local host][transport's local host]],
 [[serialized][host serializer]].
 == [1408] Set [VAR[vars]]' [CODE[SERVER_PORT]] to [VAR[transport]]'s
 [F[local port][transport's local port]], [[serialized][serialize an integer]].
