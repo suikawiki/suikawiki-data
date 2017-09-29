@@ -1363,9 +1363,11 @@ Unix domain socket connection, with following states:
 [877] A [[transport]] whose [F[protocol][transport's protocol]] is
 [CODE[tls]] has following additional states:
 [FIG(list members)[
-: [F[is ev]] : A [[boolean]].  Initially, [[false]].
+: [F[is ev]] : A [[boolean]].
+The default is [[false]].
 : [F[remote certificates]] : A list of [[certificates][certificate]].
-: [F[has alert]] : A [[boolean]].  Initially, [[false]].
+: [F[has alert]] : A [[boolean]].
+The default is [[false]].
 ]FIG]
 
 [638] The [DFN[TLS steps]] for [VAR[transport]], [VAR[url]], and [VAR[credentials]],
@@ -1429,12 +1431,10 @@ with [VAR[certificate]] set to [VAR[certs]]'s [[end entity certificate]],
 == [704] Return a [[failure]] and abort these steps.
 = [705] Apply [[PKP]] verification for [VAR[certs]] and [VAR[url]]'s [F[host]]
 in [VAR[user agent]].
-= [860] Let [VAR[tls transport]] be a [[transport]] that represents the [[TLS connection]],
+= [860] Let [VAR[tls transport]] be a new [[transport]] that represents the [[TLS connection]],
 with following states:
-[FIG(list members)[
-[FIGCAPTION[
-[[Transport][transport]]
-]FIGCAPTION]
+[FIG(list members)[ [1423] [[Transport][transport]]
+
 : [F[protocol][transport's protocol]] : [CODE[tls]]
 : [F[endpoint type][transport's endpoint type]] : [CODE[client]]
 : [F[remote address or domain][transport's remote address or domain]] : [VAR[transport]]'s
@@ -1444,6 +1444,7 @@ with following states:
 : [F[http protocol][transport's http protocol]] : [VAR[protocol]]
 : [F[is ev]] : [VAR[ev]]
 : [F[remote certificates]] : [VAR[certs]]
+
 ]FIG]
 = [859] Set [VAR[tls transport]]'s [F[HTTPS state][transport's HTTPS state]]
 to [CODE[modern]] or [CODE[deprecated]], as determined by an implementation dependent
@@ -1500,17 +1501,54 @@ or [[false]] otherwise.
 [384] A [[user agent]] has [F[[[TLS session]] cache]] and
 [F[certificate database]].
 
+-*-*-
+
+[923] A TLS server, whenever its underlying transport accepts a connection,
+[MUST[MUST]] run these steps:
+
+[FIG(steps)[
+= [928] Assert: The underlying transport protocol is 
+TCP or Unix domain socket.
+= [925] Let [VAR[transport]] be the result of running
+[[TCP after accept steps]], if the underlying transport protocol is TCP, or
+[[Unix domain socket after accept steps]], otherwise.
+= [1424] Start TLS over [VAR[transport]].
+=
+@@ If failed, ...
+= [1433] Let [VAR[protocol]] be [CODE[http/1.1]].
+=
+@@ ALPN: H2
+= [1431] Let [VAR[certs]] be the received [[certificates][certificate]].
+= [1426] Let [VAR[tls transport]] be a new [[transport]] that represents the 
+[[TLS connection]], with following states:
+[FIG(list members)[ [1430] [[Transport][transport]]
+
+: [F[protocol][transport's protocol]] : [CODE[tls]]
+: [F[endpoint type][transport's endpoint type]] : [CODE[server]]
+: [F[remote address or domain][transport's remote address or domain]] : [VAR[transport]]'s
+[F[remote address or domain][transport's remote address or domain]]
+: [F[remote port][transport's remote port]] : [VAR[transport]]'s 
+[F[remote port][transport's remote port]]
+: [F[http protocol][transport's http protocol]] : [VAR[protocol]]
+: [F[remote certificates]] : [VAR[certs]]
+
+]FIG]
+= [1434] Return [VAR[transport]].
+]FIG]
+
+;; [1427] These steps asynchronously return.
+
 @@ server:
 [706] 確立の完了時に、次の情報をアプリケーションに引渡します。
 [FIG(list)[
 - [[TLS]] の版
 - 選択された [[cipher suite]] と引数
 - [[SNI]] ホスト名
-- 選択された [[ALPN]] プロトコル
-- 相手の[[証明書]]と[[中間証明書]] (あれば)
 ]FIG]
 
 @@ server: OCSP stapling
+
+-*-*-
 
 [707] [VAR[transport]]からバイトを受信したら、[[バイト]]と[[緊急データ]]フラグを [[TLS]] に従い処理します。
 
