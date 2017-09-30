@@ -9,6 +9,43 @@
 [[TLS]] が指定されていてもそれが適用されなかった場合にも、これをエラーとしないので、
 注意が必要です。
 
+[33] mysql クライアントから ClearDB サーバーに接続するには
+
+[PRE(code bash)[
+$ mysql --user=XXX --password=XXX --host=XXX XXX --ssl-ca=cleardb-ca.pem --ssl-cert=XXX-cert.pem --ssl-key=XXX-key.pem
+]PRE]
+
+最初の4つのXXXは Heroku の設定変数として設定されている CLEARDB_DATABASE_URL の値から採る。最後の3つのファイルは Heroku の設定ページから ClearDB のページに行き、ダウンロードする (ログイン必要なのでブラウザで保存する)。
+
+秘密鍵のエラーが出る時は (OpenSSL のバージョンの問題らしい)、
+[PRE(code bash)[
+$ openssl rsa -in XXX-key.pem -out XXX-key-pkcs1.pem
+]PRE]
+... として作られたファイルを指定すれば良い。
+
+本当に SSL で接続できたかは
+[PRE(code bash)[
+SHOW STATUS LIKE 'Ssl_cipher';
+]PRE]
+... で値が空文字列になっていないかどうかで確認できる。
+[TIME[2014-10-12]]
+
+[34] Perl の DBI で接続する時は
+[PRE(code)[
+DBI:mysql:database=%s;host=%s;user=%s;password=%s;mysql_ssl=1;mysql_ssl_ca_file=%s;mysql_ssl_client_cert=%s;mysql_ssl_client_key=%s
+]PRE]
+... のような dsn で同じ要領で接続できる。ただし DBD::mysql は標準では SSL 無効でコンパイルされる。その場合 mysql_ssl* は無視されるので注意しないといけない。無視されるがエラーにならずに平文で接続できてしまう。
+
+DBD::mysql インストール時の Makefile.PL でオプション --ssl をつけると SSL 付きでコンパイルされる。 cpanm でインストールするなら --configure-args=--ssl をつければ良い。 pmbp.pl を使うなら今日の版以降は標準で --ssl 付きでコンパイルされる。
+
+SSL なしで接続できてしまうのは怖いが、 MySQL で SSL 固定にするには GRANT ほにゃららを実行するらしい。 ClearDB では GRANT を実行する権限がなさそう (未確認)。
+
+接続時に SHOW STATUS LIKE 'Ssl_cipher' して確認する実装にしておかないと怖い。
+[TIME[2014-10-12]]
+
+[35] AnyEvent::MySQL は SSL に対応していない。
+[TIME[2014-10-12]]
+
 * Docker 版
 
 [30] [CITE[mysql/mysql-server - Docker Hub]] ([TIME[2017-03-19 19:09:03 +09:00]] 版) <https://hub.docker.com/r/mysql/mysql-server/>
