@@ -1,3 +1,10 @@
+[50] [[WebSocket接続の確立]]時に[[クライアント]]と[[サーバー]]で
+[CODE(HTTP)@en[Sec-WebSocket-Extensions:]] [[ヘッダー][HTTPヘッダー]]により折衝することで、
+[DFN[[RUBYB[拡張]@en[extension]]]]を使うことができます。
+
+[68] [[拡張][WebSocket拡張]]は[[圧縮]] [CODE[permessage-deflate]] のために用いられています。
+理論上はそれ以外の用途や手法にも利用できますが、実際には使われていません。
+
 * 仕様書
 
 [REFS[
@@ -13,36 +20,81 @@
 - [54] [CITE@en[RFC 7692 - Compression Extensions for WebSocket]] ([TIME[2017-09-19 00:18:15 +09:00]]) <https://tools.ietf.org/html/rfc7692>
 ]REFS]
 
+* クライアント API
+
+[65] [[JavaScript]] の [[WebSocket]] クライアントが利用する[[拡張][WebSocket拡張]]を指定する手段は提供されていません。
+どの[[拡張][WebSocket拡張]]を使うかは、 [[Webブラウザー]]の実装次第となっています。
+
+** [CODE(DOMi)@en[WebSocket]] インターフェイス [CODE(DOMa)@en[extensions]] 属性
+
+[34] [CODE(DOMi)@en[[[WebSocket]]]] [[インターフェイス]]の
+[DFN[[CODE(DOMa)@en[[[extensions]]]]]] [[IDL属性]]は、
+利用されている[[拡張]]について返すものです。
+
+[66] この[[IDL属性]]により、[[クライアント]]と[[サーバー]]との折衝の結果利用されることとなった
+(そして現に利用されている) [[拡張][WebSocket拡張]]が何であるかを[[著者]]は知ることができます。
+
+;; [67] もっとも、この情報が有用かどうかは謎です。
+
+[35] この[[属性]]は、内部的に保持している値を返さなければ[MUST[なりません]] [SRC[>>33]]。
+値は、[[WebIDL接続の確立]]の過程で設定されます。
+
 * ハンドシェイク
 
-[50] [[WebSocket接続の確立]]時に[[クライアント]]と[[サーバー]]で折衝することで、
-[DFN[[RUBYB[拡張]@en[extension]]]]を使うことができます。
+[4] ハンドシェイクの手順については[[WebSocket接続の確立]]を参照。
 
-[3] [[クライアント]]は [CODE(HTTP)@en[[[Sec-WebSocket-Extensions:]]]]
-[[ヘッダー]]で[[拡張]]を指定することで、[[拡張]]を使うことを要求できます。
-[[サーバー]]は [CODE(HTTP)@en[[[Sec-WebSocket-Extensions:]]]]
-[[ヘッダー]]で[[拡張]]を指定することで、[[拡張]]を使うことに合意することを示せます。
+** [CODE[Sec-WebSockete-Extensions:]] ヘッダー
 
-;; [4] [[WebSocket接続の確立]]を参照。
+[3] [[クライアント]]は [CODE(HTTP)@en[Sec-WebSocket-Extensions:]]
+[[ヘッダー][HTTPヘッダー]]で[[拡張][WebSocket拡張]]を指定することで、
+[[拡張][WebSocket拡張]]を使うことを要求できます。
+
+[64] [[サーバー]]は [CODE(HTTP)@en[[[Sec-WebSocket-Extensions:]]]]
+[[ヘッダー][HTTPヘッダー]]で[[拡張][WebSocket拡張]]を指定することで、
+[[拡張][WebSocket拡張]]を使うことに合意することを示せます。
 
 ;; [36] この[[ヘッダー]]は、 [[fingerprinting vector]] です。
 
-[11] [[クライアント]]は、[[サーバー]]が[[応答]]で同意しない限り[[拡張]]を使っては[['''なりません''']]
-[SRC[>>2]]。
+-*-*-
 
-[5] 本[[ヘッダー]]の値は、1つ[[以上]]の[[拡張]]の指定の[[リスト (HTTP)]] ([CODE(HTTP)[#]])
-です [SRC[>>2]]。
+[5] 本[[ヘッダー][HTTPヘッダー]]の値は、
+1つ[[以上]]の[[拡張][WebSocket拡張]]の指定の[[リスト (HTTP)]] 
+([CODE(HTTP)[#]]) です [SRC[>>2]]。
 
 [FIG(railroad)[
-= [[拡張]]の指定
+= [[拡張][WebSocket拡張]]の指定
 = *
 == [[OWS]]
 == [CODE(HTTP)[[[,]]]]
 == [[OWS]]
-== [[拡張]]の指定
+== [[拡張][WebSocket拡張]]の指定
 ]FIG]
 
-[6] [[拡張]]の指定は、[[拡張]]の[[字句]]の後に0個以上の[[引数]]を続けたものです。
+[12] [[拡張][WebSocket拡張]]の指定の順序は、意味を持ちます。
+[[拡張][WebSocket拡張]]同士の関係は、
+特に規定がある場合は、それによります。そうでない場合、
+[[クライアント]]が先に指定したものが優先度の高いものです。
+[[サーバー]]が指定した順序が実際の適用順となり、
+データに対して先に指定したものから順に[[拡張][WebSocket拡張]]依存の操作を適用していったことを表します。 [SRC[>>2]]
+
+[57] [DFN[next extension in use after extension [VAR[X]]]]
+とは、
+[[サーバー]]が [CODE[Sec-WebSocket-Extensions:]] [[ヘッダー][HTTPヘッダー]]で
+[VAR[X]] の直後に指定した[[拡張][WebSocket拡張]]です。
+すなわち、送信するデータに関しては [VAR[X]] の直後に適用し、
+受信するデータに関しては [VAR[X]] の直前に適用するものです。 [SRC[>>54]]
+
+[58] [DFN[extension in use preceding extension [VAR[X]]]]
+とは、
+[[サーバー]]が [CODE[Sec-WebSocket-Extensions:]] [[ヘッダー][HTTPヘッダー]]で
+[VAR[X]] の直前に指定した[[拡張][WebSocket拡張]]です。
+すなわち、送信するデータに関しては [VAR[X]] の直前に適用し、
+受信するデータに関しては [VAR[X]] の直後に適用するものです。 [SRC[>>54]]
+
+-*-*-
+
+[6] [[拡張][WebSocket拡張]]の指定は、
+[[拡張][WebSocket拡張]]の[[字句]]の後に0個以上の[[引数]]を続けたものです。
 [[引数]]の前には [CODE(HTTP)[[[;]]]] が必要です。 [SRC[>>2]]
 暗示的な[[空白]] [SRC[>>2]] により、 [CODE(HTTP)[[[;]]]]
 の前後には [[OWS]] が認められると推測されます。
@@ -66,7 +118,8 @@
 暗示的な[[空白]] [SRC[>>2]] により、 [CODE(HTTP)[[[;]]]]
 の前後には [[BWS]] が認められると推測されます。
 
-[10] [[引数]]は、当該[[拡張]]で定義されたものでなければ[['''なりません''']] [SRC[>>2]]。
+[10] [[引数]]は、当該[[拡張][WebSocket拡張]]で定義されたものでなければ[MUST[なりません]] 
+[SRC[>>2]]。
 
 [FIG(railroad)[
 = [[字句]]
@@ -77,14 +130,36 @@
 === [[引用文字列]]
 ]FIG]
 
-[8] 本[[ヘッダー]]は、[[要求]]では複数指定できます [SRC[>>2, >>14]]。
-[[応答]]で複数使っては[['''なりません''']] [SRC[>>14]] と規定がありますが、
+[8] 本[[ヘッダー][HTTPヘッダー]]は、[[要求]]では複数指定できます [SRC[>>2, >>14]]。
+[[応答]]で複数使っては[MUST[ならない]] [SRC[>>14]] と規定がありますが、
 他の部分と矛盾しているとし、使っても良いと訂正 [SRC[>>16]] されています。。
 
-[12] [[拡張]]の指定の順序は、意味を持ちます。[[拡張]]同士の関係は、
-特に規定がある場合は、それによります。そうでない場合、
-[[クライアント]]が先に指定したものが優先度の高いものです。
-[[サーバー]]が指定した順序が実際の適用順となり、データに対して先に指定したものから順に[[拡張]]依存の操作を適用していったことを表します。 [SRC[>>2]]
+-*-*-
+
+[11] [[クライアント]]は、[[サーバー]]が[[応答]]で同意しない限り[[拡張][WebSocket拡張]]を使っては[['''なりません''']]
+[SRC[>>2]]。
+
+** 処理
+
+[59] [DFN[extension negotiation offer]]
+は、[[クライアント]]の [CODE[Sec-WebSocket-Extensions:]] 
+[[ヘッダー][HTTPヘッダー]]の各要素です。 [SRC[>>54]]
+
+[60] [DFN[extension negotiation response]] 
+は、[[サーバー]]の [CODE[Sec-WebSocket-Extensions:]] 
+[[ヘッダー][HTTPヘッダー]]の各要素です。 [SRC[>>54]]
+
+[61] [DFN[corresponding extension negotiation response for an extension negotiation offer]]
+は、 [[extension negotiation offer]] と同じ拡張名であってその表す要件を満たす
+[[extension negotiation response]] です。 [SRC[>>54]]
+
+[62] [DFN[Accepting an extension negotiation offer]]
+とは、 [[corresponding extension negotiation response for an extension negotiation offer]]
+を含めることです。 [SRC[>>54]]
+
+[63] [DFN[Declining an extension negotiation offer]]
+とは、 [[corresponding extension negotiation response for an extension negotiation offer]]
+を含め''ない''ことです。 [SRC[>>54]]
 
 * フレーム
 
@@ -99,16 +174,20 @@
 
 [13] [[拡張データ]]については、 [[WebSocketフレーム]]を参照。
 
-* [CODE(DOMi)@en[WebSocket]] インターフェイス [CODE(DOMa)@en[extensions]] 属性
+* PMCE
 
-[34] [CODE(DOMi)@en[[[WebSocket]]]] [[インターフェイス]]の
-[DFN[[CODE(DOMa)@en[[[extensions]]]]]] [[IDL属性]]は、
-利用されている[[拡張]]について返すものです。
+[55] [DFN[RFC 7692]] は [[WebSocket]] に[[圧縮]]機能を追加する[[フレームワーク]]として
+[DFN[WebSocket Per-Message Compression Extensions]] ([DFN[PMCEs]])
+を定義しています。
+[SRC[>>54]]
 
-[35] この[[属性]]は、内部的に保持している値を返さなければ[['''なりません''']] [SRC[>>33]]。
-値は、[[WebIDL接続の確立]]の過程で設定されます。
+[56] [[RFC 7692]] は [[PMCE]] に則った具体的な [[WebSocket拡張]]として 
+[CODE[permessage-deflate]] を定義しています。これ以外は定義されていませんし、
+その動きもありません。
 
-* 拡張の一覧
+* 歴史
+
+** 拡張の一覧
 
 [18] 現時点で [[IANA]] に登録されている[[拡張]]はありません。 [TIME[2015-05-16T13:32:07.700Z]]
 
@@ -164,17 +243,6 @@ Sec-WebSocket-Extensions:permessage-deflate; client_max_window_bits
 [REFS[
 - [37] [CITE@en[data-web-defs/http-frames.txt at master · manakai/data-web-defs]] ([TIME[2015-05-28 00:33:14 +09:00]] 版) <https://github.com/manakai/data-web-defs/blob/master/doc/http-frames.txt>
 ]REFS]
-
-* PMCE
-
-[55] [DFN[RFC 7692]] は [[WebSocket]] に[[圧縮]]機能を追加する[[フレームワーク]]として
-[DFN[WebSocket Per-Message Compression Extensions]] ([DFN[PMCEs]])
-を定義しています。
-[SRC[>>54]]
-
-[56] [[RFC 7692]] は [[PMCE]] に則った具体的な [[WebSocket拡張]]として 
-[CODE[permessage-deflate]] を定義しています。これ以外は定義されていませんし、
-その動きもありません。
 
 * メモ
 
