@@ -20,6 +20,7 @@
 - [54] [CITE@en[RFC 7692 - Compression Extensions for WebSocket]] ([TIME[2017-09-19 00:18:15 +09:00]]) <https://tools.ietf.org/html/rfc7692>
 -- [75] [CITE@en[RFC 7692 - Compression Extensions for WebSocket]] ([TIME[2017-09-19 00:18:15 +09:00]]) <https://tools.ietf.org/html/rfc7692#section-3>
 -- [76] [CITE@en[RFC 7692 - Compression Extensions for WebSocket]] ([TIME[2017-09-19 00:18:15 +09:00]]) <https://tools.ietf.org/html/rfc7692#section-4>
+-- [82] [CITE@en[RFC 7692 - Compression Extensions for WebSocket]] ([TIME[2017-09-19 00:18:15 +09:00]]) <https://tools.ietf.org/html/rfc7692#section-5>
 ]REFS]
 
 * 拡張
@@ -187,6 +188,26 @@
 は、[[クライアント]]の [CODE[Sec-WebSocket-Extensions:]] 
 [[ヘッダー][HTTPヘッダー]]の各要素です。 [SRC[>>75]]
 
+[83] 
+[[クライアント]]は、
+[[PMCE]] を使うことを望む場合、
+[CODE[Sec-WebSocket-Extensions:]] [[ヘッダー][HTTPヘッダー]]に
+[[PMCE]] 拡張名を含めなければ[MUST[なりません]]。
+必要があれば[[引数]]も使います。
+[SRC[>>82]]
+
+[84] 複数の [[PMCE]] を指定したり、異なる[[引数]]の同じ [[PMCE]] を複数指定したりもできます。
+[SRC[>>82]]
+
+[85] 順序は、[[クライアント]]の希望の高い順とします。
+[[サーバー]]は、対応している希望度の高いものを採用する[RUBYB[べき]@en[recommended]]です。
+[SRC[>>82]]
+
+[86] [[PMCE]] [[extension negotiation offer]] は、
+[[クライアント]]から[[サーバー]]に対する[RUBYB[要求]@en[request]]や[RUBYB[ヒント]@en[hint]]を記述するものです。
+要求は、[[サーバー]]が満たさなければならない制約を指定するものです。
+ヒントは、[[サーバー]]が無視しても採用しても良い[[クライアント]]の動作に関する情報を記述するものです。 [SRC[>>82]]
+
 [60] [DFN[extension negotiation response]] 
 は、[[サーバー]]の [CODE[Sec-WebSocket-Extensions:]] 
 [[ヘッダー][HTTPヘッダー]]の各要素です。 [SRC[>>75]]
@@ -202,6 +223,67 @@
 [63] [DFN[Declining an extension negotiation offer]]
 とは、 [[corresponding extension negotiation response for an extension negotiation offer]]
 を含め''ない''ことです。 [SRC[>>75]]
+
+[87] [[サーバー]]は、 [[PMCE]] の offer を accept する場合、
+拡張名を [CODE[Sec-WebSocket-Extensions:]] [[ヘッダー][HTTPヘッダー]]に含めなければ[MUST[なりません]]。
+[[引数]]は [[PMCE]] の詳細を記述するもので、 [DFN[agreed parameter]]
+といいます。
+この [[extension negotiation response]] は、
+[[サーバー]]が完全に対応している [[PMCE]] でなければ[MUST[なりません]]。
+[SRC[>>82]]
+
+[89] [[agreed parameter]] は、
+[[クライアント]]の要求とヒントを[[サーバー]]がどう扱うかを表すものであると共に、
+[[サーバー]]が[[クライアント]]の挙動について要求とヒントを示すものでもなければなりません。
+[SRC[>>82]]
+
+[88] [[extension negotiation response]] は
+[[extension negotiation offer]] と完全に一致している必要はありません。
+offer の[[引数]]で指定された追加機能を[[サーバー]]が使わない場合は、
+これを [[agreed parameter]] に含めないようにします。
+なお [[extension negotiation offer]] の引数名と
+[[extension negotiation response]] の引数名が同じである必要もありません。 [SRC[>>82]]
+
+[90] [[引数]]名は送受信どちらに関するものであるかを区別するため
+[CODE[server_]] や [CODE[client_]] をつけることもできます。 [SRC[>>82]]
+
+
+[91] [[サーバー]]は、 [[PMCE]] [[extension negotiation offer]] と
+[CODE[RSV1]] の用法が衝突する他の[[拡張][WebSocket extension]]を同時に受理しては[MUST[なりません]]。
+[[クライアント]]は、そのような[[応答]]を受信した場合、
+[[WebSocket接続失敗]]としなければ[MUST[なりません]]。
+[SRC[>>82]]
+
+[92] [[サーバー]]は、[[PMCE]] が出力に適用される場合に、
+次のような状況となるような他の[[拡張][WebSocket extension]]を同時に受理しては[MUST[なりません]]。
+[[クライアント]]は、そのような[[応答]]を受信した場合、
+[[WebSocket接続失敗]]としなければ[MUST[なりません]]。
+[SRC[>>82]]
+
+- [93] 送信者における拡張の出力と、受信者における拡張への入力との間で、
+[[フレーム][WebSocketフレーム]]境界が保持される必要があるもの。
+- [94] [[フレーム][WebSocketフレーム]]ごとの属性として[F[拡張データ]]や
+[CODE[RSV1]], [CODE[RSV2]], [CODE[RSV3]] を用いるもの。
+
+
+[95] [[サーバー]]は、
+[[PMCE]] をすべて declining する場合には、
+[[PMCE]] 拡張名を含めては[MUST[なりません]]。 [SRC[>>82]]
+
+[96] [[クライアント]]が offer していない [[PMCE]] が accepting
+されているなど不当な[[応答]]を受信した場合には、
+[[クライアント]]は[[WebSocket接続失敗]]としなければ[MUST[なりません]]。 [SRC[>>82]]
+
+
+[97] [[サーバー]]が妥当な [[PMCE]] の指定を [CODE[Sec-WebSocket-Extensions:]]
+[[ヘッダー][HTTPヘッダー]]に含め、
+[[WebSocket接続確立]]に至った場合、
+[[クライアント]]と[[サーバー]]は
+[[agreed parameter]] に従った [[PMCE]]
+により、 [[message payload]] の変形 (圧縮・展開) を行わなければ[MUST[なりません]]。
+[SRC[>>82]]
+
+
 
 * 実装
 
