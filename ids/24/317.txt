@@ -25,6 +25,7 @@
 -- [76] [CITE@en[RFC 7692 - Compression Extensions for WebSocket]] ([TIME[2017-09-19 00:18:15 +09:00]]) <https://tools.ietf.org/html/rfc7692#section-4>
 -- [82] [CITE@en[RFC 7692 - Compression Extensions for WebSocket]] ([TIME[2017-09-19 00:18:15 +09:00]]) <https://tools.ietf.org/html/rfc7692#section-5>
 -- [111] [CITE@en[RFC 7692 - Compression Extensions for WebSocket]] ([TIME[2017-09-19 00:18:15 +09:00]]) <https://tools.ietf.org/html/rfc7692#section-6>
+-- [129] [CITE@en[RFC 7692 - Compression Extensions for WebSocket]] ([TIME[2017-09-19 00:18:15 +09:00]]) <https://tools.ietf.org/html/rfc7692#section-7>
 ]REFS]
 
 * 拡張
@@ -340,23 +341,79 @@ offer の[[引数]]で指定された追加機能を[[サーバー]]が使わな
 [[メッセージ][WebSocketメッセージ]]が[[圧縮]]されているか否かを表します。
 [SRC[>>111]]
 
+[120] [[データメッセージ]]の先頭の[[データフレーム]]で[F[メッセージ毎圧縮]]ビットが設定されている場合、
+その[[データメッセージ]]の[[payloadデータ]]は圧縮データです。
+
+[119] [[制御フレーム]]や、[[データメッセージ]]の先頭以外の[[データフレーム]]では、
+[F[メッセージ毎圧縮]]ビットを設定しては[MUST[なりません]]。
+そのような[[フレーム][WebSocketフレーム]]を受信した場合、
+[[WebSocket接続失敗]]としなければ[MUST[なりません]]。 [SRC[>>111]]
+
 ** PMCE
 
 [110] [[PMCE]] は[[データメッセージ]]にのみ適用されます。 [SRC[>>111]]
 
 [105] 最初の[[フレーム][WebSocketフレーム]]の[F[メッセージ毎圧縮]]ビットの設定された[[メッセージ][WebSocketメッセージ]]を、
-[DFN[[RUBYB[圧縮メッセージ]@en[compressed message]]]]といいます。 
-[[圧縮メッセージ]]の[[フレーム][WebSocketフレーム]]の[F[payloadデータ]]は、
+[DFN[[RUBYB[圧縮メッセージ]@en[compressed message]]]]といいます。  [SRC[>>111]]
+
+[122] [[圧縮メッセージ]]の[[フレーム][WebSocketフレーム]]の[F[payloadデータ]]は、
 圧縮されたデータです。
+[F[opcode]] 依存の [F[payloadデータ]]の制約は、展開された状態のデータにのみ適用されます。
 [SRC[>>111]]
 
+[EG[
+[123] 例えば[[テキストフレーム]]からはじまる [[message payload]] は [[UTF-8]]
+データでなければなりません。[[圧縮メッセージ]]では実際に送信される各[[フレーム][WebSocketフレーム]]の[F[payloadデータ]]は
+[[UTF-8]] になっているとは限りません (なっていない可能性の方が高いです)。
+しかしそれを[[展開]]した結果は [[UTF-8]] となっていなければなりません。
+]EG]
+
 [106] 最初の[[フレーム][WebSocketフレーム]]の[F[メッセージ毎圧縮]]ビットの設定されて''いない''[[メッセージ][WebSocketメッセージ]]を、
-[DFN[[RUBYB[非圧縮メッセージ]@en[uncompressed message]]]]といいます。 
-[[非圧縮メッセージ]]の[[フレーム][WebSocketフレーム]]の[F[payloadデータ]]は、
+[DFN[[RUBYB[非圧縮メッセージ]@en[uncompressed message]]]]といいます。  [SRC[>>111]]
+
+[121] [[非圧縮メッセージ]]の[[フレーム][WebSocketフレーム]]の[F[payloadデータ]]は、
 圧縮されていないデータです。
 [SRC[>>111]]
 
 
+[107] [[メッセージ][WebSocketメッセージ]]の送信時には、
+次のようにしなければ[MUST[なりません]] [SRC[>>111]]。
+
+[FIG(steps)[
+= [115] [[圧縮メッセージ]]の場合、
+== [112] [VAR[データ]]を、 [[message payload]] に [[PMCE]] の[[圧縮]]を適用した結果に設定します。
+== [113] [VAR[データ]]を使って[[フレーム][WebSocketフレーム]](群)を生成します。
+== [114] 最初の[[フレーム][WebSocketフレーム]]の[F[メッセージ毎圧縮]]を、 [N[1]]
+に設定します。
+= [116] [[非圧縮メッセージ]]の場合、
+== [117] [VAR[データ]]を、 [[message payload]] に設定します。
+== [118] [VAR[データ]]を使って[[フレーム][WebSocketフレーム]](群)を生成します。
+]FIG]
+
+
+[124] [[圧縮メッセージ]]を受信した場合、
+次のようにしなければ[MUST[なりません]]。 [SRC[>>111]]
+
+[FIG(steps)[
+= [128] [F[メッセージ毎圧縮]]が [N[1]] の場合、
+== [125] [VAR[データ]]を、[[圧縮メッセージ]]の[[フレーム][WebSocketフレーム]]の[F[payloadデータ]]を連結したものに設定します。
+== [126] [VAR[データ]]を、[VAR[データ]]に [[PMCE]] の[[展開]]を適用した結果に設定します。
+== [127] [F[メッセージ毎圧縮]]を、[N[0]] に設定します。
+]FIG]
+
+
+** [CODE[permessage-deflate]]
+
+[130] [[DEFLATE]] を使う場合の拡張名は
+[DFN[[CODE[permessage-deflate]]]] です。
+次の[[引数]]があります。 [SRC[>>129]]
+
+[FIG(middle list)[ [131] [CODE[permessage-deflate]] の[[引数]]
+- [CODE[server_no_context_takeover]]
+- [CODE[client_no_context_takeover]]
+- [CODE[server_max_window_bits]]
+- [CODE[client_max_window_bits]]
+]FIG]
 
 * 実装
 
