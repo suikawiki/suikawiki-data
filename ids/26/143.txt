@@ -6,20 +6,92 @@
 
 * Web ブラウザーの処理
 
-[2] [[Web]] の[[利用者エージェント]]は、 [[JavaScript]]
-の[[抽象操作]] [CODE[[DFN[[[HostResolveImportedModule]]]]([VAR[referencingModule]], [VAR[specifier]])]]
-を次のように処理しなければ[['''なりません''']] [SRC[>>1]]。
+[2] [[Webブラウザー]]は、
+[VAR[referencing]] と[VAR[指定子]]に関する
+[DFN[[CODE[HostResolveImportedModule]]
+を、次のようにしなければ[MUST[なりません]] [SRC[>>1]]。
 
 [FIG(steps)[
-= [3] [VAR[参照元モジュールスクリプト]]を、 [CODE[[VAR[referencingModule]].[F(ss)[HostDefined]]]]
-に設定します。
-= [5] [VAR[URL]] を、[VAR[参照元モジュールスクリプト]]と[VAR[指定子]]について[[モジュール指定子を解決]]した結果に設定します。
-= [4] [VAR[参照元モジュールスクリプト]]の[F[設定群オブジェクト]]の[F[モジュール写像]] [ [VAR[URL]] ] の[F[モジュール記録]]を返します。
+= [3] [VAR[参照元スクリプト]]を、 [VAR[referencing]] の [F(ss)[HostDefined]] に設定します。
+= [5] [VAR[URL]] を、[VAR[参照元スクリプト]]と[VAR[指定子]]について[[モジュール指定子を解決]]した結果に設定します。
+= [4] [VAR[参照元スクリプト]]の[F[設定群オブジェクト]]の[F[モジュール写像]] [ [VAR[URL]] ] の[F[モジュール記録]]を返します。
 ]FIG]
 
 [13] つまり、与えられた[[モジュール指定子]]を解決して得られた [[URL]]
 が、既に読み込み済みの[[モジュールスクリプト]]の [[URL]] であれば、
 その[[モジュールスクリプト]]が使われます。
+
+;; [10] [[静的]]な [CODE[import][import()]] で使われます。
+
+-*-*-
+
+[8] [[Webブラウザー]]は、
+[VAR[referencing]] と[VAR[指定子]]、 [VAR[promiseCapability]] に関する
+[DFN[[CODE[HostImportModuleDynamically]]]]
+を、次のようにしなければ[MUST[なりません]]。 [SRC[>>1]]
+
+[FIG(steps)[
+= [9] [VAR[スクリプト]]を、 [VAR[referencing]] の [F(ss)[HostDefined]] に設定します。
+= [33] [[未定義]]を返します。
+]FIG]
+
+[34] [[並列に]]、次のようにしなければ[MUST[なりません]] [SRC[>>1]]。
+
+[FIG(steps)[
+= [12] [VAR[URL]] を、[VAR[スクリプト]]と[VAR[指定子]]について[[モジュール指定子を解決]]した結果に設定します。
+= [15] [VAR[URL]] が[[失敗]]の場合、
+== [16] [VAR[完了]]を、新しい [[Completion]] に設定します。
+[FIG(list members)[
+
+: [F(ss)[Type]] : [[throw]]
+: [F(ss)[Value]] : 新しい [CODE[TypeError]]
+: [F(ss)[Target]] : [[空]]
+
+]FIG]
+== [20] [VAR[referencing]]、[VAR[指定子]]、[VAR[promiseCapability]], [VAR[完了]]について
+[CODE[FinishDynamicImport]] を実行します。
+= [22] それ以外の場合、
+== [23] [VAR[オプション群]]を、 
+[VAR[スクリプト]]の[F[fetchオプション群]]の[F[子孫スクリプトfetchオプション群]]に設定します。
+== [21] [[モジュールスクリプトグラフのfetch]] を実行します。
+[FIG(list members)[
+
+: [VAR[URL]] : [VAR[URL]]
+: [VAR[設定群オブジェクト]] : [VAR[設定群オブジェクト]]
+: [VAR[終点]] : [CODE[script]]
+: [VAR[オプション群]] : [VAR[オプション群]]
+: [VAR[続きの処理]] : >>11
+]FIG]
+
+]FIG]
+
+[11] 続きは、[VAR[結果]]について、次のようにします。 [SRC[>>1]]
+
+[FIG(steps)[
+= [24] [VAR[結果]]が [CODE[null]] の場合、
+== [25] [VAR[完了]]を、新しい [[Completion]] に設定します。
+[FIG(list members)[
+: [F(ss)[Type]] : [[throw]]
+: [F(ss)[Value]] : [CODE[TypeError]]
+: [F(ss)[Target]] : [[空]]
+]FIG]
+== [26] [VAR[referencing]]、[VAR[指定子]]、[VAR[promiseCapability]]、[VAR[完了]]について、
+[[FinishDynamicImport]] を実行します。
+= [27] それ以外の場合、
+== [28] [[モジュールスクリプトの実行]]をします。
+[FIG(list members)[
+: [VAR[スクリプト]] : [VAR[結果]]
+: [VAR[エラーを再び投げる]] : [[真]]
+]FIG]
+[VAR[例外]]を、[[投げ]]られた[[例外]]に設定します。
+== [29] [VAR[例外]]がある場合、
+=== [30] [VAR[referencing]]、[VAR[指定子]]、[VAR[promiseCapability]]、
+[VAR[例外]]について [CODE[FinishDynamicImport]] を実行します。
+== [31] それ以外の場合、
+=== [32] [VAR[referencing]]、[VAR[指定子]]、[VAR[promiseCapability]]、
+[[NormalCompletion]] ([[未定義]]) について [CODE[FinishDynamicImport]]
+を実行します。
+]FIG]
 
 * 歴史
 
@@ -42,3 +114,7 @@
 [7] [CITE@en[Improve module instantiation/evaluation, especially around errors]]
 ([[domenic]]著, [TIME[2017-08-04 05:13:45 +09:00]])
 <https://github.com/whatwg/html/commit/2b408b65a11fe76b6588b744e0ae74d30ff29b43>
+
+[6] [CITE@en[Integrate dynamic import()]]
+([[domenic]]著, [TIME[2017-09-14 21:11:01 +09:00]])
+<https://github.com/whatwg/html/commit/d4d1704f9c0efbeed78b885d566af17545b8b5fe>
