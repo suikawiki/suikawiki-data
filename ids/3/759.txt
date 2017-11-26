@@ -1,9 +1,26 @@
 [1] [[電子ニュース]]の[[メッセージ]]の [DFN[[CODE(822)@en[Xref:]] [[頭欄]]]]は、
 [[ニュース鯖]]が[[メッセージ]]の識別番号を保持するために使われています。
 
-* 仕様書から
+* 仕様書
 
-** RFC 1036 2.2.13.  Xref
+[REFS[
+- [2] [CITE@en[RFC 5536 - Netnews Article Format]]
+( ([TIME[2014-09-21 18:14:06 +09:00]] 版))
+<https://tools.ietf.org/html/rfc5536#section-3.2.14>
+]REFS]
+
+* URL
+
+[3] [[emacs-w3m]] の [[shimbun]] では、元記事の [[URI]] を入れています。
+
+;; [4] [[shimbun]] の出力は[[ネットニュース]]の[[メッセージ]]ではありませんが、
+その構文が流用されていました。
+
+* 歴史
+
+** RFC 1036
+
+[FIG(quote)[ [5] RFC 1036 2.2.13.  Xref
 
 This line contains the name of the host (with domains omitted) and a
 white space separated list of colon-separated pairs of newsgroup
@@ -44,33 +61,79 @@ certain user interfaces.
 で「Xref」行はこのメッセージがホスト seismo において新聞組 news.lists 
 のメッセージ番号461, news.groups のメッセージ番号6378 であることを
 表します。この情報は利用者界面で使っても構いません。
+]FIG]
 
-** LICENSE
+** [[son-of-RFC1036]]
 
-See [[RFCのライセンス]]
+[FIG(quote)[ [6] 6.12. Xref
 
-* [[son-of-RFC1036のXRef:領域]]
+          The Xref header content indicates where an article was filed
+          by the last relayer to process it:
 
+               Xref-content     = relayer 1*( space location )
+               relayer          = relayer-name
+               location         = newsgroup-name ":" article-locator
+               article-locator  = 1*<ASCII printable character>
 
-* 他の実装
+          The relayer's name is included so that software  can  deter-
+          mine  which  relayer generated the header (and specifically,
+          whether it really was the one  that  filed  the  copy  being
+          examined).   The locations specify what newsgroups the arti-
+          cle was filed under (which may  differ  from  those  in  the
+          Newsgroups  header)  and where it was filed under them.  The
+          exact form of an article locator is implementation-specific.
 
-emacs-w3m の shimbun では、元記事の URI を入れています。
+               NOTE:  Reading agents can exploit this information
+               to avoid presenting the same article to  a  reader
+               several   times.   The  information  is  sometimes
+               available in system databases, but  having  it  in
+               the article is convenient.  Relayers traditionally
+               generate an Xref header only  if  the  article  is
+               cross-posted, but this is not mandatory, and there
+               is at  least  one  new  application  ("mirroring":
+               keeping  news  databases  on  two hosts identical)
+               where the header is useful in all articles.
 
+               NOTE: The traditional form of an  article  locator
+               is  a  decimal number, with articles in each news-
+               group  numbered  consecutively  starting  from  1.
+               NNTP  [rrr] demands that such a model be provided,
+               and there may be other software which expects  it,
+               but  it  seems desirable to permit flexibility for
+               unorthodox implementations.
 
-* SEE ALSO
+          A relayer inserting an Xref  header  into  an  article  MUST
+          delete  any  previous  Xref  header.  A relayer which is not
+          inserting its own Xref header  SHOULD  delete  any  previous
+          Xref  header.   A  relayer  MAY  delete the Xref header when
+          passing an article on to another relayer.
 
-- [[RFC822と仲間達の頭領域名]]
-- [[電子ニュース]]
--- [[RFC850]]
--- [[RFC1036]]
--- [[son-ofRFC1036]]
--- [[draft-usefor-article]]
--- [[NNTP]]
-- [[w3m]]
--- [[emacs-w3m]]
---- [[shimbun]]
+Xref 頭を記事に挿入する中継者は前の Xref 頭を削除し''なければなりません''。
+自分の Xref 頭を挿入しない中継者は前の Xref 頭を削除する''べき''です。
+中継者は Xref 頭を他の中継者に渡す時に Xref 頭を削除しても
+''構いません''。
 
+               NOTE: RFC 1036 specified that the Xref header  was
+               not  transmitted  when  an  article  was passed to
+               another relayer, but the  major  news  implementa-
+               tions  have  never  obeyed this rule, and applica-
+               tions like mirroring depend on this  disobedience.
 
-[2] [CITE@en[RFC 5536 - Netnews Article Format]]
-( ([TIME[2014-09-21 18:14:06 +09:00]] 版))
-<http://tools.ietf.org/html/rfc5536#section-3.2.14>
+参考: RFC 1036 は Xref 頭は記事が他の中継者に渡される時に
+転送されないとしていましたが、有名ニュース実装はこの規則に従わず、
+鏡化(ミラーリング)のような応用はこの規格違反に依存してきました。
+
+          A  relayer MUST use the same name in Xref headers as it uses
+          in Path headers.  Reading agents MUST ignore an Xref  header
+          containing  a  relayer  name  that differs from the one that
+          begins the path list.
+
+中継者は Xref 頭に Path 頭と同じ名前を使わ''なければなりません''。
+読み代理者は経路表の最初の中継者名と異なる Xref 頭を無視し
+''なければなりません''。
+
+]FIG]
+
+** [[draft-usefor-article]]
+
+@@
