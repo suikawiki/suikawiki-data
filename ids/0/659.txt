@@ -215,6 +215,11 @@ Base64 は6ビット単位になりますが、オクテット列の長さと必
 [[ヘッダー値]]として使うため[[改行]]を自由には挿入できないはずですが、
 符号化される値は十分短いため、実際には問題とはなりません。
 
+[827] [[基本認証]]の [[credentials]] では [[MIME]] の [[RFC 1521]] や [[RFC 2045]] の 
+[[Base64]] から行長制限を撤廃したものと規定されていました [SRC[>>826, >>183, >>828]]。
+厳密に読めば制限が撤廃されたのは良いとして、[[改行]]が認められるのかは不明でした。
+この点は後の改訂で明確化されました (>>185)。
+
 [171] [CODE[data:]] を定める [[RFC 2397]] は「base64」としか言っておらず、
 どこで規定される何を指すのかは曖昧ですが、[[参考文献]]として示された
 [[MIME]] の [[RFC 2045]] だけが文脈から推測できる候補でした。
@@ -226,6 +231,9 @@ Base64 は6ビット単位になりますが、オクテット列の長さと必
 - [149] [CITE@en[RFC 1341 - MIME (Multipurpose Internet Mail Extensions): Mechanisms for Specifying and Describing the Format of Internet Message Bodies]] ([TIME[2018-01-21 20:29:24 +09:00]]) <https://tools.ietf.org/html/rfc1341#page-17>
 - [150] [CITE@en[RFC 1521 - MIME (Multipurpose Internet Mail Extensions) Part One: Mechanisms for Specifying and Describing the Format of Internet Message Bodies]] ([TIME[2018-01-21 18:17:10 +09:00]]) <https://tools.ietf.org/html/rfc1521#section-5.2>
 - [43] [CITE@en[RFC 2045 - Multipurpose Internet Mail Extensions (MIME) Part One: Format of Internet Message Bodies]] ([TIME[2015-03-22 13:13:15 +09:00]] 版) <https://tools.ietf.org/html/rfc2045#section-6.8>
+- [826] [CITE@en[RFC 1945 - Hypertext Transfer Protocol -- HTTP/1.0]] ([TIME[2012-02-18 23:25:56 +09:00]] 版) <https://tools.ietf.org/html/rfc1945#section-11.1>
+- [183] [CITE@en[RFC 2068 - Hypertext Transfer Protocol -- HTTP/1.1]] ([TIME[2018-01-28 09:40:08 +09:00]]) <https://tools.ietf.org/html/rfc2068#section-11.1>
+- [828] [CITE@en[RFC 2617 - HTTP Authentication: Basic and Digest Access Authentication]] ([TIME[2012-01-09 21:04:30 +09:00]] 版) <https://tools.ietf.org/html/rfc2617#section-2>
 ]REFS]
 
 -*-*-
@@ -286,6 +294,7 @@ Base64 は6ビット単位になりますが、オクテット列の長さと必
 
 [FIG(list middle)[ [67] [[RFC 4648]] [[MIME]] 式 [[Base64]] の[[応用]]
 - [CODE(HTTP)@en[Sec-WebSocket-Key:]]
+- [185] [[基本認証]] [[credentials]] [SRC[>>184]]
 ]FIG]
 
 [36]
@@ -302,6 +311,7 @@ Base64 は6ビット単位になりますが、オクテット列の長さと必
 - [6] [CITE@en[RFC 3548 - The Base16, Base32, and Base64 Data Encodings]] ([TIME[2018-01-21 17:19:42 +09:00]]) <https://tools.ietf.org/html/rfc3548>
 - [24] [CITE@en[RFC 4648 - The Base16, Base32, and Base64 Data Encodings]] ([TIME[2018-01-28 17:12:45 +09:00]]) <https://tools.ietf.org/html/rfc4648>
 - [177] [CITE@en[RFC 4287 - The Atom Syndication Format]] ([TIME[2018-01-28 12:33:10 +09:00]]) <https://tools.ietf.org/html/rfc4287#section-4.1.3.3>
+- [184] [CITE@en[RFC 7617 - The 'Basic' HTTP Authentication Scheme]] ([TIME[2018-02-02 23:41:22 +09:00]]) <https://tools.ietf.org/html/rfc7617#section-2>
 ]REFS]
 
 ** [CODE[xs:base64Binary]]
@@ -327,12 +337,7 @@ Base64 は6ビット単位になりますが、オクテット列の長さと必
 - [172] [CITE@EN[XML Schema Part 2: Datatypes Second Edition]] ([TIME[2017-10-02 19:29:02 +09:00]]) <https://www.w3.org/TR/xmlschema-2/#base64Binary>
 ]REFS]
 
-** 詰めの省略
-
-[1] [[詰め]]の [CODE[=]] を省略することが認められている、
-あるいは省略しなければならないと定めているバリエーションもいくつかあります。
-
--*-*-
+** UTF-7 修正 Base64
 
 [2] [[UTF-7]] は、[DFN[[RUBYB[修正Base64]@en[Modified Base64]]]]と称する[[変種]]を定義していました
 [SRC[>>44, >>47]]。
@@ -354,30 +359,16 @@ Base64 は6ビット単位になりますが、オクテット列の長さと必
 
 -*-*-
 
-[29]
-[[Norton AntiSpam]] は [CODE(ABNF)[[[encoded-word]]]] の最後の
-[CODE(MIME)[=]] を省くそうです。 [SRC[mew-dist 25264]]
-もちろんこの実装は MIME 違反です。
-
-[39]
-機械的に電子メイルを生成する類のプログラムで、
-末尾に4つも [CODE(MIME)@en[=]] を付けるとんでもない符号化するものがあるそうです。
-[WEAK[(しかも改善するように要求したら使っている [[MUA]] が悪いのだろうと言われたとか。。。)]]
-
-([[名無しさん]] [sage] [WEAK[2005-12-10 07:32:30 +00:00]])
-
-[45]
-[[RFC 4387]] では固定長の[[オクテット列]]を符号化するため、常に最後が [CODE[=]] になってしまうので、
-[CODE[=]] は省略することになっています [SRC[>>884]]。
-
-[55]
-[[Perl]] の [CODE(perl)@en[[[Digest::MD5]]]] や
-[CODE(perl)@en[[[Digest::SHA1]]]] が出力する [[Base64]]
-化[[文字列]]は、[[詰め]]が省略されています [SRC[>>853]] 。
+[7] [[IMAP]] の[[修正UTF-7]] は、 [[UTF-7]] の[[修正Base64]]を更に改変し、
+[[字母]] [CODE(char)[/]] の代わりに [CODE(char)[,]] を使うとしています
+[SRC[>>182, >>181]]。
 
 [REFS[
-- [884] [CITE@en[RFC 4387 - Internet X.509 Public Key Infrastructure Operational Protocols: Certificate Store Access via HTTP]] ([TIME[2014-06-08 08:24:17 +09:00]] 版) <http://tools.ietf.org/html/rfc4387#section-2.1>
-- [853] [CITE[Digest::SHA - search.cpan.org]] ([TIME[2013-09-21 12:18:41 +09:00]] 版) <http://search.cpan.org/dist/Digest-SHA/lib/Digest/SHA.pm#PADDING_OF_BASE64_DIGESTS>
+- [182] [CITE@en[RFC 2060 - Internet Message Access Protocol - Version 4rev1]] ([TIME[2018-01-28 19:02:32 +09:00]]) <https://tools.ietf.org/html/rfc2060#section-5.1.3>
+- [181] [CITE@en[RFC 3501 - INTERNET MESSAGE ACCESS PROTOCOL - VERSION 4rev1]] ([TIME[2018-02-01 03:51:41 +09:00]]) <https://tools.ietf.org/html/rfc3501#section-5.1.3>
+- [180] [CITE[RFC Errata Report » RFC Editor]] ([TIME[2018-02-04 00:33:46 +09:00]]) <https://www.rfc-editor.org/errata_search.php?rfc=3501>
+-- 旧 [CITE[RFC ERRATA]] 
+<http://www.rfc-editor.org/cgi-bin/errata.pl#rfc3501>
 ]REFS]
 
 ** URL 安全 Base64
@@ -400,6 +391,13 @@ Base64 は6ビット単位になりますが、オクテット列の長さと必
 [839] 公的な文書としては [[RFC]] (>>30) があり、ファイル名や [[URL]]
 で安全なものとして紹介されています。ただし [[RFC]] は原則として[[詰め]] [CODE(char)[[[=]]]]
 は省略できないとしており、一般的な実装とは異なっています。
+
+;; [17] [CODE[=]] は [[URL]] では [[query][URL query]] などで特別な意味を持つことがあるので、
+あまり安全ではありません。 [[RFC]] は原則を貫こうとするあまり、
+一般的な実装が意図的に加えた改変を無視しているのです。
+
+;; [22] 実際には [CODE[-]] が[[ファイル名]]の先頭に来るのは必ずしも安全とはいえません。
+[[URL]] で安全と言うのに留めておけばいいのに、[[RFC]] は余計な説明を加えています。
 
 [840] [[RFC]] は既存の利用例として[[メーリング・リスト]]の記事を参照していますが、
 [[URL]] が変わってしまったのか、関係ない記事になっています。本来指すべきだったと思われる
@@ -444,7 +442,21 @@ Base64 は6ビット単位になりますが、オクテット列の長さと必
 - [CODE(HTTP)@en[HTTP2-Settings:]]
 ]FIG]
 
-** その他の字母のバリエーション
+** その他のバリエーション
+
+[9] [CODE(URI)[[[urn:urn-5]]]] [[URN]] [[名前空間]]で使っている Base64
+変種は、 [CODE(char)[/]] の代わりに [CODE(char)[-]]
+を使います。 (URN では [CODE(URI)[/]] が使えないため。)
+また、詰め文字は使いません。
+(''Namespace ID: urn-5'' <http://www.iana.org/assignments/urn-informal/urn-5>)
+
+[16] [[RFC 3548]] 曰く、 MIME Base64 ではファイル名や [[URI]] 
+で安全ではないので、 [CODE(char)[/]] の代わりに [CODE(char)[~]] 
+を使う提案があったそうです。しかし [CODE(char)[~]] もやはりファイル・システムや 
+URI で安全とは言えません。
+
+[18] [[M$XML]] は [CODE(char)[/]] の代わりに [CODE(char)[*]] 
+を使っていたそうです。最近の版では両方認識するそうです。
 
 [20] [[OpenToken]] [SRC[>>19]] は[[クッキー]]で使うためとして、 [[RFC 4648]]
 の [[Base64]] の[[詰め文字]]を [CODE[[[=]]]] ではなく [CODE[[[*]]]]
@@ -465,6 +477,56 @@ Base64 は6ビット単位になりますが、オクテット列の長さと必
 - [846] [CITE[Kazuho@Cybozu Labs: URL と Base64]] ([TIME[2012-05-23 19:26:17 +09:00]] 版) <http://labs.cybozu.co.jp/blog/kazuho/archives/2006/01/url_base64.php>
 ]REFS]
 
+-*-*-
+
+[29]
+[[Norton AntiSpam]] は [CODE(ABNF)[[[encoded-word]]]] の最後の
+[CODE(MIME)[=]] を省くそうです。 [SRC[mew-dist 25264]]
+もちろんこの実装は MIME 違反です。
+
+[39]
+機械的に電子メイルを生成する類のプログラムで、
+末尾に4つも [CODE(MIME)@en[=]] を付けるとんでもない符号化するものがあるそうです。
+[WEAK[(しかも改善するように要求したら使っている [[MUA]] が悪いのだろうと言われたとか。。。)]]
+
+([[名無しさん]] [sage] [WEAK[2005-12-10 07:32:30 +00:00]])
+
+[45]
+[[RFC 4387]] では固定長の[[オクテット列]]を符号化するため、常に最後が [CODE[=]] になってしまうので、
+[CODE[=]] は省略することになっています [SRC[>>884]]。
+
+[55]
+[[Perl]] の [CODE(perl)@en[[[Digest::MD5]]]] や
+[CODE(perl)@en[[[Digest::SHA1]]]] が出力する [[Base64]]
+化[[文字列]]は、[[詰め]]が省略されています [SRC[>>853]] 。
+
+[REFS[
+- [884] [CITE@en[RFC 4387 - Internet X.509 Public Key Infrastructure Operational Protocols: Certificate Store Access via HTTP]] ([TIME[2014-06-08 08:24:17 +09:00]] 版) <http://tools.ietf.org/html/rfc4387#section-2.1>
+- [853] [CITE[Digest::SHA - search.cpan.org]] ([TIME[2013-09-21 12:18:41 +09:00]] 版) <http://search.cpan.org/dist/Digest-SHA/lib/Digest/SHA.pm#PADDING_OF_BASE64_DIGESTS>
+]REFS]
+
+-*-*-
+
+[189] [[IMAP4]] の [CODE[AUTHENTICATE]] [[命令]]は、 [[base64]]
+で[[符号化]]するとされていますが、その定義は示されていません
+[SRC[>>186, >>187, >>188]]。
+
+[190] [[インターネットメール]]の[[プロトコル]]であるから [[MIME]]
+の [[Base64]] ではないかと推測したいところですが、
+[[ABNF]] 構文が示されており、そこでは[[改行]]が認められていません。
+本文中も単数の a line となっており、複数行は認められないようです。
+しかし符号化されるデータが [[MIME]] 式 [[Base64]] で1行に収まる保証はありません。
+
+[191] 構文は、 [[MIME]] 式の[[字母]]と[[詰め]]を認めており、
+それ以外の[[文字]]は一切認めていません。[[詰め]]が含まれる数は、正しくなければなりません。
+[[詰め]]の前の[[字母]]の制約は構文上は現れていません。
+
+[REFS[
+- [186] [CITE@en[RFC 1730 - Internet Message Access Protocol - Version 4]] ([TIME[2018-01-21 18:00:58 +09:00]]) <https://tools.ietf.org/html/rfc1730#section-6.2.1>
+- [187] [CITE@en[RFC 2060 - Internet Message Access Protocol - Version 4rev1]] ([TIME[2018-01-28 19:02:32 +09:00]]) <https://tools.ietf.org/html/rfc2060#section-6.2.1>
+- [188] [CITE@en[RFC 3501 - INTERNET MESSAGE ACCESS PROTOCOL - VERSION 4rev1]] ([TIME[2018-02-01 03:51:41 +09:00]]) <https://tools.ietf.org/html/rfc3501#section-6.2.2>
+]REFS]
+
 * uuencode 風表現
 
 [3] [[MIME]] 以外の場面でファイルを貼り付けるのに、 [[uuencode]]
@@ -483,60 +545,6 @@ begin-base64 644 code.tgz
 [INS[... base64 stream ...]]
 =
 ]PRE]
-
-* 変種
-
-
-** 斜線の代替文字
-
-[22] MIME の Base64 字母には [CODE(char)[/]] が含まれますが、
-色々なシステムで階層の区切り文字として使われているので、
-あまり嬉しくないことがあります。
-
-[7] [[IMAP]] の修正 [[UTF-7]] では、 >>2 の修正に加えて、 
-[CODE(char)[/]] の代わりに [CODE(char)[,]] が使われています。
-
-仕様書:
-- [[RFC 3501]]
-[CITE[INTERNET MESSAGE ACCESS PROTOCOL - VERSION 4rev1]]
-<urn:ietf:rfc:3501>
--- [CSECTION[5.1.3]]
-- [CITE[RFC ERRATA]] 
-<http://www.rfc-editor.org/cgi-bin/errata.pl#rfc3501>
--- 明確化のための修正が行われています。
-
-[9] [CODE(URI)[[[urn:urn-5]]]] [[URN]] [[名前空間]]で使っている Base64
-変種は、 [CODE(char)[/]] の代わりに [CODE(char)[-]]
-を使います。 (URN では [CODE(URI)[/]] が使えないため。)
-また、詰め文字は使いません。
-(''Namespace ID: urn-5'' <http://www.iana.org/assignments/urn-informal/urn-5>)
-
-[16] [[RFC 3548]] 曰く、 MIME Base64 ではファイル名や [[URI]] 
-で安全ではないので、 [CODE(char)[/]] の代わりに [CODE(char)[~]] 
-を使う提案があったそうです。しかし [CODE(char)[~]] もやはりファイル・システムや 
-URI で安全とは言えません。
-
-[17] そこで RFC 3548 はファイル名や URI で安全な代替 Base64 字母として、 
-[CODE(char)[+]] と [CODE(char)[/]] に代えて [CODE(char)[-]] と [CODE(char)[_]] 
-を使うものを規定しています。それでも [CODE(char)[=]] が padding 
-に使われてるので、まだ完全に URI で安全とは言えません。 [CODE(char)[-]] 
-が先頭に来る可能性があるので [[Un|x]] で安全でない虞もあります。
-
-[18] [[M$XML]] は [CODE(char)[/]] の代わりに [CODE(char)[*]] 
-を使っていたそうです。最近の版では両方認識するそうです。
-
-** 文字数制限の撤廃
-
-
-[827] [[基本認証]]の [[credentials]] では [[RFC 2045]] の [[Base64]] 
-から、1行当たりの文字数制限を撤廃したものを使っています。
-
-[REFS[
-- [826] [CITE@en[RFC 1945 - Hypertext Transfer Protocol -- HTTP/1.0]] ([TIME[2012-02-18 23:25:56 +09:00]] 版) <http://tools.ietf.org/html/rfc1945#section-11.1>
-- [828] [CITE@en[RFC 2617 - HTTP Authentication: Basic and Digest Access Authentication]] ([TIME[2012-01-09 21:04:30 +09:00]] 版) <http://tools.ietf.org/html/rfc2617#section-2>
-]REFS]
-
-
 
 * Web Base64 API
 
@@ -633,13 +641,15 @@ URI で安全とは言えません。
 
 * 実装
 
+[8] [[uuencode]] も[[64進数]]であることを利用して、 uuencode
+で符号化した後に [CODE[[[tr]]]] を使うという方法が使われることもあります。
+
+** Perl
+
 [4] [[Perl]] なら、 [CODE(perl)[[[MIME::Base64]]]] を使うのが気楽かと。
 Perl 5.7.3 以降では標準で入っています。
 
-但し、 >>1,>>2,>>7 のような変種には対応していません。
-
-[8] [[uuencode]] も64進数であることを利用して、 uuencode
-で符号化した後に [CODE[[[tr]]]] を使うという方法が使われることもあります。
+[192] 但し、 >>2, >>7 のような変種には対応していません。
 
 ** [CODE[base64]] コマンド
 
@@ -653,9 +663,10 @@ Perl 5.7.3 以降では標準で入っています。
 [70] [CODE[-d]] [[オプション]]つきで実行すると、[[標準入力]]を[[復号]]し、
 結果を[[標準出力]]に書き込みます。
 
-** [52] BASE64.ASM
+** BASE64.ASM
 
-[PRE[
+[FIG[
+[PRE(code)[
 	ASSUME	CS:CODE,DS:CODE
 CODE	SEGMENT
 
@@ -774,7 +785,11 @@ CODE	ENDS
 	END	START
 ]PRE]
 
-([[名無しさん]] [WEAK[2007-05-30 05:16:55 +00:00]])
+[FIGCAPTION[
+[52] [CODE[BASE64.ASM]]
+[[名無しさん]] [TIME[2007-05-30 05:16:55 +00:00]]
+]FIGCAPTION]
+]FIG]
 
 * テスト
 
