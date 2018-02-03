@@ -163,7 +163,9 @@ Base64 は6ビット単位になりますが、オクテット列の長さと必
 での利用上特別な意味を持った区切りの[[文字]] [CODE[*]] 
 も[[字母]]の1つとして挙げられていました。
 
-[FIG(short list)[ [157] [[PEM]] [[Base64]] の[[応用]]
+[166] 符号化の方法は規定されていましたが、復号の方法は明確には定められていませんでした。
+
+[FIG(list middle)[ [157] [[PEM]] [[Base64]] の[[応用]]
 - [[PEM]] [[署名]]
 ]FIG]
 
@@ -194,10 +196,9 @@ Base64 は6ビット単位になりますが、オクテット列の長さと必
 [156] このように [[PEM]] とは違って誤り処理が定められたことは注目に値しますが、
 起こり得るすべての誤りケースをカバーできてはいませんでした。
 
-[FIG(short list)[ [158] [[MIME]] [[Base64]] の[[応用]]
+[FIG(list middle)[ [158] [[MIME]] [[Base64]] の[[応用]]
 - [[MIME]] [CODE(MIME)[Base64]] [[転送符号化]]
 - [CODE(MIME)[[[x-gzip64]]]] 転送符号化
-- [[PGP/MIME]] [[署名]]
 - MIME [CODE(MIME)[[[Content-MD5]]:]] 欄
 - [[822]] [CODE(822)[[[Face]]:]] 欄
 - MIME [CODE(ABNF)[[[encoded-word]]]] [CODE(MIME)[B]] 符号化
@@ -227,6 +228,10 @@ Base64 は6ビット単位になりますが、オクテット列の長さと必
 しかし明らかに同じテキストを流用しています。
 ですが全く同じではなく、解釈次第ではこちらの定義の方が厳密ともいえます。
 
+[FIG(list middle)[ [46] [[Radix-64]] の[[応用]]
+- [[ASCII Armor]]
+]FIG]
+
 [REFS[
 - [159] [CITE@en[RFC 1991 - PGP Message Exchange Formats]] ([TIME[2018-01-28 20:52:48 +09:00]]) <https://tools.ietf.org/html/rfc1991#section-2.4>
 - [160] [CITE@en[RFC 2440 - OpenPGP Message Format]] ([TIME[2018-01-21 17:16:48 +09:00]]) <https://tools.ietf.org/html/rfc2440#section-6.3>
@@ -235,57 +240,70 @@ Base64 は6ビット単位になりますが、オクテット列の長さと必
 
 ** IETF の Base64
 
-[15] その後、 Base64 を規定する新しい RFC, [[RFC 3548]] がでました。
+[15] [[IETF]] はその後 [[Base64]] (と [[Base32]] と [[Base16]]) のみを定める
+[[RFC]] を発行しました [SRC[>>6, >>24]]。
 
-[33] [[RFC 3548]] の MIME 型 Base64 の定義を採用する仕様:
-[FIG(list)[
-- [[RFC 3548]] の MIME 型 Base64
+[30] [[MIME]] 式の [[base64]] と、 [[base64url]] との2種類が定義されています。
+両者は[[字母]]のみが異なっています。
+
+[164] [[MIME]] 式のものは、 [[MIME]] や [[OpenPGP]] に由来するものですが、
+いくつか異なる点もあります。
+
+[165] [[詰め]]は、原則として[MUST[必須]]ですが、[[応用]]は省略可能と定めることができます。
+しかし[[詰め]]が省略された場合にどう処理しなければならないかは規定されていません。
+
+[167] [[RFC 3548]] にはありませんでしたが、 [[RFC 4648]] は、
+[[詰め]]の前の[[字母]]の選択時に余った[[ビット]]は [N[0]]
+としなければ[MUST[ならない]]としています。
+そうでない場合、[[復号]]時に拒絶しても構わないとされています。
+
+[168] [[復号]]時に[[字母]]以外が含まれる場合、
+原則として拒絶しなければ[MUST[ならず]]、
+[[応用]]はそれ以外の処理方法を定めても良い、とされています。
+[[電子メール]]のように行長制限が必要な場合には[[改行]]を挿入することを選べますが、
+基本的には[[改行]]は含めないことになっているのが [[MIME]] との最大の違いです。
+同様に[[復号]]時に不正な[[詰め]]も無視すると定めても良いことになっています。
+
+[169] これらの [[RFC]] でも、完全な[[復号]]の方法は定められていません。
+
+[FIG(list middle)[ [33] [[RFC 3548]] [[MIME]] 式 [[Base64]] の[[応用]]
 - [[XMPP]] ([[RFC 3920]])
 ]FIG]
 
-[67] [[RFC 4648]] の定義を採用する仕様:
-[FIG(list)[
-- [CODE(HTTP)@en[Sec-WebSocket-Key:]] ([[符号化]]のみ利用)
+[FIG(list middle)[ [67] [[RFC 4648]] [[MIME]] 式 [[Base64]] の[[応用]]
+- [CODE(HTTP)@en[Sec-WebSocket-Key:]]
 ]FIG]
-
-** その他の派生
-
-[63] MIME の Base64 の定義から行長制限を撤廃したもの:
-[FIG(list)[
-- [[XML Schema]] のデータ型 [CODE(XML)[[[base64Binary]]]]
-]FIG]
-
-
-[36]
-[[Atom 1.0]] ([[RFC 4287]]) では、[[RFC 3548]]の定義を参照しています。
-ただし、最初と最後に[[空白]]があっても'''構いません'''。
-また、各[[行]]は[CODE(char)[[[U+000A]]]] 1つで区切ります。
-
-[46]
-[[RFC 4648]]
-
-[20] [[OpenToken]] [SRC[>>19]] は[[クッキー]]で使うためとして、 [[RFC 4648]]
-の [[Base64]] の[[詰め文字]]を [CODE[[[=]]]] ではなく [CODE[[[*]]]]
-に変えたものを採用しています [SRC[>>19]]。
 
 [REFS[
-- [19] [CITE@en[draft-smith-opentoken-02 - OpenToken]] ([TIME[2014-10-16 18:11:31 +09:00]] 版) <http://tools.ietf.org/html/draft-smith-opentoken-02#section-3.1>
+- [6] [CITE@en[RFC 3548 - The Base16, Base32, and Base64 Data Encodings]] ([TIME[2018-01-21 17:19:42 +09:00]]) <https://tools.ietf.org/html/rfc3548>
+- [24] [CITE@en[RFC 4648 - The Base16, Base32, and Base64 Data Encodings]] ([TIME[2018-01-28 17:12:45 +09:00]]) <https://tools.ietf.org/html/rfc4648>
 ]REFS]
 
-
-* URL で安全な Base64
+** URL 安全 Base64
 
 [833] [DFN[[[modified Base64 for URL]]]] [SRC[>>829]] あるいは [DFN[[[base64url]]]] と呼ばれる変種は、
-[[MIME]] の [[Base64]] よりを [[URL]] で利用しやすくしたものです。 [[Web]]
+[[URL]] で利用しやすくした [[Base64]] の一種です。 [[Web]]
 関係の分野でよく用いられるようになってきました。
 
-[834] [[MIME]] との差異は次の通りです。
-[FIG(list)[
-- [835] [CODE(char)[[[+]]]] と [CODE(char)[[[/]]]] のかわりに [CODE(char)[[[-]]]]
-と [CODE(char)[[[_]]]] を使います
-- [836] 末尾の詰め文字 [CODE(char)[[[=]]]] は省略します
-- [837] 76文字の文字数制限が無く、改行無しで最後まで連続させます
-]FIG]
+[834] [[MIME]] 式との差異は次の通りです。
+
+- [835] [[字母]]の [CODE(char)[[[+]]]] と [CODE(char)[[[/]]]] のかわりに [CODE(char)[[[-]]]]
+と [CODE(char)[[[_]]]] を使う
+- [836] [[詰め]]の [CODE(char)[[[=]]]] は省略する
+- [837] 行長制限を設けず、[[改行]]を挿入しない
+
+-*-*-
+
+[838] 出典としてはしばしば [[Wikipedia]] [SRC[>>829]] が参照されます。
+
+[839] 公的な文書としては [[RFC]] (>>30) があり、ファイル名や [[URL]]
+で安全なものとして紹介されています。ただし [[RFC]] は原則として[[詰め]] [CODE(char)[[[=]]]]
+は省略できないとしており、一般的な実装とは異なっています。
+
+[840] [[RFC]] は既存の利用例として[[メーリング・リスト]]の記事を参照していますが、
+[[URL]] が変わってしまったのか、関係ない記事になっています。本来指すべきだったと思われる
+>>831、>>832 によると、元々は [[Freenet]] で使われていたのを採用したようです。
+
 
 [66] 次の場面で使われます。
 [FIG(short list)[
@@ -300,27 +318,10 @@ Base64 は6ビット単位になりますが、オクテット列の長さと必
 - [829] [CITE@en[Base64 - Wikipedia, the free encyclopedia]] ([TIME[2012-05-01 23:31:28 +09:00]] 版) <http://en.wikipedia.org/wiki/Base64#URL_applications>
 ]REFS]
 
-[838] 出典としてはしばしば [[Wikipedia]] [SRC[>>829]] が参照されます。
-
-[839] 公的な文書としては [[RFC]] [SRC[>>830]] があり、ファイル名や [[URL]]
-で安全なものとして紹介されています。ただし [[RFC]] は原則として [CODE(char)[[[=]]]]
-は省略できず、特に認められた状況でのみ省略することもできる、としており、
-一般的な実装とは異なっています。
-
-[840] [[RFC]] は既存の利用例として[[メーリング・リスト]]の記事を参照していますが、
-[[URL]] が変わってしまったのか、関係ない記事になっています。本来指すべきだったと思われる
->>831、>>832 によると、元々は [[Freenet]] で使われていたのを採用したようです。
-
-** 実装
+-*-*-
 
 [75] 他の [[Base64]] の変種同様、[[字母]]を置き換えるだけなので簡単に実装できます。
 両対応の[[ライブラリー]]も珍しくありません。
-
-[REFS[
-- [841] [CITE[MIME::Base64 - search.cpan.org]] ([TIME[2012-05-23 19:19:16 +09:00]] 版) <http://search.cpan.org/dist/MIME-Base64/Base64.pm#encode_base64url(_$bytes_)>
-- [843] [CITE[MIME::Base64::URLSafe - search.cpan.org]] ([TIME[2012-05-23 19:21:18 +09:00]] 版) <http://search.cpan.org/dist/MIME-Base64-URLSafe/lib/MIME/Base64/URLSafe.pm>
-- [845] [CITE[Kazuho@Cybozu Labs: URL と Base64]] ([TIME[2012-05-23 19:26:17 +09:00]] 版) <http://labs.cybozu.co.jp/blog/kazuho/archives/2006/01/url_base64.php>
-]REFS]
 
 [842] [[Perl]] の[[標準モジュール]]である [CODE(perl)@en[[[MIME::Base64]]]] [SRC[>>841]]
 に実装されています。 [[Perl]] では今後はこちらが標準的な実装となっていくと思われます。
@@ -330,16 +331,40 @@ Base64 は6ビット単位になりますが、オクテット列の長さと必
 [844] >>843 は >>841 が実装される前によく用いられていました。 [[Python]]
 の実装に倣った [SRC[>>843, >>845]] としつつ、 [[Wikipedia]] [SRC[>>829]] も引用しています。
 
-[REFS[
--[848] [CITE[18.12. base64 — RFC 3548: Base16, Base32, Base64 Data Encodings — Python v2.7.3 documentation]] ([TIME[2012-05-23 16:26:05 +09:00]] 版) <http://docs.python.org/library/base64.html>
-]REFS]
-
 [849] [[Python]] の実装というのは >>848 でしょうが、こちらは >>841、>>843
 とは違って [CODE(char)[[[=]]]] を省略しません。 >>839 に従っている実装です。
 
 ;; [850] 最初からそうだったのか、それとも [[Perl]] の実装が派生した後に動作が変わったのかは不明です。
 
 ;; [851] なお、 [[Python]] の実装は >>835 の2文字を任意の文字に変更できるようですw
+
+[REFS[
+- [841] [CITE[MIME::Base64 - search.cpan.org]] ([TIME[2012-05-23 19:19:16 +09:00]] 版) <http://search.cpan.org/dist/MIME-Base64/Base64.pm#encode_base64url(_$bytes_)>
+- [843] [CITE[MIME::Base64::URLSafe - search.cpan.org]] ([TIME[2012-05-23 19:21:18 +09:00]] 版) <http://search.cpan.org/dist/MIME-Base64-URLSafe/lib/MIME/Base64/URLSafe.pm>
+- [845] [CITE[Kazuho@Cybozu Labs: URL と Base64]] ([TIME[2012-05-23 19:26:17 +09:00]] 版) <http://labs.cybozu.co.jp/blog/kazuho/archives/2006/01/url_base64.php>
+-[848] [CITE[18.12. base64 — RFC 3548: Base16, Base32, Base64 Data Encodings — Python v2.7.3 documentation]] ([TIME[2012-05-23 16:26:05 +09:00]] 版) <http://docs.python.org/library/base64.html>
+]REFS]
+
+** その他の派生
+
+[63] MIME の Base64 の定義から行長制限を撤廃したもの:
+[FIG(list)[
+- [[XML Schema]] のデータ型 [CODE(XML)[[[base64Binary]]]]
+]FIG]
+
+[36]
+[[Atom 1.0]] ([[RFC 4287]]) では、[[RFC 3548]]の定義を参照しています。
+ただし、最初と最後に[[空白]]があっても'''構いません'''。
+また、各[[行]]は[CODE(char)[[[U+000A]]]] 1つで区切ります。
+
+[20] [[OpenToken]] [SRC[>>19]] は[[クッキー]]で使うためとして、 [[RFC 4648]]
+の [[Base64]] の[[詰め文字]]を [CODE[[[=]]]] ではなく [CODE[[[*]]]]
+に変えたものを採用しています [SRC[>>19]]。
+
+[REFS[
+- [19] [CITE@en[draft-smith-opentoken-02 - OpenToken]] ([TIME[2014-10-16 18:11:31 +09:00]] 版) <http://tools.ietf.org/html/draft-smith-opentoken-02#section-3.1>
+]REFS]
+
 
 * uuencode 風表現
 
