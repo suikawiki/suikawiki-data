@@ -199,15 +199,27 @@ Base64 は6ビット単位になりますが、オクテット列の長さと必
 [FIG(list middle)[ [158] [[MIME]] [[Base64]] の[[応用]]
 - [[MIME]] [CODE(MIME)[Base64]] [[転送符号化]]
 - [CODE(MIME)[[[x-gzip64]]]] 転送符号化
-- MIME [CODE(MIME)[[[Content-MD5]]:]] 欄
-- [[822]] [CODE(822)[[[Face]]:]] 欄
+- [CODE(MIME)[[[Content-MD5]]:]] ヘッダー
+- [CODE(822)[Face:]] ヘッダー
 - MIME [CODE(ABNF)[[[encoded-word]]]] [CODE(MIME)[B]] 符号化
 - [[uuencode]] 風表現 >>3
 - [32] [CODE(ABNF)[[[instance-digest]]]]
 ([CODE(ABNF)[[[digest-algorithm]]]] が
 [CODE(HTTP)[[[SHA]]]] または [CODE(HTTP)[[[MD5]]]] の時)
-- [CODE(URI)[[[data]]:]] [[URI]] [[scheme]]
 ]FIG]
+
+[170] [CODE[Content-MD5:]] を定める [[RFC 1864]] は「base64」としか言っておらず、
+どこで規定される何を指すのかは曖昧ですが、 [[MIME]] の追加機能ですから、
+[[MIME]] の定義と解釈するのが自然でしょう。
+[[ヘッダー値]]として使うため[[改行]]を自由には挿入できないはずですが、
+符号化される値は十分短いため、実際には問題とはなりません。
+
+[171] [CODE[data:]] を定める [[RFC 2397]] は「base64」としか言っておらず、
+どこで規定される何を指すのかは曖昧ですが、[[参考文献]]として示された
+[[MIME]] の [[RFC 2045]] だけが文脈から推測できる候補でした。
+しかし行長制限の扱いと [[URL]] としての構文の矛盾など、
+[[著者]]の意図を断言するのは難しい状態でした。
+(出版から20年後にようやく [CITE[Fetch Standard]] により明確化されることになります。)
 
 [REFS[
 - [149] [CITE@en[RFC 1341 - MIME (Multipurpose Internet Mail Extensions): Mechanisms for Specifying and Describing the Format of Internet Message Bodies]] ([TIME[2018-01-21 20:29:24 +09:00]]) <https://tools.ietf.org/html/rfc1341#page-17>
@@ -243,7 +255,7 @@ Base64 は6ビット単位になりますが、オクテット列の長さと必
 [15] [[IETF]] はその後 [[Base64]] (と [[Base32]] と [[Base16]]) のみを定める
 [[RFC]] を発行しました [SRC[>>6, >>24]]。
 
-[30] [[MIME]] 式の [[base64]] と、 [[base64url]] との2種類が定義されています。
+[30] [[MIME]] 式の [[base64]] と、 [[base64url]] (>>833) との2種類が定義されています。
 両者は[[字母]]のみが異なっています。
 
 [164] [[MIME]] 式のものは、 [[MIME]] や [[OpenPGP]] に由来するものですが、
@@ -304,14 +316,6 @@ Base64 は6ビット単位になりますが、オクテット列の長さと必
 [[URL]] が変わってしまったのか、関係ない記事になっています。本来指すべきだったと思われる
 >>831、>>832 によると、元々は [[Freenet]] で使われていたのを採用したようです。
 
-
-[66] 次の場面で使われます。
-[FIG(short list)[
-- [CODE(HTTP)@en[HTTP2-Settings:]]
-]FIG]
-
-
-
 [REFS[
 - [831] [CITE[please prefer base 64 over base 32 (was: Re: '''['''p2p-hackers''']''' Bitzi (was Various identifier choices))]] ([TIME[2006-12-10 07:13:19 +09:00]] 版) <http://zgp.org/pipermail/p2p-hackers/2001-September/000317.html>
 - [832] [CITE[please prefer base 64 over base 32 (was: Re: '''['''p2p-hackers''']''' Bitzi (was Various identifier choices))]] ([TIME[2006-12-10 07:13:19 +09:00]] 版) <http://zgp.org/pipermail/p2p-hackers/2001-September/000316.html>
@@ -345,12 +349,36 @@ Base64 は6ビット単位になりますが、オクテット列の長さと必
 -[848] [CITE[18.12. base64 — RFC 3548: Base16, Base32, Base64 Data Encodings — Python v2.7.3 documentation]] ([TIME[2012-05-23 16:26:05 +09:00]] 版) <http://docs.python.org/library/base64.html>
 ]REFS]
 
+-*-*-
+
+[FIG(middle list)[ [66] [[RFC 4648]] [[base64url]] の[[応用]]
+- [CODE(HTTP)@en[HTTP2-Settings:]]
+]FIG]
+
 ** その他の派生
 
-[63] MIME の Base64 の定義から行長制限を撤廃したもの:
-[FIG(list)[
-- [[XML Schema]] のデータ型 [CODE(XML)[[[base64Binary]]]]
-]FIG]
+[63] [[XML Schemaデータ型]] [DFN[[CODE[xs:base64Binary]]]]
+は、 [[MIME]] の [[RFC 2045]] の定義を参照しつつ、
+独自の構文を規定しています [SRC[>>172]]。
+
+[173] [[US-ASCII]] ベースの [[RFC 2045]] と違って、 [[XML Schema]]
+は [[Unicode]] ベースとなっています。 ([[文字]]レベルで見れば実質的な違いはありません。)
+
+[174] 本来の[[字母]]の他に [[XMLの空白]]が任意の位置に認められることになっています。
+ただし [[XML Schema]] の[[正規化]]を経た[[字句形]]の構文上は途中に [CODE[U+0020]]
+各1つのみの挿入が認められることになっています。
+[[MIME]] とは違って行長制限はありません。
+
+[176] [[正準字句形]]では[[空白]]は認められないことになっています。
+
+[175] [[詰め]]は必須であり、[[詰め]]の前の[[字母]]の選択時に足りない[[ビット]]は [N[0]]
+で埋めなければならないことになっています。
+
+[REFS[
+- [172] [CITE@EN[XML Schema Part 2: Datatypes Second Edition]] ([TIME[2017-10-02 19:29:02 +09:00]]) <https://www.w3.org/TR/xmlschema-2/#base64Binary>
+]REFS]
+
+-*-*-
 
 [36]
 [[Atom 1.0]] ([[RFC 4287]]) では、[[RFC 3548]]の定義を参照しています。
@@ -362,9 +390,8 @@ Base64 は6ビット単位になりますが、オクテット列の長さと必
 に変えたものを採用しています [SRC[>>19]]。
 
 [REFS[
-- [19] [CITE@en[draft-smith-opentoken-02 - OpenToken]] ([TIME[2014-10-16 18:11:31 +09:00]] 版) <http://tools.ietf.org/html/draft-smith-opentoken-02#section-3.1>
+- [19] [CITE@en[draft-smith-opentoken-02 - OpenToken]] ([TIME[2014-10-16 18:11:31 +09:00]] 版) <https://tools.ietf.org/html/draft-smith-opentoken-02#section-3.1>
 ]REFS]
-
 
 * uuencode 風表現
 
