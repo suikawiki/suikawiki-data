@@ -13,52 +13,57 @@
 * [CODE(JS)@en[window.opener]] (DOM)
 
 [17] [CODE(DOMi)@en[[[Window]]]] [[インターフェイス]]の
-[DFN[[CODE(DOMa)@en[[[opener]]]]]] [[IDL属性]]は、
-[[取得時]]、次のようにしなければ[['''なりません''']] [SRC[>>16]]。
+[DFN[[CODE(DOMa)@en[opener]]]] [[IDL属性]]の[[取得器]]は、
+次のようにしなければ[MUST[なりません]] [SRC[>>16]]。
+
 [FIG(steps)[
-= [18] 
-[FIG(list)[
-- [20] [[文脈オブジェクト]]の[F[[[閲覧文脈]]]]が[[補助閲覧文脈]]で、
-- [21] その[F[[[opener閲覧文脈]]]]がまだ利用可能で、
-- [22] [[文脈オブジェクト]]の[F[[[閲覧文脈]]]]がこれを disown していない場合、
-]FIG]
-には、
-== [23] [[文脈オブジェクト]]の[F[[[閲覧文脈]]]]の[F[[[opener閲覧文脈]]]]の
-[F[[CODE(DOMi)@en[[[WindowProxy]]]]]] を返します。
-= [24] それ以外なら、
-== [25] [[null]] を返します。
+= [58] [VAR[閲覧文脈]]を、[[文脈オブジェクト]]の[F[閲覧文脈]]に設定します。
+= [59] [VAR[閲覧文脈]]が[F[廃除済み]]の場合、
+== [60] [CODE[null]] を返し、ここで停止します。
+= [61] [VAR[閲覧文脈]]の[F[opener閲覧文脈]]が [CODE[null]] の場合、
+== [62] [CODE[null]] を返し、ここで停止します。
+= [18] [VAR[閲覧文脈]]の[F[opener閲覧文脈]]の
+[F[[CODE(DOMi)@en[WindowProxy]]]] を返します。
 ]FIG]
 
-;; [19] 「まだ利用可能」というのがどういうことか明確ではありませんが、
-元の[[窓]]を[[利用者]]が閉じるなどしたら、 [CODE[[[opener]]]]
-にアクセスできなくなっても良いということでしょうか。
+[26] [CODE(DOMi)@en[Window]] [[インターフェイス]]の
+[CODE[opener]] [[IDL属性]]の[[設定器]]は、
+[VAR[指定値]]について、次のようにしなければ[MUST[なりません]] [SRC[>>16]]。
 
-[26] [[設定時]]は、次のようにしなければ[['''なりません''']] [SRC[>>16]]。
 [FIG(steps)[
-= [27] 新しい値が [[null]] なら、
-== [28] [[文脈オブジェクト]]の[F[[[閲覧文脈]]]]が、 opener を disown します。
-= [29] それ以外なら、
-== [30] [[文脈オブジェクト]]の [CODE[[[DefineOwnProperty]]]] [[内部メソッド]]を実行します。
+= [19] [VAR[指定値]]が [CODE[null]] の場合、
+== [20] [[文脈オブジェクト]]の[F[閲覧文脈]]について[[廃除]]します。
+= [29] それ以外の場合、
+== [30] [CODE[OrdinaryDefineOwnProperty]] を実行します。
 [FIG(list members)[
-:[[property key]]: [CODE[[[opener]]]]
+
+: [F[オブジェクト]] : [[文脈オブジェクト]]
+:[[property key]]: [CODE[opener]]
 :[[Property Descriptor]]:
 [FIG(list members)[
-:[F[[[Value]]]]: 新しい値
-:[F[[[Writable]]]]: [[真]]
-:[F[[[Enumerable]]]]: [[真]]
-:[F[[[Configurable]]]]: [[真]]
+:[F(ss)[Value]]:  [VAR[指定値]]
+:[F(ss)[Writable]]: [[真]]
+:[F(ss)[Enumerable]]: [[真]]
+:[F(ss)[Configurable]]: [[真]]
 ]FIG]
+
 ]FIG]
+[[例外]]が[[投げ]]られたら、[[再び投げ]]ます。
+
 ]FIG]
 
 ;; [35] [CODE[[[opener]]]] という名前の通常の [[JavaScript]]
 の[[変数]]が使われることがあるため、値を一度設定したら [[IDL属性]]ではなくなる、
 というかなり特殊な[[設定器]]となっています。
 
+-*-*-
+
+[15] [[補助閲覧文脈]]は、
+[F[[[opener閲覧文脈]]]]と[DFN[[F[[RUBYB[[[廃除済み]]]@en[disowned]]]]]]
+(初期値は[[偽]]) を持ちます [SRC[>>13]]。
+
 [14] [DFN[[RUBYB[opener閲覧文脈]@en[opener browsing context]]]]は、
 [[補助閲覧文脈]]が作成された元の[[閲覧文脈]]です [SRC[>>13]]。
-
-[15] [[補助閲覧文脈]]は、[F[[[opener閲覧文脈]]]]を持ちます [SRC[>>13]]。
 
 [31] [[opener閲覧文脈]]は、[[直接到達可能閲覧文脈]]かどうかや
 [[familiar with]] かどうかの決定に影響します。
@@ -66,7 +71,7 @@
 [32] [F[[[opener閲覧文脈]]]]は、[F[[[作成子閲覧文脈]]]]ともなることがあります。
 
 [33] ある[[閲覧文脈]]の[F[[[opener閲覧文脈]]]]という関係は、
-[DFN[[[disown its opener]]]] [SRC[>>16]] されることがあります。
+[DFN[廃除]] ([DFN[[[disown its opener]]]]) [SRC[>>16]] されることがあります。
 これは、[[スクリプト]]から [CODE(JS)@en[[[window.opener]]]]
 を通して [[opener閲覧文脈]]へのアクセスをできなくする(なる)ことをいいます。
 
@@ -74,13 +79,12 @@
 [[opener閲覧文脈]]ではなくなります。
 
 [34] disown されるのは、次の場合です。
-[FIG(list)[
+
 - [CODE(JS)@en[[[window.opener]]]] に値を設定した場合 ([CODE(JS)@en[[[window.opener]] = [[window.opener]]]] も含みます)。
 - [CODE(HTML)@en[[[rel=noreferrer]]]] が適用される場合 ([[ハイパーリンクをたどる]]処理)。
 - [CODE(HTML)@en[[[rel=noopener]]]] が適用される場合 ([[ハイパーリンクをたどる]]処理)。
 - [CODE(JS)@en[[[window.open]]]] の機能 [CODE(HTML)@en[[[noopener]]]] が指定された場合。
 - [[サービスワーカー]]下の[[非保安文脈]]から[[保安文脈]]への [[navigate]]
-]FIG]
 
 * リンク型 [CODE(HTML)@en[noopener]]
 
@@ -218,3 +222,15 @@
 [57] [CITE@en[Editorial: cleanup window.opener]]
 ([[annevk]]著, [TIME[2018-02-09 02:24:50 +09:00]])
 <https://github.com/whatwg/html/commit/15317c7a58040af294510e7511c0512a19083ffb>
+
+[21] [CITE@en[Editorial: cleanup window.opener by annevk · Pull Request #3448 · whatwg/html]]
+([TIME[2018-02-11 18:26:15 +09:00]])
+<https://github.com/whatwg/html/pull/3448>
+
+[22] [CITE@en[Editorial: cleanup window.opener by annevk · Pull Request #3448 · whatwg/html]]
+([TIME[2018-02-11 18:27:11 +09:00]])
+<https://github.com/whatwg/html/pull/3448>
+
+[23] [CITE@en[Fix #313: make disowning disown the opener browsing context too by annevk · Pull Request #323 · whatwg/html]]
+([TIME[2018-02-11 18:28:17 +09:00]])
+<https://github.com/whatwg/html/pull/323>
