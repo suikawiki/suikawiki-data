@@ -1,6 +1,7 @@
 * 仕様書
 [REFS[
 - [7] [CITE@en-US[DOM Standard]] ([TIME[2013-04-26 20:00:45 +09:00]] 版) <https://dom.spec.whatwg.org/#interface-event>
+-- [79] [CITE@en[DOM Standard]] ([TIME[2018-03-16 19:20:53 +09:00]]) <https://dom.spec.whatwg.org/#constructing-events>
 - [61] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2016-12-13 09:04:33 +09:00]]) <https://html.spec.whatwg.org/#dom-messageevent-initmessageevent>
 ]REFS]
 
@@ -112,46 +113,88 @@
 
 * 作成
 
+[80] [[イベントオブジェクト]]の作成は、
+[[イベントコンストラクター]]によるもの (>>59)、
+[CODE[createEvent]] によるもの、
+その他[[利用者エージェント]]によるものの3通りの方法に大別できます。
+
+-*-*-
+
+[81] [[利用者エージェント]]による[[イベントオブジェクト]]の作成と
+[CODE[createEvent]] は、[[イベントの作成]]の方法に従って[[イベントオブジェクト]]を作成します。
+
 [47] [DFN[[RUBYB[イベントの作成]@en[create an event]]]]は、
+[CODE[Event]] またはその[[子インターフェイス]][VAR[[[イベントインターフェイス]]]]と
+[[Realm]] [VAR[realm]] (既定値 [CODE[null]]) について、
+次のようにします [SRC[>>79]]。
+
+[FIG(steps)[
+= [83] [VAR[イベント]]を、
+[[内部イベント作成手順群]]を実行した結果に設定します。
 [FIG(list members)[
 
-: [VAR[[DFN[イベントインターフェイス]]]] :
-[CODE(DOMi)@en[Event]] または [CODE(DOMi)@en[Event]] を[[継承]]する[[インターフェイス]]
-: [VAR[realm]] :
-[[Realm]]
-: [VAR[時刻]] :
-本[[イベント]]の表す事項の発生した[[時刻]]を [CODE(DOMi)@en[DOMHighResTimeStamp]]
-に変換したもの [SRC[>>7]]。
-[EG[
-[74] 例えば [[macOS]] の[[入力イベント]]由来の場合、
-[CODE[NSEvent]] の [CODE[timestamp]] の値を [CODE(DOMi)@en[DOMHighResTimeStamp]]
-に変換したもの [SRC[>>7]]。
-]EG]
+: [VAR[イベントインターフェイス]] : [VAR[イベントインターフェイス]]
+: [VAR[realm]] : [VAR[realm]]
+: [VAR[時刻]] : 
+本[[イベント]]の表す事項の発生した[[時刻]]
+: [VAR[辞書]] : 
+[[JavaScript値]] [CODE[undefined]]
+を[VAR[イベントインターフェイス]]の[F[コンストラクター]]の第2引数の[[辞書型]]に[[変換][変換 (Web IDL)]]した結果
 
 ]FIG]
-... について、次のようにすることを言います [SRC[>>7]]。
+= [82] [VAR[イベント]]の [F[[CODE[isTrusted]]]] を、[[真]]に設定します。
+= [84] [VAR[イベント]]を返します。
+]FIG]
+
+[EG[
+[74] 例えば [[Mac OS X]] の[[入力イベント]]由来の場合、
+[CODE[NSEvent]] の [CODE[timestamp]] を[VAR[時刻]]として使えます [SRC[>>79]]。
+]EG]
+
+;; [85] [CODE[createEvent]] は[[イベントの作成]]で得られた[[イベントオブジェクト]]の
+[CODE[isTrusted]] を[[偽]]に設定します。
+
+[55] [[イベントの作成]]は色々な場面で呼び出されます。
+
+[FIG(list middle)[ [86] [[イベントを作成]]する文脈
+- [[発火]]
+- [[合成マウスイベントを発火]]
+- [CODE(DOMe)@en[beforeunload]]
+- [CODE(DOMm)@en[postMessage]]
+- [CODE(DOMm)@en[createEvent]]
+]FIG]
+
+-*-*-
+
+[87] 
+[DFN[[RUBYB[内部イベント作成手順群]@en[inner event creation steps]]]]は、
+[VAR[[[イベントインターフェイス]]]]、
+[VAR[[[realm][Realm]]]]、
+[VAR[時刻]]、
+[VAR[辞書]]について、
+次のようにします [SRC[>>79]]。
+
 [FIG(steps)[
-= [48] [VAR[イベント]]を、 [VAR[realm]] における[VAR[イベントインターフェイス]]を[[実装]]した新しい[[オブジェクト]]に設定します。
-= [72] [VAR[イベント]]の[F[[CODE(DOMe)@en[timeStamp]]]]を、[VAR[時刻]]に設定します。
-= [49] [VAR[イベント]]の[F[初期化済みフラグ]]を、[[真]]に設定します。
-= [50] [VAR[辞書]]を、 [CODE(JS)@en[undefined]] を[VAR[イベントインターフェイス]]の[F[構築子]]の[[引数]]たる[[辞書]]の型に[[変換][変換 (Web IDL)]]した結果に設定します。
-= [51] [VAR[辞書]]の各[[メンバー][辞書メンバー]]について、
-[VAR[イベント]]の同名の[[属性][IDL属性]]の値を[VAR[辞書]]側の値に設定します。
-= [52] [VAR[イベント]]の[F[trusted]]を、[[真]]に設定します。
-= [53] [VAR[イベント]]を返します。
+= [88] [VAR[イベント]]を、新しい[[オブジェクト]]に設定します。
+=- [VAR[realm]] が [CODE[null]] 以外の場合、
+[VAR[realm]] を[[オブジェクト]]の [[Realm]] として使います。
+=-
+@@ [VAR[realm]] が [CODE[null]] の場合、 [[Web IDL]] の既定の動作とします。
+= [89] [VAR[イベント]]の[F[初期化済みフラグ]]を、[[真]]に設定します。
+= [90] [VAR[イベント]]の [F[[CODE[timeStamp]]]]
+を、
+[[時刻起源]]から[VAR[時刻]]までの高精度時刻を表す
+[CODE[DOMHighResTimeStamp]] に設定します。
+= [48] [VAR[辞書]]の各 ([VAR[名前]]、[VAR[値]]) について、
+== [49] [VAR[イベント]]の [F[[VAR[名前]]]] を、 [VAR[値]]に設定します。
+= [50] [VAR[イベント]]を返します。
 ]FIG]
 
 ;; [56] [CODE[DeviceMotionEvent]] では初期化の[[辞書]]の[[辞書メンバー]]が[[辞書]]で、
 [[IDL属性]]がその[[辞書]]から初期化される[[オブジェクト]]となっていますから、
 単なる値のコピーではない操作が必要です。
 
-[55] これは色々な場面で呼び出されます。
-[FIG(list middle)[
-- [[発火]]
-- [[合成マウスイベントを発火]]
-- [CODE(DOMe)@en[beforeunload]]
-- [CODE(DOMm)@en[postMessage]]
-]FIG]
+[51] [[イベントの作成]]と[[イベントコンストラクター]]から呼び出されます。
 
 * 初期化
 
@@ -179,7 +222,7 @@
 [[DOMイベント]]の実装には存在していません。現在ではこちらの方法を使うのが望ましいとされ、
 [CODE(DOMm)@en[[[initEvent]]]] 系のメソッドは互換性のために必要なものを除き仕様からも削除されています。
 
-* イベントコンストラクター
+* [DFN[イベントコンストラクター]]
 
 [59] [CODE(DOMi)@en[Event]] [[インターフェイス]]とその[[子インターフェイス]]は、
 一部の例外を除き、[[コンストラクター]]を持ちます。
@@ -190,7 +233,28 @@
 ([DFN[[CODE(JS)[new Event]]]]) は[[引数]]で
 [DFN[[CODE(DOMi)@en[EventInit]]]] [[辞書]]を受け取ることができます。
 [[コンストラクター]]を持つ[[子インターフェイス]]も、
-それぞれに対応する[[辞書]]が存在し、それを[[引数]]で受け取ることができます。
+それぞれに対応する[[辞書]] () が存在し、それを[[引数]]で受け取ることができます。
+
+[53] [CODE[Event]] またはその[[子インターフェイス]][VAR[インターフェイス]]の[[コンストラクター]]が呼び出されたら、
+次のようにしなければ[MUST[なりません]] [SRC[>>79]]。
+
+[FIG(steps)[
+= [72] [VAR[[[イベント型]]]]を、第1引数を [CODE[DOMString]] と解釈した結果に設定します。
+= [91] [VAR[辞書]]を、[[辞書型]] ([CODE[EventInit]] またはそれを[[継承]]する[[辞書]]であり、
+具体的には[VAR[インターフェイス]]依存。必須か否かも[VAR[インターフェイス]]依存。)
+と解釈した結果に設定します。
+= [92] [VAR[イベント]]を、[[内部イベント作成手順群]]を実行した結果に設定します。
+[FIG(list members)[
+
+: [VAR[[[イベントインターフェイス]]]] : [VAR[インターフェイス]]
+: [VAR[[[realm][Realm]]]] : [CODE[null]]
+: [VAR[時刻]] : [[現在][現在時刻]]
+: [VAR[辞書]] : [VAR[辞書]]
+
+]FIG]
+= [93] [VAR[イベント]]の[F[型][イベント型]]を、 [VAR[イベント型]]に設定します。
+= [94] [VAR[イベント]]を返します。
+]FIG]
 
 * [CODE[initEvent]] メソッド
 
@@ -369,3 +433,11 @@
 [78] [CITE@en[Fix 515: Expose Event, EventTarget to AudioWorklet by hoch · Pull Request #516 · whatwg/dom]]
 ([TIME[2017-10-01 16:26:16 +09:00]])
 <https://github.com/whatwg/dom/pull/516>
+
+[52] [CITE@en[Make the two ways of event creation share a path]]
+([[annevk]]著, [TIME[2018-03-16 16:57:36 +09:00]])
+<https://github.com/whatwg/dom/commit/0283565d2a3f767befd368248b788b5f5803baf2>
+
+[95] [CITE@en[Make the two ways of event creation share a path by annevk · Pull Request #603 · whatwg/dom]]
+([TIME[2018-03-18 01:00:51 +09:00]])
+<https://github.com/whatwg/dom/pull/603>
