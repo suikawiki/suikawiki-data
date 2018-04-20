@@ -1,18 +1,11 @@
-[8] [[UGC]] 系 [[Webアプリケーション]]、[[MUA]]、
-[[HTML]] の [[authoring tool]] など、色々な[[ソフトウェア]]で、
-[[平文]]や[[利用者]]の入力文、あるいは [[HTMLメール]]の[[地の文]]などから、
+[8] 色々な[[ソフトウェア]]で[[平文]]や[[利用者]]の入力文、
+あるいは [[HTMLメール]]の[[地の文]]などから、
 [[URL]] らしき部分を自動的に検出し、これを[[リンク]]として表示する機能が備わっています。
 
 [9] 中には [[URL]] の、あるいは [[HTTP(S) URL]] など一部の [[URL]]
 の構文を機械的に[[正規表現]]に変換しただけのような雑な実装もありますが、
 実用上十分良好な[[利用者体験]]を提供するためには、
 細かな調整が必要となります。
-
-;; [10] 任意の [[URL]] を自動リンク化すると、 [CODE[:]] さえ入っていればほとんどどんな文章でも一部が
-[[URL]] ということになってしまいます。 
-
-;; [11] [CODE(URI)@en[javascript:]] など、危険な動作を誘引する [[URL scheme]]
-もあります。無邪気な実装は[[セキュリティーホール]]となりかねません。
 
 ;; [12] 実装の中には、 [[HTML]] の[[文字参照]]への変換と [[URL自動リンク]]の処理順序が不適切であるなど、
 他の処理との兼ね合いで異常な動作をしたり、[[セキュリティー]]上の問題をはらんでいたりするものもあります。
@@ -33,18 +26,7 @@
 ]REFS]
 
 
-[FIG(quote)[
-[FIGCAPTION[
-[1] [CITE[Latest topics > Text LinkとLinkification - outsider reflex]]
-([[YUKI "Piro" Hiroshi]] 著, [TIME[2016-03-03 16:56:45 +09:00]] 版)
-<http://piro.sakura.ne.jp/latest/blosxom/mozilla/extension/2006-03-10_textlink.htm>
-]FIGCAPTION]
-
-> 「http://www.<em>mozilla</em>.org/」みたいに複数のテキストノードに分割されたURIも認識できる。
-> 某新聞社のサイトのように「http://piro.sakura.ne.jp/」ってな全角文字で書かれたURIも認識できる。
-> 2chでよくある「ttp://」で始まるURIも認識できる。ていうか最初はこれが目的だったんだよね……
-
-]FIG]
+* 境界の処理
 
 [2] 「This is great: https://example.com/great.html.  Thanks!」 の最後の「.」は
 [[URL]] の一部ではなく[[英文]]の一部と解釈する必要があります。
@@ -87,6 +69,145 @@ stick with that as a determinant of the properties listed in
 
 と解釈します。
 
+[19] [CITE@ja[みのさんのツイート: "https://t.co/927QpBK32e!"]]
+([TIME[2017-12-23 13:27:17 +09:00]])
+<https://twitter.com/mino90h/status/873210646183026689>
+
+[20] [CODE[!]] で終わる [[URL]] を [[Twitter]] は [CODE[!]] の直前まで [[URL]] と認識。
+
+[21] [[GitHub]] は
+[CODE[href="https://example.com/">Example Web Page</a>]]
+の「https:」から「Example」
+までを1つの [[URL]] とみなします。
+[TIME[2018-01-14T00:27:17.600Z]]
+
+[FIG(quote)[
+[FIGCAPTION[
+[1] [CITE[Latest topics > Text LinkとLinkification - outsider reflex]]
+([[YUKI "Piro" Hiroshi]] 著, [TIME[2016-03-03 16:56:45 +09:00]] 版)
+<http://piro.sakura.ne.jp/latest/blosxom/mozilla/extension/2006-03-10_textlink.htm>
+]FIGCAPTION]
+
+> 「http://www.<em>mozilla</em>.org/」みたいに複数のテキストノードに分割されたURIも認識できる。
+> 某新聞社のサイトのように「http://piro.sakura.ne.jp/」ってな全角文字で書かれたURIも認識できる。
+> 2chでよくある「ttp://」で始まるURIも認識できる。ていうか最初はこれが目的だったんだよね……
+
+]FIG]
+
+* 非ASCII文字
+
+[27] かつては [[URL]] には[[非ASCII文字]]は認められていなかったので、
+[[日本語]]などの[[非ASCII文字]]主体の[[文章]]では
+[[URL]] とその周りの区切りは比較的明確でした。
+
+[28] ところが [[URL]] で[[非ASCII文字]]一般が認められるようになってから、
+[[URL]] の直後に[[文章]]が続いているものと [[URL]] に[[非ASCII文字]]が含まれるものの区別が難しくなりました。
+
+[31] [[素片識別子]]に[[非ASCII文字]]を含む語が書かれている場合や、
+[[パス]]に[[見出し語]]が入る [[Wikipedia]] の [[URL]] の場合のように、
+[[非ASCII文字]]が含まれる [[URL]] が書かれることは少なくないため、
+何らかの対応は必須といえます。
+
+* リンク回避
+
+[22] [[自動リンク]]機能のある[[掲示板]]などの[[利用者]]は、
+[[自動リンク]]を敢えて回避することを好む場合があります。
+
+[23] そのため [CODE[http:]] の [CODE[h]] を省略した [CODE[ttp:]]
+のような [[URL]] が用いられることもあります。
+
+;; [CODE[ttp:]] 参照。
+
+[24] しかしそうした[[自動リンク]]を回避した [[URL]] を敢えて[[自動リンク]]し[[リンク]]をたどる[[利用者]]の便を図る[[実装]]もあります。
+
+* URL scheme の省略
+
+[32] [[ドメイン名]]のみを書いたり、
+[[ドメイン名]]から始まる不完全な [[URL]] を書いたりして省略して
+[[HTTP(S) URL]] を表すこともあります。
+[[自動リンク]]の実装の中には、そうした不完全なものも抽出しようと試みるものがあります。
+
+* 対応する URL scheme
+
+[10] 任意の [[URL]] を自動リンク化すると、 [CODE[:]] さえ入っていればほとんどどんな文章でも一部が
+[[URL]] ということになってしまいます。 
+
+[35] 一般的な実装は特定の [[URL scheme]] のみに対応しています。
+[[HTTP(S) URL]] のみに対応する最低限のものから、
+それ以外の色々な [[URL]] に対応するものまであります。
+
+[FIG(short list)[ [36] よく対応されている [[URL scheme]]
+- [CODE[http:]]
+- [CODE[https:]]
+- [CODE[ftp:]]
+- [CODE[mailto:]]
+- [CODE[nntp:]]
+- [CODE[news:]]
+]FIG]
+
+[11] [CODE(URI)@en[javascript:]] など、危険な動作を誘引する [[URL scheme]]
+もあります。無邪気な実装は[[セキュリティーホール]]となりかねません。
+
+
+* 区切り文字
+
+[25] 古い [[URL]] の [[RFC]] では、[[自然言語]]文に [[URL]] を混ぜる場合は区切りとして
+[CODE[<]] と [CODE[>]] で括るのが好ましいという記述がありました。
+そのため [[URL]] の前後に [CODE[<]] と [CODE[>]] を書くことをよしとする人もいます。
+しかしこの慣習は一般には普及しませんでしたし、
+[[Web]] 技術に詳しい人の中でもそこまで有名ではありません。
+
+[26] [CODE[<]] と [CODE[>]] は通常の [[URL]] には含まれないものですから、
+[[自動リンク]]の実装は特に考慮しなくてもこの区切り文字を意図通りに解釈すると期待されます。
+しかし[[文字参照]]の扱いが杜撰な[[自動リンク]]の実装に誤解釈されることもあるようです
+(例えば >>13)。
+
+[FIG(quote)[
+[FIGCAPTION[
+[18] [CITE@en[RFC 7322 - rfc Style Guide]]
+([TIME[2017-10-22 17:40:00 +09:00]])
+<https://tools.ietf.org/html/rfc7322#section-3.3>
+]FIGCAPTION]
+
+>    Angle brackets are strongly recommended around URIs '''['''STD66''']''', e.g.,
+<http://example.com/>
+
+]FIG]
+
+* 自動リンク機能付きマーク付け言語
+
+[33] [[Wiki構文]]など[[テキスト]]系の[[マーク付け言語]]は、
+[[自動リンク]]機能を言語の一部として組み込んでいることがよくあります。
+
+[34] [[はてな記法]]
+
+[17] [CITE[GitHub Flavored Markdown Spec]]
+([TIME[2017-05-15 12:05:46 +09:00]])
+<https://github.github.com/gfm/#autolinks-extension->
+
+* 文脈
+
+[37] 次のような分野で使われています。
+
+[FIG(short list)[ [38] [[自動リンク]]する場面
+- [[UGC]] 系 [[Webアプリケーション]]
+-- [[掲示板]]
+-- [[チャット]]
+-- [[コメント]]
+-- [[Wiki]]
+- [[MUA]] の[[本文]]表示画面
+- [[HTML]] の [[authoring tool]]
+- [[IM]] の受信メッセージ
+- [[IRC]] [[クライアント]]
+]FIG]
+
+* 関連
+
+[39] その他に[[メールアドレス]]や[[電話番号]]、
+[[アプリケーション]]依存の識別子などの自動抽出・リンク化が実装されていることがあります。
+
+* メモ
+
 [FIG(quote)[
 [FIGCAPTION[
 [16] [CITE[OPMLファイルやHTML、テキストファイルからの一括登録機能の追加 - はてなアンテナ日記 - 機能変更、お知らせなど]]
@@ -99,31 +220,4 @@ stick with that as a determinant of the properties listed in
 ]FIG]
 
 
-[17] [CITE[GitHub Flavored Markdown Spec]]
-([TIME[2017-05-15 12:05:46 +09:00]])
-<https://github.github.com/gfm/#autolinks-extension->
 
-[FIG(quote)[
-[FIGCAPTION[
-[18] [CITE@en[RFC 7322 - rfc Style Guide]]
-([TIME[2017-10-22 17:40:00 +09:00]])
-<https://tools.ietf.org/html/rfc7322#section-3.3>
-]FIGCAPTION]
-
->    Angle brackets are strongly recommended around URIs '''['''STD66''']''', e.g.,
->       <http://example.com/>
-
-]FIG]
-
-
-[19] [CITE@ja[みのさんのツイート: "https://t.co/927QpBK32e!"]]
-([TIME[2017-12-23 13:27:17 +09:00]])
-<https://twitter.com/mino90h/status/873210646183026689>
-
-[20] [CODE[!]] で終わる [[URL]] を [[Twitter]] は [CODE[!]] の直前まで [[URL]] と認識。
-
-[21] [[GitHub]] は
-[CODE[href="https://example.com/">Example Web Page</a>]]
-の「https:」から「Example」
-までを1つの [[URL]] とみなします。
-[TIME[2018-01-14T00:27:17.600Z]]
