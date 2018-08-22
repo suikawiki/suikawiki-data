@@ -2,7 +2,8 @@
 
 [REFS[
 - [59] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2016-05-14 09:55:50 +09:00]]) <https://html.spec.whatwg.org/#semantics-2>
-- [10] '''[CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2014-11-21 03:08:35 +09:00]] 版) <https://html.spec.whatwg.org/#processing-model-9>'''
+- [82] '''[CITE@en-US-x-hixie[HTML Standard]] ([TIME[2018-08-22 08:13:26 +09:00]]) <https://html.spec.whatwg.org/#update-the-rendering>'''
+-- [10] 旧URL: '''[CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2014-11-21 03:08:35 +09:00]] 版) <https://html.spec.whatwg.org/#processing-model-9>'''
 - [23] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2014-11-21 03:08:35 +09:00]] 版) <https://html.spec.whatwg.org/#pause>
 ]REFS]
 
@@ -16,18 +17,34 @@
 
 * レンダリングの更新
 
-[8] [[イベントループ]]は、[[ワーカー]]でなく[[閲覧文脈]]に関するものであるなら、
-ループ各回の最後に[RUBYB[[[レンダリングの更新]]]@en[update the rendering]]処理を行います
-[SRC[>>10]]。
+[8] 
+[DFN[[RUBYB[[[レンダリングの更新]]]@en[update the rendering]]]]は、
+[[イベントループ]]の各周回の後半で行われる処理の1つです。
+[[閲覧文脈]]に関する[[イベントループ]]で実行されますが、
+[[ワーカー]]に関する[[イベントループ]]では実行されません。 [SRC[>>82]]
 
 ;; [11] [[タスク]]や[[マイクロタスク]]の後に実行されます。
 
-[12] 当該[[イベントループ]]に関連付けられた [CODE(DOMi)@en[[[Document]]]]
-が対象となります。対象となる [CODE(DOMi)@en[[[Document]]]] のリストでは、
-[[入れ子閲覧文脈]]の [CODE(DOMi)@en[[[Document]]]] は[[親閲覧文脈]]の
-[CODE(DOMi)@en[[[Document]]]] より後となります。また同じ[[閲覧文脈]]の[[入れ子閲覧文脈]]の
-[CODE(DOMi)@en[[[Document]]]] 同士は、[[閲覧文脈包含器]]の[[木順]]となります。
-それ以外の順序は任意とされています。 [SRC[>>10]]
+** 対象の決定
+
+[12] [[レンダリングの更新]]の対象となる[[文書]]の[[リスト]][VAR[文書群]]は、
+当該[[イベントループ]]に関連付けられた[[文書]]すべてから、
+次に挙げる条件に該当するものを除去したものです。 [SRC[>>82]]
+
+[100] [VAR[文書群]]における[[文書]]の順序は、
+
+- [101] 基本的に任意ですが、
+- [102] [VAR[B]] [[nested through]] [VAR[A]] なとき、
+[VAR[A]] より [VAR[B]] が後で[MUST[なければならず]]、
+- [103] [VAR[A]] も [VAR[B]] も[F[閲覧文脈]]の[F[閲覧文脈包含子]]の[F[節点文書]]が同じ
+[VAR[C]] なとき、[VAR[A]] と [VAR[B]] の順序は
+[VAR[A]] と [VAR[B]] の[F[閲覧文脈]]の[F[閲覧文脈包含子]]の[[木順]]でなければ[MUST[ならない]]
+
+... とされています [SRC[>>82]]。
+
+;; [104] つまり[[フレーム]]の入れ子関係で[[木]]を作った時、
+[[行きがけ順]]で探索しなければなりません。
+異なる[[木]]に属する[[フレーム]]同士の順序は自由です。
 
 [124] [[イベントループ]]で毎回[[レンダリング]]の更新を行う必要はなく、
 いつ更新するかの正確なタイミングは実装に任されています。
@@ -58,34 +75,46 @@
 
 [25] こうした処理を次にいつ実行するかは、[[アイドル期間]]の締切の決定に影響を及ぼすことがあります。
 
--*-*-
+** 更新処理
 
-[13] 具体的には次のように処理しなければ[MUST[なりません]] [SRC[>>10]]。
+[13] [VAR[文書群]]について、次のようにします。 [SRC[>>82]]
+
 [FIG(steps)[
-= [66] [VAR[時刻印]]を、[[現在高分解能時刻]]に設定します。
-= [14] リスト中の [CODE(DOMi)@en[[[Document]]]] のうち[F[[[完全に活性]]]]なものそれぞれについて、
-[VAR[時刻印]]に関して、
+= [66] [VAR[今]]を、[[現在高分解能時刻]]に設定します。
+= [14] [VAR[文書群]]中の各[VAR[文書]]について、順に、
+== [83] [VAR[文書]]が[F[完全に活性]]な場合、
+=== [84] [VAR[文書]]と[VAR[今]]について、
 [[サイズ変更手順を実行]]します。
-= [15] リスト中の [CODE(DOMi)@en[[[Document]]]] のうち[F[[[完全に活性]]]]なものそれぞれについて、
-[VAR[時刻印]]に関して、
+= [15] [VAR[文書群]]中の各[VAR[文書]]について、順に、
+== [85] [VAR[文書]]が[F[完全に活性]]な場合、
+=== [86] [VAR[文書]]と[VAR[今]]について、
 [[スクロール手順を実行]]します。
-= [16] リスト中の [CODE(DOMi)@en[[[Document]]]] のうち[F[[[完全に活性]]]]なものそれぞれについて、
-[VAR[時刻印]]に関して、
+= [16] [VAR[文書群]]中の各[VAR[文書]]について、順に、
+== [87] [VAR[文書]]が[F[完全に活性]]な場合、
+=== [88] [VAR[文書]]と[VAR[今]]について、
 [[媒体クエリーを評価して報告]]します。
-= [17] リスト中の [CODE(DOMi)@en[[[Document]]]] のうち[F[[[完全に活性]]]]なものそれぞれについて、
-[VAR[時刻印]]に関して、
+= [17] [VAR[文書群]]中の各[VAR[文書]]について、順に、
+== [89] [VAR[文書]]が[F[完全に活性]]な場合、
+=== [90] [VAR[文書]]と[VAR[今]]について、
 [[update animations and send events]]します。
-= [18] リスト中の [CODE(DOMi)@en[[[Document]]]] のうち[F[[[完全に活性]]]]なものそれぞれについて、
-[VAR[時刻印]]に関して、
+= [18] [VAR[文書群]]中の各[VAR[文書]]について、順に、
+== [91] [VAR[文書]]が[F[完全に活性]]な場合、
+=== [92] [VAR[文書]]と[VAR[今]]について、
 [[全画面手順を実行]]します。
-= [19] リスト中の [CODE(DOMi)@en[[[Document]]]] のうち[F[[[完全に活性]]]]なものそれぞれについて、
-[VAR[時刻印]]に関して、
+= [19] [VAR[文書群]]中の各[VAR[文書]]について、順に、
+== [93] [VAR[文書]]が[F[完全に活性]]な場合、
+=== [94] [VAR[文書]]と[VAR[今]]について、
 [[アニメーションフレームコールバックを実行]]します。
-= [54] リスト中の [CODE(DOMi)@en[[[Document]]]] のうち[F[[[完全に活性]]]]なものそれぞれについて、
-[VAR[時刻印]]に関して、
+= [54] [VAR[文書群]]中の各[VAR[文書]]について、順に、
+== [95] [VAR[文書]]が[F[完全に活性]]な場合、
+=== [96] [VAR[文書]]と[VAR[今]]について、
 [[run the update intersection observations steps]] します。
-= [21] リスト中の [CODE(DOMi)@en[[[Document]]]] のうち[F[[[完全に活性]]]]なものそれぞれについて、
-[VAR[時刻印]]に関して、
+= [78] [VAR[文書群]]中の各[VAR[文書]]について、順に、
+== [97] [VAR[文書]]について、
+[[mark paint timing]] を実行します。
+= [21] [VAR[文書群]]中の各[VAR[文書]]について、順に、
+== [98] [VAR[文書]]が[F[完全に活性]]な場合、
+=== [99] [VAR[文書]]と[VAR[今]]について、
 [[レンダリングや利用者インターフェイスを更新]]します。
 ]FIG]
 
@@ -350,3 +379,19 @@
 [76] [CITE@en[Use the current high resolution time concept by annevk · Pull Request #3707 · whatwg/html]]
 ([TIME[2018-05-31 00:18:38 +09:00]])
 <https://github.com/whatwg/html/pull/3707>
+
+[77] [CITE@en[Integrate with the Paint Timing spec]]
+([[tdresser]]著, [TIME[2018-08-17 04:05:28 +09:00]])
+<https://github.com/whatwg/html/commit/92b90bd6137faac0d15aca1ec234afdc80b9547b>
+
+[79] [CITE@en[It is totally unclear what 'duration' tries to measure · Issue #6 · WICG/event-timing]]
+([TIME[2018-08-22 21:49:05 +09:00]])
+<https://github.com/WICG/event-timing/issues/6>
+
+[80] [CITE@en[Eliminate paint timing monkey patching by tdresser · Pull Request #3923 · whatwg/html]]
+([TIME[2018-08-22 21:49:27 +09:00]])
+<https://github.com/whatwg/html/pull/3923>
+
+[81] [CITE@en[Integrate with Paint Timing · Issue #1609 · w3c/html]]
+([TIME[2018-08-22 21:50:30 +09:00]])
+<https://github.com/w3c/html/issues/1609>
