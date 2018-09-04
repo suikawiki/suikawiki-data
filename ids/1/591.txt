@@ -433,6 +433,8 @@ DTD を用意するとかの方法はあるにはあるが。。。)
 ]FIG]
 具体的には次の通りです。
 
+** 状態の決定
+
 [65] 次の条件を''すべて''満たす時、 [DFN[[[potentially active]]]] といいます [SRC[>>23]]。
 [FIG(list)[
 - [66] 現時点で、または直近の [[event loop step 1]] 時点で [[in a [CODE(DOMi)@en[Document]]]]
@@ -493,28 +495,40 @@ DTD を用意するとかの方法はあるにはあるが。。。)
 [[Should element be blocked ''a priori'' by Content Security Policy?]] が
 [[Blocked]] を返すなら、
 == [156] ここで停止します。
-= [78] [VAR[要素]]に [CODE(HTMLa)@en[[[src]]]] [[属性]]があれば、
-== [79] [[属性値]]の[[URLの解決]]を行います。
-== [80] 解決が成功したら、
-=== [81] 次のような新しい[[要求]]を [[fetch]] する[['''べきです''']]。
+= [78] [VAR[要素]]が [CODE(HTMLa)@en[src][<embed src>]] [[属性][内容属性]]を持つ場合、
+== [79] [VAR[URL]] を、
+[VAR[要素]]の [CODE[src][<embed src>]] [[属性値]]を[[解決][URLの解決]]した結果に設定します。
+== [80] [VAR[URL]] が[[失敗]]の場合、
+=== [165] ここで停止します。
+== [81] [[fetch]] します。 [[delay the load event]] します。
 [FIG(list members)[
-[FIGCAPTION[
-[[要求]]
-]FIGCAPTION]
-:[[URL]]:得られた[[絶対URL]]
-:[[クライアント]]:[[要素]]の[[節点文書]]の [CODE(DOMi)@en[[[Window]]]]
-の[[環境設定群オブジェクト]]
-:[F[終点]]: [[空文字列]]
-:[[[CODE(HTTP)@en[Origin]]ヘッダー省略フラグ]]:[[要素]]が[[閲覧文脈適用範囲起源]]を持たなければ、設定する
-:[[credentialsモード]]:[CODE[[[include]]]]
-:[[URL credentials利用フラグ]]:設定する
+
+: [VAR[要求]] :
+[FIG(list members)[ [164] [[要求]]
+
+: [F[URL][要求URL]] :得られた[[絶対URL]]
+: [F[クライアント][要求クライアント]] :
+[VAR[要素]]の[F[節点文書]]の[F[関連設定群オブジェクト]]
+: [F[終点]] : 
+[CODE[embed]]
+: [F[credentialsモード]] :
+[CODE[include]]
+: [F[URL credentials利用フラグ]] :
+[[真]]
+
 ]FIG]
-= [82] [CODE(HTMLa)@en[[[src]]]] [[属性]]がなければ、
-== [83] [CODE(HTMLa)@en[[[type]]]] [[属性]]の値に基づき適切な[[プラグイン]]を探し、
-[[実現値化]]する[['''べきです''']]。
-== [84] 本[[要素]]は、その[[プラグイン]]の[[実現値]]を[[表現]]します。
-== [85] [[プラグイン]]を完全に読み込んだら、 [CODE(DOMe)@en[[[load]]]]
-[[イベント]]の処理 (>>110) を行います。
+: [VAR[[[process response]]]] : >>87
+
+]FIG]
+= [166] それ以外の場合、
+== [168] [VAR[型]]を、
+[VAR[要素]]の [CODE[type][<embed type>]] [[属性値]]に設定します。
+== [82] [VAR[型]]に[[対応]]した[[プラグイン]]がある場合、
+=== [83] [VAR[要素]]と[VAR[型]]について、
+[[プラグインを表示]]します。
+== [84] それ以外の場合、
+=== [85] [VAR[要素]]について、
+[[プラグインなしを表示]]します。
 ]FIG]
 
 [110] [CODE(DOMe)@en[[[load]]]] [[イベント]]の処理とは、
@@ -535,22 +549,7 @@ DTD を用意するとかの方法はあるにはあるが。。。)
 ]FIG]
 ]FIG]
 
-* プラグインのための fetch
-
-[121] [[fetch]] を行う場合、これは [[delay the load event]] しなければ[['''なりません''']] [SRC[>>23]]。
-
-[122] [[入れ子閲覧文脈]]を[[表現]]する場合には、
-[FIG(list)[
-- [123] [[入れ子閲覧文脈]]の[[活性文書]]が [[ready for post-load tasks]]
-でない場合
-- [124] [[入れ子閲覧文脈]]の[[活性文書]]を [[delay the load event]]
-するものがある時
-- [125] [[入れ子閲覧文脈]]が [[delaying [CODE(DOMe)@en[load]] events mode]]
-の時
-]FIG]
-... は、 [[delay the load event]] しなければ[['''なりません''']] [SRC[>>23]]。
-
-;; [126] [[同じ起源]]かどうかの検査は行われないようです。
+** fetch 
 
 [87] [[要素]][VAR[要素]]に [CODE(HTMLa)@en[[[src]]]] [[属性]]がある場合の [[fetch]] では、
 [[process response]] は次の処理 [SRC[>>23]] です。
@@ -952,3 +951,30 @@ A: 違います。
 > <embed src="emimovie.wmv" type="video/x-ms-wmv" width="160" height="143">
 
 ]FIG]
+
+
+[FIG(quote)[
+[FIGCAPTION[
+[160] [CITE[橋の端の表紙]]
+( ([TIME[2016-04-03 12:56:58 +09:00]]))
+<http://jakoba03.web.fc2.com/hasi000hyousi.html>
+]FIGCAPTION]
+
+> 
+> <embed src="http://jakoba03.web.fc2.com/music/ikkyuusann.mid" align="left" width="280" height="42" autostart="true" loop="false" bgcolor="#d0F0F0">
+> </embed>
+
+]FIG]
+
+
+[161] [CITE@en[Clarify and tweak <embed> processing model]]
+([[domenic]]著, [TIME[2018-08-20 22:36:39 +09:00]])
+<https://github.com/whatwg/html/commit/d0b092530e62aa88cae7f63657098b411eb09b01>
+
+[162] [CITE@en[Clarify steps when embed tag has unhandled MIME type · Issue #3876 · whatwg/html]]
+([TIME[2018-09-04 19:14:45 +09:00]])
+<https://github.com/whatwg/html/issues/3876>
+
+[163] [CITE@en[State what happens to <embed> with an unhandled MIME type by domenic · Pull Request #3900 · whatwg/html]]
+([TIME[2018-09-04 19:17:38 +09:00]])
+<https://github.com/whatwg/html/pull/3900>
