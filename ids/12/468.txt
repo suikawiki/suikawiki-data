@@ -230,24 +230,6 @@
 == [284] 
 [VAR[窓]]を、
 [VAR[文書]]の[F[関連大域オブジェクト]]に設定します。
-= [56] [VAR[新しい[[セッション履歴エントリー]]]]を作成します。
-[FIG(list members)[
-[FIGCAPTION[
-[[セッション履歴エントリー]]
-]FIGCAPTION]
-:[[navigate]] の[[引数]]の新しい[VAR[資源]]:[[応答]]は、
-[FIG(list members)[
-[FIGCAPTION[
-[[応答]]
-]FIGCAPTION]
-:[CODE(HTTP)@en[[[Content-Type]]]]:[CODE(MIME)@en[[[text/html]]]]
-:[[本体]] ([[文字列]]):[[文書]]の[[構文解析器]]の[[構文解析]]したテキスト [SRC[>>7]] (≒ [[reload override buffer]])
-]FIG]
-:[[文書]]:なし [SRC[>>7]]
-:その他:現在の[[文書]]の状態 [SRC[>>7]]
-:[[上書きURL]]:[[文書の番地]] [SRC[明記されておらず]]
-:[[reload override flag]]:[[真]] [SRC[明記されておらず]]
-]FIG]
 = [87] [VAR[文書]]の新規化 [SRC[>>7]]:
 == [229] [VAR[文書]]について、[[文書のabort]] を実行します。
 == [230] [VAR[文書]]の[[影を含む包括的子孫]]の各[VAR[節点]]について、
@@ -263,9 +245,6 @@
 === [209] 
 [VAR[文書]]と[VAR[入口文書]]の[F[URL][文書の番地]]について、
 [[URLおよび履歴更新手順群]]を実行します。
-= [235] [VAR[文書]]の [F[ready for post-load tasks]] が[[真]]の場合、
-== [236] [VAR[文書]]の [F[reload override flag]] を、[[真]]に設定します [SRC[>>7]]。
-== [237] [VAR[文書]]の [F[reload override buffer]] を、[[空文字列]]に設定します [SRC[>>7]]。
 = [238] [VAR[文書]]の [F[iframe load in progress]] フラグが[[真]]の場合、
 == [239] [VAR[文書]]の [F[mute iframe load]] フラグを、[[真]]に設定します [SRC[>>7]]。
 = [240] [VAR[文書]]の[F[構文解析器]]を、
@@ -328,75 +307,6 @@
 [94] 現在となっては [CODE(JS)@en[[[document.open]]]] を使うべき理由はまったくありません。
 実装により細かな挙動が異なり不安定なので、使うべきではありません。
 
-
-* 履歴移動
-
-[60] [CODE(JS)@en[[[document.open]]]] で作られた[[文書]]の再読込や履歴の移動も、
-あたかも通常のページであるかのように扱われることが意図されているようですが、
-実装も仕様書も不安定な状態のようです。
-
-[65] [[閲覧文脈]][VAR[閲覧文脈]]の[[再読込]]は、 [CODE(JS)@en[[[document.open]]]] 後の時、
-通常の処理ではなく [[overridden reload]] となります。
-[DFN[[[overridden reload]]]] は次のようにしなければ[['''なりません''']]。
-
-[FIG(steps)[
-= [84] 次の通り [[navigate]] します。
-[FIG(list members)[
-:[F[[[navigate]] する[[閲覧文脈]]]]: [VAR[[[閲覧文脈]]]]
-:[F[新しい[[資源]]]]: 新しい[[応答]] [SRC[>>58]] で、
-[FIG(list members)[
-[FIGCAPTION[
-[96] [[応答]]
-]FIGCAPTION]
-:[F[[[HTTPS状態]]]]: [VAR[[[閲覧文脈]]]]の[F[[[活性文書]]]]の [F[[[HTTPS状態]]]] [SRC[>>58]]
-:[F[[[CSPリスト]]]]: [VAR[[[閲覧文脈]]]]の[F[[[活性文書]]]]の[F[[[CSPリスト]]]] [SRC[>>58]]
-:[F[[[ヘッダーリスト]]]]:
-[FIG(list members)[
-: [CODE(HTTP)@en[Referrer-Policy]] : [VAR[閲覧文脈]]の[F[活性文書]]の[F[参照元ポリシー]] [SRC[>>58]]
-:[CODE(HTTP)@en[[[Content-Type]]]]:[CODE(MIME)@en[[[text/html]]]]
-]FIG]
-:[F[[[本体]]]] ([[文字列]]): [VAR[[[閲覧文脈]]]]の[F[[[活性文書]]]]の 
-[F[[[reload override buffer]]]] の値 [SRC[>>58]]
-]FIG]
-:[F[[[始点閲覧文脈]]]]:[[引数]]として指定されたもの [SRC[>>58]]
-:[F[[[reload override flag]]]]:[[真]] [SRC[>>58]]
-:[F[[[上書きURL]]]]: [VAR[[[閲覧文脈]]]]の[F[[[活性文書]]]]の[F[[[文書の番地]]]] [SRC[>>58]]
-:[F[キャッシュ上書き]]: [[引数]]として指定されたもの
-: [VAR[置換有効]] : [[真]]
-: [VAR[例外有効]] : [[真]]
-]FIG]
-[[例外]]が[[投げ]]られたら、[[再度投げ]]ます。
-]FIG]
-
-;; [66] [[HTML Standard]] は[F[キャッシュ上書き]]フラグに言及していませんが、
-本 [[navigate]] が作成した[[文書]]からの [[fetch]] に影響するかもしれません
-(ししないかもしれません)。
-
-;; [67] [CODE(JS)@en[[[location.reload]]]] も参照。
-
-[59] [[文書]]は、 [DFN[[F[[[reload override flag]]]]]] と
-[DFN[[F[[[reload override buffer]]]]]] を持ちます [SRC[>>58]]。
-初期状態では未設定で [SRC[>>58]]、 [CODE(JS)@en[[[document.open]]]] 
-などが設定することがあります。
-
-[61] [[IE]] と [[Firefox]] は [[overridden reload]] に対応しているようですが、
-[[Chrome]] は対応していないようです。 [TIME[2015-05-06T08:14:43.800Z]]
-
-[55] [[IE]] は[[平文]]を [CODE(JS)@en[[[location.reload]]]] した後も[[平文]]として扱うようです。
-[[Firefox]] は[[平文]]でも [CODE(JS)@en[[[location.reload]]]] 後に [[HTML]]
-にしてしまうようです。現在の [[HTML Standard]] は [[Firefox]]
-の動作です。 [TIME[2015-05-06T14:10:21.200Z]]
-
-[68] [CODE(JS)@en[[[document.open]]]] で作られた[[文書]]から他の[[文書]]に移動したら、
-元の[[文書]]は通常通り処理されます。 [CODE(JS)@en[[[document.open]]]]
-から再度 [CODE(JS)@en[[[document.open]]]] を再度実行したら、
-前の状態は [CODE(JS)@en[[[document.write]]]] で生成されたソースコードで保存されます
-(>>56)。
-
-[57] >>56 は [[Firefox]] の動作で、 [[IE]] は[[文書]]の [F[[[reload override flag]]]]
-が[[偽]]なら [[navigate]] の新しい[[資源]]をソースでなく [[URL]] としているようです。
-(最初の [CODE(JS)@en[[[document.open]]]] より前の[[セッション履歴エントリー]]に戻った時にネットワークアクセスが発生します。そちらの仕様なら、 [[script-created parser]] でない普通の[[構文解析器]]の時に、[[構文解析]]したテキストを保持し続けずに済みます。)
-[TIME[2015-05-06T15:18:32.400Z]]
 
 * [VAR[features]] 引数の処理
 
@@ -1065,4 +975,90 @@
 
 [212] [CITE@en[document.open() simplifications, part 2 by TimothyGu · Pull Request #3946 · whatwg/html]]
 ([TIME[2018-09-05 22:43:36 +09:00]])
+<https://github.com/whatwg/html/pull/3946>
+
+[213] [CITE@en[Editorial: Factor out history.push/replaceState() steps]]
+([[TimothyGu]]著, [TIME[2018-08-18 08:04:45 +09:00]])
+<https://github.com/whatwg/html/commit/f42dcf0bf2ebf86bc5ca79aecea098a8fed6cf3e>
+
+** 履歴移動
+
+[60] [CODE(JS)@en[[[document.open]]]] で作られた[[文書]]の再読込や履歴の移動も、
+あたかも通常のページであるかのように扱われることが意図されているようですが、
+実装も仕様書も不安定な状態のようです。
+
+[65] [[閲覧文脈]][VAR[閲覧文脈]]の[[再読込]]は、 [CODE(JS)@en[[[document.open]]]] 後の時、
+通常の処理ではなく [[overridden reload]] となります。
+[DFN[[[overridden reload]]]] は次のようにしなければ[['''なりません''']]。
+
+[FIG(steps)[
+= [84] 次の通り [[navigate]] します。
+[FIG(list members)[
+:[F[[[navigate]] する[[閲覧文脈]]]]: [VAR[[[閲覧文脈]]]]
+:[F[新しい[[資源]]]]: 新しい[[応答]] [SRC[>>58]] で、
+[FIG(list members)[
+[FIGCAPTION[
+[96] [[応答]]
+]FIGCAPTION]
+:[F[[[HTTPS状態]]]]: [VAR[[[閲覧文脈]]]]の[F[[[活性文書]]]]の [F[[[HTTPS状態]]]] [SRC[>>58]]
+:[F[[[CSPリスト]]]]: [VAR[[[閲覧文脈]]]]の[F[[[活性文書]]]]の[F[[[CSPリスト]]]] [SRC[>>58]]
+:[F[[[ヘッダーリスト]]]]:
+[FIG(list members)[
+: [CODE(HTTP)@en[Referrer-Policy]] : [VAR[閲覧文脈]]の[F[活性文書]]の[F[参照元ポリシー]] [SRC[>>58]]
+:[CODE(HTTP)@en[[[Content-Type]]]]:[CODE(MIME)@en[[[text/html]]]]
+]FIG]
+:[F[[[本体]]]] ([[文字列]]): [VAR[[[閲覧文脈]]]]の[F[[[活性文書]]]]の 
+[F[[[reload override buffer]]]] の値 [SRC[>>58]]
+]FIG]
+:[F[[[始点閲覧文脈]]]]:[[引数]]として指定されたもの [SRC[>>58]]
+:[F[[[reload override flag]]]]:[[真]] [SRC[>>58]]
+:[F[[[上書きURL]]]]: [VAR[[[閲覧文脈]]]]の[F[[[活性文書]]]]の[F[[[文書の番地]]]] [SRC[>>58]]
+:[F[キャッシュ上書き]]: [[引数]]として指定されたもの
+: [VAR[置換有効]] : [[真]]
+: [VAR[例外有効]] : [[真]]
+]FIG]
+[[例外]]が[[投げ]]られたら、[[再度投げ]]ます。
+]FIG]
+
+;; [66] [[HTML Standard]] は[F[キャッシュ上書き]]フラグに言及していませんが、
+本 [[navigate]] が作成した[[文書]]からの [[fetch]] に影響するかもしれません
+(ししないかもしれません)。
+
+;; [67] [CODE(JS)@en[[[location.reload]]]] も参照。
+
+[59] [[文書]]は、 [DFN[[F[[[reload override flag]]]]]] と
+[DFN[[F[[[reload override buffer]]]]]] を持ちます [SRC[>>58]]。
+初期状態では未設定で [SRC[>>58]]、 [CODE(JS)@en[[[document.open]]]] 
+などが設定することがあります。
+
+[61] [[IE]] と [[Firefox]] は [[overridden reload]] に対応しているようですが、
+[[Chrome]] は対応していないようです。 [TIME[2015-05-06T08:14:43.800Z]]
+
+[55] [[IE]] は[[平文]]を [CODE(JS)@en[[[location.reload]]]] した後も[[平文]]として扱うようです。
+[[Firefox]] は[[平文]]でも [CODE(JS)@en[[[location.reload]]]] 後に [[HTML]]
+にしてしまうようです。現在の [[HTML Standard]] は [[Firefox]]
+の動作です。 [TIME[2015-05-06T14:10:21.200Z]]
+
+[68] [CODE(JS)@en[[[document.open]]]] で作られた[[文書]]から他の[[文書]]に移動したら、
+元の[[文書]]は通常通り処理されます。 [CODE(JS)@en[[[document.open]]]]
+から再度 [CODE(JS)@en[[[document.open]]]] を再度実行したら、
+前の状態は [CODE(JS)@en[[[document.write]]]] で生成されたソースコードで保存されます
+(>>56)。
+
+[57] >>56 は [[Firefox]] の動作で、 [[IE]] は[[文書]]の [F[[[reload override flag]]]]
+が[[偽]]なら [[navigate]] の新しい[[資源]]をソースでなく [[URL]] としているようです。
+(最初の [CODE(JS)@en[[[document.open]]]] より前の[[セッション履歴エントリー]]に戻った時にネットワークアクセスが発生します。そちらの仕様なら、 [[script-created parser]] でない普通の[[構文解析器]]の時に、[[構文解析]]したテキストを保持し続けずに済みます。)
+[TIME[2015-05-06T15:18:32.400Z]]
+
+
+[214] [CITE@en[Remove overridden reload concept]]
+([[TimothyGu]]著, [TIME[2018-08-18 05:31:49 +09:00]])
+<https://github.com/whatwg/html/commit/6440ccae7340ea41d3eb5bf8ff0b3b27363eda85>
+
+[56] [CITE@en[556002 - document.open() and write() after parsing is complete breaks reload button - we reload new, not original document]]
+([TIME[2018-09-05 23:38:17 +09:00]])
+<https://bugzilla.mozilla.org/show_bug.cgi?id=556002>
+
+[215] [CITE@en[document.open() simplifications, part 2 by TimothyGu · Pull Request #3946 · whatwg/html]]
+([TIME[2018-09-05 23:39:15 +09:00]])
 <https://github.com/whatwg/html/pull/3946>
