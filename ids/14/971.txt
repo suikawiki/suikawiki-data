@@ -29,3 +29,62 @@
 [8] [CITE[だまされたと思って使ってみてほしい、簡単で便利すぎる「はてなスクリーンショット拡張」正式リリース - はてな広報ブログ]]
 ( ([TIME[2011-02-15 23:11:45 +09:00]] 版))
 <https://d.hatena.ne.jp/hatenapr/20090917/1253160695>
+
+* はてなスクリーンショット拡張で Windows のいろいろなアプリケーションのスクリーンショットをとる
+
+はてなスクリーンショット拡張<http://www.hatena.ne.jp/tool/firefox#HatenaScreenshot>は Web ページのスクリーンショットを撮りたいときにとても便利ですよね。でもスクリーンショット拡張だと Firefox で表示した Web ページしか撮影・アップロードできないのが困りものです。
+
+そこで、スクリーンショット拡張で Windows のいろんなアプリケーションのスクリーンショットを撮れるように Perl のコードを1行書いてみました。ショートカットキーを1回押してからいつものスクリーンショット拡張の操作を行うだけなので、手軽でとっても便利です。
+
+** 準備
+
+= 必要なものをインストールする
+= Perl ワンライナーへのショートカットを作る
+
+*** 必要なもの
+
+- ActivePerl<http://www.activestate.com/activeperl/>
+- ImageMagick<http://www.imagemagick.org/script/binary-releases.php#windows>
+- Win32::Screenshot<http://search.cpan.org/~PSME/Win32-Screenshot/Screenshot.pm>
+-- > cpan Win32::Screenshot
+- Firefox<http://www.firefox.com/>
+- はてなスクリーンショット拡張<http://www.hatena.ne.jp/tool/firefox#HatenaScreenshot>
+
+*** ショートカットの作成
+
+次のワンライナーのショートカットを作る。
+
+画面全体をとりたいとき:
+
+[PRE(perl code)[
+perl -MFile::Temp(tempfile) -MWin32::Screenshot -e "(undef,$p)=tempfile(SUFFIX=>'.png');CaptureScreen->Write($p);($h,$t)=tempfile(SUFFIX=>'.html');print$h q{<img src='file:///}.$p.q{'>};close$h;system'start',$t;sleep 3;unlink$t;unlink$p"
+]PRE]
+
+アクティブウィンドウだけをとりたいとき:
+
+[PRE(perl code)[
+perl -MFile::Temp(tempfile) -e "use Win32::Screenshot':all';($x,$p)=tempfile(SUFFIX=>'.png');CaptureWindow(GetForegroundWindow)->Write($p);($h,$t)=tempfile(SUFFIX=>'.html');print$h q{<img src='///}.$p.q{'>};close$h;system'start',$t;sleep 3;unlink$t;unlink$p"
+]PRE]
+
+<http://f.hatena.ne.jp/wakabatan/20100220200859>
+
+ショートカットのプロパティを開いて、「実行時の大きさ」を「最小化」にし、適当な「ショートカットキー」を割り当てる。
+
+<http://f.hatena.ne.jp/wakabatan/20100220201146>
+
+ショートカットはデスクトップかスタートメニューに作らないと効かないみたいです。
+
+** 使ってみる
+
+= スクリーンショットを撮りたい画面を用意する
+= 先程設定したショートカットキー (図では Ctrl + Alt + S) を押す
+= しばらくすると Firefox でスクリーンショットが開かれる
+= Firefox 右下のスクリーンショット拡張のメニューから「フォトライフにアップロード」を選ぶ
+
+** メモ
+
+今回のワンライナーはショートカットのリンク先として指定できるギリギリの長さですが、別ファイルにすればもっと長くできます。 Win32::Screenshot にはいろいろ便利な関数が用意されているので、用途に応じてカスタマイズしたらもっと便利になりそうですね。
+
+[POSTAMBLE[
+[9] 初出: <http://d.hatena.ne.jp/wakabatan/20100220/1266666396> ([TIME[2010-02-20]])
+]POSTAMBLE]
