@@ -74,3 +74,65 @@
 * さよならのかわりに、昔話を ~XHTML2 を追悼してみるテスト~
 
 [SEE[ [[XHTML2の追悼]] ]]
+
+* DESTROY を使う時には $@ に注意したい
+
+;; [TIME[2009-11-21]] <http://d.hatena.ne.jp/wakabatan/20091121/1258801048>
+
+[PRE(perl code)[
+use strict;
+use warnings;
+
+{
+    package Object1;
+    sub new { bless {}, shift };
+    sub DESTROY { }
+}
+
+my $x = eval {
+    my $obj = Object1->new;
+    not_found ();
+};
+
+warn "Error1: $@";
+
+
+{
+    package Object2;
+    sub new { bless {}, shift };
+    sub DESTROY { eval { } }
+}
+
+my $y = eval {
+    my $obj = Object2->new;
+    not_found ();
+};
+
+warn "Error2: $@";
+
+{
+    package Object3;
+    sub new { bless {}, shift };
+    sub DESTROY { local $@; eval { } }
+}
+
+eval {
+    my $obj = Object3->new;
+    not_found ();
+};
+
+warn "Error3: $@";
+]PRE]
+
+[PRE(bash code)[
+$ perl a.pl
+Error1: Undefined subroutine &main::not_found called at a.pl line 12.
+Error2:  at a.pl line 29.
+Error3: Undefined subroutine &main::not_found called at a.pl line 40.
+]PRE]
+
+何も考えずに DESTROY を書くとうっかり2つ目の例のようにしちゃいそうですが (もちろんこんなあらかさまなのはないでしょうけどね)、3つ目の例のように $@ を local しておかないと、外側の eval の $@ がいつの間にか消えていて、どこでエラーが起こっているのかわからなくて酷い目にあいます。
+
+* Network Working Group
+
+RFC 5741 によると RFC の最初に Network Working Group と書くのはやめにした<https://tools.ietf.org/html/rfc5741#page-4>らしい。
