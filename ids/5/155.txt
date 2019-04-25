@@ -27,16 +27,26 @@
 
 [160] 第1引数は送信するデータです。 [CODE(DOMm)@en[postMessage]] [[メソッド]]ではこれを
 「メッセージ」と呼んでいます。
+メッセージとしては任意の [[JavaScript値]]を指定できます。
 
-[161] 第2引数と第3引数は、[[文脈オブジェクト]]によって異なります。
+[176] ただし、送信されるのは指定された値そのものではなく、
+[[構造化クローン]]です。
+
+-*-*-
+
+[161] 第2引数以後は[[文脈オブジェクト]]によって異なります。
+元は[[引数]]をいくつか順に指定する形式でしたが、
+[TIME[2018年][year:2018]]の改訂以後省略可能な[[辞書]]
+[DFN[[CODE[PostMessageOptions]]]] 
+形式の引数 [SRC[>>18]] で指定できるようになりました
+[SRC[>>22]]。
 
 ** [CODE(DOMi)@en[Window]] オブジェクトの場合
 
-[22] 第1引数には、投函したいデータを指定します。ただし、そのものではなく、
-[[構造化クローン]]が投函されることになります。メッセージとしては任意の [[JavaScript]]
-の値を指定できます。
-
-[25] 第2引数には、投函先の[[起源]]を指定します。投函先が実際には異なる[[起源]]なら、
+[25] 第2引数 [CODE[USVString]] または[[辞書]]引数 [DFN[[CODE[WindowPostMessageOptions]]]]
+([CODE[PostMessageOptions]] を[[継承]] [SRC[>>18]])
+の省略可能な [CODE[USVString]] の値 [DFN[[CODE[targetOrigin]]]] [SRC[>>18]]
+には、投函先の[[起源]]を指定します。投函先が実際には異なる[[起源]]なら、
 メッセージは無視されます (エラーにもなりません)。
 
 [26] [[起源]]は、次のいずれかの値を指定できます。
@@ -57,23 +67,22 @@
 [CODE[https://hoge.example]] 下の任意の[[文書]]などが受信できます。
 ]EG]
 
-[31] 第3引数には、 [CODE[[[Transferable]]]] の[[配列]]を指定できます。
+[31] 第3引数または[[辞書]]引数 [CODE[PostMessageOptions]]
+の省略可能な値 [DFN[[CODE[transfer]]]] [SRC[>>18]]
+には、
+[CODE[[[Transferable]]]] の[[配列]]を指定できます。
 該当するものがなければ、省略できます。
 
 ** [CODE(DOMi)@en[MessagePort]] と [CODE(DOMi)@en[DedicatedWorkerGlobalScope]] と [CODE(DOMi)@en[Worker]] の場合
 
-[113] 第1引数には、投函したいデータを指定します。ただし、そのものではなく、
-[[構造化クローン]]が投函されることになります。メッセージとしては任意の [[JavaScript]]
-の値を指定できます。
-
-[114] 第2引数には、 [CODE[[[Transferable]]]] の[[配列]]を指定できます。
+[114] 第2引数または[[辞書]]引数 [CODE[PostMessageOptions]]
+の省略可能な値 [CODE[transfer]] [SRC[>>18]]
+には、 [CODE[[[Transferable]]]] の[[配列]]を指定できます。
 該当するものがなければ、省略できます。
 
 ** [CODE(DOMi)@en[BroadcastChannel]] オブジェクトの場合
 
-[139] 第1引数には、投函したいデータを指定します。ただし、そのものではなく、
-[[構造化クローン]]が投函されることになります。メッセージとしては任意の [[JavaScript]]
-の値を指定できます。
+[139] 第1引数のみです。
 
 * 処理
 
@@ -81,13 +90,29 @@
 
 [21] [CODE(DOMi)@en[[[Window]]]] [[インターフェイス]]の
 [CODE(DOMm)@en[[[postMessage]]]] [[メソッド]]は、
-次のようにしなければ[MUST[なりません]] [SRC[>>18]]。
+[DFN[window post message steps]]、
+すなわち次のようにしなければ[MUST[なりません]] [SRC[>>18]]。
 
 [FIG(steps)[
-= [96] [VAR[メッセージ]]を、必須の第1引数を [CODE(IDL)@en[any]] として解釈した結果に設定します。
-= [97] [VAR[対象起源]]を、必須の第2引数を [CODE(IDL)@en[USVString]] として解釈した結果に設定します。
-= [98] [VAR[transfer]] を、第3引数を [CODE[[[sequence]]<[[object]]>]] として解釈した結果に設定します。
+= [177] 引数群を必須の [CODE(IDL)[any]]、
+必須の [CODE[USVString]]、
+省略可能な [CODE[[[sequence]]<[[object]]>]]
+か、
+必須の [CODE(IDL)[any]]、
+省略可能な [CODE[WindowPostMessageOptions]]
+のいずれかとして解釈します。
+== [96] [VAR[メッセージ]]を、第1引数を [CODE(IDL)@en[any]] として解釈した結果に設定します。
+== [178] 前者の場合、
+=== [97] [VAR[対象起源]]を、第2引数を [CODE(IDL)@en[USVString]] として解釈した結果に設定します。
+=== [98] [VAR[transfer]] を、第3引数を [CODE[[[sequence]]<[[object]]>]] として解釈した結果に設定します。
 [[既定値]]は、[[空リスト]]とします。
+== [113] 後者の場合、
+=== [179] [VAR[オプション群]]を、第2引数を [CODE[WindowPostMessageOptions]]
+と解釈した結果に設定します。
+=== [180] [VAR[対象起源]]を、 [VAR[オプション群]]の [F[[CODE[targetOrigin]]]]
+に設定します。
+=== [181] [VAR[transfer]]を、 [VAR[オプション群]]の [F[[CODE[transfer]]]]
+に設定します。
 = [106] [VAR[対象窓]]を、[[文脈オブジェクト]]に設定します。
 = [108] [VAR[対象Realm]] を、[VAR[対象窓]]の[F[Realm]]に設定します。
 = [83] [VAR[現職設定群]]を、[[現職設定群オブジェクト]]に設定します。
@@ -118,7 +143,8 @@
 [VAR[対象窓]]の[F[文書]]の[F[起源][文書の起源]]が[VAR[対象起源]]と[[同じ起源]]で''な''ければ、
 == [93] ここで停止します。
 = [81] [VAR[起源]]を、[VAR[現職設定群]]の[F[起源]]の[F[直列化][ASCII直列化]]に設定します。
-= [104] [VAR[始点]]を、[VAR[現職設定群]]の[F[大域オブジェクト]]に設定します。
+= [104] [VAR[始点]]を、[VAR[現職設定群]]の[F[大域オブジェクト]]の
+[F[[CODE[WindowProxy]]]] に設定します。
 = [110] [VAR[記録]]を、[VAR[直列化結果]]と[VAR[対象Realm]]について
 [CODE[StructuredDeserializeWithTransfer]] した結果に設定します。
 [[例外]]が[[投げ]]られた場合、
@@ -160,7 +186,8 @@
 [CODE(DOMi)@en[Worker]] [[オブジェクト]]と
 [CODE(DOMi)@en[DedicatedWorkerGlobalScope]] [[オブジェクト]]の
 [CODE(DOMm)@en[postMessage]] は、
-次のようにしなければ[MUST[なりません]] [SRC[>>111, >>156, >>158]]。
+[DFN[message port post message options]]、
+すなわち次のようにしなければ[MUST[なりません]] [SRC[>>111, >>156, >>158]]。
 
 [FIG(steps)[
 = [157] [VAR[ポート]]を、[[文脈オブジェクト]]により、次の値に設定します。
@@ -174,7 +201,12 @@
 ]FIG]
 = [116] [VAR[メッセージ]]を、必須の第1引数を [CODE[any]]
 として解釈した結果に設定します。
-= [117] [VAR[transfer]] を、省略可能な第2引数を[[オブジェクト]]の[[配列]]として解釈した結果に設定します。
+= [117] [VAR[オプション群]]を、省略可能な第2引数を[[オブジェクト]]の[[配列]]または
+[CODE[MessagePortOptions]] として解釈した結果に設定します。
+= [182] [VAR[オプション群]]が [CODE[MessagePortOptions]] の場合、
+== [183] [VAR[transfer]] を、 [VAR[オプション群]]の [F[[CODE[transfer]]]] に設定します。
+= [184] それ以外の場合、
+== [185] [VAR[transfer]] を、 [VAR[オプション群]]に設定します。
 = [120] [VAR[transfer]] に[VAR[ポート]]が含まれる場合、
 == [121] [CODE[DataCloneError]] を[[投げ]]、ここで停止します。
 = [118] [VAR[対象ポート]]を、[VAR[ポート]]の[F[[[entangle]] されているポート]]に設定します。
@@ -607,6 +639,8 @@
 [164] [CITE@en[No longer remove tasks for document.open() by annevk · Pull Request #3665 · whatwg/html]]
 ([TIME[2018-08-23 20:18:16 +09:00]])
 <https://github.com/whatwg/html/pull/3665>
+
+[22] [CITE@en[Add postMessage overrides that take options]] ([[dtapuska]]著, [TIME[2018-10-26 23:34:40 +09:00]]) <https://github.com/whatwg/html/commit/c501dd8ca54a10083c110e695e68f5347b3c1ba9>
 
 [167] [CITE@en[Add Window.postMessage override that takes a dictionary · Issue #3799 · whatwg/html]] ([TIME[2019-04-25 12:42:46 +09:00]]) <https://github.com/whatwg/html/issues/3799>
 
