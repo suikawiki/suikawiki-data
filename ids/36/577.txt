@@ -286,4 +286,64 @@
 
 [SEE[ [[プッシュメッセージの受信]] ]]
 
+* 実装
+
+[17] [[Firefox]] は
+[CODE[https://updates.push.services.mozilla.com/push/v1/...]] のようなエンドポイントURL
+を使っています。
+メッセージを渡さないなら、何でも良いので [CODE[POST]] だけすればOKです。
+各エンドポイントURLにそれぞれ [CODE[POST]] する必要があります。
+
+[45] 
+[[Firefox]] は
+[CODE[applicationServerKey]] なしで [CODE[subscribe]] できます。
+[CODE[https://updates.push.services.mozilla.com/wpush/v1/...]]
+のような [[URL]] を使っています。
+ただの [CODE[POST]] では受け付けてくれません。
+[CODE[TTL:]] ヘッダーがあれば他はなにもない [CODE[POST]] でも受け付けてくれます。
+[TIME[2019-01-03T12:14:20.800Z]]
+
+[51] 
+[[Chrome]] は
+[CODE[applicationServerKey]] なしで [CODE[subscribe]] できず、
+[[拒絶]]されます。
+ありだと
+[CODE[https://fcm.googleapis.com/fcm/send/...]] 
+のような [[URL]] を返してきます。
+ただの [CODE[POST]] では受け付けてくれません。
+[CODE[Authorization:]] [[ヘッダー]]がないと
+[CODE[400 UnauthorizedRegistration]] を返します。
+[CODE[Authorization:]] [[ヘッダー]]が構文エラーだと
+[CODE[500 Internal Server Error]] を返します。
+[CODE[Authorization:]] [[ヘッダー]]の内容がおかしいと
+[CODE[400 InvalidParameters]] を返します。
+[CODE[Authorization:]] [[ヘッダー]]の [CODE[k=]]
+が違う鍵だと
+[CODE[ 403 MismatchSenderId]] を返します。
+暗号化された[[本体]]データが壊れていても、
+[CODE[201 Created]] を返して成功に見えますが、
+[[Webブラウザー]]には (あるいは[[サービスワーカー]]には?) 伝わりません。
+[[本体]]がまったく含まれておらず [CODE[Content-Encoding:]]
+もなければ正常に処理されます。
+[CODE[TTL:]] がないと [CODE[400 InvalidTtlParameter]] を返します。
+[CODE[sub]] は省略可能です。
+[CODE[unsubscribe]] 済みだと [CODE[410 NotRegistered]] を返します。
+[TIME[2019-01-04T01:08:53.900Z]]
+
+
+[HISTORY[
+
+[15] [[Chrome]] は [[GCM]] を使っているので、その [[Web API]] で push を送信できます。
+受信したエンドポイントURLが [CODE[https://android.googleapis.com/gcm/send/]]
+から始まるなら、その続きの部分を ID として、
+[CODE[https://android.googleapis.com/gcm/send]] に [[JSON]]
+で [CODE[POST]] します。 (詳しくは [[GCM]] のドキュメント参照。)
+複数のクライアントのIDをまとめて送信できます。
+
+[14] つまり、[[エンドポイントURL]]が [[GCM]] のものだけ特別に扱い、
+それ以外の [CODE[https:]] [[URL]] について個別に [CODE[POST]] すればよいということになります。
+
+]HISTORY]
+
+
 * メモ
