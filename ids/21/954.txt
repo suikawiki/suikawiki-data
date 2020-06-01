@@ -15,6 +15,7 @@
 - [25] '''[CITE@en[Mixed Content]] ([TIME[2015-05-17 18:30:14 +09:00]] 版) <https://w3c.github.io/webappsec/specs/mixedcontent/>'''
 -- [90] [CITE@en[Mixed Content]], [TIME[2020-04-28 21:05:56 +09:00]] <https://w3c.github.io/webappsec-mixed-content/#terms>
 -- [95] [CITE@en[Mixed Content]], [TIME[2020-04-28 21:05:56 +09:00]] <https://w3c.github.io/webappsec-mixed-content/#categories>
+-- [102] [CITE@en[Mixed Content]], [TIME[2020-04-28 21:05:56 +09:00]] <https://w3c.github.io/webappsec-mixed-content/#algorithms>
 - [26] [CITE@en-GB-x-hixie[HTML Standard]] ([TIME[2015-05-06 10:42:35 +09:00]] 版) <https://html.spec.whatwg.org/#dom-websocket>
 ]REFS]
 
@@ -114,6 +115,146 @@
 [FIG(short list)[ [100] [[混合内容][Mixed Content]]制約の制御
 - [CODE[block-all-mixed-content]]
 ]FIG]
+
+* 処理
+
+[103] 
+[[環境設定群オブジェクト]][VAR[設定群]]について
+[DFN[Does [VAR[settings]] prohibit mixed security contexts?]]
+は、
+[[真]] (Prohibits Mixed Security Contexts)
+か[[偽]] (Does Not Prohibit Mixed Security Contexts)
+を返し、
+次のようにします。
+[SRC[>>102]]
+
+[FIG(steps)[
+= [104] 
+[VAR[設定群]]の
+[F[HTTPS状態]]
+が [CODE[none]]
+で''ない''場合、
+== [105] 
+[[真]]を返し、
+ここで停止します。
+= [106] [VAR[文書]]を、[VAR[設定群]]の[F[有責文書]]に設定します。
+= [108] [VAR[文書]]が [CODE[null]] で'''ない'''場合、
+== [107] 
+[VAR[文書]]の[F[埋め込んでいる文書]]が [CODE[null]] で''ない''間、
+[[繰り返し]]、
+=== [109] 
+[VAR[文書]]を、
+[VAR[文書]]の[F[埋め込んでいる文書]]に設定します。
+=== [110] 
+[VAR[埋め込み器設定群]]を、
+[VAR[文書]]の[F[大域オブジェクト]]の[F[関連設定群オブジェクト]]に設定します。
+=== [111] 
+[VAR[埋め込み器設定群]]の
+[F[HTTPS状態]]が
+[COODE[none]]
+で''ない''場合、
+==== [112] 
+[[真]]を返します。
+= [113] [[偽]]を返します。
+]FIG]
+
+[114] おおまかにいえば、親[[フレーム]]に [CODE[https:]]
+のものがあれば[[真]]を返します。
+
+-*-*-
+
+[116] 
+[[要求]][VAR[要求]]について
+[DFN[Should fetching [VAR[request]] be blocked as mixed content?]]
+は、
+[[真]] (blocked)
+か
+[[偽]] (allowed)
+を返し、
+次のようにします。
+[SRC[>>102]]
+
+[FIG(steps)[
+= [117] 
+[VAR[要求]]の[F[クライアント][要求クライアント]]について
+[[Does [VAR[settings]] prohibit mixed security contexts?]]
+が[[偽]]の場合、
+== [118] [[偽]]を返し、ここで停止します。
+= [119] 
+[VAR[要求]]の[F[URL][要求URL]]の[F[先験的認証済]]が[[真]]の場合、
+== [120] [[偽]]を返します。
+= [121] 
+[[混合内容][Mixed Content]]を認めるよう[[利用者エージェントが設定][Webブラウザー利用者の設定]]されている場合、
+== [120] [[偽]]を返し、ここで停止します。
+= [122] 
+[VAR[要求]]の[F[終点]]が
+[CODE[document]]
+で、
+[VAR[要求]]の[F[対象閲覧文脈]]の[F[親閲覧文脈]]が 
+[CODE[null]]
+の場合、
+== [124] 
+[VAR[要求]]が[[フォーム提出]]であって[[利用者エージェント]]がこの種の[[混合内容][Mixed Content]]を検査する場合を'''除き'''、
+=== [123] [[偽]]を返し、ここで停止します。
+= [125] 
+[VAR[要求]]の[F[クライアント][要求クライアント]]の
+[F[CSPリスト]]中の各[VAR[方針]]について、順に、
+== [126] 
+[VAR[方針]]の[F[指令集合]]に
+[CODE[block-all-mixed-content]]
+[[指令]]が含まれる場合、
+=== [127] 
+[VAR[違反]]を、
+[VAR[要求]]の[F[クライアント][要求クライアント]]の[F[大域オブジェクト]]と
+[CODE[block-all-mixed-content]]
+について
+[[create-violation-for-global]]
+した結果に設定します。
+=== [128] 
+[VAR[違反]]の[VAR[資源]]を、
+[VAR[要求]]の
+[F[URL][要求URL]]
+に設定します。
+=== [129] 
+[VAR[違反]]について
+[[report-violation]]
+します。
+= [115] 
+[[任意選択的ブロック可能混合内容]]を認め''ない''よう[[利用者エージェントが設定][Webブラウザー利用者の設定]]されている場合、
+== [130] 
+[[真]]を返し、
+ここで停止します。
+= [131] 
+[VAR[要求]]の[F[クライアント][要求クライアント]]の[F[厳密混合内容検査フラグ]]が[[真]]の場合、
+== [132]  
+[[真]]を返し、
+ここで停止します。
+= [133] 
+[VAR[要求]]の[F[モード][要求モード]]が
+[[CORS]]
+の場合、
+== [134] 
+[[真]]を返し、
+ここで停止します。
+= [135] 
+[VAR[要求]]の[F[終点]]が
+[CODE[image]]
+で、
+[VAR[要求]]の [F[initiator]] が [CODE[imageset]]
+で''ない''場合、
+== [136] 
+[[偽]]を返し、
+ここで停止します。
+= [137] [VAR[要求]]の[F[終点]]が
+[CODE[video]] か [CODE[audio]]
+の場合、
+== [138] 
+[[偽]]を返し、
+ここで停止します。
+= [139] 
+[[真]]を返します。
+]FIG]
+
 
 * 利用者インターフェイス
 
