@@ -1,27 +1,38 @@
 [1] [[Webブラウザー]]は、[DFN[[RUBYB[[[証明書データベース]]]@en[certificate database]]]]
 ([DFN[[RUBYB[[[証明書ストア]]]@en[certificate store]]]]) を保持しています。
 
-* ルート証明書
+* 証明書の種別
+
+** ルート証明書
 
 [6] [[Webブラウザー]]は [[TLS]] を実装し、 [[service identity]] を検証する必要があります。
 そのため、[[証明書の検証]]に用いる[[ルート証明書]]群を保持する必要があります。
 
-[7] [[ルート証明書]]に付随して保持する必要があるメタ情報については、[[ルート証明書]]を参照。
 
 [22] [[証明書ダウンロード]]仕様では、[[利用者]]が信頼することにした[[証明書]]を[[証明書データベース]]に追加することになっています。
+[SEE[ [[証明書ダウンロード]] ]]
 
-;; [[証明書ダウンロード]]を参照。
 
-* クライアント証明書
+[31] [[Webブラウザー]]等の[[TLSクライアント]]は[[ルートCA証明書]]に次の[[メタデータ]]を付与して管理しています。
+[FIG(list members)[
+:[[EV証明書]]用であるか否か:[[EV]] 表示するかの判定に使います。
+:[[trust bits]]:適用対象の[[アプリケーション]]を表します。
+:システムに組み込まれた証明書か否か:[[Pin Validation]] で使います。
+]FIG]
+
+
+
+** クライアント証明書
 
 [20] [[Webブラウザー]]は[[TLSクライアント認証]]に対応しているのが普通です。
 [[クライアント認証]]を行うためには、[[クライアント証明書]]と (あれば)
 [[CA証明書]]を保持している必要があります。
 
+[HISTORY[
 [10] [[HTML]] の [CODE(HTMLe)@en[[[keygen]]]] [[要素]]が含まれる[[フォームの提出]]を行うと、
 [[公開鍵]]を[[サーバー]]に送信し、[[秘密鍵]]を[[ローカル鍵データベース]]に保存することになっています。
-
-;; [CODE(HTMLe)@en[[[keygen]]]] 参照。
+[SEE[ [CODE(HTMLe)@en[[[keygen]]]] ]]
+]HISTORY]
 
 [11] [[証明書ダウンロード]]仕様では、[[利用者]]の[[証明書]]をダウンロードすると、
 それに対応する[[秘密鍵]]があれば[[証明書データベース]]にその[[証明書]]を保存することになっています。
@@ -29,7 +40,7 @@
 
 ;; [[証明書ダウンロード]]参照。
 
-* ルート以外の CA 証明書
+** ルート以外の CA 証明書
 
 [8] [[ルートCA]]以外の ([[TLS]] [[サーバー証明書]]用) 
 [[CA証明書]]を保持する必要はプロトコル上はありませんが、
@@ -37,7 +48,7 @@
 
 [9] [[証明書ダウンロード]]仕様では、ダウンロードしたファイルに含まれていた[[中間証明書]]を信頼していない[[証明書]]として証明書データベースに追加することとなっています。
 
-* S/MIME 証明書
+** S/MIME 証明書
 
 [12] [[証明書ダウンロード]]仕様では、 [[S/MIME]] 用の[[証明書]]をダウンロードすると、
 [[証明書データベース]]にその[[証明書]]を保存することになっています。
@@ -47,11 +58,10 @@
 [13] これは他人に [[S/MIME]] で[[電子メール]]を送る時に使うものです。
 直接または間接に[[電子メール]]の送信に対応していない[[クライアント]]では意味がありません。
 
-* 失効情報
+** 失効情報
 
 [23] [[証明書]]自体に加えて、[[証明書]]の[[失効]]情報も保持し、最新に保つ必要があります。
-
-;; [[CRL]] 参照。
+[SEE[ [[CRL]] ]]
 
 * 適用範囲
 
@@ -63,6 +73,13 @@
 
 [5] 特定の[[証明書]]は特定の[[ドメイン]]や[[起源]]でのみ利用するよう設定できるかもしれません。
 
+[40] 
+[[Web]]
+以外の目的と共用の[[証明書データベース]]の場合、
+[[証明書]]ごとに
+[[Web]]
+やその他の[[応用]]で利用できるか否かの情報を保有しているかもしれません。
+
 * データベースの編集
 
 [18] 多くの [[Webブラウザー]]は、[[証明書データベース]]を閲覧したり、
@@ -71,6 +88,40 @@
 ;; [21] その機能の一部または全部を [[OS]] に委ねているものもあります。
 
 [19] [[Webブラウザー]]によっては、管理者用の [[API]] 等で[[証明書データベース]]を操作できることがあります。
+
+** ルート証明書の追加
+
+[79] 普通は[[ルート証明書]]を一般利用者が手動で追加しなければならないことはありませんし、
+するべきでもありません。
+
+[80] 例外的に、次のような状況があります。 ([[利用者]]といっても本当の[[末端利用者]]ではなく、
+[[システム管理者]]が追加するのが普通かもしれませんが。)
+
+[FIG(list)[
+- [81] [[イントラネット]]等の対象利用者が限定されるシステムにアクセスする際に、
+私的な[[認証局]]が用いられるため、その[[ルート証明書]]を追加する必要がある場合
+- [82] [[ネットワーク]]の制約上、 [[MITM proxy]] を利用する必要があり、
+その用いる[[ルート証明書]]を追加する必要がある場合
+- [84] [[TLS]] を用いる[[アプリケーション]]の開発で、
+その場限りの開発用の[[証明書]]を発行して利用する場合に、
+その[[ルート証明書]]を追加する必要がある場合
+]FIG]
+
+
+
+[56] 
+[[プラットフォーム]]によっては、
+第三者ソフトウェアが[[ルート証明書]]をデータベースに容易に追加できます。
+そのため[[利用者]]が意図せず[[ルート証明書]]をインストールしてしまうことがあり、
+実際に被害が発生しています。
+[SEE[ [[ルート証明書]] ]]
+
+[57] 
+[[プラットフォーム]]はこうした被害を防ぐ仕組みを整備するべきです。
+多くの
+[[Webブラウザー]]は、
+事業者によって予め確認された[[ルート証明書]]と、
+そうした別途追加された[[ルート証明書]]を区別できるようにしています。
 
 * キャッシュ
 
@@ -96,6 +147,170 @@
 通常の[[窓]]と[[シークレットウィンドウ]]は別[[セッション]]扱いで、
 [[キャッシュ]]が共有されていないためとみられます。
 ]EG]
+
+* ルート証明書追加ポリシー
+
+[47] 各種の [[OS]] や [[Webブラウザー]]の事業者は、自身の製品に含める[[ルート証明書]]について基準を設けて公表しています。
+各[[ルートCA]]は各基準に従い運用していることを事業者に示し、
+[[ルート証明書]]を事業者に提供しています。
+
+[48] 各事業者の基準はそれぞれに異なりますが、 [[CA/Browser Forum]] の運用基準や
+[[WebTrust]] の監査基準に従うこと、またはそれに相当することを求めているものもあります。
+
+[49] いずれにせよ、ほとんどの[[利用者]]は[[ルート証明書]]の選択を完全に[[利用者エージェント]]に委ねていますから、
+各事業者が[[ルートCA]]を厳格に審査し信頼できる[[ルート証明書]]のみを含めることが極めて重要です。
+
+[65] 現在の [[Webブラウザー]]は、[[ルート証明書]]を含めるかどうかに加えて、
+[[EV証明書]]として扱うかどうかも判断する必要があります。
+
+;; [66] [[ルートCA]]が[[EV証明書]]のつもりで[[発行]]したかどうかは[[証明書]]の内容から判断できますが
+([[EV OID]] 参照)、[[EV]] であると信用する[[ルート証明書]]を使ったもののみが
+[[Webブラウザー]]上で [[EV証明書]]として表示されます。ですから、
+[[EV証明書]]のつもりで購入したものが、ある[[Webブラウザー]]では非 [[EV]]
+とみなされる可能性はあります。 (実際上、[[EV証明書]]を発行する[[ルートCA]]
+で [[EV]] 発行元として [[Webブラウザー]]事業者に承認されず、しかし非 [[EV]]
+の[[ルート証明書]]としては承認されるような事例があるのかどうかはわかりません。)
+
+[52] 各事業者は[[ルートCA]]に費用を請求していないようです。
+
+[REFS[
+- [43] [CITE@en-US[Info about Root-Embedding Programs - CA Trust Anchors in Browsers/OS]]
+([TIME[2015-04-02 12:22:39 +09:00]] 版)
+<https://cabforum.org/browser-os-info/>
+- [25] [CITE@en[Mozilla CA Certificate Policy — Mozilla]]
+([TIME[2015-04-06 18:34:55 +09:00]] 版)
+<https://www.mozilla.org/en-US/about/governance/policies/security-group/certs/policy/>
+-- [26] [CITE@en[Mozilla CA Certificate Inclusion Policy — Mozilla]]
+([TIME[2015-04-06 18:36:16 +09:00]] 版)
+<https://www.mozilla.org/en-US/about/governance/policies/security-group/certs/policy/inclusion/>
+-- [39] [CITE@en[Mozilla CA Certificate Maintenance Policy — Mozilla]] ([TIME[2015-04-06 23:03:08 +09:00]] 版) <https://www.mozilla.org/en-US/about/governance/policies/security-group/certs/policy/maintenance/>
+-- [40] [CITE@en[Mozilla CA Certificate Enforcement Policy — Mozilla]] ([TIME[2015-04-06 23:03:24 +09:00]] 版) <https://www.mozilla.org/en-US/about/governance/policies/security-group/certs/policy/enforcement/>
+- [44] [CITE@en[Introduction to The Microsoft Root Certificate Program - TechNet Articles - United States (English) - TechNet Wiki]]
+([TIME[2015-04-02 12:21:48 +09:00]] 版)
+<http://social.technet.microsoft.com/wiki/contents/articles/3281.introduction-to-the-microsoft-root-certificate-program.aspx>
+-- [51] [CITE@en[Microsoft Root Certificate Program]] ([TIME[2015-04-06 23:20:22 +09:00]] 版) <https://technet.microsoft.com/en-us/library/cc751157.aspx>
+- [45] [CITE[Root Certificate Policy - The Chromium Projects]]
+([TIME[2015-04-02 11:12:06 +09:00]] 版)
+<http://dev.chromium.org/Home/chromium-security/root-ca-policy>
+- [46] [CITE@en-US[Apple - Root Certificate Program]]
+([[Apple Inc.]] 著, [TIME[2015-04-02 12:22:45 +09:00]] 版)
+<http://www.apple.com/certificateauthority/ca_program.html>
+- [5] [CITE@ja[Operaに含まれているルート証明書の取得]]
+([[ドキュメント]] 著, [TIME[2015-03-14 20:51:34 +09:00]] 版)
+<http://www.opera.com/docs/ca/>
+]REFS]
+
+[53] [[Chrome]] は [[OS]] が[[ルート証明書]]を持っていれば、それを使うようです。
+しかし [[EV]] かどうかの判定は原則として自身で行うようです。
+
+[67] [[ルート証明書]]として事業者が承認したものが [[Webブラウザー]]や [[OS]]
+に反映されるまでの時差は、製品毎に異なります。自動更新機能がない製品では、
+事業者が更新版を提供しても所有者がそれを適用しない可能性もあります。
+また更新が行われなくなった古い製品では[[ルート証明書]]の更新も行われません。
+そのため[[相互運用性]]の問題が生じることもあります (>>38)。
+
+;; そのため[[クロスルート証明書]]のような技法が採られることがあります。
+
+[41] [CITE@en-US[Mozilla CA Certificate Policy]]
+( ([[Frank Hecker and Kathleen Wilson]] 著, [TIME[2013-12-03 01:48:20 +09:00]] 版))
+<http://www.mozilla.org/projects/security/certs/policy/>
+
+[FIG(quote)[
+[FIGCAPTION[
+[42] [CITE[Certificate Authority Program]]
+([TIME[2015-04-06 14:29:01 +09:00]] 版)
+<http://web.archive.org/web/19970727173502/http://home.netscape.com/assist/security/certificates/caprogram.html>
+]FIGCAPTION]
+
+> The Certificate Authority Program is designed to make it easier for Netscape customers to get certificates. For more information on getting a personal certificate, check out the Certificate Authorities that are currently offering client and server certificate services.
+> The Certificate Authority program is open to Certificate Authorities that meet an established set of criteria. Certificate Authorities may participate at the Premier, Distinguished, and Basic levels, though the Premier level is closed at this time.
+
+]FIG]
+
+* Mozilla の CA 証明書集
+
+[54] [[オープンソースソフトウェア]]の多くは [[Mozilla]] 
+が管理する[[ルート証明書]]を取り出したものを利用しているようです。
+[[Unix]] 系の [[OS]] では大抵標準のパッケージとして提供されています。
+
+[REFS[
+- [4] [CITE[cURL - Extract CA Certs from Mozilla]]
+([TIME[2015-02-09 19:02:35 +09:00]] 版)
+<http://curl.haxx.se/docs/caextract.html>
+- [3] [CITE@en[gisle/mozilla-ca]]
+([TIME[2015-03-08 10:01:49 +09:00]] 版)
+<https://github.com/gisle/mozilla-ca>
+-- [68] [CITE@en[mozilla-ca/cacert.pem at master · gisle/mozilla-ca]] ([TIME[2015-05-01 19:39:17 +09:00]] 版) <https://github.com/gisle/mozilla-ca/blob/master/lib/Mozilla/CA/cacert.pem>
+- [2] [CITE[Mozilla::CA - search.cpan.org]]
+([TIME[2015-03-08 10:00:58 +09:00]] 版)
+<http://search.cpan.org/dist/Mozilla-CA/lib/Mozilla/CA.pm>
+]REFS]
+
+[55] なお [[Mozilla]] の[[ルート証明書]]の一覧は、 ([[ソースコード]]の他)
+>>7 にもあります。
+
+[REFS[
+- [7] [CITE@en[CA:IncludedCAs - MozillaWiki]]
+([TIME[2015-03-21 11:10:02 +09:00]] 版)
+<https://wiki.mozilla.org/CA:IncludedCAs>
+- [29] [CITE@en[CA:PendingCAs - MozillaWiki]]
+([TIME[2015-04-06 13:44:18 +09:00]] 版)
+<https://wiki.mozilla.org/CA:PendingCAs>
+]REFS]
+
+;; [59] [[Mozilla]] は[[中間CA]]は含まず[[ルートCA]]にだけ言及していると思われる箇所でも全般的に単に
+[[CA]] と呼んでいるようです。
+
+
+[36] [[相互運用性]]のためにはすべての[[クライアント]]がまったく同じ[[ルート証明書]]の[[集合]]を保持している必要がありますが、
+実際には各[[クライアント]]の開発元や[[クライアント]]を実行する環境のシステム管理者、
+末端の[[利用者]]の設定などによって利用できる[[ルート証明書]]は異なります。
+
+[38] 実際に、 [[HTTPS]] で利用される[[サーバー証明書]]が変更され必要な[[ルート証明書]]が変化し、ある日突然[[クライアント]]が正しく動作しなくなるといったトラブルがしばしば起こっています。
+
+[37] 多くの環境で利用できる[[ルート証明書]]を用いた[[証明書]]ほど[[相互運用性]]が高いため、
+[[証明書]]を[[発行]]する [[CA]] を選択する基準の一つともなっています。
+
+;; [72] 往々にしてそのような [[CA]] ほど[[証明書]]の発行手数料は高額です。
+
+[FIG(quote)[
+[FIGCAPTION[
+[7] [CITE@en[Necko/Differences - MozillaWiki]]
+([TIME[2015-03-21 17:34:27 +09:00]] 版)
+<https://wiki.mozilla.org/Necko/Differences>
+]FIGCAPTION]
+
+> Our SSL CA certificate database is basically a subset of Windows' and Mac OS X's, so our users are probably more likely to encounter certificate error pages unnecessarily.
+
+]FIG]
+
+[12] [CITE[Node-v0.10.34がはまったクロスルート証明書とOpenSSLの落とし穴 - ぼちぼち日記]]
+([TIME[2015-03-04 23:16:15 +09:00]] 版)
+<http://d.hatena.ne.jp/jovi0608/20141222/1419265270>
+
+[13] [CITE[携帯電話とSSLルート証明書]]
+([TIME[2015-02-18 02:34:53 +09:00]] 版)
+<http://triaez.kaisei.org/~kaoru/ssl/cell.html>
+
+[17] [CITE[gitやcurlやwgetでGitHubにアクセスするとcertification errorになる原因を調べてみた - Dマイナー志向]]
+([TIME[2015-03-29 12:43:51 +09:00]] 版)
+<http://d.hatena.ne.jp/tmatsuu/20110614/1308010044>
+
+[18] [CITE[RHEL5/CentOS5でGlobalSignのルート証明書が有効期限切れで大騒ぎ - インフラエンジニアway - Powered by HEARTBEATS]]
+([TIME[2015-04-06 14:55:45 +09:00]] 版)
+<http://heartbeats.jp/hbblog/2014/01/rhel5centos5globalsign.html>
+
+[FIG(quote)[
+[FIGCAPTION[
+[27] [CITE[cURL - Extract CA Certs from Mozilla]]
+([TIME[2015-02-09 19:02:35 +09:00]] 版)
+<http://curl.haxx.se/docs/caextract.html>
+]FIGCAPTION]
+
+> Around early September 2014, Mozilla removed the trust bits from the certs in their CA bundle that were still using RSA 1024 bit keys. This may lead to TLS libraries having a hard time to verify some sites if the library in question doesn't properly support "path discovery" as per RFC 4158. (That includes OpenSSL and GnuTLS.)
+
+]FIG]
+
 
 * 実装
 
@@ -124,7 +339,7 @@
 がその内容を管理しています
 [SEE[ [[mozilla-ca]] ]]。
 
-[38] 
+[50] 
 多くの
 [[Linux]]
 システムや
@@ -147,6 +362,40 @@
 [FIG(short list)[
 - [[Java KeyStore]]
 ]FIG]
+
+
+
+[FIG(quote)[
+[FIGCAPTION[
+[60] [CITE@ja[作ろうiモードコンテンツ:主なスペック | サービス・機能 | NTTドコモ]]
+([TIME[2015-04-06 15:02:31 +09:00]] 版)
+<https://www.nttdocomo.co.jp/service/developer/make/content/ssl/spec/>
+]FIGCAPTION]
+
+> 以下7種類の認証局に対応したルート証明書(以下、端末側ルート証明書)が、SSL対応機種にそれぞれ搭載されています。
+
+]FIG]
+
+
+[FIG(quote)[
+[FIGCAPTION[
+[58] [CITE@ja[Mobile Creation | ソフトバンクモバイル]]
+([TIME[2014-08-29 10:51:46 +09:00]] 版)
+<http://creation.mb.softbank.jp/mc/tech/tech_web/web_ssl.html>
+]FIGCAPTION]
+
+> ルート証明書
+> 下記8社31種類のCAが発行したサーバ証明書に対応しています。
+
+]FIG]
+
+
+
+
+[62] [CITE[src/crypto/x509/root_unix.go - The Go Programming Language]]
+([TIME[2015-04-16 18:33:59 +09:00]] 版)
+<https://golang.org/src/crypto/x509/root_unix.go>
+
 
 * セキュリティー
 
@@ -173,21 +422,44 @@
 
 * メモ
 
-[14] [CITE[chrome.platformKeys - Google Chrome]]
+[63] [CITE[chrome.platformKeys - Google Chrome]]
 ([TIME[2015-04-14 13:48:36 +09:00]] 版)
 <https://developer.chrome.com/extensions/platformKeys>
 
-[15] [CITE[chrome.enterprise.platformKeys - Google Chrome]]
+[14] [CITE[chrome.enterprise.platformKeys - Google Chrome]]
 ([TIME[2015-04-14 13:48:46 +09:00]] 版)
 <https://developer.chrome.com/extensions/enterprise_platformKeys>
 
-[16] [CITE[Developer Guide: Certificate Management Extension API on Chrome OS - The Chromium Projects]]
+[15] [CITE[Developer Guide: Certificate Management Extension API on Chrome OS - The Chromium Projects]]
 ([TIME[2015-04-14 09:20:04 +09:00]] 版)
 <http://www.chromium.org/administrators/certificate-management-extension-api-on-chrome-os>
 
-[17] [CITE[Mozilla または Firefox ブラウザへの証明書の読み込み (Service Registry 3.1 ユーザーズガイド (2006Q4))]]
+[16] [CITE[Mozilla または Firefox ブラウザへの証明書の読み込み (Service Registry 3.1 ユーザーズガイド (2006Q4))]]
 ([TIME[2011-02-03 21:53:18 +09:00]] 版)
 <https://docs.oracle.com/cd/E19528-01/819-7126/gaesv/index.html>
 
-[31] [[Linux]] では、 [CODE[/etc/ssl/certs/]] あたりに[[証明書]]が保管されていて、
+[61] [[Linux]] では、 [CODE[/etc/ssl/certs/]] あたりに[[証明書]]が保管されていて、
 [[OpenSSL]] などから参照されるのが一般的です。
+
+
+[69] [CITE@ja[Certificate pinningの実装におけるPrivate trust anchorの判定について調べてみる - ももいろテクノロジー]]
+([TIME[2015-06-06 22:08:32 +09:00]] 版)
+<http://inaz2.hatenablog.com/entry/2015/02/25/024431>
+
+[FIG(quote)[
+[FIGCAPTION[
+[70] [CITE[Security FAQ - The Chromium Projects]]
+([TIME[2015-06-06 06:30:25 +09:00]] 版)
+<http://www.chromium.org/Home/chromium-security/security-faq#TOC-How-does-key-pinning-interact-with-local-proxies-and-filters->
+]FIGCAPTION]
+
+> To enable certificate chain validation, Chrome has access to two stores of trust anchors: certificates that are empowered as issuers. One trust anchor store is the system or public trust anchor store, and the other other is the local or private trust anchor store. The public store is provided as part of the operating system, and intended to authenticate public internet servers. The private store contains certificates installed by the user or the administrator of the client machine. Private intranet servers should authenticate themselves with certificates issued by a private trust anchor.
+>  Chrome’s key pinning feature is a strong form of web site authentication that requires a web server’s certificate chain not only to be valid and to chain to a known-good trust anchor, but also that at least one of the public keys in the certificate chain is known to be valid for the particular site the user is visiting. This is a good defense against the risk that any trust anchor can authenticate any web site, even if not intended by the site owner: if an otherwise-valid chain does not include a known pinned key (“pin”), Chrome will reject it because it was not issued in accordance with the site operator’s expectations.
+
+]FIG]
+
+
+[74] [CITE@ja[Equifax 1024 ビットルート証明書への信頼が打ち切られます | Firefox サイト互換性情報]]
+([TIME[2015-11-05 06:12:09 +09:00]] 版)
+<https://www.fxsitecompat.com/ja/docs/2015/equifax-1024-bit-root-certificate-will-no-longer-be-trusted/>
+
