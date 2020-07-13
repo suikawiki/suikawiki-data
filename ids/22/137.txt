@@ -4,32 +4,14 @@
 * 仕様書
 
 [REFS[
-- [290] '''[CITE@en-US[Fetch Standard]] ([TIME[2014-06-30 12:53:29 +09:00]] 版) <http://fetch.spec.whatwg.org/#origin-header>'''
-- [306] [CITE@en-US[Fetch Standard]] ([TIME[2014-06-30 12:53:29 +09:00]] 版) <http://fetch.spec.whatwg.org/#cors-request>
-- [307] [CITE@en-US[Fetch Standard]] ([TIME[2014-06-30 12:53:29 +09:00]] 版) <http://fetch.spec.whatwg.org/#concept-http-network-or-cache-fetch>
+- [49] [CITE[[[Fetch Standard]]]]
+-- [290] '''[CITE@en-US[Fetch Standard]] ([TIME[2014-06-30 12:53:29 +09:00]] 版) <http://fetch.spec.whatwg.org/#origin-header>'''
+-- [306] [CITE@en-US[Fetch Standard]] ([TIME[2014-06-30 12:53:29 +09:00]] 版) <http://fetch.spec.whatwg.org/#cors-request>
+-- [307] [CITE@en-US[Fetch Standard]] ([TIME[2014-06-30 12:53:29 +09:00]] 版) <http://fetch.spec.whatwg.org/#concept-http-network-or-cache-fetch>
 - [125] [CITE@en-US-x-hixie[HTML Standard]] ([TIME[2012-02-22 20:11:59 +09:00]] 版) <http://www.whatwg.org/specs/web-apps/current-work/#fetch>
 - [302] [CITE@en-US[Fetch Standard]] ([TIME[2014-06-30 12:53:29 +09:00]] 版) <http://fetch.spec.whatwg.org/#forbidden-header-name>
 ]REFS]
 
-* 文脈
-
-[296] [[要求メソッド]]が [CODE[GET]] でも [CODE[HEAD]] でも''ない''[[要求]]や、
-[[WebSocket接続の確立]]の[[要求]]、
-[[CORS]] を使った他の[[起源]]への[[要求]]に含まれます [SRC[>>290]]。
-
-;; [297] 互換性の問題からすべての[[要求]]には含まれません [SRC[>>290]]。
-
-;; [42] [[プロキシ]]に接続するための [CODE[CONNECT]] には含まれません。
-
-[298] [[Webブラウザー]]など[[同一起源ポリシー]]で管理された[[クライアント]]からの[[要求]]には [CODE(HTTP)@en[[[Origin:]]]] [[ヘッダー]]が含まれますが、
-それ以外の[[要求]]には普通は [CODE(HTTP)@en[[[Origin:]]]] [[ヘッダー]]は含まれません。
-
-[HISTORY[
-[308] [[fetch]] において、[DFN[[RUBYB[[[[CODE[Origin]]ヘッダー省略フラグ]]]@en[omit-[CODE(HTTP)[Origin]]0header flag]]]]が未設定の時、
-[[HTTP要求]]に [CODE(HTTP)@en[[[Origin:]]]] [[ヘッダー]]が設定されます [SRC[>>307]]。
-
-;; [28] 初期値は未設定です [SRC[>>306]]。
-]HISTORY]
 
 * 構文
 
@@ -83,6 +65,98 @@
 [REFS[
 - [195] [CITE@en[HTTP access control - MDN]] ([TIME[2012-02-29 23:20:44 +09:00]] 版) <https://developer.mozilla.org/en/http_access_control#Origin>
 ]REFS]
+
+* 文脈
+
+
+[50] 
+[[Webブラウザー]]の
+[[fetch]]
+アルゴリズムは、
+送信する[[HTTP要求]]の多くに、
+[[HTTPヘッダー]]
+[CODE[Origin:]]
+を付与します。
+
+[51] 
+[DFN[[RUBYB[要求[CODE[Origin]]ヘッダーの追加][append a request `[CODE[Origin]]` header]]]]
+は、
+[VAR[要求]]と
+[VAR[CORSフラグ]]について、
+次のようにします。
+[SRC[>>49]]
+
+[FIG(steps)[
+
+= [53] 
+[VAR[直列化起源]]を、
+[VAR[要求]]について[[要求起源を直列化]]した結果に設定します。
+= [54] 
+[VAR[CORSフラグ]]が[[真]]か、
+[VAR[要求]]の[F[モード][要求モード]]が
+[CODE[websocket]]
+の場合、
+== [55] 
+[VAR[要求]]の[F[ヘッダーリスト]]に、
+[CODE[Origin]]/[VAR[直列化起源]]を[[末尾に追加]]します。
+= [56] 
+それ以外の場合で、
+[VAR[要求]]の[F[メソッド][要求メソッド]]が
+[CODE[GET]] でも [CODE[HEAD]] でも''ない''場合、
+== [58] 
+[VAR[要求]]の[F[参照元ポリシー]]により、
+[FIG(switch)[
+
+: [CODE[no-referrer]] : [VAR[直列化起源]]を、 [CODE[null]] に設定します。
+: [CODE[no-referrer-when-downgrade]], [CODE[strict-origin]], [CODE[strict-origin-when-cross-origin]]: 
+[FIG(steps)[
+= [59] 
+[VAR[要求]]の[F[起源]]が[[項組起源]]で、
+[VAR[要求]]の[F[起源]]の[F[scheme][URL scheme]]が [CODE[https]] で、
+[VAR[要求]]の[F[現在URL]]の[F[scheme][URL scheme]]が [CODE[https]] で''ない''場合、
+== [60] 
+[VAR[直列化起源]]を、 [CODE[null]] に設定します。
+]FIG]
+: [CODE[same-origin]] :
+[FIG(steps)[
+= [61] 
+[VAR[要求]]の[F[起源]]が[VAR[要求]]の[F[現在URL]]の[F[起源]]と[[同じ起源]]で''ない''場合、
+== [62] 
+[VAR[直列化起源]]を、
+[CODE[null]]
+に設定します。
+]FIG]
+
+]FIG]
+== [57] 
+[VAR[要求]]の[F[ヘッダーリスト]]に、
+[CODE[Origin]]/[VAR[直列化起源]]を[[末尾に追加]]します。
+
+
+]FIG]
+
+;; [297] 互換性の問題からすべての[[要求]]には含まれません [SRC[>>290]]。
+
+;; [42] [[プロキシ]]に接続するための [CODE[CONNECT]] には含まれません。
+
+[298] [[Webブラウザー]]など[[同一起源ポリシー]]で管理された[[クライアント]]からの[[要求]]には [CODE(HTTP)@en[[[Origin:]]]] [[ヘッダー]]が含まれますが、
+それ以外の[[要求]]には普通は [CODE(HTTP)@en[[[Origin:]]]] [[ヘッダー]]は含まれません。
+
+[HISTORY[
+[296] [[要求メソッド]]が [CODE[GET]] でも [CODE[HEAD]] でも''ない''[[要求]]や、
+[[WebSocket接続の確立]]の[[要求]]、
+[[CORS]] を使った他の[[起源]]への[[要求]]に含まれます [SRC[>>290]]。
+
+[HISTORY[
+[308] [[fetch]] において、[DFN[[RUBYB[[[[CODE[Origin]]ヘッダー省略フラグ]]]@en[omit-[CODE(HTTP)[Origin]]0header flag]]]]が未設定の時、
+[[HTTP要求]]に [CODE(HTTP)@en[[[Origin:]]]] [[ヘッダー]]が設定されます [SRC[>>307]]。
+
+;; [28] 初期値は未設定です [SRC[>>306]]。
+]HISTORY]
+]HISTORY]
+
+
+
 
 * 処理
 
@@ -437,3 +511,11 @@
 [47] [CITE@en[Editorial: use %s ABNF notation]]
 ([[annevk]]著, [TIME[2018-12-12 20:25:58 +09:00]])
 <https://github.com/whatwg/fetch/commit/e69e9c2b73b1aac124de47e8f32ee8979dfdb77a>
+
+[48] [CITE@en[Make the Origin header honor Referrer Policy (outside of CORS)]]
+([[JuniorHsu]]著, [TIME[2019-06-27 18:38:15 +09:00]])
+<https://github.com/whatwg/fetch/commit/cc80ec58d24668413b7a3c7160d9b4d83ace7b20>
+
+[52] [CITE@en[Make the Origin header honor Referrer Policy (outside of CORS)]]
+([[JuniorHsu]]著, [TIME[2019-06-27 18:38:15 +09:00]])
+<https://github.com/whatwg/fetch/commit/cc80ec58d24668413b7a3c7160d9b4d83ace7b20>
