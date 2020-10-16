@@ -1,13 +1,16 @@
 [4] [DFN[ChromeDriver]] は、 [[Chrome]] 用の [[WebDriver]] [[サーバー]]です。
 
-[1] [CITE[ChromeDriver]]
+[REFS[
+- [1] [CITE[ChromeDriver]]
 ( ([TIME[2014-10-27 18:18:21 +09:00]] 版))
 <https://sites.google.com/a/chromium.org/chromedriver/>
-
+-
 [2] [CITE[ChromeDriver - selenium - Information about the Chrome Driver - Browser automation framework - Google Project Hosting]]
 ( ([TIME[2014-10-30 08:34:50 +09:00]] 版))
 <https://code.google.com/p/selenium/wiki/ChromeDriver>
+]REFS]
 
+* 入手
 
 [8] 
 [[ChromeDriver]]
@@ -39,11 +42,13 @@
 [[ChromeDriver]]
 を取得できます。
 
+* ChromeDriver に接続できない
 
 
 [3] 謎の [CODE(HTTP)[[[401]]]] エラーが返る時はアクセス元のチェックで弾かれている可能性があります。
 値なしの [CODE[[[--whitelisted-ips]]]] を指定するとなおるかもしれません。
 
+* Chrome が起動しない
 
 [5] 
 unknown error: Chrome failed to start: exited abnormally.\n  (unknown error: DevToolsActivePort file doesn't exist)\n  (The process started from chrome location /usr/bin/google-chrome is no longer running, so ChromeDriver is assuming that Chrome has crashed.)
@@ -55,6 +60,49 @@ unknown error: Chrome failed to start: exited abnormally.\n  (unknown error: Dev
 
 [7] 
 例えば依存ライブラリ― ([CODE[.so]] ファイル) がなくて起動できないときにもこのエラーが出ます。
+
+* 大きな画像データでクラッシュする
+
+[17] 
+[[Docker]]
+で
+[[ChromeDriver]]
+を動かしていると、
+小さな画像の処理はうまくいくのに、
+大きな画像の処理がうまくいかず、
+session deleted because of page crash
+エラーが出ることがあります。
+[CODE[img]]
+や
+[[CSS]]
+の[[画像処理]]や、
+[[スクリーンショット]]などが失敗したり、しなかったりします。
+
+[18] 
+[CODE[docker run]]
+の実行時のオプションに
+[CODE[[[--shm-size]] 2g]]
+のように指定しておくと、
+解消します。
+
+[19] 
+[[Fargate]]
+ではこれに相当するオプションが使えません。そこで
+[[WebDriver]]
+のセッション作成時のオプションで
+
+[PRE(code)[
+"desiredCapabilities": {
+  "chromeOptions": [
+    "args": [
+       "--disable-dev-shm-usage"
+     ]
+    }
+}
+]PRE]
+
+... を指定することで、回避できます。
+
 
 [11] [CITE@en[1097 - session deleted because of page crash - Grid v.2.45.0 - Node config : {seleniumProtocol=WebDriver, platform=LINUX, browserName=chrome, maxInstances=5} - chromedriver]]
 ([TIME[2020-10-16T02:14:07.000Z]])
@@ -71,3 +119,13 @@ unknown error: Chrome failed to start: exited abnormally.\n  (unknown error: Dev
 [14] [CITE@en[UnknownError: session deleted because of page crash from tab crashed · Issue #20 · elgalu/docker-selenium]]
 ([TIME[2020-10-16T02:14:29.000Z]])
 <https://github.com/elgalu/docker-selenium/issues/20>
+
+[15] [CITE@en[736452 - Add an option to use /tmp instead of /dev/shm - chromium]]
+([TIME[2020-10-16T02:44:21.000Z]])
+<https://bugs.chromium.org/p/chromium/issues/detail?id=736452>
+
+[16] [CITE@en[Fargate doesn't support docker shm parameter needed for stable Firefox and Chrome · Issue #8 · xilution/xilution-selenium-grid]]
+([TIME[2020-10-16T02:44:37.000Z]])
+<https://github.com/xilution/xilution-selenium-grid/issues/8>
+
+* メモ
