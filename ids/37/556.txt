@@ -587,7 +587,69 @@
 
 * 文字コード
 
-** Unicode の鏡像文字
+** Unicode の鏡像化
+
+
+[225] 
+[[Unicode]]
+は
+[[bidi]]
+を表示順ではなく意味順に[[文字]]を並べることで実現しています。
+その結果[[左横書き]]と[[右横書き]]で同じ意味でも[[字形]]が逆になるケースが出てきますが、
+あくまで[[文字]]データは意味順で適切なものを選び、
+表示の際に相応しい[[グリフを選ぶ][グリフの選択]]こととしています。
+
+[220] 
+[[括弧]]類には [CODE[LEFT]] や [CODE[RIGHT]]
+のような[[文字の名前]]が与えられています。
+しかしこれらは開き括弧、閉じ括弧を意味し、
+[[書字方向]]に関わらず方向ではなく意味で使うとされています
+[SRC[>>2]]。
+
+[221] 
+[[Unicode Bidirectional Algorithm]]
+の
+[DFN[L4]]
+は、
+[[文字]]の[[解決済方向性]]が
+[CODE[R]]
+であって、かつ[[文字]]の
+[CODE[Bidi_Mirrored]]
+[[特性][特性 (UCD)]]値が[[真]]である[[場合、その場合に限って][if and only if]]、
+[[鏡像化グリフ]]で描画することと定めています
+[SRC[>>6]]。
+ただし [[HL6]]
+が適用される場合は例外となります
+[SRC[>>6, >>5, >>2]]。
+
+[226] 
+意図した[RUBYB[[[意味]]][semantics]]を表す適切な[[文字]]を使うため、
+また[[相互運用性]]や[[セキュリティー][文字のセキュリティー]]を防ぐため、
+実装は
+[[L4]]
+に従い適切に[[鏡像化]]しなければ[RUBYB[なりません][must]]。
+[SRC[>>2]]
+
+[222] 
+[[Unicode Bidirectional Algorithm]]
+の
+[DFN[HL6]]
+は、
+[[上位層プロトコル]]次第で、
+特定の状況で、
+[CODE[Bidi_Mirrored]]
+[[特性][特性 (UCD)]]値が[[偽]]であっても、
+[[鏡像化グリフ]]で描画できるとしています。
+歴史的な[[用字系]]とその[[句読点]]、
+[[私用文字]]、
+[[数式]]中の[[文字]]などの状況が想定されます。
+次のいずれかまたは両方の条件に合致する[[文字]]となります。
+[SRC[>>5]]
+
+- [223] [[解決済方向性]]が [CODE[R]] の[[文字]]
+- [224] [[解決済方向性]]が [CODE[L]] で、
+[[双方向的型]]が [CODE[R]] または [CODE[AL]]
+の[[文字]]
 
 [177] 
 [[UCD]]
@@ -610,6 +672,14 @@
 <https://chars.suikawiki.org/set/%24unicode%3ABidi_Mirrored>
 ]REFS]
 
+[227] 
+[[鏡像化]]には、
+[[括弧]]のように組になった[[文字]]があって、
+一方の[[鏡像化]]が他方になっているケースと、
+そうでないケースがあります。
+組になっている[[文字]]の情報は、
+[CODE[Bidi_Mirroring_Glyph]]
+として提供されています [SRC[>>2]]。
 
 [179] 
 [[UCD]]
@@ -622,7 +692,8 @@
 に収録されています。
 [[鏡像化]]によって想定される[[グリフ]]を持った[[文字]]を表します
 [SRC[>>168]]。
-例えば[[開き括弧]]に対する[[閉じ括弧]]が記述されています。
+例えば[[開き括弧]]の[[符号位置]]の[[特性]]値は、
+[[閉じ括弧]]になっています。
 
 [176] 
 値は[[符号位置]]か [CODE[<none>]] です。
@@ -630,18 +701,6 @@
 が[[真]]であっても、
 [[鏡像化]]して他の[[文字]]の[[グリフ]]と一致しないものは、
 この値を持ちません。
-
-
-[181] 
-この[[写像]]のうちいくつかは
-「"BEST FIT" mirroring pairs」
-とされるものがあって、
-[CODE[BidiMirroring.txt]]
-に
-[DFN[[CODE[BEST FIT]]]]
-とマーキングされています。
-[SRC[>>178]]
-組になっていても単純に入れ替えるだけで済まないものが表されているようです。
 
 [180] 
 [[Unicode 5.1]]
@@ -654,6 +713,26 @@
 [[Unicode]]
 側の変更で一致しなくなっています。
 [SRC[>>178]]
+
+
+
+
+[181] 
+この[[写像]]のうちいくつかは
+「"BEST FIT" mirroring pairs」
+とされるものがあって、
+[CODE[BidiMirroring.txt]]
+に
+[DFN[[CODE[BEST FIT]]]]
+とマーキングされています
+[SRC[>>178]]。
+その場合、
+組になっている方と入れ替えて[[レンダリング]]しても構いませんが、
+理想的には[[鏡像化グリフ]]は他の字形となるべきです [SRC[>>2]]。
+[[開き括弧]]と[[閉じ括弧]]で左右対称になっていない字形要素が含まれるようなケースが該当しているようです。
+
+
+
 
 [REFS[
 - [194] 
@@ -680,6 +759,14 @@
 [[規定]]であり、
 [DFN[[CODE[BidiBrackets.txt]]]] [SRC[>>171]]
 に収録されています。
+[CODE[Bidi_Mirroring_Glyph]]
+とよく似ていますが、
+[CODE[Bidi_Mirroring_Glyph]]
+が[[フォント]]設計に関係しているのに対し、
+[CODE[Bidi_Paired_Bracket]]
+は
+[[Unicode Bidirectional Algorithm]]
+の[[アルゴリズム]]に関係しています。
 
 ;;
 [212] 
@@ -792,7 +879,88 @@
 実装はこれを利用して最適化できます。
 [SRC[>>178]]
 
+[HISTORY[
+[20] [[ISO/IEC 10646]]
+[CSECTION[15 [[双方向文脈]]での[[鏡像文字]]]]
 
+[37] 
+[[JIS X 0221-1:2001]] [CSECTION[19. 双方向文脈での文字]]
+は
+「左向き用及び右向き用と対をなす文字の種類」
+として括弧類を列挙していました。
+[[文字の名前]]が「LEFT」や「RIGHT」であっても、
+左右ではなく開き、閉じの意味であるとされました。
+([[GB 13000.1-93]] 20 も同じ)
+[CSECTION[附属書F (参考) 代替書式文字]] F.2.2 にこれに関係する[[代替書式文字]]の説明がありました。
+([[GB 13000.1-93]] 附属書D D1.3 も同じ)
+[CSECTION[附属書P (参考) 文字に関する追加情報]]
+にうち2文字の補足説明がありました。
+
+[38] 
+同
+[CSECTION[附属書E (参考) アラビア語の双方向文脈での鏡像文字]]
+は
+「図形記号の鏡像として表示してもよい」
+[[文字]]を列挙していました。[[括弧類]]や[[数学記号]]などが含まれていました。
+([[GB 13000.1-93]] 附属書Cも同じ)
+
+[39] 
+[[JIS X 0221:2007]] 19 は一覧表がなく、附属書Eを参照する形に改められていました。
+それは[[ユニコード]]の [[Bidi Mirrored]]
+の一覧と等しいと[[注記]]がありました。
+[CSECTION[附属書E (規定) 双方向文脈での鏡像文字]]
+は
+「図形記号の鏡像として表示してもよい」
+[[文字]]を列挙していました。[[括弧類]]や[[数学記号]]などが含まれていました。
+[CSECTION[附属書F (参考) 代替書式文字]] F.2.2 にこれに関係する[[代替書式文字]]の説明がありました。
+[CSECTION[附属書P (参考) 文字に関する追加情報]]
+にうち2文字の補足説明がありました。
+
+[40] 
+[[JIS X 0221:2014]] 15 は[[ユニコード標準]]第6.1版の 
+[[Bidi_[ASIS[Mirrord]]]]
+を参照する形に改められていました。
+
+
+
+]HISTORY]
+
+[228] 
+なお 
+[[Unicode]]
+の用語としての[RUBYB[鏡像化][mirror]]は、
+[[左横書き]]用 vs [[右横書き]]用で逆になることを意味していて、
+必ずしも左右対称であることを意味していないようです。
+
+
+[REFS[
+- [3] [[UAX #9]]
+-- [5] [CITE@en-us[[[UAX #9]]: Unicode Bidirectional Algorithm]], [TIME[2020-03-07 07:23:12 +09:00]] <https://unicode.org/reports/tr9/#HL6>
+-- [6] [CITE@en-us[[[UAX #9]]: Unicode Bidirectional Algorithm]], [TIME[2020-03-07 07:23:12 +09:00]] <https://unicode.org/reports/tr9/#L4>
+-- [2] [CITE@en-us[[[UAX #9]]: [[Unicode Bidirectional Algorithm]]]], [TIME[2020-03-07 07:23:12 +09:00]] <https://unicode.org/reports/tr9/#Mirroring>
+- [175] [CODE[UnicodeData.txt]]
+-- [167] [CITE@en-us[UAX #44: Unicode Character Database]], [TIME[2020-03-06T22:23:11.000Z]], [TIME[2020-10-18T09:34:28.933Z]] <http://www.unicode.org/reports/tr44/#Bidi_Mirrored>
+- [211] [CODE[DerivedBinaryProperties.txt]]
+-- [210] [TIME[2019-09-10T19:51:21.000Z]], [TIME[2020-10-21T08:23:16.357Z]] <https://www.unicode.org/Public/UCD/latest/ucd/extracted/DerivedBinaryProperties.txt>
+-- [209] [CITE@en-us[UAX #44: Unicode Character Database]], [TIME[2020-03-06T22:23:11.000Z]], [TIME[2020-10-21T08:21:24.759Z]] <https://www.unicode.org/reports/tr44/#Derived_Extracted>
+-[172] [CODE[BidiMirroring.txt]]
+-- [178] [TIME[2019-09-09T19:11:02.000Z]], [TIME[2020-10-18T10:58:29.073Z]] <https://www.unicode.org/Public/UCD/latest/ucd/BidiMirroring.txt>
+-- [168] [CITE@en-us[UAX #44: Unicode Character Database]], [TIME[2020-03-06T22:23:11.000Z]], [TIME[2020-10-18T09:36:01.711Z]] <http://www.unicode.org/reports/tr44/#Bidi_Mirroring_Glyph>
+- [171] [CODE[BidiBrackets.txt]]
+-- [169] [CITE@en-us[UAX #44: Unicode Character Database]], [TIME[2020-03-06T22:23:11.000Z]], [TIME[2020-10-18T09:36:52.623Z]] <http://www.unicode.org/reports/tr44/#Bidi_Paired_Bracket_Type>
+-- [170] [CITE@en-us[UAX #44: Unicode Character Database]], [TIME[2020-03-06T22:23:11.000Z]], [TIME[2020-10-18T09:37:11.515Z]] <http://www.unicode.org/reports/tr44/#Bidi_Paired_Bracket>
+]REFS]
+
+
+[REFS[
+- [12] [[Unicode Standard]]
+-- [13] [CITE[The Unicode Standard, Version 13.0 - ch06.pdf]], [TIME[2020-03-10 02:53:36 +09:00]] <https://www.unicode.org/versions/Unicode13.0.0/ch06.pdf#page=14>
+-- [14] [CITE[The Unicode Standard, Version 13.0 - ch06.pdf]], [TIME[2020-03-10 02:53:36 +09:00]] <https://www.unicode.org/versions/Unicode13.0.0/ch06.pdf#page=31>
+-- [11] [CITE[[[The Unicode Standard]], Version 13.0 - UFE10.pdf]], [TIME[2020-03-03 07:41:18 +09:00]] <https://www.unicode.org/charts/PDF/UFE10.pdf>
+-- [75] [TIME[2020-03-02T22:41:18.000Z]], [TIME[2020-10-10T08:56:35.600Z]] <https://unicode.org/charts/PDF/UFE30.pdf>
+]REFS]
+
+** Unicode の縦書き字形
 
 
 [214] 
@@ -841,146 +1009,13 @@ predominantly Upright な[[用字系]]に関連付けられた[[ブロック]]�
 です
 [SRC[>>213]]。
 
-
 [REFS[
-- [175] [CODE[UnicodeData.txt]]
--- [167] [CITE@en-us[UAX #44: Unicode Character Database]], [TIME[2020-03-06T22:23:11.000Z]], [TIME[2020-10-18T09:34:28.933Z]] <http://www.unicode.org/reports/tr44/#Bidi_Mirrored>
-- [211] [CODE[DerivedBinaryProperties.txt]]
--- [210] [TIME[2019-09-10T19:51:21.000Z]], [TIME[2020-10-21T08:23:16.357Z]] <https://www.unicode.org/Public/UCD/latest/ucd/extracted/DerivedBinaryProperties.txt>
--- [209] [CITE@en-us[UAX #44: Unicode Character Database]], [TIME[2020-03-06T22:23:11.000Z]], [TIME[2020-10-21T08:21:24.759Z]] <https://www.unicode.org/reports/tr44/#Derived_Extracted>
--[172] [CODE[BidiMirroring.txt]]
--- [178] [TIME[2019-09-09T19:11:02.000Z]], [TIME[2020-10-18T10:58:29.073Z]] <https://www.unicode.org/Public/UCD/latest/ucd/BidiMirroring.txt>
--- [168] [CITE@en-us[UAX #44: Unicode Character Database]], [TIME[2020-03-06T22:23:11.000Z]], [TIME[2020-10-18T09:36:01.711Z]] <http://www.unicode.org/reports/tr44/#Bidi_Mirroring_Glyph>
-- [171] [CODE[BidiBrackets.txt]]
--- [169] [CITE@en-us[UAX #44: Unicode Character Database]], [TIME[2020-03-06T22:23:11.000Z]], [TIME[2020-10-18T09:36:52.623Z]] <http://www.unicode.org/reports/tr44/#Bidi_Paired_Bracket_Type>
--- [170] [CITE@en-us[UAX #44: Unicode Character Database]], [TIME[2020-03-06T22:23:11.000Z]], [TIME[2020-10-18T09:37:11.515Z]] <http://www.unicode.org/reports/tr44/#Bidi_Paired_Bracket>
 - [173] [CODE[VerticalOrientation.txt]]
 -- [213] [TIME[2019-10-12T21:51:11.000Z]], [TIME[2020-10-22T02:53:53.457Z]] <https://www.unicode.org/Public/UCD/latest/ucd/VerticalOrientation.txt>
 -- [207] [CITE@en-us[UAX #44: Unicode Character Database]], [TIME[2020-03-06T22:23:11.000Z]], [TIME[2020-10-21T06:31:45.938Z]] <https://www.unicode.org/reports/tr44/#Complex_Default_Values>
 -- [24] [CITE@en-us[UAX #44: Unicode Character Database]], [TIME[2020-03-06T22:23:11.000Z]], [TIME[2020-10-21T06:24:49.510Z]] <https://www.unicode.org/reports/tr44/#Default_Values_Table>
 -- [174] 
 [CITE@en-us[UAX #44: Unicode Character Database]], [TIME[2020-03-06T22:23:11.000Z]], [TIME[2020-10-18T09:39:12.689Z]] <http://www.unicode.org/reports/tr44/#Vertical_Orientation>
-]REFS]
-
-
--*-*-
-
-[20] [[ISO/IEC 10646]]
-[CSECTION[15 [[双方向文脈]]での[[鏡像文字]]]]
-
-[37] 
-[[JIS X 0221-1:2001]] [CSECTION[19. 双方向文脈での文字]]
-は
-「左向き用及び右向き用と対をなす文字の種類」
-として括弧類を列挙していました。
-[[文字の名前]]が「LEFT」や「RIGHT」であっても、
-左右ではなく開き、閉じの意味であるとされました。
-([[GB 13000.1-93]] 20 も同じ)
-[CSECTION[附属書F (参考) 代替書式文字]] F.2.2 にこれに関係する[[代替書式文字]]の説明がありました。
-([[GB 13000.1-93]] 附属書D D1.3 も同じ)
-[CSECTION[附属書P (参考) 文字に関する追加情報]]
-にうち2文字の補足説明がありました。
-
-[38] 
-同
-[CSECTION[附属書E (参考) アラビア語の双方向文脈での鏡像文字]]
-は
-「図形記号の鏡像として表示してもよい」
-[[文字]]を列挙していました。[[括弧類]]や[[数学記号]]などが含まれていました。
-([[GB 13000.1-93]] 附属書Cも同じ)
-
-[39] 
-[[JIS X 0221:2007]] 19 は一覧表がなく、附属書Eを参照する形に改められていました。
-それは[[ユニコード]]の [[Bidi Mirrored]]
-の一覧と等しいと[[注記]]がありました。
-[CSECTION[附属書E (規定) 双方向文脈での鏡像文字]]
-は
-「図形記号の鏡像として表示してもよい」
-[[文字]]を列挙していました。[[括弧類]]や[[数学記号]]などが含まれていました。
-[CSECTION[附属書F (参考) 代替書式文字]] F.2.2 にこれに関係する[[代替書式文字]]の説明がありました。
-[CSECTION[附属書P (参考) 文字に関する追加情報]]
-にうち2文字の補足説明がありました。
-
-[40] 
-[[JIS X 0221:2014]] 15 は[[ユニコード標準]]第6.1版の 
-[[Bidi_[ASIS[Mirrord]]]]
-を参照する形に改められていました。
-
--*-*-
-
-[225] 
-[[Unicode]]
-は
-[[bidi]]
-を表示順ではなく意味順に[[文字]]を並べることで実現しています。
-その結果[[左横書き]]と[[右横書き]]で同じ意味でも[[字形]]が逆になるケースが出てきますが、
-あくまで[[文字]]データは意味順で適切なものを選び、
-表示の際に相応しい[[グリフを選ぶ][グリフの選択]]こととしています。
-
-[220] 
-[[括弧]]類には [CODE[LEFT]] や [CODE[RIGHT]]
-のような[[文字の名前]]が与えられています。
-しかしこれらは開き括弧、閉じ括弧を意味し、
-[[書字方向]]に関わらず方向ではなく意味で使うとされています
-[SRC[>>2]]。
-
-[221] 
-[[Unicode Bidirectional Algorithm]]
-の
-[DFN[L4]]
-は、
-[[文字]]の[[解決済方向性]]が
-[CODE[R]]
-であって、かつ[[文字]]の
-[CODE[Bidi_Mirrored]]
-[[特性][特性 (UCD)]]値が[[真]]である[[場合、その場合に限って][if and only if]]、
-[[鏡像化グリフ]]で描画することと定めています
-[SRC[>>6]]。
-ただし [[HL6]]
-が適用される場合は例外となります
-[SRC[>>6, >>5, >>2]]。
-
-[226] 
-意図した[RUBYB[[[意味]]][semantics]]を表す適切な[[文字]]を使うため、
-また[[相互運用性]]や[[セキュリティー][文字のセキュリティー]]を防ぐため、
-実装は
-[[L4]]
-に従い適切に[[鏡像化]]しなければ[RUBYB[なりません][must]]。
-[SRC[>>2]]
-
-[222] 
-[[Unicode Bidirectional Algorithm]]
-の
-[DFN[HL6]]
-は、
-[[上位層プロトコル]]次第で、
-特定の状況で、
-[CODE[Bidi_Mirrored]]
-[[特性][特性 (UCD)]]値が[[偽]]であっても、
-[[鏡像化グリフ]]で描画できるとしています。
-歴史的な[[用字系]]とその[[句読点]]、
-[[私用文字]]、
-[[数式]]中の[[文字]]などの状況が想定されます。
-次のいずれかまたは両方の条件に合致する[[文字]]となります。
-[SRC[>>5]]
-
-- [223] [[解決済方向性]]が [CODE[R]] の[[文字]]
-- [224] [[解決済方向性]]が [CODE[L]] で、
-[[双方向的型]]が [CODE[R]] または [CODE[AL]]
-の[[文字]]
-
-
-
-[REFS[
-- [12] [[Unicode Standard]]
--- [13] [CITE[The Unicode Standard, Version 13.0 - ch06.pdf]], [TIME[2020-03-10 02:53:36 +09:00]] <https://www.unicode.org/versions/Unicode13.0.0/ch06.pdf#page=14>
--- [14] [CITE[The Unicode Standard, Version 13.0 - ch06.pdf]], [TIME[2020-03-10 02:53:36 +09:00]] <https://www.unicode.org/versions/Unicode13.0.0/ch06.pdf#page=31>
--- [11] [CITE[[[The Unicode Standard]], Version 13.0 - UFE10.pdf]], [TIME[2020-03-03 07:41:18 +09:00]] <https://www.unicode.org/charts/PDF/UFE10.pdf>
--- [75] [TIME[2020-03-02T22:41:18.000Z]], [TIME[2020-10-10T08:56:35.600Z]] <https://unicode.org/charts/PDF/UFE30.pdf>
-- [3] [[UAX #9]]
--- [5] [CITE@en-us[[[UAX #9]]: Unicode Bidirectional Algorithm]], [TIME[2020-03-07 07:23:12 +09:00]] <https://unicode.org/reports/tr9/#HL6>
--- [6] [CITE@en-us[[[UAX #9]]: Unicode Bidirectional Algorithm]], [TIME[2020-03-07 07:23:12 +09:00]] <https://unicode.org/reports/tr9/#L4>
--- [2] [CITE@en-us[[[UAX #9]]: [[Unicode Bidirectional Algorithm]]]], [TIME[2020-03-07 07:23:12 +09:00]] <https://unicode.org/reports/tr9/#Mirroring>
 - [7] [CITE[[[UAX #50]]: Unicode Vertical Text Layout]], [TIME[2020-03-07 07:23:12 +09:00]] <https://www.unicode.org/reports/tr50/>
 ]REFS]
 
