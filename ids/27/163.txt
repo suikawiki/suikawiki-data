@@ -1,3 +1,21 @@
+[81] 
+[[DOM API]] 
+の中には[DFN[[RUBYB[[RUBY[利][り]][RUBY[用][よう]][RUBY[者][しゃ]][RUBY[活][かっ]][RUBY[性][せい]][RUBY[化][か]]][user activation]]]]が必要なものがいくつかあります。
+[[利用者活性化]]とは、
+[[利用者]]が [[viewport]] 内の[[要素]]を[[クリック]]するなど、
+当該[[閲覧文脈]]に対して明確に操作する意思を示したことをいいます。
+
+[82] 
+[[利用者活性化]]の制約は、ある種の[[ブラクラ]]のような[[利用者]]の操作を妨害する動作を[[スクリプト]] (の[[著者]]) が勝手に実行させることを防ぐものであります。
+[[Webプラットフォーム]]の草創期 ([[平成時代]]初期)
+にその危険性が知られるようになり、[[発見的]]な制約から徐々に整備が進んできました。
+現在では
+[CITE[HTML Standard]]
+によって挙動が詳細に定められています。
+
+
+
+
 * 仕様書
 
 [REFS[
@@ -10,8 +28,69 @@
 - [9] [CITE@en[The Screen Orientation API]] ([TIME[2016-07-22 04:15:20 +09:00]]) <https://w3c.github.io/screen-orientation/#dfn-triggered-by-a-user-generated-orientation-change>
 ]REFS]
 
+* 文脈
 
-*
+[83] 
+[[利用者活性化]]の制約は、
+[[viewport]] の枠を超えて画面表示に干渉するような操作や、
+[[装置]] ([[ハードウェア]]) の状態を変化させるような操作などに課されています。
+
+[77] 
+[[利用者活性化]]は、
+[[粘着性活性化]]と[[過渡活性化]]の2つに大別されます。
+両者の使い方によって、
+[[利用者活性化]]に依存した [[API]] は3種類に分類されます。
+
+-
+[78] 
+[DFN[sticky activation-gated API]]
+は、
+最初に [[user activation]] を得るまでブロックされる [[API]]
+です。
+[[粘着性活性化]]状態が[[真]]である必要があるものです。
+[SRC[>>39]]
+-
+[79] 
+[DFN[transient activation-gated API]]
+は、
+[[user activation]]
+ごとに、その[[過渡活性化]]状態が[[満期]]するまで、
+何度でも呼び出せる [[API]]
+です。
+[[過渡活性化]]状態が[[真]]である必要があるものです。
+[SRC[>>39]]
+-
+[80] 
+[DFN[transient activation-consuming API]]
+は、
+[[user activation]]
+ごとに高々1回だけ呼び出せる 
+[[API]]
+です。
+[[過渡活性化]]状態が[[真]]である必要があって、
+[[利用者活性化を消費]]するものです。
+[SRC[>>39]]
+
+
+
+
+
+* 活性化通知
+
+[84] 
+[[利用者活性化]]は、
+[[窓]] ([CODE[Window]])
+ごとに管理されます。
+つまり[[利用者]]が [[Webブラウザー]]のある[[窓]]を操作しても、
+他の[[窓]]には影響しません。
+また、
+[[利用者]]がある[[フレーム]]を操作しても、
+他の[[フレーム]]に影響するとは限りません。
+
+[85] 
+[[利用者]]による[[クリック]]などの操作は、
+[[活性化通知]]につながります。
+
 
 [40] 
 [CODE[Window]]
@@ -28,6 +107,88 @@
 [[+∞]]
 です。
 [SRC[>>39]]
+
+
+
+[49] 
+[[閲覧文脈]][VAR[閲覧文脈]]における[DFN[[RUBYB[[RUBYB[[RUBY[活][かっ]][RUBY[性][せい]][RUBY[化][か]][RUBY[通][つう]][RUBY[知][ち]]][activation notification]]]]]]は、
+次のようにします。
+[SRC[>>39]]
+
+[FIG(steps)[
+= [51] 
+[VAR[文書]]を、
+[VAR[閲覧文脈]]の[F[活性文書]]に設定します。
+=
+[52] 
+[VAR[閲覧文脈群]]を、
+[VAR[閲覧文脈]]、
+[VAR[閲覧文脈]]の[[祖先閲覧文脈]]すべて、
+[VAR[文書]]の [F[list of descendant browsing contexts]] 中の[[閲覧文脈]]のうち、
+その[F[活性文書]]が[VAR[文書]]と[[同じ起源]]であるものすべて、
+を含む[[リスト]]に設定します。
+=
+[53] 
+[VAR[窓群]]を、
+[VAR[閲覧文脈群]]中の各[VAR[閲覧文脈]]の[F[[CODE[WindowProxy]]]]の[F(ss)[Window]]から[[構築]]した[CODE[Window]]の[[リスト]]に設定します。
+=
+[54] 
+[VAR[窓群]]の各[VAR[窓]]について、[[順に][list iterate]]、
+==
+[55] 
+[VAR[窓]]の[F[最終活性化時刻印]]を、
+[[現在高解像度時刻]]に設定します。
+
+]FIG]
+
+
+
+
+
+[50] 
+[[利用者エージェント]]は、
+[[閲覧文脈]][VAR[閲覧文脈]]における
+[[user interaction]]
+に関する
+[[activation triggering input event]]
+の
+[[dispatch]]
+の前に、
+[VAR[閲覧文脈]]について[[活性化通知]]しなければ[MUST[なりません]]。
+[SRC[>>39]]
+
+[56] 
+[DFN[activation triggering input event]]
+は、
+次のすべてを満たす[[イベント]][VAR[イベント]]です。
+[SRC[>>39]]
+
+- [57] 
+[VAR[イベント]]の[F[[CODE[isTrusted]]]]が[[真]]、かつ、
+- [58] 
+[VAR[イベント]]の[F[型][イベント型]]が次のいずれか:
+--
+[CODE[change][onchange]]
+-- [CODE[click][onclick]]
+-- [CODE[contextmenu][oncontextmenu]]
+-- [CODE[dblclick]]
+-- [CODE[mouseup]]
+-- [CODE[pointerup]]
+-- [CODE[reset][onreset]]
+-- [CODE[submit][onsubmit]]
+-- [CODE[touchend]]
+
+;; [87] 
+[[装置]]からの[[入力]]を表す[[イベント]]でも、
+[CODE[mousemove]]
+や
+[CODE[orientationchange]]
+のように[[利用者]]の明示的な操作を表すとはいえないものは含まれていません。
+
+;;
+[88] 
+[[利用者エージェント]]が発生させる[[イベント]]が対象です。
+[[スクリプト]]が [CODE[dispacthEvent]] を使っても効果はありません。
 
 
 
@@ -80,6 +241,14 @@
 しばらくして[[偽]]に戻ります。
 [SRC[>>39]]
 
+[86] 
+[[過渡活性化]]が[[真]]から[[偽]]に変化するのは、
+一定時間が経過した場合 ([[満期]])
+と、
+特定の [[API]] が呼び出された場合 ([[利用者活性化消費]])
+の2通りがあります。
+
+-*-*-
 
 [41] 
 [DFN[[RUBYB[[RUBY[過][か]][RUBY[渡][と]][RUBY[活][かっ]][RUBY[性][せい]][RUBY[化][か]][RUBY[時][じ]][RUBY[間][かん]][RUBY[長][ちょう]]][transient activation duration]]]]は、
@@ -99,80 +268,7 @@
 [DFN[[RUBYB[[RUBY[満][まん]][RUBY[期][き]][RUBY[済][ずみ]]][expired]]]]といいます。
 [SRC[>>39]]
 
-
-* 活性化通知
-
-
-[50] 
-[[利用者エージェント]]は、
-[[閲覧文脈]][VAR[閲覧文脈]]における
-[[user interaction]]
-に関する
-[[activation triggering input event]]
-の
-[[dispatch]]
-の前に、
-[VAR[閲覧文脈]]について[[活性化通知]]しなければ[MUST[なりません]]。
-[SRC[>>39]]
-
-[56] 
-[DFN[activation triggering input event]]
-は、
-次のすべてを満たす[[イベント]][VAR[イベント]]です。
-[SRC[>>39]]
-
-- [57] 
-[VAR[イベント]]の[F[[CODE[isTrusted]]]]が[[真]]、かつ、
-- [58] 
-[VAR[イベント]]の[F[型][イベント型]]が次のいずれか:
---
-[CODE[change][onchange]]
--- [CODE[click][onclick]]
--- [CODE[contextmenu][oncontextmenu]]
--- [CODE[dblclick]]
--- [CODE[mouseup]]
--- [CODE[pointerup]]
--- [CODE[reset][onreset]]
--- [CODE[submit][onsubmit]]
--- [CODE[touchend]]
-
-
-
-
-
-
-[49] 
-[[閲覧文脈]][VAR[閲覧文脈]]における[DFN[[RUBYB[[RUBYB[[RUBY[活][かっ]][RUBY[性][せい]][RUBY[化][か]][RUBY[通][つう]][RUBY[知][ち]]][activation notification]]]]]]は、
-次のようにします。
-[SRC[>>39]]
-
-[FIG(steps)[
-= [51] 
-[VAR[文書]]を、
-[VAR[閲覧文脈]]の[F[活性文書]]に設定します。
-=
-[52] 
-[VAR[閲覧文脈群]]を、
-[VAR[閲覧文脈]]、
-[VAR[閲覧文脈]]の[[祖先閲覧文脈]]すべて、
-[VAR[文書]]の [F[list of descendant browsing contexts]] 中の[[閲覧文脈]]のうち、
-その[F[活性文書]]が[VAR[文書]]と[[同じ起源]]であるものすべて、
-を含む[[リスト]]に設定します。
-=
-[53] 
-[VAR[窓群]]を、
-[VAR[閲覧文脈群]]中の各[VAR[閲覧文脈]]の[F[[CODE[WindowProxy]]]]の[F(ss)[Window]]から[[構築]]した[CODE[Window]]の[[リスト]]に設定します。
-=
-[54] 
-[VAR[窓群]]の各[VAR[窓]]について、[[順に][list iterate]]、
-==
-[55] 
-[VAR[窓]]の[F[最終活性化時刻印]]を、
-[[現在高解像度時刻]]に設定します。
-
-]FIG]
-
-* 活性化消費
+-*-*-
 
 [59] 
 [CODE[Window]]
