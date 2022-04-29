@@ -30,6 +30,7 @@ Initially, [[false]].
 Initially, [CODE[null]].
 : [F[GR invoked]] : [[G element]] or [CODE[null]].
 Initially, [CODE[null]].
+: [F[current sequence]] : [[Character string][character string]].
 : [F[PCD PM]] : [[Byte][byte]].
 : [F[PCD PI]] : [[Byte][byte]].
 : [F[PCD LI]] : Non-negative integer.
@@ -40,6 +41,9 @@ Initially, [[initial state]].
 ]FIG]
 
 [100] A [DFN[G element]] is [I[G0]], [I[G1]], [I[G2]], or [I[G3]].
+
+[117] A [DFN[maximum sequence length]] is an implementation-specific integer,
+e.g. [N[15]].
 
 [94] A [DFN[maximum chunk length]] is an implementation-specific integer,
 e.g. 2[SUP[30]] - 1.
@@ -72,6 +76,18 @@ To [DFN[emit a character]] with [[character]] [VAR[char]], run these steps:
 [VAR[char]]
 to 
 [VAR[output stream]].
+]FIG]
+
+[115] 
+To [DFN[emit a sequence]]  with [[character string]] [VAR[seq]], run these steps:
+
+[FIG(steps)[
+=
+[116] 
+[[Extend][extend]]
+[VAR[output stream]]
+with 
+[VAR[seq]].
 ]FIG]
 
 [95] 
@@ -183,7 +199,21 @@ Set [VAR[state]]'s [F[decoder state]] to [[escape state]].
 [FIG(switch)[
 
 :[ [[2/0]], [[2/15]] ]:
+[FIG(steps)[
+
 @@
+
+]FIG]
+: [[2/3]] :
+[FIG(steps)[
+
+= [105] Set [VAR[state]]'s [F[current sequence]] to an [[empty character string]].
+= [111] [[Append][append]]
+a [[character]] ([I[sequence]], [VAR[bc]])
+to [VAR[state]]'s [F[current sequence]].
+= [104] Set [VAR[state]]'s [F[decoder state]] to [I[unassigned escape state]].
+
+]FIG]
 :[ [[4/0]], [[5/15]] ]:
 [FIG(steps)[
 
@@ -290,6 +320,42 @@ Set [VAR[state]]'s [F[G0 designated]] to [[94 set]] ([I[escape]], [VAR[bc]]).
 = [34] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
+
+]FIG]
+
+*** Unassigned escape state
+
+[106] The [DFN[unassigned escape state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+: [ [N[2/0]], [N[2/15]] ] :
+[FIG(steps)[
+
+= [107] [[Append]] 
+a [[character]] ([I[sequence]], [VAR[bc]])
+to [VAR[state]]'s [F[current sequence]].
+= [110] If [VAR[state]]'s [F[current sequence]]'s [[length]]
+is equal to the [[maximum sequence length]]:
+== 
+@@
+
+]FIG]
+: [ [N[3/0]], [N[7/14]] ] :
+[FIG(steps)[
+
+= [108] [[Append][append to a byte sequence]] 
+a [[character]] ([I[sequence]], [VAR[bc]])
+to [VAR[state]]'s [F[current sequence]].
+= [114] [[Emit a sequence][emit a sequence]]
+[VAR[state]]'s [F[current sequence]].
+= [109] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+
+]FIG]
+: [[EOF]] :
+@@
+: Otherwise :
+@@
 
 ]FIG]
 
@@ -438,6 +504,7 @@ The terms
 [[tuple]],
 [[list]],
 [[append]],
+[[extend]],
 [[ordered map]],
 [[entry]],
 [[key]],
@@ -470,7 +537,16 @@ A [DFN[character]] is one of followings:
 - [CODE(charname)@en[MSP]]
 - [CODE(charname)@en[DEL]]
 - [[tuple]] ([I[escape]], [VAR[bc]]), where [VAR[bc]] is a [[bit combination]]
+- [[tuple]] ([I[sequence]], [VAR[bc]]), where [VAR[bc]] is a [[bit combination]]
 - [[tuple]] ([I[unassigned]], [VAR[bc]]), where [VAR[bc]] is a [[bit combination]]
+
+[112] 
+A [DFN[character string]] is a [[list]] of zero or more [[characters][character]].
+
+[113] 
+An [DFN[empty character string]] is a [[character string]] whose [[length]]
+is [N[0]].
+
 
 [98] 
 A [DFN[PCD data]]
