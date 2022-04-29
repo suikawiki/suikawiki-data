@@ -16,13 +16,13 @@ Initially. the [[empty C1 set]].
 : [F[10/0 designated]] : [CODE(charname)@en[MSP]] or ([I[unassigned]], [[10/0]]).
 Initially, ([I[unassigned]], [[10/0]]).
 : [F[15/15 designated]] : ([I[unassigned]], [[15/15]]).
-: [F[G0 designated]] : [[G set]].
+: [DFN[[F[G0 designated]]]] : [[G set]].
 Initially, the [[empty 94 set]].
-: [F[G1 designated]] : [[G set]].
+: [DFN[[F[G1 designated]]]] : [[G set]].
 Initially, the [[empty 94 set]].
-: [F[G2 designated]] : [[G set]].
+: [DFN[[F[G2 designated]]]] : [[G set]].
 Initially, the [[empty 94 set]].
-: [F[G3 designated]] : [[G set]].
+: [DFN[[F[G3 designated]]]] : [[G set]].
 Initially, the [[empty 94 set]].
 : [DFN[[F[bits]]]] : [I[8-bit]] or [I[7-bit]].
 Initially, [I[8-bit]].
@@ -34,6 +34,7 @@ Initially, [CODE[null]].
 Initially, [CODE[null]].
 : [DFN[[F[current sequence]]]] : [[Character string][character string]].
 : [DFN[[F[current element]]]] : [[C element]] or [[G element]].
+: [DFN[[F[current I byte]]]] : [[Byte][byte]].
 : [DFN[[F[PCD PM]]]] : [[Byte][byte]].
 : [DFN[[F[PCD PI]]]] : [[Byte][byte]].
 : [DFN[[F[PCD LI]]]] : Non-negative integer.
@@ -300,7 +301,7 @@ Return [VAR[output stream]].
 == [39] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
 
 ]FIG]
-:[ [[3/0]], [[3/15]] ], [[6/0]], [[6/1]], [[6/3]], [ [[6/5]], [[6/9]] ], [ [[7/1]], [[7/11]] ]:
+:[ [[3/0]], [[3/15]] ], [[6/0]], [[6/1]], [[6/3]], [[6/5]], [[6/6]], [[6/8]], [[6/9]], [[7/1]], [[7/2]], [ [[7/4]], [[7/11]] ]:
 [FIG(steps)[
 
 = [35] [[Emit a character][emit a character]]
@@ -313,7 +314,8 @@ Return [VAR[output stream]].
 
 = [41] If [VAR[state]]'s [F[MARC-8 flag]] is [[true]]:
 == [49] 
-Set [VAR[state]]'s [F[G0 designated]] to [[94 set]] ([I[escape]], [VAR[bc]]).
+Set [VAR[state]]'s [F[G0 designated]] to the result of 
+[[getting a 94 set][get a 94 set]] [I[escape]], [VAR[bc]].
 = [42] Otherwise:
 == [43] [[Emit a character][emit a character]]
 ([VAR[escape]], [VAR[bc]]).
@@ -324,6 +326,13 @@ Set [VAR[state]]'s [F[G0 designated]] to [[94 set]] ([I[escape]], [VAR[bc]]).
 [FIG(steps)[
 
 = [48] Set [VAR[state]]'s [F[decoder state]] to [I[foreign state]].
+
+]FIG]
+: [[6/7]], [[7/3]] :
+[FIG(steps)[
+
+= [273] Set [VAR[state]]'s [F[G0 designated]] to the result of 
+[[getting a 94 set][get a 94 set]] [I[escape]], [VAR[bc]].
 
 ]FIG]
 : [[6/11]] :
@@ -373,7 +382,8 @@ Set [VAR[state]]'s [F[G0 designated]] to [[94 set]] ([I[escape]], [VAR[bc]]).
 
 = [62] If [VAR[state]]'s [F[MARC-8 flag]] is [[true]]:
 == [63]  
-Set [VAR[state]]'s [F[G0 designated]] to [[94 set]] ([I[escape]], [VAR[bc]]).
+Set [VAR[state]]'s [F[G0 designated]] to the result of 
+[[getting a 94 set][get a 94 set]] [I[escape]], [VAR[bc]].
 == [66] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
 = [64] Otherwise:
 == [65] Set [VAR[state]]'s [F[decoder state]] to [I[PCD state]].
@@ -517,20 +527,21 @@ to [VAR[state]]'s [F[current sequence]].
 
 [FIG(switch)[
 
-: [ [[2/1]], [[2/3]] ] :
+: [ [[2/0]], [[2/3]] ] :
 [FIG(steps)[
 
-@@
+= [254] Set [VAR[state]]'s [F[current I byte]] to [VAR[bc]].
+= [255] Set [VAR[state]]'s [F[decoder state]] to [I[escape 94 I state]].
 
 ]FIG]
 : [ [[3/0]], [[7/14]] ] :
 [FIG(steps)[
 
 = [237] If [VAR[state]]'s [F[current element]] is [I[G0]]:
-== [238] Let [VAR[state]]'s [F[G0 designated]] be the result of
+== [238] Set [VAR[state]]'s [F[G0 designated]] to the result of
 [[getting a 94 set][get a 94 set]] [CODE[null]], [VAR[bc]].
 = [239] Otherwise, if [VAR[state]]'s [F[current element]] is [I[G1]]:
-== [240] Let [VAR[state]]'s [F[G1 designated]] be the result of
+== [240] Set [VAR[state]]'s [F[G1 designated]] to the result of
 [[getting a 94 set][get a 94 set]] [CODE[null]], [VAR[bc]].
 
 ]FIG]
@@ -551,6 +562,48 @@ a [[character]] ([I[sequence]], [VAR[i]])
 to [VAR[state]]'s [F[current sequence]].
 = [251] Set [VAR[state]]'s [F[decoder state]] to [I[unassigned escape state]].
 = [252] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
+
+
+
+*** Escape 94 I state
+
+[253] The [DFN[escape 94 I state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+: [ [[3/0]], [[7/14]] ] :
+[FIG(steps)[
+
+= [257] If [VAR[state]]'s [F[current element]] is [I[G0]]:
+== [256] Set [VAR[state]]'s [F[G0 designated]] to the result of
+[[getting a 94 set][get a 94 set]] [VAR[state]]'s [F[current I byte]], [VAR[bc]].
+= [258] Otherwise, if [VAR[state]]'s [F[current element]] is [I[G1]]:
+== [259] Let [VAR[state]]'s [F[G1 designated]] to the result of
+[[getting a 94 set][get a 94 set]] [VAR[state]]'s [F[current I byte]], [VAR[bc]].
+
+]FIG]
+: Otherwise :
+[FIG(steps)[
+
+= [260] Set [VAR[state]]'s [F[current sequence]] be an [[empty character string]].
+= [261] If [VAR[state]]'s [F[current element]] is [I[G0]]:
+== [262] Let [VAR[i]] be [[2/8]].
+= [263] Otherwise, if [VAR[state]]'s [F[current element]] is [I[G1]]:
+== [264] Let [VAR[i]] be [[2/9]].
+= [265] Otherwise, if [VAR[state]]'s [F[current element]] is [I[G2]]:
+== [266] Let [VAR[i]] be [[2/10]].
+= [267] Otherwise, if [VAR[state]]'s [F[current element]] is [I[G3]]:
+== [268] Let [VAR[i]] be [[2/11]].
+= [270] Set [VAR[i]] to [VAR[i]] followed by [VAR[state]]'s [F[current I byte]].
+= [271] [[Append][append]] 
+a [[character]] ([I[sequence]], [VAR[i]])
+to [VAR[state]]'s [F[current sequence]].
+= [269] Set [VAR[state]]'s [F[decoder state]] to [I[unassigned escape state]].
+= [272] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
 
@@ -763,8 +816,8 @@ To [DFN[get a C0 set]] [VAR[F]], run these steps:
 
 [FIG(steps)[
 
-= [177] Let [VAR[set]] be the result of running the steps to
-[[get a character set]] 
+= [177] Let [VAR[set]] be the result of 
+[[getting a character set][get a character set]] 
 with [[0/0]], [[1/15]], [I[C0]], and [VAR[F]].
 = [180] If [VAR[F]] is ''not'' [[7/14]]:
 == [178] Set [VAR[set]] [ [[1/11]] ] to [CODE(charname)@en[ESC]].
@@ -798,8 +851,8 @@ or
 ]FIG]
 
 [19] 
-The [DFN[initial C0 set]] is the result of running the steps to
-[[get a C0 set]] [I[unassigned]].
+The [DFN[initial C0 set]] is the result of 
+[[getting a C0 set][get a C0 set]] [I[unassigned]].
 
 [23] 
 A [DFN[C1 set]] is a [[character set]] whose [[keys][key]] are
@@ -815,8 +868,8 @@ To [DFN[get a C1 set]] [VAR[F]], run these steps:
 
 [FIG(steps)[
 
-= [181] Let [VAR[set]] be the result of running the steps to
-[[get a character set]] 
+= [181] Let [VAR[set]] be the result of 
+[[getting a character set][get a character set]] 
 with [[8/0]], [[9/15]], [I[C1]], and [VAR[F]].
 = [196] If [VAR[F]] is one of:
 [[4/5]] ([[ISO-IR]] 40),
@@ -830,8 +883,8 @@ or
 ]FIG]
 
 [24] 
-The [DFN[empty C1 set]] is the result of running the steps to
-[[get a C1 set]] [[7/14]].
+The [DFN[empty C1 set]] is the result of 
+[[getting a C1 set][get a C1 set]] [[7/14]].
 
 @@
 [45] 
@@ -853,46 +906,25 @@ with [[2/1]], [[7/14]], [I[94]], and [VAR[f]].
 
 ]FIG]
 
+[NOTE[
+[274] Following pairs of [VAR[I]] and [VAR[F]] are used:
+
+- ([CODE[null]], [VAR[F]]) where [VAR[F]] is in [ [[3/0]], [[7/14]] ]
+- ([VAR[I]], [VAR[F]]) where 
+[VAR[I]] is in [ [[2/1]], [[2/3]] ] 
+and
+[VAR[F]] is in [ [[3/0]], [[7/14]] ]
+- ([[2/0]], [VAR[F]]) where [VAR[F]] is in [ [[3/0]], [[7/14]] ]
+- ([I[escape]], [[6/2]])
+- ([I[escape]], [[6/7]])
+- ([I[escape]], [[7/0]])
+- ([I[escape]], [[7/3]])
+
+]NOTE]
+
 [185] 
-The [DFN[empty 94 set]] is the result of running the steps to
-[[get a 94 set]] with [CODE[null]] and [[7/14]].
-
-[47] [DFN[94 set]] ([VAR[c1]], [VAR[c2]]) is defined by the following table:
-
-[FIG(table)[
-
-:c1:[VAR[c1]]
-:c2:[VAR[c2]]
-:set:[[94 set]] ([VAR[c1]], [VAR[c2]])
-:note:[[Note]] ([[non-normative]])
-
-:c1:[I[escape]]
-:c2: [[6/2]]
-:note: [[MARC-8]]
-:set:
-@@
-
-:c1:[I[escape]]
-:c2: [[6/7]]
-:note: [[MARC-8]]
-:set:
-@@
-
-:c1:[I[escape]]
-:c2: [[7/0]]
-:note: [[MARC-8]]
-:set:
-@@
-
-:c1:[I[escape]]
-:c2: [[7/3]]
-:note: [[MARC-8]]
-:set:
-@@ASCII
-
-
-
-]FIG]
+The [DFN[empty 94 set]] is the result of 
+[[getting a 94 set][get a 94 set]] with [CODE[null]] and [[7/14]].
 
 
 
