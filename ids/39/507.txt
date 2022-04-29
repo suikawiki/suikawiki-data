@@ -6,48 +6,62 @@
 
 [FIG(list members)[
 
-: [F[C0 designated]] : A [[character set]].
+: [F[C0 designated]] : [[C0 set]].
 Initially, the [[initial C0 set]].
 : [F[2/0 designated]] : [CODE(charname)@en[SP]] or [CODE(charname)@en[MSP]].
 Initially, [CODE(charname)@en[SP]].
 : [F[7/15 designated]] : [CODE(charname)@en[DEL]].
-: [F[10/0 designated]] : [CODE(charname)@en[MSP]] or [CODE[null]].
-Initially, [CODE[null]].
-: [F[15/15 designated]] : [CODE[null]].
+: [F[C1 designated]] : [[C1 set]].
+Initially. the [[empty C1 set]].
+: [F[10/0 designated]] : [CODE(charname)@en[MSP]] or ([I[unassigned]], [[10/0]]).
+Initially, ([I[unassigned]], [[10/0]]).
+: [F[15/15 designated]] : ([I[unassigned]], [[15/15]]).
 : [F[decoder state]] : One of [[decoder states][decoder state]].
 Initially, [[initial state]].
 
 ]FIG]
 
+[20] A [[state initialization steps]] is a set of zero or more steps
+that modifies [VAR[state]].  It [MAY[MAY]] modify [VAR[state]] in these ways:
+
+- [21] Modify values of [VAR[state]]'s 
+[F[C0 designated]],
+[F[2/0 designated]],
+[F[7/15 designated]],
+[F[C1 designated]],
+[F[10/0 designated]],
+and/or
+[F[15/15 designated]].
+
+
 [4] 
-To [DFN[emit a character]] [VAR[char]], run these steps:
+To [DFN[emit a [[character]]]] [VAR[char]], run these steps:
 
 [FIG(steps)[
 = 
 [5] 
-If [VAR[char]] is [CODE[null]]:
-==
-@@ Error
-==
-[6] 
-@@ [CODE[U+FFFD]]?
-=
-[7] 
-Otherwise:
-==
-@@
-
+[[Append][append]]
+[VAR[char]]
+to 
+[VAR[output stream]].
 ]FIG]
 
 @@
+[VAR[input stream]],
+[VAR[initialization steps]] a [[state initialization steps]],
+run these steps:
+
 [FIG(steps)[
 = [8] Let [VAR[state]] be a new [[state]].
-= [9] 
-@@ Initialization steps
+= [9] Run [VAR[initialization steps]] with [VAR[state]].
+= [6] 
+Let [VAR[output stream]] be a [[list]].
 = [10] 
 @@
 Process the input stream,
 a sequence of zero or more [[bit combinations][bit combination]]
+= [7] 
+Return [VAR[output stream]].
 ]FIG]
 
 
@@ -75,6 +89,14 @@ a sequence of zero or more [[bit combinations][bit combination]]
 [[Emit a character][emit a character]] [VAR[state]]'s [F[2/0 designated]].
 : [N[7/15]] :
 [[Emit a character][emit a character]] [VAR[state]]'s [F[7/15 designated]].
+: [ [N[8/0]], [N[9/15]] ] :
+[FIG(steps)[
+
+= [26] Let [VAR[set]] be [VAR[state]]'s [F[C1 designated]].
+= [27] Let [VAR[char]] be [VAR[set]] [ [VAR[bc]] ].
+= [28] [[Emit a character][emit a character]] [VAR[char]].
+
+]FIG]
 : [N[10/0]] :
 [[Emit a character][emit a character]] [VAR[state]]'s [F[10/0 designated]].
 : [N[15/15]] :
@@ -93,7 +115,11 @@ This document depends on the [CITE[Infra Standard]].
 The terms
 [[byte]],
 [[byte sequence]],
+[[tuple]],
+[[list]],
+[[append]],
 [[ordered map]],
+[[entry]],
 [[key]],
 and
 [[value]]
@@ -105,12 +131,68 @@ A [[bit combination]] is represented as "[VAR[X]]/[VAR[Y]]",
 where [VAR[X]] and [VAR[Y]] are integers in [ [N[0]], [N[15]] ],
 which represents a [[byte]] [VAR[X]] × [N[16]] + [VAR[Y]].
 
-** Character sets
+[18] 
+A [DFN[character]] is one of followings:
+
+- [CODE(charname)@en[ESC]]
+- [CODE(charname)@en[SP]]
+- [CODE(charname)@en[MSP]]
+- [CODE(charname)@en[DEL]]
+- [[tuple]] ([I[unassigned]], [VAR[bc]]), where [VAR[bc]] is a [[bit combination]]
 
 [17] 
 A [DFN[character set]] is an [[ordered map]],
 where [[keys][key]] are [[byte sequences][byte sequence]] and
 [[values][value]] are a [[character]].
+
+[22] 
+A [DFN[C0 set]] is a [[character set]] whose [[keys][key]]
+are «
+[[0/0]],
+[[0/1]],
+...,
+[[1/15]]
+».
+
+[19] 
+The [DFN[initial C0 set]] is a [[C0 set]] 
+«[ 
+[[0/0]] → ([I[unassigned]], [[0/0]]),
+[[0/1]] → ([I[unassigned]], [[0/1]]),
+...,
+[[1/10]] → ([I[unassigned]], [[1/10]]),
+[[1/11]] → [CODE(charname)@en[ESC]],
+[[1/12]] → ([I[unassigned]], [[1/12]]),
+...,
+[[1/15]] → ([I[unassigned]], [[1/15]])
+]».
+
+[25] 
+The [DFN[empty C0 set]] is a [[C0 set]] 
+«[ 
+[[0/0]] → ([I[unassigned]], [[0/0]]),
+[[0/1]] → ([I[unassigned]], [[0/1]]),
+...,
+[[1/15]] → ([I[unassigned]], [[1/15]])
+]».
+
+[23] 
+A [DFN[C1 set]] is a [[character set]] whose [[keys][key]]
+are «
+[[8/0]],
+[[0/1]],
+...,
+[[9/15]]
+».
+
+[24] 
+The [DFN[empty C1 set]] is a [[C1 set]] 
+«[ 
+[[8/0]] → ([I[unassigned]], [[8/0]]),
+[[8/1]] → ([I[unassigned]], [[8/1]]),
+...,
+[[9/15]] → ([I[unassigned]], [[9/15]])
+]».
 
 
 * Notes
