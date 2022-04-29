@@ -31,6 +31,9 @@ Initially, [[initial state]].
 
 ]FIG]
 
+[94] A [[maximum chunk length]] is an implementation-specific integer,
+e.g. 2[SUP[30]] - 1.
+
 [20] A [[state initialization steps]] is a set of zero or more steps
 that modifies [VAR[state]].  It [MAY[MAY]] modify [VAR[state]] in these ways:
 
@@ -129,6 +132,8 @@ Set [VAR[state]]'s [F[decoder state]] to [[escape state]].
 [[Emit a character][emit a character]] [VAR[state]]'s [F[10/0 designated]].
 : [N[15/15]] :
 [[Emit a character][emit a character]] [VAR[state]]'s [F[15/15 designated]].
+: [[EOF]] :
+@@
 : Otherwise :
 @@
 
@@ -159,7 +164,7 @@ Set [VAR[state]]'s [F[decoder state]] to [[escape state]].
 = [40] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
 
 ]FIG]
-: [[6/2]], [[7/0]] :
+: [[6/2]] :
 [FIG(steps)[
 
 = [41] If [VAR[state]]'s [F[MARC-8 flag]] is [[true]]:
@@ -210,6 +215,20 @@ Set [VAR[state]]'s [F[G0 designated]] to [[94 set]] ([I[escape]], [VAR[bc]]).
 = [61] Set [VAR[state]]'s [F[GL invoked]] to [I[G3]].
 
 ]FIG]
+: [[7/0]] :
+[FIG(steps)[
+
+= [62] If [VAR[state]]'s [F[MARC-8 flag]] is [[true]]:
+== [63]  
+Set [VAR[state]]'s [F[G0 designated]] to [[94 set]] ([I[escape]], [VAR[bc]]).
+== [66] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [64] Otherwise:
+== [65] Set [VAR[state]]'s [F[decoder state]] to [I[PCD state]].
+
+
+]FIG]
+: [[EOF]] :
+@@
 : Otherwise :
 [FIG(steps)[
 
@@ -220,6 +239,115 @@ Set [VAR[state]]'s [F[G0 designated]] to [[94 set]] ([I[escape]], [VAR[bc]]).
 
 ]FIG]
 
+*** PCD state
+
+[67] The [DFN[PCD state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+: [ [N[0/0]], [N[15/15]] ] :
+[FIG(steps)[
+
+= [68] Set [VAR[state]]'s [F[PCD PM]] to [VAR[bc]].
+= [69] Set [VAR[state]]'s [F[decoder state]] to [I[PCD PM state]].
+
+]FIG]
+: [[EOF]] :
+@@
+: Otherwise :
+@@
+
+]FIG]
+
+*** PCD PM state
+
+[70] The [DFN[PCD PM state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+: [ [N[0/0]], [N[15/15]] ] :
+[FIG(steps)[
+
+= [71] Set [VAR[state]]'s [F[PCD PI]] to [VAR[bc]].
+= [73] Set [VAR[state]]'s [F[PCD LI]] to [N[0]].
+= [72] Set [VAR[state]]'s [F[decoder state]] to [I[PCD PI state]].
+
+]FIG]
+: [[EOF]] :
+@@
+: Otherwise :
+@@
+
+]FIG]
+
+*** PCD PI state
+
+[74] The [DFN[PCD PI state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [[10/0]], [[11/1]] ]:
+[FIG(steps)[
+
+= [75] Set [VAR[state]]'s [F[PCD LI]] to ([VAR[state]]'s [F[PCD LI]] << 5) + ([VAR[bc]] & [N[0b11111]]).
+= [77] If [VAR[state]]'s [F[PCD LI]] is greater than the
+[[maximum chunk length]]:
+==
+@@
+
+]FIG]
+:[ [[8/13]], [[9/14]] ]:
+[FIG(steps)[
+
+= [78] Set [VAR[state]]'s [F[PCD LI]] to 
+([VAR[state]]'s [F[PCD LI]] << 5) + ([VAR[bc]] & [N[0b11111]]).
+= [79] If [VAR[state]]'s [F[PCD LI]] is greater than the
+[[maximum chunk length]]:
+==
+@@
+= [87] Set [VAR[state]]'s [F[PCD data]] to the [[empty byte sequence]].
+= [82] If [VAR[state]]'s [F[PCD LI]] is zero:
+== [93] [[Emit a PCD data][emit a PCD data]]
+[VAR[state]]'s [F[PCD PM]],
+[VAR[state]]'s [F[PCD PI]],
+[VAR[state]]'s [F[PCD data]].
+== [83] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [84] Otherwise:
+== [80] Set [VAR[state]]'s [F[decoder state]] to [I[PCD LI state]].
+
+]FIG]
+: [[EOF]] :
+@@
+: Otherwise :
+@@
+
+]FIG]
+
+*** PCD LI state
+
+[81] The [DFN[PCD LI state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [[0/0]], [[15/15]] ]:
+[FIG(steps)[
+
+= [88] [[Append][append to a byte sequence]] [VAR[bc]] to [VAR[state]]'s [F[PCD data]].
+= [76] Set [VAR[state]]'s [F[PCD LI]] to [VAR[state]]'s [F[PCD LI]] - 1.
+= [85] If [VAR[state]]'s [F[PCD LI]] is zero:
+== [92] [[Emit a PCD data][emit a PCD data]]
+[VAR[state]]'s [F[PCD PM]],
+[VAR[state]]'s [F[PCD PI]],
+[VAR[state]]'s [F[PCD data]].
+== [86] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+
+]FIG]
+: [[EOF]] :
+@@
+: Otherwise :
+@@
+
+]FIG]
 
 *** Foreign state
 
@@ -227,14 +355,17 @@ Set [VAR[state]]'s [F[G0 designated]] to [[94 set]] ([I[escape]], [VAR[bc]]).
 
 [FIG(switch)[
 
-: [ [N[0/0]], [N[15/15]] ] :
+:[ [[0/0]], [[15/15]] ]:
 [FIG(steps)[
 
 = [51] [[Emit a character][emit a character]]
 ([VAR[unassigned]], [VAR[bc]]).
 
-
 ]FIG]
+: [[EOF]] :
+@@
+: Otherwise :
+@@
 
 ]FIG]
 
@@ -249,6 +380,7 @@ The terms
 [[boolean]],
 [[byte]],
 [[byte sequence]],
+[[length]],
 [[tuple]],
 [[list]],
 [[append]],
@@ -264,6 +396,17 @@ A [DFN[bit combination]] is a [[byte]].
 A [[bit combination]] is represented as "[VAR[X]]/[VAR[Y]]",
 where [VAR[X]] and [VAR[Y]] are integers in [ [N[0]], [N[15]] ],
 which represents a [[byte]] [VAR[X]] × [N[16]] + [VAR[Y]].
+
+[89] 
+To [DFN[append][append to a byte sequence]] a [[bit combination]] [VAR[bc]]
+to a [[byte sequence]] [VAR[bytes]], run these steps:
+
+[FIG(steps)[
+= [90] Replace [VAR[bytes]]'s content by [VAR[bytes]] followed by [VAR[bc]].
+]FIG]
+
+[91] The [DFN[empty byte sequence]] is a [[byte sequence]] whose [[length]]
+is [N[0]].
 
 [18] 
 A [DFN[character]] is one of followings:
