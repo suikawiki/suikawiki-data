@@ -64,6 +64,7 @@ a sequence of zero or more [[bit combinations][bit combination]]
 Return [VAR[output stream]].
 ]FIG]
 
+@@[DFN[reconsume]]
 
 @@
 
@@ -82,7 +83,11 @@ Return [VAR[output stream]].
 
 = [11] Let [VAR[set]] be [VAR[state]]'s [F[C0 designated]].
 = [12] Let [VAR[char]] be [VAR[set]] [ [VAR[bc]] ].
-= [13] [[Emit a character][emit a character]] [VAR[char]].
+= [29] If [VAR[char]] is [CODE(charname)@en[ESC]]:
+== [30] 
+Set [VAR[state]]'s [F[decoder state]] to [[escape state]].
+= [31] Otherwise:
+== [13] [[Emit a character][emit a character]] [VAR[char]].
 
 ]FIG]
 : [N[2/0]] :
@@ -105,6 +110,42 @@ Return [VAR[output stream]].
 @@
 
 ]FIG]
+
+*** Escape state
+
+[32] The [DFN[escape state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [N[2/0]], [N[2/15]] ]:
+@@
+:[ [N[4/0]], [N[5/15]] ]:
+[FIG(steps)[
+
+= [36] Let [VAR[set]] be [VAR[state]]'s [F[C1 designated]].
+= [37] Let [VAR[char]] be [VAR[set]] [ [VAR[bc]] + 0x40 ].
+= [38] [[Emit a character][emit a character]] [VAR[char]].
+= [39] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+
+]FIG]
+:[ [N[3/0]], [N[3/15]] ], [ [N[6/0]], [N[7/15]] ]:
+[FIG(steps)[
+
+= [35] [[Emit a character][emit a character]]
+([VAR[escape]], [VAR[bc]]).
+= [40] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+
+]FIG]
+: Otherwise :
+[FIG(steps)[
+
+= [33] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [34] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
+
 
 * Definitions
 
@@ -138,6 +179,7 @@ A [DFN[character]] is one of followings:
 - [CODE(charname)@en[SP]]
 - [CODE(charname)@en[MSP]]
 - [CODE(charname)@en[DEL]]
+- [[tuple]] ([I[escape]], [VAR[bc]]), where [VAR[bc]] is a [[bit combination]]
 - [[tuple]] ([I[unassigned]], [VAR[bc]]), where [VAR[bc]] is a [[bit combination]]
 
 [17] 
