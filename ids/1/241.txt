@@ -83,16 +83,6 @@ GnDm, GnDMm は、[[図形文字]]集合をそれぞれ [[G0]] 〜 [[G3]]
 =G2DM6 = ESC %x24 %x2E [ ( I-R / DRCS ) ] F  ;; G2-DESIGNATE MULTIBYTE 96-SET
 =G3DM6 = ESC %x24 %x2F [ ( I-R / DRCS ) ] F  ;; G3-DESIGNATE MULTIBYTE 96-SET
 
-[56] 
-GnDMm では、何バイトの文字集合かが F の値で定まります。
-([[ISO/IEC2022]] 1994 14.3.3)
-
-,*[VAR[F]],[[バイト]]数
-,03/* ,2以上
-,04/* ,2
-,05/* ,2
-,06/* ,3
-,07/* ,4以上
 
 =F = Fp / Fs
 =Fs = %x40-7D / EMPTY-SET
@@ -125,12 +115,48 @@ GnM6 の ESC <I> 5/7 は [[ISO-IR]] で、 [[CCITT]]
 02/01 〜 02/03 を1つ使って、例えば ESC 02/08 02/01 04/00
 で G0 に94図形文字集合を指示出来ます。
 
+[66] 
+俗にそれぞれ2周目、3周目、4周目のような呼ばれ方をすることがありました。
+
 [35] [[94図形文字集合]]登録用の[[終端バイト]]はすべて使いきったので、
 [[中間バイト]] [[2/1]] が使われ始めました。
 
 [61] 
 [[中間バイト]]と[[空集合][空集合 (ISO/IEC 2022)]]の[[終端バイト]] [[7/14]]
 の関係は[[空集合 (ISO/IEC 2022)]]参照。
+
+** 図形文字のバイト数
+
+[72] 
+[[指示シーケンス]]は[[指示]]する[[文字集合]]に属する[[文字]]の[[バイト数]]によって変わります。
+
+[73] 
+[[C0]], [[C1]] は常に1バイトです。
+
+[74] 
+[[図形文字集合]]は
+[[8F]] - [[15F]] 
+の[[エスケープシーケンス]]を使うと1バイト
+([[94集合]]、[[96集合]])
+です。
+
+[75] 
+[[図形文字集合]]は
+[[4F]]
+の[[エスケープシーケンス]]を使うと2バイト以上
+([[複数バイト集合]])
+です。
+
+[56] 
+GnDMm では、何バイトの文字集合かが F の値で定まります。
+([[ISO/IEC2022]] 1994 14.3.3)
+
+,*[VAR[F]],[[バイト]]数
+,03/* ,2以上
+,04/* ,2
+,05/* ,2
+,06/* ,3
+,07/* ,4以上
 
 ** 1F型エスケープシーケンス
 
@@ -178,6 +204,48 @@ GnM6 の ESC <I> 5/7 は [[ISO-IR]] で、 [[CCITT]]
 - [CODE(ABNF)[[DFN@en[I]] := %x20-2F [CODE(comment)[;; 中間バイト]]]]
 - [CODE(ABNF)[[DFN@en[Fp]] := %x30-3F [CODE(comment)[;; 私用終端バイト]]]]
 - [CODE(ABNF)[[DFN@en[Ft]] := %x40-7E [CODE(comment)[;; 標準終端バイト]]]]
+
+** 4F型エスケープシーケンス
+
+[67] [DFN@en[[CODE[4F]]]] 型[[エスケープ・シーケンス]]は、
+[[複数バイト集合]]の[[指示]]に使われます。
+
+[68] 仕様書:
+- [[JIS X 0202]]:1998
+--[CSECTION[表 3.b nF 型エスケープ・シーケンス及び対応機能]]
+--[CSECTION[13.2.3 4F 型のエスケープ・シーケンス]]
+
+[69] '''第2中間バイトの割当て''':
+,第1中間バイト,第2中間バイト,機能
+,[CODE(char)[02/04]],[CODE(char)[02/08]],[[94[SUP[[VAR@en[n]]]]文字集合]]を [[G0]] に[[指示]] ([CODE(charname)[[[G0-DESIGNATE MULTIBYTE 94-SET]]]])
+,[CODE(char)[02/04]],[CODE(char)[02/09]],[[94[SUP[[VAR@en[n]]]]文字集合]]を [[G1]] に[[指示]] ([CODE(charname)[[[G1-DESIGNATE MULTIBYTE 94-SET]]]])
+,[CODE(char)[02/04]],[CODE(char)[02/10]],[[94[SUP[[VAR@en[n]]]]文字集合]]を [[G2]] に[[指示]] ([CODE(charname)[[[G2-DESIGNATE MULTIBYTE 94-SET]]]])
+,[CODE(char)[02/04]],[CODE(char)[02/11]],[[94[SUP[[VAR@en[n]]]]文字集合]]を [[G3]] に[[指示]] ([CODE(charname)[[[G3-DESIGNATE MULTIBYTE 94-SET]]]])
+,[CODE(char)[02/04]],[CODE(char)[02/12]],[[94[SUP[[VAR@en[n]]]]文字集合]]を [[G0]] に[[指示]] ([CODE(charname)[[[G0-DESIGNATE MULTIBYTE 96-SET]]]])
+,[CODE(char)[02/04]],[CODE(char)[02/13]],[[94[SUP[[VAR@en[n]]]]文字集合]]を [[G1]] に[[指示]] ([CODE(charname)[[[G1-DESIGNATE MULTIBYTE 96-SET]]]])
+,[CODE(char)[02/04]],[CODE(char)[02/14]],[[94[SUP[[VAR@en[n]]]]文字集合]]を [[G2]] に[[指示]] ([CODE(charname)[[[G2-DESIGNATE MULTIBYTE 96-SET]]]])
+,[CODE(char)[02/04]],[CODE(char)[02/15]],[[94[SUP[[VAR@en[n]]]]文字集合]]を [[G3]] に[[指示]] ([CODE(charname)[[[G3-DESIGNATE MULTIBYTE 96-SET]]]])
+
+[[ISO/IEC 2022]] では 
+[CODE(charname)@en[[[G0-DESIGNATE MULTIBYTE 96-SET]]]]
+はありません。
+
+[70] '''構文''':
+- [CODE(ABNF)[[DFN[エスケープ・シーケンス]] /= 4F 型エスケープ・シーケンス]]
+- [CODE(ABNF)[[DFN[4F 型エスケープ・シーケンス]] := 標準複数バイト指示 / 標準互換複数バイト指示 / 再定義可能複数バイト指示 / 私用複数バイト指示 / 4F 型予約エスケープ・シーケンス]]
+- [CODE(ABNF)[[DFN[標準複数バイト指示]] := [CODE(charname)@en[[[ESC]]]] %x24 (%x28-2F) [%x21-23 *[[I]]__&&]&&__ [[Ft]] − [CODE(charname)@en[[[ESC]]]] %x24 %x28 (%x40-42)]]
+- [CODE(ABNF)[[DFN[標準互換複数バイト指示]] := [CODE(charname)@en[[[ESC]]]] %x24 (%x40-42) [CODE(comment)[;; JIS 表4 備考]]]]
+- [CODE(ABNF)[[DFN[再定義可能複数バイト指示]] := [CODE(charname)@en[[[ESC]]]] %x24 (%x28-2F) %x20 *[[I]] [[F]]]]
+- [CODE(ABNF)[[DFN[私用複数バイト指示]] := [CODE(charname)@en[[[ESC]]]] %x24 (%x28-2F) *[[I]] [[Fp]]]]
+- [CODE(ABNF)[[DFN[4F 型予約エスケープ・シーケンス]] := <[CODE(charname)@en[[[ESC]]]] %x24 *[[I]] [[Ft]] で以上に該当しないもの>]]
+- [CODE(ABNF)[[DFN@en[I]] := %x20-2F [CODE(comment)[;; 中間バイト]]]]
+- [CODE(ABNF)[[DFN@en[Fp]] := %x30-3F [CODE(comment)[;; 私用終端バイト]]]]
+- [CODE(ABNF)[[DFN@en[Ft]] := %x40-7E [CODE(comment)[;; 標準終端バイト]]]]
+- [CODE(ABNF)[[DFN@en[F]] := Fp / Ft [CODE(comment)[;; 終端バイト]]]]
+
+
+
+
 
 
 ** 8F型エスケープシーケンス
@@ -469,6 +537,12 @@ GnM6 の ESC <I> 5/7 は [[ISO-IR]] で、 [[CCITT]]
 一貫しているほうがいいだろうと
 [[2/12]] を実装することもあったようです。
 
+
+[71] 
+同じ理由で[[96[SUP[[VAR[n]]]]文字集合]]を[[指示]]する
+[[2/4]] [[2/12]]
+も
+[[ISO/IEC 2022]] にはなく、一部で実装されているだけです。
 
 *3つの 94[SUP[2]] 文字集合の指示の例外規定
 -ESC 02/04 (04/00 / 04/01 / 04/02)  ;; Ft の文字集合を [[G0]] に指示
