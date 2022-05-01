@@ -376,27 +376,33 @@ or that is an extension to the ISO/IEC 2022 standard.
 
 [FIG(switch)[
 
-: [[2/0]] :
+: [N[2/0]] :
 [FIG(steps)[
 
 = [136] Set [VAR[state]]'s [F[decoder state]] to [I[escape announce state]].
 
 ]FIG]
-: [[2/1]] :
+: [N[2/1]] :
 [FIG(steps)[
 
 = [218] Set [VAR[state]]'s [F[current element]] to [I[C0]].
 = [157] Set [VAR[state]]'s [F[decoder state]] to [I[escape control state]].
 
 ]FIG]
-: [[2/2]] :
+: [N[2/2]] :
 [FIG(steps)[
 
 = [230] Set [VAR[state]]'s [F[current element]] to [I[C1]].
 = [158] Set [VAR[state]]'s [F[decoder state]] to [I[escape control state]].
 
 ]FIG]
-: [[2/4]] :
+: [N[2/3]] :
+[FIG(steps)[
+
+= [388] Set [VAR[state]]'s [F[decoder state]] to [I[escape 3 state]].
+
+]FIG]
+: [N[2/4]] :
 [FIG(steps)[
 
 @@
@@ -514,7 +520,7 @@ with
 [N[94]], [I[escape]], [VAR[bc]].
 = [42] Otherwise:
 == [43] [[Emit a character][emit a character]]
-([VAR[escape]], [VAR[bc]]).
+([I[escape]], [VAR[bc]]).
 = [44] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
 
 ]FIG]
@@ -695,6 +701,83 @@ to [VAR[state]]'s [F[current sequence]].
 ]FIG]
 
 ]FIG]
+
+
+
+*** Escape 3 state
+
+[389] The [DFN[escape 3 state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [N[2/0]], [N[2/15]] ]:
+[FIG(steps)[
+
+= [397] Set [VAR[state]]'s [F[current I byte]] to [VAR[bc]].
+= [398] Set [VAR[state]]'s [F[decoder state]] to [I[escape ctext version state]].
+
+]FIG]
+:[ [N[3/0]], [N[3/9]] ]:
+[FIG(steps)[
+
+= [396] [[Emit a character][emit a character]]
+([I[vt3]], [VAR[bc]]).
+= [390] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+
+]FIG]
+: Otherwise :
+[FIG(steps)[
+
+= [391] [[Error][error]].
+= [392] Set [VAR[state]]'s [F[current sequence]] be an [[empty character string]].
+= [393] [[Append][append]] 
+a [[character]] ([I[sequence]], [N[2/3]])
+to [VAR[state]]'s [F[current sequence]].
+= [394] Set [VAR[state]]'s [F[decoder state]] to [I[unassigned escape state]].
+= [395] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
+
+*** Escape ctext version state
+
+[399] The [DFN[escape ctext version state]] switches by the [[bit combination]] 
+[VAR[bc]]:
+
+[FIG(switch)[
+
+: [N[3/0]] :
+[FIG(steps)[
+
+= [401] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+
+]FIG]
+: [N[3/1]] :
+[FIG(steps)[
+
+= [400] [[Error][error]].
+= [403] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+
+]FIG]
+: Otherwise :
+[FIG(steps)[
+
+= [404] [[Error][error]].
+= [405] Set [VAR[state]]'s [F[current sequence]] be an [[empty character string]].
+= [406] [[Append][append]] 
+a [[character]] ([I[sequence]], [N[2/3]])
+to [VAR[state]]'s [F[current sequence]].
+= [409] [[Append][append]] 
+a [[character]] ([I[sequence]], [VAR[state]]'s [F[current I byte]])
+to [VAR[state]]'s [F[current sequence]].
+= [407] Set [VAR[state]]'s [F[decoder state]] to [I[unassigned escape state]].
+= [408] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
+
 
 *** Escape control state
 
@@ -1019,6 +1102,57 @@ to [VAR[state]]'s [F[current sequence]].
 
 ]FIG]
 
+* Characters
+
+[18] 
+A [DFN[character]] is one of followings:
+
+- [CODE(charname)@en[ESC]]
+- [CODE(charname)@en[SP]]
+- [CODE(charname)@en[MSP]]
+- [CODE(charname)@en[DEL]]
+- [CODE(charname)@en[LS0]]
+- [CODE(charname)@en[LS1]]
+- [CODE(charname)@en[SS2]]
+- [CODE(charname)@en[SS3]]
+- [[tuple]] ([I[escape]], [VAR[bc]]), where [VAR[bc]] is a [[bit combination]]
+- [[tuple]] ([I[sequence]], [VAR[bc]]), where [VAR[bc]] is a [[bit combination]]
+- [[tuple]] ([I[unassigned]], [VAR[bc]]), where [VAR[bc]] is a [[bit combination]]
+- [[tuple]] ([I[C0]], [VAR[F]], [VAR[bc]]), 
+where [VAR[bc]] and [VAR[F]] are [[bit combinations][bit combination]]
+- [[tuple]] ([I[C1]], [VAR[F]], [VAR[bc]]), 
+where [VAR[bc]] and [VAR[F]] are [[bit combinations][bit combination]]
+- [[tuple]] ([I[94]], [VAR[F]], [VAR[bc]]), 
+where [VAR[bc]] and [VAR[F]] are [[bit combinations][bit combination]]
+- [[tuple]] ([I[96]], [VAR[F]], [VAR[bc]]), 
+where [VAR[bc]] and [VAR[F]] are [[bit combinations][bit combination]]
+- [[tuple]] ([I[vt3]], [VAR[bc]]), where [VAR[bc]] is in [ [N[3/0]], [N[3/9]] ]
+
+;; [186] 
+Interpretation of these [[tuples][tuple]] are application-specific.
+
+[112] 
+A [DFN[character string]] is a [[list]] of zero or more [[characters][character]].
+
+[113] 
+An [DFN[empty character string]] is a [[character string]] whose [[length]]
+is [N[0]].
+
+
+[98] 
+A [DFN[PCD data]]
+is a [[tuple]] consisting of:
+[DFN[[F[picture mode]]]] ([[byte]]),
+[DFN[[F[picture identifier]]]] ([[byte]]),
+and
+[DFN[[F[picture data]]]] ([[byte sequence]]).
+
+@@
+[99] 
+[DFN[EOF]]
+
+
+
 * Character sets
 
 [17] 
@@ -1252,52 +1386,6 @@ to a [[byte sequence]] [VAR[bytes]], run these steps:
 
 [91] The [DFN[empty byte sequence]] is a [[byte sequence]] whose [[length]]
 is [N[0]].
-
-[18] 
-A [DFN[character]] is one of followings:
-
-- [CODE(charname)@en[ESC]]
-- [CODE(charname)@en[SP]]
-- [CODE(charname)@en[MSP]]
-- [CODE(charname)@en[DEL]]
-- [CODE(charname)@en[LS0]]
-- [CODE(charname)@en[LS1]]
-- [CODE(charname)@en[SS2]]
-- [CODE(charname)@en[SS3]]
-- [[tuple]] ([I[escape]], [VAR[bc]]), where [VAR[bc]] is a [[bit combination]]
-- [[tuple]] ([I[sequence]], [VAR[bc]]), where [VAR[bc]] is a [[bit combination]]
-- [[tuple]] ([I[unassigned]], [VAR[bc]]), where [VAR[bc]] is a [[bit combination]]
-- [[tuple]] ([I[C0]], [VAR[F]], [VAR[bc]]), 
-where [VAR[bc]] and [VAR[F]] are [[bit combinations][bit combination]]
-- [[tuple]] ([I[C1]], [VAR[F]], [VAR[bc]]), 
-where [VAR[bc]] and [VAR[F]] are [[bit combinations][bit combination]]
-- [[tuple]] ([I[94]], [VAR[F]], [VAR[bc]]), 
-where [VAR[bc]] and [VAR[F]] are [[bit combinations][bit combination]]
-- [[tuple]] ([I[96]], [VAR[F]], [VAR[bc]]), 
-where [VAR[bc]] and [VAR[F]] are [[bit combinations][bit combination]]
-
-;; [186] 
-Interpretation of these [[tuples][tuple]] are application-specific.
-
-[112] 
-A [DFN[character string]] is a [[list]] of zero or more [[characters][character]].
-
-[113] 
-An [DFN[empty character string]] is a [[character string]] whose [[length]]
-is [N[0]].
-
-
-[98] 
-A [DFN[PCD data]]
-is a [[tuple]] consisting of:
-[DFN[[F[picture mode]]]] ([[byte]]),
-[DFN[[F[picture identifier]]]] ([[byte]]),
-and
-[DFN[[F[picture data]]]] ([[byte sequence]]).
-
-@@
-[99] 
-[DFN[EOF]]
 
 
 * Notes
