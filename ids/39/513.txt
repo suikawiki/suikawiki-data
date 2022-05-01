@@ -1,0 +1,111 @@
+* [CODE[wchar_t]] データ型
+
+
+[1] [CITE@ja-jp[wchar_t ‐ 通信用語の基礎知識]], [TIME[2022-05-01T02:20:13.000Z]] <https://www.wdic.org/w/TECH/wchar_t>
+
+[2] [CITE@ja[ワイド文字 - Wikipedia]], [TIME[2022-04-17T02:16:55.000Z]], [TIME[2022-05-01T02:20:31.000Z]] <https://ja.wikipedia.org/wiki/%E3%83%AF%E3%82%A4%E3%83%89%E6%96%87%E5%AD%97>
+
+[9] [[CSI][Code Set Independent]]
+
+* [CODE[wchar_t]] 符号化文字集合
+
+[6] 
+[CODE[wchar_t]] における[[符号]]と[[文字]]の対応関係は実装依存です。
+
+[7] 
+次のようなものがあります。
+
+- [8] 完全に独自のもの
+- [10] [[UCS-4]] ≒ [[UTF-32]]
+- [11] [[UCS-2]], [[UTF-16]]
+- [12] [[固定長EUC]]各種
+
+
+[FIG(quote)[
+[FIGCAPTION[
+[3] [CITE@ja[文字および文字列の処理 - Oracle Solaris でのアプリケーションの国際化とローカライズ]]
+([TIME[2017-06-02T20:02:22.000Z]], [TIME[2022-05-01T02:22:03.072Z]])
+<https://docs.oracle.com/cd/E62101_01/html/E62868/gmwke.html>
+]FIGCAPTION]
+
+> Oracle Solaris では、wchar_t の内部形式はロケール固有です。Oracle Solaris の Unicode ロケールでは、wchar_t は UTF-32 Unicode エンコード形式を使用し、その他のロケールは別の表現を使用します。
+
+]FIG]
+
+
+[FIG(quote)[
+[FIGCAPTION[
+[4] [CITE@ja-JP[C および C++ 組み込み SQL アプリケーションにおける日本語または中国語 (繁体字) EUC、および UCS-2 に関する考慮事項 - IBM Documentation]]
+([TIME[2022-05-01T02:23:21.000Z]])
+<https://www.ibm.com/docs/ja/db2/11.1?topic=hvicc-japanese-traditional-chinese-euc-ucs-2-considerations-in-c-c>
+]FIGCAPTION]
+
+> wchar_t エンコード方式が 2 バイト Unicode のクライアント環境 (例えば Windows 2000 または AIX® バージョン 5.1 以上) の場合には、NOCONVERT オプションを使用して直接 UCS-2 で作業できます。
+
+]FIG]
+
+
+[FIG(quote)[
+[FIGCAPTION[
+[5] [CITE@ja[EUC(5) - ファイルフォーマット - YOS OPENSONAR]]
+([TIME[2022-05-01T02:25:25.000Z]])
+<http://www.yosbits.com/opensonar/rest/man/freebsd/man/ja/man5/euc.5.html?l=ja>
+]FIGCAPTION]
+
+> EUC マルチバイト文字の wchar_t エンコーディングは、 len および mask 引数に依存します。先ず、以下のように wchar_t にバイトが移動されます:
+> byte0 << ((lenN-1) * 8) | byte1 << ((lenN-2) * 8) | ... | bytelenN-1
+> その結果はそれから ~mask と AND をとられ、 maskN と OR をとられます。コードセット 2 と 3 は特殊で、前のバイト (0x8e または 0x8f) が最初に取り除かれ lenN 引数が 1 減少させられます。
+
+]FIG]
+
+* 歴史
+
+** ISO 2022 wchar_t encoding
+
+[13] 
+[CITE@en[ISO 2022 wchar_t encoding]], 
+[[Markus Kuhn]],
+created 2001-06-16 – last modified 2001-06-26,
+[TIME[2006-02-12T16:40:58.000Z]], [TIME[2022-05-01T02:29:42.333Z]] <https://www.cl.cam.ac.uk/~mgk25/ucs/iso2022-wc.html>
+
+
+[14] 
+[[21世紀]]初頭の [[Unicode]] への移行が徐々に始まった時代に提案されたもの。
+[[著者]]は [[Unicode推進][Unicoder]]、アンチ [[ISO/IEC 2022]]
+で当時有名 (悪名?) だった人。
+
+[15] 
+題名に [[ISO 2022]] と書いてあるが、 [[ISO/IEC 2022]] とはあまり関係ない。
+当時の[[東アジア]] (主に[[日本]]) では [[ISO/IEC 2022]]
+の[[符号化文字集合]]の違いが[[フォント]]の選択
+[WEAK[(によって誤魔化されていた[[漢字統合]]の問題)]]
+や[[文字幅]]
+([[半角]] vs [[全角]]) の決定に影響していたので、
+[[ISO/IEC 2022]] を捨てて [[Unicode]] に移行させるためには
+[[ISO/IEC 2022]] における[[指示シーケンス]]の情報を
+[[Unicode文字]]に付与すればいいのでは、という誤解に基づき設計されている.
+
+[16] 
+[[ISO 2022 wchar_t encoding]] では 
+[[ISO/IEC 10646]] の [CODE[U+0000]] - [CODE[U-07FFFFFF]] はそのまま使える。
+([CODE[U-08000000]] - [CODE[U-7FFFFFFF]] は表現不能。)
+それに加えて、
+[[ISO/IEC 10646]] の [CODE[U+0000]] - [CODE[U+3FFFFF]] は、
+上位数ビットに特定の値を加えた形でも使える。
+
+[17] 
+その特定の値が、 [[ISO/IEC 2022]] における[[符号化図形文字集合]]の[[指示シーケンス]]の[[中間バイト]]や[[終端バイト]]である。
+従って元が [[JIS X 0208]] だったか [[GB 2312]] だったか [[ISO/IEC 8859]] だったか区別できる、
+という仕組み。
+
+[18] 
+あくまで[[往復変換]]のために元の[[符号化文字集合]]が何だったか記録するだけで、
+下位ビットは相当する [[Unicode]] の文字に置き換えないといけない。
+従って当時まだ多かった [[Unicode]] 嫌悪派の受けが良いはずがないし、
+[[ISO/IEC 2022]] との相互変換時の [[Unicode]] 文字との変換表が必要なことはただの
+[[Unicode]] への変換と変わらないし、
+その変換表が実装によって違うことに起因する[[相互運用性]]の問題の解決にもならない。
+
+
+* メモ
+
