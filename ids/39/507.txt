@@ -8,14 +8,6 @@
 
 : [DFN[[F[fixed set]]]] : [[Character set][character set]].
 : [DFN[[F[escape set]]]] : [[Character set][character set]].
-: [DFN[[F[2/0 designated]]]] : [CODE(charname)@en[SP]] or [CODE(charname)@en[MSP]].
-Initially, [CODE(charname)@en[SP]].
-: [DFN[[F[7/15 designated]]]] : [CODE(charname)@en[DEL]].
-: [DFN[[F[10/0 designated]]]] : [CODE(charname)@en[MSP]] or 
-[[character]] ([I[unknown-byte]], [[10/0]]).
-Initially, [[character]] ([I[unknown-byte]], [[10/0]]).
-: [DFN[[F[15/15 designated]]]] : 
-[[Character][character]] ([I[unknown-byte]], [[15/15]]).
 : [DFN[[F[C0 designated]]]] : [[C0 set]] or [I[unknown-cset]].
 Initially, the [[initial C0 set]].
 : [DFN[[F[C1 designated]]]] : [[C1 set]] or [I[unknown-cset]].
@@ -103,7 +95,7 @@ that modifies [VAR[state]].  It [MAY[MAY]] modify [VAR[state]] in these ways:
 and/or
 [F[GR invoked]].
 - [319] Invoke the steps to [[modify character sets]]
-with [VAR[state]] and some [VAR[features]].
+of [VAR[state]] by some [VAR[features]].
 
 
 
@@ -114,6 +106,9 @@ run these steps:
 
 [FIG(steps)[
 = [8] Let [VAR[state]] be a new [[state]].
+= [327] [[Modify character sets][modify character sets]]
+of [VAR[state]] by 
+« "default" ».
 = [9] Run [VAR[initialization steps]] with [VAR[state]].
 = [6] 
 Let [VAR[output stream]] be a [[list]].
@@ -235,32 +230,113 @@ The decoder has several [DFN[decoder states]] for processing input
 [[bit combinations][bit combination]].
 
 [719] 
-To [DFN[process a control [[character]]]] [VAR[char]], run these steps:
+To [DFN[process a control [[character]]]] [VAR[char]], 
+[[switch]] by [VAR[char]]:
 
+[FIG(switch)[
+
+:[CODE(charname)@en[ESC]]:
 [FIG(steps)[
 
-= [29] If [VAR[char]] is [CODE(charname)@en[ESC]]:
-== [30] Set [VAR[state]]'s [F[decoder state]] to [I[escape state]].
-= [211] Otherwise, if [VAR[char]] is [CODE(charname)@en[LS0]]:
-== [209] Set [VAR[state]]'s [F[GL invoked]] to [I[G0]].
-= [210] Otherwise, if [VAR[char]] is [CODE(charname)@en[LS1]]:
-== [212] Set [VAR[state]]'s [F[GL invoked]] to [I[G1]].
-= [213] Otherwise, if [VAR[char]] is [CODE(charname)@en[SS2]]:
-== [226] Set [VAR[state]]'s [F[current element]] to [I[G2]].
-== [214] Set [VAR[state]]'s [F[decoder state]] to [I[SS state]].
-= [215] Otherwise, if [VAR[char]] is [CODE(charname)@en[SS3]]:
-== [227] Set [VAR[state]]'s [F[current element]] to [I[G3]].
-== [216] Set [VAR[state]]'s [F[decoder state]] to [I[SS state]].
-= [721] Otherwise, if [VAR[char]] is
-a [[character]] ([I[vt52]], [I[C1]], [N[9/9]]):
-== [722] Set [VAR[state]]'s [F[decoder state]] to [I[cursor address state]].
-= [685] Otherwise, if [VAR[char]] is 
-a [[character]] ([I[tektronix]], [I[esc]], [N[0/3]]):
-== [686] Set [VAR[state]]'s [F[Tektronix 4014 flag]] to [[false]].
-== [718] Set [VAR[state]]'s [F[C1 designated]] to the [[VT C1 set]].
-== [738] [[Emit][emit a character]] [VAR[char]].
+= [30] Set [VAR[state]]'s [F[decoder state]] to [I[escape state]].
+
+]FIG]
+:[CODE(charname)@en[LS0]]:
+[FIG(steps)[
+
+= [209] Set [VAR[state]]'s [F[GL invoked]] to [I[G0]].
+
+]FIG]
+:[CODE(charname)@en[LS1]]:
+[FIG(steps)[
+
+= [212] Set [VAR[state]]'s [F[GL invoked]] to [I[G1]].
+
+]FIG]
+:[CODE(charname)@en[LS2]]:
+[FIG(steps)[
+
+= [750] Set [VAR[state]]'s [F[GL invoked]] to [I[G2]].
+
+]FIG]
+:[CODE(charname)@en[LS3]]:
+[FIG(steps)[
+
+= [752] Set [VAR[state]]'s [F[GL invoked]] to [I[G3]].
+
+]FIG]
+:[CODE(charname)@en[LS1R]]:
+[FIG(steps)[
+
+= [61] If [VAR[state]]'s [F[bits]] is [I[7-bit]]:
+== [101] Set [VAR[state]]'s [F[GL invoked]] to [I[G1]].
+= [102] Otherwise:
+== [127] Set [VAR[state]]'s [F[GR invoked]] to [I[G1]].
+
+]FIG]
+:[CODE(charname)@en[LS2R]]:
+[FIG(steps)[
+
+= [129] If [VAR[state]]'s [F[bits]] is [I[7-bit]]:
+== [130] Set [VAR[state]]'s [F[GL invoked]] to [I[G2]].
+= [131] Otherwise:
+== [132] Set [VAR[state]]'s [F[GR invoked]] to [I[G2]].
+
+]FIG]
+:[CODE(charname)@en[LS3R]]:
+[FIG(steps)[
+
+= [754] If [VAR[state]]'s [F[bits]] is [I[7-bit]]:
+== [133] Set [VAR[state]]'s [F[GL invoked]] to [I[G3]].
+= [134] Otherwise:
+== [135] Set [VAR[state]]'s [F[GR invoked]] to [I[G3]].
+
+]FIG]
+:[CODE(charname)@en[SS2]]:
+[FIG(steps)[
+
+= [226] Set [VAR[state]]'s [F[current element]] to [I[G2]].
+= [214] Set [VAR[state]]'s [F[decoder state]] to [I[SS state]].
+
+]FIG]
+:[CODE(charname)@en[SS3]]:
+[FIG(steps)[
+
+= [227] Set [VAR[state]]'s [F[current element]] to [I[G3]].
+= [216] Set [VAR[state]]'s [F[decoder state]] to [I[SS state]].
+
+]FIG]
+:([I[vt52]], [I[C1]], [N[9/9]]):
+[FIG(steps)[
+
+= [722] Set [VAR[state]]'s [F[decoder state]] to [I[cursor address state]].
+
+]FIG]
+:([I[tektronix]], [I[esc]], [N[0/3]]):
+[FIG(steps)[
+
+= [686] Set [VAR[state]]'s [F[Tektronix 4014 flag]] to [[false]].
+= [718] Set [VAR[state]]'s [F[C1 designated]] to the [[VT C1 set]].
+= [738] [[Emit][emit a character]] [VAR[char]].
+
+]FIG]
+:[CODE(charname)@en[CMD]]:
+[FIG(steps)[
+
+= [48] Set [VAR[state]]'s [F[decoder state]] to [I[unassigned state]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [103] If [VAR[char]] is a [[tuple]] of ([I[deprecated]], [VAR[c]]):
+== [756] [[Deprecated][deprecated]].
+== [755] [[Process][process a control character]] [VAR[c]].
 = [31] Otherwise:
 == [13] [[Emit][emit a character]] [VAR[char]].
+]FIG]
+
+
 ]FIG]
 
 @@
@@ -281,12 +357,7 @@ with
 = [44] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
 
 ]FIG]
-: [N[6/4]] :
-[FIG(steps)[
-
-= [48] Set [VAR[state]]'s [F[decoder state]] to [I[unassigned state]].
-
-]FIG]
+: [N[6/4]] : CMD
 : [[6/7]], [[7/3]] :
 [FIG(steps)[
 
@@ -326,18 +397,8 @@ with
 == [54] Set [VAR[state]]'s [F[GR invoked]] to [I[G3]].
 
 ]FIG]
-: [[6/14]] :
-[FIG(steps)[
-
-= [60] Set [VAR[state]]'s [F[GL invoked]] to [I[G2]].
-
-]FIG]
-: [[6/15]] :
-[FIG(steps)[
-
-= [61] Set [VAR[state]]'s [F[GL invoked]] to [I[G3]].
-
-]FIG]
+: [[6/14]] : LS2
+: [[6/15]] : LS3
 : [[7/0]] :
 [FIG(steps)[
 
@@ -352,33 +413,9 @@ with
 == [65] Set [VAR[state]]'s [F[decoder state]] to [I[PCD state]].
 
 ]FIG]
-: [[7/12]] :
-[FIG(steps)[
-
-= [127] If [VAR[state]]'s [F[bits]] is [I[7-bit]]:
-== [128] Set [VAR[state]]'s [F[GL invoked]] to [I[G3]].
-= [129] Otherwise:
-== [101] Set [VAR[state]]'s [F[GR invoked]] to [I[G3]].
-
-]FIG]
-: [[7/13]] :
-[FIG(steps)[
-
-= [130] If [VAR[state]]'s [F[bits]] is [I[7-bit]]:
-== [131] Set [VAR[state]]'s [F[GL invoked]] to [I[G2]].
-= [132] Otherwise:
-== [102] Set [VAR[state]]'s [F[GR invoked]] to [I[G2]].
-
-]FIG]
-: [[7/14]] :
-[FIG(steps)[
-
-= [133] If [VAR[state]]'s [F[bits]] is [I[7-bit]]:
-== [134] Set [VAR[state]]'s [F[GL invoked]] to [I[G1]].
-= [135] Otherwise:
-== [103] Set [VAR[state]]'s [F[GR invoked]] to [I[G1]].
-
-]FIG]
+: [[7/12]] : LS3R
+: [[7/13]] : LS2R
+: [[7/14]] : LS1R
 
 ]FIG]
 
@@ -1744,13 +1781,17 @@ A [DFN[character]] is one of followings:
 - [CODE(charname)@en[DEL]]
 - [CODE(charname)@en[LS0]]
 - [CODE(charname)@en[LS1]]
+- [CODE(charname)@en[LS2]]
+- [CODE(charname)@en[LS3]]
+- [CODE(charname)@en[LS1R]]
+- [CODE(charname)@en[LS2R]]
+- [CODE(charname)@en[LS3R]]
 - [CODE(charname)@en[SS2]]
 - [CODE(charname)@en[SS3]]
 - [CODE(charname)@en[DCS]]
 - any other [[code point]]
-- [[tuple]] ([I[escape]], [VAR[bc]]), where [VAR[bc]] is a [[bit combination]]
-- [[tuple]] ([I[esc]], [VAR[bytes]]), where [VAR[bytes]] is a [[byte sequence]]
-- [[tuple]] ([I[unknown-byte]], [VAR[bc]]), where [VAR[bc]] is a [[bit combination]]
+- ([I[esc]], [VAR[bytes]]), where [VAR[bytes]] is a [[byte sequence]]
+- ([I[unknown-byte]], [VAR[bc]]), where [VAR[bc]] is a [[bit combination]]
 - [[tuple]] ([I[C0]], [VAR[IF]], [VAR[bytes]]), 
 where [VAR[IF]] is a [[byte sequence]] and
 [VAR[bytes]] is a [[byte sequence]] of [[length]] [N[1]]
@@ -1783,7 +1824,7 @@ where [VAR[bc]] is in [ [N[8/0]], [N[9/15]] ]
 where [VAR[bc]] is in [ [N[8/0]], [N[9/15]] ]
 - [[tuple]] ([I[tektronix]], [I[esc]], [VAR[bc]]), 
 where [VAR[bc]] is in [ [N[0/0]], [N[1/15]] ]
-
+- ([I[deprecated]], [VAR[char]]) where [VAR[char]] is a [[character]]
 
 
 ;; [186] 
@@ -2192,7 +2233,47 @@ with [[2/1]], [[7/14]], 94[SUP[3]], [VAR[f]].
 
 ]FIG]
 
+[333] 
+To [DFN[modify character sets]] of [[state]] [VAR[state]] by
+[[list]] [VAR[features]], run these steps:
 
+[FIG(steps)[
+
+= [342] [[For each]] [VAR[feature]] in [VAR[features]]:
+== [739] [[Switch]] by [VAR[feature]]:
+[FIG(switch)[
+
+: "default" :
+[FIG(steps)[
+
+= [740] Set [VAR[state]]'s [F[fixed set]] [ [N[2/0]] ] to [CODE(charname)@en[SP]].
+= [741] Set [VAR[state]]'s [F[fixed set]] [ [N[7/15]] ] to [CODE(charname)@en[DEL]].
+= [742] Set [VAR[state]]'s [F[fixed set]] [ [N[10/0]] ] to 
+[[character]] ([I[unknown-byte]], [N[10/0]]).
+= [743] Set [VAR[state]]'s [F[fixed set]] [ [N[15/15]] ] to 
+[[character]] ([I[unknown-byte]], [N[15/15]]).
+
+]FIG]
+: "mongolian7" :
+[FIG(steps)[
+
+= [744] Set [VAR[state]]'s [F[fixed set]] [ [N[2/0]] ] to [CODE(charname)@en[MSP]].
+= [745] Set [VAR[state]]'s [F[fixed set]] [ [N[7/15]] ] to [CODE(charname)@en[DEL]].
+
+]FIG]
+: "mongolian8" :
+[FIG(steps)[
+
+= [746] Set [VAR[state]]'s [F[fixed set]] [ [N[2/0]] ] to [CODE(charname)@en[SP]].
+= [747] Set [VAR[state]]'s [F[fixed set]] [ [N[7/15]] ] to [CODE(charname)@en[DEL]].
+= [748] Set [VAR[state]]'s [F[fixed set]] [ [N[10/0]] ] to [CODE(charname)@en[MSP]].
+
+]FIG]
+
+
+]FIG]
+
+]FIG]
 
 * Definitions
 
