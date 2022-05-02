@@ -8,10 +8,8 @@
 
 : [DFN[[F[fixed set]]]] : [[Character set][character set]].
 : [DFN[[F[escape set]]]] : [[Character set][character set]].
-: [DFN[[F[C0 designated]]]] : [[C0 set]] or [I[unknown-cset]].
-Initially, the [[initial C0 set]].
-: [DFN[[F[C1 designated]]]] : [[C1 set]] or [I[unknown-cset]].
-Initially, the [[empty C1 set]].
+: [DFN[[F[C0 designated]]]] : [[C0 set]].  Initially, the [[initial C0 set]].
+: [DFN[[F[C1 designated]]]] : [[C1 set]].  Initially, the [[empty C1 set]].
 : [DFN[[F[G0 designated]]]] : [[G set]], [I[unknown-94]], or [I[unknown-96]].
 Initially, [I[unknown-96]].
 : [DFN[[F[G1 designated]]]] : [[G set]], [I[unknown-94]], or [I[unknown-96]].
@@ -322,7 +320,16 @@ with [N[94]], [I[marc]], [VAR[bc]].
 
 = [686] Set [VAR[state]]'s [F[Tektronix 4014 flag]] to [[false]].
 = [718] Set [VAR[state]]'s [F[C1 designated]] to the [[VT C1 set]].
+= [677] [[Modify character sets][modify character sets]]
+of [VAR[state]] by 
+« "vt" ».
 = [738] [[Emit][emit a character]] [VAR[char]].
+
+]FIG]
+:([I[vt]], [I[esc]], [N[7/11]]):
+[FIG(steps)[
+
+= [679] Set [VAR[state]]'s [F[decoder state]] to [I[file state]].
 
 ]FIG]
 :([I[vt52]], [I[C1]], [N[9/9]]):
@@ -382,12 +389,7 @@ with [N[94]], [I[marc]], [VAR[bc]].
 [FIG(steps)[
 
 = [11] Let [VAR[set]] be [VAR[state]]'s [F[C0 designated]].
-= [658] If [VAR[set]] is [I[unknown-cset]]:
-== [659] Set [VAR[state]]'s [F[decoder state]] to [I[unassigned state]].
-== [660] [[Emit][emit a character]]
-a [[character]] ([I[unknown-control]], [VAR[bc]]).
-= [661] Otherwise:
-== [717] [[Process a control character][process a control character]]
+= [717] [[Process a control character][process a control character]]
 [VAR[set]] [ [VAR[bc]] ].
 
 ]FIG]
@@ -418,12 +420,7 @@ a [[character]] ([I[unknown-control]], [VAR[bc]]).
 [FIG(steps)[
 
 = [26] Let [VAR[set]] be [VAR[state]]'s [F[C1 designated]].
-= [672] If [VAR[set]] is [I[unknown-cset]]:
-== [673] Set [VAR[state]]'s [F[decoder state]] to [I[unassigned state]].
-== [37] [[Emit][emit a character]]
-a [[character]] ([I[unknown-control]], [VAR[bc]]).
-= [675] Otherwise:
-== [28] [[Process a control character][process a control character]] 
+= [28] [[Process a control character][process a control character]] 
 [VAR[set]] [ [VAR[bc]] ].
 
 ]FIG]
@@ -935,13 +932,8 @@ a [[character]] ([I[unassinged]], [VAR[bc]]).
 [FIG(steps)[
 
 = [36] Let [VAR[set]] be [VAR[state]]'s [F[C1 designated]].
-= [676] If [VAR[set]] is [I[unknown-cset]]:
-== [677] Set [VAR[state]]'s [F[decoder state]] to [I[unassigned state]].
-== [679] [[Emit][emit a character]]
-a [[character]] ([I[unknown-control]], [VAR[bc]] + [N[0x40]]).
-= [680] Otherwise:
-== [39] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
-== [38] [[Process a control character][process a control character]]
+= [39] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [38] [[Process a control character][process a control character]]
 [VAR[set]] [ [VAR[bc]] + [N[0x40]] ].
 
 
@@ -1039,9 +1031,18 @@ or
 :[ [N[3/0]], [N[3/9]] ]:
 [FIG(steps)[
 
-= [396] [[Emit a character][emit a character]]
-([I[vt]], [N[2/3]], [VAR[bc]]).
+= [396] [[Emit][emit a character]]
+[[character]] ([I[vt]], [N[2/3]], [VAR[bc]]).
 = [390] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+
+]FIG]
+:[ [N[3/10]], [N[3/15]] ]:
+[FIG(steps)[
+
+= [749] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [747] [[Process][process a control character]]
+[[character]] ([I[unknown-control]], 
+[N[1/11]] followed by [N[2/3]] followed by [VAR[bc]]).
 
 ]FIG]
 : Otherwise :
@@ -1075,13 +1076,21 @@ or
 = [403] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
 
 ]FIG]
+:[ [N[3/2]], [N[3/15]] ]:
+[FIG(steps)[
+
+= [751] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [753] [[Process][process a control character]]
+[[character]] ([I[unknown-control]], 
+[N[1/11]] followed by [N[2/3]] followed by [VAR[state]]'s [F[current I byte]]
+followed by [VAR[bc]]).
+
+]FIG]
 : Otherwise :
 [FIG(steps)[
 
 = [404] [[Error][error]].
-= [405] Set [VAR[state]]'s [F[current byte sequence]] to 
-[N[2/3]] followed by [VAR[state]]'s [F[current I byte]].
-= [407] Set [VAR[state]]'s [F[decoder state]] to [I[escape unassigned state]].
+= [407] Set [VAR[state]]'s [F[decoder state]] to [I[unassigned state]].
 = [408] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -1586,6 +1595,31 @@ by the [[bit combination]] [VAR[bc]]:
 
 ]FIG]
 
+*** File state
+
+[680] The [DFN[file state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [N[3/0]], [N[7/14]] ]:
+[FIG(steps)[
+
+= [685] [[Emit][emit a character]]
+[[character]] ([I[vt]], [I[file]], [VAR[bc]]).
+= [721] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [742] [[Error][error]].
+= [745] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [746] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
+
 *** PCD state
 
 [67] The [DFN[PCD state]] switches by the [[bit combination]] [VAR[bc]]:
@@ -1743,7 +1777,7 @@ A [DFN[character]] is one of followings:
 - any other [[code point]]
 - ([I[esc]], [VAR[bytes]]), where [VAR[bytes]] is a [[byte sequence]]
 - ([I[unknown-byte]], [VAR[bc]]), where [VAR[bc]] is a [[bit combination]]
-- ([I[unknown-control]], [VAR[bc]]), where [VAR[bc]] is a [[bit combination]]
+- ([I[unknown-control]], [VAR[bytes]]), where [VAR[bytes]] is a [[byte sequence]]
 - ([I[C0]], [VAR[IF]], [VAR[bytes]]), 
 where [VAR[IF]] is a [[byte sequence]] and
 [VAR[bytes]] is a [[byte sequence]] of [[length]] [N[1]]
@@ -1773,6 +1807,7 @@ where [VAR[bc]] is a [[bit combination]] and
 - ([I[vt]], [N[2/9]], [N[3/1]])
 - ([I[vt]], [N[2/15]], [VAR[bc]]), where [VAR[bc]] is in [ [N[3/0]], [N[7/14]] ]
 - ([I[vt]], [I[esc]], [VAR[bc]]), where [VAR[bc]] is in [ [N[3/0]], [N[7/14]] ]
+- ([I[vt]], [I[file]], [VAR[bc]]), where [VAR[bc]] is in [ [N[3/0]], [N[7/14]] ]
 - ([I[vt]], [I[C1]], [VAR[bc]]), where [VAR[bc]] is in [ [N[8/0]], [N[9/15]] ]
 - ([I[vt52]], [I[esc]], [VAR[bc]]), where [VAR[bc]] is in [ [N[3/0]], [N[7/14]] ]
 - ([I[vt52]], [I[C1]], [VAR[bc]]), where [VAR[bc]] is in [ [N[8/0]], [N[9/15]] ]
@@ -1917,7 +1952,7 @@ To [DFN[get a C0 set]] [VAR[F]], run these steps:
 [FIG(steps)[
 
 = [652] If [VAR[F]] is ''not'' in [ [N[4/0]], [N[7/14]] ]:
-== [653] Return [I[unknown-c0]].
+== [653] Return the [[unknown C0 set]].
 == [654] Abort these steps.
 = [177] Let [VAR[set]] be the result of 
 [[getting a 1-byte set][get a 1-byte set]] 
@@ -1967,6 +2002,19 @@ a [[character]] ([I[unknown-byte]], [VAR[c]]).
 
 ]FIG]
 
+[37] 
+The [DFN[unknown C0 set]] is the result of running these steps:
+
+[FIG(steps)[
+
+= [213] Let [VAR[set]] be a new [[character set]].
+= [215] [[For each]] [VAR[c]] in [ [N[0/0]], [N[1/15]] ]:
+== [273] Let [VAR[set]] [ [VAR[c]] ] be
+[[character]] ([I[unknown-control]], [VAR[c]]).
+= [658] Return [VAR[set]].
+
+]FIG]
+
 [228] The [DFN[Tektronix 4014 escape C0 set]] is the result of running these steps:
 
 [FIG(steps)[
@@ -1988,7 +2036,7 @@ To [DFN[get a C1 set]] [VAR[F]], run these steps:
 [FIG(steps)[
 
 = [655] If [VAR[F]] is ''not'' in [ [N[4/0]], [N[7/14]] ]:
-== [656] Return [I[unknown-c1]].
+== [656] Return the [[unknown C1 set]].
 == [657] Abort these steps.
 = [181] Let [VAR[set]] be the result of 
 [[getting a 1-byte set][get a 1-byte set]] 
@@ -2007,6 +2055,20 @@ or
 [24] 
 The [DFN[empty C1 set]] is the result of 
 [[getting a C1 set][get a C1 set]] [[7/14]].
+
+[661] 
+The [DFN[unknown C1 set]] is the result of running these steps:
+
+[FIG(steps)[
+
+= [672] Let [VAR[set]] be a new [[character set]].
+= [673] [[For each]] [VAR[c]] in [ [N[8/0]], [N[9/15]] ]:
+== [675] Let [VAR[set]] [ [VAR[c]] ] be
+[[character]] ([I[unknown-control]], [VAR[c]]).
+= [676] Return [VAR[set]].
+
+]FIG]
+
 
 [683] 
 The [DFN[VT C1 set]] is the result of running these steps:
@@ -2226,15 +2288,15 @@ To [DFN[modify character sets]] of [[state]] [VAR[state]] by
 = [124] Set [VAR[state]]'s [F[fixed set]] [ [N[2/0]] ] to 
 [[character]] ([I[unknown-byte]], [N[2/0]]).
 = [125] Set [VAR[state]]'s [F[escape set]] [ [N[6/4]] ] to 
-[[character]] ([I[unknown-control]], [N[6/4]]).
+[[character]] ([I[unknown-control]], [N[1/11]] followed by [N[6/4]]).
 = [126] Set [VAR[state]]'s [F[escape set]] [ [N[6/2]] ] to 
-[[character]] ([I[esc]], [N[6/2]]).
+[[character]] ([I[unknown-control]], [N[1/11]] followed by [N[6/2]]).
 = [128] Set [VAR[state]]'s [F[escape set]] [ [N[7/0]] ] to 
-[[character]] ([I[unknown-control]], [N[7/0]]).
+[[character]] ([I[unknown-control]], [N[1/11]] followed by [N[7/0]]).
 = [210] Set [VAR[state]]'s [F[escape set]] [ [N[6/11]] ] to 
-[[character]] ([I[unknown-control]], [N[6/11]]).
+[[character]] ([I[unknown-control]], [N[1/11]] followed by [N[6/11]]).
 = [211] Set [VAR[state]]'s [F[escape set]] [ [N[6/12]] ] to 
-[[character]] ([I[unknown-control]], [N[6/12]]).
+[[character]] ([I[unknown-control]], [N[1/11]] followed by [N[6/12]]).
 
 ]FIG]
 : "iso2022" :
