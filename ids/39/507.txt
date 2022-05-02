@@ -30,7 +30,9 @@ Initially, [I[unknown-96]].
 Initially, [I[8-bit]].
 : [DFN[[F[MARC-8 flag]]]] : [[Boolean][boolean]].
 Initially, [[false]].
-: [DFN[[F[VT response flag]]]] : [[Boolean]].
+: [DFN[[F[VT response flag]]]] : [[Boolean][boolean]].
+Initially, [[false]].
+: [DFN[F[Tektronix 4014 flag]]]] : [[Boolean][boolean]].
 Initially, [[false]].
 : [DFN[[F[GL invoked]]]] : [[G element]] or [CODE[null]].
 Initially, [CODE[null]].
@@ -100,6 +102,7 @@ that modifies [VAR[state]].  It [MAY[MAY]] modify [VAR[state]] in these ways:
 [F[G3 designated]],
 [F[bits]],
 [F[MARC-8 flag]],
+[F[Tektronix 4014 flag]],
 [F[VT response flag]],
 [F[GL invoked]],
 and/or
@@ -230,6 +233,10 @@ To [DFN[process a control [[character]]]] [VAR[char]], run these steps:
 = [215] Otherwise, if [VAR[char]] is [CODE(charname)@en[SS3]]:
 == [227] Set [VAR[state]]'s [F[current element]] to [I[G3]].
 == [216] Set [VAR[state]]'s [F[decoder state]] to [I[SS state]].
+= [685] Otherwise, if [VAR[char]] is 
+a [[character]] ([I[tektronix]], [I[esc]], [N[0/3]]):
+== [686] Set [VAR[state]]'s [F[Tektronix 4014 flag]] to [[false]].
+== [718] Set [VAR[state]]'s [F[C1 designated]] to the [[VT C1 set]].
 = [31] Otherwise:
 == [13] [[Emit][emit a character]] [VAR[char]].
 ]FIG]
@@ -668,6 +675,23 @@ a [[character]] ([I[unassinged]], [VAR[bc]]).
 
 [FIG(switch)[
 
+
+:[ [N[0/0]], [N[1/15]] ]:
+[FIG(steps)[
+
+= [204] If [VAR[state]]'s [F[Tektronix 4014 flag]] is [[true]]:
+== [205] Let [VAR[set]] be the [[Tektronix 4014 escape C0 set]].
+== [720] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [225] [[Process a control character][process a control character]]
+[VAR[set]] [ [VAR[bc]] ].
+= [206] Otherwise:
+== [207] Set [VAR[state]]'s [F[current byte sequence]] to an [[empty byte sequence]].
+== [208] Set [VAR[state]]'s [F[decoder state]] to [I[escape unassigned state]].
+== [224] [[Reconsume][reconsume]] [VAR[bc]].
+
+
+
+]FIG]
 : [N[2/0]] :
 [FIG(steps)[
 
@@ -1683,6 +1707,10 @@ where [VAR[bc]] is in [ [N[3/0]], [N[7/14]] ]
 where [VAR[bc]] is in [ [N[8/0]], [N[9/15]] ]
 - [[tuple]] ([I[vt52]], [I[C1]], [VAR[bc]]), 
 where [VAR[bc]] is in [ [N[8/0]], [N[9/15]] ]
+- [[tuple]] ([I[tektronix]], [I[esc]], [VAR[bc]]), 
+where [VAR[bc]] is in [ [N[0/0]], [N[1/15]] ]
+
+
 
 ;; [186] 
 Interpretation of these [[tuples][tuple]] are application-specific.
@@ -1864,6 +1892,16 @@ a [[character]] ([I[unknown-byte]], [VAR[c]]).
 
 ]FIG]
 
+[228] The [DFN[Tektronix 4014 escape C0 set]] is the result of running these steps:
+
+[FIG(steps)[
+
+= [229] Let [VAR[set]] be the result of 
+[[getting a 1-byte set][get a 1-byte set]] 
+with [[0/0]], [[1/15]], [I[tektronix]], [I[esc]].
+= [681] Return [VAR[set]].
+
+]FIG]
 
 [23] 
 A [DFN[C1 set]] is a [[character set]] that 
@@ -1896,7 +1934,7 @@ The [DFN[empty C1 set]] is the result of
 [[getting a C1 set][get a C1 set]] [[7/14]].
 
 [683] 
-The [DFN[vt C1 set]] is the result of running these steps:
+The [DFN[VT C1 set]] is the result of running these steps:
 
 [FIG(steps)[
 
@@ -1912,7 +1950,7 @@ with [[8/0]], [[9/15]], [I[vt]], [I[C1]].
 ]FIG]
 
 [200] 
-The [DFN[vt52 C1 set]] is the result of running these steps:
+The [DFN[VT52 C1 set]] is the result of running these steps:
 
 [FIG(steps)[
 
@@ -1923,6 +1961,7 @@ with [[8/0]], [[9/15]], [I[vt52]], [I[C1]].
 = [203] Return [VAR[set]].
 
 ]FIG]
+
 
 [45] 
 A [DFN[G set]] is 
