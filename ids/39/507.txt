@@ -163,6 +163,26 @@ with
 [VAR[seq]].
 ]FIG]
 
+[735] 
+To [DFN[emit a direct cursor address]] with 
+[[byte]] [VAR[line]] and [[byte]] [VAR[column]],
+run these steps:
+
+[FIG(steps)[
+=
+[736] 
+[[Append][append]]
+a new [[direct cursor address]]
+to 
+[VAR[output stream]]:
+[FIG(list members)[
+:[F[line]]:[VAR[line]] - [N[0x1F]]
+:[F[column]]:[VAR[column]] - [N[0x1F]]
+]FIG]
+
+
+]FIG]
+
 [95] 
 To [DFN[emit a PCD data]] with [[byte]] [VAR[PM]], [[byte]] [VAR[PI]], 
 [[byte sequence]] [VAR[data]], run these steps:
@@ -233,6 +253,9 @@ To [DFN[process a control [[character]]]] [VAR[char]], run these steps:
 = [215] Otherwise, if [VAR[char]] is [CODE(charname)@en[SS3]]:
 == [227] Set [VAR[state]]'s [F[current element]] to [I[G3]].
 == [216] Set [VAR[state]]'s [F[decoder state]] to [I[SS state]].
+= [721] Otherwise, if [VAR[char]] is
+a [[character]] ([I[vt52]], [I[C1]], [N[9/9]]):
+== [722] Set [VAR[state]]'s [F[decoder state]] to [I[cursor address state]].
 = [685] Otherwise, if [VAR[char]] is 
 a [[character]] ([I[tektronix]], [I[esc]], [N[0/3]]):
 == [686] Set [VAR[state]]'s [F[Tektronix 4014 flag]] to [[false]].
@@ -1526,6 +1549,57 @@ a [[character]] ([I[esc]], [VAR[state]]'s [F[current byte sequence]]).
 
 ]FIG]
 
+
+*** Cursor address state
+
+[723] The [DFN[cursor address state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [N[2/0]], [N[15/15]] ]:
+[FIG(steps)[
+
+= [724] Set [VAR[state]]'s [F[current I byte]] to [VAR[bc]].
+= [725] Set [VAR[state]]'s [F[decoder state]] to [I[cursor address line state]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [726] [[Error][error]].
+= [727] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [728] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
+
+*** Cursor address line state
+
+[729] The [DFN[cursor address line state]] switches 
+by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [N[2/0]], [N[15/15]] ]:
+[FIG(steps)[
+
+= [730] [[Emit a direct cursor address][emit a direct cursor address]]
+[VAR[state]]'s [F[current I byte]], [VAR[bc]].
+= [731] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [732] [[Error][error]].
+= [733] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [734] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
+
 *** PCD state
 
 [67] The [DFN[PCD state]] switches by the [[bit combination]] [VAR[bc]]:
@@ -1722,10 +1796,16 @@ A [DFN[character string]] is a [[list]] of zero or more [[characters][character]
 An [DFN[empty character string]] is a [[character string]] whose [[length]]
 is [N[0]].
 
+[737] 
+A [DFN[direct cursor address]]
+is a [[tuple]] of
+[DFN[[F[line]]]] (non-negative integer)
+and
+[DFN[[F[column]]]] (non-negative integer).
 
 [98] 
 A [DFN[PCD data]]
-is a [[tuple]] consisting of:
+is a [[tuple]] of
 [DFN[[F[picture mode]]]] ([[byte]]),
 [DFN[[F[picture identifier]]]] ([[byte]]),
 and
