@@ -30,6 +30,8 @@ Initially, [I[unknown-94]].
 Initially, [I[8-bit]].
 : [DFN[[F[VT response flag]]]] : [[Boolean][boolean]].
 Initially, [[false]].
+: [DFN[[F[CR invoked]]]] : [[C element]].
+Initially, [I[C1]].
 : [DFN[[F[GL invoked]]]] : [[G element]] or [CODE[null]].
 Initially, [CODE[null]].
 : [DFN[[F[GR invoked]]]] : [[G element]] or [CODE[null]].
@@ -116,6 +118,7 @@ that modifies [VAR[state]].  It can modify [VAR[state]] in these ways:
 [F[G3 RL designated]],
 [F[bits]],
 [F[VT response flag]],
+[F[CR invoked]],
 [F[GL invoked]],
 and/or
 [F[GR invoked]].
@@ -469,9 +472,14 @@ of [VAR[state]] for
 : [ [N[8/0]], [N[9/15]] ] :
 [FIG(steps)[
 
-= [26] Let [VAR[set]] be [VAR[state]]'s [F[C1 designated]].
-= [28] [[Process a control character][process a control character]] 
+= [834] If [VAR[state]]'s [F[CR invoked]] is [I[C1]]:
+== [26] Let [VAR[set]] be [VAR[state]]'s [F[C1 designated]].
+== [28] [[Process a control character][process a control character]] 
 [VAR[set]] [ [VAR[bc]] ].
+= [835] Otherwise, if [VAR[state]]'s [F[CR invoked]] is [I[C0]]:
+== [836] Let [VAR[set]] be [VAR[state]]'s [F[C0 designated]].
+== [837] [[Process a control character][process a control character]] 
+[VAR[set]] [ [VAR[bc]] & [N[0b01111111]] ].
 
 ]FIG]
 :[ [N[10/0]], [N[15/15]] ]:
@@ -1022,11 +1030,29 @@ a [[character]] ([I[unassinged]], [VAR[bc]]).
 
 [FIG(switch)[
 
-:[N[3/6]], [N[3/7]]:
+:[ [N[3/0]], [N[3/5]] ], [ [N[3/8]], [N[3/15]] ]:
+[FIG(steps)[
+
+= [828] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [829] [[Process][process a control character]]
+[[character]] ([I[unknown-control]], 
+[N[1/11]] followed by [N[2/0]] followed by [VAR[bc]]).
+
+]FIG]
+: [N[3/6]] :
 [FIG(steps)[
 
 = [387] [[Deprecated][deprecated]].
+= [833] Set [VAR[state]]'s [F[CR invoked]] to [I[C0]].
 = [381] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+
+]FIG]
+: [N[3/7]] :
+[FIG(steps)[
+
+= [830] [[Deprecated][deprecated]].
+= [832] Set [VAR[state]]'s [F[CR invoked]] to [I[C1]].
+= [831] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
 
 ]FIG]
 :[ [N[4/1]], [N[7/14]] ]:
@@ -1456,7 +1482,7 @@ by the [[bit combination]] [VAR[bc]]:
 [[getting a multiple graphic set][get a multiple graphic set]] with
 [VAR[state]]'s [F[current size]],
 [CODE[null]], [VAR[bc]], [[false]].
-== [812] Set [VAR[state]]'s [F[G0 designated]] to the result of
+== [812] Set [VAR[state]]'s [F[G0 RL designated]] to the result of
 [[getting a multiple graphic set][get a multiple graphic set]] with
 [VAR[state]]'s [F[current size]],
 [CODE[null]], [VAR[bc]], [[true]].
@@ -1465,7 +1491,7 @@ by the [[bit combination]] [VAR[bc]]:
 [[getting a multiple graphic set][get a multiple graphic set]] with
 [VAR[state]]'s [F[current size]],
 [CODE[null]], [VAR[bc]], [[false]].
-== [813] Set [VAR[state]]'s [F[G1 designated]] to the result of
+== [813] Set [VAR[state]]'s [F[G1 RL designated]] to the result of
 [[getting a multiple graphic set][get a multiple graphic set]] with
 [VAR[state]]'s [F[current size]],
 [CODE[null]], [VAR[bc]], [[true]].
@@ -1474,7 +1500,7 @@ by the [[bit combination]] [VAR[bc]]:
 [[getting a multiple graphic set][get a multiple graphic set]] with
 [VAR[state]]'s [F[current size]],
 [CODE[null]], [VAR[bc]], [[false]].
-== [814] Set [VAR[state]]'s [F[G2 designated]] to the result of
+== [814] Set [VAR[state]]'s [F[G2 RL designated]] to the result of
 [[getting a multiple graphic set][get a multiple graphic set]] with
 [VAR[state]]'s [F[current size]],
 [CODE[null]], [VAR[bc]], [[true]].
@@ -1483,7 +1509,7 @@ by the [[bit combination]] [VAR[bc]]:
 [[getting a multiple graphic set][get a multiple graphic set]] with
 [VAR[state]]'s [F[current size]],
 [CODE[null]], [VAR[bc]], [[false]].
-== [815] Set [VAR[state]]'s [F[G3 designated]] to the result of
+== [815] Set [VAR[state]]'s [F[G3 RL designated]] to the result of
 [[getting a multiple graphic set][get a multiple graphic set]] with
 [VAR[state]]'s [F[current size]],
 [CODE[null]], [VAR[bc]], [[true]].
@@ -1528,22 +1554,38 @@ by the [[bit combination]] [VAR[bc]]:
 == [664] Set [VAR[state]]'s [F[G0 designated]] to the result of
 [[getting a multiple graphic set][get a multiple graphic set]] with
 [VAR[state]]'s [F[current size]],
-[VAR[state]]'s [F[current I byte]], [VAR[bc]].
+[VAR[state]]'s [F[current I byte]], [VAR[bc]], [[false]].
+== [816] Set [VAR[state]]'s [F[G0 RL designated]] to the result of
+[[getting a multiple graphic set][get a multiple graphic set]] with
+[VAR[state]]'s [F[current size]],
+[VAR[state]]'s [F[current I byte]], [VAR[bc]], [[true]].
 = [665] Otherwise, if [VAR[state]]'s [F[current element]] is [I[G1]]:
 == [666] Let [VAR[state]]'s [F[G1 designated]] to the result of
 [[getting a multiple graphic set][get a multiple graphic set]] with
 [VAR[state]]'s [F[current size]],
-[VAR[state]]'s [F[current I byte]], [VAR[bc]].
+[VAR[state]]'s [F[current I byte]], [VAR[bc]], [[false]].
+== [817] Let [VAR[state]]'s [F[G1 RL designated]] to the result of
+[[getting a multiple graphic set][get a multiple graphic set]] with
+[VAR[state]]'s [F[current size]],
+[VAR[state]]'s [F[current I byte]], [VAR[bc]], [[true]].
 = [667] Otherwise, if [VAR[state]]'s [F[current element]] is [I[G2]]:
 == [668] Let [VAR[state]]'s [F[G2 designated]] to the result of
 [[getting a multiple graphic set][get a multiple graphic set]] with
 [VAR[state]]'s [F[current size]],
-[VAR[state]]'s [F[current I byte]], [VAR[bc]].
+[VAR[state]]'s [F[current I byte]], [VAR[bc]], [[false]].
+== [818] Let [VAR[state]]'s [F[G2 RL designated]] to the result of
+[[getting a multiple graphic set][get a multiple graphic set]] with
+[VAR[state]]'s [F[current size]],
+[VAR[state]]'s [F[current I byte]], [VAR[bc]], [[true]].
 = [669] Otherwise, if [VAR[state]]'s [F[current element]] is [I[G3]]:
 == [670] Let [VAR[state]]'s [F[G3 designated]] to the result of
 [[getting a multiple graphic set][get a multiple graphic set]] with
 [VAR[state]]'s [F[current size]],
-[VAR[state]]'s [F[current I byte]], [VAR[bc]].
+[VAR[state]]'s [F[current I byte]], [VAR[bc]], [[false]].
+== [819] Let [VAR[state]]'s [F[G3 RL designated]] to the result of
+[[getting a multiple graphic set][get a multiple graphic set]] with
+[VAR[state]]'s [F[current size]],
+[VAR[state]]'s [F[current I byte]], [VAR[bc]], [[true]].
 = [671] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
 
 ]FIG]
@@ -2307,10 +2349,19 @@ with [N[2/1]], [N[7/14]], [VAR[I]], [VAR[F]].
 
 [678] 
 To [DFN[get a multiple graphic set]] with 
-[VAR[size]], [VAR[I]], and [VAR[F]], run these steps:
+[VAR[size]], [VAR[I]], [VAR[F]],
+and
+[VAR[is RL]], run these steps:
 
 [FIG(steps)[
 
+= [820] If [VAR[is RL]] is [[true]]:
+== [821] If [VAR[size]] is [N[94]]:
+=== [822] Return [I[unknown-94]].
+=== [826] Abort these steps.
+== [823] Otherwise, if [VAR[size]] is [N[96]]:
+=== [824] Return [I[unknown-96]].
+=== [825] Abort these steps.
 = [690] If [VAR[I]] is ''not'' [CODE[null]]:
 == [691] Let [VAR[f]] be [VAR[I]] followed by [VAR[F]].
 = [692] Otherwise:
@@ -2336,6 +2387,15 @@ with [[2/1]], [[7/14]], 94[SUP[3]], [VAR[f]].
 = [703] Return [VAR[set]].
 
 ]FIG]
+
+[NOTE[
+
+@@
+[827] 
+- ([I[dec]], [I[udc1978]])
+- ([I[dec]], [I[udc]])
+
+]NOTE]
 
 [333] 
 To [DFN[modify character sets]] of [[state]] [VAR[state]] for
