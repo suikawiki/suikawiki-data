@@ -54,6 +54,8 @@ Initially, [[false]].
 : [DFN[[F[current bytes]]]] : [N[1]], [N[2]], or [N[3]].
 : [DFN[[F[current I byte]]]] : [[Byte][byte]].
 : [DFN[[F[current J byte]]]] : [[Byte][byte]] or [CODE[null]].
+: [DFN[[F[current revision byte]]]] : [[Byte][byte]] or [CODE[null]].
+Initially, [CODE[null]].
 : [DFN[[F[PCD PM]]]] : [[Byte][byte]].
 : [DFN[[F[PCD PI]]]] : [[Byte][byte]].
 : [DFN[[F[PCD LI]]]] : Non-negative integer.
@@ -938,7 +940,7 @@ a [[character]] ([I[unassinged]], [VAR[bc]]).
 : [[2/6]] :
 [FIG(steps)[
 
-@@
+= [978] Set [VAR[state]]'s [F[decoder state]] to [I[escape revision state]].
 
 ]FIG]
 : [[2/8]] :
@@ -1206,6 +1208,78 @@ followed by [VAR[bc]]).
 ]FIG]
 
 
+*** Escape revision state
+
+[979] The [DFN[escape revision state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [N[4/0]], [N[7/14]] ]:
+[FIG(steps)[
+
+= [980] Set [VAR[state]]'s [F[current revision byte]] to [VAR[bc]].
+= [984] Set [VAR[state]]'s [F[decoder state]] to [I[IRR state]].
+
+]FIG]
+: Otherwise :
+[FIG(steps)[
+
+= [981] Set [VAR[state]]'s [F[current byte sequence]] to [N[2/6]].
+= [982] Set [VAR[state]]'s [F[decoder state]] to [I[escape unassigned state]].
+= [983] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
+
+*** IRR state
+
+[985] The [DFN[IRR state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+: [N[1/11]] :
+[FIG(steps)[
+
+= [986] Set [VAR[state]]'s [F[decoder state]] to [I[IRR escape state]].
+
+]FIG]
+: Otherwise :
+[FIG(steps)[
+
+= [989] [[Error][error]].
+= [987] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [988] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
+
+*** IRR escape state
+
+[990] The [DFN[IRR state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+: [N[2/1]], [N[2/2]], [N[2/4]], [ [N[2/8]], [N[2/15]] ] :
+[FIG(steps)[
+
+= [991] Set [VAR[state]]'s [F[decoder state]] to [I[escape state]].
+= [992] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+: Otherwise :
+[FIG(steps)[
+
+= [993] [[Error][error]].
+= [996] Set [VAR[state]]'s [F[current revision byte]] to [CODE[null]].
+= [994] Set [VAR[state]]'s [F[decoder state]] to [I[escape state]].
+= [995] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
+
 *** Escape control state
 
 [159] The [DFN[escape control state]] switches by the [[bit combination]] [VAR[bc]]:
@@ -1217,10 +1291,12 @@ followed by [VAR[bc]]).
 
 = [231] If [VAR[state]]'s [F[current element]] is [I[C0]]:
 == [164] Set [VAR[state]]'s [F[C0 designated]] to the result of 
-[[getting a C0 set][get a C0 set]] [VAR[bc]].
+[[getting a C0 set][get a C0 set]] with
+[VAR[bc]] and [VAR[state]]'s [F[current revision byte]].
 = [232] Otherwise, if [VAR[state]]'s [F[current element]] is [I[C1]]:
 == [233] Set [VAR[state]]'s [F[C1 designated]] to the result of 
-[[getting a C1 set][get a C1 set]] [VAR[bc]].
+[[getting a C1 set][get a C1 set]] with
+[VAR[bc]] and [VAR[state]]'s [F[current revision byte]].
 = [382] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
 
 ]FIG]
@@ -1994,11 +2070,9 @@ A [DFN[character]] is one of followings:
 - ([I[unknown-byte]], [VAR[bc]]), where [VAR[bc]] is a [[bit combination]]
 - ([I[unknown-control]], [VAR[bytes]]), where [VAR[bytes]] is a [[byte sequence]]
 - ([I[C0]], [VAR[IF]], [VAR[bytes]]), 
-where [VAR[IF]] is a [[byte sequence]] and
-[VAR[bytes]] is a [[byte sequence]] of [[length]] [N[1]]
+where [VAR[IF]] is a [[byte sequence]] and [VAR[bytes]] is a [[byte sequence]]
 - ([I[C1]], [VAR[IF]], [VAR[bytes]]), 
-where [VAR[IF]] is a [[byte sequence]] and
-[VAR[bytes]] is a [[byte sequence]] of [[length]] [N[1]]
+where [VAR[IF]] is a [[byte sequence]] and [VAR[bytes]] is a [[byte sequence]]
 - ([VAR[t1]], [VAR[t2]], [VAR[bytes]]), 
 where [VAR[t1]] and [VAR[t2]] are valid [VAR[t1]] and [VAR[t2]] pairs for 
 the steps to [[get a G set]] and [VAR[bytes]] is a [[byte sequence]]
@@ -2155,16 +2229,17 @@ A [DFN[C0 set]] is a [[character set]] that
 [[has 1-byte range]] [ [N[0/0]], [N[1/15]] ].
 
 [176] 
-To [DFN[get a C0 set]] [VAR[F]], run these steps:
+To [DFN[get a C0 set]] with [VAR[F]] and [VAR[R]], run these steps:
 
 [FIG(steps)[
 
-= [652] If [VAR[F]] is ''not'' in [ [N[4/0]], [N[7/14]] ]:
-== [653] Return the [[unknown C0 set]].
-== [654] Abort these steps.
+= [652] If [VAR[R]] is [CODE[null]]:
+== [655] Let [VAR[bytes]] be [VAR[F]].
+= [654] Otherwise:
+== [653] Let [VAR[bytes]] be [VAR[F]] followed by [VAR[R]].
 = [177] Let [VAR[set]] be the result of 
 [[getting a 1-byte set][get a 1-byte set]] 
-with [[0/0]], [[1/15]], [I[C0]], and [VAR[F]].
+with [[0/0]], [[1/15]], [I[C0]], and [VAR[bytes]].
 = [180] If [VAR[F]] is ''not'' [[7/14]]:
 == [178] Set [VAR[set]] [ [[1/11]] ] to [CODE(charname)@en[ESC]].
 = [187] If [VAR[F]] is one of:
@@ -2198,7 +2273,7 @@ or
 
 [19] 
 The [DFN[initial C0 set]] is the result of 
-[[getting a C0 set][get a C0 set]] [[4/7]].
+[[getting a C0 set][get a C0 set]] with [N[4/7]] and [CODE[null]].
 
 
 [37] 
@@ -2221,16 +2296,17 @@ A [DFN[C1 set]] is a [[character set]] that
 [[has 1-byte range]] [ [N[8/0]], [N[9/15]] ].
 
 [25] 
-To [DFN[get a C1 set]] [VAR[F]], run these steps:
+To [DFN[get a C1 set]] with [VAR[F]] and [VAR[R]], run these steps:
 
 [FIG(steps)[
 
-= [655] If [VAR[F]] is ''not'' in [ [N[4/0]], [N[7/14]] ]:
-== [656] Return the [[unknown C1 set]].
-== [657] Abort these steps.
+= [656] If [VAR[R]] is [CODE[null]]:
+== [657] Let [VAR[bytes]] be [VAR[F]].
+= [997] Otherwise:
+== [998] Let [VAR[bytes]] be [VAR[F]] followed by [VAR[R]].
 = [181] Let [VAR[set]] be the result of 
 [[getting a 1-byte set][get a 1-byte set]] 
-with [[8/0]], [[9/15]], [I[C1]], [VAR[F]].
+with [[8/0]], [[9/15]], [I[C1]], [VAR[bytes]].
 = [196] If [VAR[F]] is one of:
 [[4/5]] ([[ISO-IR]] 40),
 [[4/3]] ([[ISO-IR]] 77),
@@ -2244,7 +2320,7 @@ or
 
 [24] 
 The [DFN[empty C1 set]] is the result of 
-[[getting a C1 set][get a C1 set]] [[7/14]].
+[[getting a C1 set][get a C1 set]] with [N[7/14]] and [CODE[null]].
 
 [661] 
 The [DFN[unknown C1 set]] is the result of running these steps:
