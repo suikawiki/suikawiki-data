@@ -72,10 +72,10 @@ Initially, [[false]].
 : [DFN[[F[current J byte]]]] : [[Byte][byte]] or [CODE[null]].
 : [DFN[[F[current revision byte]]]] : [[Byte][byte]] or [CODE[null]].
 Initially, [CODE[null]].
-: [DFN[[F[PCD PM]]]] : [[Byte][byte]].
-: [DFN[[F[PCD PI]]]] : [[Byte][byte]].
-: [DFN[[F[PCD LI]]]] : Non-negative integer.
-: [DFN[[F[PCD data]]]] : [[Byte sequence][byte sequence]].
+: [DFN[[F[current PCD PM]]]] : [[Byte][byte]].
+: [DFN[[F[current PCD PI]]]] : [[Byte][byte]].
+: [DFN[[F[current segment length]]]] : Non-negative integer.
+: [DFN[[F[current segment data]]]] : [[Byte sequence][byte sequence]].
 : [DFN[[F[decoder state]]]] : One of [[decoder states][decoder state]].
 Initially, [[initial state]].
 
@@ -185,6 +185,8 @@ Let [VAR[output stream]] be a [[list]].
 [NOTE[
 [97] [VAR[output stream]] might contain
 [[characters][character]],
+[[extended segment]],
+[[direct cursor address]],
 [[PCD data]],
 and
 [[EOF]].
@@ -247,8 +249,12 @@ to
 ]FIG]
 
 [95] 
-To [DFN[emit a PCD data]] with [[byte]] [VAR[PM]], [[byte]] [VAR[PI]], 
-[[byte sequence]] [VAR[data]], run these steps:
+To [DFN[emit a PCD data]] with 
+[[byte]] [VAR[PM]], 
+[[byte]] [VAR[PI]], 
+[[byte sequence]] [VAR[data]],
+and
+[[boolean]] [VAR[incomplete]], run these steps:
 
 [FIG(steps)[
 =
@@ -261,6 +267,7 @@ to
 :[F[picture mode]]: [VAR[PM]]
 :[F[picture identifier]]: [VAR[PI]]
 :[F[picture data entity]]: [VAR[data]]
+:[F[incomplete]]: [VAR[incomplete]]
 ]FIG]
 
 ]FIG]
@@ -1829,6 +1836,8 @@ the [[bit combination]] [VAR[bc]]:
 : [N[3/0]], [N[4/0]] :
 [FIG(steps)[
 
+= [1121] [[Emit][emit a character]]
+[[character]] ([I[protocol]], [N[4/0]]).
 = [1040] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
 = [1035] Set [VAR[state]]'s [F[right mode]] to [I[iso2022]].
 
@@ -1839,17 +1848,18 @@ the [[bit combination]] [VAR[bc]]:
 @@
 
 ]FIG]
-: [N[3/4]] :
+: [N[3/4]], [N[4/1]] :
 [FIG(steps)[
 
-@@
+= [1118] 
+@@[[NAPLPS]]
 
 ]FIG]
 : [N[3/8]] :
 [FIG(steps)[
 
-=
-@@
+= [1119] [[Emit][emit a character]]
+[[character]] ([I[protocol]], [VAR[bc]]).
 = [1037] If [VAR[state]]'s [F[UTF-8 GL flag]] is [[true]]:
 == [1072] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
 = [1073] Otherwise:
@@ -1860,10 +1870,11 @@ the [[bit combination]] [VAR[bc]]:
 : [N[3/13]] :
 [FIG(steps)[
 
-@@
+= [1120] [[Emit][emit a character]]
+[[character]] ([I[protocol]], [VAR[bc]]).
 
 ]FIG]
-: [N[4/1]], [ [N[4/3]], [N[4/6]] ], [N[4/9]]:
+: [ [N[4/3]], [N[4/6]] ], [N[4/9]]:
 [FIG(steps)[
 
 @@
@@ -2324,14 +2335,19 @@ by the [[bit combination]] [VAR[bc]]:
 : [ [N[0/0]], [N[15/15]] ] :
 [FIG(steps)[
 
-= [68] Set [VAR[state]]'s [F[PCD PM]] to [VAR[bc]].
+= [68] Set [VAR[state]]'s [F[current PCD PM]] to [VAR[bc]].
 = [69] Set [VAR[state]]'s [F[decoder state]] to [I[PCD PM state]].
 
 ]FIG]
-: [[EOF]] :
-@@
-: Otherwise :
-@@
+:Otherwise:
+[FIG(steps)[
+
+= [1123] [[Error][error]].
+= [1122] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1128] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
 
 ]FIG]
 
@@ -2344,15 +2360,19 @@ by the [[bit combination]] [VAR[bc]]:
 : [ [N[0/0]], [N[15/15]] ] :
 [FIG(steps)[
 
-= [71] Set [VAR[state]]'s [F[PCD PI]] to [VAR[bc]].
-= [73] Set [VAR[state]]'s [F[PCD LI]] to [N[0]].
+= [71] Set [VAR[state]]'s [F[current PCD PI]] to [VAR[bc]].
+= [73] Set [VAR[state]]'s [F[current segment length]] to [N[0]].
 = [72] Set [VAR[state]]'s [F[decoder state]] to [I[PCD PI state]].
 
 ]FIG]
-: [[EOF]] :
-@@
-: Otherwise :
-@@
+:Otherwise:
+[FIG(steps)[
+
+= [1124] [[Error][error]].
+= [1125] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1129] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
 
 ]FIG]
 
@@ -2365,37 +2385,43 @@ by the [[bit combination]] [VAR[bc]]:
 :[ [[10/0]], [[11/1]] ]:
 [FIG(steps)[
 
-= [75] Set [VAR[state]]'s [F[PCD LI]] to ([VAR[state]]'s [F[PCD LI]] << 5) + ([VAR[bc]] & [N[0b11111]]).
-= [77] If [VAR[state]]'s [F[PCD LI]] is greater than the
+= [75] Set [VAR[state]]'s [F[current segment length]] to 
+([VAR[state]]'s [F[current segment length]] << 5) + ([VAR[bc]] & [N[0b11111]]).
+= [77] If [VAR[state]]'s [F[current segment length]] is greater than the
 [[maximum chunk length]]:
-==
-@@
+== [1131] [[Error][error]].
+== [1132] Set [VAR[state]]'s [F[decoder state]] to [I[unassigned state]].
 
 ]FIG]
 :[ [[8/13]], [[9/14]] ]:
 [FIG(steps)[
 
-= [78] Set [VAR[state]]'s [F[PCD LI]] to 
-([VAR[state]]'s [F[PCD LI]] << 5) + ([VAR[bc]] & [N[0b11111]]).
-= [79] If [VAR[state]]'s [F[PCD LI]] is greater than the
+= [78] Set [VAR[state]]'s [F[current segment length]] to 
+([VAR[state]]'s [F[current segment length]] << 5) + ([VAR[bc]] & [N[0b11111]]).
+= [79] If [VAR[state]]'s [F[current segment length]] is greater than the
 [[maximum chunk length]]:
-==
-@@
-= [87] Set [VAR[state]]'s [F[PCD data]] to the [[empty byte sequence]].
-= [82] If [VAR[state]]'s [F[PCD LI]] is zero:
+== [1133] [[Error][error]].
+== [1134] Set [VAR[state]]'s [F[decoder state]] to [I[unassigned state]].
+= [87] Set [VAR[state]]'s [F[current segment data]] to the [[empty byte sequence]].
+= [82] If [VAR[state]]'s [F[current segment length]] is zero:
 == [93] [[Emit a PCD data][emit a PCD data]]
-[VAR[state]]'s [F[PCD PM]],
-[VAR[state]]'s [F[PCD PI]],
-[VAR[state]]'s [F[PCD data]].
+[VAR[state]]'s [F[current PCD PM]],
+[VAR[state]]'s [F[current PCD PI]],
+[VAR[state]]'s [F[current segment data]],
+[[false]].
 == [83] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
 = [84] Otherwise:
 == [80] Set [VAR[state]]'s [F[decoder state]] to [I[PCD LI state]].
 
 ]FIG]
-: [[EOF]] :
-@@
-: Otherwise :
-@@
+:Otherwise:
+[FIG(steps)[
+
+= [1126] [[Error][error]].
+= [1127] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1130] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
 
 ]FIG]
 
@@ -2408,20 +2434,32 @@ by the [[bit combination]] [VAR[bc]]:
 :[ [[0/0]], [[15/15]] ]:
 [FIG(steps)[
 
-= [88] [[Append][append to a byte sequence]] [VAR[bc]] to [VAR[state]]'s [F[PCD data]].
-= [76] Set [VAR[state]]'s [F[PCD LI]] to [VAR[state]]'s [F[PCD LI]] - 1.
-= [85] If [VAR[state]]'s [F[PCD LI]] is zero:
+= [88] [[Append][append to a byte sequence]] [VAR[bc]] to
+[VAR[state]]'s [F[current segment data]].
+= [76] Set [VAR[state]]'s [F[current segment length]] to 
+[VAR[state]]'s [F[current segment length]] - 1.
+= [85] If [VAR[state]]'s [F[current segment length]] is zero:
 == [92] [[Emit a PCD data][emit a PCD data]]
-[VAR[state]]'s [F[PCD PM]],
-[VAR[state]]'s [F[PCD PI]],
-[VAR[state]]'s [F[PCD data]].
+[VAR[state]]'s [F[current PCD PM]],
+[VAR[state]]'s [F[current PCD PI]],
+[VAR[state]]'s [F[current segment data]],
+[[false]].
 == [86] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
 
 ]FIG]
-: [[EOF]] :
-@@
-: Otherwise :
-@@
+:Otherwise:
+[FIG(steps)[
+
+= [1135] [[Emit a PCD data][emit a PCD data]]
+[VAR[state]]'s [F[current PCD PM]],
+[VAR[state]]'s [F[current PCD PI]],
+[VAR[state]]'s [F[current segment data]],
+[[true]].
+= [1136] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1137] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
 
 ]FIG]
 
@@ -2471,6 +2509,7 @@ A [DFN[character]] is one of followings:
 - [CODE(charname)@en[PCD]]
 - any other [[code point]]
 - ([I[esc]], [VAR[bytes]]), where [VAR[bytes]] is a [[byte sequence]]
+- ([I[protocol]], [VAR[bc]]), where [VAR[bc]] is a [[bit combination]]
 - ([I[unknown-byte]], [VAR[bc]]), where [VAR[bc]] is a [[bit combination]]
 - ([I[unknown-control]], [VAR[bytes]]), where [VAR[bytes]] is a [[byte sequence]]
 - ([I[C0]], [VAR[IF]], [VAR[bytes]]), 
@@ -2512,6 +2551,15 @@ A [DFN[character string]] is a [[list]] of zero or more [[characters][character]
 An [DFN[empty character string]] is a [[character string]] whose [[length]]
 is [N[0]].
 
+[1138] 
+An [DFN[extended segment]]
+is a [[tuple]] of
+[DFN[[F[final]]]] ([[bit combination]]),
+[DFN[[F[data]]]] ([[byte sequence]]),
+and
+[DFN[[F[incomplete]]]] ([[boolean]]).
+
+
 [737] 
 A [DFN[direct cursor address]]
 is a [[tuple]] of
@@ -2524,8 +2572,9 @@ A [DFN[PCD data]]
 is a [[tuple]] of
 [DFN[[F[picture mode]]]] ([[byte]]),
 [DFN[[F[picture identifier]]]] ([[byte]]),
+[DFN[[F[picture data]]]] ([[byte sequence]]),
 and
-[DFN[[F[picture data]]]] ([[byte sequence]]).
+[DFN[[F[incomplete]]]] ([[boolean]]).
 
 @@
 [99] 
