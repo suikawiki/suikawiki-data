@@ -228,6 +228,31 @@ with
 [VAR[seq]].
 ]FIG]
 
+
+[1165] 
+To [DFN[emit an extended segment]] with 
+[[byte]] [VAR[F]], 
+[[byte sequence]] [VAR[data]],
+and
+[[boolean]] [VAR[incomplete]], run these steps:
+
+[FIG(steps)[
+=
+[1166] 
+[[Append][append]]
+a new [[extended segment]]
+to 
+[VAR[output stream]]:
+[FIG(list members)[
+:[F[final]]: [VAR[F]]
+:[F[data]]: [VAR[data]]
+:[F[incomplete]]: [VAR[incomplete]]
+]FIG]
+
+]FIG]
+
+
+
 [735] 
 To [DFN[emit a direct cursor address]] with 
 [[byte]] [VAR[line]] and [[byte]] [VAR[column]],
@@ -2060,8 +2085,8 @@ the [[bit combination]] [VAR[bc]]:
 :[ [N[3/0]], [N[3/15]] ]:
 [FIG(steps)[
 
-= [1025] 
-@@ extended segment
+= [1025] Set [VAR[state]]'s [F[current I byte]] to [VAR[bc]].
+= [1139] Set [VAR[state]]'s [F[decoder state]] to [I[extended segment state]].
 
 ]FIG]
 : [N[4/0]], [N[4/1]], [ [N[4/3]], [N[4/12]] ]:
@@ -2250,6 +2275,103 @@ a [[character]] ([I[esc]], [VAR[state]]'s [F[current byte sequence]]).
 
 
 ]FIG]
+
+
+*** Extended segment state
+
+[1140] The [DFN[extended segment state]] switches by 
+the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [N[8/0]], [N[15/15]] ]:
+[FIG(steps)[
+
+= [1144] Set [VAR[state]]'s [F[current J byte]] to [VAR[bc]].
+= [1145] Set [VAR[state]]'s [F[decoder state]] to [I[extended segment length state]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [1141] [[Error][error]].
+= [1142] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1143] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+
+]FIG]
+
+*** Extended segment length state
+
+[1146] The [DFN[extended segment length state]] switches by 
+the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [N[8/0]], [N[15/15]] ]:
+[FIG(steps)[
+
+= [1147] Set [VAR[state]]'s [F[current segment length]] to
+(([VAR[state]]'s [F[current J byte]] - [N[128]]) × [N[128]]) + ([VAR[bc]] - [N[128]]).
+= [1148] Set [VAR[state]]'s [F[current segment data]] to the [[empty byte sequence]].
+= [1149] If [VAR[state]]'s [F[current segment length]] is [N[0]]:
+== [1151] [[Error][error]].
+== [1152] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1150] Otherwise:
+== [1145] Set [VAR[state]]'s [F[decoder state]] to [I[extended segment data state]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [1153] [[Error][error]].
+= [1154] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1155] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+
+]FIG]
+
+*** Extended segment data state
+
+[1156] The [DFN[extended segment data state]] switches by 
+the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [N[0/0]], [N[15/15]] ]:
+[FIG(steps)[
+
+= [1158] Set [VAR[state]]'s [F[current segment data]] to
+[VAR[state]]'s [F[current segment data]] followed by [VAR[bc]].
+= [1159] Set [VAR[state]]'s [F[current segment length]] to
+[VAR[state]]'s [F[current segment length]] - [N[1]].
+= [1160] If [VAR[state]]'s [F[current segment length]] is [N[0]]:
+== [1157] [[Emit an extended segment][emit an extended segment]]
+[VAR[state]]'s [F[I byte]], 
+[VAR[state]]'s [F[current segment data]],
+[[false]].
+== [1161] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [1164] [[Emit an extended segment][emit an extended segment]]
+[VAR[state]]'s [F[I byte]], 
+[VAR[state]]'s [F[current segment data]],
+[[true]].
+= [1162] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1163] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+
+]FIG]
+
 
 *** Cursor address state
 
