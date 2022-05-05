@@ -42,11 +42,25 @@ Initially, [I[C1]].
 Initially, [CODE[null]].
 : [DFN[[F[GR invoked]]]] : [[G element]] or [CODE[null]].
 Initially, [CODE[null]].
+: [DFN[[F[GL mode]]]] :
+[I[iso2022]] or [I[ascii]].  Initially, [I[iso2022]].
+: [DFN[[F[right mode]]]] :
+[I[iso2022]], [I[utf-1]], [I[utf-8]],
+[I[single]],
+[I[sjis]], [I[sjis-2000]],
+[I[big5]],
+[I[uhc]], [I[johab]],
+[I[gbk]], [I[gb18030]],
+or
+[I[x-moe-internal]].
+Initially, [I[iso2022]].
 : [DFN[[F[bits]]]] : [I[8-bit]] or [I[7-bit]].
 Initially, [I[8-bit]].
 : [DFN[[F[VT response flag]]]] : [[Boolean][boolean]].
 Initially, [[false]].
-: [DFN[[F[ISO 4873 Latin-1 flag]]]] : [[Boolean]].
+: [DFN[[F[ISO 4873 Latin-1 flag]]]] : [[Boolean][boolean]].
+Initially, [[false]].
+: [DFN[[F[UTF-8 GL flag]]]] : [[Boolean][boolean]].
 Initially, [[false]].
 : [DFN[[F[current byte sequence]]]] : [[Byte sequence][byte sequence]].
 : [DFN[[F[current element]]]] : [[C element]] or [[G element]].
@@ -130,13 +144,16 @@ that modifies [VAR[state]].  It can modify [VAR[state]] in these ways:
 [F[G1 RL designated]],
 [F[G2 RL designated]],
 [F[G3 RL designated]],
+[F[CR invoked]],
+[F[GL invoked]],
+[F[GR invoked]],
+[F[GL mode]],
+[F[right mode]],
 [F[bits]],
 [F[VT response flag]],
 [F[ISO 4873 Latin-1 flag]],
-[F[CR invoked]],
-[F[GL invoked]],
 and/or
-[F[GR invoked]].
+[F[UTF-8 GL flag]].
 - [319] It [MAY[MAY]] invoke the steps to [[modify character sets]]
 of [VAR[state]] for some [VAR[features]].
 - [807] If [VAR[state]]'s [F[G0 RL designated]] is set to a [[94[SUP[2]] set]],
@@ -462,7 +479,12 @@ of [VAR[state]] for
 :[ [N[2/0]], [N[7/15]] ]:
 [FIG(steps)[
 
-= [314] Let [VAR[set]] be the result of
+= [1078] If [VAR[state]]'s [F[GL mode]] is [I[ascii]]:
+== [1079] Let [VAR[set]] be the result of
+[[getting a G set][get a G set]] with
+[N[94]], [N[1]], [I[94]], [N[4/2]].
+= [1080] Otherwise, if [VAR[state]]'s [F[GL mode]] is [I[iso2022]]:
+== [314] Let [VAR[set]] be the result of
 [[getting invoked set][get invoked set]] with
 [VAR[state]] and [VAR[state]]'s [F[GL invoked]].
 = [507] If [[is 96 size]] [VAR[set]] is [[false]] and
@@ -485,7 +507,10 @@ of [VAR[state]] for
 : [ [N[8/0]], [N[9/15]] ] :
 [FIG(steps)[
 
-= [834] If [VAR[state]]'s [F[CR invoked]] is [I[C1]]:
+= [1081] If [VAR[state]]'s [F[right mode]] is ''not'' [I[iso2022]]:
+== [1082] Set [VAR[state]]'s [F[decoder state]] to [I[foreign right state]].
+== [1083] [[Reconsume][reconsume]] [VAR[bc]].
+= [834] Otherwise, if [VAR[state]]'s [F[CR invoked]] is [I[C1]]:
 == [26] Let [VAR[set]] be [VAR[state]]'s [F[C1 designated]].
 == [28] [[Process a control character][process a control character]] 
 [VAR[set]] [ [VAR[bc]] ].
@@ -501,7 +526,10 @@ of [VAR[state]] for
 = [334] Let [VAR[set]] be the result of
 [[getting invoked set][get invoked set]] with
 [VAR[state]] and [VAR[state]]'s [F[GR invoked]].
-= [312] If [[is 96 size]] [VAR[set]] is [[false]] and
+= [1084] If [VAR[state]]'s [F[right mode]] is ''not'' [I[iso2022]]:
+== [1085] Set [VAR[state]]'s [F[decoder state]] to [I[foreign right state]].
+== [1086] [[Reconsume][reconsume]] [VAR[bc]].
+= [312] Otherwise, if [[is 96 size]] [VAR[set]] is [[false]] and
 [VAR[bc]] is [N[10/0]] or [N[15/15]]:
 == [317] [[Emit a character][emit a character]] 
 [VAR[state]]'s [F[fixed set]] [ [VAR[bc]] ].
@@ -1793,7 +1821,8 @@ the [[bit combination]] [VAR[bc]]:
 : [N[3/0]], [N[4/0]] :
 [FIG(steps)[
 
-@@
+= [1040] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
+= [1035] Set [VAR[state]]'s [F[right mode]] to [I[iso2022]].
 
 ]FIG]
 : [N[3/1]], [N[3/2]], [N[3/3]], [ [N[3/5]], [N[3/7]] ], [ [N[3/9]], [N[3/12]] ], [N[3/14]], [N[3/15]] :
@@ -1811,7 +1840,13 @@ the [[bit combination]] [VAR[bc]]:
 : [N[3/8]] :
 [FIG(steps)[
 
+=
 @@
+= [1037] If [VAR[state]]'s [F[UTF-8 GL flag]] is [[true]]:
+== [1072] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
+= [1073] Otherwise:
+== [1074] Set [VAR[state]]'s [F[GL mode]] to [I[ascii]].
+= [1036] Set [VAR[state]]'s [F[right mode]] to [I[utf-8]].
 
 ]FIG]
 : [N[3/13]] :
@@ -1820,17 +1855,28 @@ the [[bit combination]] [VAR[bc]]:
 @@
 
 ]FIG]
-:[ [N[4/1]], [N[4/6]] ], [N[4/9]]:
+: [N[4/1]], [ [N[4/3]], [N[4/6]] ], [N[4/9]]:
 [FIG(steps)[
 
 @@
+
+
+]FIG]
+: [N[4/2]] :
+[FIG(steps)[
+
+= [1039] Set [VAR[state]]'s [F[GL mode]] to [I[ascii]].
+= [1038] Set [VAR[state]]'s [F[right mode]] to [I[utf-1]].
 
 ]FIG]
 : [N[4/7]] :
 [FIG(steps)[
 
-=[1012] 
-@@ utf-8
+= [1075] If [VAR[state]]'s [F[UTF-8 GL flag]] is [[true]]:
+== [1076] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
+= [1077] Otherwise:
+== [1012] Set [VAR[state]]'s [F[GL mode]] to [I[ascii]].
+= [1041] Set [VAR[state]]'s [F[right mode]] to [I[utf-8]].
 
 ]FIG]
 : Otherwise :
@@ -1912,8 +1958,53 @@ the [[bit combination]] [VAR[bc]]:
 
 = [1023] Let [VAR[n]] be 
 ([F[state]]'s [F[current I byte]] - [N[0x20]]) × [N[16]] + [VAR[bc]] - [N[0x30]].
-=
-@@ 
+= [1043] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
+= [1045] If [VAR[n]] is in [ [N[1]], [N[11]] ]:
+== [1047] Set [VAR[state]]'s [F[right mode]] to [I[single]].
+== [1048] Set [VAR[state]]'s [F[right designated]] to [VAR[n]].
+= [1049] Otherwise, if [VAR[n]] is [N[12]]:
+== [1050] Set [VAR[state]]'s [F[right mode]] to [I[sjis]].
+= [1046] Otherwise, if [VAR[n]] is [N[13]]:
+== [1051] Set [VAR[state]]'s [F[right mode]] to [I[sjis-2000]].
+= [1052] Otherwise, if [VAR[n]] is [N[14]]:
+== [1053] Set [VAR[state]]'s [F[right mode]] to [I[big5]].
+= [1054] Otherwise, if [VAR[n]] is [N[15]]:
+== [1055] Set [VAR[state]]'s [F[right mode]] to [I[johab]].
+= [1056] Otherwise, if [VAR[n]] is [N[16]]:
+== [1057] Set [VAR[state]]'s [F[right mode]] to [I[uhc]].
+= [1058] Otherwise, if [VAR[n]] is [N[17]]:
+== [1059] Set [VAR[state]]'s [F[right mode]] to [I[iso2022]].
+== [1060] Set [VAR[state]]'s [F[G1 designated]] to 
+to the result of 
+[[getting a G set][get a G set]] with
+[N[94]], [N[3]], [I[cns]], [N[1]].
+== [1061] Set [VAR[state]]'s [F[G2 designated]] to 
+to the result of 
+[[getting a G set][get a G set]] with
+[N[94]], [N[2]], [I[cns]], [I[euctw2]].
+= [1062] Otherwise, if [VAR[n]] is [N[18]]:
+== [1063] Set [VAR[state]]'s [F[right mode]] to [I[iso2022]].
+== [1064] Set [VAR[state]]'s [F[G1 designated]] to 
+to the result of 
+[[getting a G set][get a G set]] with
+[N[94]], [N[2]], [I[94[SUP[2]]]], [N[4/15]].
+== [1065] Set [VAR[state]]'s [F[G2 designated]] to 
+to the result of 
+[[getting a G set][get a G set]] with
+[N[94]], [N[1]], [I[94]], [N[4/9]].
+== [1066] Set [VAR[state]]'s [F[G3 designated]] to 
+to the result of 
+[[getting a G set][get a G set]] with
+[N[94]], [N[2]], [I[jis]], [I[jisx0212jisx0213]].
+= [1067] Otherwise, if [VAR[n]] is [N[19]]:
+== [1068] Set [VAR[state]]'s [F[right mode]] to [I[gbk]].
+= [1069] Otherwise, if [VAR[n]] is [N[20]]:
+== [1070] Set [VAR[state]]'s [F[right mode]] to [I[gb18030]].
+= [1042] Otherwise:
+== [1044] Set [VAR[state]]'s [F[right mode]] to [I[x-moe-internal]].
+= [1071] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+
+
 
 ]FIG]
 : Otherwise :
@@ -2726,6 +2817,7 @@ where [VAR[bytes]] is a [[byte sequence]]
 - ([N[94]], [N[2]], [I[jef]], [CODE[null]])
 - ([N[94]], [N[2]], [I[open]], [I[jisx0208nec]])
 - ([N[94]], [N[2]], [I[open]], [I[jisx0212ibm]])
+- ([N[94]], [N[2]], [I[jis]], [I[jisx0212jisx0213]])
 - ([N[94]], [N[2]], [I[mule-94[SUP[2]]]], [VAR[F]]) where 
 [VAR[F]] is in [ [N[3/0]], [N[3/8]] ]
 - ([N[94]], [N[2]], [I[arib]], [VAR[F]]) where [VAR[F]] is in [ [N[3/9]], [N[3/11]] ]
@@ -2823,11 +2915,11 @@ to [I[unassigned-94]].
 == [866] Set [VAR[state]]'s [F[94[SUP[[VAR[n]]]] final set]] [ [VAR[bytes]] ]
 to the result of
 [[getting a G set][get a G set]] with
-[N[94]], [N[2]], [CODE[null]], [VAR[bc]], [[false]].
+[N[94]], [N[2]], [CODE[null]], [VAR[bc]].
 == [848] Set [VAR[state]]'s [F[96[SUP[[VAR[n]]]] final set]] [ [VAR[bytes]] ]
 to the result of
 [[getting a G set][get a G set]] with
-[N[96]], [N[2]], [CODE[null]], [VAR[bc]], [[false]].
+[N[96]], [N[2]], [CODE[null]], [VAR[bc]].
 == [849] Set [VAR[state]]'s [F[94[SUP[[VAR[n]]]] final RL set]] [ [VAR[bytes]] ]
 to [I[unassigned-94]].
 == [850] [[For each]] [VAR[ibc]] in [ [N[2/0]], [N[2/5]] ]:
@@ -2835,11 +2927,11 @@ to [I[unassigned-94]].
 === [868] Set [VAR[state]]'s [F[94[SUP[[VAR[n]]]] final set]] [ [VAR[bytes]] ]
 to the result of
 [[getting a G set][get a G set]] with
-[N[94]], [N[2]], [CODE[null]], [VAR[bc]], [[false]].
+[N[94]], [N[2]], [CODE[null]], [VAR[bc]].
 === [851] Set [VAR[state]]'s [F[96[SUP[[VAR[n]]]] final set]] [ [VAR[bytes]] ]
 to the result of
 [[getting a G set][get a G set]] with
-[N[96]], [N[2]], [CODE[null]], [VAR[bc]], [[false]].
+[N[96]], [N[2]], [CODE[null]], [VAR[bc]].
 === [852] Set [VAR[state]]'s [F[94[SUP[[VAR[n]]]] final RL set]] [ [VAR[bytes]] ]
 to [I[unassigned-94]].
 = [853] [[For each]] [VAR[bc]] in [ [N[6/0]], [N[6/15]] ]:
@@ -2847,7 +2939,7 @@ to [I[unassigned-94]].
 == [870] Set [VAR[state]]'s [F[94[SUP[[VAR[n]]]] final set]] [ [VAR[bytes]] ]
 to the result of
 [[getting a G set][get a G set]] with
-[N[94]], [N[3]], [CODE[null]], [VAR[bc]], [[false]].
+[N[94]], [N[3]], [CODE[null]], [VAR[bc]].
 == [871] Set [VAR[state]]'s [F[96[SUP[[VAR[n]]]] final set]] [ [VAR[bytes]] ]
 to [I[unassigned-96]].
 == [872] Set [VAR[state]]'s [F[94[SUP[[VAR[n]]]] final RL set]] [ [VAR[bytes]] ]
@@ -2857,7 +2949,7 @@ to [I[unassigned-94]].
 === [875] Set [VAR[state]]'s [F[94[SUP[[VAR[n]]]] final set]] [ [VAR[bytes]] ]
 to the result of
 [[getting a G set][get a G set]] with
-[N[94]], [N[3]], [CODE[null]], [VAR[bc]], [[false]].
+[N[94]], [N[3]], [CODE[null]], [VAR[bc]].
 === [876] Set [VAR[state]]'s [F[96[SUP[[VAR[n]]]] final set]] [ [VAR[bytes]] ]
 to [I[unassigned-96]].
 === [877] Set [VAR[state]]'s [F[94[SUP[[VAR[n]]]] final RL set]] [ [VAR[bytes]] ]
