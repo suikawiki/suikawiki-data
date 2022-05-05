@@ -36,6 +36,8 @@ Initially, [I[unknown-94]].
 Initially, [I[unknown-94]].
 : [DFN[[F[G3 RL designated]]]] : [[94[SUP[2]] set]] or [I[unknown-94]].  
 Initially, [I[unknown-94]].
+: [DFN[[F[left designated]]]] : [[128 set]].
+: [DFN[[F[right designated]]]] : [[128 set]].
 : [DFN[[F[CR invoked]]]] : [[C element]].
 Initially, [I[C1]].
 : [DFN[[F[GL invoked]]]] : [[G element]] or [CODE[null]].
@@ -43,7 +45,7 @@ Initially, [CODE[null]].
 : [DFN[[F[GR invoked]]]] : [[G element]] or [CODE[null]].
 Initially, [CODE[null]].
 : [DFN[[F[GL mode]]]] :
-[I[iso2022]] or [I[ascii]].  Initially, [I[iso2022]].
+[I[iso2022]], [I[ascii]], or [I[single]].  Initially, [I[iso2022]].
 : [DFN[[F[right mode]]]] :
 [I[iso2022]], [I[utf-1]], [I[utf-8]],
 [I[single]],
@@ -140,6 +142,7 @@ that modifies [VAR[state]].  It can modify [VAR[state]] in these ways:
 [F[G1 designated]],
 [F[G2 designated]],
 [F[G3 designated]],
+[F[right designated]],
 [F[G0 RL designated]],
 [F[G1 RL designated]],
 [F[G2 RL designated]],
@@ -471,7 +474,10 @@ of [VAR[state]] for
 : [ [N[0/0]], [N[1/15]] ] :
 [FIG(steps)[
 
-= [11] Let [VAR[set]] be [VAR[state]]'s [F[C0 designated]].
+= [1110] If [VAR[state]]'s [F[GL mode]] is [I[single]]:
+== [1111] Let [VAR[set]] be [VAR[state]]'s [F[left designated]].
+= [1112] Otherwise:
+== [11] Let [VAR[set]] be [VAR[state]]'s [F[C0 designated]].
 = [717] [[Process a control character][process a control character]]
 [VAR[set]] [ [VAR[bc]] ].
 
@@ -483,6 +489,8 @@ of [VAR[state]] for
 == [1079] Let [VAR[set]] be the result of
 [[getting a G set][get a G set]] with
 [N[94]], [N[1]], [I[94]], [N[4/2]].
+= [1109] Otherwise, if [VAR[state]]'s [F[GL mode]] is [I[single]]:
+== [1079] Let [VAR[set]] be [VAR[state]]'s [F[left designated]].
 = [1080] Otherwise, if [VAR[state]]'s [F[GL mode]] is [I[iso2022]]:
 == [314] Let [VAR[set]] be the result of
 [[getting invoked set][get invoked set]] with
@@ -1901,8 +1909,15 @@ the [[bit combination]] [VAR[bc]]:
 : [N[3/0]] :
 [FIG(steps)[
 
-= [1011] 
-@@ barcode
+= [1011] Set [VAR[state]]'s [F[GL mode]] to [I[single]].
+= [1105] Set [VAR[state]]'s [F[right mode]] to [I[single]].
+= [1108] Set [VAR[state]]'s [F[left designated]] to  
+the result of 
+[[getting a G set][get a G set]] with
+[N[128]], [N[1]], [I[single]], [I[barcode]].
+= [1107] Set [VAR[state]]'s [F[right designated]] to
+[VAR[state]]'s [F[left designated]].
+= [1106] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
 
 ]FIG]
 : Otherwise :
@@ -1961,7 +1976,10 @@ the [[bit combination]] [VAR[bc]]:
 = [1043] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
 = [1045] If [VAR[n]] is in [ [N[1]], [N[11]] ]:
 == [1047] Set [VAR[state]]'s [F[right mode]] to [I[single]].
-== [1048] Set [VAR[state]]'s [F[right designated]] to [VAR[n]].
+== [1048] Set [VAR[state]]'s [F[right designated]] 
+to the result of 
+[[getting a G set][get a G set]] with
+[N[128]], [N[1]], [I[single]], [VAR[n]].
 = [1049] Otherwise, if [VAR[n]] is [N[12]]:
 == [1050] Set [VAR[state]]'s [F[right mode]] to [I[sjis]].
 = [1046] Otherwise, if [VAR[n]] is [N[13]]:
@@ -1974,11 +1992,11 @@ the [[bit combination]] [VAR[bc]]:
 == [1057] Set [VAR[state]]'s [F[right mode]] to [I[uhc]].
 = [1058] Otherwise, if [VAR[n]] is [N[17]]:
 == [1059] Set [VAR[state]]'s [F[right mode]] to [I[iso2022]].
-== [1060] Set [VAR[state]]'s [F[G1 designated]] to 
+== [1060] Set [VAR[state]]'s [F[G1 designated]] 
 to the result of 
 [[getting a G set][get a G set]] with
 [N[94]], [N[3]], [I[cns]], [N[1]].
-== [1061] Set [VAR[state]]'s [F[G2 designated]] to 
+== [1061] Set [VAR[state]]'s [F[G2 designated]] 
 to the result of 
 [[getting a G set][get a G set]] with
 [N[94]], [N[2]], [I[cns]], [I[euctw2]].
@@ -2162,6 +2180,65 @@ a [[character]] ([I[esc]], [VAR[state]]'s [F[current byte sequence]]).
 
 ]FIG]
 
+*** Foreign right state
+
+[1087] The [DFN[foreign right state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [N[8/0]], [N[15/15]] ]:
+[FIG(steps)[
+
+= [1090] If [VAR[state]]'s [F[right mode]] is [I[single]]:
+== [1091] Let [VAR[set]] be [VAR[state]]'s [F[right designated]].
+== [1092] [[Emit a character][emit a character]]
+[VAR[set]] [ [VAR[bc]] & 0b01111111 ].
+[NOTE[
+[1117] Control characters are not interpreted.
+]NOTE]
+== [1094] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1093] Otherwise, if [VAR[state]]'s [F[right mode]] is [I[utf-1]]:
+==
+@@
+= [1104] Otherwise, if [VAR[state]]'s [F[right mode]] is [I[utf-8]]:
+==
+@@
+= [1096] Otherwise, if [VAR[state]]'s [F[right mode]] is [I[sjis]]:
+==
+@@
+= [1097] Otherwise, if [VAR[state]]'s [F[right mode]] is [I[sjis-2000]]:
+==
+@@
+= [1098] Otherwise, if [VAR[state]]'s [F[right mode]] is [I[big5]]:
+==
+@@
+= [1099] Otherwise, if [VAR[state]]'s [F[right mode]] is [I[uhc]]:
+==
+@@
+= [1100] Otherwise, if [VAR[state]]'s [F[right mode]] is [I[johab]]:
+==
+@@
+= [1101] Otherwise, if [VAR[state]]'s [F[right mode]] is [I[gbk]]:
+==
+@@
+= [1102] Otherwise, if [VAR[state]]'s [F[right mode]] is [I[gb18030]]:
+==
+@@
+= [1103] Otherwise, if [VAR[state]]'s [F[right mode]] is [I[x-moe-internal]]:
+==
+@@
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [1088] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1089] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+
+]FIG]
 
 *** Cursor address state
 
@@ -2708,6 +2785,9 @@ that [[has 2-byte range]] [ [N[2/0]], [N[7/15]] ].
 A [DFN[94[SUP[3]] set]] is a [[character set]]
 that [[has 3-byte range]] [ [N[2/1]], [N[7/14]] ].
 
+[1095] 
+A [DFN[128 set]] is a [[character set]]
+that [[has 1-byte range]] [ [N[0/0]], [N[7/15]] ].
 
 [374] 
 To determine whether [DFN[is 96 size]] [VAR[set]], run these steps:
@@ -2763,6 +2843,11 @@ with [N[2/0]], [N[7/15]], [VAR[t1]], [VAR[t2]].
 = [862] Otherwise, if [VAR[size]] is [N[94]] and [VAR[length]] is [N[3]]:
 == [863] Let [VAR[set]] be the result of [[getting a 3-byte set][get a 3-byte set]] 
 with [N[2/1]], [N[7/14]], [VAR[t1]], [VAR[t2]].
+= [1113] Otherwise, if [VAR[size]] is [N[128]] and [VAR[length]] is [N[1]]:
+== [1114] Let [VAR[set]] be the result of [[getting a 1-byte set][get a 1-byte set]] 
+with [N[0/0]], [N[7/15]], [VAR[t1]], [VAR[t2]].
+== [1115] If [VAR[t1]] is [I[single]] and [VAR[t2]] is [I[barcode]]:
+=== [1116] Set [VAR[set]] [ [N[1/11]] ] to [CODE(charname)@en[ESC]].
 = [864] Return [VAR[set]].
 
 ]FIG]
@@ -2829,6 +2914,8 @@ where [VAR[bytes]] is a [[byte sequence]]
 - ([N[94]], [N[3]], [I[marc]], [N[3/1]])
 - ([N[96]], [N[2]], [I[mule-96[SUP[2]]]], [VAR[F]]) where 
 [VAR[F]] is in [ [N[3/1]], [N[3/4]] ]
+- ([N[128]], [N[1]], [I[single]], [VAR[i]]) where 
+[VAR[i]] is an integer
 
 ]NOTE]
 
