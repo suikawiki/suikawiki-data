@@ -2382,7 +2382,9 @@ with
 = [1213] Set [VAR[state]]'s [F[current segment length]] to
 [VAR[state]]'s [F[current segment length]] - [N[1]].
 = [1218] If [VAR[set]] is ''not'' [CODE[null]]:
-== [1225] Set [VAR[state]]'s [F[decoder state]] to [I[extended segment byte state]].
+== [1224] Set [VAR[state]]'s [F[current CT set]] to [VAR[set]].
+== [1228] Set [VAR[state]]'s [F[current segment data]] to the [[empty byte sequence]].
+== [1225] Set [VAR[state]]'s [F[decoder state]] to [I[extended segment text state]].
 == [1219] If [VAR[state]]'s [F[current segment length]] is [N[0]]:
 === [1220] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
 = [1221] Otherwise:
@@ -2409,6 +2411,75 @@ with
 
 ]FIG]
 
+
+*** Extended segment text state
+
+[1222] The [DFN[extended segment text state]] switches by 
+the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+: [ [N[0/0]], [N[15/15]] ]:
+[FIG(steps)[
+
+= [1223] Let [VAR[set]] be [VAR[state]]'s [F[current CT set]].
+= [1226] Set [VAR[state]]'s [F[current segment data]] to
+[VAR[state]]'s [F[current segment data]] followed by [VAR[bc]].
+= [1227] Set [VAR[state]]'s [F[current segment length]] to
+[VAR[state]]'s [F[current segment length]] - [N[1]].
+= [1229] If [VAR[set]] is a [[94 set]], [[96 set]], or [[128 set]]:
+== [1242] Let [VAR[bytes]] be [VAR[bc]] & [N[0b01111111]].
+== [1230] If [VAR[set]] [ [VAR[bytes]] ] [[exists]]:
+=== [1232] Let [VAR[char]] be [VAR[set]] [ [VAR[bytes]] ].
+== [1233] Otherwise:
+=== [1234] Let [VAR[char]] be [[character]] ([I[unknown-byte]], [VAR[bc]]).
+== [1244] [[Emit][emit a character]] [VAR[char]].
+== [1235] Set [VAR[state]]'s [F[current segment data]] to the [[empty byte sequence]].
+= [1231] Otherwise, if [VAR[set]] is a [[94[SUP[2]] set]] or [[256[SUP[2]] set]]:
+== [1237] If [VAR[state]]'s [F[current segment data]]'s [[length]] is [N[2]]:
+=== [1251] If [VAR[set]] is a [[94[SUP[2]] set]]:
+==== [1238] Let [VAR[bytes]] be 
+[VAR[state]]'s [F[current segment data]]'s first byte & [N[0b01111111]]
+followed by 
+[VAR[state]]'s [F[current segment data]]'s second byte & [N[0b01111111]].
+=== [1252] Otherwise, if [VAR[set]] is a [[256[SUP[2]] set]]:
+==== [1253] Let [VAR[bytes]] be [VAR[state]]'s [F[current segment data]].
+=== [1243] If [VAR[set]] [ [VAR[bytes]] ] [[exists]]:
+==== [1241] Let [VAR[char]] be [VAR[set]] [ [VAR[bytes]] ].
+==== [1246] [[Emit][emit a character]] [VAR[char]].
+=== [1247] Otherwise:
+==== [1248] [[Emit][emit a character]]
+[[character]] ([I[unknown-byte]], 
+[VAR[state]]'s [F[current segment data]]'s first byte).
+==== [1249] [[Emit][emit a character]]
+[[character]] ([I[unknown-byte]], 
+[VAR[state]]'s [F[current segment data]]'s second byte).
+=== [1245] Set [VAR[state]]'s [F[current segment data]] to the [[empty byte sequence]].
+== [1262] Otherwise, if [VAR[state]]'s [F[current I byte]] is [N[3/0]]:
+=== [1264] If [VAR[state]]'s [F[current segment data]] is in [ [N[0/0]], [N[7/15]] ]:
+==== [1265] Let [VAR[char]] be a [[code point]] whose value is [VAR[bc]].
+==== [1267] [[Emit][emit a character]] [VAR[char]].
+==== [1266] Set [VAR[state]]'s [F[current segment data]] to the [[empty byte sequence]].
+= [1236] If [VAR[state]]'s [F[current segment length]] is [N[0]]:
+== [1239] If [VAR[state]]'s [F[current segment data]]'s [[length]] is ''not'' [N[0]]:
+=== [1240] [[Error][error]].
+== [1254] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [1256] If [VAR[state]]'s [F[current segment data]]'s [[length]] is ''not'' [N[0]]:
+== [1257] [[Emit][emit a character]]
+[[character]] ([I[unknown-byte]], [VAR[state]]'s [F[current segment data]]).
+= [1255] [[Error][error]].
+= [1259] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1260] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+
+]FIG]
 
 *** Cursor address state
 
@@ -2677,7 +2748,12 @@ where [VAR[IF]] is a [[byte sequence]] and [VAR[bytes]] is a [[byte sequence]]
 where [VAR[IF]] is a [[byte sequence]] and [VAR[bytes]] is a [[byte sequence]]
 - ([VAR[t1]], [VAR[t2]], [VAR[bytes]]), 
 where [VAR[t1]] and [VAR[t2]] are valid [VAR[t1]] and [VAR[t2]] pairs for 
-the steps to [[get a G set]] and [VAR[bytes]] is a [[byte sequence]]
+the steps to 
+[[get a G set]],
+[[get a 128 set]],
+[[get a 256 set]], or
+[[get a 256[SUP[2]] set]]
+and [VAR[bytes]] is a [[byte sequence]]
 - ([I[marc]], [VAR[bc]], [VAR[bytes]]), 
 where [VAR[bc]] is a [[bit combination]] and
 [VAR[bytes]] is a [[byte sequence]] of [[length]] [N[1]]
@@ -3161,6 +3237,29 @@ with [N[0/0]], [N[7/15]], [VAR[t1]], [VAR[t2]].
 
 ]NOTE]
 
+
+[1268] 
+To [DFN[get a 256 set]]
+with [VAR[t1]] and [VAR[t2]],
+run these steps:
+
+[FIG(steps)[
+
+= [1269] Let [VAR[set]] be the result of [[getting a 1-byte set][get a 1-byte set]] 
+with [N[0/0]], [N[15/15]], [VAR[t1]], [VAR[t2]].
+= [1270] Return [VAR[set]].
+
+]FIG]
+
+[NOTE[
+
+[1271] The following combinations of 
+[VAR[t1]] and [VAR[t2]] are used:
+
+- ([I[vts]], [I[transparent]])
+
+]NOTE]
+
 [1185] 
 To [DFN[get a 256[SUP[2]] set]]
 with [VAR[t1]] and [VAR[t2]],
@@ -3183,6 +3282,7 @@ with [N[0/0]], [N[15/15]], [VAR[t1]], [VAR[t2]].
 - ([I[sjis]], [I[2000]])
 - ([I[gbk]], [CODE[null]])
 - ([I[big5]], [CODE[null]])
+- ([I[big5]], [I[hp]])
 - ([I[big5]], [I[hkscs]])
 - ([I[uhc]], [CODE[null]])
 - ([I[johab]], [CODE[null]])
@@ -3227,6 +3327,8 @@ with [N[0/0]], [N[15/15]], [VAR[t1]], [VAR[t2]].
 - [CODE[big5-0]]
 - [CODE[big5hkscs-0]]
 - [CODE[gbk-0]]
+- [CODE[BIG5-0]]
+- [CODE[HP-BIG5]]
 
 [1177] 
 To [DFN[get a CT character set]] with [VAR[F]] and [VAR[encoding name]],
@@ -3275,7 +3377,7 @@ a [[CT 2-byte encoding name]]:
 === [1205] Return the result of 
 [[getting a G set][get a G set]] with
 [I[94]], [I[2]], [I[cns]], [I[old14]].
-== [1206] Otherwise, if [VAR[encoding name]] is [CODE[big5-0]]:
+== [1206] Otherwise, if [VAR[encoding name]] is [CODE[big5-0]] or [CODE[BIG5-0]]:
 === [1207] Return the result of 
 [[getting a 256[SUP[2]] set][get a 256[SUP[2]] set]] with
 [I[big5]], [CODE[null]].
@@ -3287,6 +3389,10 @@ a [[CT 2-byte encoding name]]:
 === [1211] Return the result of 
 [[getting a 256[SUP[2]] set][get a 256[SUP[2]] set]] with
 [I[gbk]], [CODE[null]].
+= [1261] If [VAR[F]] is [N[3/0]] and [VAR[encoding name]] is [CODE[HP-BIG5]]:
+== [1263] Return the result of 
+[[getting a 256[SUP[2]] set][get a 256[SUP[2]] set]] with
+[I[big5]], [I[hp]].
 = [1169] Otherwise:
 == [1180] Return [CODE[null]].
 
