@@ -2010,12 +2010,24 @@ the [[bit combination]] [VAR[bc]]:
 = [1023] Let [VAR[n]] be 
 ([F[state]]'s [F[current I byte]] - [N[0x20]]) × [N[16]] + [VAR[bc]] - [N[0x30]].
 = [1043] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
-= [1045] If [VAR[n]] is in [ [N[1]], [N[11]] ]:
+= [1045] If [VAR[n]] is in [N[1]]:
 == [1047] Set [VAR[state]]'s [F[right mode]] to [I[single]].
 == [1048] Set [VAR[state]]'s [F[right designated]] 
 to the result of 
 [[getting a G set][get a G set]] with
-[N[128]], [N[1]], [I[single]], [VAR[n]].
+[N[128]], [N[1]], [I[koi8]], [I[R]].
+= [1170] Otherwise, if [VAR[n]] is in [N[2]]:
+== [1171] Set [VAR[state]]'s [F[right mode]] to [I[single]].
+== [1172] Set [VAR[state]]'s [F[right designated]] 
+to the result of 
+[[getting a G set][get a G set]] with
+[N[128]], [N[1]], [I[koi8]], [I[U]].
+= [1173] If [VAR[n]] is in [ [N[3]], [N[11]] ]:
+== [1174] Set [VAR[state]]'s [F[right mode]] to [I[single]].
+== [1175] Set [VAR[state]]'s [F[right designated]] 
+to the result of 
+[[getting a G set][get a G set]] with
+[N[128]], [N[1]], [I[cp]], [N[1250]] + [VAR[n]] - 3.
 = [1049] Otherwise, if [VAR[n]] is [N[12]]:
 == [1050] Set [VAR[state]]'s [F[right mode]] to [I[sjis]].
 = [1046] Otherwise, if [VAR[n]] is [N[13]]:
@@ -2960,6 +2972,10 @@ that [[has 3-byte range]] [ [N[2/1]], [N[7/14]] ].
 A [DFN[128 set]] is a [[character set]]
 that [[has 1-byte range]] [ [N[0/0]], [N[7/15]] ].
 
+[1176] 
+A [DFN[256[SUP[2]] set]] is a [[character set]]
+that [[has 2-byte range]] [ [N[0/0]], [N[15/15]] ].
+
 [374] 
 To determine whether [DFN[is 96 size]] [VAR[set]], run these steps:
 
@@ -2978,14 +2994,17 @@ run these steps:
 
 [FIG(steps)[
 
-= [350] If [VAR[set]] is a [[94 set]] or [[96 set]]:
+= [350] If [VAR[set]] is a [[94 set]], [[96 set]], or [[128 set]]:
 == [351] Return [N[1]].
-= [352] Otherwise, if [VAR[set]] is a [[94[SUP[2]] set]] or [[96[SUP[2]] set]]:
+= [352] Otherwise, if [VAR[set]] is a [[94[SUP[2]] set]], [[96[SUP[2]] set]],
+or [[256[SUP[2]] set]]:
 == [353] Return [N[2]].
 = [360] Otherwise, if [VAR[set]] is a [[94[SUP[3]] set]]:
 == [361] Return [N[3]].
 
 ]FIG]
+
+
 
 
 
@@ -3085,10 +3104,76 @@ where [VAR[bytes]] is a [[byte sequence]]
 - ([N[94]], [N[3]], [I[marc]], [N[3/1]])
 - ([N[96]], [N[2]], [I[mule-96[SUP[2]]]], [VAR[F]]) where 
 [VAR[F]] is in [ [N[3/1]], [N[3/4]] ]
-- ([N[128]], [N[1]], [I[single]], [VAR[i]]) where 
-[VAR[i]] is an integer
+- ([N[128]], [N[1]], [I[cp]], [VAR[i]]) where 
+[VAR[i]] is in [ [N[1250]], [N[1258]] ]
+- ([N[128]], [N[1]], [I[koi8]], [I[R]])
+- ([N[128]], [N[1]], [I[koi8]], [I[U]])
+- ([N[128]], [N[1]], [I[koi8]], [I[C]])
+
 
 ]NOTE]
+
+
+-*-*-
+
+[1167] A [DFN[CT right encoding name]] is one of the followings:
+
+- [CODE[omron_UDC]]
+- [CODE[omron_UDC_ja]]
+- [CODE[omron_UDC_zh]]
+- [CODE[omron_UDC_tw]]
+- [CODE[iso8859-14]]
+- [CODE[iso8859-15]]
+- [CODE[armscii-8]]
+- [CODE[georgian-academy]]
+- [CODE[georgian-ps]]
+- [CODE[ibm-cp1133]]
+- [CODE[iscii-dev]]
+- [CODE[isiri-3342]]
+- [CODE[iso8859-9e]]
+- [CODE[koi8-c]]
+- [CODE[koi8-r]]
+- [CODE[koi8-u]]
+- [CODE[microsoft-cp1251]]
+- [CODE[microsoft-cp1255]]
+- [CODE[microsoft-cp1256]]
+- [CODE[mulelao-1]]
+- [CODE[nokhchi-1]]
+- [CODE[tatar-cyr]]
+- [CODE[tscii-0]]
+- [CODE[tcvn-5712]]
+- [CODE[viscii1.1-1]]
+
+[1168] A [DFN[CT 2-byte encoding name]] is one of the followings:
+
+- [CODE[fujitsu.u90x03]]
+- [CODE[DEC.CNS11643.1986-2]]
+- [CODE[DEC.DTSCS.1990-2]]
+- [CODE[big5-0]]
+- [CODE[big5hkscs-0]]
+- [CODE[gbk-0]]
+
+[1177] 
+To [DFN[get a CT character set]] with [VAR[F]] and [VAR[encoding name]],
+run these steps:
+
+[FIG(steps)[
+
+= [1178] If [VAR[F]] is [N[3/1]] and [VAR[encoding name]] is 
+a [[CT right encoding name]]:
+==
+@@
+= [1179] Otherwise, if [VAR[F]] is [N[3/2]] and [VAR[encoding name]] is
+a [[CT 2-byte encoding name]]:
+==
+@@
+= [1169] Otherwise:
+== [1180] Return [CODE[null]].
+
+
+]FIG]
+
+-*-*-
 
 [333] 
 To [DFN[modify character sets]] of [[state]] [VAR[state]] for
