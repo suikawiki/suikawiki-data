@@ -32,30 +32,63 @@
 
 ** VideotexString
 
-[19] 
-[DFN[VideotexString]]
-[SRC[T.101 PDF1 p.41]]:
-[[ISO/IEC 2022]],
-Data Syntax I,
-Data Syntax II,
-Data Syntax III,
-その他を 
-[CODE(charname)@en[DOCS]] で相互に切替可能。
 
 [20] 
-"complete code" environment を切り替える [CODE(charname)@en[DOCS]]
+"complete code" environment 
+([[ISO/IEC 2022]] complete coding environment)
+を切り替える [CODE(charname)@en[DOCS]]
 [SRC[T.101 PDF1 p.18, p.20, p.41]]:
 
 - [CODE(charname)@en[ESC]] 2/5 4/3 : Data Syntax I 
 - [CODE(charname)@en[ESC]] 2/5 4/4 : Data Syntax II
 - [CODE(charname)@en[ESC]] 2/5 4/1 : Data Syntax III 
 - [CODE(charname)@en[ESC]] 2/5 4/0 : [[ISO/IEC 2022]]
+- その他 [[ISO/IEC 9281]] で登録されたもの
+
+[21] 
+各 Data Syntax から
+[CODE(charname)@en[PCD]] 
+を使って
+[[ISO/IEC 9281]] picture coding environment
+の
+audio mode,
+photographic mode,
+VEMMI mode
+を利用可能。
+[SRC[T.101 PDF1 p.41]]
+
+[19] 
+[[ASN.1]]
+[DFN[VideotexString]]:
+[[ISO/IEC 2022]],
+Data Syntax I,
+Data Syntax II,
+Data Syntax III
+[CODE(charname)@en[DOCS]] で相互に切替可能。
+[SRC[T.101 PDF1 p.41]]
 
 [29] 3規格を識別するのみならず相互切り替え可能にする必要性はあったのか、
 需要はあったのか、実装可能だったのかは謎です。
 
-[21] 
-[CODE(charname)@en[PCD]] [SRC[PDF1 p.41]]
+[39] 
+Data Syntax の方に言及がなく本体で規定される
+[[ISO/IEC 9281]] picture coding への対応も、
+実態はあったのでしょうかね?
+
+[40] DI で識別される Data Syntax I と 
+[CODE(charname)@en[PCD]] で始まる [[ISO/IEC 9281]]
+は区別可能だけどアーキテクチャとしておかしい。
+また Data Syntax I から他に切り替える時どこにどう
+[CODE(charname)@en[DOCS]]
+を挿入すればいいのか何も書いていない。
+本体の状態遷移図に従うなら DI で識別されるバイト長が満了した後に
+[CODE(charname)@en[DOCS]] や [CODE(charname)@en[PCD]]
+を書けるということか。
+
+[41] 本体の状態遷移図には Data Syntax I に切り替えたらまず
+rank
+を書く(?)とあるが、その構文が本体にも附属書にも書いてなく謎。
+(rank という概念は Data Syntax I に存在してはいるのだが。)
 
 ** Data Syntax I
 
@@ -63,8 +96,43 @@ Data Syntax III,
 Data Syntax I (CAPTAIN) - 日本向け
 [SRC[PDF1 p.102]]
 
+[31] 4モードあって、
+DI (Data Identifier) 
+で識別します。
+
+- character mode
+-- DI(C) 0b00100000
+- transparent mode
+-- DI(T) 0b00110000
+-- DI(T-CNT) 0b00111111 (継続を表す)
+- sound mode
+-- DI(S) 0b01000001
+- message mode
+-- DI(M) 0b01000000
+
+[32] 
+[VAR[DI]], [VAR[LI]], [VAR[bytes]]
+を1セットとして繰り返します。
+
+[33] 
+LI (Length Indicator) 
+は
+[ [N[0]], [N[254]] ]
+の1バイトでバイト長を表すか、
+[N[255]] の[[バイト]]に続く[[大エンディアン]]2バイトでバイト長を表します。
+([ [N[0]], [N[254]] ] を1+2バイトで表すのも禁止されていない。)
+
+
+[30] [[character mode]] (初期状態)
+
+- [[ISO/IEC 2022]] [[7ビット符号]]、[[8ビット符号]]
 - [[C0]] [N[4/9]]
 - [[C1]] [N[4/4]]
+- [[G0]] = [[GL]]
+- [[G1]]
+- [[G2]] = [[GR]]
+- [[G3]]
+- [[固定シフト]]、[[単独シフト]]、[[指示シーケンス]]
 - [[94集合]] [N[4/10]] Primary Character set
 -- [[JIS X 0201]] [[ラテン文字用図形文字集合]]相当
 - [[94集合]] [N[4/9]] Katakana Character set
@@ -87,7 +155,37 @@ Data Syntax I (CAPTAIN) - 日本向け
 [[C1]] の [CODE(charname)@en[P-MACRO]] は
 [[ARIB STD-B24]] の [CODE(charname)@en[MACRO]]
 相当 + [CODE(charname)@en[P-MACRO]] [N[4/2]] [VAR[P]] でマクロ文を返送要求
+(ただしこちらは[[96集合]]で [VAR[P]] は [N[2/0]] ... [N[7/15]])
 
+[35] 
+transparent mode は PDU (Phorographic Data Unit) の連続。
+
+[36] 
+PDU は opcode (1[[バイト]])、[VAR[LI]]、[VAR[bytes]]。
+
+[34] 
+DI(T) / DI(T-CNT) の境界と PDU の境界が一致していなければならないのか、
+そうでないのかよくわからない。一致しなければならないとすると
+DI(T-CNT) は不要に思えるので、一致しなくても良いのかも。
+
+[38] 
+sound mode
+
+- [[ISO/IEC 2022]] [[8ビット符号]]
+
+
+[37] 
+message mode 
+
+- [[ISO/IEC 2022]] [[7ビット符号]]/[[8ビット符号]]
+- [[C0]]
+- [[C1]]
+- [[GL]] = [[G0]]
+- [[LS0]] Katakana character 
+- [[LS1]] Japanese-Kanji character
+- [[GR]] Primary character
+
+**
 
 [15] [[ISO-IR 165]]
 
