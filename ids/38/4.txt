@@ -90,6 +90,17 @@ rank
 を書く(?)とあるが、その構文が本体にも附属書にも書いてなく謎。
 (rank という概念は Data Syntax I に存在してはいるのだが。)
 
+** terminal identification 
+
+[46] 
+端末状態と照会・回答できる。 Data Syntax 共通。
+[SRC[PDF1 p.36, PDF1 p.102]]
+
+host 1/15 2/0 4/0 
+
+terminal 1/15 [4/1...7/15] 4/0 
+
+
 ** Data Syntax I
 
 [22] 
@@ -128,10 +139,10 @@ LI (Length Indicator)
 - [[ISO/IEC 2022]] [[7ビット符号]]、[[8ビット符号]]
 - [[C0]] [N[4/9]]
 - [[C1]] [N[4/4]]
-- [[G0]] = [[GL]]
-- [[G1]]
-- [[G2]] = [[GR]]
-- [[G3]]
+- [[G0]] = [[GL]] (初期値 Japanese-Kanji set)
+- [[G1]] (初期値 Primary set)
+- [[G2]] = [[GR]] (初期値 Display control command set)
+- [[G3]] (初期値 DRCS 1)
 - [[固定シフト]]、[[単独シフト]]、[[指示シーケンス]]
 - [[94集合]] [N[4/10]] Primary Character set
 -- [[JIS X 0201]] [[ラテン文字用図形文字集合]]相当
@@ -150,6 +161,15 @@ LI (Length Indicator)
 --- [26] 92区から94区に169文字追加
 - [[94集合]] [N[2/0]] [N[4/1]] : [[DRCS]] I set
 - [[94[SUP[2]]集合]] [N[2/0]] [N[4/0]] : [[DRCS]] II set
+
+[47] 
+[[C0]] 引数付き
+
+- 1/15 NSR >>36
+- 1/4 KMC [VAR[P]]
+- 1/12 APS [VAR[row]] [VAR[column]] (cursor position) 
+-- 下位6ビット
+
 
 [23] 
 [[C1]] の [CODE(charname)@en[P-MACRO]] は
@@ -172,6 +192,51 @@ DI(T-CNT) は不要に思えるので、一致しなくても良いのかも。
 sound mode
 
 - [[ISO/IEC 2022]] [[8ビット符号]]
+- [[C0]]
+- [[GL]] [[96[SUP[2]]集合]] Sound tone set
+- [[C1]]
+- [[GR]] Sound control
+
+[44] Sound tone set : 
+第1バイト Sound Tone Set (Pitch)、
+第2バイト Sound Tone Set (Duration)
+
+[45] Sound control  
+
+,*  ,*8  ,*9
+,* 0,SMC ,SLV
+,* 1,SMP ,
+,* 2,SRP ,
+,* 3,    ,
+,* 4,EMC ,
+,* 5,EPT ,
+,* 6,    ,
+,* 7,    ,
+,* 8,LBL ,LRT
+,* 9,JMP ,
+,*10,RPT ,
+,*11,BRA ,
+,*12,CTM ,
+
+引数付き
+
+- SMC 3/0 3/11 3/N 3/11
+- SMP 3/P 3/11
+- SRP 3/P 3/11
+- LBL 3/N 3/11
+- JMP 3/N 3/11
+- RPT 3/M 3/11 3/N 3/11
+- BRA 3/M 3/11 3/N 3/11
+- SLV 3/L 3/11
+- CTM 3/P 3/11
+- LRT 3/N 3/11
+
+(引数は1バイトとは限らない)
+
+numeric parameter: [ [N[3/0]], [N[3/9]] ]+
+delimiter: 3/11
+
+
 
 
 [37] 
@@ -184,6 +249,76 @@ message mode
 - [[LS0]] Katakana character 
 - [[LS1]] Japanese-Kanji character
 - [[GR]] Primary character
+
+[42] 
+1バイト (左側) の[[引数]]が続く[[C1制御文字]]
+
+- COL
+- SZX 
+- FLC
+- CDC
+
+[43] 
+特殊文字の集合
+Display Control set,
+PDI set,
+MVI set:
+opcode が [ [N[2/0]], [N[3/0]] ],
+operand が [ [N[4/0]], [N[7/15]] ]。
+opcode の後、
+opcode 依存の構文・長さで operand が続く。
+
+- 固定 operand
+- single-value operand : 下位6ビットが符号なし整数を表す
+- multi-value operand : 
+下位6ビット中、上位3ビットと下位3ビットがそれぞれ値を表す。
+後続 operand バイトも同じ。
+1 - 8 バイト。
+-- coordinate operand - 上位が X、下位が Y。第1バイト1つ目が符号±、
+2つ目が最上位ビット (0.5)、最終バイト3つ目が最下位ビットで、
+符号付き[[2の補数]]を表す。
+-- 色: 3ビットの上位から GRB の順で unsigned color value in RGB color system
+を表す。 unsigned binary decimal, 0 が lowest intensity、 1が highest intensity を表す。
+
+Display Control set
+
+- P-RESET fixed 1バイト
+- P-DOMAIN fixed 2バイト
+- LOGICAL-PEL multi-value 2バイト
+- DISPLAY MODE fixed 1バイト
+- P-TEXT fixed 2バイト / multi-value 1バイト
+- RASTER multi-value 1バイト
+- HEADER RASTER multi-value 1バイト
+- SET LUT single-value 1バイト / multi-value 1バイト
+- P-BLINK single-value 2バイト / fixed 3バイト
+- AREA multi-value 2バイト
+- SET FRAME single-value 2[VAR[n]] ([VAR[n]] = # of frames)
+- ASSIGN FRAME signle-value 1バイト
+
+Display Control Command Set
+
+,*  ,* 2         ,* 3  
+,* 0,            ,
+,* 1,P-RESET     ,
+,* 2,P-DOMAIN    ,
+,* 3,LOGICAL PEL ,
+,* 4,DISPLAY MODE,P-TEXT
+,* 5,AREA
+,* 6,SET FRAME
+,* 7,ASSIGN FRAME
+,* 8,            ,RASTER HEADER
+,* 9,            ,RASTER
+,*10,            ,SET LUT
+,*11,            ,
+,*12,P-WAIT      ,P-BLINK
+,*13,            ,
+,*14,            ,
+,*15,            ,
+
+[N[4/0]] - [N[7/15]] NUMERIC DATA
+
+
+
 
 **
 
