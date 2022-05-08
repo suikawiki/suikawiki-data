@@ -237,7 +237,6 @@ An [DFN[end-of-frame]] is a [[tuple]] of
 [97] [VAR[output stream]] might contain
 [[characters][character]],
 [[extended segment]],
-[[direct cursor address]],
 [[PCD data]],
 and
 @@ [[EOF]].
@@ -289,27 +288,6 @@ to
 
 ]FIG]
 
-
-
-[735] 
-To [DFN[emit a direct cursor address]] with 
-[[byte]] [VAR[line]] and [[byte]] [VAR[column]],
-run these steps:
-
-[FIG(steps)[
-=
-[736] 
-[[Append][append]]
-a new [[direct cursor address]]
-to 
-[VAR[output stream]]:
-[FIG(list members)[
-:[F[line]]:[VAR[line]] - [N[0x1F]]
-:[F[column]]:[VAR[column]] - [N[0x1F]]
-]FIG]
-
-
-]FIG]
 
 [95] 
 To [DFN[emit a PCD data]] with 
@@ -499,10 +477,46 @@ of [VAR[state]] for
 = [199] Set [VAR[state]]'s [F[decoder state]] to [I[us state]].
 
 ]FIG]
+:([I[videotex]], [I[sound-control]], [VAR[bytes]]) where [VAR[bytes]] is one of [N[8/0]], [N[8/1]], [N[8/2]], [N[8/8]], [N[8/9]], [N[8/12]], [N[9/0]], and [N[9/12]]:
+[FIG(steps)[
+
+= [1497] [[Emit][emit a character]] [VAR[char]].
+= [1483] Set [VAR[state]]'s [F[decoder state]] to [I[sound control parameter state]].
+
+]FIG]
+:([I[videotex]], [I[sound-control]], [VAR[bytes]]) where [VAR[bytes]] is [N[8/10]] or [N[8/11]]:
+[FIG(steps)[
+
+= [1498] [[Emit][emit a character]] [VAR[char]].
+= [1484] Set [VAR[state]]'s [F[decoder state]] to [I[sound control state]].
+
+]FIG]
 :([I[vt52]], [I[C1]], [N[9/9]]):
 [FIG(steps)[
 
+= [1499] [[Emit][emit a character]] [VAR[char]].
 = [722] Set [VAR[state]]'s [F[decoder state]] to [I[cursor address state]].
+
+]FIG]
+:([I[C0]], [I[C0]], [N[1/12]]):
+[FIG(steps)[
+
+= [732] [[Emit][emit a character]] [VAR[char]].
+= [735] Set [VAR[state]]'s [F[decoder state]] to [I[cursor address state]].
+
+]FIG]
+:([I[C0]], [N[4/9]], [N[1/4]]):
+[FIG(steps)[
+
+= [736] [[Emit][emit a character]] [VAR[char]].
+= [737] Set [VAR[state]]'s [F[decoder state]] to [I[control state]].
+
+]FIG]
+:([I[C1]], [N[4/4]], [VAR[bc]]) where [VAR[bc]] is [N[8/11]], [N[9/0]], [N[9/1]], or [N[9/2]]:
+[FIG(steps)[
+
+= [724] [[Emit][emit a character]] [VAR[char]].
+= [1505] Set [VAR[state]]'s [F[decoder state]] to [I[control state]].
 
 ]FIG]
 :[CODE(charname)@en[PCD]]:
@@ -2964,6 +2978,88 @@ by the [[bit combination]] [VAR[bc]]:
 ]FIG]
 
 
+*** Sound control state
+
+[1485] The [DFN[sound control state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [N[3/0]], [N[3/9]] ]:
+[FIG(steps)[
+
+= [1488] [[Emit][emit a character]] [[character]] ([I[param]], [VAR[bc]]).
+
+]FIG]
+: [N[3/11]] :
+[FIG(steps)[
+
+= [1489] [[Emit][emit a character]] [[character]] ([I[param]], [VAR[bc]]).
+= [1490] Set [VAR[state]]'s [F[decoder state]] to [I[sound control parameter state]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [1486] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+= [1487] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
+
+*** Sound control parameter state
+
+[1491] The [DFN[sound control parameter state]] switches by 
+the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [N[3/0]], [N[3/9]] ]:
+[FIG(steps)[
+
+= [1492] [[Emit][emit a character]] [[character]] ([I[param]], [VAR[bc]]).
+
+]FIG]
+: [N[3/11]] :
+[FIG(steps)[
+
+= [1493] [[Emit][emit a character]] [[character]] ([I[param]], [VAR[bc]]).
+= [1494] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [1495] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+= [1496] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
+
+*** Control state
+
+[1500] The [DFN[control state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [N[2/0]], [N[7/15]] ]:
+[FIG(steps)[
+
+= [1501] [[Emit][emit a character]] [[character]] ([I[param]], [VAR[bc]]).
+= [1502] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [1503] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+= [1504] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
+
 *** Cursor address state
 
 [723] The [DFN[cursor address state]] switches by the [[bit combination]] [VAR[bc]]:
@@ -2973,14 +3069,13 @@ by the [[bit combination]] [VAR[bc]]:
 :[ [N[2/0]], [N[15/15]] ]:
 [FIG(steps)[
 
-= [724] Set [VAR[state]]'s [F[current I byte]] to [VAR[bc]].
+= [726] [[Emit][emit a character]] [[character]] ([I[param]], [VAR[bc]]).
 = [725] Set [VAR[state]]'s [F[decoder state]] to [I[cursor address line state]].
 
 ]FIG]
 :Otherwise:
 [FIG(steps)[
 
-= [726] [[Error][error]].
 = [727] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [728] [[Reconsume][reconsume]] [VAR[bc]].
 
@@ -2998,15 +3093,13 @@ by the [[bit combination]] [VAR[bc]]:
 :[ [N[2/0]], [N[15/15]] ]:
 [FIG(steps)[
 
-= [730] [[Emit a direct cursor address][emit a direct cursor address]]
-[VAR[state]]'s [F[current I byte]], [VAR[bc]].
+= [730] [[Emit a character][emit a character]] [[character]] ([I[param]], [VAR[bc]]).
 = [731] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 :Otherwise:
 [FIG(steps)[
 
-= [732] [[Error][error]].
 = [733] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [734] [[Reconsume][reconsume]] [VAR[bc]].
 
@@ -3311,6 +3404,7 @@ A [DFN[character]] is one of followings:
 - [CODE(charname)@en[PCD]]
 - any other [[code point]]
 - ([I[esc]], [VAR[bytes]]), where [VAR[bytes]] is a [[byte sequence]]
+- ([I[param]], [VAR[bc]]) where [VAR[bc]] is a [[bit combination]]
 - ([I[protocol]], [VAR[bc]]), where [VAR[bc]] is a [[bit combination]]
 - ([VAR[t1]], [VAR[t2]], [VAR[bytes]]), 
 where [VAR[t1]] and [VAR[t2]] are valid [VAR[t1]] and [VAR[t2]] pairs for 
@@ -3360,14 +3454,6 @@ is a [[tuple]] of
 [DFN[[F[data]]]] ([[byte sequence]]),
 and
 [DFN[[F[incomplete]]]] ([[boolean]]).
-
-
-[737] 
-A [DFN[direct cursor address]]
-is a [[tuple]] of
-[DFN[[F[line]]]] (non-negative integer)
-and
-[DFN[[F[column]]]] (non-negative integer).
 
 [98] 
 A [DFN[PCD data]]
