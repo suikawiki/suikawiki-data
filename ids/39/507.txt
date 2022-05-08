@@ -77,7 +77,7 @@ Initially, [[false]].
 : [DFN[[F[current J byte]]]] : [[Byte][byte]] or [CODE[null]].
 : [DFN[[F[current revision byte]]]] : [[Byte][byte]] or [CODE[null]].
 Initially, [CODE[null]].
-: [DFN[[F[current segment length]]]] : Non-negative integer.
+: [DFN[[F[current segment length]]]] : Non-negative integer or [CODE[null]].
 : [DFN[[F[current segment data]]]] : [[Byte sequence][byte sequence]].
 : [DFN[[F[current frame length]]]] : Non-negative integer or [CODE[null]].
 Initially, [CODE[null]].
@@ -510,7 +510,7 @@ of [VAR[state]] for
 [FIG(steps)[
 
 = [182] Set [VAR[state]]'s [F[current I byte]] to [VAR[bytes]].
-= [199] Set [VAR[state]]'s [F[decoder state]] to [I[us state]].
+= [199] Set [VAR[state]]'s [F[decoder state]] to [I[US state]].
 
 ]FIG]
 :([I[videotex]], [I[sound-control]], [VAR[bytes]]) where [VAR[bytes]] is one of [N[8/0]], [N[8/1]], [N[8/2]], [N[8/8]], [N[8/9]], [N[8/12]], [N[9/0]], and [N[9/12]]:
@@ -2930,7 +2930,7 @@ followed by
 
 *** US state
 
-[213] The [DFN[us state]] switches by the [[bit combination]] [VAR[bc]]:
+[213] The [DFN[US state]] switches by the [[bit combination]] [VAR[bc]]:
 
 [FIG(switch)[
 
@@ -3027,11 +3027,9 @@ followed by
 : [N[3/15]] :
 [FIG(steps)[
 
-@@ TRANSPARENT 
-
 = [1384] If [VAR[state]]'s [F[current I byte]] is [N[4/10]]:
-==
-@@
+== [1628] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
+== [1617] Set [VAR[state]]'s [F[decoder state]] to [I[TRANSPARENT state]].
 = [1385] Otherwise:
 == [1386] [[Emit][emit a character]]
 [[character]] ([I[C0]], [VAR[state]]'s [F[current I byte]], [N[1/15]]).
@@ -3500,6 +3498,82 @@ the [[bit combination]] [VAR[bc]]:
 
 
 ]FIG]
+
+*** TRANSPARENT state
+
+[1618] The [DFN[TRANSPARENT state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+: [N[0/0]] :
+[FIG(steps)[
+
+= [1624] Set [VAR[state]]'s [F[current segment length]] to [CODE[null]].
+= [1619] Set [VAR[state]]'s [F[decoder state]] to [I[TRANSPARENT data state]].
+
+]FIG]
+:[ [N[0/1]], [N[15/14]] ]:
+[FIG(steps)[
+
+= [1623] Set [VAR[state]]'s [F[current segment length]] to [VAR[bc]].
+= [1622] Set [VAR[state]]'s [F[decoder state]] to [I[TRANSPARENT data state]].
+
+]FIG]
+: [N[15/15]] :
+[FIG(steps)[
+
+= [1621] [[Deprecated][deprecated]].
+= [1620] Set [VAR[state]]'s [F[decoder state]] to [I[TRANSPARENT data state]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [1625] [[Error][error]].
+= [1627] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+= [1626] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
+
+
+*** TRANSPARENT data state
+
+[1629] The [DFN[TRANSPARENT data state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [N[0/0]], [N[1/14]] ], [ [N[2/0]], [N[15/15]] ]:
+[FIG(steps)[
+
+= [1634] If [VAR[state]]'s [F[current segment length]] is ''not'' [CODE[null]]:
+== [1635] Set [VAR[state]]'s [F[current segment length]] to
+[VAR[state]]'s [F[current segment length]] - 1.
+= [1636] [[Emit][emit a character]]
+[[character]] ([I[videotex]], [I[transparent]], [VAR[bc]]).
+= [1637] If [VAR[state]]'s [F[current segment length]] is [N[0]]:
+== [1638] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+
+]FIG]
+: [N[1/15]] :
+[FIG(steps)[
+
+= [1639] [[Error][error]].
+= [1631] Set [VAR[state]]'s [F[current I byte]] to [N[4/10]].
+= [1632] Set [VAR[state]]'s [F[decoder state]] to [I[US state]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [1630] [[Error][error]].
+= [1633] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+
+]FIG]
+
+]FIG]
+
 
 
 
@@ -4179,6 +4253,7 @@ with [N[0/0]], [N[15/15]], [VAR[t1]], [VAR[t2]].
 - ([I[unknown-byte]], [CODE[null]])
 - ([I[vts]], [I[transparent]])
 - ([I[captain]], [VAR[bc]]) where [VAR[bc]] is a [[bit combination]]
+- ([I[videotex]], [I[transparent]])
 
 ]NOTE]
 
