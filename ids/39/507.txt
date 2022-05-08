@@ -62,6 +62,8 @@ Initially, [[false]].
 Initially, [[false]].
 : [DFN[[F[UTF-8 GL flag]]]] : [[Boolean][boolean]].
 Initially, [[false]].
+: [DFN[[F[data syntax 2 default mode]]]] : [I[serial]] or [I[parallel]].
+Initially, [I[serial]].
 : [DFN[[F[current byte sequence]]]] : [[Byte sequence][byte sequence]].
 : [DFN[[F[current element]]]] : [[C element]] or [[G element]].
 : [DFN[[F[current size]]]] : [N[94]] or [N[96]].
@@ -166,8 +168,9 @@ that modifies [VAR[state]].  It can modify [VAR[state]] in these ways:
 [F[bits]],
 [F[VT response flag]],
 [F[ISO 4873 Latin-1 flag]],
+[F[UTF-8 GL flag]],
 and/or
-[F[UTF-8 GL flag]].
+[F[data syntax 2 default mode]].
 - [319] It [MAY[MAY]] invoke the steps to [[modify character sets]]
 of [VAR[state]] for some [VAR[features]].
 - [807] If [VAR[state]]'s [F[G0 RL designated]] is set to a [[94[SUP[2]] set]],
@@ -595,6 +598,23 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 == [1454] Set [VAR[state]]'s [F[decoder state]] to [I[opaque state]].
 
 ]FIG]
+
+[1527] 
+To [DFN[initialize data syntax 2]] with [VAR[state]] and [VAR[mode]],
+run these steps:
+
+[FIG(steps)[
+
+= [1528] [[Run a macro][run a macro]]
+"ESC 2/1 4/10 ESC 2/8 4/0 ESC 2/9 6/3 ESC 2/10 6/2 ESC 2/11 6/4 LS0 LS2R".
+= [1529] If [VAR[mode]] is [I[serial]]:
+== [1530] [[Run a macro][run a macro]] "ESC 2/2 4/0".
+= [1531] Otherwise, if [VAR[mode]] is [I[parallel]]:
+== [1532] [[Run a macro][run a macro]] "ESC 2/2 4/1".
+= [1533] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+
+]FIG]
+
 
 @@
 [1429] To [DFN[run a macro]] [VAR[bytes]], ...
@@ -1509,6 +1529,9 @@ followed by [VAR[bc]]).
 == [164] Set [VAR[state]]'s [F[C0 designated]] to the result of 
 [[getting a C set][get a C set]] with [I[C0]], [I[C0]], [I[bytes]].
 = [232] Otherwise, if [VAR[state]]'s [F[current element]] is [I[C1]]:
+== [1534] If [VAR[bytes]] is [N[4/0]] or [N[4/1]]:
+=== [1535] [[Emit][emit a character]]
+[[character]] ([I[videotex]], [I[protocol]], [VAR[bytes]]).
 == [233] Set [VAR[state]]'s [F[C1 designated]] to the result of 
 [[getting a C set][get a C set]] with [I[C1]], [I[C1]], [VAR[bytes]].
 = [382] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
@@ -2040,6 +2063,7 @@ the [[bit combination]] [VAR[bc]]:
 [[character]] ([I[protocol]], [N[4/0]]).
 = [1040] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
 = [1035] Set [VAR[state]]'s [F[right mode]] to [I[iso2022]].
+= [1507] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 : [N[3/1]], [N[3/2]], [N[3/3]], [ [N[3/5]], [N[3/7]] ], [ [N[3/9]], [N[3/12]] ], [N[3/14]], [N[3/15]] :
@@ -2065,6 +2089,7 @@ the [[bit combination]] [VAR[bc]]:
 = [1073] Otherwise:
 == [1074] Set [VAR[state]]'s [F[GL mode]] to [I[ascii]].
 = [1036] Set [VAR[state]]'s [F[right mode]] to [I[utf-8]].
+= [1508] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 : [N[3/13]] :
@@ -2072,9 +2097,10 @@ the [[bit combination]] [VAR[bc]]:
 
 = [1120] [[Emit][emit a character]]
 [[character]] ([I[protocol]], [VAR[bc]]).
+= [1509] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
-: [ [N[4/4]], [N[4/6]] ], [N[4/9]]:
+: [ [N[4/5]], [N[4/6]] ], [N[4/9]]:
 [FIG(steps)[
 
 @@
@@ -2086,13 +2112,20 @@ the [[bit combination]] [VAR[bc]]:
 
 = [1039] Set [VAR[state]]'s [F[GL mode]] to [I[ascii]].
 = [1038] Set [VAR[state]]'s [F[right mode]] to [I[utf-1]].
+= [1510] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 : [N[4/3]] :
 [FIG(steps)[
 
 = [1419] Set [VAR[state]]'s [F[GL mode]] to [I[captain]].
-= [1418] Set [VAR[state]]'s [F[decoder state]] to [I[captain state]].
+= [1418] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+
+]FIG]
+: [N[4/4]] :
+[FIG(steps)[
+
+= [1506] Set [VAR[state]]'s [F[decoder state]] to [I[data syntax 2 state]].
 
 ]FIG]
 : [N[4/7]] :
@@ -2103,6 +2136,7 @@ the [[bit combination]] [VAR[bc]]:
 = [1077] Otherwise:
 == [1012] Set [VAR[state]]'s [F[GL mode]] to [I[ascii]].
 = [1041] Set [VAR[state]]'s [F[right mode]] to [I[utf-8]].
+= [1511] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 :[ [N[5/0]], [N[5/15]] ]:
@@ -2112,7 +2146,6 @@ the [[bit combination]] [VAR[bc]]:
 [[getting a G set][get a G set]] with
 [I[96]], [I[1]], [I[videotex]], [I[t100alphageometric]].
 = [1362] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
-
 
 ]FIG]
 : Otherwise :
@@ -2771,6 +2804,46 @@ followed by
 
 ]FIG]
 
+*** data syntax 2 state
+
+[1512] The [DFN[data syntax 2 state]] switches by the [[bit combination]] [VAR[bc]].
+
+[FIG(switch)[
+
+: [N[4/0]] :
+[FIG(steps)[
+
+= [1521] Let [VAR[mode]] be [VAR[state]]'s [F[data syntax 2 default mode]].
+= [1520] If [VAR[state]]'s [F[current I byte]] is [N[6/3]] or [N[6/4]]:
+== [1522] Set [VAR[mode]] to [I[parallel]].
+= [1523] Run the steps to [[initialize data syntax 2]] with 
+[VAR[state]] and [VAR[mode]].
+
+]FIG]
+:[ [N[4/1]], [N[7/14]] ]:
+[FIG(steps)[
+
+= [1513] If [VAR[bc]] is in [ [N[6/0]], [N[6/4]] ]:
+== [1514] Set [VAR[state]]'s [F[bits]] to [I[7-bit]].
+= [1515] If [VAR[bc]] is in [ [N[6/1]], [N[6/4]] ]:
+== [1516] Set [VAR[state]]'s [F[current I byte]] to [VAR[bc]].
+= [1517] [[Emit][emit a character]]
+[[character]] ([I[videotex]], [I[profile]], [VAR[bc]]).
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [1518] Let [VAR[mode]] be [VAR[state]]'s [F[data syntax 2 default mode]].
+= [1519] If [VAR[state]]'s [F[current I byte]] is [N[6/3]] or [N[6/4]]:
+== [1524] Set [VAR[mode]] to [I[parallel]].
+= [1525] Run the steps to [[initialize data syntax 2]] with 
+[VAR[state]] and [VAR[mode]].
+= [1526] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
 
 *** US state
 
@@ -3432,6 +3505,7 @@ where [VAR[bytes]] is a [[byte sequence]]
 - ([I[vt105]], [I[esc]], [VAR[bc]]), where [VAR[bc]] is in [ [N[3/1]], [N[3/2]] ]
 - ([I[tektronix]], [I[esc]], [VAR[bc]]), where [VAR[bc]] is in [ [N[0/0]], [N[1/15]] ]
 - ([I[tektronix]], [I[esc]], [VAR[bc]]), where [VAR[bc]] is in [ [N[3/0]], [N[3/15]] ]
+- ([I[videotex]], [I[protocol]], [VAR[bc]]) where [VAR[bc]] is a [[bit combination]]
 - ([I[videotex]], [I[us]], [VAR[bc]]) where [VAR[bc]] is a [[bit combination]]
 - ([I[mule]], [I[esc]], [VAR[bc]]), where [VAR[bc]] is in [ [N[3/0]], [N[3/4]] ]
 - ([I[deprecated]], [VAR[char]]) where [VAR[char]] is a [[character]]
@@ -4546,6 +4620,7 @@ This document depends on the [CITE[Infra Standard]].
 [15] 
 The terms
 [DFN[for each][For each]],
+[DFN[while][While]],
 [DFN[boolean]],
 [DFN[byte]],
 [DFN[byte sequence]],
