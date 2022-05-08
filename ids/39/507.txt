@@ -451,7 +451,8 @@ of [VAR[state]] for
 :([I[tektronix]], [I[esc]], [N[0/3]]):
 [FIG(steps)[
 
-= [718] Set [VAR[state]]'s [F[C1 designated]] to the [[VT C1 set]].
+= [718] Set [VAR[state]]'s [F[C1 designated]] to the result of 
+[[getting a C set][get a C set]] with [I[C1]], [I[vt]], [I[C1]].
 = [677] [[Modify character sets][modify character sets]]
 of [VAR[state]] for
 « "noescc0", "vt" ».
@@ -1287,7 +1288,26 @@ or
 followed by [VAR[bc]]).
 
 ]FIG]
-: Otherwise :
+:[ [N[4/0]], [N[5/15]] ]:
+[FIG(steps)[
+
+= [1363] If [VAR[state]]'s [F[current I byte]] is [N[2/0]] or [N[2/1]]:
+== [1369] Let [VAR[set]] be the result of
+[[getting a C set][get a C set]] with
+[I[C1]], [I[videotex]], [VAR[state]]'s [F[current I byte]].
+== [1370] [[Emit a character][emit a character]] [ [VAR[bc]] + [N[0x40]] ].
+== [1371] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1364] Otherwise:
+== [1365] [[Error][error]].
+== [1366] Set [VAR[state]]'s [F[opaque designated]] to the result of
+[[getting a 256 set][get a 256 set]]
+[I[unknown-byte]], [CODE[null]].
+== [1367] Set [VAR[state]]'s [F[decoder state]] to [I[opaque state]].
+== [1368] [[Reconsume][reconsume]] [VAR[bc]].
+
+
+]FIG]
+:Otherwise:
 [FIG(steps)[
 
 = [404] [[Error][error]].
@@ -1383,14 +1403,17 @@ followed by [VAR[bc]]).
 : [ [[3/0]], [[7/14]] ] :
 [FIG(steps)[
 
+= [1373] If [VAR[state]]'s [F[current revision byte]] is [CODE[null]]:
+== [1374] Let [VAR[bytes]] be [VAR[bc]].
+= [1375] Otherwise:
+== [1372] Let [VAR[bytes]] be 
+[VAR[bc]] followed by [VAR[state]]'s [F[current revision byte]].
 = [231] If [VAR[state]]'s [F[current element]] is [I[C0]]:
 == [164] Set [VAR[state]]'s [F[C0 designated]] to the result of 
-[[getting a C0 set][get a C0 set]] with
-[VAR[bc]] and [VAR[state]]'s [F[current revision byte]].
+[[getting a C set][get a C set]] with [I[C0]], [I[C0]], [I[bytes]].
 = [232] Otherwise, if [VAR[state]]'s [F[current element]] is [I[C1]]:
 == [233] Set [VAR[state]]'s [F[C1 designated]] to the result of 
-[[getting a C1 set][get a C1 set]] with
-[VAR[bc]] and [VAR[state]]'s [F[current revision byte]].
+[[getting a C set][get a C set]] with [I[C1]], [I[C1]], [VAR[bytes]].
 = [382] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
 
 ]FIG]
@@ -1976,6 +1999,16 @@ the [[bit combination]] [VAR[bc]]:
 = [1077] Otherwise:
 == [1012] Set [VAR[state]]'s [F[GL mode]] to [I[ascii]].
 = [1041] Set [VAR[state]]'s [F[right mode]] to [I[utf-8]].
+
+]FIG]
+:[ [N[5/0]], [N[5/15]] ]:
+[FIG(steps)[
+
+= [975] Set [VAR[state]]'s [F[G1 designated]] to the result of 
+[[getting a G set][get a G set]] with
+[I[96]], [I[1]], [I[videotex]], [I[t100alphageometric]].
+= [1362] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+
 
 ]FIG]
 : Otherwise :
@@ -3076,129 +3109,82 @@ a [[character]] ([VAR[t1]], [VAR[t2]], [VAR[cc]]).
 A [DFN[C0 set]] is a [[character set]] that 
 [[has 1-byte range]] [ [N[0/0]], [N[1/15]] ].
 
+[23] 
+A [DFN[C1 set]] is a [[character set]] that 
+[[has 1-byte range]] [ [N[8/0]], [N[9/15]] ].
+
 [176] 
-To [DFN[get a C0 set]] with [VAR[F]] and [VAR[R]], run these steps:
+To [DFN[get a C set]] with 
+[VAR[type]], [VAR[t1]], and [VAR[t2]],
+run these steps:
 
 [FIG(steps)[
 
-= [652] If [VAR[R]] is [CODE[null]]:
-== [655] Let [VAR[bytes]] be [VAR[F]].
-= [654] Otherwise:
-== [653] Let [VAR[bytes]] be [VAR[F]] followed by [VAR[R]].
-= [177] Let [VAR[set]] be the result of 
+= [652] If [VAR[type]] is [I[C0]]:
+== [177] Let [VAR[set]] be the result of 
 [[getting a 1-byte set][get a 1-byte set]] 
-with [[0/0]], [[1/15]], [I[C0]], and [VAR[bytes]].
-= [180] If [VAR[F]] is ''not'' [[7/14]]:
-== [178] Set [VAR[set]] [ [[1/11]] ] to [CODE(charname)@en[ESC]].
-= [187] If [VAR[F]] is one of:
-[[4/1]] ([[ISO-IR]] 1),
-[[4/3]] ([[ISO-IR]] 26),
-[[4/4]] ([[ISO-IR]] 36),
-[[4/6]] ([[ISO-IR]] 74),
-[[4/11]] ([[ISO-IR]] 135),
-[[4/12]] ([[ISO-IR]] 140),
-[[4/5]] ([[ISO-IR]] 106),
-[[4/8]] ([[ISO-IR]] 130),
+with [N[0/0]], [N[1/15]], [VAR[t1]], [VAR[t2]].
+= [653] Otherwise, if [VAR[type]] is [I[C1]]:
+== [181] Let [VAR[set]] be the result of 
+[[getting a 1-byte set][get a 1-byte set]] 
+with [N[8/0]], [N[9/15]], [VAR[t1]], [VAR[t2]].
+= [180] If [VAR[t1]] is [I[C0]] and [VAR[t2]] is ''not'' [N[7/14]]:
+== [178] Set [VAR[set]] [ [N[1/11]] ] to [CODE(charname)@en[ESC]].
+= [187] If [VAR[t1]] is [I[C0]] and [VAR[t2]] is one of:
+[N[4/1]] ([[ISO-IR]] 1),
+[N[4/3]] ([[ISO-IR]] 26),
+[N[4/4]] ([[ISO-IR]] 36),
+[N[4/6]] ([[ISO-IR]] 74),
+[N[4/11]] ([[ISO-IR]] 135),
+[N[4/12]] ([[ISO-IR]] 140),
+[N[4/5]] ([[ISO-IR]] 106),
+[N[4/8]] ([[ISO-IR]] 130),
 or
-[[4/10]] ([[ISO-IR]] 134):
-== [188] Set [VAR[set]] [ [[0/14]] ] to [CODE(charname)@en[LS1]].
-== [189] Set [VAR[set]] [ [[0/15]] ] to [CODE(charname)@en[LS0]].
-= [190] If [VAR[F]] is [[4/4]] ([[ISO-IR]] 36):
-== [191] Set [VAR[set]] [ [[1/12]] ] to [CODE(charname)@en[SS2]].
-= [192] If [VAR[F]] is one of:
-[[4/5]] ([[ISO-IR]] 106),
-[[4/9]] ([[ISO-IR]] 132),
-[[4/10]] ([[ISO-IR]] 134),
+[N[4/10]] ([[ISO-IR]] 134):
+== [188] Set [VAR[set]] [ [N[0/14]] ] to [CODE(charname)@en[LS1]].
+== [189] Set [VAR[set]] [ [N[0/15]] ] to [CODE(charname)@en[LS0]].
+= [190] If [VAR[t1]] is [I[C0]] and [VAR[t2]] is [N[4/4]] ([[ISO-IR]] 36):
+== [191] Set [VAR[set]] [ [N[1/12]] ] to [CODE(charname)@en[SS2]].
+= [192] If [VAR[t1]] is [I[C0]] and [VAR[t2]] is one of:
+[N[4/5]] ([[ISO-IR]] 106),
+[N[4/9]] ([[ISO-IR]] 132),
+[N[4/10]] ([[ISO-IR]] 134),
 or 
-[[4/12]] ([[ISO-IR]] 135):
-== [193] Set [VAR[set]] [ [[1/9]] ] to [CODE(charname)@en[SS2]].
-== [193] Set [VAR[set]] [ [[1/14]] ] to [CODE(charname)@en[SS3]].
-= [194] If [VAR[F]] is [[4/12]] ([[ISO-IR]] 140):
-== [195] Set [VAR[set]] [ [[1/9]] ] to [CODE(charname)@en[SS2]].
-= [179] Return [VAR[set]].
+[N[4/12]] ([[ISO-IR]] 135):
+== [193] Set [VAR[set]] [ [N[1/9]] ] to [CODE(charname)@en[SS2]].
+== [193] Set [VAR[set]] [ [N[1/14]] ] to [CODE(charname)@en[SS3]].
+= [194] If [VAR[t1]] is [I[C0]] and [VAR[t2]] is [N[4/12]] ([[ISO-IR]] 140):
+== [195] Set [VAR[set]] [ [N[1/9]] ] to [CODE(charname)@en[SS2]].
+= [196] If [VAR[t1]] is [I[C1]] and [VAR[t2]] is one of:
+[N[4/5]] ([[ISO-IR]] 40),
+[N[4/3]] ([[ISO-IR]] 77),
+or
+[N[4/7]] ([[ISO-IR]] 105):
+== [197] Set [VAR[set]] [ [N[8/14]] ] to [CODE(charname)@en[SS2]].
+== [198] Set [VAR[set]] [ [N[8/15]] ] to [CODE(charname)@en[SS3]].
+= [25] If [VAR[t1]] is [I[vt]] and [VAR[t2]] is [I[C1]]:
+== [688] Set [VAR[set]] [ [N[8/14]] ] to [CODE(charname)@en[LS1]].
+== [689] Set [VAR[set]] [ [N[8/15]] ] to [CODE(charname)@en[LS0]].
+== [715] Set [VAR[set]] [ [N[9/0]] ] to [CODE(charname)@en[DCS]].
+= [716] Return [VAR[set]].
 
 ]FIG]
 
 [19] 
 The [DFN[initial C0 set]] is the result of 
-[[getting a C0 set][get a C0 set]] with [N[4/7]] and [CODE[null]].
-
+[[getting a C set][get a C set]] with [I[C0]], [I[C0]], [N[4/7]].
 
 [37] 
-The [DFN[unknown C0 set]] is the result of running these steps:
-
-[FIG(steps)[
-
-= [213] Let [VAR[set]] be a new [[character set]].
-= [215] [[For each]] [VAR[c]] in [ [N[0/0]], [N[1/15]] ]:
-== [273] Let [VAR[set]] [ [VAR[c]] ] be
-[[character]] ([I[unknown-control]], [VAR[c]]).
-= [658] Return [VAR[set]].
-
-]FIG]
-
-
-
-[23] 
-A [DFN[C1 set]] is a [[character set]] that 
-[[has 1-byte range]] [ [N[8/0]], [N[9/15]] ].
-
-[25] 
-To [DFN[get a C1 set]] with [VAR[F]] and [VAR[R]], run these steps:
-
-[FIG(steps)[
-
-= [656] If [VAR[R]] is [CODE[null]]:
-== [657] Let [VAR[bytes]] be [VAR[F]].
-= [997] Otherwise:
-== [998] Let [VAR[bytes]] be [VAR[F]] followed by [VAR[R]].
-= [181] Let [VAR[set]] be the result of 
-[[getting a 1-byte set][get a 1-byte set]] 
-with [[8/0]], [[9/15]], [I[C1]], [VAR[bytes]].
-= [196] If [VAR[F]] is one of:
-[[4/5]] ([[ISO-IR]] 40),
-[[4/3]] ([[ISO-IR]] 77),
-or
-[[4/7]] ([[ISO-IR]] 105):
-== [197] Set [VAR[set]] [ [[8/14]] ] to [CODE(charname)@en[SS2]].
-== [198] Set [VAR[set]] [ [[8/15]] ] to [CODE(charname)@en[SS3]].
-= [182] Return [VAR[set]].
-
-]FIG]
+The [DFN[unknown C0 set]] is the result of 
+[[getting a C set][get a C set]] with [I[C0]], [I[unknown-control]], [CODE[null]].
 
 [24] 
 The [DFN[empty C1 set]] is the result of 
-[[getting a C1 set][get a C1 set]] with [N[7/14]] and [CODE[null]].
+[[getting a C set][get a C set]] with [I[C1]], [I[C1]], [N[7/14]].
 
 [661] 
-The [DFN[unknown C1 set]] is the result of running these steps:
-
-[FIG(steps)[
-
-= [672] Let [VAR[set]] be a new [[character set]].
-= [673] [[For each]] [VAR[c]] in [ [N[8/0]], [N[9/15]] ]:
-== [675] Let [VAR[set]] [ [VAR[c]] ] be
-[[character]] ([I[unknown-control]], [VAR[c]]).
-= [676] Return [VAR[set]].
-
-]FIG]
-
-
-[683] 
-The [DFN[VT C1 set]] is the result of running these steps:
-
-[FIG(steps)[
-
-= [684] Let [VAR[set]] be a new [[character set]].
-= [199] Let [VAR[set]] be the result of 
-[[getting a 1-byte set][get a 1-byte set]] 
-with [[8/0]], [[9/15]], [I[vt]], [I[C1]].
-= [688] Set [VAR[set]] [ [N[8/14]] ] to [CODE(charname)@en[LS1]].
-= [689] Set [VAR[set]] [ [N[8/15]] ] to [CODE(charname)@en[LS0]].
-= [715] Set [VAR[set]] [ [N[9/0]] ] to [CODE(charname)@en[DCS]].
-= [716] Return [VAR[set]].
-
-]FIG]
+The [DFN[unknown C1 set]] is the result of 
+[[getting a C set][get a C set]] with [I[C1]], [I[unknown-control]], [CODE[null]].
 
 -*-*-
 
@@ -3317,6 +3303,7 @@ with [N[2/1]], [N[7/14]], [VAR[t1]], [VAR[t2]].
 [VAR[F]] is in [ [N[3/0]], [N[3/15]] ]
 - ([N[94]], [N[1]], [I[jphone]], [VAR[F]]) where [VAR[F]] is in [ [N[4/3]], [N[5/1]] ]
 - ([N[94]], [N[1]], [I[videotex]], [N[4/0]])
+- ([N[96]], [N[1]], [I[videotex]], [I[t100alphageometric]])
 - ([N[96]], [N[1]], [I[videotex]], [VAR[F]]) where [VAR[F]] is in [ [N[3/8]], [N[3/9]] ]
 - ([N[96]], [N[1]], [I[mule-96]], [VAR[F]]) where [VAR[F]] is in [ [N[3/0]], [N[3/2]] ]
 - ([N[94]], [N[2]], [I[94[SUP[2]]]], [VAR[bytes]]) 
