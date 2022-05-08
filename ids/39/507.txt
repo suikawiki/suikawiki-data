@@ -51,7 +51,7 @@ Initially, [CODE[null]].
 : [DFN[[F[GR invoked]]]] : [[G element]] or [CODE[null]].
 Initially, [CODE[null]].
 : [DFN[[F[GL mode]]]] :
-[I[iso2022]], [I[captain]], or [I[single]].  
+[I[iso2022]], [I[captain]], [I[telesoftware]], or [I[single]].  
 Initially, [I[iso2022]].
 : [DFN[[F[right mode]]]] : A [[right mode]].
 Initially, [I[iso2022]].
@@ -67,6 +67,8 @@ Initially, [[false]].
 Initially, [[false]].
 : [DFN[[F[data syntax 2 default mode]]]] : [I[serial]] or [I[parallel]].
 Initially, [I[serial]].
+: [DFN[[F[videotex basic kernel flag]]]] : [[Boolean][boolean]].
+Initially, [[false]].
 : [DFN[[F[current byte sequence]]]] : [[Byte sequence][byte sequence]].
 : [DFN[[F[current element]]]] : [[C element]] or [[G element]].
 : [DFN[[F[current size]]]] : [N[94]] or [N[96]].
@@ -75,8 +77,6 @@ Initially, [I[serial]].
 : [DFN[[F[current J byte]]]] : [[Byte][byte]] or [CODE[null]].
 : [DFN[[F[current revision byte]]]] : [[Byte][byte]] or [CODE[null]].
 Initially, [CODE[null]].
-: [DFN[[F[current PCD PM]]]] : [[Byte][byte]].
-: [DFN[[F[current PCD PI]]]] : [[Byte][byte]].
 : [DFN[[F[current segment length]]]] : Non-negative integer.
 : [DFN[[F[current segment data]]]] : [[Byte sequence][byte sequence]].
 : [DFN[[F[current frame length]]]] : Non-negative integer or [CODE[null]].
@@ -172,8 +172,9 @@ that modifies [VAR[state]].  It can modify [VAR[state]] in these ways:
 [F[VT response flag]],
 [F[ISO 4873 Latin-1 flag]],
 [F[UTF-8 GL flag]],
+[F[data syntax 2 default mode]],
 and/or
-[F[data syntax 2 default mode]].
+[F[videotex basic kernel flag]].
 - [319] It [MAY[MAY]] invoke the steps to [[modify character sets]]
 of [VAR[state]] for some [VAR[features]].
 - [807] If [VAR[state]]'s [F[G0 RL designated]] is set to a [[94[SUP[2]] set]],
@@ -297,6 +298,28 @@ to
 :[F[final]]: [VAR[F]]
 :[F[data]]: [VAR[data]]
 :[F[incomplete]]: [VAR[incomplete]]
+]FIG]
+
+]FIG]
+
+[1581] 
+To [DFN[emit a TELESOFTWARE data]] with
+[[byte]] [VAR[CI]],
+[[byte sequence]] [VAR[data]],
+and
+[[boolean]] [VAR[incomplete]], run these steps:
+
+[FIG(steps)[
+
+= [1615] 
+[[Append][append]] 
+a new [[TELESOFTWARE data]]
+to 
+[VAR[output stream]]:
+[FIG(list members)[
+:[F[command identifier]]: [VAR[CI]]
+:[F[data]]: [VAR[data]]
+:[F[incomplete]]: [VAR[incomplete]].
 ]FIG]
 
 ]FIG]
@@ -684,6 +707,16 @@ run these steps:
 = [1420] Otherwise, if [VAR[state]]'s [F[GL mode]] is [I[captain]]:
 == [1427] Set [VAR[state]]'s [F[current I byte]] to [VAR[bc]].
 == [1428] Set [VAR[state]]'s [F[decoder state]] to [I[CAPTAIN DI state]].
+= [1613] Otherwise, if [VAR[state]]'s [F[GL mode]] is [I[telesoftware]]:
+== [1612] If [VAR[state]]'s [F[videotex basic kernel flag]] is [[true]]:
+=== [1577] [[Emit a TELESOFTWARE data][emit a TELESOFTWARE data]]
+[VAR[bc]],
+the [[empty byte sequence]],
+and
+[CODE[false]].
+== [1576] Otherwise:
+=== [1614] Set [VAR[state]]'s [F[current I byte]] to [VAR[bc]].
+=== [1578] Set [VAR[state]]'s [F[decoder state]] to [I[TELESOFTWARE CI state]].
 = [1080] Otherwise, if [VAR[state]]'s [F[GL mode]] is [I[iso2022]]:
 == [314] Let [VAR[set]] be the result of
 [[getting invoked set][get invoked set]] with
@@ -2906,6 +2939,7 @@ followed by
 
 = [1403] [[Emit][emit a character]]
 [[character]] ([I[videotex]], [I[us]], [VAR[bc]]).
+= [1580] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
 = [1404] Set [VAR[state]]'s [F[decoder state]] to [I[us terminal state]].
 
 ]FIG]
@@ -2979,11 +3013,9 @@ followed by
 : [N[3/14]] :
 [FIG(steps)[
 
-@@ TELESOFTWARE 
-
 = [1380] If [VAR[state]]'s [F[current I byte]] is [N[4/10]]:
-==
-@@
+== [1579] Set [VAR[state]]'s [F[GL mode]] to [I[telesoftware]].
+== [1575] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [1381] Otherwise:
 == [1382] [[Emit][emit a character]]
 [[character]] ([I[C0]], [VAR[state]]'s [F[current I byte]], [N[1/15]]).
@@ -3350,6 +3382,126 @@ by the [[bit combination]] [VAR[bc]]:
 ]FIG]
 
 
+*** TELESOFTWARE CI state
+
+[1582] The [DFN[TELESOFTWARE CI state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [N[0/0]], [N[15/14]] ]:
+[FIG(steps)[
+
+= [1583] Set [VAR[state]]'s [F[current segment data]] to the [[empty byte sequence]].
+= [1584] Set [VAR[state]]'s [F[current segment length]] to [VAR[bc]].
+= [1585] Set [VAR[state]]'s [F[decoder state]] to [I[TELESOFTWARE parameter state]].
+
+]FIG]
+: [N[15/15]] :
+[FIG(steps)[
+
+= [1586] Set [VAR[state]]'s [F[decoder state]] to [I[TELESOFTWARE LI state]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [1587] [[Error][error]].
+= [1588] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+= [1589] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
+
+*** TELESOFTWARE LI state
+
+[1590] The [DFN[TELESOFTWARE LI state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [N[0/0]], [N[15/15]] ]:
+[FIG(steps)[
+
+= [1592] Set [VAR[state]]'s [F[current segment length]] to [VAR[bc]].
+= [1591] Set [VAR[state]]'s [F[decoder state]] to [I[TELESOFTWARE LI first state]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [1593] [[Error][error]].
+= [1594] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+= [1595] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
+
+*** TELESOFTWARE LI first state
+
+[1596] The [DFN[TELESOFTWARE LI first state]] switches by 
+the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [N[0/0]], [N[15/15]] ]:
+[FIG(steps)[
+
+= [1597] Set [VAR[state]]'s [F[current segment data]] to the [[empty byte sequence]].
+= [1598] Set [VAR[state]]'s [F[current segment length]] to
+[VAR[state]]'s [F[current segment length]] * 0x100 + [VAR[bc]].
+= [1599] Set [VAR[state]]'s [F[decoder state]] to [I[TELESOFTWARE parameter state]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [1600] [[Error][error]].
+= [1601] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+= [1602] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
+
+*** TELESOFTWARE parameter state
+
+[1603] The [DFN[TELESOFTWARE parameter state]] switches by 
+the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [[0/0]], [[15/15]] ]:
+[FIG(steps)[
+
+= [1604] Set [VAR[state]]'s [F[current segment data]] to
+[VAR[state]]'s [F[current segment data]] followed by [VAR[bc]].
+= [1605] Set [VAR[state]]'s [F[current segment length]] to 
+[VAR[state]]'s [F[current segment length]] - 1.
+= [1606] If [VAR[state]]'s [F[current segment length]] is zero:
+== [1607] [[Emit a TELESOFTWARE data][emit a TELESOFTWARE data]]
+[VAR[state]]'s [F[current I byte]],
+[VAR[state]]'s [F[current byte sequence]],
+[[false]].
+== [1608] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [1609] [[Emit a TELESOFTWARE data][emit a TELESOFTWARE data]]
+[VAR[state]]'s [F[current I byte]],
+[VAR[state]]'s [F[current byte sequence]],
+[[true]].
+= [1610] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+= [1611] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+
+]FIG]
+
+
 
 *** PCD state
 
@@ -3385,7 +3537,7 @@ by the [[bit combination]] [VAR[bc]]:
 : [ [N[0/0]], [N[15/15]] ] :
 [FIG(steps)[
 
-= [71] Set [VAR[state]]'s [F[current PCD PI]] to [VAR[bc]].
+= [71] Set [VAR[state]]'s [F[current J byte]] to [VAR[bc]].
 = [73] Set [VAR[state]]'s [F[current segment length]] to [N[0]].
 = [72] Set [VAR[state]]'s [F[decoder state]] to [I[PCD PI state]].
 
@@ -3436,8 +3588,8 @@ by the [[bit combination]] [VAR[bc]]:
 = [87] Set [VAR[state]]'s [F[current segment data]] to the [[empty byte sequence]].
 = [82] If [VAR[state]]'s [F[current segment length]] is zero:
 == [93] [[Emit a PCD data][emit a PCD data]]
-[VAR[state]]'s [F[current PCD PM]],
-[VAR[state]]'s [F[current PCD PI]],
+[VAR[state]]'s [F[current I byte]],
+[VAR[state]]'s [F[current J byte]],
 [VAR[state]]'s [F[current segment data]],
 [[false]].
 == [83] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
@@ -3471,8 +3623,8 @@ by the [[bit combination]] [VAR[bc]]:
 [VAR[state]]'s [F[current segment length]] - 1.
 = [85] If [VAR[state]]'s [F[current segment length]] is zero:
 == [92] [[Emit a PCD data][emit a PCD data]]
-[VAR[state]]'s [F[current PCD PM]],
-[VAR[state]]'s [F[current PCD PI]],
+[VAR[state]]'s [F[current I byte]],
+[VAR[state]]'s [F[current J byte]],
 [VAR[state]]'s [F[current segment data]],
 [[false]].
 == [86] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
@@ -3482,8 +3634,8 @@ by the [[bit combination]] [VAR[bc]]:
 [FIG(steps)[
 
 = [1135] [[Emit a PCD data][emit a PCD data]]
-[VAR[state]]'s [F[current PCD PM]],
-[VAR[state]]'s [F[current PCD PI]],
+[VAR[state]]'s [F[current I byte]],
+[VAR[state]]'s [F[current J byte]],
 [VAR[state]]'s [F[current segment data]],
 [[true]].
 = [1136] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
@@ -3593,6 +3745,14 @@ An [DFN[extended segment]]
 is a [[tuple]] of
 [DFN[[F[final]]]] ([[bit combination]]),
 [DFN[[F[data]]]] ([[byte sequence]]),
+and
+[DFN[[F[incomplete]]]] ([[boolean]]).
+
+[1616] 
+A [DFN[TELESOFTWARE data]]
+is a [[tuple]] of
+[DFN[[F[command identifier]]]] ([[byte]]),
+[DFN[[F[parameter field]]]] ([[byte sequence]]),
 and
 [DFN[[F[incomplete]]]] ([[boolean]]).
 
