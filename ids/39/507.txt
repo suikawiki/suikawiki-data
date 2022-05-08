@@ -486,7 +486,7 @@ of [VAR[state]] for
 = [48] Set [VAR[state]]'s [F[decoder state]] to [I[opaque state]].
 
 ]FIG]
-:([I[unknown-control]], [VAR[bytes]]) where [VAR[bytes]] is a [[byte sequence]]:
+:([I[unknown-control]], [CODE[null]], [VAR[bytes]]) where [VAR[bytes]] is a [[byte sequence]]:
 [FIG(steps)[
 
 = [660] [[Emit][emit a character]] [VAR[char]].
@@ -1140,7 +1140,7 @@ a [[character]] ([I[unassinged]], [VAR[bc]]).
 
 = [828] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
 = [829] [[Process][process a control character]]
-[[character]] ([I[unknown-control]], 
+[[character]] ([I[unknown-control]], [CODE[null]], 
 [N[1/11]] followed by [N[2/0]] followed by [VAR[bc]]).
 
 ]FIG]
@@ -1243,7 +1243,7 @@ or
 
 = [749] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
 = [747] [[Process][process a control character]]
-[[character]] ([I[unknown-control]], 
+[[character]] ([I[unknown-control]], [CODE[null]], 
 [N[1/11]] followed by [N[2/3]] followed by [VAR[bc]]).
 
 ]FIG]
@@ -1283,7 +1283,7 @@ or
 
 = [751] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
 = [753] [[Process][process a control character]]
-[[character]] ([I[unknown-control]], 
+[[character]] ([I[unknown-control]], [CODE[null]], 
 [N[1/11]] followed by [N[2/3]] followed by [VAR[state]]'s [F[current I byte]]
 followed by [VAR[bc]]).
 
@@ -2933,14 +2933,10 @@ A [DFN[character]] is one of followings:
 - any other [[code point]]
 - ([I[esc]], [VAR[bytes]]), where [VAR[bytes]] is a [[byte sequence]]
 - ([I[protocol]], [VAR[bc]]), where [VAR[bc]] is a [[bit combination]]
-- ([I[unknown-control]], [VAR[bytes]]), where [VAR[bytes]] is a [[byte sequence]]
-- ([I[C0]], [VAR[IF]], [VAR[bytes]]), 
-where [VAR[IF]] is a [[byte sequence]] and [VAR[bytes]] is a [[byte sequence]]
-- ([I[C1]], [VAR[IF]], [VAR[bytes]]), 
-where [VAR[IF]] is a [[byte sequence]] and [VAR[bytes]] is a [[byte sequence]]
 - ([VAR[t1]], [VAR[t2]], [VAR[bytes]]), 
 where [VAR[t1]] and [VAR[t2]] are valid [VAR[t1]] and [VAR[t2]] pairs for 
 the steps to 
+[[get a C set]],
 [[get a G set]],
 [[get a 128 set]],
 [[get a 256 set]], or
@@ -2948,18 +2944,17 @@ the steps to
 and [VAR[bytes]] is a [[byte sequence]]
 - ([I[marc]], [VAR[bc]], [VAR[bytes]]), 
 where [VAR[bc]] is a [[bit combination]] and
-[VAR[bytes]] is a [[byte sequence]] of [[length]] [N[1]]
+[VAR[bytes]] is a [[byte sequence]]
 - ([I[vt]], [N[8/6]], [VAR[bytes]]), 
-where [VAR[bytes]] is a [[byte sequence]] of [[length]] [N[1]]
+where [VAR[bytes]] is a [[byte sequence]]
 - ([I[vt52]], [N[8/6]], [VAR[bytes]]), 
-where [VAR[bytes]] is a [[byte sequence]] of [[length]] [N[1]]
+where [VAR[bytes]] is a [[byte sequence]]
 - ([I[vt]], [N[2/3]], [VAR[bc]]), where [VAR[bc]] is in [ [N[3/0]], [N[3/9]] ]
 - ([I[vt]], [N[2/8]], [N[3/1]])
 - ([I[vt]], [N[2/9]], [N[3/1]])
 - ([I[vt]], [N[2/15]], [VAR[bc]]), where [VAR[bc]] is in [ [N[3/0]], [N[7/14]] ]
 - ([I[vt]], [I[esc]], [VAR[bc]]), where [VAR[bc]] is in [ [N[3/0]], [N[7/14]] ]
 - ([I[vt]], [I[file]], [VAR[bc]]), where [VAR[bc]] is in [ [N[3/0]], [N[7/14]] ]
-- ([I[vt]], [I[C1]], [VAR[bc]]), where [VAR[bc]] is in [ [N[8/0]], [N[9/15]] ]
 - ([I[vt52]], [I[esc]], [VAR[bc]]), where [VAR[bc]] is in [ [N[3/0]], [N[7/14]] ]
 - ([I[vt105]], [I[esc]], [VAR[bc]]), where [VAR[bc]] is in [ [N[3/1]], [N[3/2]] ]
 - ([I[tektronix]], [I[esc]], [VAR[bc]]), where [VAR[bc]] is in [ [N[0/0]], [N[1/15]] ]
@@ -3169,6 +3164,21 @@ or
 = [716] Return [VAR[set]].
 
 ]FIG]
+
+[NOTE[
+
+[179] The following combinations of 
+[VAR[type]], [VAR[t1]], and [VAR[t2]] are used:
+
+- ([I[C0]], [I[C0]], [VAR[bytes]]) where [VAR[bytes]] is a [[byte sequence]]
+- ([I[C0]], [I[unknown-control]], [CODE[null]])
+- ([I[C1]], [I[C1]], [VAR[bytes]]) where [VAR[bytes]] is a [[byte sequence]]
+- ([I[C1]], [I[vt]], [I[C1]])
+- ([I[C1]], [I[videotex]], [N[2/0]])
+- ([I[C1]], [I[videotex]], [N[2/1]])
+- ([I[C1]], [I[unknown-control]], [CODE[null]])
+
+]NOTE]
 
 [19] 
 The [DFN[initial C0 set]] is the result of 
@@ -3743,24 +3753,24 @@ to the result of
 
 = [740] Set [VAR[state]]'s [F[fixed set]] [ [N[2/0]] ] to [CODE(charname)@en[SP]].
 = [125] Set [VAR[state]]'s [F[escape set]] [ [N[6/4]] ] to 
-[[character]] ([I[unknown-control]], [N[1/11]] followed by [N[6/4]]).
+[[character]] ([I[unknown-control]], [CODE[null]], [N[1/11]] followed by [N[6/4]]).
 = [126] Set [VAR[state]]'s [F[escape set]] [ [N[6/2]] ] to 
-[[character]] ([I[unknown-control]], [N[1/11]] followed by [N[6/2]]).
+[[character]] ([I[unknown-control]], [CODE[null]], [N[1/11]] followed by [N[6/2]]).
 = [128] Set [VAR[state]]'s [F[escape set]] [ [N[7/0]] ] to 
-[[character]] ([I[unknown-control]], [N[1/11]] followed by [N[7/0]]).
+[[character]] ([I[unknown-control]], [CODE[null]], [N[1/11]] followed by [N[7/0]]).
 = [210] Set [VAR[state]]'s [F[escape set]] [ [N[6/11]] ] to 
-[[character]] ([I[unknown-control]], [N[1/11]] followed by [N[6/11]]).
+[[character]] ([I[unknown-control]], [CODE[null]], [N[1/11]] followed by [N[6/11]]).
 = [211] Set [VAR[state]]'s [F[escape set]] [ [N[6/12]] ] to 
-[[character]] ([I[unknown-control]], [N[1/11]] followed by [N[6/12]]).
+[[character]] ([I[unknown-control]], [CODE[null]], [N[1/11]] followed by [N[6/12]]).
 = [758] [[For each]] [VAR[bc]] in [ [N[0/0]], [N[1/15]] ]:
 == [759] [[Remove][remove an entry]] [VAR[state]]'s [F[escape set]] [ [VAR[bc]] ].
 = [778] [[For each]] [VAR[bc]] in [ [N[3/1]], [N[3/4]] ]:
 == [779] Set [VAR[state]]'s [F[escape set]] [ [VAR[bc]] ] to 
-[[character]] ([I[unknown-control]], [VAR[bc]]).
+[[character]] ([I[unknown-control]], [CODE[null]], [VAR[bc]]).
 = [780] Set [VAR[state]]'s [F[escape set]] [ [N[3/8]] ] to 
-[[character]] ([I[unknown-control]], [N[3/8]]).
+[[character]] ([I[unknown-control]], [CODE[null]], [N[3/8]]).
 = [781] Set [VAR[state]]'s [F[escape set]] [ [N[3/9]] ] to 
-[[character]] ([I[unknown-control]], [N[3/9]]).
+[[character]] ([I[unknown-control]], [CODE[null]], [N[3/9]]).
 = [922] [[For each]] [VAR[F]] in [ [N[3/0]], [N[3/8]] ], [N[4/0]],
 [N[4/3]], [N[4/5]], [N[4/8]], [N[4/11]], [N[5/1]], and [N[5/5]]:
 == [923] Set [VAR[state]]'s [F[94 final set]] [ [VAR[F]] ] to the result of 
