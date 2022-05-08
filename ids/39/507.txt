@@ -75,7 +75,7 @@ Initially, [CODE[null]].
 : [DFN[[F[current segment length]]]] : Non-negative integer.
 : [DFN[[F[current segment data]]]] : [[Byte sequence][byte sequence]].
 : [DFN[[F[decoder state]]]] : One of [[decoder states][decoder state]].
-Initially, [[initial state]].
+Initially, [[default state]].
 
 ]FIG]
 
@@ -139,9 +139,7 @@ run these steps:
 == [806] Return [VAR[state]]'s [F[G3 RL designated]].
 ]FIG]
 
-** Input stream
-
-@@
+** Initial state
 
 [20] A [[state initialization steps]] is a set of zero or more steps
 that modifies [VAR[state]].  It can modify [VAR[state]] in these ways:
@@ -179,6 +177,16 @@ of [VAR[state]] for some [VAR[features]].
 - [810] If [VAR[state]]'s [F[G3 RL designated]] is set to a [[94[SUP[2]] set]],
 [VAR[state]]'s [F[G3 designated]] [MUST[MUST]] be set to a [[94[SUP[2]] set]],
 
+
+
+** Input stream
+
+[99] An [DFN[input stream]] is a [[list]] of
+[[bit combination]],
+[I[end-of-frame]],
+and
+[I[end-of-file]]
+items.
 
 @@
 [VAR[input stream]],
@@ -527,14 +535,10 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 [FIG(steps)[
 
 = [1452] If [VAR[state]]'s [F[current I byte]] is [N[2/0]]:
+== [932] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
+== [1437] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [1422] [[Run a macro][run a macro]]
 "ESC 2/1 4/9 ESC 2/2 4/4 ESC 2/6 4/0 ESC 2/4 4/2 ESC 2/9 4/10 ESC 2/14 3/8 ESC 2/11 2/0 4/1 LS0 LS2".
-= [1421] Otherwise, if [VAR[state]]'s [F[current I byte]] is [N[3/0]]:
-==
-@@
-= [1423] Otherwise, if [VAR[state]]'s [F[current I byte]] is [N[3/15]]:
-==
-@@
 = [1424] Otherwise, if [VAR[state]]'s [F[current I byte]] is [N[4/1]]:
 ==
 @@
@@ -542,8 +546,10 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 ==
 @@
 = [1426] Otherwise:
-==
-@@
+== [1445] Set [VAR[state]]'s [F[opaque designated]] to the result of
+[[getting a 256 set][get a 256 set]]
+[I[captain]], [VAR[state]]'s [F[current I byte]].
+== [1454] Set [VAR[state]]'s [F[decoder state]] to [I[opaque state]].
 
 ]FIG]
 
@@ -554,9 +560,9 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 
 [2] There are the following [[decoder states][decoder state]]:
 
-*** Initial state
+*** Default state
 
-[3] The [DFN[initial state]] switches by the [[bit combination]] [VAR[bc]]:
+[3] The [DFN[default state]] switches by the [[bit combination]] [VAR[bc]]:
 
 [FIG(switch)[
 
@@ -650,7 +656,14 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 === [476] Set [VAR[state]]'s [F[decoder bytes]] to [I[right leading byte state]].
 
 ]FIG]
-: [[EOF]] :
+: [I[end-of-frame]] :
+[FIG(steps)[
+
+= [1423] Set [VAR[state]]'s [F[GL mode]] to [I[captain]].
+= [1421] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+
+]FIG]
+: [I[end-of-file]] :
 @@
 : Otherwise :
 @@
@@ -674,7 +687,7 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 = [528] If [[is 96 size]] [VAR[set]] is [[false]] and
 [VAR[bc]] is [N[2/0]], [N[7/15]], [N[10/0]], or [N[15/15]]:
 == [349] [[Error][error]].
-== [354] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [354] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [364] [[Reconsume][reconsume]] [VAR[bc]].
 = [444] Otherwise, if [VAR[set]] is [I[unknown-94]] or [I[unknown-96]]:
 == [271] [[Error][error]].
@@ -685,7 +698,7 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 == [316] If [VAR[state]]'s [F[current bytes]] is [N[1]]:
 === [326] [[Emit a character][emit a character]] 
 [VAR[set]] [ [VAR[bc]] & [N[0b01111111]] ].
-=== [443] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+=== [443] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [329] Otherwise:
 === [332] Set [VAR[state]]'s [F[current I byte]] to [VAR[bc]] & [N[0b01111111]].
 === [341] Set [VAR[state]]'s [F[current J byte]] to [CODE[null]].
@@ -696,7 +709,7 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 [FIG(steps)[
 
 = [357] [[Error][error]].
-= [359] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [359] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [358] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -724,7 +737,7 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 == [324] If [VAR[state]]'s [F[current J byte]] is ''not'' [CODE[null]]:
 === [325] [[Emit][emit a character]] 
 [[character]] ([I[unknown-byte]], [CODE[null]], [VAR[state]]'s [F[current J byte]]).
-== [328] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [328] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [330] [[Reconsume][reconsume]] [VAR[bc]].
 = [321] Otherwise:
 == [496] Set [VAR[state]]'s [F[current bytes]] to [VAR[set]]'s [[byte length]].
@@ -732,7 +745,7 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 === [331] Let [VAR[bytes]] be 
 [VAR[state]]'s [F[current I byte]] followed by [VAR[bc]].
 === [498] [[Emit a character][emit a character]] [VAR[set]] [ [VAR[bytes]] ].
-=== [336] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+=== [336] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [499] Otherwise, if [VAR[state]]'s [F[current bytes]] is [N[3]]:
 === [502] If [VAR[state]]'s [F[current J byte]] is [CODE[null]]:
 ==== [503] Set [VAR[state]]'s [F[current J byte]] to [VAR[bc]].
@@ -741,7 +754,7 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 [VAR[state]]'s [F[current I byte]] followed by
 [VAR[state]]'s [F[current J byte]] followed by [VAR[bc]].
 ==== [501] [[Emit a character][emit a character]] [VAR[set]] [ [VAR[bytes]] ].
-==== [337] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+==== [337] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 :Otherwise:
@@ -752,7 +765,7 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 = [493] If [VAR[state]]'s [F[current J byte]] is ''not'' [CODE[null]]:
 == [494] [[Emit][emit a character]] 
 [[character]] ([I[unknown-byte]], [CODE[null]], [VAR[state]]'s [F[current J byte]]).
-= [483] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [483] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [485] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -775,13 +788,13 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 = [649] If [VAR[set]] is [I[unassigned-94]]:
 == [792] [[Emit][emit a character]] 
 [[character]] ([I[unknown-byte]], [CODE[null]], [VAR[state]]'s [F[current I byte]]).
-== [793] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [793] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [794] [[Reconsume][reconsume]] [VAR[bc]].
 = [795] Otherwise:
 == [650] Let [VAR[bytes]] be 
 [VAR[state]]'s [F[current I byte]] followed by [VAR[bc]].
 == [651] [[Emit a character][emit a character]] [VAR[set]] [ [VAR[bytes]] ].
-== [687] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [687] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 :[ [N[10/0]], [N[15/15]] ]:
@@ -797,7 +810,7 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 == [426] If [VAR[state]]'s [F[current J byte]] is ''not'' [CODE[null]]:
 === [427] [[Emit][emit a character]] 
 [[character]] ([I[unknown-byte]], [CODE[null]], [VAR[state]]'s [F[current J byte]]).
-== [428] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [428] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [429] [[Reconsume][reconsume]] [VAR[bc]].
 = [433] Otherwise:
 == [434] Set [VAR[state]]'s [F[current bytes]] to [VAR[set]]'s [[byte length]].
@@ -805,7 +818,7 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 === [437] Let [VAR[bytes]] be 
 [VAR[state]]'s [F[current I byte]] followed by [VAR[bc]] & [N[0b01111111]].
 === [453] [[Emit a character][emit a character]] [VAR[set]] [ [VAR[bytes]] ].
-=== [454] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+=== [454] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [455] Otherwise, if [VAR[state]]'s [F[current bytes]] is [N[3]]:
 === [456] If [VAR[state]]'s [F[current J byte]] is [CODE[null]]:
 ==== [457] Set [VAR[state]]'s [F[current J byte]] to [VAR[bc]] & [N[0b01111111]].
@@ -814,7 +827,7 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 [VAR[state]]'s [F[current I byte]] followed by
 [VAR[state]]'s [F[current J byte]] followed by [VAR[bc]] & [N[0b01111111]].
 ==== [461] [[Emit a character][emit a character]] [VAR[set]] [ [VAR[bytes]] ].
-==== [462] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+==== [462] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 :Otherwise:
@@ -825,7 +838,7 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 = [465] If [VAR[state]]'s [F[current J byte]] is ''not'' [CODE[null]]:
 == [466] [[Emit][emit a character]] 
 [[character]] ([I[unknown-byte]], [CODE[null]], [VAR[state]]'s [F[current J byte]]).
-= [467] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [467] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [468] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -854,7 +867,7 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 == [480] If [VAR[state]]'s [F[current J byte]] is ''not'' [CODE[null]]:
 === [481] [[Emit][emit a character]] 
 [[character]] ([I[unknown-byte]], [CODE[null]], [VAR[state]]'s [F[current J byte]]).
-== [486] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [486] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [488] [[Reconsume][reconsume]] [VAR[bc]].
 = [489] Otherwise:
 == [491] Set [VAR[state]]'s [F[current bytes]] to [VAR[set]]'s [[byte length]].
@@ -862,7 +875,7 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 === [506] Let [VAR[bytes]] be 
 [VAR[state]]'s [F[current I byte]] followed by [VAR[bc]] & [N[0b01111111]].
 === [509] [[Emit a character][emit a character]] [VAR[set]] [ [VAR[bytes]] ].
-=== [510] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+=== [510] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [511] Otherwise, if [VAR[state]]'s [F[current bytes]] is [N[3]]:
 === [512] If [VAR[state]]'s [F[current J byte]] is [CODE[null]]:
 ==== [513] Set [VAR[state]]'s [F[current J byte]] to [VAR[bc]] & [N[0b01111111]].
@@ -871,7 +884,7 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 [VAR[state]]'s [F[current I byte]] followed by
 [VAR[state]]'s [F[current J byte]] followed by [VAR[bc]] & [N[0b01111111]].
 ==== [517] [[Emit a character][emit a character]] [VAR[set]] [ [VAR[bytes]] ].
-==== [518] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+==== [518] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 :Otherwise:
@@ -883,7 +896,7 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 = [521] If [VAR[state]]'s [F[current J byte]] is ''not'' [CODE[null]]:
 == [522] [[Emit][emit a character]] 
 [[character]] ([I[unknown-byte]], [CODE[null]], [VAR[state]]'s [F[current J byte]]).
-= [523] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [523] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [524] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -904,7 +917,7 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 [VAR[state]] and [VAR[state]]'s [F[GL invoked]].
 = [532] If [[is 96 size]] [VAR[set]] is [[false]] and
 [VAR[bc]] is [N[2/0]] or [N[7/15]]:
-== [533] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [533] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [534] [[Reconsume][reconsume]] [VAR[bc]].
 = [535] Otherwise:
 == [531] [[Emit][emit a character]]
@@ -914,7 +927,7 @@ a [[character]] ([I[unassinged]], [VAR[bc]]).
 :Otherwise:
 [FIG(steps)[
 
-= [529] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [529] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [530] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -935,7 +948,7 @@ a [[character]] ([I[unassinged]], [VAR[bc]]).
 [VAR[state]] and [VAR[state]]'s [F[GR invoked]].
 = [539] If [[is 96 size]] [VAR[set]] is [[false]] and
 [VAR[bc]] is [N[10/0]] or [N[15/15]]:
-== [540] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [540] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [541] [[Reconsume][reconsume]] [VAR[bc]].
 = [542] Otherwise:
 == [543] [[Emit][emit a character]]
@@ -945,7 +958,7 @@ a [[character]] ([I[unassinged]], [VAR[bc]] & [N[0b01111111]]).
 :Otherwise:
 [FIG(steps)[
 
-= [544] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [544] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [545] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -971,7 +984,7 @@ a [[character]] ([I[unassinged]], [VAR[bc]] & [N[0b01111111]]).
 = [552] If [[is 96 size]] [VAR[set1]] is [[false]] and
 [[is 96 size]] [VAR[set2]] is [[false]] and
 [VAR[bc]] is [N[2/0]] or [N[7/15]]:
-== [553] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [553] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [554] [[Reconsume][reconsume]] [VAR[bc]].
 = [555] Otherwise:
 == [556] [[Emit][emit a character]]
@@ -991,7 +1004,7 @@ a [[character]] ([I[unassinged]], [VAR[bc]]).
 = [564] If [[is 96 size]] [VAR[set1]] is [[false]] and
 [[is 96 size]] [VAR[set2]] is [[false]] and
 [VAR[bc]] is [N[10/0]] or [N[15/15]]:
-== [565] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [565] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [566] [[Reconsume][reconsume]] [VAR[bc]].
 = [567] Otherwise:
 == [568] [[Emit][emit a character]]
@@ -1001,7 +1014,7 @@ a [[character]] ([I[unassinged]], [VAR[bc]]).
 :Otherwise:
 [FIG(steps)[
 
-= [557] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [557] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [558] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -1019,7 +1032,7 @@ a [[character]] ([I[unassinged]], [VAR[bc]]).
 [FIG(steps)[
 
 = [204] If [VAR[state]]'s [F[escape set]] [ [VAR[bc]] ] [[exists]]:
-== [720] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [720] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [225] [[Process a control character][process a control character]]
 [VAR[state]]'s [F[escape set]] [ [VAR[bc]] ].
 = [206] Otherwise:
@@ -1142,7 +1155,7 @@ a [[character]] ([I[unassinged]], [VAR[bc]]).
 :[ [N[3/0]], [N[3/15]] ], [ [N[6/0]], [N[7/14]] ]:
 [FIG(steps)[
 
-= [40] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [40] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [35] [[Process a control character][process a control character]]
 [VAR[char]] be [VAR[state]]'s [F[escape set]] [ [VAR[bc]] ].
 
@@ -1151,7 +1164,7 @@ a [[character]] ([I[unassinged]], [VAR[bc]]).
 [FIG(steps)[
 
 = [36] Let [VAR[set]] be [VAR[state]]'s [F[C1 designated]].
-= [39] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [39] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [38] [[Process a control character][process a control character]]
 [VAR[set]] [ [VAR[bc]] + [N[0x40]] ].
 
@@ -1177,7 +1190,7 @@ a [[character]] ([I[unassinged]], [VAR[bc]]).
 :[ [N[3/0]], [N[3/5]] ], [ [N[3/8]], [N[3/15]] ]:
 [FIG(steps)[
 
-= [828] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [828] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [829] [[Process][process a control character]]
 [[character]] ([I[unknown-control]], [CODE[null]], 
 [N[1/11]] followed by [N[2/0]] followed by [VAR[bc]]).
@@ -1188,7 +1201,7 @@ a [[character]] ([I[unassinged]], [VAR[bc]]).
 
 = [387] [[Deprecated][deprecated]].
 = [833] Set [VAR[state]]'s [F[CR invoked]] to [I[C0]].
-= [381] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [381] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 : [N[3/7]] :
@@ -1196,7 +1209,7 @@ a [[character]] ([I[unassinged]], [VAR[bc]]).
 
 = [830] [[Deprecated][deprecated]].
 = [832] Set [VAR[state]]'s [F[CR invoked]] to [I[C1]].
-= [831] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [831] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 :[ [N[4/1]], [N[7/14]] ]:
@@ -1240,7 +1253,7 @@ or
 == [149] Set [VAR[state]]'s [F[bits]] be [I[8-bit]].
 = [150] If [VAR[announce]] is [N[10]]:
 == [151] Set [VAR[state]]'s [F[bits]] be [I[7-bit]].
-= [380] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [380] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 : Otherwise :
@@ -1274,13 +1287,13 @@ or
 
 = [396] [[Emit][emit a character]]
 [[character]] ([I[vt]], [N[2/3]], [VAR[bc]]).
-= [390] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [390] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 :[ [N[3/10]], [N[3/15]] ]:
 [FIG(steps)[
 
-= [749] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [749] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [747] [[Process][process a control character]]
 [[character]] ([I[unknown-control]], [CODE[null]], 
 [N[1/11]] followed by [N[2/3]] followed by [VAR[bc]]).
@@ -1307,20 +1320,20 @@ or
 : [N[3/0]] :
 [FIG(steps)[
 
-= [401] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [401] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 : [N[3/1]] :
 [FIG(steps)[
 
 = [400] [[Error][error]].
-= [403] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [403] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 :[ [N[3/2]], [N[3/15]] ]:
 [FIG(steps)[
 
-= [751] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [751] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [753] [[Process][process a control character]]
 [[character]] ([I[unknown-control]], [CODE[null]], 
 [N[1/11]] followed by [N[2/3]] followed by [VAR[state]]'s [F[current I byte]]
@@ -1335,7 +1348,7 @@ followed by [VAR[bc]]).
 [[getting a C set][get a C set]] with
 [I[C1]], [I[videotex]], [VAR[state]]'s [F[current I byte]].
 == [1370] [[Emit a character][emit a character]] [ [VAR[bc]] + [N[0x40]] ].
-== [1371] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [1371] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [1364] Otherwise:
 == [1365] [[Error][error]].
 == [1366] Set [VAR[state]]'s [F[opaque designated]] to the result of
@@ -1401,7 +1414,7 @@ followed by [VAR[bc]]).
 [FIG(steps)[
 
 = [989] [[Error][error]].
-= [987] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [987] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [988] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -1453,7 +1466,7 @@ followed by [VAR[bc]]).
 = [232] Otherwise, if [VAR[state]]'s [F[current element]] is [I[C1]]:
 == [233] Set [VAR[state]]'s [F[C1 designated]] to the result of 
 [[getting a C set][get a C set]] with [I[C1]], [I[C1]], [VAR[bytes]].
-= [382] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [382] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 : Otherwise :
@@ -1543,7 +1556,7 @@ followed by [VAR[bc]]).
 ==== [221] Set [VAR[state]]'s [F[G3 designated]] to 
 [VAR[state]]'s [F[96 final set]] [ [VAR[bytes]] ].
 === [967] Set [VAR[state]]'s [F[G3 RL designated]] to [I[unassigned-94]].
-= [383] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [383] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 : Otherwise :
@@ -1620,7 +1633,7 @@ followed by [VAR[bc]].
 == [693] Otherwise, if [VAR[state]]'s [F[current size]] is [N[96]]:
 === [694] Set [VAR[state]]'s [F[G3 designated]] to 
 [VAR[state]]'s [F[96 final set]] [ [VAR[bytes]] ].
-= [384] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [384] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 
 ]FIG]
@@ -1735,7 +1748,7 @@ followed by [VAR[bc]].
 [VAR[state]]'s [F[94[SUP[[VAR[n]]]] final set]] [ [VAR[bytes]] ].
 = [637] Set [VAR[state]]'s [F[G0 RL designated]] to 
 [VAR[state]]'s [F[94[SUP[[VAR[n]]]] final RL set]] [ [VAR[bytes]] ].
-= [1286] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1286] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 
 ]FIG]
@@ -1749,7 +1762,7 @@ followed by [VAR[bc]].
 [[getting a G set][get a G set]] with
 [I[94]], [I[1]], [I[jphone]], [VAR[bc]].
 = [1285] Set [VAR[state]]'s [F[GL invoked]] to [I[Gj]].
-= [1287] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1287] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 : Otherwise :
@@ -1831,7 +1844,7 @@ by the [[bit combination]] [VAR[bc]]:
 === [811] Set [VAR[state]]'s [F[G3 designated]] to 
 [VAR[state]]'s [F[96[SUP[[VAR[n]]]] final set]] [ [VAR[bytes]] ].
 === [812] Set [VAR[state]]'s [F[G3 RL designated]] to [I[unassigned-94]].
-= [645] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [645] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 : Otherwise :
@@ -1921,7 +1934,7 @@ by the [[bit combination]] [VAR[bc]]:
 === [946] Set [VAR[state]]'s [F[G3 designated]] to 
 [VAR[state]]'s [F[96[SUP[[VAR[n]]]] final set]] [ [VAR[bytes]] ].
 === [947] Set [VAR[state]]'s [F[G3 RL designated]] to [I[unassigned-94]].
-= [671] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [671] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 : Otherwise :
@@ -2053,7 +2066,7 @@ the [[bit combination]] [VAR[bc]]:
 = [975] Set [VAR[state]]'s [F[G1 designated]] to the result of 
 [[getting a G set][get a G set]] with
 [I[96]], [I[1]], [I[videotex]], [I[t100alphageometric]].
-= [1362] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1362] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 
 ]FIG]
@@ -2087,7 +2100,7 @@ the result of
 [I[single]], [I[barcode]].
 = [1107] Set [VAR[state]]'s [F[right designated]] to
 [VAR[state]]'s [F[left designated]].
-= [1106] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1106] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 : Otherwise :
@@ -2216,7 +2229,7 @@ to the result of
 == [1070] Set [VAR[state]]'s [F[right mode]] to [I[gb18030]].
 = [1042] Otherwise:
 == [1044] Set [VAR[state]]'s [F[right mode]] to [I[x-moe-internal]].
-= [1071] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1071] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 
 
@@ -2305,7 +2318,7 @@ the [[bit combination]] [VAR[bc]]:
 [FIG(steps)[
 
 = [1029] [[Error][error]].
-= [1031] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1031] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [1032] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -2337,14 +2350,14 @@ is equal to the [[maximum sequence length]]:
 [VAR[state]]'s [F[current byte sequence]] followed by [VAR[bc]].
 = [114] [[Emit][emit a character]] 
 a [[character]] ([I[esc]], [VAR[state]]'s [F[current byte sequence]]).
-= [109] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [109] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 :Otherwise:
 [FIG(steps)[
 
 = [472] [[Error][error]].
-= [484] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [484] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [497] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -2368,13 +2381,13 @@ a [[character]] ([I[esc]], [VAR[state]]'s [F[current byte sequence]]).
 : [ [[3/0]], [[7/14]] ] :
 [FIG(steps)[
 
-= [602] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [602] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 :Otherwise:
 [FIG(steps)[
 
-= [647] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [647] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [646] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -2398,14 +2411,14 @@ a [[character]] ([I[esc]], [VAR[state]]'s [F[current byte sequence]]).
 [NOTE[
 [1117] Control characters are not interpreted.
 ]NOTE]
-== [1094] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [1094] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [1097] Otherwise, if [VAR[state]]'s [F[right mode]] is [I[iso2022jp]]:
 == [1335] If [VAR[state]]'s [F[current I byte]] is 
 in [ [N[10/1]], [N[14/15]] ], [N[15/13]], [N[15/14]]:
 === [1336] Let [VAR[set]] be [VAR[state]]'s [F[94 final set]] [ [N[4/9]] ].
 === [1337] [[Emit a character][emit a character]] 
 [VAR[set]] [ [VAR[bc]] & [N[0b01111111]] ].
-=== [1341] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+=== [1341] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [1340] Otherwise:
 === [1324] Set [VAR[state]]'s [F[current I byte]] to [VAR[bc]].
 === [1325] Set [VAR[state]]'s [F[decoder state]] to [I[foreign right first state]].
@@ -2421,7 +2434,7 @@ in [ [N[10/1]], [N[13/15]] ]:
 === [1343] Let [VAR[set]] be [VAR[state]]'s [F[94 final set]] [ [N[4/9]] ].
 === [1344] [[Emit a character][emit a character]] 
 [VAR[set]] [ [VAR[bc]] & [N[0b01111111]] ].
-=== [1345] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+=== [1345] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [1346] Otherwise:
 ===
 @@
@@ -2448,7 +2461,7 @@ in [ [N[10/1]], [N[13/15]] ]:
 :Otherwise:
 [FIG(steps)[
 
-= [1088] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1088] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [1089] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -2475,7 +2488,7 @@ the [[bit combination]] [VAR[bc]]:
 === [1332] Let [VAR[bytes]] be [VAR[first]] followed by [VAR[bc]].
 === [1334] Let [VAR[set]] be [VAR[state]]'s [F[S2 designated]].
 === [1333] [[Emit a character][emit a character]] [VAR[set]] [ [VAR[bytes]] ].
-=== [1347] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+=== [1347] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [1348] Otherwise, if [VAR[state]]'s [F[current I byte]] is 
 in [ [N[15/0]], [N[15/12]] ] and
 [VAR[bc]] is 
@@ -2488,7 +2501,7 @@ in [ [N[15/0]], [N[15/12]] ] and
 @@
 ...
 === [1350] [[Emit a character][emit a character]] [VAR[set]] [ [VAR[bytes]] ].
-=== [1351] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+=== [1351] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [1352] Otherwise:
 === [1338] If [VAR[state]]'s [F[current I byte]] is in [ [N[7/15]], [N[9/15]] ]:
 ==== [1353] [[Emit][emit a character]] a [[code point]] whose value is 
@@ -2496,7 +2509,7 @@ in [ [N[15/0]], [N[15/12]] ] and
 === [1354] Otherwise:
 ==== [1355] [[Emit][emit a character]] 
 [[character]] ([I[unknown-byte]], [CODE[null]], [VAR[state]]'s [F[current I byte]]).
-=== [1357] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+=== [1357] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 === [1356] [[Reconsume][reconsume]] [VAR[bc]].
 = [1329] Otherwise:
 ==
@@ -2509,7 +2522,7 @@ in [ [N[15/0]], [N[15/12]] ] and
 
 = [1328] [[Emit][emit a character]]
 [[character]] ([I[unknown-byte]], [CODE[null]], [VAR[state]]'s [F[current I byte]]).
-= [1330] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1330] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [1331] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -2537,7 +2550,7 @@ the [[bit combination]] [VAR[bc]]:
 [FIG(steps)[
 
 = [1141] [[Error][error]].
-= [1142] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1142] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [1143] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -2560,7 +2573,7 @@ the [[bit combination]] [VAR[bc]]:
 = [1148] Set [VAR[state]]'s [F[current segment data]] to the [[empty byte sequence]].
 = [1149] If [VAR[state]]'s [F[current segment length]] is [N[0]]:
 == [1151] [[Error][error]].
-== [1152] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [1152] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [1150] Otherwise:
 == [1145] Set [VAR[state]]'s [F[decoder state]] to [I[extended segment data state]].
 
@@ -2569,7 +2582,7 @@ the [[bit combination]] [VAR[bc]]:
 [FIG(steps)[
 
 = [1153] [[Error][error]].
-= [1154] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1154] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [1155] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -2596,7 +2609,7 @@ the [[bit combination]] [VAR[bc]]:
 [VAR[state]]'s [F[I byte]], 
 [VAR[state]]'s [F[current segment data]],
 [[false]].
-== [1161] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [1161] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 : [N[0/2]] :
@@ -2616,14 +2629,14 @@ with
 == [1228] Set [VAR[state]]'s [F[current segment data]] to the [[empty byte sequence]].
 == [1225] Set [VAR[state]]'s [F[decoder state]] to [I[extended segment text state]].
 == [1219] If [VAR[state]]'s [F[current segment length]] is [N[0]]:
-=== [1220] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+=== [1220] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [1221] Otherwise:
 == [1214] If [VAR[state]]'s [F[current segment length]] is [N[0]]:
 === [1215] [[Emit an extended segment][emit an extended segment]]
 [VAR[state]]'s [F[I byte]], 
 [VAR[state]]'s [F[current segment data]],
 [[false]].
-=== [1216] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+=== [1216] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 :Otherwise:
@@ -2633,7 +2646,7 @@ with
 [VAR[state]]'s [F[I byte]], 
 [VAR[state]]'s [F[current segment data]],
 [[true]].
-= [1162] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1162] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [1163] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -2694,7 +2707,7 @@ followed by
 = [1236] If [VAR[state]]'s [F[current segment length]] is [N[0]]:
 == [1239] If [VAR[state]]'s [F[current segment data]]'s [[length]] is ''not'' [N[0]]:
 === [1240] [[Error][error]].
-== [1254] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [1254] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 :Otherwise:
@@ -2705,7 +2718,7 @@ followed by
 [[character]] ([I[unknown-byte]], [CODE[null]], 
 [VAR[state]]'s [F[current segment data]]).
 = [1255] [[Error][error]].
-= [1259] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1259] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [1260] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -2737,7 +2750,7 @@ followed by
 = [656] Otherwise:
 == [657] [[Emit][emit a character]]
 [[character]] ([I[C0]], [VAR[state]]'s [F[current I byte]], [N[1/15]]).
-== [1401] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [1401] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [658] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -2750,7 +2763,7 @@ followed by
 = [673] Otherwise:
 == [675] [[Emit][emit a character]]
 [[character]] ([I[C0]], [VAR[state]]'s [F[current I byte]], [N[1/15]]).
-== [1400] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [1400] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [676] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -2765,7 +2778,7 @@ followed by
 = [684] Otherwise:
 == [997] [[Emit][emit a character]]
 [[character]] ([I[C0]], [VAR[state]]'s [F[current I byte]], [N[1/15]]).
-== [1399] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [1399] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [998] [[Reconsume][reconsume]] [VAR[bc]].
 
 
@@ -2781,7 +2794,7 @@ followed by
 = [1377] Otherwise:
 == [1378] [[Emit][emit a character]]
 [[character]] ([I[C0]], [VAR[state]]'s [F[current I byte]], [N[1/15]]).
-== [1398] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [1398] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [1379] [[Reconsume][reconsume]] [VAR[bc]].
 
 
@@ -2797,7 +2810,7 @@ followed by
 = [1381] Otherwise:
 == [1382] [[Emit][emit a character]]
 [[character]] ([I[C0]], [VAR[state]]'s [F[current I byte]], [N[1/15]]).
-== [1397] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [1397] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [1383] [[Reconsume][reconsume]] [VAR[bc]].
 
 
@@ -2813,7 +2826,7 @@ followed by
 = [1385] Otherwise:
 == [1386] [[Emit][emit a character]]
 [[character]] ([I[C0]], [VAR[state]]'s [F[current I byte]], [N[1/15]]).
-== [1396] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [1396] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [1387] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -2826,7 +2839,7 @@ followed by
 = [1389] Otherwise:
 == [1390] [[Emit][emit a character]]
 [[character]] ([I[C0]], [VAR[state]]'s [F[current I byte]], [N[1/15]]).
-== [1395] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [1395] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [1391] [[Reconsume][reconsume]] [VAR[bc]].
 
 
@@ -2839,7 +2852,7 @@ followed by
 = [654] Otherwise:
 == [1394] [[Emit][emit a character]]
 [[character]] ([I[C0]], [VAR[state]]'s [F[current I byte]], [N[1/15]]).
-= [215] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [215] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [273] [[Reconsume][reconsume]] [VAR[bc]].
 
 
@@ -2858,7 +2871,7 @@ followed by
 
 = [1405] [[Emit][emit a character]]
 [[character]] ([I[videotex]], [I[us]], [VAR[bc]]).
-= [1406] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1406] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 :[ [N[4/1]], [N[7/14]] ]:
@@ -2879,7 +2892,7 @@ followed by
 :Otherwise:
 [FIG(steps)[
 
-= [1411] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1411] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [1410] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -2899,7 +2912,7 @@ by the [[bit combination]] [VAR[bc]]:
 
 = [1413] [[Emit][emit a character]]
 [[character]] ([I[videotex]], [I[us]], [VAR[bc]]).
-= [1414] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1414] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 :[ [N[6/0]], [N[7/15]] ]:
@@ -2912,7 +2925,7 @@ by the [[bit combination]] [VAR[bc]]:
 :Otherwise:
 [FIG(steps)[
 
-= [1416] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1416] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [1417] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -2937,7 +2950,7 @@ by the [[bit combination]] [VAR[bc]]:
 [FIG(steps)[
 
 = [726] [[Error][error]].
-= [727] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [727] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [728] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -2956,14 +2969,14 @@ by the [[bit combination]] [VAR[bc]]:
 
 = [730] [[Emit a direct cursor address][emit a direct cursor address]]
 [VAR[state]]'s [F[current I byte]], [VAR[bc]].
-= [731] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [731] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 :Otherwise:
 [FIG(steps)[
 
 = [732] [[Error][error]].
-= [733] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [733] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [734] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -2981,14 +2994,14 @@ by the [[bit combination]] [VAR[bc]]:
 
 = [685] [[Emit][emit a character]]
 [[character]] ([I[vt]], [I[file]], [VAR[bc]]).
-= [721] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [721] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 :Otherwise:
 [FIG(steps)[
 
 = [742] [[Error][error]].
-= [745] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [745] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [746] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -3006,7 +3019,6 @@ by the [[bit combination]] [VAR[bc]]:
 [FIG(steps)[
 
 = [1431] Set [VAR[state]]'s [F[frame length]] to [VAR[bc]].
-= [1437] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
 = [1450] Run the steps to [[initialize by DI]] [VAR[state]].
 
 ]FIG]
@@ -3020,7 +3032,7 @@ by the [[bit combination]] [VAR[bc]]:
 [FIG(steps)[
 
 = [1433] [[Error][error]].
-= [1438] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1438] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [1434] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -3044,7 +3056,7 @@ by the [[bit combination]] [VAR[bc]]:
 [FIG(steps)[
 
 = [1440] [[Error][error]].
-= [1441] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1441] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [1442] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -3063,14 +3075,13 @@ by the [[bit combination]] [VAR[bc]]:
 = [1444] Set [VAR[state]]'s [F[frame length]] to 
 [VAR[state]]'s [F[current J byte]] * 0x100 + [VAR[bc]].
 = [1449] Run the steps to [[initialize by DI]] [VAR[state]].
-= [1445] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
 
 ]FIG]
 :Otherwise:
 [FIG(steps)[
 
 = [1446] [[Error][error]].
-= [1447] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1447] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [1448] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -3096,7 +3107,7 @@ by the [[bit combination]] [VAR[bc]]:
 [FIG(steps)[
 
 = [1123] [[Error][error]].
-= [1122] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1122] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [1128] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -3122,7 +3133,7 @@ by the [[bit combination]] [VAR[bc]]:
 [FIG(steps)[
 
 = [1124] [[Error][error]].
-= [1125] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1125] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [1129] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -3168,7 +3179,7 @@ by the [[bit combination]] [VAR[bc]]:
 [VAR[state]]'s [F[current PCD PI]],
 [VAR[state]]'s [F[current segment data]],
 [[false]].
-== [83] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [83] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [84] Otherwise:
 == [80] Set [VAR[state]]'s [F[decoder state]] to [I[PCD LI state]].
 
@@ -3177,7 +3188,7 @@ by the [[bit combination]] [VAR[bc]]:
 [FIG(steps)[
 
 = [1126] [[Error][error]].
-= [1127] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1127] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [1130] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -3203,7 +3214,7 @@ by the [[bit combination]] [VAR[bc]]:
 [VAR[state]]'s [F[current PCD PI]],
 [VAR[state]]'s [F[current segment data]],
 [[false]].
-== [86] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+== [86] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 :Otherwise:
@@ -3214,7 +3225,7 @@ by the [[bit combination]] [VAR[bc]]:
 [VAR[state]]'s [F[current PCD PI]],
 [VAR[state]]'s [F[current segment data]],
 [[true]].
-= [1136] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1136] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [1137] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -3236,10 +3247,10 @@ by the [[bit combination]] [VAR[bc]]:
 [VAR[set]] [ [VAR[bc]] ].
 
 ]FIG]
-: [[EOF]] :
+:Otherwise:
 [FIG(steps)[
 
-= [674] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [674] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [682] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
@@ -3336,9 +3347,6 @@ is a [[tuple]] of
 and
 [DFN[[F[incomplete]]]] ([[boolean]]).
 
-@@
-[99] 
-[DFN[EOF]]
 
 
 
@@ -3739,6 +3747,7 @@ with [N[0/0]], [N[15/15]], [VAR[t1]], [VAR[t2]].
 
 - ([I[unknown-byte]], [CODE[null]])
 - ([I[vts]], [I[transparent]])
+- ([I[captain]], [VAR[bc]]) where [VAR[bc]] is a [[bit combination]]
 
 ]NOTE]
 
