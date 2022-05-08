@@ -49,7 +49,7 @@ Initially, [CODE[null]].
 : [DFN[[F[GR invoked]]]] : [[G element]] or [CODE[null]].
 Initially, [CODE[null]].
 : [DFN[[F[GL mode]]]] :
-[I[iso2022]], [I[ascii]], or [I[single]].  Initially, [I[iso2022]].
+[I[iso2022]], [I[ascii]], [I[captain]], or [I[single]].  Initially, [I[iso2022]].
 : [DFN[[F[right mode]]]] : A [[right mode]].
 Initially, [I[iso2022]].
 : [DFN[[F[shift plane 2 mode]]]] : [I[normal]] or [I[jisx0213]].
@@ -521,6 +521,32 @@ of [VAR[state]] for
 ]FIG]
 
 
+[1451] 
+To [DFN[initialize by DI]] [VAR[state]], run these steps:
+
+[FIG(steps)[
+
+= [1452] If [VAR[state]]'s [F[current I byte]] is [N[2/0]]:
+==
+@@
+= [1421] Otherwise, if [VAR[state]]'s [F[current I byte]] is [N[3/0]]:
+==
+@@
+= [1423] Otherwise, if [VAR[state]]'s [F[current I byte]] is [N[3/15]]:
+==
+@@
+= [1424] Otherwise, if [VAR[state]]'s [F[current I byte]] is [N[4/1]]:
+==
+@@
+= [1425] Otherwise, if [VAR[state]]'s [F[current I byte]] is [N[4/0]]:
+==
+@@
+= [1426] Otherwise:
+==
+@@
+
+]FIG]
+
 -*-*-
 
 [2] There are the following [[decoder states][decoder state]]:
@@ -551,6 +577,9 @@ of [VAR[state]] for
 [N[94]], [N[1]], [I[94]], [N[4/2]].
 = [1109] Otherwise, if [VAR[state]]'s [F[GL mode]] is [I[single]]:
 == [1079] Let [VAR[set]] be [VAR[state]]'s [F[left designated]].
+= [1420] Otherwise, if [VAR[state]]'s [F[GL mode]] is [I[captain]]:
+== [1427] Set [VAR[state]]'s [F[current I byte]] to [VAR[bc]].
+== [1428] Set [VAR[state]]'s [F[decoder state]] to [I[CAPTAIN DI state]].
 = [1080] Otherwise, if [VAR[state]]'s [F[GL mode]] is [I[iso2022]]:
 == [314] Let [VAR[set]] be the result of
 [[getting invoked set][get invoked set]] with
@@ -1984,7 +2013,7 @@ the [[bit combination]] [VAR[bc]]:
 [[character]] ([I[protocol]], [VAR[bc]]).
 
 ]FIG]
-: [ [N[4/3]], [N[4/6]] ], [N[4/9]]:
+: [ [N[4/4]], [N[4/6]] ], [N[4/9]]:
 [FIG(steps)[
 
 @@
@@ -1996,6 +2025,13 @@ the [[bit combination]] [VAR[bc]]:
 
 = [1039] Set [VAR[state]]'s [F[GL mode]] to [I[ascii]].
 = [1038] Set [VAR[state]]'s [F[right mode]] to [I[utf-1]].
+
+]FIG]
+: [N[4/3]] :
+[FIG(steps)[
+
+= [1419] Set [VAR[state]]'s [F[GL mode]] to [I[captain]].
+= [1418] Set [VAR[state]]'s [F[decoder state]] to [I[captain state]].
 
 ]FIG]
 : [N[4/7]] :
@@ -2955,6 +2991,90 @@ by the [[bit combination]] [VAR[bc]]:
 ]FIG]
 
 ]FIG]
+
+
+*** CAPTAIN DI state
+
+[1430] The [DFN[CAPTAIN DI state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [N[0/0]], [N[15/14]] ]:
+[FIG(steps)[
+
+= [1431] Set [VAR[state]]'s [F[frame length]] to [VAR[bc]].
+= [1437] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1450] Run the steps to [[initialize by DI]] [VAR[state]].
+
+]FIG]
+: [N[15/15]] :
+[FIG(steps)[
+
+= [1432] Set [VAR[state]]'s [F[decoder state]] to [I[CAPTAIN DI first state]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [1433] [[Error][error]].
+= [1438] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1434] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
+
+*** CAPTAIN DI first state
+
+[1435] The [DFN[CAPTAIN DI first state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [N[0/0]], [N[15/15]] ]:
+[FIG(steps)[
+
+= [1436] Set [VAR[state]]'s [F[current J byte]] to [VAR[bc]].
+= [1439] Set [VAR[state]]'s [F[decoder state]] to [I[CAPTAIN DI second state]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [1440] [[Error][error]].
+= [1441] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1442] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
+
+*** CAPTAIN DI second state
+
+[1443] The [DFN[CAPTAIN DI second state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [N[0/0]], [N[15/15]] ]:
+[FIG(steps)[
+
+= [1444] Set [VAR[state]]'s [F[frame length]] to 
+[VAR[state]]'s [F[current J byte]] * 0x100 + [VAR[bc]].
+= [1449] Run the steps to [[initialize by DI]] [VAR[state]].
+= [1445] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [1446] [[Error][error]].
+= [1447] Set [VAR[state]]'s [F[decoder state]] to [I[initial state]].
+= [1448] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
+
+
 
 *** PCD state
 
