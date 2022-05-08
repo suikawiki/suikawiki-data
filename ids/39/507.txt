@@ -83,6 +83,8 @@ Initially, [CODE[null]].
 Initially, [CODE[null]].
 : [DFN[[F[decoder state]]]] : One of [[decoder states][decoder state]].
 Initially, [[default state]].
+: [DFN[[F[previous state]]]] : [[State][state]] or [CODE[null]].
+Initially, [CODE[null]].
 
 ]FIG]
 
@@ -666,6 +668,9 @@ run these steps:
 
 [FIG(steps)[
 
+= [1651] [[Modify character sets][modify character sets]]
+of [VAR[state]] for
+« "iso2022", "videotex" ».
 = [1543] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
 = [1528] [[Run a macro][run a macro]]
 "ESC 2/1 4/10 ESC 2/8 4/0 ESC 2/9 6/3 ESC 2/10 6/2 ESC 2/11 6/4 LS0 LS2R".
@@ -2940,7 +2945,7 @@ followed by
 = [1403] [[Emit][emit a character]]
 [[character]] ([I[videotex]], [I[us]], [VAR[bc]]).
 = [1580] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
-= [1404] Set [VAR[state]]'s [F[decoder state]] to [I[us terminal state]].
+= [1404] Set [VAR[state]]'s [F[decoder state]] to [I[US terminal state]].
 
 ]FIG]
 :[ [N[2/2]], [N[2/14]] ], [N[3/0]], [N[3/11]], [N[3/12]], [N[3/13]] :
@@ -2964,8 +2969,8 @@ followed by
 [FIG(steps)[
 
 = [672] If [VAR[state]]'s [F[current I byte]] is [N[4/10]]:
-==
-@@reset
+== [1660] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
+== [1640] Set [VAR[state]]'s [F[decoder state]] to [I[US reset state]].
 = [673] Otherwise:
 == [675] [[Emit][emit a character]]
 [[character]] ([I[C0]], [VAR[state]]'s [F[current I byte]], [N[1/15]]).
@@ -3098,7 +3103,7 @@ followed by
 
 = [1408] [[Emit][emit a character]]
 [[character]] ([I[videotex]], [I[us]], [VAR[bc]]).
-= [1409] Set [VAR[state]]'s [F[decoder state]] to [I[us terminal delete state]].
+= [1409] Set [VAR[state]]'s [F[decoder state]] to [I[US terminal delete state]].
 
 ]FIG]
 :Otherwise:
@@ -3144,6 +3149,110 @@ by the [[bit combination]] [VAR[bc]]:
 
 ]FIG]
 
+*** US reset state
+
+[1641] The [DFN[US reset state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(steps)[
+
+: [N[4/0]], [N[4/5]] :
+[FIG(steps)[
+
+= [1655] Set [VAR[state]]'s [F[current I byte]] to [VAR[bc]].
+= [1656] Set [VAR[state]]'s [F[decoder state]] to [I[US reset row state]].
+
+]FIG]
+:[ [N[4/1]], [N[4/4]] ]:
+[FIG(steps)[
+
+= [1643] If [VAR[bc]] is [N[4/1]] or [N[4/3]]:
+== [1644] Let [VAR[mode]] be [I[serial]].
+= [1645] Otherwise, if [VAR[bc]] is [N[4/2]] or [N[4/4]]:
+== [1646] Let [VAR[mode] be [I[parallel]].
+= [1642] Run the steps to [[initialize data syntax 2]] 
+with [VAR[state]] and [VAR[mode]].
+= [1647] If [VAR[bc]] is [N[4/1]] or [N[4/2]]:
+== [1648] [[Emit][emit a character]]
+[[character]] ([I[videotex]], [I[reset]], [VAR[bc]]).
+
+]FIG]
+: [N[4/15]] :
+[FIG(steps)[
+
+= [1671] If [VAR[state]]'s [F[previous state]] is ''not'' [CODE[null]]:
+== [1672] Set [VAR[state]]'s [F[G0 designated]] to 
+[VAR[state]]'s [F[previous state]]'s [F[G0 designated]].
+== [1673] Set [VAR[state]]'s [F[G2 designated]] to 
+[VAR[state]]'s [F[previous state]]'s [F[G2 designated]].
+== [1674] Set [VAR[state]]'s [F[GL invoked]] to 
+[VAR[state]]'s [F[previous state]]'s [F[GL invoked]].
+== [1675] Set [VAR[state]]'s [F[GR invoked]] to 
+[VAR[state]]'s [F[previous state]]'s [F[GR invoked]].
+== [1677] Set [VAR[state]]'s [F[C1 designated]] to 
+[VAR[state]]'s [F[previous state]]'s [F[C1 designated]].
+== [1678] If [VAR[state]]'s [F[C1 designated]] is equal to the result of 
+[[getting a C set][get a C set]] with
+[I[C1]], [I[C1]], [N[4/0]]:
+=== [1676] [[Run a macro][run a macro]]
+"ESC 2/2 4/0".
+== [1679] Otherwise, if [VAR[state]]'s [F[C1 designated]] is equal to the result of
+[[getting a C set][get a C set]] with
+[I[C1]], [I[C1]], [N[4/1]].
+= [1680] [[Emit][emit a character]]
+[[character] ([I[videotex]], [I[reset]], [VAR[bc]]).
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [1657] [[Error][error]].
+= [1658] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+= [1659] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
+
+*** US reset row state
+
+[1661] The [DFN[US reset row state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(steps)[
+
+:[ [N[4/0]], [N[7/15]] ]:
+[FIG(steps)[
+
+= [1649] Set [VAR[state]]'s [F[previous state]] to a copy of [VAR[decode]].
+= [1650] Set [VAR[state]]'s [F[G0 designated]] to the result of
+[[getting a G set][get a G set]] with
+[I[94]], [I[1]], [I[94]], [N[4/0]].
+= [1652] Set [VAR[state]]'s [F[G2 designated]] to the result of
+[[getting a G set][get a G set]] with
+[I[94]], [I[1]], [I[94]], [N[6/2]].
+= [1653] Set [VAR[state]]'s [F[GL invoked]] to [I[G0]].
+= [1654] Set [VAR[state]]'s [F[GR invoked]] to [I[G2]].
+= [1662] If [VAR[state]]'s [F[current I byte]] is [N[4/0]]:
+== [1664] [[Run a macro][run a macro]]
+"ESC 2/2 4/0".
+= [1663] Otherwise, if [VAR[state]]'s [F[current I byte]] is [N[4/5]]:
+== [1665] [[Run a macro][run a macro]]
+"ESC 2/2 4/1".
+= [1668] [[Emit][emit a character]]
+[[character]] ([I[videotex]], [I[resetrow]], [VAR[bc]]).
+= [1666] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [1667] [[Error][error]].
+= [1669] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+= [1670] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+
+]FIG]
 
 *** Sound control state
 
@@ -3800,6 +3909,9 @@ where [VAR[bytes]] is a [[byte sequence]]
 - ([I[videotex]], [I[protocol]], [VAR[bytes]]) 
 where [VAR[bytes]] is a [[byte sequence]]
 - ([I[videotex]], [I[us]], [VAR[bc]]) where [VAR[bc]] is a [[bit combination]]
+- ([I[videotex]], [I[profile]], [VAR[bc]]) where [VAR[bc]] is a [[bit combination]]
+- ([I[videotex]], [I[reset]], [VAR[bc]]) where [VAR[bc]] is a [[bit combination]]
+- ([I[videotex]], [I[resetrow]], [VAR[bc]]) where [VAR[bc]] is a [[bit combination]]
 - ([I[mule]], [I[esc]], [VAR[bc]]), where [VAR[bc]] is in [ [N[3/0]], [N[3/4]] ]
 - ([I[deprecated]], [VAR[char]]) where [VAR[char]] is a [[character]]
 
