@@ -74,6 +74,8 @@ Initially, [CODE[null]].
 : [DFN[[F[current PCD PI]]]] : [[Byte][byte]].
 : [DFN[[F[current segment length]]]] : Non-negative integer.
 : [DFN[[F[current segment data]]]] : [[Byte sequence][byte sequence]].
+: [DFN[[F[current frame length]]]] : Non-negative integer or [CODE[null]].
+Initially, [CODE[null]].
 : [DFN[[F[decoder state]]]] : One of [[decoder states][decoder state]].
 Initially, [[default state]].
 
@@ -181,15 +183,14 @@ of [VAR[state]] for some [VAR[features]].
 
 ** Input stream
 
-[99] An [DFN[input stream]] is a [[list]] of
-[[bit combination]],
-[I[end-of-frame]],
-and
-[I[end-of-file]]
-items.
-
 @@
-[VAR[input stream]],
+[99] 
+input stream:
+[[bit combination]],
+[[end-of-frame]],
+and
+[I[end-of-file]];
+[VAR[get the next byte]] : [[byte]] or [CODE[null]];
 [VAR[initialization steps]] a [[state initialization steps]],
 run these steps:
 
@@ -199,29 +200,47 @@ run these steps:
 of [VAR[state]] for
 « "fixed", "fallback", "iso2022" ».
 = [9] Run [VAR[initialization steps]] with [VAR[state]].
-= [6] 
-Let [VAR[output stream]] be a [[list]].
-[NOTE[
+= [6] Let [VAR[output stream]] be a [[list]].
+= [1468] Let [VAR[next]] be [CODE[null]].
+= [1456] [[While]] [VAR[next]] is not [I[end-of-file]]:
+== [1457] If [VAR[state]]'s [F[current frame length]] is [N[0]]:
+=== [1455] Set [VAR[state]]'s [F[current frame length]] to [CODE[null]].
+=== [1458] Set [VAR[next]] to an [[end-of-frame]] ([[false]]).
+== [1459] Otherwise:
+=== [1460] Set [VAR[next]] to the result of 
+[[getting the next byte][get the next byte]].
+=== [1461] If [VAR[next]] is [CODE[null]]:
+==== [1462] If [VAR[state]]'s [F[current frame length]] is [CODE[null]]:
+===== [1464] Set [VAR[next]] to an [I[end-of-file]].
+==== [1465] Otherwise:
+===== [1463] Set [VAR[next]] to an [[end-of-frame]] ([[true]]).
+==== [1466] Set [VAR[get the next byte]] to a function that returns [CODE[null]].
+=== [1469] Otherwise:
+==== [1471] If [VAR[state]]'s [F[current frame length]] is ''not'' [CODE[null]]:
+===== [1470] Set [VAR[state]]'s [F[current frame length]] to
+[VAR[state]]'s [F[current frame length]] - 1.
+== [1467] 
+@@
+run [VAR[state]]'s [F[decoder state]]'s switch
+= [7] 
+Return [VAR[output stream]].
+]FIG]
+
+[1472] 
+An [DFN[end-of-frame]] is a [[tuple]] of 
+[DFN[[F[incomplete]]]] ([[boolean]]).
+
+
+** Output stream
+
+@@
 [97] [VAR[output stream]] might contain
 [[characters][character]],
 [[extended segment]],
 [[direct cursor address]],
 [[PCD data]],
 and
-[[EOF]].
-]NOTE]
-= [10] 
-@@
-Process the input stream,
-a sequence of zero or more [[bit combinations][bit combination]]
-= [7] 
-Return [VAR[output stream]].
-]FIG]
-
-
-** Output stream
-
-@@
+@@ [[EOF]].
 
 [4] 
 To [DFN[emit a character]] with [[character]] [VAR[char]], run these steps:
@@ -538,13 +557,23 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 == [932] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
 == [1437] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 == [1422] [[Run a macro][run a macro]]
-"ESC 2/1 4/9 ESC 2/2 4/4 ESC 2/6 4/0 ESC 2/4 4/2 ESC 2/9 4/10 ESC 2/14 3/8 ESC 2/11 2/0 4/1 LS0 LS2".
+"ESC 2/1 4/9 ESC 2/2 4/4 ESC 2/6 4/0 ESC 2/4 4/2 ESC 2/9 4/10 ESC 2/14 3/8 ESC 2/11 2/0 4/1 LS0 LS2R".
 = [1424] Otherwise, if [VAR[state]]'s [F[current I byte]] is [N[4/1]]:
-==
-@@
+== [1475] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
+== [1476] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+== [1477] [[Run a macro][run a macro]]
+"ESC 2/1 4/9 LS0".
+== [1478] Set [VAR[state]]'s [F[C1 designated]] to the result of
+[[getting a C set][get a C set]] with
+[I[C1]], [I[videotex]], [I[sound-control]].
+== [1479] Set [VAR[state]]'s [F[G0 designated]] to the result of
+[[getting a G set][get a G set]] with
+[I[96]], [I[1]], [I[videotex]], [I[sound-tone]].
 = [1425] Otherwise, if [VAR[state]]'s [F[current I byte]] is [N[4/0]]:
-==
-@@
+== [1482] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
+== [1481] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+== [1480] [[Run a macro][run a macro]]
+"ESC 2/1 4/9 ESC 2/2 4/4 ESC 2/8 4/9 ESC 2/6 4/0 ESC 2/4 2/9 4/2 ESC 2/10 4/10 LS0 LS2R".
 = [1426] Otherwise:
 == [1445] Set [VAR[state]]'s [F[opaque designated]] to the result of
 [[getting a 256 set][get a 256 set]]
@@ -656,9 +685,11 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 === [476] Set [VAR[state]]'s [F[decoder bytes]] to [I[right leading byte state]].
 
 ]FIG]
-: [I[end-of-frame]] :
+: [[end-of-frame]] :
 [FIG(steps)[
 
+= [1473] If [VAR[bc]]'s [F[incomplete]] is [[true]]:
+== [1474] [[Error][error]].
 = [1423] Set [VAR[state]]'s [F[GL mode]] to [I[captain]].
 = [1421] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
@@ -3018,7 +3049,7 @@ by the [[bit combination]] [VAR[bc]]:
 :[ [N[0/0]], [N[15/14]] ]:
 [FIG(steps)[
 
-= [1431] Set [VAR[state]]'s [F[frame length]] to [VAR[bc]].
+= [1431] Set [VAR[state]]'s [F[current frame length]] to [VAR[bc]].
 = [1450] Run the steps to [[initialize by DI]] [VAR[state]].
 
 ]FIG]
@@ -3072,7 +3103,7 @@ by the [[bit combination]] [VAR[bc]]:
 :[ [N[0/0]], [N[15/15]] ]:
 [FIG(steps)[
 
-= [1444] Set [VAR[state]]'s [F[frame length]] to 
+= [1444] Set [VAR[state]]'s [F[current frame length]] to 
 [VAR[state]]'s [F[current J byte]] * 0x100 + [VAR[bc]].
 = [1449] Run the steps to [[initialize by DI]] [VAR[state]].
 
@@ -3522,6 +3553,7 @@ or
 - ([I[C1]], [I[vt]], [I[C1]])
 - ([I[C1]], [I[videotex]], [N[2/0]])
 - ([I[C1]], [I[videotex]], [N[2/1]])
+- ([I[C1]], [I[videotex]], [I[sound-control]])
 - ([I[C1]], [I[unknown-control]], [CODE[null]])
 
 ]NOTE]
@@ -3682,7 +3714,7 @@ where [VAR[bytes]] is a [[byte sequence]]
 - ([N[94]], [N[3]], [I[marc]], [N[3/1]])
 - ([N[96]], [N[2]], [I[mule-96[SUP[2]]]], [VAR[F]]) where 
 [VAR[F]] is in [ [N[3/1]], [N[3/4]] ]
-
+- ([N[96]], [N[2]], [I[videotex]], [I[sound-tone]])
 
 ]NOTE]
 
