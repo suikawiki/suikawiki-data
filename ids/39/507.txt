@@ -50,8 +50,7 @@ Initially, [I[C1]].
 Initially, [CODE[null]].
 : [DFN[[F[GR invoked]]]] : [[G element]] or [CODE[null]].
 Initially, [CODE[null]].
-: [DFN[[F[GL mode]]]] :
-[I[iso2022]], [I[captain]], [I[telesoftware]], or [I[single]].  
+: [DFN[[F[GL mode]]]] : [[GL mode]].
 Initially, [I[iso2022]].
 : [DFN[[F[right mode]]]] : A [[right mode]].
 Initially, [I[iso2022]].
@@ -85,12 +84,17 @@ Initially, [CODE[null]].
 Initially, [[default state]].
 : [DFN[[F[previous state]]]] : [[State][state]] or [CODE[null]].
 Initially, [CODE[null]].
+: [DFN[[F[previous GL mode]]]] : [[GL mode]] or [CODE[null]].
+Initially, [CODE[null]].
 
 ]FIG]
 
 [223] A [DFN[C element]] is [I[C0]] or [I[C1]].
 
 [100] A [DFN[G element]] is [I[G0]], [I[G1]], [I[G2]], [I[G3]], or [I[Gj]].
+
+[1704] A [DFN[GL mode]] is one of:
+[I[iso2022]], [I[captain]], [I[telesoftware]], and [I[single]].  
 
 [1291] A [DFN[right mode]] is one of:
 [I[iso2022]], 
@@ -101,7 +105,7 @@ Initially, [CODE[null]].
 [I[big5]],
 [I[uhc]], [I[johab]],
 [I[gbk]], [I[gb18030]],
-or
+and
 [I[x-moe-internal]].
 
 
@@ -580,6 +584,23 @@ of [VAR[state]] for
 [[getting a G set][get a G set]] with
 [I[96]], [I[1]], [I[videotex]], [I[l]].
 
+
+]FIG]
+:[CODE(charname)@en[SOS]]:
+[FIG(steps)[
+
+= [1705] Set [VAR[state]]'s [F[previous GL mode]] to [VAR[state]]'s [F[GL mode]].
+= [1706] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
+= [1707] [[Emit][emit a character]] [VAR[char]].
+
+]FIG]
+:[CODE(charname)@en[ST]]:
+[FIG(steps)[
+
+= [1709] If [VAR[state]]'s [F[previous GL mode]] is ''not'' [CODE[null]]:
+== [1708] Set [VAR[state]]'s [F[GL mode]] to [VAR[state]]'s [F[previous GL mode]].
+== [1710] Set [VAR[state]]'s [F[previous GL mode]] to [CODE[null]].
+= [1711] [[Emit][emit a character]] [VAR[char]].
 
 ]FIG]
 :[CODE(charname)@en[PCD]]:
@@ -2151,8 +2172,12 @@ of [VAR[state]] for
 : [N[3/4]], [N[4/1]] :
 [FIG(steps)[
 
-= [1118] 
-@@[[NAPLPS]]
+= [1024] [[Modify character sets][modify character sets]]
+of [VAR[state]] for
+« "iso2022", "videotex" ».
+= [1118] [[Run a macro][run a macro]]
+"ESC 2/1 4/11 ESC 2/2 4/6 ESC 2/8 4/2 ESC 2/9 5/7 ESC 2/10 7/12 ESC 2/15 5/7 LS0 LS1R".
+= [1703] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 : [N[3/8]] :
@@ -4738,10 +4763,17 @@ to the result of
 = [781] Set [VAR[state]]'s [F[escape set]] [ [N[3/9]] ] to 
 [[character]] ([I[unknown-control]], [CODE[null]], [N[3/9]]).
 = [922] [[For each]] [VAR[F]] in [ [N[3/0]], [N[3/8]] ], [N[4/0]],
-[N[4/3]], [N[4/5]], [N[4/8]], [N[4/11]], [N[5/1]], and [N[5/5]]:
+[N[4/3]], [N[4/5]], [N[4/8]], [N[4/11]], [N[5/1]], [N[5/5]],
+[N[7/0]], [N[7/10]], [N[7/11]], [N[7/13]],
+[N[2/0]] followed by [N[7/10]], [N[2/0]] followed by [N[7/11]]:
 == [923] Set [VAR[state]]'s [F[94 final set]] [ [VAR[F]] ] to the result of 
 [[getting a G set][get a G set]] with
 [N[94]], [N[1]], [I[94]], [VAR[F]].
+= [1701] [[For each]] [VAR[F]] in 
+[N[7/10]], [N[7/11]]:
+== [1702] Set [VAR[state]]'s [F[96 final set]] [ [VAR[F]] ] to the result of 
+[[getting a G set][get a G set]] with
+[N[96]], [N[1]], [I[96]], [VAR[F]].
 = [894] [[For each]] [VAR[F]] in 
 [N[3/0]], [N[3/3]], [ [N[3/5]], [N[3/11]] ], and [N[3/15]]:
 == [896] Set [VAR[state]]'s [F[94[SUP[[VAR[n]]]] final set]] [ [VAR[F]] ]
@@ -4767,6 +4799,7 @@ to the result of
 [[getting a G set][get a G set]] with
 [N[94]], [N[2]], [I[94[SUP[2]]]], [N[4/2]] followed by [N[4/0]].
 
+
 ]FIG]
 : "iso2022" :
 [FIG(steps)[
@@ -4774,11 +4807,18 @@ to the result of
 = [29] Set [VAR[state]]'s [F[escape set]] [ [N[6/4]] ] to [CODE(charname)@en[CMD]].
 = [42] Set [VAR[state]]'s [F[escape set]] [ [N[6/2]] ] to 
 [[character]] ([I[esc]], [N[6/2]]).
-= [1681] [[For each]] [VAR[F]] in [N[4/0]],
-[N[4/3]], [N[4/5]], [N[4/8]], [N[4/11]], [N[5/1]], and [N[5/5]]:
+= [1681] [[For each]] [VAR[F]] in 
+[N[4/0]], [N[4/3]], [N[4/5]], [N[4/8]], [N[4/11]], [N[5/1]], [N[5/5]],
+[N[7/0]], [N[7/10]], [N[7/11]], [N[7/13]],
+[N[2/0]] followed by [N[7/10]], [N[2/0]] followed by [N[7/11]]:
 == [1682] Set [VAR[state]]'s [F[94 final set]] [ [VAR[F]] ] to the result of 
 [[getting a G set][get a G set]] with
 [N[94]], [N[1]], [I[94]], [VAR[F]].
+= [1699] [[For each]] [VAR[F]] in 
+[N[7/10]], [N[7/11]]:
+== [1700] Set [VAR[state]]'s [F[96 final set]] [ [VAR[F]] ] to the result of 
+[[getting a G set][get a G set]] with
+[N[96]], [N[1]], [I[96]], [VAR[F]].
 = [1685] Set [VAR[state]]'s [F[94[SUP[[VAR[n]]]] final set]] [ [N[4/2]] ]
 to the result of 
 [[getting a G set][get a G set]] with
@@ -4847,7 +4887,7 @@ to the result of
 [N[94]], [N[2]], [I[94[SUP[2]]]], [N[4/3]].
 
 ]FIG]
-: "naplps" :
+: "videotex" :
 [FIG(steps)[
 
 = [52] Set [VAR[state]]'s [F[escape set]] [ [N[6/11]] ] to 
@@ -4855,15 +4895,10 @@ to the result of
 = [53] Set [VAR[state]]'s [F[escape set]] [ [N[6/12]] ] to 
 [[character]] ([I[deprecated]], [CODE(charname)@en[LS2R]]).
 = [43] Set [VAR[state]]'s [F[escape set]] [ [N[7/0]] ] to [CODE(charname)@en[PCD]].
-
-]FIG]
-: "videotex" :
-[FIG(steps)[
-
 = [974] Set [VAR[state]]'s [F[94 final set]] [ [N[4/0]] ] to the result of 
 [[getting a G set][get a G set]] with
 [N[94]], [N[1]], [I[videotex]], [N[4/0]].
-= [928] [[For each]] [VAR[F]] in [ [N[3/0]], [N[3/8]] ]:
+= [928] [[For each]] [VAR[F]] in [ [N[3/0]], [N[3/8]] ], [N[7/0]]:
 == [929] Set [VAR[state]]'s [F[94 final set]] [ [VAR[F]] ] to the result of 
 [[getting a G set][get a G set]] with
 [N[94]], [N[1]], [I[arib]], [VAR[F]].
@@ -4877,7 +4912,33 @@ to the result of
 to the result of 
 [[getting a G set][get a G set]] with
 [N[94]], [N[2]], [I[arib]], [N[4/2]].
-= [43] Set [VAR[state]]'s [F[escape set]] [ [N[7/0]] ] to [CODE(charname)@en[PCD]].
+= [1026] Set [VAR[state]]'s [F[96 final set]] [ [N[7/10]] ] to the result of 
+[[getting a G set][get a G set]] with
+[N[96]], [N[1]], [I[96]], [N[2/0]] followed by [N[7/10]].
+= [1692] Set [VAR[state]]'s [F[96 final set]] [ [N[7/11]] ] to the result of 
+[[getting a G set][get a G set]] with
+[N[96]], [N[1]], [I[96]], [N[2/0]] followed by [N[7/11]].
+= [1693] Set [VAR[state]]'s [F[94 final set]] [ [N[7/10]] ] to the result of 
+[[getting a G set][get a G set]] with
+[N[96]], [N[1]], [I[96]], [N[2/0]] followed by [N[7/10]].
+= [1694] Set [VAR[state]]'s [F[94 final set]] [ [N[7/11]] ] to the result of 
+[[getting a G set][get a G set]] with
+[N[96]], [N[1]], [I[96]], [N[2/0]] followed by [N[7/11]].
+= [1695] Set [VAR[state]]'s [F[94 final set]] [ [N[2/0]] followed by [N[7/10]] ] 
+to the result of 
+[[getting a G set][get a G set]] with
+[N[96]], [N[1]], [I[96]], [N[2/0]] followed by [N[7/10]].
+= [1696] Set [VAR[state]]'s [F[94 final set]] [ [N[2/0]] followed by [N[7/11]] ] 
+to the result of 
+[[getting a G set][get a G set]] with
+[N[96]], [N[1]], [I[96]], [N[2/0]] followed by [N[7/11]].
+= [1697] Set [VAR[state]]'s [F[94 final set]] [ [N[5/7]] ] to the result of 
+[[getting a G set][get a G set]] with
+[N[96]], [N[1]], [I[96]], [N[5/7]].
+= [1698] Set [VAR[state]]'s [F[94 final set]] [ [N[7/13]] ] to the result of 
+[[getting a G set][get a G set]] with
+[N[96]], [N[1]], [I[96]], [N[7/13]].
+
 
 ]FIG]
 : "marc" :
