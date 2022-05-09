@@ -41,7 +41,7 @@ Initially, [I[unknown-94]].
 : [DFN[[F[Gj designated]]]] : [[94 set]].  Initially, [I[unknown-94]].
 : [DFN[[F[S1 designated]]]] : [[94[SUP[2]] set]].
 : [DFN[[F[S2 designated]]]] : [[94[SUP[2]] set]].
-: [DFN[[F[left designated]]]] : [[128 set]].
+: [DFN[[F[left designated]]]] : [[G set]] or [[128 set]].
 : [DFN[[F[right designated]]]] : [[128 set]].
 : [DFN[[F[opaque designated]]]] : [[256 set]].
 : [DFN[[F[CR invoked]]]] : [[C element]].
@@ -86,6 +86,7 @@ Initially, [[default state]].
 Initially, [CODE[null]].
 : [DFN[[F[previous GL mode]]]] : [[GL mode]] or [CODE[null]].
 Initially, [CODE[null]].
+: [DFN[[F[previous left designated]]]] : [[G set]] or [[128 set]].
 
 ]FIG]
 
@@ -590,6 +591,8 @@ of [VAR[state]] for
 [FIG(steps)[
 
 = [1705] Set [VAR[state]]'s [F[previous GL mode]] to [VAR[state]]'s [F[GL mode]].
+= [1713] Set [VAR[state]]'s [F[previous left designated]]
+to [VAR[state]]'s [F[left designated]].
 = [1706] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
 = [1707] [[Emit][emit a character]] [VAR[char]].
 
@@ -599,6 +602,8 @@ of [VAR[state]] for
 
 = [1709] If [VAR[state]]'s [F[previous GL mode]] is ''not'' [CODE[null]]:
 == [1708] Set [VAR[state]]'s [F[GL mode]] to [VAR[state]]'s [F[previous GL mode]].
+== [1714] Set [VAR[state]]'s [F[left designated]] to
+[VAR[state]]'s [F[previous left designated]].
 == [1710] Set [VAR[state]]'s [F[previous GL mode]] to [CODE[null]].
 = [1711] [[Emit][emit a character]] [VAR[char]].
 
@@ -728,9 +733,7 @@ of [VAR[state]] for
 :[ [N[2/0]], [N[7/15]] ]:
 [FIG(steps)[
 
-= [1109] If [VAR[state]]'s [F[GL mode]] is [I[single]]:
-== [1079] Let [VAR[set]] be [VAR[state]]'s [F[left designated]].
-= [1420] Otherwise, if [VAR[state]]'s [F[GL mode]] is [I[captain]]:
+= [1420] If [VAR[state]]'s [F[GL mode]] is [I[captain]]:
 == [1427] Set [VAR[state]]'s [F[current I byte]] to [VAR[bc]].
 == [1428] Set [VAR[state]]'s [F[decoder state]] to [I[CAPTAIN DI state]].
 = [1613] Otherwise, if [VAR[state]]'s [F[GL mode]] is [I[telesoftware]]:
@@ -743,28 +746,32 @@ and
 == [1576] Otherwise:
 === [1614] Set [VAR[state]]'s [F[current I byte]] to [VAR[bc]].
 === [1578] Set [VAR[state]]'s [F[decoder state]] to [I[TELESOFTWARE CI state]].
-= [1080] Otherwise, if [VAR[state]]'s [F[GL mode]] is [I[iso2022]]:
-== [314] Let [VAR[set]] be the result of
+= [1712] Otherwise:
+== [1109] If [VAR[state]]'s [F[GL mode]] is [I[single]]:
+=== [1079] Let [VAR[set]] be [VAR[state]]'s [F[left designated]].
+== [1080] Otherwise, if [VAR[state]]'s [F[GL mode]] is [I[iso2022]]:
+=== [314] Let [VAR[set]] be the result of
 [[getting invoked set][get invoked set]] with
 [VAR[state]] and [VAR[state]]'s [F[GL invoked]].
-= [1288] If [VAR[state]]'s [F[right mode]] is [I[iso2022jp]] and [VAR[bc]] is [N[7/15]]:
-== [1289] Set [VAR[state]]'s [F[decoder state]] to [I[foreign right state]].
-== [1290] [[Reconsume][reconsume]] [VAR[bc]].
-= [507] Otherwise, if [[is 96 size]] [VAR[set]] is [[false]] and
+== [1288] If [VAR[state]]'s [F[right mode]] is [I[iso2022jp]] and 
+[VAR[bc]] is [N[7/15]]:
+=== [1289] Set [VAR[state]]'s [F[decoder state]] to [I[foreign right state]].
+=== [1290] [[Reconsume][reconsume]] [VAR[bc]].
+== [507] Otherwise, if [[is 96 size]] [VAR[set]] is [[false]] and
 [VAR[bc]] is [N[2/0]] or [N[7/15]]:
-== [318] [[Emit a character][emit a character]] 
+=== [318] [[Emit a character][emit a character]] 
 [VAR[state]]'s [F[fixed set]] [ [VAR[bc]] ].
-= [422] Otherwise, if [VAR[set]] is [I[unknown-94]] or [I[unknown-96]]:
-== [440] Set [VAR[state]]'s [F[decoder state]] to [I[left unassigned state]].
-== [441] [[Reconsume][reconsume]] [VAR[bc]].
-= [424] Otherwise:
-== [448] Set [VAR[state]]'s [F[current bytes]] to [VAR[set]]'s [[byte length]].
-== [449] If [VAR[state]]'s [F[current bytes]] is [N[1]]:
-=== [185] [[Emit a character][emit a character]] [VAR[set]] [ [VAR[bc]] ].
-== [450] Otherwise:
-=== [451] Set [VAR[state]]'s [F[current I byte]] to [VAR[bc]].
-=== [487] Set [VAR[state]]'s [F[current J byte]] to [CODE[null]].
-=== [452] Set [VAR[state]]'s [F[decoder bytes]] to [I[left leading byte state]].
+== [422] Otherwise, if [VAR[set]] is [I[unknown-94]] or [I[unknown-96]]:
+=== [440] Set [VAR[state]]'s [F[decoder state]] to [I[left unassigned state]].
+=== [441] [[Reconsume][reconsume]] [VAR[bc]].
+== [424] Otherwise:
+=== [448] Set [VAR[state]]'s [F[current bytes]] to [VAR[set]]'s [[byte length]].
+=== [449] If [VAR[state]]'s [F[current bytes]] is [N[1]]:
+==== [185] [[Emit a character][emit a character]] [VAR[set]] [ [VAR[bc]] ].
+=== [450] Otherwise:
+==== [451] Set [VAR[state]]'s [F[current I byte]] to [VAR[bc]].
+==== [487] Set [VAR[state]]'s [F[current J byte]] to [CODE[null]].
+==== [452] Set [VAR[state]]'s [F[decoder bytes]] to [I[left leading byte state]].
 
 ]FIG]
 : [ [N[8/0]], [N[9/15]] ] :
@@ -5197,4 +5204,5 @@ is [N[0]].
 [[SCI]],
 [[OSC]],
 [[DCS]],
-[[APC]]
+[[APC]],
+[[CSI]]
