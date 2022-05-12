@@ -206,6 +206,7 @@ of [VAR[state]] for some [VAR[features]].
 
 @@
 [99] 
+The [DFN[ISO/IEC 2022 decoder steps]]:
 input stream:
 [[bit combination]],
 [[end-of-frame]],
@@ -222,7 +223,7 @@ run these steps:
 of [VAR[state]] for
 « "fixed", "fallback", "iso2022" ».
 = [9] Run [VAR[initialization steps]] with [VAR[state]].
-= [6] Let [VAR[output stream]] be a [[list]].
+= [6] Let [VAR[output stream]] be a new [[output stream]].
 = [1468] Let [VAR[next]] be [CODE[null]].
 = [1456] [[While]] [VAR[next]] is not [I[end-of-file]]:
 == [1457] If [VAR[state]]'s [F[current frame length]] is [N[0]]:
@@ -248,7 +249,7 @@ to
 [VAR[state]]'s [F[macro set]] [ [VAR[state]]'s [F[current capturing byte]] ]
 followed by [VAR[next]].
 == [1467] [[Process the next input character][process the next input character]]
-of [VAR[state]].
+with [VAR[state]], [VAR[next]].
 = [7] 
 Return [VAR[output stream]].
 ]FIG]
@@ -256,6 +257,8 @@ Return [VAR[output stream]].
 [1472] 
 An [DFN[end-of-frame]] is a [[tuple]] of 
 [DFN[[F[incomplete]]]] ([[boolean]]).
+
+-*-*-
 
 [1574] 
 A [DFN[byte getter]] is a steps that returns a [CODE[byte]] or [CODE[null]].
@@ -267,20 +270,25 @@ is reached.
 [1780] 
 The [[empty byte getter]] is a [[byte getter]] that returns a [CODE[null]].
 
+-*-*-
+
 [1778] 
 To [DFN[process the next input character]]
-of [VAR[state]],
+with [VAR[state]] and [VAR[bc]],
 run these steps:
 
 [FIG(steps)[
 
-= [1784] 
-@@
-Run [VAR[state]]'s [F[decoder state]]'s switch
+= [1784] Run [VAR[state]]'s [F[decoder state]]'s [[switch]] by [VAR[bc]],
+with [VAR[state]].
+= [1766] If the previous step asked to [DFN[reconsume]] [VAR[bc]]:
+== [1767] Go to the first step of these steps.
+
+
 ]FIG]
 
 [1783] 
-The variable [VAR[state]] in these steps is visible from
+The variable [VAR[state]] in these steps is accessible from
 the steps 
 to [[emit a character]] and
 to [[process a control character]].
@@ -313,34 +321,33 @@ in order.
 
 [FIG(steps)[
 
-= [1767] Let [VAR[getter]] be [VAR[state]]'s [F[input getter]].
-= [1769] Let [VAR[current bytes]] be [VAR[bytes]].
-= [1766] Set [VAR[state]]'s [F[current byte getter]] to the following [[byte getter]]:
-[FIG(steps)[
-
-= [1768] If [VAR[current bytes]]'s [F[length]] is [N[0]]:
-== [1770] Set [VAR[state]]'s [F[current byte getter]] to [VAR[getter]].
-== [1771] Return the result of running [VAR[getter]].
-= [1772] Otherwise:
-== [1773] Let [VAR[byte]] be the first [[bit combination]] of [VAR[current bytes]].
-== [1774] Remove the first [[bit combination]] from [VAR[current bytes]].
-== [1775] Return [VAR[byte]].
-
-]FIG]
-= [1776] [[While]] [VAR[current bytes]]'s [F[length]] is greater than [N[0]]:
+= [1776] [[For each]] [VAR[bc]] in the [[bit combinations][bit combination]] of
+[VAR[bytes]], in order:
 == [1777] [[Process the next input character][process the next input character]]
-of [VAR[state]].
+with [VAR[state]], [VAR[bc]].
 
 ]FIG]
 
 
 ** Output stream
 
-@@
-[97] [VAR[output stream]] might contain
-[[characters][character]],
-and
-@@ [[EOF]].
+[97] 
+An [DFN[output stream]] is a [[list]].
+The variable [VAR[output stream]] of the steps of the 
+[[ISO/IEC 2022 decoder steps]] represents the output of the decoder.
+It is accessible from the steps 
+to [[emit a character]] and
+to [[emit the EOF]].
+
+
+[1768] 
+When [[ISO/IEC 2022 decoder steps]] returns,
+[VAR[output stream]]
+contains
+zero or more [[characters][character]]
+followed by
+an [[EOF]].
+
 
 [4] 
 To [DFN[emit a character]] with [[character]] [VAR[char]], 
@@ -363,6 +370,28 @@ to
 [VAR[output stream]].
 ]FIG]
 
+[1769] 
+To [DFN[emit the EOF]], run these steps:
+
+[FIG(steps)[
+
+= [1770] 
+[[Append][append]]
+an [[EOF]]
+to 
+[VAR[output stream]].
+
+]FIG]
+
+[1774] 
+Although the steps of the [[ISO/IEC 2022 decoder steps]] is written in the form 
+of the steps to return an [VAR[output stream]], 
+any [[character]] or [[EOF]] in [VAR[output stream]]
+[MAY[MAY]] be made accessible from the application
+as soon as it is [[appended][append]] to [VAR[output stream]].
+The steps of the [[ISO/IEC 2022 decoder steps]] never modify or rearrange
+[[appended][append]] [[characters][character]].
+
 [355] 
 When [DFN[error]], run these steps:
 
@@ -382,11 +411,6 @@ When [DFN[deprecated]], run these steps:
 
 ;; [385] There is a sequence that is discouraged by a relevant specification,
 or that is an extension to the ISO/IEC 2022 standard.
-
-
-@@[DFN[reconsume]]
-
-@@
 
 
 
@@ -763,7 +787,9 @@ of [VAR[state]] for
 
 -*-*-
 
-[2] There are the following [[decoder states][decoder state]]:
+[2] 
+Each [[decoder state]] has its [[switch]].
+There are the following [[decoder states][decoder state]]:
 
 *** Default state
 
@@ -874,9 +900,18 @@ of [VAR[state]] for
 
 ]FIG]
 : [I[end-of-file]] :
-@@
+[FIG(steps)[
+
+= [1772] [[Emit the EOF][emit the EOF]].
+
+]FIG]
 : Otherwise :
-@@
+[FIG(steps)[
+
+= [1773] [[Emit a character][emit a character]] [VAR[bc]].
+
+]FIG]
+
 
 ]FIG]
 
@@ -4155,6 +4190,10 @@ A [DFN[character string]] is a [[list]] of zero or more [[characters][character]
 An [DFN[empty character string]] is a [[character string]] whose [F[length]]
 is [N[0]].
 
+[1771] 
+An [DFN[EOF]] is a [[tuple]] with no [[item]].
+
+
 * Character sets
 
 [17] 
@@ -5344,6 +5383,7 @@ The terms
 [DFN[byte sequence]],
 [DFN[[F[length]]]],
 [DFN[code point]],
+[DFN[item]],
 [DFN[tuple]],
 [DFN[list]],
 [DFN[[F[size]]]],
