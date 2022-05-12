@@ -86,7 +86,6 @@ Initially, [CODE[null]].
 Initially, [CODE[null]].
 : [DFN[[F[current frame length]]]] : Non-negative integer or [CODE[null]].
 Initially, [CODE[null]].
-: [DFN[[F[current byte getter]]]] : [[Byte getter][byte getter]].
 : [DFN[[F[decoder state]]]] : One of [[decoder states][decoder state]].
 Initially, [[default state]].
 : [DFN[[F[previous state]]]] : [[State][state]] or [CODE[null]].
@@ -191,6 +190,10 @@ and/or
 [F[videotex basic kernel flag]].
 - [319] It [MAY[MAY]] invoke the steps to [[modify character sets]]
 of [VAR[state]] for some [VAR[features]].
+- [1465] It [MAY[MAY]] modify the variable 
+[VAR[input getter]]
+of the [[ISO/IEC 2022 decoder steps]]
+to another [[input getter]].
 - [807] If [VAR[state]]'s [F[G0 RL designated]] is set to a [[94[SUP[2]] set]],
 [VAR[state]]'s [F[G0 designated]] [MUST[MUST]] be set to a [[94[SUP[2]] set]],
 - [808] If [VAR[state]]'s [F[G1 RL designated]] is set to a [[94[SUP[2]] set]],
@@ -218,11 +221,11 @@ run these steps:
 
 [FIG(steps)[
 = [8] Let [VAR[state]] be a new [[state]].
-= [1779] Set [VAR[state]]'s [F[current byte getter]] to [VAR[byte getter]].
+= [1464] Let [VAR[input getter]] be the [[8-bit input getter]].
 = [327] [[Modify character sets][modify character sets]]
 of [VAR[state]] for
 « "fixed", "fallback", "iso2022" ».
-= [9] Run [VAR[initialization steps]] with [VAR[state]].
+= [9] Run [VAR[initialization steps]] with [VAR[state]] and [VAR[input getter]].
 = [6] Let [VAR[output stream]] be a new [[output stream]].
 = [1468] Let [VAR[next]] be [CODE[null]].
 = [1456] [[While]] [VAR[next]] is not [I[end-of-file]]:
@@ -230,14 +233,12 @@ of [VAR[state]] for
 === [1455] Set [VAR[state]]'s [F[current frame length]] to [CODE[null]].
 === [1458] Set [VAR[next]] to an [[end-of-frame]] ([[false]]).
 == [1459] Otherwise:
-=== [1460] Set [VAR[next]] to the result of running
-[VAR[state]]'s [F[current byte getter]].
-=== [1461] If [VAR[next]] is [CODE[null]]:
-==== [1462] If [VAR[state]]'s [F[current frame length]] is [CODE[null]]:
-===== [1464] Set [VAR[next]] to an [I[end-of-file]].
-==== [1465] Otherwise:
+=== [1460] Set [VAR[next]] to the result of running [VAR[input getter]]
+with [VAR[byte getter]].
+=== [1461] If [VAR[next]] is [I[end-of-file]]:
+==== [1462] If [VAR[state]]'s [F[current frame length]] is ''not'' [CODE[null]]:
 ===== [1463] Set [VAR[next]] to an [[end-of-frame]] ([[true]]).
-==== [1466] Set [VAR[state]]'s [F[current byte getter]] to the [[empty byte getter]].
+==== [1466] Set [VAR[input getter]] to the [[empty input getter]].
 === [1469] Otherwise:
 ==== [1471] If [VAR[state]]'s [F[current frame length]] is ''not'' [CODE[null]]:
 ===== [1470] Set [VAR[state]]'s [F[current frame length]] to
@@ -248,6 +249,15 @@ of [VAR[state]] for
 to 
 [VAR[state]]'s [F[macro set]] [ [VAR[state]]'s [F[current capturing byte]] ]
 followed by [VAR[next]].
+===== [1792] 
+If [VAR[state]]'s [F[macro set]] [ [VAR[state]]'s [F[current capturing byte]] ]'s
+[F[length]] is greater than the 
+[[maximum sequence length]]:
+====== [1793] [[Error][error]].
+====== [1794] Set [VAR[state]]'s [F[opaque designated]] to the result of
+[[getting a 256 set][get a 256 set]]
+[I[unknown-byte]], [CODE[null]].
+====== [1795] Set [VAR[state]]'s [F[decoder state]] to [I[opaque state]].
 == [1467] [[Process the next input character][process the next input character]]
 with [VAR[state]], [VAR[next]].
 = [7] 
@@ -267,8 +277,45 @@ Whenever invoked, it is expected to return a [[byte]] from the stream it represe
 in order.  It is expected to return a [CODE[null]] after the end of the stream
 is reached.
 
+[1791] 
+An [DFN[input item]] is 
+a [[byte]], 
+a [[character]],
+[I[end-of-frame]], or 
+[I[end-of-file]].
+
+
 [1780] 
-The [[empty byte getter]] is a [[byte getter]] that returns a [CODE[null]].
+An [DFN[input getter]] is 
+the [[empty input getter]]
+or 
+an [[8-bit input getter]].
+
+[1779] 
+The [DFN[empty input getter]] run these steps:
+
+[FIG(steps)[
+
+= [1790] Return [I[end-of-file]].
+
+]FIG]
+
+
+[1775] 
+An [DFN[8-bit input getter]] 
+run these steps with 
+a [[byte getter]] [VAR[byte getter]]:
+
+[FIG(steps)[
+
+= [1785] Let [VAR[byte]] be the result of running [VAR[getter]].
+= [1786] If [VAR[byte]] is [CODE[null]]:
+== [1787] Return [I[end-of-file]].
+= [1788] Otherwise:
+== [1789] Return [VAR[byte]].
+
+]FIG]
+
 
 -*-*-
 
