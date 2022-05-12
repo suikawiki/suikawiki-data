@@ -30,6 +30,9 @@ with [VAR[byte getter]].
 ==== [1462] If [VAR[state]]'s [F[current frame length]] is ''not'' [CODE[null]]:
 ===== [1463] Set [VAR[next]] to an [[end-of-frame]] ([[true]]).
 ==== [1466] Set [VAR[input getter]] to the [[empty input getter]].
+=== [1849] Otherwise, if [VAR[next]] is [I[incomplete-end-of-file]]:
+==== [1851] Set [VAR[next]] to [CODE[U+FFFD]].
+==== [1850] Set [VAR[input getter]] to the [[empty input getter]].
 === [1469] Otherwise:
 ==== [1471] If [VAR[state]]'s [F[current frame length]] is ''not'' [CODE[null]]:
 ===== [1470] Set [VAR[state]]'s [F[current frame length]] to
@@ -149,6 +152,8 @@ Initially, [CODE[null]].
 : [DFN[[F[previous GL mode]]]] : [[GL mode]] or [CODE[null]].
 Initially, [CODE[null]].
 : [DFN[[F[previous left designated]]]] : [[G set]] or [[128 set]].
+: [DFN[[F[previous code point]]]] : [[Code point][code point]] or [CODE[null]].
+Initially, [CODE[null]]
 
 ]FIG]
 
@@ -215,7 +220,7 @@ run these steps:
 == [806] Return [VAR[state]]'s [F[G3 RL designated]].
 ]FIG]
 
-** Initial state
+** Initialization
 
 [20] A [[state initialization steps]] is a set of zero or more steps
 that modifies [VAR[state]].  It can modify [VAR[state]] in these ways:
@@ -322,8 +327,12 @@ An [DFN[input getter]] is
 the [[empty input getter]],
 the [[8-bit input getter]],
 the [[UCS-2BE input getter]],
-or
 the [[UCS-2LE input getter]].
+the [[UCS-4BE input getter]],
+the [[UCS-4LE input getter]],
+the [[UTF-16BE input getter]],
+and
+the [[UTF-16LE input getter]].
 
 [1779] 
 The [DFN[empty input getter]] run these steps:
@@ -350,51 +359,195 @@ a [[byte getter]] [VAR[byte getter]]:
 
 ]FIG]
 
-[1796] 
-The [DFN[UCS-2BE input getter]]
-run these steps with
-a [[byte getter]] [VAR[byte getter]]:
+[1069] 
+To [DFN[get input bytes]] with 
+a [[byte getter]] [VAR[byte getter]]
+and
+an integer [VAR[n]],
+run these steps:
 
 [FIG(steps)[
 
-= [1797] Let [VAR[byte1]] be the result of running [VAR[getter]].
-= [1798] If [VAR[byte1]] is [CODE[null]]:
-== [1799] Return [I[end-of-file]].
-= [1800] Otherwise:
-== [1801] Let [VAR[byte2]] be the result of running [VAR[getter]].
-== [1802] If [VAR[byte2]] is [CODE[null]]:
-=== [1803] Return
-[[character]] ([I[unknown-byte]], [CODE[null]], [VAR[byte1]]).
-== [1804] Otherwise:
-=== [1805] Let [VAR[c]] be [VAR[bytes1]] × [N[0x100]] + [VAR[bytes2]].
-=== [1806] Return the result of
+= [1070] Let [VAR[bytes]] be an [[empty][is empty]] [[list]].
+= [1101] Let [VAR[m]] be [VAR[n]].
+= [1827] [[While]] [VAR[m]] is greater than [N[0]]:
+== [1828] Let [VAR[byte]] be the result of running
+[VAR[byte getter]].
+== [1829] If [VAR[byte]] is [CODE[null]]:
+=== [1830] Return [N[bytes]].
+=== [1832] Abort these steps.
+== [1831] Otherwise:
+=== [1833] [[Append][append]] [VAR[byte]] to [VAR[bytes]].
+= [1834] Return [VAR[bytes]].
+
+]FIG]
+
+
+
+[1796] 
+The [DFN[UCS-2BE input getter]]
+run these steps with
+[VAR[state]] and
+[[byte getter]] [VAR[byte getter]]:
+
+[FIG(steps)[
+
+= [1835] Let [VAR[bytes]] be the result of running the steps to
+[[get input bytes]] with [N[2]] and [VAR[byte getter]].
+= [1836] If [VAR[bytes]]'s [F[length]] is [N[2]]:
+== [1805] Let [VAR[c]] be [VAR[bytes]] [ 0 ] × [N[0x100]] + [VAR[bytes]] [ 1 ].
+== [1806] Return the result of
 [[getting a UCS input item][get a UCS input item]] [VAR[c]].
+= [1799] Otherwise, if [VAR[bytes]]'s [F[length]] is [N[0]]:
+== [1800] Return [I[end-of-file]].
+= [1797] Otherwise:
+== [1798] Return [I[incomplete-end-of-file]].
 
 ]FIG]
 
 [1807] 
 The [DFN[UCS-2LE input getter]]
 run these steps with
-a [[byte getter]] [VAR[byte getter]]:
+[VAR[state]] and
+[[byte getter]] [VAR[byte getter]]:
 
 [FIG(steps)[
 
-= [1808] Let [VAR[byte1]] be the result of running [VAR[getter]].
-= [1809] If [VAR[byte1]] is [CODE[null]]:
-== [1810] Return [I[end-of-file]].
-= [1811] Otherwise:
-== [1812] Let [VAR[byte2]] be the result of running [VAR[getter]].
-== [1813] If [VAR[byte2]] is [CODE[null]]:
-=== [1814] Return
-[[character]] ([I[unknown-byte]], [CODE[null]], [VAR[byte1]]).
-== [1815] Otherwise:
-=== [1816] Let [VAR[c]] be [VAR[bytes2]] × [N[0x100]] + [VAR[bytes1]].
-=== [1817] Return the result of
+= [1801] Let [VAR[bytes]] be the result of running the steps to
+[[get input bytes]] with [N[2]] and [VAR[byte getter]].
+= [1802] If [VAR[bytes]]'s [F[length]] is [N[2]]:
+== [1803] Let [VAR[c]] be [VAR[bytes]] [ 1 ] × [N[0x100]] + [VAR[bytes]] [ 0 ].
+== [1804] Return the result of
 [[getting a UCS input item][get a UCS input item]] [VAR[c]].
+= [1808] Otherwise, if [VAR[bytes]]'s [F[length]] is [N[0]]:
+== [1809] Return [I[end-of-file]].
+= [1810] Otherwise:
+== [1811] Return [I[incomplete-end-of-file]].
+
+]FIG]
+
+[1812] 
+The [DFN[UCS-4BE input getter]]
+run these steps with
+[VAR[state]] and
+[[byte getter]] [VAR[byte getter]]:
+
+[FIG(steps)[
+
+= [1813] Let [VAR[bytes]] be the result of running the steps to
+[[get input bytes]] with [N[4]] and [VAR[byte getter]].
+= [1814] If [VAR[bytes]]'s [F[length]] is [N[4]]:
+== [1815] Let [VAR[c]] be 
+[VAR[bytes]] [ 0 ] × [N[0x1000000]] +
+[VAR[bytes]] [ 1 ] × [N[0x10000]] +
+[VAR[bytes]] [ 2 ] × [N[0x100]] +
+[VAR[bytes]] [ 3 ].
+== [1816] Return the result of
+[[getting a UCS input item][get a UCS input item]] [VAR[c]].
+= [1817] Otherwise, if [VAR[bytes]]'s [F[length]] is [N[0]]:
+== [1837] Return [I[end-of-file]].
+= [1838] Otherwise:
+== [1839] Return [I[incomplete-end-of-file]].
+
+]FIG]
+
+[1840] 
+The [DFN[UCS-4LE input getter]]
+run these steps with
+[VAR[state]] and
+[[byte getter]] [VAR[byte getter]]:
+
+[FIG(steps)[
+
+= [1841] Let [VAR[bytes]] be the result of running the steps to
+[[get input bytes]] with [N[4]] and [VAR[byte getter]].
+= [1842] If [VAR[bytes]]'s [F[length]] is [N[4]]:
+== [1843] Let [VAR[c]] be 
+[VAR[bytes]] [ 3 ] × [N[0x1000000]] +
+[VAR[bytes]] [ 2 ] × [N[0x10000]] +
+[VAR[bytes]] [ 1 ] × [N[0x100]] +
+[VAR[bytes]] [ 0 ].
+== [1844] Return the result of
+[[getting a UCS input item][get a UCS input item]] [VAR[c]].
+= [1845] Otherwise, if [VAR[bytes]]'s [F[length]] is [N[0]]:
+== [1846] Return [I[end-of-file]].
+= [1847] Otherwise:
+== [1848] Return [I[incomplete-end-of-file]].
+
+]FIG]
+
+[1852] 
+The [DFN[UTF-16BE input getter]]
+run these steps with
+[VAR[state]]
+and
+[[byte getter]] [VAR[byte getter]]:
+
+[FIG(steps)[
+
+= [1860] If [VAR[state]]'s [F[previous character]] is not [CODE[null]]:
+== [1861] Let [VAR[char]] be [VAR[state]]'s [F[previous character]].
+= [1862] Otherwise:
+== [1853] Let [VAR[char]] be the result of running the
+[[UCS-2BE input getter]] with [VAR[byte getter]].
+= [1854] 
+@@
+If [VAR[char]] is in [ XXX ]:
+== [1857] Set [VAR[char2]] be the result of running the
+[[UCS-2BE input getter]] with [VAR[byte getter]].
+== 
+@@
+If [VAR[char]] is in [ XXX ]:
+=== [1876] Set [VAR[state]]'s [F[previous code point]] to [CODE[null]].
+=== 
+@@
+Return XXX.
+== [1855] Otherwise:
+=== [1856] Set [VAR[state]]'s [F[previous code point]] to [VAR[char]].
+=== [1863] Return [VAR[char]].
+= [1858] Otherwise:
+== [1877] Set [VAR[state]]'s [F[previous code point]] to [CODE[null]].
+== [1859] Return [VAR[char]].
+
 
 ]FIG]
 
 
+[1864] 
+The [DFN[UTF-16LE input getter]]
+run these steps with
+[VAR[state]]
+and
+[[byte getter]] [VAR[byte getter]]:
+
+[FIG(steps)[
+
+= [1865] If [VAR[state]]'s [F[previous character]] is not [CODE[null]]:
+== [1866] Let [VAR[char]] be [VAR[state]]'s [F[previous character]].
+= [1867] Otherwise:
+== [1868] Let [VAR[char]] be the result of running the
+[[UCS-2LE input getter]] with [VAR[byte getter]].
+= [1869] 
+@@
+If [VAR[char]] is in [ XXX ]:
+== [1870] Set [VAR[char2]] be the result of running the
+[[UCS-2LE input getter]] with [VAR[byte getter]].
+== 
+@@
+If [VAR[char]] is in [ XXX ]:
+=== [1878] Set [VAR[state]]'s [F[previous code point]] to [CODE[null]].
+=== 
+@@
+Return XXX.
+== [1871] Otherwise:
+=== [1872] Set [VAR[state]]'s [F[previous code point]] to [VAR[char]].
+=== [1873] Return [VAR[char]].
+= [1874] Otherwise:
+== [1879] Set [VAR[state]]'s [F[previous code point]] to [CODE[null]].
+== [1875] Return [VAR[char]].
+
+
+]FIG]
 
 
 
@@ -490,6 +643,7 @@ run these steps:
 where [VAR[bc]] is a [[bit combination]]:
 == [116] If [VAR[state]]'s [F[macro set]] [ [VAR[bc]] ] [[exists]]:
 === [1782] [[Run a macro][run a macro]] 
+with [VAR[state]] and
 [VAR[state]]'s [F[macro set]] [ [VAR[bc]] ].
 = [1781] Otherwise:
 == [5] 
@@ -1675,8 +1829,10 @@ or
 == [147] Set [VAR[state]]'s [F[7/14 designated]] be [CODE(charname)@en[DEL]].
 == [838] If [VAR[state]]'s [F[ISO 4873 Latin-1 flag]] is [[true]]:
 === [839] 
-@@
-[CODE(charname)@en[ESC]] [N[2/8]] [N[4/2]] [CODE(charname)@en[ESC]] [N[2/13]] [N[4/1]]
+[[Run a macro][run a macro]]
+with
+[VAR[state]] and
+"[CODE(charname)@en[ESC]] [N[2/8]] [N[4/2]] [CODE(charname)@en[ESC]] [N[2/13]] [N[4/1]]".
 = [148] If [VAR[announce]] is one of:
 [N[11]],
 [N[12]],
