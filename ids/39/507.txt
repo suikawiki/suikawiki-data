@@ -470,6 +470,12 @@ To [DFN[process a control [[character]]]] [VAR[char]],
 = [216] Set [VAR[state]]'s [F[decoder state]] to [I[SS state]].
 
 ]FIG]
+: [CODE(charname)@en[EXT1]] :
+[FIG(steps)[
+
+= [1718] Set [VAR[state]]'s [F[decoder state]] to [I[EXT1 state]].
+
+]FIG]
 :([I[marc]], [I[esc]], [VAR[bc]]) where [VAR[bc]] is a [[bit combination]]:
 [FIG(steps)[
 
@@ -882,6 +888,62 @@ and
 
 ]FIG]
 
+*** EXT1 state
+
+[1719] The [DFN[EXT1 state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [N[0/0]], [N[1/15]] ]:
+[FIG(steps)[
+
+= [1720] Let [VAR[set]] be the result of 
+[[getting a C set][get a C set]]
+[I[C0]], [I[dtvcc]], [I[C2]].
+= [1722] [[Process a control character][process a control character]] 
+[VAR[set]] [ [VAR[bc]] ].
+
+]FIG]
+:[ [N[2/0]], [N[7/15]] ]:
+[FIG(steps)[
+
+= [1721] Let [VAR[set]] be the result of 
+[[getting a G set][get a G set]]
+[N[96]], [N[1]], [I[dtvcc]], [I[G2]].
+= [1722] [[Emit][emit a character]]
+[VAR[set]] [ [VAR[bc]] ].
+
+]FIG]
+:[ [N[8/0]], [N[9/15]] ]:
+[FIG(steps)[
+
+= [1723] Let [VAR[set]] be the result of 
+[[getting a C set][get a C set]]
+[I[C1]], [I[dtvcc]], [I[C3]].
+= [1724] [[Process a control character][process a control character]] 
+[VAR[set]] [ [VAR[bc]] ].
+
+]FIG]
+:[ [N[10/0]], [N[15/15]] ]:
+[FIG(steps)[
+
+= [1725] Let [VAR[set]] be the result of 
+[[getting a G set][get a G set]]
+[N[96]], [N[1]], [I[dtvcc]], [I[G3]].
+= [1726] [[Emit][emit a character]]
+[VAR[set]] [ [VAR[bc]] ].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [1727] [[Error][error]].
+= [1728] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+= [1729] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
 
 
 *** Left leading byte state
@@ -4139,6 +4201,8 @@ or
 == [193] Set [VAR[set]] [ [N[1/14]] ] to [CODE(charname)@en[SS3]].
 = [194] If [VAR[t1]] is [I[C0]] and [VAR[t2]] is [N[4/12]] ([[ISO-IR]] 140):
 == [195] Set [VAR[set]] [ [N[1/9]] ] to [CODE(charname)@en[SS2]].
+= [1716] If [VAR[t1]] is [I[dtvcc]] and [VAR[t2]] is [I[C0]]:
+== [1717] Set [VAR[set]] [ [N[1/0]] ] to [CODE(charname)@en[EXT1]].
 = [196] If [VAR[t1]] is [I[C1]] and [VAR[t2]] is one of:
 [N[4/5]] ([[ISO-IR]] 40),
 [N[4/3]] ([[ISO-IR]] 77),
@@ -4173,6 +4237,7 @@ or
 
 - ([I[C0]], [I[C0]], [VAR[bytes]]) where [VAR[bytes]] is a [[byte sequence]]
 - ([I[C0]], [I[unknown-control]], [CODE[null]])
+- ([I[C0]], [I[dtvcc]], [I[C0]])
 - ([I[C1]], [I[C1]], [VAR[bytes]]) where [VAR[bytes]] is a [[byte sequence]]
 - ([I[C1]], [I[vt]], [I[C1]])
 - ([I[C1]], [I[videotex]], [N[2/0]])
@@ -4181,6 +4246,9 @@ or
 - ([I[C1]], [I[videotex]], [I[geometric-c1]])
 - ([I[C1]], [I[marc]], [I[C1]])
 - ([I[C1]], [I[unknown-control]], [CODE[null]])
+- ([I[C1]], [I[dtvcc]], [I[C1]])
+- ([I[C0]], [I[dtvcc]], [I[C2]])
+- ([I[C1]], [I[dtvcc]], [I[C3]])
 
 ]NOTE]
 
@@ -4320,6 +4388,10 @@ with [N[2/1]], [N[7/14]], [VAR[t1]], [VAR[t2]].
 where [VAR[bytes]] is a [[byte sequence]]
 - ([N[96]], [N[1]], [I[videotex]], [I[l]])
 - ([N[96]], [N[1]], [I[mule-96]], [VAR[F]]) where [VAR[F]] is in [ [N[3/0]], [N[3/2]] ]
+- ([N[96]], [N[1]], [I[dtvcc]], [I[G0]])
+- ([N[96]], [N[1]], [I[dtvcc]], [I[G1]])
+- ([N[96]], [N[1]], [I[dtvcc]], [I[G2]])
+- ([N[96]], [N[1]], [I[dtvcc]], [I[G3]])
 - ([N[94]], [N[2]], [I[94[SUP[2]]]], [VAR[bytes]]) 
 where [VAR[bytes]] is a [[byte sequence]]
 - ([N[94]], [N[2]], [I[jisx0208]], [I[ms]])
