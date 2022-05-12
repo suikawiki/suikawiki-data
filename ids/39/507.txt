@@ -80,6 +80,8 @@ Initially, [[false]].
 Initially, [CODE[null]].
 : [DFN[[F[current segment length]]]] : Non-negative integer or [CODE[null]].
 : [DFN[[F[current segment data]]]] : [[Byte sequence][byte sequence]].
+: [DFN[[F[current capturing byte]]]] : [CODE[Byte][byte]] or [CODE[null]].
+Initially, [CODE[null]].
 : [DFN[[F[current frame length]]]] : Non-negative integer or [CODE[null]].
 Initially, [CODE[null]].
 : [DFN[[F[decoder state]]]] : One of [[decoder states][decoder state]].
@@ -235,6 +237,12 @@ of [VAR[state]] for
 ==== [1471] If [VAR[state]]'s [F[current frame length]] is ''not'' [CODE[null]]:
 ===== [1470] Set [VAR[state]]'s [F[current frame length]] to
 [VAR[state]]'s [F[current frame length]] - 1.
+==== [1761] If [VAR[state]]'s [F[current capturing byte]] is ''not'' [CODE[null]]:
+===== [1762] Set 
+[VAR[state]]'s [F[macro set]] [ [VAR[state]]'s [F[current capturing byte]] ]
+to 
+[VAR[state]]'s [F[macro set]] [ [VAR[state]]'s [F[current capturing byte]] ]
+followed by [VAR[next]].
 == [1467] 
 @@
 run [VAR[state]]'s [F[decoder state]]'s switch
@@ -2979,6 +2987,8 @@ followed by
 : [N[4/0]], [N[4/1]] :
 [FIG(steps)[
 
+= [1759] If [VAR[state]]'s [F[current capturing byte]] is ''not' [CODE[null]]:
+== [1760] [[Error][error]].
 = [1614] Set [VAR[state]]'s [F[decoder state]] to [I[macro start state]].
 = [1615] Set [VAR[state]]'s [F[current I byte]] to [VAR[bc]].
 
@@ -3018,6 +3028,9 @@ followed by
 [FIG(steps)[
 
 = [1733] Set [VAR[state]]'s [F[current capturing byte]] to [VAR[bc]].
+= [1758] Set 
+[VAR[state]]'s [F[macro set]] [ [VAR[state]]'s [F[current capturing byte]] ]
+to the [[empty byte sequence]].
 = [1734] If [VAR[state]]'s [F[current I byte]] is [N[4/0]]:
 == [1735] Set [VAR[state]]'s [F[decoder state]] to [I[macro data state]].
 = [1736] Otherwise, if [VAR[state]]'s [F[current I byte]] is [N[4/1]]:
@@ -3042,10 +3055,16 @@ followed by
 
 [FIG(switch)[
 
-:[ [N[0/0]], [N[15/15]] ]:
+:[ [N[0/0]], [N[9/4]] ], [ [N[9/6]], [N[15/15]] ]:
 [FIG(steps)[
 
 = [1748] Do nothing.
+
+]FIG]
+: [N[9/5]] :
+[FIG(steps)[
+
+= [1752] Set [VAR[state]]'s [F[decoder state]] to [I[macro data macro state]].
 
 ]FIG]
 :Otherwise:
@@ -3054,6 +3073,30 @@ followed by
 = [1749] [[Error][error]].
 = [1750] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [1751] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+
+]FIG]
+
+*** Macro data macro state
+
+[1753] The [DFN[macro data macro state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+: [N[4/15]] :
+[FIG(steps)[
+
+= [1754] Set [VAR[state]]'s [F[decoder state]] to [I[macro state]].
+= [1755] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [1756] Set [VAR[state]]'s [F[decoder state]] to [I[macro data state]].
+= [1757] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
 
