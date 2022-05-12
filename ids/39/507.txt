@@ -8,6 +8,8 @@
 
 : [DFN[[F[fixed set]]]] : [[Character set][character set]].
 : [DFN[[F[escape set]]]] : [[Character set][character set]].
+: [DFN[[F[macro set]]]] : [[Ordered map][ordered map]].
+Initially, an [[empty][is empty]] [[ordered map]].
 : [DFN[[F[94 final set]]]] : [[Ordered map][ordered map]].
 Initially, an [[empty][is empty]] [[ordered map]].
 : [DFN[[F[96 final set]]]] : [[Ordered map][ordered map]].
@@ -543,6 +545,12 @@ of [VAR[state]] for
 [[getting a G set][get a G set]] with
 [I[96]], [I[1]], [I[videotex]], [I[l]].
 
+
+]FIG]
+: [CODE(charname)@en[P-MACRO]] :
+[FIG(steps)[
+
+= [1166] Set [VAR[state]]'s [F[decoder state]] to [I[macro state]].
 
 ]FIG]
 :[CODE(charname)@en[SOS]]:
@@ -2962,9 +2970,99 @@ followed by
 
 ]FIG]
 
+*** Macro state
+
+[1576] The [DFN[macro state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+: [N[4/0]], [N[4/1]] :
+[FIG(steps)[
+
+= [1614] Set [VAR[state]]'s [F[decoder state]] to [I[macro start state]].
+= [1615] Set [VAR[state]]'s [F[current I byte]] to [VAR[bc]].
+
+]FIG]
+:[ [N[4/2]], [N[4/14]] ]:
+[FIG(steps)[
+
+= [1597] [[Emit][emit a character]]
+[[character]] ([I[param]], [VAR[bc]]).
+
+]FIG]
+: [N[4/15]] :
+[FIG(steps)[
+
+= [1616] Set [VAR[state]]'s [F[current capturing byte]] to [CODE[null]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [1604] [[Error][error]].
+= [1607] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+= [1609] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+
+]FIG]
+
+*** Macro start state
+
+[1732] The [DFN[macro start state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [N[2/0]], [N[7/15]] ]:
+[FIG(steps)[
+
+= [1733] Set [VAR[state]]'s [F[current capturing byte]] to [VAR[bc]].
+= [1734] If [VAR[state]]'s [F[current I byte]] is [N[4/0]]:
+== [1735] Set [VAR[state]]'s [F[decoder state]] to [I[macro data state]].
+= [1736] Otherwise, if [VAR[state]]'s [F[current I byte]] is [N[4/1]]:
+== [1737] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [1738] [[Error][error]].
+= [1739] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+= [1740] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+
+]FIG]
+
+*** Macro data state
+
+[1741] The [DFN[macro data state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+:[ [N[0/0]], [N[15/15]] ]:
+[FIG(steps)[
+
+= [1748] Do nothing.
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [1749] [[Error][error]].
+= [1750] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+= [1751] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+
+]FIG]
+
 *** Data syntax 2 state
 
-[1512] The [DFN[data syntax 2 state]] switches by the [[bit combination]] [VAR[bc]].
+[1512] The [DFN[data syntax 2 state]] switches by the [[bit combination]] [VAR[bc]]:
 
 [FIG(switch)[
 
@@ -3885,6 +3983,7 @@ A [DFN[character]] is one of followings:
 - [CODE(charname)@en[PCD]]
 - [CODE(charname)@en[SOS]]
 - [CODE(charname)@en[ST]]
+- [CODE(charname)@en[P-MACRO]]
 - any other [[code point]]
 - ([I[esc]], [VAR[bytes]]) where [VAR[bytes]] is a [[byte sequence]]
 - ([I[param]], [VAR[bc]]) where [VAR[bc]] is a [[bit combination]]
@@ -4107,6 +4206,8 @@ or
 [N[4/7]] ([[ISO-IR]] 105):
 == [197] Set [VAR[set]] [ [N[8/14]] ] to [CODE(charname)@en[SS2]].
 == [198] Set [VAR[set]] [ [N[8/15]] ] to [CODE(charname)@en[SS3]].
+= [1138] If [VAR{t1]] is [I[C1]] and [VAR[t2]] is [N[4/4]]:
+== [1165] Set [VAR[set]] [ [N[9/5]] ] to [CODE(charname)@en[P-MACRO]].
 = [25] If [VAR[t1]] is [I[vt]] and [VAR[t2]] is [I[C1]]:
 == [688] Set [VAR[set]] [ [N[8/14]] ] to [CODE(charname)@en[LS1]].
 == [689] Set [VAR[set]] [ [N[8/15]] ] to [CODE(charname)@en[LS0]].
