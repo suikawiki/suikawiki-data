@@ -2,6 +2,60 @@
 
 * ISO/IEC 2022 Decoder
 
+
+@@
+[99] 
+The [DFN[ISO/IEC 2022 decoder steps]]:
+[VAR[byte getter]] : [[byte getter]];
+[VAR[initialization steps]] a [[state initialization steps]],
+run these steps:
+
+[FIG(steps)[
+= [8] Let [VAR[state]] be a new [[state]].
+= [1464] Let [VAR[input getter]] be the [[8-bit input getter]].
+= [327] [[Modify character sets][modify character sets]]
+of [VAR[state]] for
+« "fixed", "fallback", "iso2022" ».
+= [9] Run [VAR[initialization steps]] with [VAR[state]] and [VAR[input getter]].
+= [6] Let [VAR[output stream]] be a new [[output stream]].
+= [1468] Let [VAR[next]] be [CODE[null]].
+= [1456] [[While]] [VAR[next]] is not [I[end-of-file]]:
+== [1457] If [VAR[state]]'s [F[current frame length]] is [N[0]]:
+=== [1455] Set [VAR[state]]'s [F[current frame length]] to [CODE[null]].
+=== [1458] Set [VAR[next]] to an [[end-of-frame]] ([[false]]).
+== [1459] Otherwise:
+=== [1460] Set [VAR[next]] to the result of running [VAR[input getter]]
+with [VAR[byte getter]].
+=== [1461] If [VAR[next]] is [I[end-of-file]]:
+==== [1462] If [VAR[state]]'s [F[current frame length]] is ''not'' [CODE[null]]:
+===== [1463] Set [VAR[next]] to an [[end-of-frame]] ([[true]]).
+==== [1466] Set [VAR[input getter]] to the [[empty input getter]].
+=== [1469] Otherwise:
+==== [1471] If [VAR[state]]'s [F[current frame length]] is ''not'' [CODE[null]]:
+===== [1470] Set [VAR[state]]'s [F[current frame length]] to
+[VAR[state]]'s [F[current frame length]] - 1.
+==== [1761] If [VAR[state]]'s [F[current capturing byte]] is ''not'' [CODE[null]]:
+===== [1762] Set 
+[VAR[state]]'s [F[macro set]] [ [VAR[state]]'s [F[current capturing byte]] ]
+to 
+[VAR[state]]'s [F[macro set]] [ [VAR[state]]'s [F[current capturing byte]] ]
+followed by [VAR[next]].
+===== [1792] 
+If [VAR[state]]'s [F[macro set]] [ [VAR[state]]'s [F[current capturing byte]] ]'s
+[F[length]] is greater than the 
+[[maximum sequence length]]:
+====== [1793] [[Error][error]].
+====== [1794] Set [VAR[state]]'s [F[opaque designated]] to the result of
+[[getting a 256 set][get a 256 set]]
+[I[unknown-byte]], [CODE[null]].
+====== [1795] Set [VAR[state]]'s [F[decoder state]] to [I[opaque state]].
+== [1467] [[Process the next input character][process the next input character]]
+with [VAR[state]], [VAR[next]].
+= [7] 
+Return [VAR[output stream]].
+]FIG]
+
+
 [1] A [DFN[state]] is:
 
 [FIG(list members)[
@@ -64,6 +118,8 @@ Initially, [I[8-bit]].
 Initially, [[false]].
 : [DFN[[F[ISO 4873 Latin-1 flag]]]] : [[Boolean][boolean]].
 Initially, [[false]].
+: [DFN[[F[Unicode 1.1 flag]]]] : [[Boolean][boolean]].
+Initially, [[false]].
 : [DFN[[F[UTF-8 GL flag]]]] : [[Boolean][boolean]].
 Initially, [[false]].
 : [DFN[[F[data syntax 2 default mode]]]] : [I[serial]] or [I[parallel]].
@@ -108,10 +164,10 @@ Initially, [CODE[null]].
 [I[iso2022jp]],
 [I[utf-1]], [I[utf-8]],
 [I[single]],
-[I[sjis]], [I[sjis-2000]],
+[I[sjis]], 
 [I[big5]],
 [I[uhc]], [I[johab]],
-[I[gbk]], [I[gb18030]],
+[I[gb18030]],
 and
 [I[x-moe-internal]].
 
@@ -184,6 +240,7 @@ that modifies [VAR[state]].  It can modify [VAR[state]] in these ways:
 [F[bits]],
 [F[VT response flag]],
 [F[ISO 4873 Latin-1 flag]],
+[F[Unicode 1.1 flag]],
 [F[UTF-8 GL flag]],
 [F[data syntax 2 default mode]],
 and/or
@@ -207,62 +264,15 @@ to another [[input getter]].
 
 ** Input stream
 
+
+
 @@
-[99] 
-The [DFN[ISO/IEC 2022 decoder steps]]:
 input stream:
 [[bit combination]],
 [[end-of-frame]],
 and
 [I[end-of-file]];
-[VAR[byte getter]] : [[byte getter]];
-[VAR[initialization steps]] a [[state initialization steps]],
-run these steps:
 
-[FIG(steps)[
-= [8] Let [VAR[state]] be a new [[state]].
-= [1464] Let [VAR[input getter]] be the [[8-bit input getter]].
-= [327] [[Modify character sets][modify character sets]]
-of [VAR[state]] for
-« "fixed", "fallback", "iso2022" ».
-= [9] Run [VAR[initialization steps]] with [VAR[state]] and [VAR[input getter]].
-= [6] Let [VAR[output stream]] be a new [[output stream]].
-= [1468] Let [VAR[next]] be [CODE[null]].
-= [1456] [[While]] [VAR[next]] is not [I[end-of-file]]:
-== [1457] If [VAR[state]]'s [F[current frame length]] is [N[0]]:
-=== [1455] Set [VAR[state]]'s [F[current frame length]] to [CODE[null]].
-=== [1458] Set [VAR[next]] to an [[end-of-frame]] ([[false]]).
-== [1459] Otherwise:
-=== [1460] Set [VAR[next]] to the result of running [VAR[input getter]]
-with [VAR[byte getter]].
-=== [1461] If [VAR[next]] is [I[end-of-file]]:
-==== [1462] If [VAR[state]]'s [F[current frame length]] is ''not'' [CODE[null]]:
-===== [1463] Set [VAR[next]] to an [[end-of-frame]] ([[true]]).
-==== [1466] Set [VAR[input getter]] to the [[empty input getter]].
-=== [1469] Otherwise:
-==== [1471] If [VAR[state]]'s [F[current frame length]] is ''not'' [CODE[null]]:
-===== [1470] Set [VAR[state]]'s [F[current frame length]] to
-[VAR[state]]'s [F[current frame length]] - 1.
-==== [1761] If [VAR[state]]'s [F[current capturing byte]] is ''not'' [CODE[null]]:
-===== [1762] Set 
-[VAR[state]]'s [F[macro set]] [ [VAR[state]]'s [F[current capturing byte]] ]
-to 
-[VAR[state]]'s [F[macro set]] [ [VAR[state]]'s [F[current capturing byte]] ]
-followed by [VAR[next]].
-===== [1792] 
-If [VAR[state]]'s [F[macro set]] [ [VAR[state]]'s [F[current capturing byte]] ]'s
-[F[length]] is greater than the 
-[[maximum sequence length]]:
-====== [1793] [[Error][error]].
-====== [1794] Set [VAR[state]]'s [F[opaque designated]] to the result of
-[[getting a 256 set][get a 256 set]]
-[I[unknown-byte]], [CODE[null]].
-====== [1795] Set [VAR[state]]'s [F[decoder state]] to [I[opaque state]].
-== [1467] [[Process the next input character][process the next input character]]
-with [VAR[state]], [VAR[next]].
-= [7] 
-Return [VAR[output stream]].
-]FIG]
 
 [1472] 
 An [DFN[end-of-frame]] is a [[tuple]] of 
@@ -284,12 +294,36 @@ a [[character]],
 [I[end-of-frame]], or 
 [I[end-of-file]].
 
+[1818] 
+To [DFN[get a UCS input item]] for [VAR[c]], run these steps:
+
+[FIG(steps)[
+
+= [1819] If [VAR[c]] is in [ [N[0x00]], [N[0xFF]] ]:
+== [1820] Return a [[bit combination]] whose value is [VAR[c]].
+= [1821] Otherwise, if [VAR[c]] is greater than [N[0x10FFFF]]:
+== [1822] Return 
+[[character]] ([I[unicode]], [I[1.1]], [VAR[c]]).
+= [1823] Otherwise:
+== [1825] 
+@@
+If [VAR[state]]'s [F[Unicode 1.1 flag]] is [[true]] and
+[VAR[c]] is in range [ XXX ]:
+=== [1826] Return
+[[character]] ([I[unicode]], [I[1.1]], [VAR[c]]).
+== [1824] Return 
+a [[code point]] whose value is [VAR[c]].
+
+]FIG]
+
 
 [1780] 
 An [DFN[input getter]] is 
-the [[empty input getter]]
-or 
-an [[8-bit input getter]].
+the [[empty input getter]],
+the [[8-bit input getter]],
+the [[UCS-2BE input getter]],
+or
+the [[UCS-2LE input getter]].
 
 [1779] 
 The [DFN[empty input getter]] run these steps:
@@ -316,6 +350,53 @@ a [[byte getter]] [VAR[byte getter]]:
 
 ]FIG]
 
+[1796] 
+The [DFN[UCS-2BE input getter]]
+run these steps with
+a [[byte getter]] [VAR[byte getter]]:
+
+[FIG(steps)[
+
+= [1797] Let [VAR[byte1]] be the result of running [VAR[getter]].
+= [1798] If [VAR[byte1]] is [CODE[null]]:
+== [1799] Return [I[end-of-file]].
+= [1800] Otherwise:
+== [1801] Let [VAR[byte2]] be the result of running [VAR[getter]].
+== [1802] If [VAR[byte2]] is [CODE[null]]:
+=== [1803] Return
+[[character]] ([I[unknown-byte]], [CODE[null]], [VAR[byte1]]).
+== [1804] Otherwise:
+=== [1805] Let [VAR[c]] be [VAR[bytes1]] × [N[0x100]] + [VAR[bytes2]].
+=== [1806] Return the result of
+[[getting a UCS input item][get a UCS input item]] [VAR[c]].
+
+]FIG]
+
+[1807] 
+The [DFN[UCS-2LE input getter]]
+run these steps with
+a [[byte getter]] [VAR[byte getter]]:
+
+[FIG(steps)[
+
+= [1808] Let [VAR[byte1]] be the result of running [VAR[getter]].
+= [1809] If [VAR[byte1]] is [CODE[null]]:
+== [1810] Return [I[end-of-file]].
+= [1811] Otherwise:
+== [1812] Let [VAR[byte2]] be the result of running [VAR[getter]].
+== [1813] If [VAR[byte2]] is [CODE[null]]:
+=== [1814] Return
+[[character]] ([I[unknown-byte]], [CODE[null]], [VAR[byte1]]).
+== [1815] Otherwise:
+=== [1816] Let [VAR[c]] be [VAR[bytes2]] × [N[0x100]] + [VAR[bytes1]].
+=== [1817] Return the result of
+[[getting a UCS input item][get a UCS input item]] [VAR[c]].
+
+]FIG]
+
+
+
+
 
 -*-*-
 
@@ -337,7 +418,8 @@ with [VAR[state]].
 [1783] 
 The variable [VAR[state]] in these steps is accessible from
 the steps 
-to [[emit a character]] and
+to [[get a UCS input item]],
+to [[emit a character]], and
 to [[process a control character]].
 
 ** Macros
@@ -2613,10 +2695,8 @@ to the result of
 to the result of 
 [[getting a G set][get a G set]] with
 [N[94]], [N[2]], [I[jis]], [I[jisx0212jisx0213]].
-= [1067] Otherwise, if [VAR[n]] is [N[19]]:
-== [1068] Set [VAR[state]]'s [F[right mode]] to [I[gbk]].
-= [1069] Otherwise, if [VAR[n]] is [N[20]]:
-== [1070] Set [VAR[state]]'s [F[right mode]] to [I[gb18030]].
+= [1067] Otherwise, if [VAR[n]] is [N[19]] or [N[20]]:
+== [1068] Set [VAR[state]]'s [F[right mode]] to [I[gb18030]].
 = [1042] Otherwise:
 == [1044] Set [VAR[state]]'s [F[right mode]] to [I[x-moe-internal]].
 = [1071] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
@@ -2815,7 +2895,7 @@ in [ [N[10/1]], [N[14/15]] ], [N[15/13]], [N[15/14]]:
 @@
 = [1104] Otherwise, if [VAR[state]]'s [F[right mode]] is [I[utf-8]]:
 ==
-@@
+@@ [[get a UCS input item]]
 = [1096] Otherwise, if [VAR[state]]'s [F[right mode]] is [I[sjis]]:
 == [1342] If [VAR[state]]'s [F[current I byte]] is 
 in [ [N[10/1]], [N[13/15]] ]:
@@ -2835,12 +2915,9 @@ in [ [N[10/1]], [N[13/15]] ]:
 = [1100] Otherwise, if [VAR[state]]'s [F[right mode]] is [I[johab]]:
 ==
 @@
-= [1101] Otherwise, if [VAR[state]]'s [F[right mode]] is [I[gbk]]:
-==
-@@
 = [1102] Otherwise, if [VAR[state]]'s [F[right mode]] is [I[gb18030]]:
 ==
-@@
+@@ [[get a UCS input item]]
 = [1103] Otherwise, if [VAR[state]]'s [F[right mode]] is [I[x-moe-internal]]:
 ==
 @@
