@@ -82,8 +82,11 @@ Initially, [CODE[null]].
 : [DFN[[F[current segment data]]]] : [[Byte sequence][byte sequence]].
 : [DFN[[F[current capturing byte]]]] : [CODE[Byte][byte]] or [CODE[null]].
 Initially, [CODE[null]].
+: [DFN[[F[current macro]]]] : [[Macro][macro]] or [CODE[null]].
+Initially, [CODE[null]].
 : [DFN[[F[current frame length]]]] : Non-negative integer or [CODE[null]].
 Initially, [CODE[null]].
+: [DFN[[F[current byte getter]]]] : [[Byte getter][byte getter]].
 : [DFN[[F[decoder state]]]] : One of [[decoder states][decoder state]].
 Initially, [[default state]].
 : [DFN[[F[previous state]]]] : [[State][state]] or [CODE[null]].
@@ -208,12 +211,13 @@ input stream:
 [[end-of-frame]],
 and
 [I[end-of-file]];
-[VAR[get the next byte]] : [[byte getter]];
+[VAR[byte getter]] : [[byte getter]];
 [VAR[initialization steps]] a [[state initialization steps]],
 run these steps:
 
 [FIG(steps)[
 = [8] Let [VAR[state]] be a new [[state]].
+= [1779] Set [VAR[state]]'s [F[current byte getter]] to [VAR[byte getter]].
 = [327] [[Modify character sets][modify character sets]]
 of [VAR[state]] for
 « "fixed", "fallback", "iso2022" ».
@@ -225,14 +229,14 @@ of [VAR[state]] for
 === [1455] Set [VAR[state]]'s [F[current frame length]] to [CODE[null]].
 === [1458] Set [VAR[next]] to an [[end-of-frame]] ([[false]]).
 == [1459] Otherwise:
-=== [1460] Set [VAR[next]] to the result of 
-[[getting the next byte][get the next byte]].
+=== [1460] Set [VAR[next]] to the result of running
+[VAR[state]]'s [F[current byte getter]].
 === [1461] If [VAR[next]] is [CODE[null]]:
 ==== [1462] If [VAR[state]]'s [F[current frame length]] is [CODE[null]]:
 ===== [1464] Set [VAR[next]] to an [I[end-of-file]].
 ==== [1465] Otherwise:
 ===== [1463] Set [VAR[next]] to an [[end-of-frame]] ([[true]]).
-==== [1466] Set [VAR[get the next byte]] to a function that returns [CODE[null]].
+==== [1466] Set [VAR[state]]'s [F[current byte getter]] to the [[empty byte getter]].
 === [1469] Otherwise:
 ==== [1471] If [VAR[state]]'s [F[current frame length]] is ''not'' [CODE[null]]:
 ===== [1470] Set [VAR[state]]'s [F[current frame length]] to
@@ -243,12 +247,15 @@ of [VAR[state]] for
 to 
 [VAR[state]]'s [F[macro set]] [ [VAR[state]]'s [F[current capturing byte]] ]
 followed by [VAR[next]].
-== [1467] 
-@@
-run [VAR[state]]'s [F[decoder state]]'s switch
+== [1467] [[Process the next input character][process the next input character]]
+of [VAR[state]].
 = [7] 
 Return [VAR[output stream]].
 ]FIG]
+
+[1472] 
+An [DFN[end-of-frame]] is a [[tuple]] of 
+[DFN[[F[incomplete]]]] ([[boolean]]).
 
 [1574] 
 A [DFN[byte getter]] is a steps that returns a [CODE[byte]] or [CODE[null]].
@@ -257,9 +264,74 @@ Whenever invoked, it is expected to return a [[byte]] from the stream it represe
 in order.  It is expected to return a [CODE[null]] after the end of the stream
 is reached.
 
-[1472] 
-An [DFN[end-of-frame]] is a [[tuple]] of 
-[DFN[[F[incomplete]]]] ([[boolean]]).
+[1780] 
+The [[empty byte getter]] is a [[byte getter]] that returns a [CODE[null]].
+
+[1778] 
+To [DFN[process the next input character]]
+of [VAR[state]],
+run these steps:
+
+[FIG(steps)[
+
+= [1784] 
+@@
+Run [VAR[state]]'s [F[decoder state]]'s switch
+]FIG]
+
+[1783] 
+The variable [VAR[state]] in these steps is visible from
+the steps 
+to [[emit a character]] and
+to [[process a control character]].
+
+** Macros
+
+[1764] 
+A [DFN[macro]] is a [[byte sequence]].
+
+[1765] 
+In this document, a [[macro]] might be represented as a [[string]],
+which is a [CODE[U+0020]]-separated list of tokens.
+A token is either a [[bit combination]] or 
+a [VAR[token]] from the following table.
+A [[bit combination]] represents itself.
+One of [VAR[token]] represents [VAR[bytes]] in the same table row.
+The list represents a [[macro]] that is the concatenation
+of the [[bit combinations][bit combination]] (including those in [VAR[bytes]]),
+in order.
+
+,* [VAR[token]] ,* [VAR[bytes]]
+,* [CODE[ESC]] , [N[1/11]]
+,* [CODE[LS0]] , [N[0/15]]
+,* [CODE[LS1]] , [N[0/14]]
+,* [CODE[LS1R]] , [N[1/11]] followed by [N[7/14]]
+,* [CODE[LS2R]] , [N[1/11]] followed by [N[7/13]]
+,* [CODE[LS3R]] , [N[1/11]] followed by [N[7/12]]
+
+[1429] To [DFN[run a macro]] with [VAR[state]] and [VAR[bytes]], run these steps:
+
+[FIG(steps)[
+
+= [1767] Let [VAR[getter]] be [VAR[state]]'s [F[input getter]].
+= [1769] Let [VAR[current bytes]] be [VAR[bytes]].
+= [1766] Set [VAR[state]]'s [F[current byte getter]] to the following [[byte getter]]:
+[FIG(steps)[
+
+= [1768] If [VAR[current bytes]]'s [F[length]] is [N[0]]:
+== [1770] Set [VAR[state]]'s [F[current byte getter]] to [VAR[getter]].
+== [1771] Return the result of running [VAR[getter]].
+= [1772] Otherwise:
+== [1773] Let [VAR[byte]] be the first [[bit combination]] of [VAR[current bytes]].
+== [1774] Remove the first [[bit combination]] from [VAR[current bytes]].
+== [1775] Return [VAR[byte]].
+
+]FIG]
+= [1776] [[While]] [VAR[current bytes]]'s [F[length]] is greater than [N[0]]:
+== [1777] [[Process the next input character][process the next input character]]
+of [VAR[state]].
+
+]FIG]
 
 
 ** Output stream
@@ -271,29 +343,25 @@ and
 @@ [[EOF]].
 
 [4] 
-To [DFN[emit a character]] with [[character]] [VAR[char]], run these steps:
+To [DFN[emit a character]] with [[character]] [VAR[char]], 
+with [VAR[state]] of the steps to [[process the next input character]],
+run these steps:
 
 [FIG(steps)[
-= 
-[5] 
+=
+[115] If [VAR[char]] is
+[[character]] ([I[videotex]], [I[96]], [I[7/0]], [VAR[bc]])
+where [VAR[bc]] is a [[bit combination]]:
+== [116] If [VAR[state]]'s [F[macro set]] [ [VAR[bc]] ] [[exists]]:
+=== [1782] [[Run a macro][run a macro]] 
+[VAR[state]]'s [F[macro set]] [ [VAR[bc]] ].
+= [1781] Otherwise:
+== [5] 
 [[Append][append]]
 [VAR[char]]
 to 
 [VAR[output stream]].
 ]FIG]
-
-[115] 
-To [DFN[emit a sequence]]  with [[character string]] [VAR[seq]], run these steps:
-
-[FIG(steps)[
-=
-[116] 
-[[Extend][extend]]
-[VAR[output stream]]
-with 
-[VAR[seq]].
-]FIG]
-
 
 [355] 
 When [DFN[error]], run these steps:
@@ -330,6 +398,7 @@ The decoder has several [DFN[decoder states]] for processing input
 
 [719] 
 To [DFN[process a control [[character]]]] [VAR[char]], 
+with [VAR[state]] of the steps to [[process the next input character]],
 [[switch]] by [VAR[char]]:
 
 [FIG(switch)[
@@ -635,12 +704,14 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 = [1452] If [VAR[state]]'s [F[current I byte]] is [N[2/0]]:
 == [932] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
 == [1437] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
-== [1422] [[Run a macro][run a macro]]
+== [1422] [[Run a macro][run a macro]] with
+[VAR[state]],
 "ESC 2/1 4/9 ESC 2/2 4/4 ESC 2/6 4/0 ESC 2/4 4/2 ESC 2/9 4/10 ESC 2/14 3/8 ESC 2/11 2/0 4/1 LS0 LS2R".
 = [1424] Otherwise, if [VAR[state]]'s [F[current I byte]] is [N[4/1]]:
 == [1475] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
 == [1476] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
-== [1477] [[Run a macro][run a macro]]
+== [1477] [[Run a macro][run a macro]] with
+[VAR[state]],
 "ESC 2/1 4/9 LS0".
 == [1478] Set [VAR[state]]'s [F[C1 designated]] to the result of
 [[getting a C set][get a C set]] with
@@ -651,7 +722,8 @@ To [DFN[initialize by DI]] [VAR[state]], run these steps:
 = [1425] Otherwise, if [VAR[state]]'s [F[current I byte]] is [N[4/0]]:
 == [1482] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
 == [1481] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
-== [1480] [[Run a macro][run a macro]]
+== [1480] [[Run a macro][run a macro]] with
+[VAR[state]],
 "ESC 2/1 4/9 ESC 2/2 4/4 ESC 2/8 4/9 ESC 2/6 4/0 ESC 2/4 2/9 4/2 ESC 2/10 4/10 LS0 LS2R".
 = [1426] Otherwise:
 == [1445] Set [VAR[state]]'s [F[opaque designated]] to the result of
@@ -674,25 +746,19 @@ run these steps:
 of [VAR[state]] for
 « "iso2022", "videotex" ».
 = [1543] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
-= [1528] [[Run a macro][run a macro]]
+= [1528] [[Run a macro][run a macro]] with
+[VAR[state]],
 "ESC 2/1 4/10 ESC 2/8 4/0 ESC 2/9 6/3 ESC 2/10 6/2 ESC 2/11 6/4 LS0 LS2R".
 = [1529] If [VAR[mode]] is [I[serial]]:
-== [1530] [[Run a macro][run a macro]] "ESC 2/2 4/0".
+== [1530] [[Run a macro][run a macro]] with
+[VAR[state]],"ESC 2/2 4/0".
 = [1531] Otherwise, if [VAR[mode]] is [I[parallel]]:
-== [1532] [[Run a macro][run a macro]] "ESC 2/2 4/1".
+== [1532] [[Run a macro][run a macro]] with
+[VAR[state]],"ESC 2/2 4/1".
 = [1533] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 
-
-@@
-[1429] To [DFN[run a macro]] [VAR[bytes]], ...
-,* [CODE[ESC]] , [N[1/11]]
-,* [CODE[LS0]] , [N[0/15]]
-,* [CODE[LS1]] , [N[0/14]]
-,* [CODE[LS1R]] , [N[1/11]] [N[7/14]]
-,* [CODE[LS2R]] , [N[1/11]] [N[7/13]]
-,* [CODE[LS3R]] , [N[1/11]] [N[7/12]]
 
 
 -*-*-
@@ -2224,7 +2290,8 @@ of [VAR[state]] for
 = [1024] [[Modify character sets][modify character sets]]
 of [VAR[state]] for
 « "iso2022", "videotex" ».
-= [1118] [[Run a macro][run a macro]]
+= [1118] [[Run a macro][run a macro]] with
+[VAR[state]],
 "ESC 2/1 4/11 ESC 2/2 4/6 ESC 2/8 4/2 ESC 2/9 5/7 ESC 2/10 7/12 ESC 2/15 5/7 LS0 LS1R".
 = [1703] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
@@ -2939,7 +3006,7 @@ the [[bit combination]] [VAR[bc]]:
 == [1581] [[Emit][emit a character]] [VAR[set]] [ [VAR[bc]] ].
 == [1583] Set [VAR[state]]'s [F[current segment data]] to the [[empty byte sequence]].
 = [1231] Otherwise, if [VAR[set]] is a [[94[SUP[2]] set]] or [[256[SUP[2]] set]]:
-== [1237] If [VAR[state]]'s [F[current segment data]]'s [[length]] is [N[2]]:
+== [1237] If [VAR[state]]'s [F[current segment data]]'s [F[length]] is [N[2]]:
 === [1251] If [VAR[set]] is a [[94[SUP[2]] set]]:
 ==== [1238] Let [VAR[bytes]] be 
 [VAR[state]]'s [F[current segment data]]'s first byte & [N[0b01111111]]
@@ -2964,7 +3031,7 @@ followed by
 ==== [1267] [[Emit][emit a character]] [VAR[char]].
 ==== [1266] Set [VAR[state]]'s [F[current segment data]] to the [[empty byte sequence]].
 = [1236] If [VAR[state]]'s [F[current segment length]] is [N[0]]:
-== [1239] If [VAR[state]]'s [F[current segment data]]'s [[length]] is ''not'' [N[0]]:
+== [1239] If [VAR[state]]'s [F[current segment data]]'s [F[length]] is ''not'' [N[0]]:
 === [1240] [[Error][error]].
 == [1254] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
@@ -2972,7 +3039,7 @@ followed by
 :Otherwise:
 [FIG(steps)[
 
-= [1256] If [VAR[state]]'s [F[current segment data]]'s [[length]] is ''not'' [N[0]]:
+= [1256] If [VAR[state]]'s [F[current segment data]]'s [F[length]] is ''not'' [N[0]]:
 == [1257] [[Emit][emit a character]]
 [[character]] ([I[unknown-byte]], [CODE[null]], 
 [VAR[state]]'s [F[current segment data]]).
@@ -3411,7 +3478,8 @@ with [VAR[state]] and [VAR[mode]].
 == [1678] If [VAR[state]]'s [F[C1 designated]] is equal to the result of 
 [[getting a C set][get a C set]] with
 [I[C1]], [I[C1]], [N[4/0]]:
-=== [1676] [[Run a macro][run a macro]]
+=== [1676] [[Run a macro][run a macro]] with
+[VAR[state]],
 "ESC 2/2 4/0".
 == [1679] Otherwise, if [VAR[state]]'s [F[C1 designated]] is equal to the result of
 [[getting a C set][get a C set]] with
@@ -3450,10 +3518,12 @@ with [VAR[state]] and [VAR[mode]].
 = [1653] Set [VAR[state]]'s [F[GL invoked]] to [I[G0]].
 = [1654] Set [VAR[state]]'s [F[GR invoked]] to [I[G2]].
 = [1662] If [VAR[state]]'s [F[current I byte]] is [N[4/0]]:
-== [1664] [[Run a macro][run a macro]]
+== [1664] [[Run a macro][run a macro]] with
+[VAR[state]],
 "ESC 2/2 4/0".
 = [1663] Otherwise, if [VAR[state]]'s [F[current I byte]] is [N[4/5]]:
-== [1665] [[Run a macro][run a macro]]
+== [1665] [[Run a macro][run a macro]] with
+[VAR[state]],
 "ESC 2/2 4/1".
 = [1668] [[Emit][emit a character]]
 [[character]] ([I[videotex]], [I[resetrow]], [VAR[bc]]).
@@ -4082,7 +4152,7 @@ Interpretation of these [[tuples][tuple]] are application-specific.
 A [DFN[character string]] is a [[list]] of zero or more [[characters][character]].
 
 [113] 
-An [DFN[empty character string]] is a [[character string]] whose [[length]]
+An [DFN[empty character string]] is a [[character string]] whose [F[length]]
 is [N[0]].
 
 * Character sets
@@ -5322,7 +5392,7 @@ to a [[byte sequence]] [VAR[bytes]], run these steps:
 = [90] Replace [VAR[bytes]]'s content by [VAR[bytes]] followed by [VAR[bc]].
 ]FIG]
 
-[91] The [DFN[empty byte sequence]] is a [[byte sequence]] whose [[length]]
+[91] The [DFN[empty byte sequence]] is a [[byte sequence]] whose [F[length]]
 is [N[0]].
 
 
