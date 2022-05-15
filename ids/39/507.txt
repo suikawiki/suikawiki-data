@@ -977,25 +977,32 @@ of [VAR[state]] for
 = [1166] Set [VAR[state]]'s [F[decoder state]] to [I[macro state]].
 
 ]FIG]
+: [CODE(charname)@en[DCS]], [CODE(charname)@en[OSC]], [CODE(charname)@en[PM]], [CODE(charname)@en[APC]] :
+[FIG(steps)[
+
+= [2010] [[Emit][emit a character]] [VAR[char]].
+= [2009] Set [VAR[state]]'s [F[decoder state]] to [I[command state]].
+
+]FIG]
 :[CODE(charname)@en[SOS]]:
 [FIG(steps)[
 
+= [1707] [[Emit][emit a character]] [VAR[char]].
 = [1705] Set [VAR[state]]'s [F[previous GL mode]] to [VAR[state]]'s [F[GL mode]].
 = [1713] Set [VAR[state]]'s [F[previous left designated]]
 to [VAR[state]]'s [F[left designated]].
 = [1706] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
-= [1707] [[Emit][emit a character]] [VAR[char]].
 
 ]FIG]
 :[CODE(charname)@en[ST]]:
 [FIG(steps)[
 
+= [1711] [[Emit][emit a character]] [VAR[char]].
 = [1709] If [VAR[state]]'s [F[previous GL mode]] is ''not'' [CODE[null]]:
 == [1708] Set [VAR[state]]'s [F[GL mode]] to [VAR[state]]'s [F[previous GL mode]].
 == [1714] Set [VAR[state]]'s [F[left designated]] to
 [VAR[state]]'s [F[previous left designated]].
 == [1710] Set [VAR[state]]'s [F[previous GL mode]] to [CODE[null]].
-= [1711] [[Emit][emit a character]] [VAR[char]].
 
 ]FIG]
 :[CODE(charname)@en[PCD]]:
@@ -3484,6 +3491,29 @@ followed by
 
 ]FIG]
 
+*** Command state
+
+[2011] The [DFN[command state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+: [ [N[0/8]], [N[0/13]] ], [ [N[2/0]], [N[7/14]] ] : 
+[FIG(steps)[
+
+= [2014] [[Emit][emit a character]]
+[[character]] ([I[param]], [VAR[bc]]).
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [2012] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+= [2013] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
+
 *** Macro state
 
 [1576] The [DFN[macro state]] switches by the [[bit combination]] [VAR[bc]]:
@@ -4587,10 +4617,14 @@ A [DFN[character]] is one of followings:
 - [CODE(charname)@en[SS3]]
 - [CODE(charname)@en[EXT1]]
 - [CODE(charname)@en[DCS]]
+- [CODE(charname)@en[OSC]]
+- [CODE(charname)@en[PM]]
+- [CODE(charname)@en[APC]]
 - [CODE(charname)@en[CMD]]
 - [CODE(charname)@en[PCD]]
 - [CODE(charname)@en[SOS]]
 - [CODE(charname)@en[ST]]
+- [CODE(charname)@en[SCI]]
 - [CODE(charname)@en[P-MACRO]]
 - any other [[code point]]
 - ([I[isiri3342]], [I[left]], [I[SP]])
@@ -4830,6 +4864,18 @@ or
 [N[4/7]] ([[ISO-IR]] 105):
 == [197] Set [VAR[set]] [ [N[8/14]] ] to [CODE(charname)@en[SS2]].
 == [198] Set [VAR[set]] [ [N[8/15]] ] to [CODE(charname)@en[SS3]].
+= [1999] If [VAR[t1]] is [I[C1]] and [VAR[t2]] is 
+[N[4/3]] ([[ISO-IR]] 77)
+or
+[N[4/3]] followed by [N[4/0]]:
+== [2001] Set [VAR[set]] [ [N[9/0]] ] to [CODE(charname)@en[DCS]].
+== [2002] Set [VAR[set]] [ [N[9/13]] ] to [CODE(charname)@en[OSC]].
+== [2003] Set [VAR[set]] [ [N[9/14]] ] to [CODE(charname)@en[PM]].
+== [2004] Set [VAR[set]] [ [N[9/15]] ] to [CODE(charname)@en[APC]].
+== [2007] If [VAR[t2]] is [N[4/3]] followed by [N[4/0]]:
+=== [2005] Set [VAR[set]] [ [N[9/8]] ] to [CODE(charname)@en[SOS]].
+=== [2015] Set [VAR[set]] [ [N[9/10]] ] to [CODE(charname)@en[SCI]].
+== [2006] Set [VAR[set]] [ [N[9/12]] ] to [CODE(charname)@en[ST]].
 = [1138] If [VAR[t1]] is [I[C1]] and [VAR[t2]] is [N[4/4]]:
 == [1165] Set [VAR[set]] [ [N[9/5]] ] to [CODE(charname)@en[P-MACRO]].
 = [1971] If [VAR[t1]] is [I[gb8565]] and [VAR[t2]] is [I[C1]]:
@@ -4838,7 +4884,7 @@ or
 ==
 @@
 9/11 CSI
-9/14 PM 
+== [2008] Set [VAR[set]] [ [N[9/14]] ] to [CODE(charname)@en[PM]].
 = [25] If [VAR[t1]] is [I[vt]] and [VAR[t2]] is [I[C1]]:
 == [688] Set [VAR[set]] [ [N[8/14]] ] to [CODE(charname)@en[LS1]].
 == [689] Set [VAR[set]] [ [N[8/15]] ] to [CODE(charname)@en[LS0]].
