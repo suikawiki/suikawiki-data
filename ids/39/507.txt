@@ -752,6 +752,13 @@ with [VAR[state]] of the steps to [[process the next input character]],
 = [30] Set [VAR[state]]'s [F[decoder state]] to [I[escape state]].
 
 ]FIG]
+:[CODE(charname)@en[CSI]]:
+[FIG(steps)[
+
+= [2087] [[Emit][emit a character]] [VAR[char]].
+= [2085] Set [VAR[state]]'s [F[decoder state]] to [I[CSI state]].
+
+]FIG]
 :[CODE(charname)@en[LS0]]:
 [FIG(steps)[
 
@@ -1269,6 +1276,18 @@ There are the following [[decoder states][decoder state]]:
 
 [FIG(switch)[
 
+: [N[0/14]], [N[0/15]] :
+[FIG(steps)[
+
+= [2046] Let [VAR[set]] be [VAR[state]]'s [F[C0 designated]].
+= [2047] Set [VAR[char]] be [VAR[set]] [ [VAR[bc]] ].
+= [2048] If [VAR[char]] is [CODE(charname)@en[LS0]] or [CODE(charname)@en[LS1]]:
+== [2049] [[Process][process a control character]] [VAR[char]].
+= [2050] Otherwise:
+== [2051] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+== [2052] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
 :[ [[2/0]], [[7/15]] ], [ [[10/0]], [[15/15]] ]:
 [FIG(steps)[
 
@@ -1295,6 +1314,23 @@ There are the following [[decoder states][decoder state]]:
 === [332] Set [VAR[state]]'s [F[current I byte]] to [VAR[bc]] & [N[0b01111111]].
 === [341] Set [VAR[state]]'s [F[current J byte]] to [CODE[null]].
 === [347] Set [VAR[state]]'s [F[decoder bytes]] to [I[SS leading byte state]].
+
+]FIG]
+: [N[8/14]], [N[8/15]] :
+[FIG(steps)[
+
+= [2053] If [VAR[state]]'s [F[right mode]] is [I[iso2022]] or [I[unicode]] and
+[VAR[state]]'s [F[CR invoked]] is [I[C0]]:
+== [2054] Let [VAR[set]] be [VAR[state]]'s [F[C0 designated]].
+== [2055] Set [VAR[char]] be [VAR[set]] [ [VAR[bc]] & [N[0b01111111]] ].
+== [2056] If [VAR[char]] is [CODE(charname)@en[LS0]] or [CODE(charname)@en[LS1]]:
+=== [2057] [[Process][process a control character]] [VAR[char]].
+== [2058] Otherwise:
+=== [2059] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+=== [2060] [[Reconsume][reconsume]] [VAR[bc]].
+= [2061] Otherwise:
+== [2062] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+== [2063] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
 : Otherwise :
@@ -3503,11 +3539,40 @@ followed by
 
 [FIG(switch)[
 
-: [ [N[0/8]], [N[0/13]] ], [ [N[2/0]], [N[7/14]] ] : 
+: [ [N[0/8]], [N[0/13]] ], [ [N[2/0]], [N[7/14]] ], [ [N[10/0]], [N[15/14]] ] : 
 [FIG(steps)[
 
 = [2014] [[Emit][emit a character]]
-[[character]] ([I[param]], [VAR[bc]]).
+[[character]] ([I[param]], [VAR[bc]] & [N[0b01111111]]).
+
+]FIG]
+: [N[0/14]], [N[0/15]] :
+[FIG(steps)[
+
+= [2029] Let [VAR[set]] be [VAR[state]]'s [F[C0 designated]].
+= [2028] Set [VAR[char]] be [VAR[set]] [ [VAR[bc]] ].
+= [2030] If [VAR[char]] is [CODE(charname)@en[LS0]] or [CODE(charname)@en[LS1]]:
+== [2031] [[Process][process a control character]] [VAR[char]].
+= [2032] Otherwise:
+== [2033] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+== [2034] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+: [N[8/14]], [N[8/15]] :
+[FIG(steps)[
+
+= [2035] If [VAR[state]]'s [F[right mode]] is [I[iso2022]] or [I[unicode]] and
+[VAR[state]]'s [F[CR invoked]] is [I[C0]]:
+== [2036] Let [VAR[set]] be [VAR[state]]'s [F[C0 designated]].
+== [2037] Set [VAR[char]] be [VAR[set]] [ [VAR[bc]] & [N[0b01111111]] ].
+== [2038] If [VAR[char]] is [CODE(charname)@en[LS0]] or [CODE(charname)@en[LS1]]:
+=== [2039] [[Process][process a control character]] [VAR[char]].
+== [2040] Otherwise:
+=== [2041] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+=== [2042] [[Reconsume][reconsume]] [VAR[bc]].
+= [2043] Otherwise:
+== [2044] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+== [2045] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
 :Otherwise:
@@ -3515,6 +3580,134 @@ followed by
 
 = [2012] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 = [2013] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
+
+*** CSI state
+
+[2064] The [DFN[CSI state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+: [N[0/14]], [N[0/15]] :
+[FIG(steps)[
+
+= [2065] Let [VAR[set]] be [VAR[state]]'s [F[C0 designated]].
+= [2066] Set [VAR[char]] be [VAR[set]] [ [VAR[bc]] ].
+= [2067] If [VAR[char]] is [CODE(charname)@en[LS0]] or [CODE(charname)@en[LS1]]:
+== [2068] [[Process][process a control character]] [VAR[char]].
+= [2069] Otherwise:
+== [2071] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+== [2072] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+: [ [N[2/0]], [N[2/15]] ], [ [N[10/0]], [N[10/15]] ] :
+[FIG(steps)[
+
+= [2086] [[Emit][emit a character]]
+[[charcter]] ([I[param]], [VAR[bc]]).
+= [2088] Set [VAR[state]]'s [F[decoder state]] to [I[CSI I state]].
+
+]FIG]
+: [ [N[3/0]], [N[3/15]] ], [ [N[11/0]], [N[11/15]] ] :
+[FIG(steps)[
+
+= [2089] [[Emit][emit a character]]
+[[charcter]] ([I[param]], [VAR[bc]]).
+
+]FIG]
+: [ [N[4/0]], [N[7/14]] ], [ [N[12/0]], [N[15/14]] ] :
+[FIG(steps)[
+
+= [2090] [[Emit][emit a character]]
+[[charcter]] ([I[param]], [VAR[bc]]).
+= [2091] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+
+]FIG]
+: [N[8/14]], [N[8/15]] :
+[FIG(steps)[
+
+= [2070] If [VAR[state]]'s [F[right mode]] is [I[iso2022]] or [I[unicode]] and
+[VAR[state]]'s [F[CR invoked]] is [I[C0]]:
+== [2073] Let [VAR[set]] be [VAR[state]]'s [F[C0 designated]].
+== [2074] Set [VAR[char]] be [VAR[set]] [ [VAR[bc]] & [N[0b01111111]] ].
+== [2075] If [VAR[char]] is [CODE(charname)@en[LS0]] or [CODE(charname)@en[LS1]]:
+=== [2076] [[Process][process a control character]] [VAR[char]].
+== [2077] Otherwise:
+=== [2078] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+=== [2079] [[Reconsume][reconsume]] [VAR[bc]].
+= [2080] Otherwise:
+== [2081] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+== [2082] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [2083] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+= [2084] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+
+]FIG]
+
+*** CSI I state
+
+[2092] The [DFN[CSI I state]] switches by the [[bit combination]] [VAR[bc]]:
+
+[FIG(switch)[
+
+: [N[0/14]], [N[0/15]] :
+[FIG(steps)[
+
+= [2093] Let [VAR[set]] be [VAR[state]]'s [F[C0 designated]].
+= [2094] Set [VAR[char]] be [VAR[set]] [ [VAR[bc]] ].
+= [2095] If [VAR[char]] is [CODE(charname)@en[LS0]] or [CODE(charname)@en[LS1]]:
+== [2096] [[Process][process a control character]] [VAR[char]].
+= [2097] Otherwise:
+== [2098] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+== [2099] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+: [ [N[2/0]], [N[2/15]] ], [ [N[10/0]], [N[10/15]] ] :
+[FIG(steps)[
+
+= [2100] [[Emit][emit a character]]
+[[charcter]] ([I[param]], [VAR[bc]]).
+
+]FIG]
+: [ [N[4/0]], [N[7/14]] ], [ [N[12/0]], [N[15/14]] ] :
+[FIG(steps)[
+
+= [2101] [[Emit][emit a character]]
+[[charcter]] ([I[param]], [VAR[bc]]).
+= [2102] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+
+]FIG]
+: [N[8/14]], [N[8/15]] :
+[FIG(steps)[
+
+= [2103] If [VAR[state]]'s [F[right mode]] is [I[iso2022]] or [I[unicode]] and
+[VAR[state]]'s [F[CR invoked]] is [I[C0]]:
+== [2104] Let [VAR[set]] be [VAR[state]]'s [F[C0 designated]].
+== [2105] Set [VAR[char]] be [VAR[set]] [ [VAR[bc]] & [N[0b01111111]] ].
+== [2106] If [VAR[char]] is [CODE(charname)@en[LS0]] or [CODE(charname)@en[LS1]]:
+=== [2107] [[Process][process a control character]] [VAR[char]].
+== [2108] Otherwise:
+=== [2109] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+=== [2110] [[Reconsume][reconsume]] [VAR[bc]].
+= [2111] Otherwise:
+== [2112] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+== [2113] [[Reconsume][reconsume]] [VAR[bc]].
+
+]FIG]
+:Otherwise:
+[FIG(steps)[
+
+= [2114] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+= [2115] [[Reconsume][reconsume]] [VAR[bc]].
 
 ]FIG]
 
