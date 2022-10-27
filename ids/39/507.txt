@@ -134,6 +134,7 @@ Initially, [[false]].
 Initially, [I[serial]].
 : [DFN[[F[videotex basic kernel flag]]]] : [[Boolean][boolean]].
 Initially, [[false]].
+: [DFN[[F[lib flag]]]] : [[Boolean][boolean]].  Initially, [[false]].
 : [DFN[[F[current byte sequence]]]] : [[Byte sequence][byte sequence]].
 : [DFN[[F[current element]]]] : [[C element]] or [[G element]].
 : [DFN[[F[current size]]]] : [N[94]] or [N[96]].
@@ -178,11 +179,11 @@ and
 [I[iso2022]], 
 [I[iso2022jp]],
 [I[unicode]],
-[I[utf-1]], [I[utf-8]],
+[I[utf-1]], [I[utf-8]], [I[scsu]],
 [I[single]],
 [I[sjis]], 
 [I[big5]],
-[I[uhc]], [I[johab]],
+[I[uhc]], [I[johab]], [I[hangultalk]],
 [I[gb18030]],
 and
 [I[x-moe-internal]].
@@ -2725,33 +2726,81 @@ the [[bit combination]] [VAR[bc]]:
 = [1006] Set [VAR[state]]'s [F[decoder state]] to [I[escape coding system wo state]].
 
 ]FIG]
-: [N[3/0]], [N[4/0]] :
+: [N[3/0]] :
 [FIG(steps)[
 
-= [1121] [[Emit][emit a character]]
+= [2142] If [VAR[state]]'s [F[lib flag]] is [[true]]:
+== [2158] Set [VAR[state]]'s [F[input getter]] to the [[8-bit input getter]].
+== [2143] Set [VAR[state]]'s [F[right mode]] to [I[sjis]].
+== [2144] Set [VAR[state]]'s [F[S1 designated]] to the result of
+[[getting a G set][get a G set]] with
+[I[94]], [I[2]], [I[94[SUP[2]]]], [N[4/2]] followed by [N[4/0]].
+== [2145] Set [VAR[state]]'s [F[S2 designated]] to the result of
+[[getting a G set][get a G set]] with
+[I[94]], [I[2]], [I[sjis2]], [I[ms]].
+== [2146] Set [VAR[state]]'s [F[shift plane 2 mode]] to [I[normal]].
+= [2147] Otherwise:
+== [1121] [[Emit][emit a character]]
 [[character]] ([I[protocol]], [N[4/0]]).
-= [1691] [[Modify character sets][modify character sets]]
+== [1691] [[Modify character sets][modify character sets]]
 of [VAR[state]] for
 « "iso2022" ».
-= [1940] Set [VAR[state]]'s [F[input getter]] to the [[8-bit input getter]].
-= [1040] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
-= [1035] Set [VAR[state]]'s [F[right mode]] to [I[iso2022]].
-= [1507] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+== [1940] Set [VAR[state]]'s [F[input getter]] to the [[8-bit input getter]].
+== [1040] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
+== [1035] Set [VAR[state]]'s [F[right mode]] to [I[iso2022]].
+== [1507] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
-: [N[3/4]], [N[4/1]] :
+: [N[3/1]] :
 [FIG(steps)[
 
-= [1024] [[Modify character sets][modify character sets]]
+= [2162] Set [VAR[state]]'s [F[input getter]] to the [[8-bit input getter]].
+= [2163] Set [VAR[state]]'s [F[right mode]] to [I[uhc]].
+= [2164] Set [VAR[state]]'s [F[decoder state]] to the [I[default state]].
+
+]FIG]
+: [N[3/2]] :
+[FIG(steps)[
+
+= [2165] Set [VAR[state]]'s [F[input getter]] to the [[8-bit input getter]].
+= [2166] Set [VAR[state]]'s [F[right mode]] to [I[gb18030]].
+= [2167] Set [VAR[state]]'s [F[decoder state]] to the [I[default state]].
+
+]FIG]
+: [N[3/4]] :
+[FIG(steps)[
+
+= [2154] If [VAR[state]]'s [F[lib flag]] is [[true]]:
+== [2158] Set [VAR[state]]'s [F[input getter]] to the [[8-bit input getter]].
+== [2156] Set [VAR[state]]'s [F[right mode]] to [I[big5]].
+== [2157] Set [VAR[state]]'s [F[decoder state]] to the [I[default state]].
+= [2155] Otherwise:
+== [1024] [[Modify character sets][modify character sets]]
 of [VAR[state]] for
 « "iso2022", "videotex" ».
-= [1939] Set [VAR[state]]'s [F[input getter]] to the [[8-bit input getter]].
-= [1907] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
-= [1908] Set [VAR[state]]'s [F[right mode]] to [I[iso2022]].
-= [1118] [[Run a macro][run a macro]] with
+== [1939] Set [VAR[state]]'s [F[input getter]] to the [[8-bit input getter]].
+== [1907] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
+== [1908] Set [VAR[state]]'s [F[right mode]] to [I[iso2022]].
+== [1118] [[Run a macro][run a macro]] with
 [VAR[state]],
 "ESC 2/1 4/11 ESC 2/2 4/6 ESC 2/8 4/2 ESC 2/9 5/7 ESC 2/10 7/12 ESC 2/15 5/7 LS0 LS1R".
-= [1703] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+== [1703] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+
+]FIG]
+: [N[3/5]] :
+[FIG(steps)[
+
+= [2159] Set [VAR[state]]'s [F[input getter]] to the [[8-bit input getter]].
+= [2160] Set [VAR[state]]'s [F[right mode]] to [I[big5]].
+= [2161] Set [VAR[state]]'s [F[decoder state]] to the [I[default state]].
+
+]FIG]
+: [N[3/6]] :
+[FIG(steps)[
+
+= [2168] Set [VAR[state]]'s [F[input getter]] to the [[8-bit input getter]].
+= [2169] Set [VAR[state]]'s [F[right mode]] to [I[hangultalk]].
+= [2170] Set [VAR[state]]'s [F[decoder state]] to the [I[default state]].
 
 ]FIG]
 : [N[3/8]] :
@@ -2777,6 +2826,35 @@ of [VAR[state]] for
 = [1120] [[Emit][emit a character]]
 [[character]] ([I[protocol]], [VAR[bc]]).
 = [1509] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+
+]FIG]
+: [N[4/0]] :
+[FIG(steps)[
+
+= [2136] [[Emit][emit a character]]
+[[character]] ([I[protocol]], [N[4/0]]).
+= [2137] [[Modify character sets][modify character sets]]
+of [VAR[state]] for
+« "iso2022" ».
+= [2138] Set [VAR[state]]'s [F[input getter]] to the [[8-bit input getter]].
+= [2139] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
+= [2140] Set [VAR[state]]'s [F[right mode]] to [I[iso2022]].
+= [2141] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
+
+]FIG]
+: [N[4/1]] :
+[FIG(steps)[
+
+= [2148] [[Modify character sets][modify character sets]]
+of [VAR[state]] for
+« "iso2022", "videotex" ».
+= [2149] Set [VAR[state]]'s [F[input getter]] to the [[8-bit input getter]].
+= [2150] Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
+= [2151] Set [VAR[state]]'s [F[right mode]] to [I[iso2022]].
+= [2152] [[Run a macro][run a macro]] with
+[VAR[state]],
+"ESC 2/1 4/11 ESC 2/2 4/6 ESC 2/8 4/2 ESC 2/9 5/7 ESC 2/10 7/12 ESC 2/15 5/7 LS0 LS1R".
+= [2153] Set [VAR[state]]'s [F[decoder state]] to [I[default state]].
 
 ]FIG]
 : [N[4/2]] :
@@ -3225,6 +3303,9 @@ in [ [N[10/1]], [N[14/15]] ], [N[15/13]], [N[15/14]]:
 = [1093] Otherwise, if [VAR[state]]'s [F[right mode]] is [I[utf-1]]:
 ==
 @@
+= [2134] Otherwise, if [VAR[state]]'s [F[right mode]] is [I[scsu]]:
+==
+@@
 = [1104] Otherwise, if [VAR[state]]'s [F[right mode]] is [I[utf-8]]:
 ==
 @@ [[get a UCS input item]]
@@ -3242,6 +3323,9 @@ in [ [N[10/1]], [N[13/15]] ]:
 ==
 @@
 = [1099] Otherwise, if [VAR[state]]'s [F[right mode]] is [I[uhc]]:
+==
+@@
+= [2135] Otherwise, if [VAR[state]]'s [F[right mode]] is [I[hangultalk]]:
 ==
 @@
 = [1100] Otherwise, if [VAR[state]]'s [F[right mode]] is [I[johab]]:
