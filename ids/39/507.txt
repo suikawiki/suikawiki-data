@@ -123,6 +123,8 @@ Initially, [I[iso2022]].
 Initially, [I[normal]].
 : [DFN[[F[bits]]]] : [I[8-bit]] or [I[7-bit]].
 Initially, [I[8-bit]].
+: [DFN[[F[XON/XOFF flag]]]] : [[Boolean][boolean]].
+Initially, [[false]].
 : [DFN[[F[VT response flag]]]] : [[Boolean][boolean]].
 Initially, [[false]].
 : [DFN[[F[ISO 4873 Latin-1 flag]]]] : [[Boolean][boolean]].
@@ -1067,6 +1069,95 @@ to [VAR[state]]'s [F[left designated]].
 
 ]FIG]
 
+-*-*-
+
+[2220] 
+A [DFN[[[SGR]]]] is a [[character string]] which is the
+[[concatenation]] of the followings, in order:
+
+= [CODE(charname)@en[CSI]]
+= Zero or more sequence of [[character]] ([I[param]], [VAR[bc]])
+where [VAR[bc]] is a [[bit combination]]
+= [[Character][character]] ([I[param]], [N[6/13]])
+
+and the [[concatenation]] of [VAR[bc]], in order, is referred to as
+[VAR[params]] of the [[SGR]].
+
+[2229] 
+To [DFN[process SGR attribute]] [VAR[attr]], run these steps:
+
+[FIG(steps)[
+
+=
+[2230] 
+[[Switch][switch]] by [VAR[attr]]:
+[FIG(switch)[
+
+: [N[3/1]] followed by [N[3/0]] :
+[FIG(steps)[
+
+@@
+
+]FIG]
+: [N[3/1]] followed by [N[3/1]] :
+[FIG(steps)[
+
+@@
+
+]FIG]
+: [N[3/1]] followed by [N[3/2]] :
+[FIG(steps)[
+
+@@
+
+]FIG]
+
+
+]FIG]
+
+
+]FIG]
+
+[2192] 
+A [DFN[[[DECPCTERM]]]] is a [[character string]] which is the
+[[concatenation]] of the followings, in order:
+
+= [CODE(charname)@en[CSI]]
+= [[Character][character]] ([I[param]], [N[3/15]])
+= Optionally, [[character]] ([I[param]], [VAR[ps1]])
+= [[Character][character]] ([I[param]], [N[3/11]])
+= Optionally, either:
+=- [[character]] ([I[param]], [VAR[ps2]])
+=- [[character]] ([I[param]], [VAR[ps21]]) 
+followed by [[character]] ([I[param]], [VAR[ps22]]) 
+followed by [[character]] ([I[param]], [VAR[ps23]])
+= [[Character][character]] ([I[param]], [N[7/2]])
+
+... where each of [VAR[ps1]], [VAR[ps2]], [VAR[ps21]], [VAR[ps22]], and [VAR[ps23]]
+is a [[bit combination]].  If omitted, 
+they are considered as [CODE[null]].
+
+[2215] 
+A [DFN[[[DECSFC]]]] is a [[character string]] which is the
+[[concatenation]] of the followings, in order:
+
+= [CODE(charname)@en[CSI]]
+= Optionally, [[character]] ([I[param]], [VAR[ps1]])
+= [[Character][character]] ([I[param]], [N[3/11]])
+= Optionally, [[character]] ([I[param]], [VAR[ps2]])
+= [[Character][character]] ([I[param]], [N[3/11]])
+= Optionally, [[character]] ([I[param]], [VAR[ps3]])
+= [[Character][character]] ([I[param]], [N[3/11]])
+= Optionally, [[character]] ([I[param]], [VAR[ps4]])
+= [[Character][character]] ([I[param]], [N[3/11]])
+= [[Character][character]] ([I[param]], [N[2/10]])
+= [[Character][character]] ([I[param]], [N[7/3]])
+
+... where each of [VAR[ps1]], [VAR[ps2]], [VAR[ps3]], and [VAR[ps4]]
+is a [[bit combination]].  If omitted, 
+they are considered as [CODE[null]].
+
+
 [2190] 
 To
 [DFN[run the control sequence]]
@@ -1076,79 +1167,114 @@ run these steps:
 
 [FIG(steps)[
 
-= [2191] Let [VAR[seq]] be [VAR[state]]'s [F[current control sequence]].
-= [2192] If [VAR[seq]] is
-[CODE(charname)@en[CSI]],
-followed by [[character]] ([I[param]], [N[3/15]]),
-optionally followed by [[character]] ([I[param]], [VAR[ps1]]),
-followed by [[character]] ([I[param]], [N[3/11]]),
-optionally followed by either
-[[character]] ([I[param]], [VAR[ps2]])
-or
-[[character string]] of
-[[character]] ([I[param]], [VAR[ps21]])
-followed by [[character]] ([I[param]], [VAR[ps22]])
-followed by [[character]] ([I[param]], [VAR[ps23]]),
-then followed by [[character]] ([I[param]], [N[7/2]]):
-== [2193] 
-If [VAR[ps1]] is missing or [VAR[ps1]] is [N[3/1]]:
-=== [2195] 
+
+= [2231] 
+If [VAR[state]]'s [F[current control sequence]]'s [F[length]]
+is greater than the [[maximum sequence length]]:
+== [2232] 
+Abort these steps.
+= [2191] 
+[[Switch][switch]] by
+[VAR[state]]'s [F[current control sequence]]:
+[FIG(switch)[
+
+: [[DECPCTERM]] with [VAR[ps1]], [VAR[ps2]], [VAR[ps21]], [VAR[ps22]], [VAR[ps23]] :
+[FIG(steps)[
+
+= [2193] 
+If [VAR[ps1]] is [CODE[null]] or [VAR[ps1]] is [N[3/1]]:
+== [2195] 
 Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
-=== [2209] 
+== [2209] 
 Set [VAR[state]]'s [F[right mode]] to [I[iso2022]].
-== [2194] 
+= [2194] 
 Otherwise, if [VAR[ps1]] is [VAR[3/2]]:
-=== [2210] 
+== [2210] 
 Set [VAR[state]]'s [F[GL mode]] to [I[single]].
-=== [2196] 
+== [2196] 
 Set [VAR[state]]'s [F[right mode]] to [I[single]].
-== [2197] 
-If both [VAR[ps2]] and [VAR[ps21]] are missing or [VAR[ps2]] is [N[3/0]]:
-=== [2206] Do nothing.
-== [2198] Otherwise, if [VAR[ps21]] is missing:
-=== [2202] 
+= [2197] 
+If either [VAR[ps2]] is [CODE[null]] and [VAR[ps21]] is [CODE[null]],
+or [VAR[ps2]] is [N[3/0]]:
+== [2206] Do nothing.
+= [2198] Otherwise, if [VAR[ps21]] is [CODE[null]]:
+== [2202] 
 If [VAR[state]]'s [F[right mode]] is [I[single]]:
-==== [2200] 
+=== [2200] 
 Set [VAR[state]]'s [F[left designated]] to  
 the result of 
 [[getting a 128 set][get a 128 set]] with
 [I[vt-left]], [VAR[ps2]].
-==== [2201] 
+=== [2201] 
 Set [VAR[state]]'s [F[right designated]] to
 the result of 
 [[getting a 128 set][get a 128 set]] with
 [I[vt-right]], [VAR[ps2]].
-=== [2203] 
+== [2203] 
 Otherwise:
-==== [2211] 
+=== [2211] 
 Set [VAR[state]]'s [F[G0 designated]] to  
 the result of 
 [[getting a 94 set][get a 94 set]] with
 [I[vt-left]], [VAR[ps2]].
-==== [2212]  
+=== [2212]  
 Set [VAR[state]]'s [F[G1 designated]] to
 the result of 
 [[getting a 94 set][get a 94 set]] with
 [I[vt-right]], [VAR[ps2]].
-==== [2213] 
+=== [2213] 
 Set [VAR[state]]'s [F[GL invoked]] to [I[G0]].
-==== [2214] 
+=== [2214] 
 Set [VAR[state]]'s [F[GR invoked]] to [I[G1]].
-== [2199] Otherwise, if [VAR[ps2]] is missing:
-=== [2208] 
+= [2199] Otherwise, if [VAR[ps2]] is [CODE[null]:
+== [2208] 
 If [VAR[state]]'s [F[right mode]] is [I[single]]:
-==== [2204] Set [VAR[ps2]] to 
+=== [2204] Set [VAR[ps2]] to 
 [VAR[ps21]] followed by [VAR[ps22]] followed by [VAR[ps23]].
-==== [2207]  
+=== [2207]  
 Set [VAR[state]]'s [F[left designated]] to  
 the result of 
 [[getting a 128 set][get a 128 set]] with
 [I[vt-left]], [VAR[ps2]].
-==== [2205]  
+=== [2205]  
 Set [VAR[state]]'s [F[right designated]] to
 the result of 
 [[getting a 128 set][get a 128 set]] with
 [I[vt-right]], [VAR[ps2]].
+
+
+]FIG]
+: [[DECSFC]] with [VAR[ps3]] :
+[FIG(steps)[
+
+= [2216] 
+If [VAR[ps3]] is [CODE[null]], [N[3/0]], or [N[3/1]]:
+== [2217] 
+Set [VAR[state]]'s [F[XON/XOFF flag]] to [[true]].
+= [2218] 
+Otherwise:
+== [2219] 
+Set [VAR[state]]'s [F[XON/XOFF flag]] to [[false]].
+
+
+]FIG]
+: [[SGR]] with [VAR[params]] :
+[FIG(steps)[
+
+= [2221] Let [VAR[item]] be an [[empty byte sequence]].
+= [2222] [[For each]] [VAR[byte]] in [VAR[params]]:
+== [2223] If [VAR[byte]] is [N[3/11]]:
+=== [2224] [[Process SGR attribute][process SGR attribute]] [VAR[item]].
+=== [2226] Set [VAR[item]] to an [[empty byte sequence]].
+== [2225] Otherwise:
+=== [2227] [[Append][append]] [VAR[byte]] to [VAR[item]].
+= [2228] [[Process SGR attribute][process SGR attribute]] [VAR[item]].
+
+
+]FIG]
+
+
+]FIG]
 
 
 ]FIG]
