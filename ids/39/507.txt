@@ -115,6 +115,8 @@ Initially, [I[C1]].
 Initially, [CODE[null]].
 : [DFN[[F[GR invoked]]]] : [[G element]] or [CODE[null]].
 Initially, [CODE[null]].
+: [DFN[[F[CL mode]]]] : [[CL mode]].
+Initially, [I[iso2022]].
 : [DFN[[F[GL mode]]]] : [[GL mode]].
 Initially, [I[iso2022]].
 : [DFN[[F[right mode]]]] : A [[right mode]].
@@ -173,13 +175,20 @@ Initially, [CODE[null]]
 
 [100] A [DFN[G element]] is [I[G0]], [I[G1]], [I[G2]], [I[G3]], or [I[Gj]].
 
+[2242] A [DFN[CL mode]] is one of:
+[I[iso2022]],
+[I[single-esc]],
+and
+[I[single-right-esc]].
+
 [1704] A [DFN[GL mode]] is one of:
 [I[iso2022]], 
 [I[captain]], 
 [I[unicode]],
 [I[telesoftware]], 
-and 
-[I[single]].  
+[I[single]],
+and
+[I[single-right]].  
 
 [1291] A [DFN[right mode]] is one of:
 [I[iso2022]], 
@@ -260,6 +269,7 @@ with [VAR[state]] given by the [[ISO/IEC 2022 decoder steps]]:
 [F[CR invoked]],
 [F[GL invoked]],
 [F[GR invoked]],
+[F[CL mode]],
 [F[GL mode]],
 [F[right mode]],
 [F[bits]],
@@ -1084,7 +1094,7 @@ and the [[concatenation]] of [VAR[bc]], in order, is referred to as
 [VAR[params]] of the [[SGR]].
 
 [2229] 
-To [DFN[process SGR attribute]] [VAR[attr]], run these steps:
+To [DFN[process SGR attribute]] [VAR[attr]] with [VAR[state]], run these steps:
 
 [FIG(steps)[
 
@@ -1096,19 +1106,36 @@ To [DFN[process SGR attribute]] [VAR[attr]], run these steps:
 : [N[3/1]] followed by [N[3/0]] :
 [FIG(steps)[
 
-@@
+= [2234] If [VAR[state]]'s [F[right mode]] is [I[single]]:
+== [2255] Set [VAR[state]]'s [F[CL mode]] to [I[iso2022]].
+== [2235] Set [VAR[state]]'s [F[GL mode]] to [I[single]].
+= [2258] Otherwise:
+== [2259] Set [VAR[state]]'s [F[G0 designated]] to the result of
+[[getting a G set][get a G set]] with
+[I[94]], [I[1]], [I[94]], [N[4/2]].
+== [2260] Set [VAR[state]]'s [F[GL invoked]] to [I[G0]].
 
 ]FIG]
 : [N[3/1]] followed by [N[3/1]] :
 [FIG(steps)[
 
-@@
+= [2236] If [VAR[state]]'s [F[right mode]] is [I[single]]:
+== [2256] Set [VAR[state]]'s [F[CL mode]] to [I[single-esc]].
+== [2239] Set [VAR[state]]'s [F[GL mode]] to [I[single]].
 
 ]FIG]
 : [N[3/1]] followed by [N[3/2]] :
 [FIG(steps)[
 
-@@
+= [2240] If [VAR[state]]'s [F[right mode]] is [I[single]]:
+== [2257] Set [VAR[state]]'s [F[CL mode]] to [I[single-right-esc]].
+== [2241] Set [VAR[state]]'s [F[GL mode]] to [I[single-right]].
+= [2261] Otherwise:
+== [2264] Let [VAR[set]] be the result of
+[[getting invoked set][get invoked set]] with
+[VAR[state]] and [VAR[state]]'s [F[GR invoked]].
+== [2262] Set [VAR[state]]'s [F[G2 designated]] to [VAR[set]].
+== [2263] Set [VAR[state]]'s [F[GR invoked]] to [I[G2]].
 
 ]FIG]
 
@@ -1200,6 +1227,8 @@ or [VAR[ps2]] is [N[3/0]]:
 = [2198] Otherwise, if [VAR[ps21]] is [CODE[null]]:
 == [2202] 
 If [VAR[state]]'s [F[right mode]] is [I[single]]:
+=== [2237] 
+Set [VAR[state]]'s [F[GL mode]] to [I[iso2022]].
 === [2200] 
 Set [VAR[state]]'s [F[left designated]] to  
 the result of 
@@ -1210,25 +1239,25 @@ Set [VAR[state]]'s [F[right designated]] to
 the result of 
 [[getting a 128 set][get a 128 set]] with
 [I[vt-right]], [VAR[ps2]].
-== [2203] 
-Otherwise:
-=== [2211] 
+== [2211] 
 Set [VAR[state]]'s [F[G0 designated]] to  
 the result of 
 [[getting a 94 set][get a 94 set]] with
 [I[vt-left]], [VAR[ps2]].
-=== [2212]  
+== [2212]  
 Set [VAR[state]]'s [F[G1 designated]] to
 the result of 
 [[getting a 94 set][get a 94 set]] with
 [I[vt-right]], [VAR[ps2]].
-=== [2213] 
+== [2213] 
 Set [VAR[state]]'s [F[GL invoked]] to [I[G0]].
-=== [2214] 
+== [2214] 
 Set [VAR[state]]'s [F[GR invoked]] to [I[G1]].
 = [2199] Otherwise, if [VAR[ps2]] is [CODE[null]:
 == [2208] 
 If [VAR[state]]'s [F[right mode]] is [I[single]]:
+=== [2238] 
+Set [VAR[state]]'s [F[GL mode]] to [I[single]].
 === [2204] Set [VAR[ps2]] to 
 [VAR[ps21]] followed by [VAR[ps22]] followed by [VAR[ps23]].
 === [2207]  
@@ -1264,11 +1293,13 @@ Set [VAR[state]]'s [F[XON/XOFF flag]] to [[false]].
 = [2221] Let [VAR[item]] be an [[empty byte sequence]].
 = [2222] [[For each]] [VAR[byte]] in [VAR[params]]:
 == [2223] If [VAR[byte]] is [N[3/11]]:
-=== [2224] [[Process SGR attribute][process SGR attribute]] [VAR[item]].
+=== [2224] [[Process SGR attribute][process SGR attribute]] [VAR[item]]
+with [VAR[state]].
 === [2226] Set [VAR[item]] to an [[empty byte sequence]].
 == [2225] Otherwise:
 === [2227] [[Append][append]] [VAR[byte]] to [VAR[item]].
-= [2228] [[Process SGR attribute][process SGR attribute]] [VAR[item]].
+= [2228] [[Process SGR attribute][process SGR attribute]] [VAR[item]]
+with [VAR[state]].
 
 
 ]FIG]
@@ -1409,8 +1440,24 @@ There are the following [[decoder states][decoder state]]:
 : [ [N[0/0]], [N[1/15]] ] :
 [FIG(steps)[
 
-= [11] Let [VAR[set]] be [VAR[state]]'s [F[C0 designated]].
-= [717] [[Process a control character][process a control character]]
+= [2243] If [VAR[state]]'s [F[CL mode]] is [I[single-esc]] or [I[single-right-esc]]:
+== [2248] If [VAR[bc]] is [N[1/11]]:
+=== [2249] [[Process a control character][process a control character]]
+[CODE(charname)@en[ESC]].
+== [2252] Otherwise, if [VAR[bc]] is [N[1/1]] or [N[1/3]] and
+[VAR[state]]'s [F[XON/XOFF flag]] is [[true]]:
+=== [2253] Let [VAR[set]] be [VAR[state]]'s [F[C0 designated]].
+=== [2254] [[Process a control character][process a control character]]
+[VAR[set]] [ [VAR[bc]] ].
+== [2250] Otherwise:
+=== [2245] If [VAR[state]]'s [F[CL mode]] is [I[single-right-esc]]:
+==== [2244] Set [VAR[set]] to [VAR[state]]'s [F[right designated]].
+=== [2251] Otherwise:
+==== [2244] Set [VAR[set]] to [VAR[state]]'s [F[left designated]].
+=== [2246] [[Emit a character][emit a character]] [VAR[set]] [ [VAR[bc]] ].
+= [2247] Otherwise: 
+== [11] Let [VAR[set]] be [VAR[state]]'s [F[C0 designated]].
+== [717] [[Process a control character][process a control character]]
 [VAR[set]] [ [VAR[bc]] ].
 
 ]FIG]
@@ -1430,6 +1477,8 @@ There are the following [[decoder states][decoder state]]:
 = [1712] Otherwise:
 == [1109] If [VAR[state]]'s [F[GL mode]] is [I[single]]:
 === [1079] Let [VAR[set]] be [VAR[state]]'s [F[left designated]].
+== [2203] Otherwise, if [VAR[state]]'s [F[GL mode]] is [I[single-right]]:
+=== [2233] Let [VAR[set]] be [VAR[state]]'s [F[right designated]].
 == [1080] Otherwise, if [VAR[state]]'s [F[GL mode]] is [I[iso2022]]:
 === [314] Let [VAR[set]] be the result of
 [[getting invoked set][get invoked set]] with
