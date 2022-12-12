@@ -154,6 +154,7 @@ Initially, [CODE[null]].
 Initially, [CODE[null]].
 : [DFN[[F[current frame length]]]] : Non-negative integer or [CODE[null]].
 Initially, [CODE[null]].
+: [DFN[[F[current control sequence]]]] : [[Character string][character string]].
 : [DFN[[F[decoder state]]]] : One of [[decoder states][decoder state]].
 Initially, [[default state]].
 : [DFN[[F[previous state]]]] : [[State][state]] or [CODE[null]].
@@ -627,40 +628,6 @@ to [[get a UCS input item]],
 to [[emit a character]], and
 to [[process a control character]].
 
-** Macros
-
-[1764] 
-A [DFN[macro]] is a [[byte sequence]].
-
-[1765] 
-In this document, a [[macro]] might be represented as a [[string]],
-which is a [CODE[U+0020]]-separated list of tokens.
-A token is either a [[bit combination]] or 
-a [VAR[token]] from the following table.
-A [[bit combination]] represents itself.
-One of [VAR[token]] represents [VAR[bytes]] in the same table row.
-The list represents a [[macro]] that is the concatenation
-of the [[bit combinations][bit combination]] (including those in [VAR[bytes]]),
-in order.
-
-,* [VAR[token]] ,* [VAR[bytes]]
-,* [CODE[ESC]] , [N[1/11]]
-,* [CODE[LS0]] , [N[0/15]]
-,* [CODE[LS1]] , [N[0/14]]
-,* [CODE[LS1R]] , [N[1/11]] followed by [N[7/14]]
-,* [CODE[LS2R]] , [N[1/11]] followed by [N[7/13]]
-,* [CODE[LS3R]] , [N[1/11]] followed by [N[7/12]]
-
-[1429] To [DFN[run a macro]] with [VAR[state]] and [VAR[bytes]], run these steps:
-
-[FIG(steps)[
-
-= [1776] [[For each]] [VAR[bc]] in the [[bit combinations][bit combination]] of
-[VAR[bytes]], in order:
-== [1777] [[Process the next input character][process the next input character]]
-with [VAR[state]], [VAR[bc]].
-
-]FIG]
 
 
 ** Output stream
@@ -698,6 +665,22 @@ where [VAR[bc]] is a [[bit combination]]:
 with [VAR[state]],
 [VAR[state]]'s [F[macro set]] [ [VAR[bc]] ].
 = [1781] Otherwise:
+== [2184] If [VAR[char]] is [CODE(charname)@en[CSI]]:
+=== [2185] 
+Set [VAR[state]]'s [F[current control sequence]] to
+a [[character string]] of [VAR[char]].
+== [2186] Otherwise, if [VAR[char]] 
+is 
+[[character]] ([I[param]], [VAR[bc]]):
+=== [2187] 
+[[Append][append]]
+[VAR[char]]
+to
+[VAR[state]]'s [F[current control sequence]].
+=== [2188] 
+If [VAR[bc]] is in [ [N[4/0]], [N[7/14]] ]:
+==== [2189] 
+[[Run the control sequence][run the control sequence]] for [VAR[state]].
 == [5] 
 [[Append][append]]
 [VAR[char]]
@@ -747,13 +730,7 @@ When [DFN[deprecated]], run these steps:
 ;; [385] There is a sequence that is discouraged by a relevant specification,
 or that is an extension to the ISO/IEC 2022 standard.
 
-
-
-** Decoder states
-
-[27] 
-The decoder has several [DFN[decoder states]] for processing input 
-[[bit combinations][bit combination]].
+** Control characters
 
 [719] 
 To [DFN[process a control [[character]]]] [VAR[char]], 
@@ -1090,6 +1067,96 @@ to [VAR[state]]'s [F[left designated]].
 
 ]FIG]
 
+[2190] 
+To
+[DFN[run the control sequence]]
+for
+[VAR[state]],
+run these steps:
+
+[FIG(steps)[
+
+= [2191] Let [VAR[seq]] be [VAR[state]]'s [F[current control sequence]].
+= [2192] If [VAR[seq]] is
+[CODE(charname)@en[CSI]],
+followed by [[character]] ([I[param]], [N[3/15]]),
+optionally followed by [[character]] ([I[param]], [VAR[ps1]]),
+followed by [[character]] ([I[param]], [N[3/15]]),
+optionally followed by either
+[[character]] ([I[param]], [VAR[ps2]])
+or
+[[character string]] of
+[[character]] ([I[param]], [VAR[ps21]])
+followed by [[character]] ([I[param]], [VAR[ps22]])
+followed by [[character]] ([I[param]], [VAR[ps23]]),
+then followed by [[character]] ([I[param]], [N[7/2]]):
+== [2193] 
+If [VAR[ps1]] is missing or [VAR[ps1]] is [N[3/1]]:
+=== [2195] 
+Set [VAR[state]]'s [F[right mode]] to [I[iso2022]].
+== [2194] 
+Otherwise, if [VAR[ps1]] is [VAR[3/2]]:
+=== [2196] 
+Set [VAR[state]]'s [F[right mode]] to [I[single]].
+== [2197] 
+If both [VAR[ps2]] and [VAR[ps21]] are missing or [VAR[ps2]] is [N[3/0]]:
+===
+@@
+== [2198] Otherwise, if [VAR[ps21]] is missing:
+===
+@@
+== [2199] Otherwise, if [VAR[ps2]] is missing:
+===
+@@
+
+
+]FIG]
+
+[2186]Otherwise, if char is (param, bc):
+[2187]Append char to state's current control sequence.
+[2188]If bc is in [ 4/0, 7/14 ]:
+[2189]Run the control sequence for state.
+
+** Macros
+
+[1764] 
+A [DFN[macro]] is a [[byte sequence]].
+
+[1765] 
+In this document, 
+a [[macro]] might be represented as a [[string]],
+which is a list of tokens separated by a [CODE[U+0020]] [[character]].
+A token is either a [[bit combination]] or 
+a [VAR[token]] from the following table.
+A [[bit combination]] represents itself.
+One of [VAR[token]] values in the following table
+represents the cell value of the [VAR[bytes]] column in the same table row.
+The list represents a [[macro]] that is the [[concatenation]]
+of the [[bit combinations][bit combination]] (including those in [VAR[bytes]]),
+in order.
+
+,* [VAR[token]] ,* [VAR[bytes]]
+,* [CODE[ESC]] , [N[1/11]]
+,* [CODE[LS0]] , [N[0/15]]
+,* [CODE[LS1]] , [N[0/14]]
+,* [CODE[LS1R]] , [N[1/11]] followed by [N[7/14]]
+,* [CODE[LS2R]] , [N[1/11]] followed by [N[7/13]]
+,* [CODE[LS3R]] , [N[1/11]] followed by [N[7/12]]
+
+[1429] To [DFN[run a macro]] with [VAR[state]] and [VAR[bytes]], run these steps:
+
+[FIG(steps)[
+
+= [1776] [[For each]] [VAR[bc]] in the [[bit combinations][bit combination]] of
+[VAR[bytes]], in order:
+== [1777] [[Process the next input character][process the next input character]]
+with [VAR[state]], [VAR[bc]].
+
+]FIG]
+
+-*-*-
+
+
 
 [1451] 
 To [DFN[initialize by DI]] [VAR[state]], run these steps:
@@ -1157,7 +1224,15 @@ of [VAR[state]] for
 
 
 
--*-*-
+
+** Decoder states
+
+[27] 
+The decoder has several [DFN[decoder states]] for processing input 
+[[bit combinations][bit combination]].
+
+
+
 
 [2] 
 Each [[decoder state]] has its [[switch]].
@@ -6401,6 +6476,7 @@ The terms
 [DFN[list]],
 [DFN[[F[size]]]],
 [DFN[append]],
+[DFN[concatenation]],
 [DFN[extend]],
 [DFN[ordered map]],
 [DFN[entry]],
