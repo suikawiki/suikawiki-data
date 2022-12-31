@@ -391,85 +391,48 @@
 [CODE[format]] [N[13]] 専用の [CODE[encodingID]] もそうです。
 [CODE[format]] だけでの区別では実装上の問題があったのでしょうか。
 
-** [CODE[language]]
+** Windows 符号化
 
-[93] 
-[DFN[[F[[CODE[language]]]]]] 
-は[[文字符号化]]の[[言語]]を表します。
+[124] 
+[CODE[name][name (OpenType)]]
+の文字列は、
+[F[[CODE[encodingID]]]] が [N[3]] ([[Windows]])
+の場合、
+[[UTF-16BE]]
+で符号化しなければ[RUBYB[なりません][must]]。
+[SRC[>>121]]
 
-[92] 
-[F[[CODE[platformID]]]] [N[1]] ([[Macintosh]])
-''以外''の
-[CODE[cmap]] [[部分表]]の
-[F[[CODE[language]]]]
+[125] 
+これはつまり、 [CODE[cmap]] の [F[[CODE[encodingID]]]] と同じ値を指定する (>>122)
+だけで、その値自体にはそれほど意味がなく、
+値に関わらず [[UTF-16BE]] を使わなければならないということのようです。
+
+[126] 
+古い [[CJK]] [[フォント]]はこの規定に反していることがあります。
+例えば [[MingLi]]
 は、
-[N[0]]
-でなければ[RUBYB[なりません][must]]。
-[SRC[>>1]]
+[[ラテン文字]]名を [[UTF-16BE]] で[[符号化]]しながらも[[中文]]名は
+[F[[CODE[encodingID]]]] [N[4]] ([[Big5]]) で文字列を [[CP950]]
+で符号化していました。
+[SRC[>>121]]
 
-[94] 
-[F[[CODE[platformID]]]] [N[1]] ([[Macintosh]])
-の
-[CODE[cmap]] [[部分表]]の
-[F[[CODE[language]]]]
-は、
+[127] 
+これは [F[[CODE[platformID]]]] [N[1]] ([[Macintosh]])
+が実際に指定された通りの[[符号化]]となるのと違う点です。
 
-- [RUBYB[言語依存][language-specific]]のとき、 [[Macintosh language ID]] + [N[1]]
-- 言語依存でないとき、 [N[0]]
+[128] 
+さて、 [[OpenType]] の仕様はこの状況をどう処理するべきなのか何も語っていません。
+現在となっては [F[[CODE[platformID]]]] [N[3]] ([[Windows]])
+のデータを含む[[フォント]]は希少となっているようですが、
+古い[[フォント]]を扱う必要がある (可能性がある) [[ソフトウェア]]は、
+何らかの方針を立てて対処しなければなりません。
 
-とします。
-[SRC[>>1]]
+[129] 
+[[CJK]] の[[コードページ]]なら[[コードページ]]通りの[[符号化]]、
+それ以外なら [[UTF-16BE]]、としてしまっていいのでしょうか。
+それなら楽なのですが、 [[CJK]] の[[コードページ]]で [[UTF-16BE]]
+の[[フォント]]も出回っているなら、[[文字コード自動判定]]が必要となります。
 
-[95] 
-[[Mac OS Roman]]
-[CODE[cmap]]
-では、
-言語依存の符号化ではありませんから、
-[N[0]] 
-としなければ[RUBYB[なりません][must]]。
-[SRC[>>1]]
-
-[EG[
-[96] 
-[[Mac OS Turkish]]
-[CODE[cmap]]
-では、
-[[Turkish]] の [[Macintosh language ID]] が [N[17]]
-なので、
-[F[[CODE[language]]]]
-は
-[N[18]]
-とします。
-[SRC[>>1]]
-
-
-
-]EG]
-
-[105] 
-[F[[CODE[language]]]] 
-は
-[F[[CODE[format]]]]
-依存の[[部分表]]に属しています。
-ということは古い
-[[Macintosh]]
-でしか使われていないこの欄をいつまでも残しておく必要も無さそうなものですが、
-新しそうな
-[CODE[format]]
-でもそのまま引き継がれています。
-
-[106] 
-ただし
-[CODE[format]] [N[14]]
-には
-[CODE[language]]
-欄がありません。この [CODE[format]] だけ
-[[Unicode]]
-に完全に依存している
-(= [CODE[language]] があってもまったく使いようがない)
-関係なのでしょうかね。
-(他は、少なくても理屈の上では、
-[[Unicode]] に限定されていないので使い道がないとはいえない。)
 
 
 ** [CODE[platformID]] [N[4]]
@@ -601,6 +564,88 @@
 [CODE[platformID]] = 0 ([[Unicode]]),
 [CODE[encodingID]] = 10
 があります。
+
+* 言語ID
+
+[93] 
+[CODE[cmap]]
+[[部分表]]の
+[DFN[[F[[CODE[language]]]]]] 
+は[[文字符号化]]の[[言語]]を表します。
+
+[92] 
+[F[[CODE[platformID]]]] [N[1]] ([[Macintosh]])
+''以外''の
+[CODE[cmap]] [[部分表]]の
+[F[[CODE[language]]]]
+は、
+[N[0]]
+でなければ[RUBYB[なりません][must]]。
+[SRC[>>1]]
+
+[94] 
+[F[[CODE[platformID]]]] [N[1]] ([[Macintosh]])
+の
+[CODE[cmap]] [[部分表]]の
+[F[[CODE[language]]]]
+は、
+
+- [RUBYB[言語依存][language-specific]]のとき、 [[Macintosh language ID]] + [N[1]]
+- 言語依存でないとき、 [N[0]]
+
+とします。
+[SRC[>>1]]
+
+[95] 
+[[Mac OS Roman]]
+[CODE[cmap]]
+では、
+言語依存の符号化ではありませんから、
+[N[0]] 
+としなければ[RUBYB[なりません][must]]。
+[SRC[>>1]]
+
+[EG[
+[96] 
+[[Mac OS Turkish]]
+[CODE[cmap]]
+では、
+[[Turkish]] の [[Macintosh language ID]] が [N[17]]
+なので、
+[F[[CODE[language]]]]
+は
+[N[18]]
+とします。
+[SRC[>>1]]
+
+
+
+]EG]
+
+[105] 
+[F[[CODE[language]]]] 
+は
+[F[[CODE[format]]]]
+依存の[[部分表]]に属しています。
+ということは古い
+[[Macintosh]]
+でしか使われていないこの欄をいつまでも残しておく必要も無さそうなものですが、
+新しそうな
+[CODE[format]]
+でもそのまま引き継がれています。
+
+[106] 
+ただし
+[CODE[format]] [N[14]]
+には
+[CODE[language]]
+欄がありません。この [CODE[format]] だけ
+[[Unicode]]
+に完全に依存している
+(= [CODE[language]] があってもまったく使いようがない)
+関係なのでしょうかね。
+(他は、少なくても理屈の上では、
+[[Unicode]] に限定されていないので使い道がないとはいえない。)
 
 
 
