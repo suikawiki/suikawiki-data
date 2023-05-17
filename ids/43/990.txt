@@ -67,3 +67,48 @@
 
 
 
+- [9] [CITE@en[php-src/locale_methods.c at master · php/php-src · GitHub]], [TIME[2023-05-17T09:16:25.000Z]] <https://github.com/php/php-src/blob/master/ext/intl/locale/locale_methods.c#:~:text=locale_accept_from_http>
+
+
+
+[10] 
+ソースコードを見ると、利用可能な[[ロケール]]の一覧を用意して、それと一致するものが返されてくるみたいですねえ。
+そしてその一覧は直接指定することはできないっぽい。
+
+[11] 
+だから利用可能な一覧に [CODE[ja]] や [CODE[ja_JP]] が(たまたま)入っていたりして、
+[CODE[Accept-Language]] の値次第で [CODE[ja]] が返ってきたり [CODE[ja_JP]]
+が返ってきたりするんですねえ。
+そんなことはドキュメントに書いてないので、
+いろんな[[ブラウザー]]がいろんな値を送ってくるのを経験しないとわからないわけです。
+これはバグの温床っすな。
+
+[12] 
+ちな、
+[CODE[Accept-Language:]] は [[IETF言語タグ]]なので、
+[CODE[[[Accept-Language:]] [[ja-JP]]]]
+が指定されると[[ロケールID]]として [CODE[ja_JP]] が返ってくる。これは罠。
+
+
+[13] 
+利用可能な[[ロケール]]の一覧はどこからやってくるかというと
+
+- [14] [CITE[[[ICU]] 73.1: ures.h File Reference]], [TIME[2023-04-13T21:37:12.000Z]], [TIME[2023-05-17T09:22:33.800Z]] <https://unicode-org.github.io/icu-docs/apidoc/dev/icu4c/ures_8h.html#aa59a731931be953ead03206933f3c0f0>
+
+[CODE[ures_openAvailableLocales]] という [[ICU]] の[[関数]]が呼び出されてます。
+
+[[ICU]] の仕様によって [[PHP]] の挙動が変わるって、そんなことちゃんと理解して[[Webアプリケーション]]作ってる開発者いるのかなあ?
+この一覧をちゃんと思った通りのものにするにはどこのどのファイルをいじればいいんだろう?
+
+[16] では肝心の [CODE[Accept-Language]] から[[ロケール識別子]]への変換はどうやっているのかというと、
+
+- [15] [CITE@en[Search · uloc_acceptLanguageFromHTTP · [[GitHub]]]], [TIME[2023-05-17T09:31:21.000Z]] <https://github.com/unicode-org/icu/search?q=uloc_acceptLanguageFromHTTP>
+
+
+これもやっぱり [[ICU]] の
+[CODE[uloc_acceptLanguageFromHTTP]]
+を使っている模様。
+
+[17] てことは返ってくる結果は[[Unicodeロケール識別子]]の [[POSIXロケール識別子]]ぽい味付けのやつなんかな?
+
+
