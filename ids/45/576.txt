@@ -61,6 +61,111 @@
 [14] 
 [CITE[高橋研究室: 地下鉄路線図に注釈を付ける際のメンタルマップの保持]], [TIME[2019-10-03T06:16:56.000Z]], [TIME[2024-05-16T04:51:13.811Z]] <https://u-aizu.ac.jp/~shigeo/research/mental/index-j.html>
 
+
+[40] [[多角線]]上の[[点]] [VAR[p2]] の近く、距離 [CODE[opts.delta]] の位置を、
+前後の[[点]] [VAR[p1]] と [VAR[p3]] の位置を勘案しつつ決定する
+[[JavaScript]]
+の実装例。
+
+[PRE[
+  function get (p1, p2, p3, opts) {
+    let Q;
+    {
+      let d = opts.offset || 1;
+
+      let p1p;
+      let p3p;
+      let pr = p1;
+      if (p1.x === p2.x && p1.y === p2.y && p1.x === p3.x && p1.y === p3.y) {
+        p1p = p3p = p2;
+      } else if (p1.x === p2.x && p1.y === p2.y) {
+        p1p = p3p = {x: p1.x + p3.x - p2.x, y: p1.y + p3.y - p2.y};
+        pr = p3;
+      } else if (p3.x === p2.x && p3.y === p2.y) {
+        p3p = p1p = {x: p3.x + p1.x - p2.x, y: p3.y + p1.y - p2.y};
+      } else {
+        p1p = {
+          x: p2.x + (p1.x - p2.x) / Math.sqrt ((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2),
+          y: p2.y + (p1.y - p2.y) / Math.sqrt ((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2)
+        };
+        p3p = {
+          x: p2.x + (p3.x - p2.x) / Math.sqrt ((p3.x - p2.x) ** 2 + (p3.y - p2.y) ** 2),
+          y: p2.y + (p3.y - p2.y) / Math.sqrt ((p3.x - p2.x) ** 2 + (p3.y - p2.y) ** 2)
+        };
+      }
+
+      const mx = (p1p.x + p3p.x) / 2;
+      const my = (p1p.y + p3p.y) / 2;
+      //let M = {x: mx, y: my};
+
+      let ux;
+      let uy;
+      if (p2.x === mx) {
+        if (p1.y === p3.y) {
+          ux = 0;
+          uy = 1;
+        } else {
+          const m1 = (p3.y - p1.y) / (p3.x - p1.x);
+          const mL = -1 / m1;
+          ux = 1 / Math.sqrt (1 + mL * mL);
+          uy = mL / Math.sqrt (1 + mL * mL);
+        }
+      } else {
+        const dx = mx - p2.x;
+        const dy = my - p2.y;
+        const m = dy / dx;
+        ux = 1 / Math.sqrt (1 + m * m);
+        uy = m / Math.sqrt (1 + m * m);
+      }
+
+      const Q1 = {x: p2.x + d * ux, y: p2.y + d * uy};
+      const Q2 = {x: p2.x - d * ux, y: p2.y - d * uy};
+      const dQ1p = Math.sqrt (Math.pow (Q1.x - pr.x, 2) + Math.pow (Q1.y - pr.y, 2));
+      const dQ2p = Math.sqrt (Math.pow (Q2.x - pr.x, 2) + Math.pow (Q2.y - pr.y, 2));
+
+      Q = dQ1p > dQ2p ? Q1 : Q2;
+    }
+
+    let angle = Math.atan2 (Q.y - p2.y, Q.x - p2.x) * (180 / Math.PI);
+
+    angle += 22.5;
+    if (angle < 0) angle += 360;
+    angle %= 360;
+    angle /= 45;
+
+    let v;
+    if (angle < 1) {
+      v = {textAlign: "left", textBaseline: "middle", anchorPoint: Q};
+    } else if (angle < 2) {
+      v = {textAlign: "left", textBaseline: "top", anchorPoint: Q};
+    } else if (angle < 3) {
+      v = {textAlign: "center", textBaseline: "top", anchorPoint: Q};
+    } else if (angle < 4) {
+      v = {textAlign: "right", textBaseline: "top", anchorPoint: Q};
+    } else if (angle < 5) {
+      v = {textAlign: "right", textBaseline: "middle", anchorPoint: Q};
+    } else if (angle < 6) {
+      v = {textAlign: "right", textBaseline: "bottom", anchorPoint: Q};
+    } else if (angle < 7) {
+      v = {textAlign: "center", textBaseline: "bottom", anchorPoint: Q};
+    } else {
+      v = {textAlign: "left", textBaseline: "bottom", anchorPoint: Q};
+    }
+
+    return v;
+  }
+]PRE]
+
+この実装例では、 [VAR[p2]] の周囲を8分割し、右側に置くべきならその左端 (上下中央)
+の位置を返し、左下に置くべきならその右上端の位置を返し、
+といった感じで基準となる位置を返す。
+
+判断基準は [VAR[p2]] を中心に [VAR[p1]], [VAR[p3]] が成す角度であり、
+角度が大きい方の中央に向かって距離 [CODE[opts.delta]] の位置が基準点となる。
+
+
+
+
 ** ツールチップ表示位置の決定
 
 [23] [[Anchor Positioning]]
@@ -115,7 +220,6 @@
 [1] 
 [TIME[2024-05-16T03:25:41.000Z]]
 <https://chuo-u.repo.nii.ac.jp/record/14550/files/nenpou49_150.pdf>
-
 
 * 群に沿った注記の配置
 
