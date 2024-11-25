@@ -132,6 +132,15 @@
 [91] [[IETF]] の [[RFC]] として最初に [CODE(URI)@en[[[file:]]]] [[URL]]
 を定義したのは [[RFC 1630]] でした。
 
+[223] 
+[[RFC1630]] は [[URI]]
+に関する最初の [[RFC]]
+ですが、 [CODE(URI)[[[file:]]]]
+URI [[方式]]を定義した最初の RFC
+でもあります。
+
+
+
 [95] [CODE(URI)@en[[[file:]]]] は他の [[URL scheme]] とは違ってどこでも同義ではなく、
 解釈する[[ホスト]]によって異なるという点が特殊です。しかし[[ローカル・ファイル・システム]]の[[ファイル]]を指す
 [[URL]] は必要性があるために定義したとされています。
@@ -150,7 +159,146 @@
 [123] これはどの[[ホスト]]でも共通で[[マウント]]されているような[[ファイル]]や、
 [CODE(file)[[[/etc/hosts]]]] のようにおおくの[[ホスト]]で共通に存在する[[ファイル]]に有用とされていました。
 
+-*-*-
+
+[224] 
+なぜか、 RFC 1630 の [[BNF]]
+定義には [CODE(URI)[file:]] URI
+は載っていません。
+「構文は
+[CODE(URI)[[[ftp:]]]] と同じ」
+とされている
+[SRC[>>222]]
+ことから推測してみます。
+
+>
+- ftpaddress             f t p : / / login / path [  ftptype ]
+- login                  [ user [ : password ] @ ] hostport
+- hostport               host [ : port ]
+- host                   hostname | hostnumber
+- hostname               ialpha [  .  hostname ]
+- hostnumber             digits . digits . digits . digits
+- xalpha                 alpha | digit | safe | extra | escape
+-  xalphas                xalpha [ xalphas ]
+-  xpalpha                xalpha | +
+-  xpalphas               xpalpha [ xpalphas ]
+-  ialpha                 alpha [ xalphas ]
+- digits                 digit [ digits ]
+- path                   void |  xpalphas  [  / path ]
+
+[225] 
+[CODE[ftptype]] が [CODE(URI)[file:]]
+URI に不要なことは明らかです。
+
+[226] 
+[CODE[hostport]] でなくて
+[CODE[login]] を使うのかどうかも謎です。
+後の [[..//RFC1738]]
+の定義に従うなら、これは前者です。
+実際にも file access
+に user@password までわざわざ記述する必要はないと思われます。
+(ホスト名を指定可能にした理由は普遍性の確保ですが、 [[Un|x]]
+などで login する利用者によってファイルシステムの木まで変わってしまうことは ([CODE(file)[[[~]]]] を除いて)
+ありませんから。 remote file
+access は別の scheme が用意されているので対象外ですし。)
+
+[227] 
+更に、 local file access
+に port なんて存在しませんからこれも削ります。
+
+[228] 
+こんな [[BNF]] が得られます。
+
+[FIG[
+
+- fileaddress = 'file://' host "/" [ path ]
+- host = hostname / hostnumber
+- hostname = hostlabel *("." hostlabel)
+- hostnumber = 1*DIGIT 3("." 1*DIGIT)
+- hostlabel = ALPHA [ xalphas ]
+- path = xpalphas *("/" xpalphas)
+-- ;; [SAMP(URI)[file://localhost/bar''//''foo]] は駄目。
+- xalphas = 1*(ALPHA / DIGIT / <-$_@.&+!*"'(),> / [[escape]])
+- xpalphas = 1*("+" / xalphas)
+
+]FIG]
+
+
+-*-*-
+
+
+
+[FIG(quote)[ [222] [[RFC 1630]] [CSECTION[[CODE[file]]]]
+
+
+>The other URI schemes (except nntp) share the property that they are
+equally valid at any geographical place.
+
+他の URI 方式 
+([CODE(URI)[nntp]] を除く。)
+は地理的にどんな場所であっても等しく妥当な特性を共有しています。
+
+>There is however a real practical requirement to be able to generate
+a URL for an object in a machine's local file system.
+
+しかし現実の実際的な要件には機械の局部[[ファイル・システム]]中の物体の
+URL を生成できることがあります。
+
+>The syntax is similar to the ftp syntax, but in this case the slash
+is used to donate boundaries between directory levels of a
+hierarchical file system is used.  The "client" software converts the
+file URL into a file name in the local file name conventions.  This
+allows local files to be treated just as network objects without any
+necessity to use a network server for access.  This may be used for
+example for defining a user's "home" document in WWW.
+
+構文は [CODE(URI)[ftp]] のものと似ていますが、こちらの場合は[[斜線]]が使用されている階層ファイル・システムのディレクトリ水準の境界を示すのに使います。
+「クライアント」ソフトウェアは
+[CODE(URI)[file]] URL を局部ファイル名表記法によるファイル名に変換します。
+これによって、接続するためのネットワーク・サーバーを使う必要なしに局部ファイルをネットワーク物体のように扱うことが出来ます。
+これは例えば [[WWW]] で利用者の
+「家」文書を定義するのに使うかもしれません。
+
+>There is clearly a danger of confusion that a link made to a local
+file should be followed by someone on a different system, with
+unexpected and possibly harmful results.  Therefore, the convention
+is that even a "file" URL is provided with a host part.  This allows
+a client on another system to know that it cannot access the file
+system, or perhaps to use some other local mecahnism to access the
+file.
+
+明らかに、局部ファイルに対して作られたリンクが誰かに違ったシステムで辿られて、予期せぬ、もしかすると有害な結果になったりする混乱の危険があります。
+従って、この表記法では [CODE(URI)[file]]
+URL にもホスト部分が用意されているのです。
+これによって他のシステムのクライアントはこれがそのファイル・システムでは接続できないもので、おそらく接続するためには他の局部機構を使わなければならないのだと知ることが出来ます。
+
+>The special value "localhost" is used in the host field to indicate
+that the filename should really be used on whatever host one is.
+This for example allows links to be made to files which are
+distribted on many machines, or to "your unix local password file"
+subject of course to consistency across the users of the data.
+
+特別な値 [CODE(URI)[localhost]]
+は、ホスト欄で使用して、
+どこのホストであってもこのファイル名が本当に使用されるべきであることを示します。
+これによって、例えば多くの機械に配布されているファイルへのリンクやデータの利用者の間で当然一貫して利用可能な「お宅の unix 局部合言葉ファイル」へのリンクを作ることができます。
+
+>A void host field is equivalent to "localhost".
+
+空のホスト欄は [CODE(URI)[localhost]]
+と同等です。
+
+
+]FIG]
+
+
+
 ** RFC 1738
+
+[229] [[RFC1738]] が [CODE(URI)[[[file:]]]]
+[[URI]] [[方式]]を定義しています。
+
+
 
 [REFS[
 - [101] [CITE@en[RFC 1738 - Uniform Resource Locators (URL)]] 
@@ -170,6 +318,140 @@ fileurl        = "file://" [ host | "localhost" ] "/" fpath
 ]PRE]
 
 [103] [CODE(URI)@en[[[localhost]]]] や[[空文字列]]はやはりその[[ホスト]]を表すとされていました [SRC[>>96]]。
+
+
+[302] RFC 1738 の5章では [[ABNF]]
+定義が挙げられています。
+[CODE(URI)[file:]] URI
+に関係する部分だけを抜粋します:
+
+>
+- fileurl        = "file://" [ host | "localhost" ] "/" fpath
+- host           = hostname | hostnumber
+- hostname       = *[ domainlabel "." ] toplabel
+- domainlabel    = alphadigit | alphadigit *[ alphadigit | "-" ] alphadigit
+- toplabel       = alpha | alpha *[ alphadigit | "-" ] alphadigit
+- alphadigit     = alpha | digit
+- hostnumber     = digits "." digits "." digits "." digits
+- digits         = 1*digit
+- fpath          = fsegment *[ "/" fsegment ]
+- fsegment       = *[ uchar | "?" | ":" | "@" | "&" | "=" ]
+- escape         = "%" hex hex
+- unreserved     = alpha | digit | safe | extra
+- uchar          = unreserved | escape
+- safe           = "$" | "-" | "_" | "." | "+"
+- extra          = "!" | "*" | "'" | "(" | ")" | ","
+
+[303] この定義をちょっと見やすく書き直してみます。
+
+[FIG[
+
+- fileurl
+-- = "file:///" fpath
+-- / "file://localhost/" fpath
+-- / "file://" host "/" fpath 
+- host = hostname / hostnumber
+- hostname = 1*(domainlabel ".") toplabel
+-- ;; 元の定義では [CODE(BNF)[*]]
+になっていますから、 
+[SAMP(URI)[file://foo/]]
+が可能です。しかし、本文中の規定により [[FQDN]] でなければなりませんから、必ず [CODE(ABNF)[1*]]
+になります。
+- domainlabel = ([[ALPHA]] / [[DIGIT]]) [*(ALPHA / DIGIT / "-") (ALPHA / DIGIT)]
+- toplabel = domainlabel - (DIGIT 1*(ALPHA / DIGIT / "-"))
+-- ;; toplabel は数字で始まってはいけない。
+- hostnumber = [[IPv4address]]
+-- ;; 元の BNF では「1234.456.3.2」
+のような値も許されてしまうが、
+本文 (3.1) の規定により誤り。
+- fpath = fsegment *("/" fsegment)
+- fsegment = *(_fchar / escape)
+- escape = "%" 2[[HEXDIGIT]]
+- fchar = <[A-Za-z0-9?:@&=$_.+!*'(),-]>
+
+]FIG]
+
+[304] [CODE(URI)[file:]] の部分は小文字で書くのが正式ですが、実装は大文字も受け付けるべきとされています。その他の部分 ([CODE(URI)[localhost]] の部分も含む。) の大文字・小文字の区別についての言及はありません。
+
+[305] >>304 あ、 [CODE(URI)[escape]] に大文字も小文字も使えることは明記されています。
+
+[306] [CODE[hostname]] は FQDN ですから、大文字・小文字は区別されないと予想されます。ですから [CODE(URI)[localhost]] もされないと予想は出来ますが、定かではありません。 [CODE[fpath]] の部分はシステム依存でしょうが、 [[Un|x]] など多くのシステムで区別しないと現実的に使い物になりませんから、少なくても区別を無視しないといけないということはないでしょう。 (そんな重要な要求は書き忘れるはずがないし。)
+
+[307] まあ明記されてないのは常識で判断して問題ないということでしょうな。
+
+
+
+
+
+-*-*-
+
+[FIG(quote)[ [230] [[RFC 1738]] [CSECTION[3.10 FILES]]
+
+>The file URL scheme is used to designate files accessible on a
+particular host computer. This scheme, unlike most other URL schemes,
+does not designate a resource that is universally accessible over the
+Internet.
+
+[CODE(URI)[file]] URL 方式は、
+特定のホスト計算機で接続可能なファイルを指示するのに使います。
+この方式は、他のほとんどの URL
+方式とは異なり、インターネット上で普遍的に接続可能な資源を指示しません。
+
+>A file URL takes the form:
+
+[CODE(URI)[file]] URL は、
+
+>
+-       file://<host>/<path>
+
+>where <host> is the fully qualified domain name of the system on
+which the <path> is accessible, and <path> is a hierarchical
+directory path of the form <directory>/<directory>/.../<name>.
+
+の形式を取ります。ここで、
+[CODE[<host>]] は [CODE[<host>]]
+に接続可能なシステムの[[完全修飾ドメイン名]]で、
+[CODE[<path>]] は
+[CODE[<directory>/<directory>/.../<name>]]
+の形式の階層的ディレクトリ経路です。
+
+>For example, a VMS file
+
+例えば、 [[VMS]] ファイル
+>
+-     DISK$USER:[MY.NOTES]NOTE123456.TXT
+
+>might become
+
+は
+
+> 
+-   <URL:file://vms.host.edu/disk$user/my/notes/note12345.txt>
+
+となるでしょう。
+
+>As a special case, <host> can be the string "localhost" or the empty
+string; this is interpreted as `the machine from which the URL is
+being interpreted'.
+
+特別な場合として、 [CODE[<host>]]
+は文字列 [CODE(URI)[localhost]]
+又は空文字列となることができます。
+これは URL が解釈される機械と解釈します。
+
+>The file URL scheme is unusual in that it does not specify an
+Internet protocol or access method for such files; as such, its
+utility in network protocols between hosts is limited.
+
+[CODE[file]] URL 方式は、
+インターネットのプロトコルやファイルへの接続方法を指定しないという点で普通ではありません。
+ですから、ホスト間のネットワーク・プロトコル中での有用性は限られています。
+
+
+]FIG]
+
+
+
 
 ** draft-hoffman-file-uri (2004)
 
