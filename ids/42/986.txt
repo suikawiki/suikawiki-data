@@ -8,6 +8,19 @@
 
 * OpenType の座標
 
+[115] 
+[[OpenType]]
+の[[グリフ]]は、
+[[座標空間]]上の[[点]]の[[集合]]として記述されます。
+
+[116] 
+1つの[[グリフ]]データは、
+1つの[[座標空間]]上に配置されています。
+このデータを適宜、[[文字]]を[[レンダリング]]するべき位置に配置 (= [[行]]の[[座標空間]]に変換) し、
+次の[[文字]]の配置処理へと進んだり、前後の[[文字]]との関係を調整したりすることになります。
+
+
+
 
 [4] [[フォント単位]]
 
@@ -17,16 +30,6 @@
 - [3] [CITE@ja-jp[[[GPOS]] — Glyph Positioning Table (OpenType 1.9) - Typography | Microsoft Docs]], [[PeterCon]], [TIME[2022-09-06T11:34:46.000Z]] <https://docs.microsoft.com/ja-jp/typography/opentype/spec/gpos>
 ]REFS]
 
-[42] 
-[CODE[hdmx]] [[表][OpenType表]]は[[グリフ]]の [[advance width]]
-を各[[フォントサイズ]]における[[画素]]単位の[[整数]]に変換した値を格納しています。
-[SRC[>>41]]
-
-
-[REFS[
-- [41] 
-[CITE@ja-jp[[[hdmx]] - Horizontal Device Metrics (OpenType 1.9) - Typography | Microsoft Docs]], [[PeterCon]], [TIME[2022-09-08T06:01:54.000Z]] <https://docs.microsoft.com/ja-jp/typography/opentype/spec/hdmx>
-]REFS]
 
 [71] [CITE@ja-jp[[[LTSH]] - Linear Threshold (OpenType 1.9) - Typography | Microsoft Docs]], [[PeterCon]], [TIME[2022-09-09T12:24:42.000Z]] <https://docs.microsoft.com/ja-jp/typography/opentype/spec/ltsh>
 
@@ -35,7 +38,48 @@
 [CODE[sbix]],
 [CODE[STAT][STAT (OpenType)]]
 
--*-*-
+** 前進
+
+[117] 
+[[グリフ]]は、
+[DFN[[F[[RUBYB[[[前進幅]]][advance width]]]]]],
+[DFN[[F[[RUBYB[[[前進高]]][advance height]]]]]]の
+2つの[RUBYB[[[前進]]][advance]]の値を持ちます。
+
+[118] 
+素朴には、[[原点]] (0, 0) と ([F[前進幅]], [F[前進高]]) 
+が[[グリフ]]の描画域と考えることができます。
+
+;; [119] 実際には[[基線]]の関係で [VAR[y]] 方向はもう少し複雑です。
+
+[120] 
+[[文字のレンダリング]]の処理では、
+[[現在位置]]に[[グリフ]]の[[原点]]を揃えて配置し、
+次の[[グリフ]]のために[[現在位置]]を[F[前進幅]]または[F[前進高]]の分だけ移動します。
+(より厳密には >>5)
+
+[121] 
+現在の一般的な[[仮名]]や[[漢字]]のような[[正方形]]の[[文字]]の場合は、
+[[グリフ]]は[F[前進幅]]や[F[前進高]]の範囲に収まるように設計するのが普通です。
+つまり[[グリフ]]の[F[外接箱]]は[F[前進幅]]や[F[前進高]]の範囲より小さくなります。
+
+[122] 
+しかしそうでない[[グリフ]]も作ることが出来ます。その場合、前後の[[グリフ]]と重なる可能性があります。
+[[文字]]によっては (もちろん重なり方は調整しつつ) 意図的にそうすることがあります。
+
+
+[123] 
+[F[前進幅]], [F[前進高]]は[[グリフ]]ごとに固定です。
+前後の[[グリフ]]の組み合わせによって[[字間]]を調整したいときは、
+[[kerning]] 機能のような他の仕組みを使うことになります。
+
+
+[42] 
+[CODE[hdmx]] [[表][OpenType表]]は[[グリフ]]の [[advance width]]
+を各[[フォントサイズ]]における[[画素]]単位の[[整数]]に変換した値を格納しています。
+[SRC[>>41]]
+
+
 
 
 [58] 
@@ -73,6 +117,9 @@
 
 
 [REFS[
+
+- [41] 
+[CITE@ja-jp[[[hdmx]] - Horizontal Device Metrics (OpenType 1.9) - Typography | Microsoft Docs]], [[PeterCon]], [TIME[2022-09-08T06:01:54.000Z]] <https://docs.microsoft.com/ja-jp/typography/opentype/spec/hdmx>
 -
 [44] 
 [CITE@ja-jp[[[glyf]] - Glyf data table (OpenType 1.9) - Typography | Microsoft Docs]], [[PeterCon]], [TIME[2022-09-08T06:52:01.000Z]] <https://docs.microsoft.com/ja-jp/typography/opentype/spec/glyf>
@@ -167,6 +214,24 @@
 
 ;; [109] [[contour]] のない、つまり[[空白]]の[[グリフ]]では定義されません。
 各定義により [N[0]] などの値になります。
+
+;; [113] [[外接箱]]が [[off-curve point]] を含む[[点]]に[[外接]]するものだったのに対し、
+[[side bearing]] は [[contour]] までの距離なので、
+最外が [[off-curve point]] のとき両者は一致しません。
+[[LSB]]
+と 
+[CODE[xMin]]
+が等しい、
+つまり最左が [[on-curve point]] 
+であること
+(>>65 の [VAR[pp1]] = 0)
+を表すのが
+[CODE[head]]
+の
+[F[[CODE[flags]]]]
+の第1ビットです。
+[SRC[>>114]]
+
 
 [110] 
 究極的には[[グリフ]]データそのものから計算できますが、
@@ -287,7 +352,12 @@
 [SRC[>>43]]
 
 
+[REFS[
 
+- [114] 
+[CITE@en-us[[[head]] - Font header table (OpenType 1.9.1) - Typography | Microsoft Learn]], [[PeterCon]], [TIME[2024-05-31T17:42:29.000Z]], [TIME[2024-11-26T12:48:16.060Z]] <https://learn.microsoft.com/en-us/typography/opentype/spec/head>
+
+]REFS]
 
 ** 縦書き用座標値
 
