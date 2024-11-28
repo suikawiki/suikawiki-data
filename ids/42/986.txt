@@ -1092,45 +1092,6 @@ default line spacing
 
 
 
-** フォント高
-
-[100] 
-[[Windows]] では [CODE[OS/2]] の [F[[CODE[usWinAscent]]]]
-と [F[[CODE[usWinDescent]]]] 
-を使って
-maximum black height を決定します。
-[[Windows]]
-はこの両者の距離を Font Height
-といいます。
-[SRC[>>99]]
-
-
-[101] 
-ただし 
-[[Windows]] は
-[F[[CODE[yMax]]]] と [F[[CODE[yMin]]]]
-の外側の [[pixel]]
-をくり抜きます。
-[[TrueType]] instruction は actual scaled and rounded values と異なる
-Font Height を生じることがあって、
-Font Height を厳密に [F[[CODE[yMax]]]] と [F[[CODE[yMin]]]] に置くと
-「lost pixel」
-が生じることになります。
-[SRC[>>99]]
-
-[102] この grid fitting の lost pixel 問題を避けるために [DFN[[CODE[VDMX]]]]
-[[表][表 (OpenType)]]に修正した高さを記述できます。
-[SRC[>>99]]
-
-
-
-[REFS[
-
-- [99] 
-[CITE@en-us[[[VDMX]] - Vertical Device Metrics (OpenType 1.9.1) - Typography | Microsoft Learn]], [[PeterCon]], [TIME[2024-05-31T17:42:16.000Z]], [TIME[2024-11-26T11:21:58.885Z]] <https://learn.microsoft.com/en-us/typography/opentype/spec/vdmx>
-
-]REFS]
-
 
 
 
@@ -1216,6 +1177,191 @@ default line spacing
 として使うことが[RUBYB[強く推奨されます][strongly recommended]]。
 [SRC[>>143]]
 
+[196] 
+[F[[CODE[sTypo[VAR[*]]]]]]
+と
+[F[[CODE[usWin[VAR[*]]]]]]
+のどちらで 
+default line spacing
+を決めるか
+[F[[CODE[USE_TYPO_METRICS]]]]
+をみる[[応用]]があります。
+この挙動は新しい[[フォント]]でより好ましく可搬な配置を実現しつつも古い[[フォント]]を使った[[遺物]]の[[文書]]との互換性を保つ有用な実装方法です。
+[SRC[>>143]]
+
+
+
+** フォント高
+
+[187] 
+[CODE[OS/2]]
+に
+[DFN[[F[[CODE[usWinAscent]]]]]],
+[DFN[[F[[CODE[usWinDescent]]]]]]
+があります。
+「Windows ascender」 metric,
+「Windows descender」 metric
+を[[フォント設計単位]]で表します。
+[SRC[>>143]]
+
+[188] 
+これらには
+clipping region
+の[[基線]]上の高さを指定する[RUBYB[べきです][should]]。
+[SRC[>>143]]
+
+[189] 
+[F[[CODE[sTypoAscender]]]] / [F[[CODE[sTypoDescender]]]],
+[F[[CODE[ascender]]]] / [F[[CODE[descender]]]]
+とよく似ていますが、大きな違いは描画の限界を示すことです。
+
+[201] 
+また、
+[F[[CODE[sTypoDescender]]]] / [F[[CODE[descender]]]]
+は[[基線]]の上が[[正]]、下が[[負]]となるのに対し、
+[F[[CODE[usWinDescent]]]]
+は[[基線]]の上が[[負]]、下が[[正]]となります。
+[SRC[>>143]]
+
+[100] 
+[[Windows]] では
+[F[[CODE[usWinAscent]]]]
+と [F[[CODE[usWinDescent]]]] 
+を使って
+maximum black height を決定します。
+[[Windows]]
+はこの両者の距離を Font Height
+といいます。
+[SRC[>>99]]
+
+[190] 
+[[Windows]] [[GDI]] 実装では、
+[F[[CODE[usWinAscent]]]]
+と [F[[CODE[usWinDescent]]]] 
+が
+[[TrueType]] [[rasterrizer]] の bitmap surface の size
+を決定するために使われます。
+[[Windows]] [[GDI]]
+は
+[[TrueType]] glyph outline がこの範囲外にはみ出した時切り抜き (clip)
+します。
+[SRC[>>143]]
+
+[191] 
+切り抜きが好ましからざるときは、
+[F[[CODE[yMax]]]] [[以上]]や
+[F[[CODE[yMin]]]] [[以下]]に当たる値を指定する[RUBYB[べきです][should]]。
+[SRC[>>143]]
+
+[199] 
+古い版の [[OpenType]] 仕様書は、
+[F[[CODE[usWinAscent]]]]
+と [F[[CODE[usWinDescent]]]] 
+を
+[[Windows "ANSI" character set]]
+のすべての[[文字]]の
+[CODE[yMax]] / [CODE[yMin]]
+(の最大・最小?)
+に当たる値とすることを[RUBYB[提案][suggested]]していました。
+[SRC[>>143]]
+
+[200] 
+新しいフォントでは、
+[F[[CODE[usWinAscent]]]]
+と [F[[CODE[usWinDescent]]]] 
+は対応する主要な[[言語]]をもとに決定するべきであり、
+長い[[グリフ]]や [[mark]] positioning
+に必要になる追加分の高さも考慮するべきです。
+[SRC[>>143]]
+
+;; [202] >>193 の通り既定の位置を基に切り抜きの範囲は決まりますから、
+切り抜きに関して言えば[[マーク]]が上下に追加されることは特別な配慮は不要です。
+しかし >>197 のような行とみなされる範囲に[[マーク]]が含まれることは好ましいでしょうから、
+その意味での配慮はやはり必要です。
+
+[101] 
+ただし 
+[[Windows]] は
+[F[[CODE[yMax]]]] と [F[[CODE[yMin]]]]
+の外側の [[pixel]]
+をくり抜きます。
+[[TrueType]] instruction は actual scaled and rounded values と異なる
+Font Height を生じることがあって、
+Font Height を厳密に [F[[CODE[yMax]]]] と [F[[CODE[yMin]]]] に置くと
+「lost pixel」
+が生じることになります。
+[SRC[>>99]]
+
+[102] この grid fitting の lost pixel 問題を避けるために [DFN[[CODE[VDMX]]]]
+[[表][表 (OpenType)]]に修正した高さを記述できます。
+[SRC[>>99]]
+
+[192] 
+[CODE[VDMX]] があって current device aspect ratio と rasterization size に対するデータが存在するとき、
+[CODE[VDMX]] のデータが
+[F[[CODE[usWinAscent]]]]
+と [F[[CODE[usWinDescent]]]] 
+を上書きします。
+[SRC[>>143]]
+
+[193] 
+[F[[CODE[usWinAscent]]]]
+と [F[[CODE[usWinDescent]]]] 
+の指定する範囲は[[グリフ]]の既定の位置に対するものです。
+[CODE[GPOS]] や [CODE[kern]]
+による配置が適用される前の状態を指します。
+[SRC[>>143]]
+
+;; [194] 
+[[Windows]] の [[GDI]] の実装の挙動として説明されているということは、
+他の実装はこれに従う必要はないということでしょうか。
+
+[195] 
+[[遺物]]の[[応用]]の中には、
+[F[[CODE[usWinAscent]]]]
+と [F[[CODE[usWinDescent]]]] 
+から
+default line spacing
+を決めるものがあります。これは[RUBYB[強く非推奨][strongly discouraged]]です。
+[F[[CODE[sTypo[VAR[*]]]]]]
+から決める[RUBYB[べきです][should]]。
+[SRC[>>143]]
+
+[197] 
+[F[[CODE[sTypo[VAR[*]]]]]]
+を使って
+default line spacing
+を決める[[応用]]であっても、
+[F[[CODE[usWin[VAR[*]]]]]]
+を使って clipping region の size を決定できます。
+[[応用]]によっては
+clipping region
+を使って編集時に再描画するべき display surface の部分を決めたり、
+text が選択されたときに選択[[矩形]]を描く大きさを決めたりします。
+これらは
+[F[[CODE[usWin[VAR[*]]]]]]
+の正統な用法です。
+[SRC[>>143]]
+
+;; [198] ということは clipping してレンダリングされてしまうことを防ぐために余裕を持たせてあまりに大きな値を
+[F[[CODE[usWin[VAR[*]]]]]]
+に指定してしまうと、上下の[[行]]を隠すように選択矩形が描画されてしまうリスクがあるということです。
+再描画範囲の決定にしても、上下の[[行]]と被ってしまうと、上下の[[行]]の再描画まで必要だと[[応用]]は判断しないといけないはずですが、この >>197 のような仕様書の書き方だとそこまで考えないで実装してしまいそうです。。。
+従って安全のため
+[F[[CODE[usWin[VAR[*]]]]]]
+は
+default line spacing
+とそうかわらないように指定するべきということになりそうです。
+
+
+
+
+[REFS[
+
+- [99] 
+[CITE@en-us[[[VDMX]] - Vertical Device Metrics (OpenType 1.9.1) - Typography | Microsoft Learn]], [[PeterCon]], [TIME[2024-05-31T17:42:16.000Z]], [TIME[2024-11-26T11:21:58.885Z]] <https://learn.microsoft.com/en-us/typography/opentype/spec/vdmx>
+
+]REFS]
 
 
 
