@@ -202,7 +202,7 @@
 
 [6] 
 [[OpenType]] では、
-[CODE[GPOS]] [[表][OpenType表]]を使って[RUBYB[[[グリフ添付点]]][glyph attachment point]]による[[グリフ]]間の位置調整も可能です。
+[CODE[GPOS]] [[表][OpenType表]]を使って[DFN[[RUBYB[グリフ添付点][glyph attachment point]]]]による[[グリフ]]間の位置調整も可能です。
 [SRC[>>3]]
 
 [16] 
@@ -489,6 +489,24 @@ lsb + (xMax - xMin)
 を持つ[[グリフ]]のみを使って計算する[RUBYB[べきです][should]]。
 [SRC[>>124]]
 
+[246] 
+[[可変フォント]]では[[制御点]]の座標値が変わることがありますから、[[グリフ]]の [[outline]]
+や[[グリフ]]の[[実現値]]を構成するすべての[[点]]の tight bounding rectangle
+は、
+[[グリフ]]の[[既定実現値]]のものより大きかったり小さかったりします。
+[CODE[head]]
+の
+[F[[CODE[xMin]]]],
+[F[[CODE[xMax]]]],
+[F[[CODE[yMin]]]],
+[F[[CODE[yMax]]]]
+は[[実現値]]の derived glyph outline を包含することもあれば、
+そうでないこともあります。
+非[[既定実現値]]の[[フォント]]の[[グリフ]]を包含する bounding rectangle
+が必要な[[応用]]は、
+[[実現値]]の derived glyph outline を処理して決定する[RUBYB[べきです][should]]。
+[SRC[>>52]]
+
 ** side bearing
 
 [106] 
@@ -507,19 +525,6 @@ lsb + (xMax - xMin)
 ;; [113] [[外接箱]]が [[off-curve point]] を含む[[点]]に[[外接]]するものだったのに対し、
 [[side bearing]] は [[contour]] までの距離なので、
 最外が [[off-curve point]] のとき両者は一致しません。
-[[LSB]]
-と 
-[CODE[xMin]]
-が等しい、
-つまり最左が [[on-curve point]] 
-であること
-(>>65 の [VAR[pp1]] = 0)
-を表すのが
-[CODE[head]]
-の
-[F[[CODE[flags]]]]
-の第1ビットです。
-[SRC[>>114]]
 
 
 [110] 
@@ -544,10 +549,10 @@ lsb + (xMax - xMin)
 
 [244] 
 [CODE[head]] の [F[[CODE[flags]]]] の第1ビットは、
-[[left side bearing]] が [VAR[x]] = 0 
-であることを表します。
+[[left side bearing]] point at [VAR[x]] = 0 
+を意味するとされています。
 [[TrueType]] [[rasterizer]] にのみ関係します。
-[SRC[>>114]]
+[SRC[>>52]]
 
 [60] 
 [CODE[CFF ]] や [CODE[CFF2]] の[[グリフ]]データには 
@@ -644,6 +649,19 @@ lsb + (xMax - xMin)
 
 ]FIG]
 
+[114] 
+[CODE[head]] の [F[[CODE[flags]]]] の第1ビットが設定されているときは、
+すべての[[グリフ]]に於いて [VAR[pp1]] = 0 であり、
+各[[グリフ]]の [F[[CODE[xMin]]]] と [F[[[left side bearing]]]] は等しくなければ[RUBYB[なりません][must]]。
+[SRC[>>52]]
+
+[245] 
+[[TrueType outline]] の[[可変フォント]]に於いては、
+各[[グリフ]]の [F[left side bearing]] は 
+[F[[CODE[xMin]]]]
+と等しくなければ[RUBYB[なりません][must]]。
+[SRC[>>52]]
+
 [66] 
 [[グリフ]]が [[contour]] を持たないとき、 [F[[CODE[xMin]]]], [F[[CODE[xMax]]]]
 は定義されません。
@@ -676,7 +694,7 @@ lsb + (xMax - xMin)
 
 [REFS[
 
-- [114] 
+- [52] 
 [CITE@en-us[[[head]] - Font header table (OpenType 1.9.1) - Typography | Microsoft Learn]], [[PeterCon]], [TIME[2024-05-31T17:42:29.000Z]], [TIME[2024-11-26T12:48:16.060Z]] <https://learn.microsoft.com/en-us/typography/opentype/spec/head>
 
 ]REFS]
@@ -763,7 +781,16 @@ lsb + (xMax - xMin)
 の[[前進幅]]の最大値とされます。
 [SRC[>>124]]
 
-
+[247] 
+[CODE[head]]
+の
+[F[[CODE[flags]]]]
+の第4ビットは、
+[[instruction]]
+が[[前進幅]]を[RUBYB[変更][alter]]する[RUBYB[かもしれない][may]]
+([[前進幅]]は[[線形]]に[[拡縮]]しない[RUBYB[かもしれない][might]])
+ことを表します。
+[SRC[>>52]]
 
 [REFS[
 
@@ -772,9 +799,6 @@ lsb + (xMax - xMin)
 -
 [44] 
 [CITE@ja-jp[[[glyf]] - Glyf data table (OpenType 1.9) - Typography | Microsoft Docs]], [[PeterCon]], [TIME[2022-09-08T06:52:01.000Z]] <https://docs.microsoft.com/ja-jp/typography/opentype/spec/glyf>
--
-[52] 
-[CITE@ja-jp[[[head]] - Font header table (OpenType 1.9) - Typography | Microsoft Docs]], [[PeterCon]], [TIME[2022-09-08T07:10:10.000Z]] <https://docs.microsoft.com/ja-jp/typography/opentype/spec/head>
 - [43] 
 [CITE@ja-jp[[[hmtx]] - Horizontal metrix table (OpenType 1.9) - Typography | Microsoft Docs]], [[PeterCon]], [TIME[2022-09-08T06:51:33.000Z]] <https://docs.microsoft.com/ja-jp/typography/opentype/spec/hmtx>
 ]REFS]
@@ -1763,6 +1787,18 @@ unscaled で unhinted な[[グリフ]] [[bounding box]]
 
 
 * フォントサイズ
+
+[248] 
+[CODE[head]]
+に
+[DFN[[F[[CODE[lowestRecPPEM]]]]]]
+があります。
+[SRC[>>52]]
+
+[249] 
+最小可読サイズを[RUBYB[[[画素]]][pixel]]単位で表します。
+[SRC[>>52]]
+
 
 [221] 
 [CODE[OS/2]]
