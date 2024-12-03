@@ -24,6 +24,8 @@
 
 [4] [[フォント単位]]
 
+
+
 [70] [CODE[kern]]
 
 [REFS[
@@ -58,6 +60,12 @@
 [[縦書き]]用の [DFN[[CODE[vhea]]]] (vertical header table) [SRC[>>78]]
 と [DFN[[CODE[vmtx]]]] (vertical metrics table) [SRC[>>103]] があります。
 
+[274] 
+[[OpenType]] vertical font は [CODE[vhea]] と [CODE[vmtx]]
+が[RUBYB[必須][require]]です。
+[SRC[>>103]]
+
+
 [254] 
 [CODE[vhea]] のデータは、 [CODE[vmtx]] のデータと一貫していなければ[RUBYB[なりません][must]]。
 [SRC[>>78]]
@@ -77,11 +85,57 @@
 (一方 [CODE[hmtx]] がないとエラーになります。)
 
 
+[273] 
+vertical metrics coordinate system [SRC[>>103]]
+
+[275] 
+[[グリフ]]の[DFN[[F[[RUBYB[[[縦書き原点]]][vertical origin]]]]]]の
+y [RUBYB[座標][coordinate]]は、
+[[グリフ]]の [[tsb]] + [[グリフ]]の [[bounding box]] の top (= y の最大)
+です。
+[SRC[>>103]]
+
+;; [276] 
+通常は[[グリフ]]の上部の[[アキ]]も含めた上端ということになります。
+
+[283] 
+実装は、 [CODE[CFF ]] または [CODE[CFF2]] の[[グリフ]]であり、
+[[フォント]]に [CODE[VORG]] [[表]]がある場合は、
+[CODE[VORG]] に指定された値でこれに替えることができます
+(し、定義通りの計算もできます)。
+[SRC[>>103]]
+
+
+
+[279] 
+[[縦書き原点]]のy座標の算出に必要な[[グリフ]]の[F[外接箱]]の[F[上辺]]の値は
+[CODE[glyf]] には入っています (>>62) が、
+[CODE[CFF ]] や [CODE[CFF2]] には入っていないので計算が必要です (>>278)。
+この計算を省略して[[応用]]が正確性と性能を向上させられるよう、
+[CODE[VORG]]
+[[表]]を使うことができます (が、[RUBYB[必須ではありません][optional]])。
+[SRC[>>103, >>281]]
+
+;; [280] 
+必須ではないので[[フォント]]の設計者はこれを含めるか含めないかを決められますし、
+実装者はどちらのケースも想定する必要があることになります。
+
+;; [284] 
+正確性というのは[[丸め]]誤差などが想定されます。 [SRC[>>281]]
+
+[282] 
+[CODE[VORG]] は [CODE[CFF ]] や [CODE[CFF2]] の [[OpenType]] [[フォント]]でのみ[RUBYB[使えます][may]]。
+[[TrueType outline]] データの [[OpenType]] [[フォント]]では無視しなければ[RUBYB[なりません][must]]。
+[SRC[>>281]]
+
 [REFS[
 
 - [78] 
 [CITE@en-us[[[vhea]] — Vertical header table (OpenType 1.9.1) - Typography | Microsoft Learn]], [[PeterCon]], [TIME[2024-05-31T17:42:16.000Z]], [TIME[2024-11-26T11:33:55.547Z]] <https://learn.microsoft.com/en-us/typography/opentype/spec/vhea>
 - [103] [CITE@en-us[[[vmtx]] — Vertical metrics table (OpenType 1.9.1) - Typography | Microsoft Learn]], [[PeterCon]], [TIME[2024-05-31T17:42:32.000Z]], [TIME[2024-11-26T11:35:50.160Z]] <https://learn.microsoft.com/en-us/typography/opentype/spec/vmtx>
+- [281] 
+[CITE@en-us[[[VORG]] — Vertical origin table (OpenType 1.9.1) - Typography | Microsoft Learn]], [[PeterCon]], [TIME[2024-05-31T17:42:17.000Z]], [TIME[2024-12-03T04:05:51.540Z]] <https://learn.microsoft.com/en-us/typography/opentype/spec/vorg>
+
 
 
 
@@ -420,6 +474,12 @@ anchor は記述できませんから、
 [SRC[>>52]]
 
 
+[62] 
+[[TrueType outline]] の[[グリフ]]の[[外接箱]]は、
+[CODE[glyf]] [[表][OpenType表]]の[[グリフ]]データによります。
+[SRC[>>43, >>103]]
+
+
 [45] 
 [CODE[glyf]] [[表][OpenType表]]の [[TrueType outline]] [[グリフ]]データは、
 [DFN[[F[[CODE[xMin]]]]]],
@@ -429,10 +489,6 @@ anchor は記述できませんから、
 の4つの [CODE[int16]] 値を持ちます。
 [SRC[>>44]]
 
-[62] 
-[[TrueType outline]] の[[グリフ]]の [F[[CODE[xMin]]]] と [F[[CODE[xMax]]]] は、
-[CODE[glyf]] [[表][OpenType表]]の[[グリフ]]データによります。
-[SRC[>>43]]
 
 
 [47] 
@@ -451,6 +507,12 @@ anchor は記述できませんから、
 右上 ([F[[CODE[xMax]]]], [F[[CODE[yMax]]]])
 の[[方形]]です。
 [SRC[>>44]]
+
+[278] 
+[CODE[CFF ]] や [CODE[CFF2]] の[F[外接箱]]は、
+[CODE[CharString]]
+データから算出することになります。
+[SRC[>>103]]
 
 
 
@@ -522,6 +584,17 @@ tsb + (yMax - yMin)
 が必要な[[応用]]は、
 [[実現値]]の derived glyph outline を処理して決定する[RUBYB[べきです][should]]。
 [SRC[>>52]]
+
+
+;; [277] 
+[[フォント]]内で明示された[[外接箱]]の情報と実際のグリフデータから算出される[[外接箱]]の情報が相違するとき、
+どうなるのかは [CITE[OpenType]] 仕様書上必ずしも明確になっていません。
+これらの情報は主に性能を目的として重複して含まれていると考えられるので、
+実装は処理の最適化のために使っているでしょうから、
+情報が矛盾していると誤った[[レンダリング]]になる可能性がありそうです。
+また、実装戦略に関わりますから、[[相互運用性]]に問題が生じる可能性がありそうです。
+場合によってはバッファー溢れなど[[セキュリティー]]に悪影響を及ぼしそうですから、
+実装者は注意が必要です。
 
 ** side bearing
 
