@@ -1,3 +1,7 @@
+[68] 
+[[RFC 822メッセージ]]や [[HTTPメッセージ]]の[[ヘッダー]]の特定の位置には[DFN[[RUBYB[注釈][comment]]]]を挿入できます。
+
+
 * 仕様書
 
 [REFS[
@@ -10,6 +14,8 @@
 * RFC 822 における構文
 
 [9] [[RFC 822]] における[[注釈]]の構文は、次のように説明できます。
+[SRC[>>61]]
+
 - [15] [CODE[[[(]]]] ではじまり、 [CODE[[[)]]]] で終わる
 - [10] 括弧内には、任意の [[ASCII文字]] ([CODE[[[U+0000]]]]-[CODE[[[U+007F]]]]) を使って良い
 - [11] ただし [CODE[[[(]]]] と [CODE[[[)]]]] は対になっていなければならない ([CODE[[[\]][[(]]]] と [CODE[[[\]][[)]]]] を除く)
@@ -17,9 +23,107 @@
 - [13] [[CRLF]] が続いた後には [CODE[[[U+0020]]]] か [CODE[[[U+0009]]]] が必要
 - [14] [CODE[[[U+0009]]]] は非推奨
 
-* RFC 822 における構文
+[FIG(quote)[ [61] [[RFC 822]] の [[ABNF]]
 
-[17] [[RFC 2822]] における[[注釈]]の構文は、次のように説明できます [SRC[>>16]]。
+
+[PRE[
+     comment     =  "(" *(ctext / quoted-pair / comment) ")"
+     ctext       =  <any CHAR excluding "(",     ; => may be folded
+                     ")", "\" & CR, & including
+                     linear-white-space>
+     quoted-pair =  "\" CHAR                     ; may quote any char
+     linear-white-space =  1*([CRLF] LWSP-char)  ; semantics = SPACE
+                                                 ; CRLF => folding
+     LWSP-char   =  SPACE / HTAB                 ; semantics = SPACE
+     CHAR        =  <any ASCII character>        ; (  0-177,  0.-127.)
+     CRLF        =  CR LF
+     LF          =  <ASCII LF, linefeed>         ; (     12,      10.)
+     CR          =  <ASCII CR, carriage return>  ; (     15,      13.)
+     SPACE       =  <ASCII SP, space>            ; (     40,      32.)
+     HTAB        =  <ASCII HT, horizontal-tab>   ; (     11,       9.)
+]PRE]
+
+
+]FIG]
+
+[FIG(quote)[ [1] [[RFC 822]] 3.4.2 COMMENTS (抜粋)
+
+> If a comment is to be "folded" onto multiple lines,  then  the
+syntax  for  folding  must  be  adhered to.  (See the "Lexical
+Analysis of Messages" section on "Folding Long Header  Fields"
+above,  and  the  section on "Case Independence" below.)  Note
+that  the  official  semantics  therefore  do  not  "see"  any
+unquoted CRLFs that are in comments, although particular parsing programs 
+may wish to note their presence.  For these  programs,  it would be reasonable
+to interpret a "CRLF LWSP-char"
+as being a CRLF that is part of the comment; i.e., the CRLF is
+kept  and  the  LWSP-char is discarded.  Quoted CRLFs (i.e., a
+backslash followed by a CR followed by a  LF)  still  must  be
+followed by at least one LWSP-char.
+
+[37] 
+[CODE(ABNF)[comment]] が複数行に「折畳まれている」時は、折畳みの構文をくっつけないといけません。
+(上の「長い頭領域の折畳み」の「メッセージの単語分析」の節と、下の「大文字・小文字の区別性」の節を参照。)
+従って、公式な意味においては [CODE(ABNF)[comment]] 中にある quote されていない
+[CODE(ABNF)[CRLF]] を「見る」ことはありません。
+但しそうしたものの出現に注意したいと思う解析プログラムもあることでしょう。
+そうしたプログラムでは、「[CODE(ABNF)[CRLF LWSP-char]]」を [CODE(ABNF)[CRLF]] が
+[CODE(ABNF)[comment]] の一部であると
+解釈する、つまり [CODE(ABNF)[CRLF]] は残して, [CODE(ABNF)[LWSP-char]] 
+を棄てるのが適切かもしれません。
+Quote された [CODE(ABNF)[CRLF LWSP-char]] (すなわち、 逆斜線に [CODE(ABNF)[CR]]
+が続いて、 [CODE(ABNF)[LF]] が続くもの)
+は依然、最低一つの [CODE(ABNF)[LWSP-char]] が後に続かなければなりません。
+]FIG]
+
+
+
+
+[7] [[注釈]] ([CODE(ABNF)@en[[[comment]]]]) は、
+[[メールプロトコル]]の[[サーバー]]に引き渡すなどの目的で列を再生成する際には、
+[[字句]]間の区切りとして機能している場合、 [CODE[[[SPACE]]]] 1つと[[字句]]的に等しい [SRC[>>6 3.4.3.]]
+とされていました。
+
+[8] [[RFC 822]] はこれ以外に[[注釈]]が[[空白]]と等価であると明言しているところはありません。
+厳密に解釈すると実装は[[注釈]]を[[空白]]と解釈して構いませんが、[[著者]]は[[注釈]]を生成してはいけないことになります
+([[BNF]] に一致しないので)。しかしこれは一般的な解釈とは異なります。
+
+
+** 文脈
+
+[125] [[RFC822]] メッセージでは、 [CODE(ABNF)[comment]] 
+は[[構造化欄]]の要素間であればどこにでも挿入出来、 [CODE(ABNF)[linear-white-space]]
+1個と透過であるとみなされます。
+
+[126] [[RFC2822]] では [CODE(ABNF)[obsolete-]] 構文 (受信メッセージ解析用。)
+では [[RFC 822]] (>>125) と同じですが、 [CODE(ABNF)[obsolete-]] でない構文
+(新規メッセージ送信用。) では特定の場所 (RFC 2822 の [[ABNF]] 構文で [[CFWS]]
+とされた場所。) でしか使えません。
+
+
+** 正規表現
+
+[65] 
+BNF をほぼそのまま正規表現に直したものです。
+
+$822_comment = qr/\((?:[\x00-\x0C\x0E-\x27\x29-\x5B\x5D-\x7F]|(?:(?:\x0D\x0A)?[\x20\x09])+|\\[\x00-\x7F]|(??{${822_comment}}))*\)/
+
+$2822_comment = qr/\((?:(?:(?:[\x09\x20]*\x0D\x0A)?[\x09\x20]+)?(?:[\x01-\x08\x0B\x0C\x0E-\x1F\x21-\x27\x2A-\x5B\x5D-\x7F]|\\[\x00-\x7F]|(??{$2822_comment})))*(?:[\x09\x20]*\x0D\x0A)?[\x09\x20]+\)/;
+
+[66] 
+RFC 2822 ABNF で、 quoted-pair = "\" text / obs-qp となっているけど、
+text には obs-text = qr/\x0A?\x0D?([\x00-\x09\x0B\x0C\x0E-\x7F]\x0A?\x0D?)*/
+が含まれてるから、これはおかしい。結局のところは全体の構造は破壊しないけど。
+
+[67] 
+いや、実は意図したものなのでは?
+
+
+
+* RFC 2822 における構文
+
+[17] [[RFC 2822]] における[[注釈]]の構文は、次のように説明できます [SRC[>>16, >>62]]。
+
 - [18] [CODE[[[(]]]] ではじまり、 [CODE[[[)]]]] で終わる
 - [22] [[括弧内]]には [[U+0001]]-[[U+007F]] を使って良い
 - [19] ただし [CODE[[[(]]]] と [CODE[[[)]]]] は対になっていなければならない ([CODE[[[\]][[(]]]] と [CODE[[[\]][[)]]]] を除く)
@@ -30,21 +134,69 @@
 - [26] [[LF]] は [[CRLF]] としてのみ使って良いが、 [CODE[[[\]]]] のあと [[LF]] も理解できなければならない
 - [30] [[CRLF]] と [[CRLF]] の間には [[U+0009]] と [[U+0020]] 以外の文字が1つ以上なければならないが、なくても理解できなければならない
 
+[FIG(quote)[ [62] [[RFC 2822]] の [[ABNF]]
+
+[PRE[
+  comment         =       "(" *([FWS] ccontent) [FWS] ")"
+  FWS             =       ([*WSP CRLF] 1*WSP) /   ; Folding white space
+                          obs-FWS
+  ccontent        =       ctext / quoted-pair / comment
+  ctext           =       NO-WS-CTL /     ; Non white space controls
+                          %d33-39 /       ; The rest of the US-ASCII
+                          %d42-91 /       ;  characters not including "(",
+                          %d93-126        ;  ")", or "\"
+  quoted-pair     =       ("\" text) / obs-qp
+  NO-WS-CTL       =       %d1-8 /         ; US-ASCII control characters
+                          %d11 /          ;  that do not include the
+                          %d12 /          ;  carriage return, line feed,
+                          %d14-31 /       ;  and white space characters
+                          %d127
+  text            =       %d1-9 /         ; Characters excluding CR and LF
+                          %d11 /
+                          %d12 /
+                          %d14-127 /
+                          obs-text
+  
+  obs-FWS         =       1*WSP *(CRLF 1*WSP)
+  obs-qp          =       "\" (%d0-127)
+  obs-text        =       *LF *CR *(obs-char *LF *CR)
+  obs-char        =       %d0-9 / %d11 /          ; %d0-127 except CR and
+                          %d12 / %d14-127         ;  LF
+  
+  ;; RFC 2234
+  WSP             =  SP / HTAB    ; white space
+  CRLF            =  CR LF        ; Internet standard newline
+  SP              =  %x20         ; space
+  HTAB            =  %x09         ; horizontal tab
+  CR              =  %x0D         ; carriage return
+  LF              =  %x0A         ; linefeed
+]PRE]
+
+
+]FIG]
+
+
 [25] 実装が対応しなければならないものベースで [[RFC 822]] と比較すると、
 - [29] [CODE[[[\]]]] の後でない [[U+0000]] は使えない
 - [27] [CODE[[[\]]]] の後でも [[LF]] の前でもない [[CR]] は使えない
 - [28] [CODE[[[\]]]] の後でも [[CR]] の後でもない [[LF]] は使えない
 
-* RFC 822 における注釈
+* Usenet メッセージにおける注釈
 
-[7] [[注釈]] ([CODE(ABNF)@en[[[comment]]]]) は、
-[[メールプロトコル]]の[[サーバー]]に引き渡すなどの目的で列を再生成する際には、
-[[字句]]間の区切りとして機能している場合、 [CODE[[[SPACE]]]] 1つと[[字句]]的に等しい [SRC[>>6 3.4.3.]]
-とされていました。
+@@
 
-[8] [[RFC 822]] はこれ以外に[[注釈]]が[[空白]]と等価であると明言しているところはありません。
-厳密に解釈すると実装は[[注釈]]を[[空白]]と解釈して構いませんが、[[著者]]は[[注釈]]を生成してはいけないことになります
-([[BNF]] に一致しないので)。しかしこれは一般的な解釈とは異なります。
+
+* MIME encoded-word を考慮した ABNF
+
+[63] RFC 2822, RFC 2047 を元に作成。
+
+[PRE[
+  comment-eword       = "(" [FWS] (*ccontent-eword / encoded-word) 
+                             *(FWS (1*ccontent-eword / encoded-word)) [FWS] ")"
+  ccontent-eword      = ctext / quoted-pair / comment-eword
+]PRE]
+
+[64] See [[encoded-word]] of [[RFC 2231]]。
 
 * HTTP における注釈
 
@@ -71,9 +223,54 @@
 = [CODE[)]]
 ]FIG]
 
+
+
+[38] [[RFC2616]] ([[HTTP/1.1]]) によると:
+
+- [39] comment        = "(" *( ctext | quoted-pair | comment ) ")"
+- [40] ctext          = <any TEXT excluding "(" and ")">
+
+[41] 
+ところがこれでは [CODE(ABNF)[quoted-pair]] と [CODE(ABNF)[ctext]] が区別出来ない。
+822 同様に [CODE(ABNF)["\"]] も除いた方がよさげ。でも直ぐ後に、
+
+> The backslash character ("\") MAY be used as a single-character
+quoting mechanism only within quoted-string and comment constructs.
+
+「単一文字 quote 機構として使っても'''よい'''」と書いてある。
+てことは「として使」わなくてもいいてこと?
+
+[42] とか言ってもどーしよーもないので、やっぱり quote 以外には使えないことにする。
+
+- [43] http1.1.comment = "(" http1.1.ccontent ")"
+- [44] http1.1.ccontent = *( http1.1.ctext / http.quoted-pair / http1.1.comment )
+- [45] http1.1.ctext = %x20-27 / %x2A-5B / %x5D-7E / %x80-FF / FWS ;; %x80-FF は [[ISO-8859-1]] で、 encoded-word が使用可能。
+- [46] http.quoted-pair = "\" %x00-7F
+
+[47] [CODE(ABNF)[quoted-pair]] に %x80-FF が使えないことに注意。
+
+
+[48] [[RFC1945]] によると [[HTTP/1.0]] では [CODE(ABNF)[quoted-pair]]
+が使えないらしい。
+でもって [CODE(ABNF)["\"]] はふつーに [CODE(ABNF)["\"]] と解釈されると。
+にゃるほど、これが元凶でこーいう変な状況なのね。
+
+- [49] http1.0.comment = "(" http1.0.ccontent ")"
+- [50] http1.0.ccontent = *( http1.0.ctext / http1.0.comment )
+- [51] http1.0.ctext = http1.1.ctext / "\"
+
+[52] 
+しかしそうなると、 [CODE(ABNF)[quoted-pair]] を正しく扱えない
+HTTP/1.0 実装は多そうだ。 (ただ扱えないだけなら[[文字化け]]
+(のように見える) とかの軽度の問題で済みそうだけど、 [SAMP["foo\"bar"]]
+みたいな値だと問題だよな。)
+
+
+
+
 * CGI
 
-[3] [[CGI]] では次のように定義されています [SRC[>>4]]。
+[3] [[HTTP CGI]] では次のように定義されています [SRC[>>4]]。
 [PRE(ABNF code)[
       comment         = "(" *( ctext | comment ) ")"
       ctext           = <any TEXT excluding "(" and ")">
@@ -84,6 +281,32 @@
 [REFS[
 - [4] [CITE@en[RFC 3875 - The Common Gateway Interface (CGI) Version 1.1]] ([TIME[2011-11-20 06:09:05 +09:00]] 版) <http://tools.ietf.org/html/rfc3875#section-4.1.17>
 ]REFS]
+
+
+* SIP メッセージ
+
+[54] 
+[[HTTP]] を元にしてる [[SIP]] だけど、びみょーに違う。
+いやらしーのは HTTP/1.1 と同じ。(たぶん何も考えずに写したんだ。)
+
+- [55] comment  =  "(" *(ctext | quoted-pair | comment) ")"
+- [56] ctext    =  < any TEXT-UTF8  excluding "("  and ")">
+- [119] quoted-pair  =  " \ " CHAR
+
+[57] >>119 [CODE(ABNF)[" \ "]] はたぶん [CODE(ABNF)["\"]] の間違いだ。そー信じたい。
+
+- [58] sip.comment = "(" ccontent ")"
+- [59] sip.ccontent = *( sip.ctext / http.quoted-pair / sip.comment )
+- [60] sip.ctext = %x20-27 / %x2A-5B / %x5D-7E / utf8-xtra-char / FWS
+
+
+* RTSP メッセージ
+
+[53] 
+[[HTTP]] 派生プロトコルの1つである [[RTSP/1.0]] ([[RFC 2326]]) では
+[CODE(ABNF)[comment]] は使われていません。
+
+
 
 * [CODE(MIME)@en[message/global]]
 
@@ -97,3 +320,15 @@
 [REFS[
 - [33] [CITE@en[RFC 6532 - Internationalized Email Headers]] ([TIME[2014-03-09 10:33:13 +09:00]] 版) <http://tools.ietf.org/html/rfc6532>
 ]REFS]
+
+
+* メモ
+
+
+
+
+
+[127] この[DEL[スレ]][INS[WikiPage]], [[comment]] と重複なんだが (というかこっちが元祖?)、どうにかならないかな。
+
+[128] >>127 無理矢理統合しました。
+
