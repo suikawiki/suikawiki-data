@@ -69,6 +69,11 @@
 
 [4] >>3 でも [[Apache]] は提供してくれません。
 
+[39] 
+このようないびつな仕様は、 [[CGI/1.0]] 時代に [CODE[HTTP_[VAR[*]]]] 
+が存在しなかったことに由来するものです。 (>>17)
+
+
 [10] CGI メタ変数はほとんどの環境では[[環境変数]]として実装されていますが、
 環境変数が安全でない環境も少なくありません。
 その鯖の任意の利用者が環境変数の値を見ることができるかもしれません。
@@ -81,9 +86,22 @@ CGI で昔から認証系の頭欄が提供されないことになっている�
 [CODE(HTTP)@en[Proxy:]] [[ヘッダー]]があっても [CODE(CGI)@en[HTTP_PROXY]]
 [[メタ変数]]を省略するようです。
 
+
+
 [32] [[WSGI]] と派生仕様は [CODE(CGI)@en[[[HTTP_*]]]] は [[HTTP]] [[要求]]の[[頭欄]]に対応するべきであるとしており、
 [CODE(CGI)@en[[[CONTENT_TYPE]]]] と [CODE(CGI)@en[[[CONTENT_LENGTH]]]] を除き、
 一部の[[頭欄]]を引き渡さないことは原則として認められていないようです。 [SRC[>>28, >>29, >>30, >>31]]
+
+[40] [[WSGI]] 等は[[環境変数]]と異なる安全な方法で[[アプリケーション]]に[[メタ変数]]を引き渡しますから、
+保安に関する要件も緩められていると考えられます。
+
+[38] 
+[[SIP CGI]] は他の手段で取得できるものも含めすべての[[ヘッダー]]を 
+[CODE[SIP_[VAR[*]]]]
+で提供する[SHOULD[べき]]と定めています。 [SRC[>>36]]
+[[HTTP CGI]]
+よりはかなり強い要件 (原則として提供する) となっていますが、
+それでもなぜか提供しない余地を残しています。
 
 * 歴史
 
@@ -169,10 +187,110 @@ environment limits.
 
 [19] [[HTTPS]] であることは[[メタ変数]] [CODE(CGI)@en[[[HTTPS]]]] によって表されます。
 
-** SIP_* メタ変数
+** [CODE[SIP_[VAR[*]]]] メタ変数
 
 [18] [[SIP CGI]] では [[SIP]] [[要求メッセージ]]は[[メタ変数]]
-[CODE(CGI)@en[[[SIP_[VAR[*]]]]]] として提供されます。
+[DFN[[CODE(CGI)@en[SIP_[VAR[*]]]]]] として提供されます。
+
+[37] 
+[CODE(CGI)[SIP_[VAR[*]]]]
+[[メタ変数]]群は、 [[SIP]] 
+[[要求]]の[[頭欄]]が反映されるもので、
+[[HTTP CGI]] では
+[CODE(CGI)[HTTP_[VAR[*]]]]
+メタ変数群に相当します。
+
+
+[FIG(quote)[ [36] [[RFC 3050]] (SIP-CGI/1.1) 5.5.1.5 Protocol-Specific Metavariables
+>These metavariables are specific to the protocol via which the method
+is sent.  Interpretation of these variables depends on the value of
+the SERVER_PROTOCOL metavariable (see section 5.5.1.20).
+
+これらのメタ変数群は、
+method が送信されたプロトコルに特有のものです。
+これらの変数の解釈は
+[CODE(CGI)[[[SERVER_PROTOCOL]]]]
+メタ変数の値に依存します。
+
+>Metavariables with names beginning with "SIP_" contain values from
+the message header, if the protocol used was SIP.  Each SIP header
+field name is converted to upper case, has all occurrences of "-"
+replaced with "_", and has "SIP_" prepended to form the metavariable
+name.  Similar transformations are applied for other protocols.  The
+header data MAY be presented as sent by the client, or MAY be
+rewritten in ways which do not change its semantics.  If multiple
+header fields with the same field-name are received then the server
+MUST rewrite them as though they had been received as a single header
+field having the same semantics before being represented in a
+metavariable.  Similarly, a header field that is received on more
+than one line MUST be merged into a single line.  The server MUST, if
+necessary, change the representation of the data (for example, the
+character set) to be appropriate for a CGI metavariable.
+
+名前が [CODE(CGI)[SIP_]]
+から始まるメタ変数群には、
+使用されているプロトコルが SIP
+である時にメッセージ頭からの値を設定します。
+各 SIP 頭欄名は大文字に変換され、
+全ての [CODE(SIP)[-]]
+を [CODE(CGI)[_]]
+に置換し、 [CODE(CGI)[SIP_]]
+を頭につけてメタ変数名を形成します。
+同様の変換が他のプロトコルにも適用されます。
+頭データはクライアントから送られたままにしても'''構いません ([[MAY]])'''
+し、その意味を変更しない範囲で書き換えても'''構いません (MAY)'''。
+同じ欄名の複数の頭欄を受信した時は、
+サーバーはメタ変数として表現する前にこれを書き換えて同じ意味を持つ単一の頭欄を受信したようにしなければ'''なりません ([[MUST]])'''。
+同様に、複数行で受信した頭欄は単一行に併合しなければ'''なりません (MUST)'''。
+サーバーは、必要であれば、
+データの表現 (例えば[[文字集合]])
+を変更して CGI
+メタ変数として適切なものとしなければ'''なりません (MUST)'''。
+
+> Note: these metavariables' names were changed from HTTP_*
+to SIP_* since the first draft of this specification.  The
+intention had been to make it easier to use existing CGI
+libraries unmodified, but this convenience was felt to be
+outweighed by the confusion this introduced.
+
+注意: これらのメタ変数群の名前は、
+この仕様書の最初の原案から、
+[CODE(CGI)[HTTP_*]] から
+[CODE(CGI)[SIP_*]] に変更しました。
+その意図は、既存の CGI
+ライブラリを修正せずに使用することを用意とすることにありますが、
+この便宜はこれが招く混乱より価値があると感じられます。
+
+>Servers are not required to create metavariables for all the message
+header fields they receive.  However, because of the relatively high
+importance of headers in SIP for messages' semantic content, the
+server SHOULD provide all headers which do not contain potentially
+sensitive authorization information, such as Authorization.  Servers
+SHOULD provide protocol-specific metavariables even for information
+which is available through other SIP CGI metavariables, such as
+CONTENT_LENGTH and CONTENT_TYPE.
+
+サーバーに対してその受信した全てのメッセージ頭欄に関してメタ変数を作成することは要求していません。
+しかし、 SIP においてメッセージの意味内容に頭が比較的高い重要性を持つことから、
+サーバーは繊細な認証情報を含む可能性がある
+[CODE(SIP)[Authorization]] のようなものの他は全ての頭欄を提供する'''べきです ([[SHOULD]])'''。
+サーバーは、他の SIP CGI
+メタ変数、例えば [CODE(CGI)[[[CONTENT_LENGTH]]]]
+や [CODE(CGI)[[[CONTENT_TYPE]]]]
+から利用可能な情報であっても、
+プロトコル特有メタ変数を提供する'''べきです (SHOULD)'''。
+
+> This allows a SIP CGI script to determine, if necessary,
+whether the information in the other metavariables was in
+the original message, or was synthesized by the server.
+
+これによって SIP CGI
+が必要であれば他のメタ変数の情報が元のメッセージにあったものか、
+それともサーバーが生成したものかを判断できます。
+
+]FIG]
+
+
 
 ** [CODE[HTTP_[VAR[*]]]] 環境変数
 
