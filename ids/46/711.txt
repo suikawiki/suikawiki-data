@@ -1,0 +1,600 @@
+[5] [CODE(HTTP)@en[[[Accept:]]]] [[ヘッダー]]は、[[利用者エージェント]]が受け入れ可能な[[応答]]の
+[[MIME型]]を指定するものです [SRC[>>416]]。
+
+* 代替
+
+[20] [[内容折衝]]は[[利用者]]を混乱させるだけなので、使うべきではありません。
+[[Webサーバー]]は、 [CODE(HTTP)@en[[[Accept:]]]]
+[[ヘッダー]]を無視するべきです。
+
+* 仕様書
+
+[REFS[
+- [416] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-5.3.2>
+]REFS]
+
+* 意味
+
+[435] [CODE(HTTP)@en[[[Accept:]]]] [[ヘッダー]]を指定しなければ、
+[[利用者エージェント]]はどんな[[MIME型]]でも受け入れることを表しています [SRC[>>416]]。
+
+* 構文
+
+[420] [[欄値]]は、0個以上の値の[[リスト]] ([CODE[#]]) です [SRC[>>416]]。
+
+[421] それぞれの値は、[[媒体範囲]]、または[[媒体範囲]]のあとに
+[CODE(ABNF)@en[accept-params]] を指定したものです [SRC[>>416]]。
+
+[FIG(railroad)[
+= ?
+== [[媒体範囲]]と[[引数]]
+== *
+=== [[OWS]]
+=== [CODE[[[,]]]]
+=== [[OWS]]
+=== [[媒体範囲]]と[[引数]]
+]FIG]
+
+[422] [DFN[[RUBYB[[[媒体範囲]]]@en[media range]]]]は、
+[[MIME型]]か、[[MIME型]]のうち [[subtype]] が [CODE[[[*]]]] になったものか、
+[CODE[[[*/*]]]] です。[[引数]]も指定できます。 [SRC[>>416]]
+
+[423] [DFN[[CODE(ABNF)@en[[[accept-params]]]]]] は、
+[CODE(HTTP)@en[[[q]]]] [[引数]] ([[品質値]])
+および0個以上の[[引数]]です。
+ここでの[[引数]]は、[CODE[[[;]]]]、名前、[CODE[[[=]]]]、値で構成されます。
+ただし [CODE[[[;]]]] の前後には [[OWS]] を使えます。
+名前は[[字句]]で、値は[[字句]]または[[引用文字列]]です。
+[CODE[[[=]]]] 以下は省略できます。 [SRC[>>416]]
+
+[FIG(railroad)[
+= |
+== [CODE(MIME)@en[[[*/*]]]]
+== =
+=== [[字句]]
+=== [CODE[[[/]]]]
+=== |
+==== [CODE[[[*]]]]
+==== [[字句]]
+= *
+== [CODE[[[OWS]]]]
+== [CODE[[[;]]]]
+== [CODE[[[OWS]]]]
+== [[字句]]
+== ?
+=== [CODE[[[=]]]]
+=== |
+==== [[字句]]
+==== [[引用文字列]]
+]FIG]
+
+[424] [[媒体範囲]]に含まれる[[MIME型]]の[[引数]]、 [CODE(ABNF)@en[[[accept-params]]]]
+に含まれる [CODE(HTTP)@en[[[q]]]] [[引数]]、その後の[[引数]]は、構文としてはほとんど同じですが、
+微妙な違いがあります。 [CODE(HTTP)@en[[[q]]]] [[引数]]の値は[[字句]]でなければなりません。
+[[MIME型]]の[[引数]]の値と [CODE(HTTP)@en[[[q]]]] [[引数]]の値は省略できません。
+[[MIME型]]の[[引数]]と、 [CODE(HTTP)@en[[[Accept:]]]] としての[[引数]]は、
+[CODE(HTTP)@en[[[q]]]] [[引数]]の前後どちらかにあるかによって区別します。
+
+;; [425] ただし、 [CODE(HTTP)@en[[[q]]]] [[引数]]以外に [CODE(HTTP)@en[[[Accept:]]]]
+としての[[引数]]は存在しておらず、今後追加されることがあるのかも疑問です。
+歴史的にはいくつか存在しており、古い仕様書や古くからある実装が対応していることがあります。
+
+;; [11] [CODE(ABNF)@en[[[accept-params]]]] は [CODE(HTTP)@en[[[Accept-Additions:]]]]
+[[ヘッダー]]でも使われています。
+
+* 文脈
+
+[16] この[[ヘッダー]]は[[要求]]で指定できます。
+
+[419] この[[ヘッダー]]は、複数指定できます。
+
+[15] この[[ヘッダー]]は必須ではありません。
+
+[36] 
+[[API]] の [[versioning]] に濫用されることがあります。
+[SEE[ [[REST]] ]]
+
+* 媒体範囲
+
+[426] [[媒体範囲]]は、 [[MIME型]]の範囲を表しています。
+
+[427] [DFN[[CODE(MIME)@en[[[*/*]]]]]] は、すべての[[MIME型]]を表します [SRC[>>416]]。
+
+[428] [CODE(MIME)@en[[[text/*]]]] のような[[字句]]と [CODE(HTTP)@en[/*]]
+による指定は、 [CODE(MIME)@en[[[text/plain]]]] や
+[CODE(MIME)@en[[[text/html]]]] など当該型に属するすべての部分型を表します。 [SRC[>>416]]
+
+[429] それ以外は、記述された[[MIME型]]そのものを表します。
+
+;; [431] [CODE(MIME)@en[*/plain]] のような指定はできません。
+
+[430] いずれにせよ、[[引数]]も指定できます [SRC[>>416]]。
+
+[438] [[媒体範囲]]は、より詳細な記述が優先度が高い [SRC[>>416]] とされています。
+
+[EG[
+[439] 例えば、
+[PRE(HTTP code)[
+Accept: text/*, text/plain, text/plain;format=flowed, */*
+]PRE]
+... は、
+[FIG[
+= [CODE(MIME)@en[[[text/plain]];[[format]]=[[flowed]]]]
+= [CODE(MIME)@en[[[text/plain]]]]
+= [CODE(MIME)@en[[[text/*]]]]
+= [CODE(MIME)@en[[[*/*]]]]
+]FIG]
+... という優先順を表しています [SRC[>>416]]。
+]EG]
+
+* 引数
+
+[432] [CODE(HTTP)@en[[[q]]]] [[引数]]の構文と解釈については、
+[[引数値]]の項を参照してください。
+
+[433] [CODE(HTTP)@en[[[q]]]] より前にある[[引数]]は、[[MIME型]]に属するものとして扱われます。
+[[MIME型]]としての互いの区別に用いられる他は、 [CODE(HTTP)@en[[[Accept:]]]]
+[[ヘッダー]]としての特別な意味は持ちません。
+
+[434] [CODE(HTTP)@en[[[q]]]] [[引数]]の後にある[[引数]]は、 [CODE(HTTP)@en[[[Accept:]]]]
+[[ヘッダー]]としてのオプションを指定するものですが、現在使われている例はありません。
+未知の[[引数]]をどう扱うかの規定もありません。
+
+* 処理
+
+[6] [CODE(HTTP)[Accept:]] 頭欄を受取った鯖は、
+それに従って適当な[[表現]]を送ることができるかどうかを調べ、
+可能であればそれで[[応答]]します。
+
+[436] [[起源鯖]]は、 [CODE(HTTP)@en[[[Accept:]]]] [[ヘッダー]]に利用できる[[表現]]の 
+[[MIME型]]がない場合は、 [CODE(HTTP)[[[406]]]] を送信することもできますし、
+[[内容折衝]]の対象でない場合のように無視して処理しても構いません [SRC[>>416]]。
+
+;; [437] どちらの挙動が有用かは状況にも依存するので、判断が難しいところです。
+
+[17] [[サーバー]]によっては、特定の [CODE(HTTP)@en[[[Accept:]]]]
+が指定されていないと [CODE(HTTP)[[[406]]]] [[応答]]を返すことがあります。
+例えば [[JSON]] と [[XML]] を受け付ける [[Web API]] がどちらかを選択するために本[[ヘッダー]]を使うことがあります。
+
+;; [18] 汎用的な[[クライアント]]は事前にどのような値を送信するべきか決定できません。
+個別の[[サーバー]]や[[資源]]に応じて適切な値を設定する必要があります。
+このような[[サーバー]]の挙動は (たまに見られるものの) 一般的とは言えず、
+[[クライアント]]に不便を強いるだけですから、[[サーバー]]の実装者はそのような設計にせずに、
+いずれかの適切な形式を自動的に選択するべきと思われます。
+
+[10] [CODE(MIME)@en[[[Accept-Charset:]]]] も参照。
+
+* 歴史
+
+
+
+[38] [CITE@ja[A Guide to the Internet Connection Servers - SG244805.PDF]], [TIME[2009-11-28T06:54:29.000Z]], [TIME[2024-08-18T13:31:43.921Z]] <http://ps-2.kev009.com/rs6000/redbook-cd/SG244805.PDF#page=58>
+
+
+[39] >>38 この時代の [[IBM]] のクライアントは1ヘッダー1[[MIME型]]で
+[CODE[Accept:]]
+ヘッダーをずらーっといくつも並べていたらしい。
+
+[40] [CITE[HTTP Client Profile Proposal (rough draft II)]], [TIME[2024-10-07T08:32:33.000Z]], [TIME[1999-11-25T14:25:07.033Z]] <https://web.archive.org/web/19991125142429/http://www.bsdi.com/HTTP:TNG/MIME-ClientProfile.html>
+
+[37] 
+[CITE[HTTP Client Profile Proposal (rough draft II)]], [TIME[2024-08-13T07:44:18.000Z]], [TIME[1999-11-25T14:24:38.061Z]] <https://web.archive.org/web/19991125142429/http://www.bsdi.com/HTTP:TNG/MIME-ClientProfile.html>
+
+関連: [[WWWWW]]
+
+[FIG(quote)[
+[FIGCAPTION[
+[415] RFC 1945 (HTTP/1.0) D.2.1; RFC 2068・2616 (HTTP/1.1) 14.1 Accept
+]FIGCAPTION]
+
+> The Accept request-header field can be used to [DEL[[INS[{1945}]] indicate a list of media ranges]] [INS[specify certain media types]] which are acceptable [DEL[[INS[{1945}]] as a response to the request]] [INS[for the response]]. [INS[Accept headers can be used to indicate that the request is specifically limited to a small set of desired types, as in the case of a request for an in-line image.]]
+
+[CODE(HTTP)[Accept]] [[要求頭欄]]は、
+応答で受入れ可能な媒体型を指定するのに使うことが出来ます。
+[CODE(HTTP)[Accept]] 頭は、要求が行内画像の要求の場合のように望まれる型の小さな集合に限定することを示すのに使うことが出来ます。
+
+[INS[
+
+> [INS[{2068,2616}]]
+- [CODE(HTTP)[[DFN[Accept]] = "Accept" ":" #( media-range [ accept-params ] )]]
+- [CODE(HTTP)[[DFN[media-range]] = ( "*/*" | ( type "/" "*" ) | ( type "/" subtype ) ) *( ";" parameter )]]
+- [CODE(HTTP)[[DFN[accept-params]] = ";" "q" "=" qvalue *( accept-extension )]]
+- [CODE(HTTP)[[DFN[accept-extension]] = ";" token [ "=" ( token | quoted-string ) ] ]]
+]INS]
+
+> The asterisk "*" character is used to group media types into ranges,
+with "*/*" indicating all media types and "type/*" indicating all
+subtypes of that type. [DEL[[INS[{1945}]] The set of ranges given by the client should represent what types are acceptable given the context of the request.]] [INS[[INS[{2068,2616}]] The media-range MAY include media type parameters that are applicable to that range.]]
+
+星印 [CODE(char)[*]] 文字は、媒体型の範囲を集団化するのに使います。
+[CODE(HTTP)[*/*]] は全ての媒体型を示し、
+[CODE(HTTP)[[VAR[type]]/*]] はその型の全ての部分型を示します。
+[CODE(ABNF)[media-range]] は、その範囲に適用可能な媒体型引数を含んでいても'''構いません'''。
+
+[INS[
+
+> [INS[{2068,2616}]] Each media-range MAY be followed by one or more accept-params,
+beginning with the "q" parameter for indicating a relative quality
+factor. The first "q" parameter (if any) separates the media-range
+parameter(s) from the accept-params. Quality factors allow the user
+or user agent to indicate the relative degree of preference for that
+media-range, using the qvalue scale from 0 to 1 (section 3.9). The
+default value is q=1.
+
+各 [CODE(ABNF)[media-range]] の後には、
+相対的品質因子を示す [CODE(HTTP)[[[q]]]] 引数で始まる、
+1つ以上の [CODE(ABNF)[accept-params]]
+を続けても'''構いません'''。
+最初の [CODE(HTTP)[q]] 引数は、 (あれば) [CODE(ABNF)[media-range]]
+引数(群)を [CODE(ABNF)[accept-params]] から分離します。
+品質因子は利用者または利用者エージェントがその [CODE(ABNF)[media-range]]
+を優先させる想定的な度合いを、 [CODE(HTTP)[0]] から
+[CODE(HTTP)[1]] の [[qvalue]] 尺度を使って示すことが出来ます。
+既定値は [CODE(HTTP)[q=1]] です。
+
+> Note: Use of the "q" parameter name to separate media type
+parameters from Accept extension parameters is due to historical
+practice.  Although this prevents any media type parameter named
+"q" from being used with a media range, such an event is believed
+to be unlikely given the lack of any "q" parameters in the IANA
+media type registry and the rare usage of any media type parameters
+in Accept. Future media types should be discouraged from
+registering any parameter named "q".
+
+注意 : [CODE(HTTP)[q]] 引数名を、媒体型引数を
+[CODE(HTTP)[Accept]] 拡張引数から分離するのに使うのは歴史的慣習です。
+このために [CODE(HTTP)[q]] という名前の媒体型引数を媒体範囲に使うことが出来ませんが、
+そのような事象は起こりそうもないであろうと信じられています。
+IANA 媒体型登録簿には [CODE(HTTP)[q]] 引数はありませんし、
+[CODE(HTTP)[Accept]] 中での任意の媒体型の引数の使用も稀なことです。
+将来の媒体型が [CODE(HTTP)[q]] という名前の引数を登録することは非推奨されるべきです。
+
+> The example
+- Accept: audio/*; q=0.2, audio/basic
+
+> SHOULD be interpreted as "I prefer audio/basic, but send me any audio
+type if it is the best available after an 80% mark-down in quality."
+
+という例は、「私は [CODE(MIME)[[[audio/basic]]]]
+を最優先しますが、 80% 落とした品質でそれが最善であれば任意の音声型を送ってください。」
+と解釈される'''べきです'''。
+
+> If no Accept header field is present, then it is assumed that the
+client accepts all media types. If an Accept header field is present,
+and if the server cannot send a response which is acceptable
+according to the combined Accept field value, then the server SHOULD
+send a 406 (not acceptable) response.
+
+[CODE(HTTP)[Accept]] 頭欄が示されていなかった場合、
+クライアントは全ての媒体型を受け入れると仮定します。
+[CODE(HTTP)[Accept]] 頭欄が示されている場合、
+そしてサーバーが結合 [CODE(HTTP)[Accept]] 欄値に従って受け入れ可能な応答を遅れない場合、
+サーバーは [CODE(HTTP)[[[406]]]] (受入れ不能) 応答を送る'''べきです'''。
+
+> A more elaborate example is
+- Accept: text/plain; q=0.5, text/html,
+[PRE[
+                  text/x-dvi; q=0.8, text/x-c
+]PRE]
+
+> Verbally, this would be interpreted as "text/html and text/x-c are
+the preferred media types, but if they do not exist, then send the
+text/x-dvi entity, and if that does not exist, send the text/plain
+entity."
+
+言葉で言えば、これは「[CODE(HTTP)[[[text/html]]]] 及び
+[CODE(HTTP)[[[text/x-c]]]] が最優先媒体型ですが、これらが存在しない場合には、
+[CODE(HTTP)[[[text/x-dvi]]]] 実体を送り、それも存在しない場合には、
+[CODE(HTTP)[[[text/plain]]]] 実体を送ってください。」と解釈されます。
+
+> Media ranges can be overridden by more specific media ranges or
+specific media types. If more than one media range applies to a given
+type, the most specific reference has precedence. For example,
+
+媒体範囲は特定媒体範囲または特定媒体型で上書き可能です。
+ある型に複数の媒体範囲が適用できるなら、
+最も特定した参照が優先されます。例えば、
+
+>
+- Accept: text/*, text/html, text/html;level=1, */*
+
+> have the following precedence:
+
+は次の優先度を持ちます:
+
+= 1) text/html;level=1
+= 2) text/html
+= 3) text/*
+= 4) */*
+
+> The media type quality factor associated with a given type is
+determined by finding the media range with the highest precedence
+which matches that type. For example,
+
+ある型に関連付けられた媒体型品質因子は、
+その型に一致する最高の優先度の媒体範囲を探すことで決定します。
+例えば、
+
+>
+- Accept: text/*;q=0.3, text/html;q=0.7, text/html;level=1, text/html;level=2;q=0.4, */*;q=0.5
+
+> would cause the following values to be associated:
+
+には、次の値が関連付けられます:
+
+- text/html;level=1         = 1
+- text/html                 = 0.7
+- text/plain                = 0.3
+- image/jpeg                = 0.5
+- text/html;level=2         = 0.4
+- text/html;level=3         = 0.7
+
+> Note: A user agent may be provided with a default set of quality
+values for certain media ranges. However, unless the user agent is
+a closed system which cannot interact with other rendering agents,
+this default set should be configurable by the user.
+
+注意 : 利用者エージェントはある媒体範囲に品質値の既定集合を提供するかもしれません。
+しかし、利用者エージェントが他のレンダリング・エージェントと対話できない閉じたシステムでない限り、
+この既定集合は利用者により設定可能とするべきです。
+]INS]
+]FIG]
+
+* 実装
+
+[440] [[Webブラウザー]]は、[[文脈]]によって違う値を設定するようです。
+
+* 関連
+
+[4]
+[[XML]] の[[要素]]の[[内容]]として入れることができる[[媒体型]]を
+[[XML Schema]] 定義文書で記述するための
+[CODE(XMLa)[[QN[xmlmime:[[expectedContentTypes]]] [http://www.w3.org/2005/05/xmlmime]]]]
+[[属性]]なるものがあります。この値は [[RFC 2616]]
+の [CODE(HTTP)[[[Accept]]:]] 頭欄の欄本体と同じです
+[WEAK[(ただし使用できる文字の範囲は [[US-ASCII]] に限定されています)]]。
+
+[CITE[Describing Media Content of Binary Data in XML]] 
+<http://www.w3.org/TR/2005/NOTE-xml-media-types-20050504/#expectedContentTypes>
+
+[417] [[HTML]] の [CODE(HTMLe)@en[[[input]]]] [[要素]]の [CODE(HTMLa)@en[[[accept]]]]
+[[属性]]は [CODE(HTTP)@en[[[Accept:]]]] と似たものとして (曖昧に) 定義されていましたが、
+現在は [[HTML Standard]] により明確に構文と処理モデルが定義されているため、
+類似度は低くなりました。
+
+[418] [[XHTML2]] は[[リンク]]の [CODE(HTMLa)@en[[[type]]]] [[属性]] (相当)
+を ([[HTML]] のような[[ヒント]]ではなく) [CODE(HTTP)@en[[[Accept:]]]]
+に設定するべき値として使うことを求めていましたが、 [[XHTML2]]
+全体が支持を集められず、この動作も実装されることはありませんでした。
+
+* 例
+
+例:
+- [SAMP(HTTP)[Accept: text/html]]
+- [SAMP(HTTP)[Accept: text/html; q=1.0]]
+
+([CODE(HTTP)[q]] の既定値は [CODE(HTTP)[1]] なので、この二例は等価。)
+
+[CODE(HTTP)[Accept:]] [[要求頭欄]]は、ひとつの HTTP 要求メッセージ中に任意個 (零個以上) 入れることができます。複数個存在する場合には、一般の HTTP の頭欄の取扱いの規則により、すべてを[[読点分離]]でひとまとめにしたものと等価として扱います。
+
+例:
+[PRE(HTTP)[
+Accept: text/plain
+Accept: text/html
+]PRE]
+
+は、
+[PRE(HTTP)[
+Accept: text/plain,text/html
+]PRE]
+
+と等価です。
+
+* メモ
+
+- [1] ''Mozillaが評価される理由の一つ。'' <http://www.popup.org/~matsushima/column/Lab/2001/0904a>
+- [2] [[M$IE]]6 でも未だに [SAMP[image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*]] なんて意味のあまりないのを送ってきます。だから [[text/html]] と [[application/xhtml+xml]] の内容折衝で前者を選んでもらえなかったりしてなかなか間抜けです。
+- [3] >>2 <http://pc3.2ch.net/test/read.cgi/hp/1039974316/253->
+
+[7]
+>>2 [[Apache]] なんかは [CODE(HTTP)[[[q]]]]
+引数が同順位だと前ほど優先するようなので、
+[[WinIE 6]] がこのような [CODE(HTTP)[[[Accept]]:]]
+欄を送ってくることを利用して、
+通常の [[WWWブラウザ]]向けの高品質画像を
+[[PNG]] ([CODE(MIME)[[[image/png]]]]) で、 [[WinIE]] 向けの低品質画像を
+[[GIF]] で送り返すような技が使えます。
+[WEAK[(都合がいいことに他の主要 [[WWWブラウザ]]は [[GIF]] よりも [[PNG]] を優先させてくれます。)]]
+([[名無しさん]])
+
+[8]
+[CODE(HTTP)@en[[[Accept]]]]欄の構文解析を一々するのは面倒なので、適当な[[正規表現]]の[[一致]]で済ませたくなりますが、
+できるだけ正確に検査した方が無難です。
+
+特に注意しないといけないのは、[CODE(HTTP)@en[[[q]]='''0''']]の場合があることです。[CODE(HTTP)@en[[[Accept]]]]欄にある[[媒体型]]があったとしても、それが本当に受け入れられるものかどうかは[CODE(HTTP)@en[[[q]]]]をみないとわかりません。
+([[名無しさん]])
+
+[9]
+[CITE[Bug 309438 &#8211; Accept: header too long on account of text types]] ([CODE[2007-02-26 08:33:13 +09:00]] 版) <https://bugzilla.mozilla.org/show_bug.cgi?id=309438>
+
+[407] [CITE[IRC logs: freenode / #whatwg / 20110416]]
+( ([TIME[2011-04-17 15:45:01 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20110416#l-39>
+
+[408] [CITE[''''''[''''''whatwg'''''']'''''' RWD Heaven: if browsers reported device capabilities in a request header]]
+( ([TIME[2012-02-06 22:37:54 +09:00]] 版))
+<http://lists.whatwg.org/htdig.cgi/whatwg-whatwg.org/2012-February/034642.html>
+
+[409] [CITE[IRC logs: freenode / #whatwg / 20120206]]
+( ([TIME[2012-02-09 21:33:22 +09:00]] 版))
+<http://krijnhoetmer.nl/irc-logs/whatwg/20120206>
+
+[410] [CITE[Request Headers in the HTTP protocol]]
+( ([TIME[2001-11-29 11:01:38 +09:00]] 版))
+<http://www.w3.org/Protocols/HTTP/HTRQ_Headers.html#z3>
+
+[411] [CITE@en[RFC 6787 - Media Resource Control Protocol Version 2 (MRCPv2)]]
+( ([TIME[2012-11-13 15:18:40 +09:00]] 版))
+<http://tools.ietf.org/html/rfc6787#section-6.2.2>
+
+[412] [CITE[''''''[''''''whatwg'''''']'''''' microdata questions]]
+( ([TIME[2014-04-02 09:02:52 +09:00]] 版))
+<http://lists.whatwg.org/pipermail/whatwg-whatwg.org/2014-April/084610.html>
+
+[413] [CITE@en[HTTP - WHATWG Wiki]]
+( ([TIME[2013-12-19 01:12:07 +09:00]] 版))
+<http://wiki.whatwg.org/wiki/HTTP#Accept_header>
+
+[414] [CITE@en[RFC 7252 - The Constrained Application Protocol (CoAP)]]
+( ([TIME[2014-06-27 00:59:37 +09:00]] 版))
+<http://tools.ietf.org/html/rfc7252#section-5.10.4>
+
+[441] [CITE[OData Version 4.0 Part 1: Protocol Plus Errata 01]]
+( ([TIME[2014-09-04 16:00:00 +09:00]] 版))
+<http://docs.oasis-open.org/odata/odata/v4.0/odata-v4.0-part1-protocol.html#_Toc393958667>
+
+[442] [CITE[OData Version 4.0 Part 1: Protocol Plus Errata 01]]
+( ([TIME[2014-09-04 16:00:00 +09:00]] 版))
+<http://docs.oasis-open.org/odata/odata/v4.0/odata-v4.0-part1-protocol.html#_Toc370374804>
+
+[443] [CITE[Request Headers in the HTTP protocol]]
+( ([TIME[2001-11-29 20:01:38 +09:00]] 版))
+<http://www.w3.org/Protocols/HTTP/HTRQ_Headers.html#z3>
+
+[444] [CITE[HTTP::Negotiate - search.cpan.org]]
+( ([TIME[2014-11-13 08:11:39 +09:00]] 版))
+<http://search.cpan.org/~gaas/HTTP-Negotiate-6.01/lib/HTTP/Negotiate.pm#Accept>
+
+[445] [CITE[HTTP::Negotiate - search.cpan.org]]
+( ([TIME[2014-11-13 08:11:39 +09:00]] 版))
+<http://search.cpan.org/~gaas/HTTP-Negotiate-6.01/lib/HTTP/Negotiate.pm#Accept>
+
+[446] [CITE[HTTP::Negotiate - search.cpan.org]]
+( ([TIME[2014-11-13 08:11:39 +09:00]] 版))
+<http://search.cpan.org/~gaas/HTTP-Negotiate-6.01/lib/HTTP/Negotiate.pm#Accept>
+
+[12] [CITE@en[Set Accept/Accept-Language in Fetch per #43 · whatwg/fetch@d095fdc]]
+([TIME[2015-05-05 11:12:34 +09:00]] 版)
+<https://github.com/whatwg/fetch/commit/d095fdcf284cd36e9ddee526ad6faa6fda4ecc00>
+
+[13] [CITE@en[Accept/Accept-Language handling is now done in Fetch · whatwg/xhr@7e8e1d8]]
+([TIME[2015-05-05 11:33:54 +09:00]] 版)
+<https://github.com/whatwg/xhr/commit/7e8e1d887c2b16ba4665c849e7034a45ab826ec3>
+
+[14] [CITE@en[Fix #142: always give `Accept` a default value · whatwg/fetch@ceb16ef]]
+([TIME[2015-11-05 17:07:58 +09:00]] 版)
+<https://github.com/whatwg/fetch/commit/ceb16efa37f3888323b47a6529124c4fcefa5e33>
+
+[19] [CITE@en[Clarify requirements around Accept and Accept-Language · whatwg/fetch@69eda57]]
+([TIME[2015-11-12 11:30:25 +09:00]] 版)
+<https://github.com/whatwg/fetch/commit/69eda57af99fd5762162f24739da1895bd2130f4>
+
+[21] [CITE@en[1249474 – Accept header sent for images prevents w3.org from serving us SVG images in W3C's style sheet]]
+([TIME[2016-04-22 19:30:11 +09:00]] 版)
+<https://bugzilla.mozilla.org/show_bug.cgi?id=1249474>
+
+[FIG(quote)[
+[FIGCAPTION[
+[22] [CITE@en[draft-cooper-webi-wpad-00 - Web Proxy Auto-Discovery Protocol]]
+( ([TIME[2016-05-23 03:01:30 +09:00]]))
+<https://tools.ietf.org/html/draft-cooper-webi-wpad-00#section-5.6>
+]FIGCAPTION]
+
+> The client then requests the CURL via HTTP.  When making the request
+>    it MUST transmit HTTP "Accept" headers indicating what CFILE formats
+>    it is capable of accepting. For example, Netscape Navigator browsers
+>    with versions 2.0 and beyond might include the following line in the
+>    HTTP Request:
+>        Accept: application/x-ns-proxy-autoconfig
+> 
+
+]FIG]
+
+
+[FIG(quote)[
+[FIGCAPTION[
+[23] [CITE@en[Git Trees | REST API Reference for Visual Studio Team Services and Team Foundation Server]]
+([[Robert Outlaw]]著, [TIME[2016-11-08 20:56:33 +09:00]])
+<https://www.visualstudio.com/ja-jp/docs/integrate/api/git/trees>
+]FIGCAPTION]
+
+> Use the request header Accept: application/zip to download a folder and its contents in the zip format.
+
+]FIG]
+
+
+[FIG(quote)[
+[FIGCAPTION[
+[24] [CITE@en[Web Annotation Protocol]]
+([TIME[2017-02-24 02:14:26 +09:00]])
+<https://w3c.github.io/web-annotation/protocol/wd/#h-annotation-retrieval>
+]FIGCAPTION]
+
+> Servers may support different JSON-LD profiles. Content negotiation for different JSON-LD profiles is performed by adding a profile parameter to the JSON-LD media type in a space separated, quoted list as part of the Accept header.
+
+]FIG]
+
+
+[FIG(quote)[
+[FIGCAPTION[
+[25] [CITE[CircleCI API v1.1 Reference - CircleCI]]
+([TIME[2017-06-10 05:03:08 +09:00]])
+<https://circleci.com/docs/api/v1-reference/>
+]FIGCAPTION]
+
+> If you specify no accept header, we’ll return human-readable JSON with comments. If you prefer to receive compact JSON with no whitespace or comments, add the "application/json" Accept header. 
+
+]FIG]
+
+
+[FIG(quote)[
+[FIGCAPTION[
+[26] [CITE@ja[生テレを眺めた - rencontRe Lab]]
+([[minolabo]]著, [TIME[2017-07-31 15:53:47 +09:00]])
+<http://nyarudiary.blog.fc2.com/blog-entry-126.html>
+]FIGCAPTION]
+
+> 要求ヘッダの、Acceptヘッダフィールドに、
+> Accept: application/json;pk=abcdefg1234567890(一例)
+> Accept:application/json;pk=BCpkADawqM0JuhdAR5ltYcF75lYGhlH-BMDUvcu5ryEdXB90DClTPOjHAWLNL9TfxPUeOHlM1LsBB74Rq8Vm7J_khrxLYtPwfOVtRzHVqHLcAt59eHMYeHT7S6yYPnp_df737dsxTHIJe_W6
+> を付けてあげれば401(Unauthorized)とならずに、ステータスコードは200(正常)となる。
+
+]FIG]
+
+
+[27] [CITE@en[Fold request type into destination]]
+([[annevk]]著, [TIME[2017-08-28 18:15:21 +09:00]])
+<https://github.com/whatwg/fetch/commit/d7052e2b6d24d04caa2cea8ef664923ecdb1e35c>
+
+[28] [CITE[Release Notes for Safari Technology Preview 46 | WebKit]]
+([TIME[2017-12-21 10:51:56 +09:00]])
+<https://webkit.org/blog/8042/release-notes-for-safari-technology-preview-46/>
+
+[29] [CITE@en[Listing headers safe only for certain values is a bad idea · Issue #313 · whatwg/fetch]]
+([TIME[2018-08-22 19:13:56 +09:00]])
+<https://github.com/whatwg/fetch/issues/313>
+
+[30] [CITE@en[Strengthen requirements on CORS-safelisted request-headers]]
+([[annevk]]著, [TIME[2018-05-25 18:19:35 +09:00]])
+<https://github.com/whatwg/fetch/commit/9288c8f85c809a0ac371be6843ad2cf4046ee35b>
+
+[31] [CITE@en[Be strict on request's Content-Type]]
+([[annevk]]著, [TIME[2018-11-09 17:36:06 +09:00]])
+<https://github.com/whatwg/fetch/commit/e06e2613f9eef720d0df8640be793efca2af89bc>
+
+[32] 
+[CODE[text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3]]
+([[Chrome]])
+[TIME[2019-11-28T13:40:31.900Z]]
+
+[33] [CITE@en[Add Accept: */* to CORS-preflight request's headers]]
+([[perryjiang]]著, [TIME[2019-09-27 18:42:12 +09:00]])
+<https://github.com/whatwg/fetch/commit/412723bae95dcc1541e6aad13b8bf42d8afcfe93>
+
+[34] [CITE@en[specify default accept header on cors preflight · Issue #922 · whatwg/fetch]]
+([TIME[2020-02-01 14:47:30 +09:00]])
+<https://github.com/whatwg/fetch/issues/922>
+
+[35] [CITE@en[Add Accept: */* to CORS-preflight requests' headers by perryjiang · Pull Request #941 · whatwg/fetch]]
+([TIME[2020-02-01 14:48:01 +09:00]])
+<https://github.com/whatwg/fetch/pull/941>

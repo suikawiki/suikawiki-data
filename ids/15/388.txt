@@ -1,0 +1,205 @@
+[830] [DFN[[CODE(HTTP)@en[[[From:]]]]]] [[ヘッダー]]は、[[送信者]]を表すものです。
+
+* 仕様書
+
+[REFS[
+- [829] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-5.5.1>
+]REFS]
+
+* 意味
+
+[831] [[HTTP]] における [CODE(HTTP)@en[[[From:]]]] [[ヘッダー]]は、
+[[要求]]している[[利用者エージェント]]を制御している人間[[利用者]]の[[インターネットメール]]の[[メールアドレス]]を含むものです
+[SRC[>>829]]。
+
+* 文脈
+
+** HTTP
+
+[833] [[HTTP]] の [CODE(HTTP)@en[[[From:]]]] [[ヘッダー]]は、
+[[ロボット]]以外の[[利用者エージェント]]は滅多に送りません。
+[[利用者エージェント]]は、[[利用者]]が明示的に設定しない限り、
+[CODE(HTTP)@en[[[From:]]]] [[ヘッダー]]を送る[['''べきではありません''']]。 [SRC[>>829]]
+
+[834] [[ロボット]][[利用者エージェント]]は、[[ロボット]]が[[要求]]を送りすぎたり、
+不正だったりするなど問題を起こした時に[[ロボット]]の実行の責任者に連絡がつくような[[メールアドレス]]を送信する[['''べきです''']]
+[SRC[>>829]]。
+
+[14] 現実には[[ロボット]]の識別には [CODE(HTTP)@en[User-Agent:]]
+が用いられ、 [CODE(HTTP)@en[From:]] は[[アクセスログ]]にも残さないのが普通です。
+従って、無駄な[[トラフィック]]となるだけで実効性のない [CODE(HTTP)@en[From:]]
+は指定するべきではありません。
+
+* 構文
+
+[832] [[HTTP]] では、 [[RFC 5322]] [CODE(ABNF)@en[[[mailbox]]]] とされています。
+機械利用可能な[[メールアドレス]]とする[RUBYB[べき]@en[ought to]]です。 [SRC[>>829]]
+
+[FIG(railroad)[
+= |
+== =
+=== ?
+==== [CODE(ABNF)@en[[[phrase]]]]
+=== ?
+==== [CODE(ABNF)@en[[[CFWS]]]]
+=== [CODE(822)[[[<]]]]
+=== [CODE(ABNF)@en[[[addr-spec]]]]
+=== [CODE(822)[[[>]]]]
+=== ?
+==== [CODE(ABNF)@en[[[CFWS]]]]
+== [CODE(ABNF)@en[[[addr-spec]]]]
+]FIG]
+
+[15] 
+[[Mozilla Thunderbird]] の[[フィードリーダー]]機能の[[メッセージ]]では、
+
+[PRE(code 822)[
+From: <Foo Bar>
+]PRE]
+
+のような [[RFC 822メッセージ]]としては不適切な
+[CODE[From:]]
+[[ヘッダー]]が生成されます。
+[[非ASCII文字]]が [[UTF-8]] のまま出力されます。
+
+
+* 処理
+
+[835] [[HTTP]] [[鯖]]は、[[アクセス制御]]や[[認証]]に [CODE(HTTP)@en[[[From:]]]]
+[[ヘッダー]]を使う[['''べきではありません''']] [SRC[>>829]]。
+
+* セキュリティー
+
+[10] [[HTTP]] [CODE(HTTP)@en[[[From:]]]] [[ヘッダー]]は、 [[fingerprinting vector]]
+です。
+
+* 歴史
+
+[824] [CITE[Request Headers in the HTTP protocol]]
+( ([TIME[2001-11-29 11:01:38 +09:00]] 版))
+<http://www.w3.org/Protocols/HTTP/HTRQ_Headers.html#from>
+
+[FIG(quote)[
+[FIGCAPTION[
+[827] RFC 1945 (HTTP/1.0) 10.8; RFC 2068・2616 (HTTP/1.1) 14.22 From
+]FIGCAPTION]
+
+> The From request-header field, if given, [DEL[[INS[{1945}]] should]] [INS[[INS[{2068}]] SHOULD]] contain an Internet
+e-mail address for the human user who controls the requesting user
+agent. The address [DEL[[INS[{1945}]] should]] [INS[[INS[{2068}]] SHOULD]] be machine-usable, as defined by [INS["]]mailbox[INS[" [INS[{2616}]]]] in
+RFC 822 [DEL[[INS[{1945}]] [7] ]] [INS[[INS[{2616}]] [9] ]] [DEL[(]]as updated by RFC 1123 [DEL[[INS[{1945}]] [6] ]] [INS[[INS[{2616}]] [8] ]] [DEL[) [INS[{2616}]]]]:
+
+[CODE(822)@en[[[From]]]] [[要求頭欄]]が与えられている場合、
+[[要求]]している[[利用者エージェント]]を制御している[[人間利用者]]の[[インターネット]][[電子メイル・アドレス]]を含む'''べきです'''。
+アドレスは [[RFC 822]] で定義され、 [[RFC 1123]]
+で更新されている [CODE(ABNF)@en[[[mailbox]]]]
+に従った機械利用可能なものである'''べきです'''。
+
+>
+- From   = "From" ":" mailbox
+
+> An example is:
+- From: webmaster@w3.org
+
+> This header field [DEL[[INS[{1945}]] may]] [INS[[INS[{2068}]] MAY]] be used for logging purposes and as a means for
+identifying the source of invalid or unwanted requests. It [DEL[[INS[{1945}]] should not]] [INS[[INS[{2068}]] SHOULD NOT]]
+be used as an insecure form of access protection. The interpretation
+of this field is that the request is being performed on behalf of the
+person given, who accepts responsibility for the method performed. In
+particular, robot agents [DEL[[INS[{1945}]] should]] [INS[[INS[{2068}]] SHOULD]] include this header so that the
+person responsible for running the robot can be contacted if problems
+occur on the receiving end.
+
+この[[頭欄]]は、記録目的で、
+あるいは不当な[[要求]]や望まない[[要求]]の出自を特定する手段として用いて'''構いません'''。
+安全でない形のアクセス保護に使う'''べきではありません'''。
+この欄は、その[[要求]]が指定された人のために行われたものであって、
+その人が施された[[メソッド]]に関して責任を認めると解釈します。
+特に[[ロボット]]・エージェントは、
+この頭を含めることにより、もし受信側で問題が起こった時に[[ロボット]]を実行させた責任者に連絡が付くようにする'''べきです'''。
+
+> The Internet e-mail address in this field [DEL[[INS[{1945}]] may]] [INS[[INS[{2068}]] MAY]] be separate from the
+Internet host which issued the request. For example, when a request
+is passed through a proxy[DEL[, [INS[{1945}]]]] the original issuer's address [DEL[[INS[{1945}]] should]] [INS[[INS[{2068}]] SHOULD]] be used.
+
+この欄の[[インターネット]][[電子メイル・アドレス]]は、
+[[要求]]を発行した[[インターネット]]・[[ホスト]]とは別であっても'''構いません'''。
+例えば、[[要求]]が[[串]]を介して渡されたものである場合、
+元の発行者のアドレスを使う'''べきです'''。
+
+> [DEL[Note: [INS[{1945,2068}]]]] The client [DEL[[INS[{1945}]] should]] [INS[[INS[{2068}]] SHOULD]] [DEL[[INS[{1945,2068}]] not]] [INS[[INS[{2616}]] NOT]] send the From header field without the
+user's approval, as it [DEL[[INS[{1945,2068}]] may]] [INS[[INS[{2616}]] might]] conflict with the user's privacy
+interests or their site's security policy. It is strongly
+recommended that the user be able to disable, enable, and modify
+the value of this field at any time prior to a request.
+
+[[利用者]]の個人情報の保護とその[[サイト]]の安全に関する方針との兼ね合いから、
+[[クライアント]]は[[利用者]]の承諾無く
+[CODE(822)@en[[[From]]]] 頭欄を送る'''べきではありません'''。
+[[要求]]の前にいつでも[[利用者]]がこの欄の値を有効・無効・編集できるようにすることを強く推奨します。
+]FIG]
+
+* 実装
+
+[1] [[HTTP]] の [CODE(HTTP)[From:]] 欄は、
+利用者のメイル・アドレスを送るのはプライバシー上よろしくないということで、
+現在ではほぼ[[ロボット]]専用となっています。
+
+- [2] [[NN2]] までは送っていたらしいですが、少なくても手元の 2.02 [ja] では確認できません。
+
+- [3] 未だにエラーメイルを [CODE(822)[From]] 欄宛に送ってくる DQN MTA があるみたいです。名前不明。しかも [CODE(822)[[[Received]]]] 欄の [CODE(822)[From]] に [CODE(822)[0]] とか書いてある素晴らしいホスト!
+- [4] [[Googlebot]] は [CODE(HTTP)[@]] の代わりに [CODE(HTTP)[(at)]] と書いて送ってきます。もちろん規格違反です。
+- [5] 他には、接頭辞 [CODE(HTTP)[[[mailto]]:]] をつけてくる robot もいます。ここ [[URI]] じゃないってば。もちろん規格違反。
+- [8] 古いロボットには、この欄にメイル・アドレスではなく [[URI参照]]を入れていたものもいたようです。ロボットの身元を申告するという意味的には正しい使い方ですが、構文的には誤りです。
+
+- [6] [[WinIE]] で [[Webアーカイブ]]で HTML を保存したら出力される [CODE(file)[mht]] ファイル (中身は擬似 [[822]]) では、 [CODE(822)[From: <Microsoft Internet Explorer 5 で保存する>]] というのがついてます。まじで。[[シフトJIS]] で。 ([[WinIE6]] なのに。。。)
+- [7] >>6 [CODE(822)[[[Subject]]]] 欄には [[encoded-word]] 使うのに、 [CODE(822)[From]] は生シフト JIS、それも規格違反の場所になんてねぇ。。。
+
+[9] Mosaic Netscape 0.9 では、
+既定で [CODE(HTTP)[From: unregistered]]
+になります。
+設定画面でメイル・アドレスを記入しておけばそれになります。
+
+[11]
+>>6 英語版では [SAMP(822)[From: <Saved by Microsoft Internet Explorer 5>]]。なんにせよ規格違反です。
+
+* 不思議解釈
+
+[FIG(quote)[
+[823] 
+>
+This header is no longer part of the HTTP standard.
+
+[FIGCAPTION[
+[828] [CITE[HTTP::Headers - search.cpan.org]] ([TIME[2009-11-15 14:17:47 +09:00]] 版) <http://search.cpan.org/~gaas/libwww-perl-5.833/lib/HTTP/Headers.pm#$h-%3Efrom>
+]FIGCAPTION]
+]FIG]
+
+え!?
+
+* 関連
+
+[826] [[電子メール]]には [CODE(822)@en[[[Sender:]]]] 欄もあります。 [CODE(822)@en[[[From:]]]]
+は名目上の送信者、 [CODE(822)@en[[[Sender:]]]] は実際に送信操作を行った人を表すという違いがあります。
+
+* メモ
+
+[12]
+[CITE[このメールに返信いただいても……]] <http://www.amy.hi-ho.ne.jp/~lepton/program/p4/prog456.html>
+([[名無しさん]] [WEAK[2006-09-26 23:55:55 +00:00]])
+
+[825] [CITE@en[RFC 6854 - Update to Internet Message Format to Allow Group Syntax in the "From:" and "Sender:" Header Fields]]
+( ([TIME[2013-08-03 09:00:40 +09:00]] 版))
+<http://tools.ietf.org/html/rfc6854>
+
+[836] [CITE@en[RFC 3507 - Internet Content Adaptation Protocol (ICAP)]]
+( ([TIME[2014-06-08 07:17:07 +09:00]] 版))
+<http://tools.ietf.org/html/rfc3507#page-14>
+
+[837] [CITE@en[RFC 5536 - Netnews Article Format]]
+( ([TIME[2014-09-21 18:14:06 +09:00]] 版))
+<http://tools.ietf.org/html/rfc5536#section-3.1.2>
+
+[13] [CITE@ja[別のアドレスまたはエイリアスからメールを送信する - Gmail ヘルプ]]
+( ([TIME[2016-08-31 12:46:49 +09:00]]))
+<https://support.google.com/mail/answer/22370?authuser=0>
