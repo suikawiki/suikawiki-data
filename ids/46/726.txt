@@ -1,0 +1,208 @@
+[1] [DFN[[CODE(HTTP)[[[201]]]]]] ([DFN[[[Created]]]]) は、
+新たに[[資源]]が作成されたことを表す[[状態符号]]です。
+
+[EG[
+[511] 例えば [CODE(HTTP)@en[[[POST]]]] [[要求]]によって新しい[[資源]]を作成することを求め、
+[[鯖]]がその処理を成功させた場合には、[[鯖]]は [CODE(HTTP)[[[201]]]]
+[[応答]]を返すことができます。この時 [[payload body]] には作成処理の結果や作成した[[資源]]の
+[[URL]] などを含めることができます。また [CODE(HTTP)@en[[[Location:]]]]
+[[ヘッダー]]に作成した[[資源]]の [[URL]] を明記できます。
+]EG]
+
+* 仕様書
+
+[REFS[
+- [513] '''[CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-6.3.2>'''
+- [412] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-4.3.3>
+- [507] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-4.3.4>
+- [7] [CITE@en[RFC 4918 - HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV)]] ([TIME[2014-09-21 17:04:59 +09:00]] 版) <http://tools.ietf.org/html/rfc4918#section-7.3>
+- [11] [CITE@en[RFC 4918 - HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV)]] ([TIME[2014-09-21 17:04:59 +09:00]] 版) <http://tools.ietf.org/html/rfc4918#section-9.3>
+- [13] [CITE@en[RFC 4918 - HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV)]] ([TIME[2014-09-21 17:04:59 +09:00]] 版) <http://tools.ietf.org/html/rfc4918#section-9.8>
+- [15] [CITE@en[RFC 4918 - HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV)]] ([TIME[2014-09-21 17:04:59 +09:00]] 版) <http://tools.ietf.org/html/rfc4918#section-9.9>
+]REFS]
+
+* 意味
+
+[514] 
+[[状態符号]]が
+[CODE(HTTP)[[[201]]]] 
+の[[応答]]は、[[要求]]が満たされ、
+一つ[[以上]]の[[資源]]が新しく作られたことを示しています [SRC[>>513]]。
+
+[516] 
+当該[[応答]]の
+[[payload]] は、普通は作成された[[資源]]を説明したり、
+[[リンク]]していたりするものです [SRC[>>513]]。
+
+;; [515] 新たに作られた[[資源]]のうち主たるものは、
+[CODE(HTTP)@en[[[Location:]]]] があればその [[URL]] により、
+なければ[[実効要求URL]]により識別されます [SRC[>>513]]。
+
+;; [517] 作られた[[資源]]をそのまま[[応答]]で返すわけではありません。
+ただし [CODE(HTTP)@en[[[Prefer:]] [[return]]]]
+も参照。
+
+* 構文
+
+[2] [CODE(HTTP)[201]] 応答は  [CODE(HTTP)[[[Location]]:]]
+頭欄を使用できます。 [CODE(HTTP)[Location:]] 欄本体には作成された資源を識別する
+URI を指定します。
+
+[NOTE[
+
+[17] 指定されない場合は[[実効要求URL]]が識別することになる (>>515)
+ので、つまり[[要求]]の [[URL]] ということになります。
+
+[18] 実世界の [[Web API]] 等での利用例を見るに、これは必ずしも従われていないようです。
+[CODE[Location:]] が省略されているからといって、作成されたものがその[[要求]]と同じ
+[[URL]] に存在しているとは限りません。
+
+[19] 
+従って実装は [CODE[PUT]] [[要求]]の場合を除き、 [CODE[Location:]]
+が明示的に指定されていないときは作成された[[資源]]の [[URL]] は不明とするべきです。
+
+]NOTE]
+
+[3] [CODE(HTTP)[201]] 応答は [CODE(HTTP)[[[ETag]]:]]
+頭欄を使用できます。 [CODE(HTTP)[ETag:]] 
+欄本体には作成された資源異体の[[実体札]]を指定します。
+
+[16] [[LDP]] は [CODE(HTTP)@en[[[Link:]] ...; [[rel]]=[[describedby]]]] 
+によって作成された[[資源]]について記述することを認めています。
+
+[4] [CODE(HTTP)[201]] 応答には[[実体本体]]を指定できます。
+[CODE(HTTP)[201]] 応答実体は、作成された資源についての情報を記述します。
+具体的な書式は特に規定されていません。
+
+;;
+[20] 
+実世界では空のこともありますし、「作成しました」のような自然言語文のこともありますし、
+「201」のような簡単な文字列だけのこともあれば、
+[[資源]]に関する何らかの[[機械可読]]なデータが提供されることもあります。
+
+* 文脈
+
+[417] [[起源鯖]]は、 [CODE(HTTP)@en[[[POST]]]] 
+[[要求]]の処理に成功して1つ以上の[[資源]]が作られた時には、
+[CODE(HTTP)@en[[[201]]]] [[応答]]を送信する[SHOULD[べきです]]。
+[SRC[>>412]]
+
+;; [22] 実世界では必ずしもこの規定は従われていません。
+[CODE[POST]] の結果[[資源]]が作成されたとしても、 [CODE[200]]
+や [CODE[302]]
+が返されることはよくあります。
+
+[21] 
+その場合、
+[CODE(HTTP)@en[[[Location:]]]] [[ヘッダー]]に作成された主たる[[資源]]の [[URL]]
+を含める[['''べきです''']]。[[表現]]は[[要求]]の状態と新しい[[資源]]への参照を説明したものとする[['''べきです''']]。
+[SRC[>>412]]
+
+[9] [CODE(HTTP)[[[207]]]] [[応答]]の内部で [CODE(HTTP)[[[201]]]]
+を使う時は、 [CODE(HTTP)@en[[[Location:]]]] [[ヘッダー]]のかわりに
+[CODE(XMLe)@en[[[location]]]] [[要素]]を使います。
+
+[510] [[起源鯖]]は、[[対象資源]]が現在[[表現]]を持っておらず、 [CODE(HTTP)[[[PUT]]]]
+によってその作成に成功した場合には、 [CODE(HTTP)[[[201]]]]
+を送信しなければ[['''なりません''']] [SRC[>>507]]。
+
+;; [23] 予定地だけがあるところに実データが [CODE[PUT]] で届けられた時、
+[CODE[201]] を返すという意味です。
+
+[8] [CODE(HTTP)@en[[[LOCK]]]] [[要求]]により新たな[[資源]]が作られた際は、
+[CODE(HTTP)[[[201]]]] [[応答]]を返さなければ[['''なりません''']] [SRC[>>7]]。
+
+[12] [CODE(HTTP)@en[[[MKCOL]]]] [[要求]] [SRC[>>11]] や
+[CODE(HTTP)@en[[[COPY]]]] [[要求]] [SRC[>>13]] や
+[CODE(HTTP)@en[[[MOVE]]]] [[要求]] [SRC[>>15]]
+により新たな[[資源]]が作られた時は、[CODE(HTTP)[[[201]]]] [[応答]]を返します。
+
+[14] [CODE(HTTP)@en[[[COPY]]]] [[要求]] [SRC[>>13]] や
+[CODE(HTTP)@en[[[MOVE]]]] [[要求]] [SRC[>>15]] に対する [CODE(HTTP)[[[207]]]]
+[[応答]]内の [CODE(XMLe)@en[[[status]]]] [[要素]]では、
+[CODE(HTTP)[[[201]]]] は使う[['''べきではありません''']]。
+
+* 処理
+
+[25] 
+[CODE[201]]
+を受信した[[クライアント]]がこれをどう処理するべきかは、
+その[[クライアント]]の性質によって異なります。
+すべての[[HTTPクライアント]]に共通する処理方法の規定はありません。
+
+[24] 
+[[Webブラウザー]]の [[navigate]] では [[payload]] が [CODE[200]]
+の場合と同じ様に表示されることになります。
+[SEE[ [[navigate]] ]]
+
+
+[512] [CODE(HTTP)[[[3xx]]]] [[応答]]と同じ [CODE(HTTP)@en[[[Location:]]]] 
+[[ヘッダー]]を使ってはいますが、 (少なくても [CODE(HTTP)[[[3xx]]]] と同じ意味の)
+[[HTTPリダイレクト]]とは異なります。[[利用者エージェント]]は普通は
+[CODE(HTTP)@en[[[Location:]]]] で指定された [[URL]] に自動的にアクセスすることはありません。
+
+
+* 歴史
+
+[FIG(quote)[
+[FIGCAPTION[
+[418] RFC 1945 (HTTP/1.0); RFC 2068・2616 (HTTP/1.1) 10.2.2 201 Created
+]FIGCAPTION]
+
+> The request has been fulfilled and resulted in a new resource being
+created. The newly created resource can be referenced by the URI(s)
+returned in the entity of the response[INS[, [INS[{2068,2616}]] with the most specific [DEL[URL]] [INS[URI]] for the resource given by a Location header field]]. [INS[[INS[{2616}]] The response SHOULD include an entity containing a list of resource characteristics and location(s) from which the user or user agent can choose the one most appropriate. The entity format is specified by the media type given in the Content-Type header field.]]
+The origin server [DEL[[INS[{1945}]] should]] [INS[[INS[{2068}]] MUST]] create the resource before [DEL[[INS[{1945}]] using this Status-Code]] [INS[[INS[{2068}]] returning the 201 status code]].
+If the action cannot be carried out immediately, [DEL[[INS[{1945}]] the server must include in the response body a description of when the resource will be available; otherwise,]]
+the server [DEL[[INS[{1945, 2068}]] should]] [INS[[INS[{2616}]] SHOULD]] respond with 202 [DEL[[INS[{1945}]] (accepted)]] [INS[[INS[{2068}]] (Accepted) response instead]].
+
+[[要求]]は満たされまして、新しい[[資源]]が作られました。
+新しく作られた資源は、[[応答]]の[[実体]]の中にある
+URI (群) によって参照することができます。 [INS[その資源を識別する一番の URI は [CODE(HTTP)[[[Location]]]] 頭欄で指定します。]] [INS[応答は、[[利用者]]や[[利用者エージェント]]が最適なものを選ぶことができるような、その資源の特徴と位置 (群) の一覧が含まれている実体を含む'''べきです'''。実体の書式は、 [CODE(HTTP)[[[Content-Type]]]] 頭欄に指定した媒体型により規定されます。]]
+起点鯖は、その資源を、 [CODE(HTTP)[201]] 
+状態符号を返すよりも前に作成[DEL[するべきです]] [INS[し'''なければなりません''']]。
+起点鯖がすぐに資源を作成できない場合には、[DEL[その資源がいつ利用可能になるのかの説明を[[応答本体]]に含めなければなりません。そうしない場合には、]]
+[CODE(HTTP)[201]] ではなしに [CODE(HTTP)[[[202]]]] (受入れ)
+応答を使って応答する'''べきです'''。
+
+[DEL[
+
+> [INS[{1945}]] Of the methods defined by this specification, only POST can create a resource.
+
+この仕様書で定義しました method の内では、 [CODE(HTTP)[[[POST]]]]
+だけが資源を作成できます。
+]DEL]
+
+[INS[
+
+> [INS[{2616}]] A 201 response MAY contain an ETag response header field indicating
+the current value of the entity tag for the requested variant just
+created, see section 14.19.
+
+[CODE(HTTP)[201]] 応答は、
+ちょうど今作成するように要求された[[異体]]の[[実体札]]の現在値を示した
+[CODE(HTTP)[[[ETag]]]] 応答頭欄を含めても'''構いません'''。
+]INS]
+]FIG]
+
+[6] [[RFC 2068]] 以前からある部分は[Q[資源を作成]]すると書いていますが、
+[[RFC 2616]] で追加された [CODE(HTTP)[ETag:]] 
+欄の説明の部分では[Q[異体を作成]]と言っています。
+
+[CODE(HTTP)[201]] はまったく新しい資源を作成した時に限らず、
+既存の資源の新しい異体を作成した場合 (例えば HTML 版に加えて XHTML
+版を作成した場合) にも使って良いのかもしれません。
+
+[203] [CITE@en[RFC 7252 - The Constrained Application Protocol (CoAP)]]
+( ([TIME[2014-06-27 00:59:37 +09:00]] 版))
+<http://tools.ietf.org/html/rfc7252#section-5.9.1.1>
+
+* 関連
+
+[5] [CODE(HTTP)[201]] 応答を返し得る method
+には、 [CODE(HTTP)[[[POST]]]], [CODE(HTTP)[[[PUT]]]] などがあります。
+
+[10] 新しい[[資源]]が作成された時に [CODE(HTTP)[[[201]]]] [[応答]]を使うことができますが、
+[CODE(HTTP)[[[201]]]] を使う義務はありません。例えば自動的に作成した[[資源]]に[[利用者]]を移動させたいなら、
+[CODE(HTTP)[[[302]]]] がより適切です。また作成が主たる処理ではなく副次的なものなら、
+[CODE(HTTP)[[[200]]]] や [CODE(HTTP)[[[302]]]] など他の[[状態符号]]がより適切かもしれません。
