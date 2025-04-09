@@ -1,0 +1,399 @@
+[1] [DFN[[CODE(HTTP)[[[100]] Continue]]]] [[応答]]は、[[クライアント]]が[[要求]]を途中まで送ってきたところで、[[サーバー]]が (その時点では) 問題はないから続きを送りたまえという意思表示をするものです。
+
+[441] [CODE(HTTP)[[[100]]]] を含む [CODE(HTTP)[[[1xx]]]] [[応答]]は、
+[[最後の応答]]の前に途中の状態や進捗を表す[[応答]]です。
+[CODE(HTTP)[[[200]]]] 以上の[[最後の応答]]よりも前に、
+[[鯖]]は0個以上の [CODE(HTTP)[[[1xx]]]] [[応答]]を送ることが認められています。
+
+[447] [[HTTP/1.1]] では[[鯖]]も[[クライアント]]も [CODE(HTTP)[[[100]]]]
+に対応することが求められているようですが、実際どれだけ対応されているのかは不明です。
+使われているという話はあまり聞きません。
+
+* 仕様書
+
+[REFS[
+- [443] '''[CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-6.2.1>'''
+- [421] [CITE@en[RFC 7230 - Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing]] ([TIME[2014-06-07 01:59:35 +09:00]] 版) <https://tools.ietf.org/html/rfc7230#page-59>
+- [420] [CITE@en[RFC 7231 - Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content]] ([TIME[2014-06-07 01:55:45 +09:00]] 版) <https://tools.ietf.org/html/rfc7231#section-5.1.1>
+]REFS]
+
+* 意味
+
+[444] [CODE(HTTP)[[[100]]]] [[状態符号]]は、[[要求]]の最初の部分が[[受信]]され、
+[[鯖]]はその時点で拒絶はしていないことを示しています。
+[[鯖]]は、[[要求]]を完全に[[受信]]し、それに従い動作した後、
+[[最後の応答]]を送ることとなります。 [SRC[>>443]]
+
+[445] [[要求]]が [CODE(HTTP)@en[[[Expect:]] [[100-continue]]]] (>>424)
+を含む場合には、[[鯖]]が [[payload body]] の[[受信]]を望むことを示します。
+[SRC[>>443]]
+
+* 文脈
+
+[438] [[HTTP/1.0]] [[クライアント]]に [CODE(HTTP)[[[100]]]]
+を含む [CODE(HTTP)[[[1xx]]]] [[応答]]を送っては[['''なりません''']]。
+
+* 処理
+
+[439] [[HTTP/1.1]] [[クライアント]]は [CODE(HTTP)[[[100]]]]
+を含む [CODE(HTTP)[[[1xx]]]] [[応答]]の[[構文解析]]を実装しなければ[['''なりません''']]。
+
+[446] [[クライアント]]は、[[要求]]に [CODE(HTTP)@en[[[Expect:]] [[100-continue]]]]
+を含めなかった場合、 [CODE(HTTP)[[[100]]]] [[応答]]を捨てて構いません [SRC[>>443]]。
+
+;; 含めていた場合については >>424 参照。
+
+[440] [[串]]は自身が [CODE(HTTP)[[[100]]]] を含む [CODE(HTTP)[[[1xx]]]]
+[[応答]]を要求した場合を除き、これを[[転送]]しなければなりません。
+[[串]]自身が[[要求]]に [CODE(HTTP)[[[100]]]] の[[要求]]を追加して[[転送]]した場合は、
+[CODE(HTTP)[[[100]]]] を[[転送]]する必要はありません。
+
+[6] [[HTTP/1.0]] [[応答]]が [CODE(HTTP)[[[100]]]] [[応答]]だった時どう処理するべきかは不明です。
+
+* [CODE(HTTP)@en[100-continue]]
+
+[424] [CODE(HTTP)@en[[[Expect:]]]] [[ヘッダー]]の値 [DFN[[CODE(HTTP)@en[[[100-continue]]]]]]
+は、[[クライアント]]が (おそらく大きな)
+[[メッセージ本体]]を当該[[要求]]の[[メッセージ本体]]で送信しようとしており、
+[[要求行]]と[[ヘッダー]]のみから即座に成功、リダイレクト、エラーのいずれかの[[応答]]を返すことができなければ
+[CODE(HTTP)[[[100]]]] [[応答]]を受信したいと望んでいることを、
+[[受信者]]に通知するものとなっています [SRC[>>420]]。
+
+[425] これにより[[クライアント]]は[[メッセージ本体]]を送信する前に送信する意味があるか判断できますから、
+[[メッセージ本体]]が大きい時やエラーになりそうな時に効率を向上させることができます [SRC[>>420]]。
+
+[FIG(sequence)[
+:C:[[クライアント]]
+:S:[[鯖]]
+:C -> S:[[ヘッダー]] ([CODE(HTTP)@en[[[Expect:]] [[100-continue]]]])
+:S -> C:[CODE(HTTP)[[[100]]]] [[応答]]
+:C -> S:[[メッセージ本体]]
+:S -> C:[[最後の応答]]
+]FIG]
+
+[427] [[クライアント]]は、[[メッセージ本体]]を送る前に [CODE(HTTP)[[[100]]]]
+[[応答]]を待つ場合、 [CODE(HTTP)[[[100-continue]]]] を送信しなければ[['''なりません''']]
+[SRC[>>420]]。
+
+[428] [[クライアント]]が [CODE(HTTP)[[[100-continue]]]] を送信する場合、
+待つ時間に特に決まりはありません。[[応答]]を受信しなくても、
+[[メッセージ本体]]を送信して構いません。特に、 [[HTTP/1.0]]
+[[中間器]]は仕組み上 [CODE(HTTP)[[[100]]]] [[応答]]を送れませんから、
+[[メッセージ本体]]を送信するまでいつまでも待つ[['''べきではありません''']]。 [SRC[>>420]]
+
+[426] [[クライアント]]は、[[メッセージ本体]]を含まない[[要求]]に
+[CODE(HTTP)[[[100-continue]]]] を[[生成]]しては[['''なりません''']] [SRC[>>420]]。
+
+[430] [[鯖]]は、 [[HTTP/1.0]] [[要求]]で [CODE(HTTP)[[[100-continue]]]]
+を受信した場合、これを無視しなければ[['''なりません''']] [SRC[>>421]]。
+
+[431] [[鯖]]は、[[メッセージ本体]]の一部又は全部を既に受信した場合や、
+[[メッセージ本体]]がないと示されているときは、 [CODE(HTTP)[[[100]]]]
+の送信を省略して構いません [SRC[>>420]]。
+
+[434] [[起源鯖]]は、 [[HTTP/1.1]] 以降の[[要求行]]と[[ヘッダー部]]全体を読み終わったら、
+そこから[[状態符号]]を決定できる場合には最終的な[[状態符号]]で即座の[[応答]]を送信するか、
+または即座の [CODE(HTTP)[[[100]]]] [[応答]]を送信して[[メッセージ本体]]の送信を促すかのいずれかとしなければ[['''なりません''']]
+[SRC[>>420]]。[[起源鯖]]は [CODE(HTTP)[[[100]]]] [[応答]]を送信する前に[[メッセージ本体]]を待っては[['''なりません''']]
+[SRC[>>420]]。
+
+
+[435] [[串]]は、 [[HTTP/1.1]] 以降の[[要求行]]と[[ヘッダー部]]全体を読み終わったら、
+そこから[[状態符号]]を決定できる場合には最終的な[[状態符号]]で即座の[[応答]]を送信するか、
+または[[要求行]]と[[ヘッダー部]]を[[上流]]に[[転送]]するかしなければ[['''なりません''']]。
+[SRC[>>420]]
+
+[436] [[串]]は、[[内向き]]の[[鯖]]が [[HTTP/1.0]] しか対応していないと
+(設定や経験から) 考えられるときは、即座の [CODE(HTTP)[[[100]]]]
+[[応答]]を送信して[[メッセージ本体]]の送信を促しても[['''構いません''']] [SRC[>>420]]。
+
+[422] [[鯖]]は、 [CODE(HTTP)@en[[[100-continue]]]] と [CODE(HTTP)@en[[[Upgrade:]]]]
+が共に指定されているときは、まず [CODE(HTTP)[[[100]]]] を送り、次に
+[CODE(HTTP)[[[101]]]] を送ります [SRC[>>421]]。
+
+[432] [[鯖]]は、 [CODE(HTTP)[[[100]]]] を送った場合、
+[[メッセージ本体]]を受信して処理したら、 ([[接続]]が途中で閉じられた場合を除き、)
+最終的な[[状態符号]]の[[応答]]を送信しなければ[['''なりません''']] [SRC[>>420]]。
+
+[433] [[鯖]]は、[[メッセージ本体]]をすべて読む前に最終的な[[状態符号]]の[[応答]]を送信する場合、
+[[接続]]を閉じることを[[応答]]に示す ([CODE(HTTP)@en[[[Connection:]] [[close]]]])
+か、[[要求メッセージ]]を最後まで読んで捨てる[['''べきです''']] [SRC[>>420]]。
+
+;; [448] [[鯖]]が [CODE(HTTP)[[[Expect:]] [[100-continue]]]] を実装することは明示的に要求されているわけではありませんが、
+実装しなくても良いとは明記されていません。実装しない場合には
+[CODE(HTTP)[[[417]]]] を返すべきと思われます。
+しかし現実には黙って無視する ([[要求]]全体を受信するのを待つ) [[サーバー]]もあります。
+
+[429] [[クライアント]]は、 [CODE(HTTP)[[[100-continue]]]] に対して
+[CODE(HTTP)[[[417]]]] [[応答]]を受信した場合、 [CODE(HTTP)[[[100-continue]]]]
+なしで[[要求]]を再度行う[['''べきです''']] [SRC[>>420]]。
+
+;; [10] が、[[HTTPクライアント]]の[[ライブラリー]]の実装によっては、
+[CODE[100-continue]] を指定して [CODE[417]] を受け取ったらそのまま[[アプリケーション]]に渡すものもあります。
+これでは [CODE[417]] を返す[[サーバー]]から意味のある[[応答]]を受け取ることができないので、
+[[Web互換]]ではありません。汎用[[ライブラリー]]はそもそも [CODE[Expect:]]
+を指定するべきではありません。
+
+* 歴史
+
+[2] この状態符号は、というかこの仕組みは [[HTTP/1.0]] 以前にはなく、 [[HTTP/1.1]] で導入されたものです。 [[RFC 2068]] によればすべての HTTP/1.1 クライアントはとりあえず対応しないといけないことになっていましたが、[WEAK[実装状況を反映して]] [[RFC 2616]] ではトーンダウンして、対応しているクライアントは [CODE(HTTP)[[[Expect]]: [[100-continue]]]] と合図することになっています。
+
+** HTTP/1.1
+
+[FIG(quote)[
+[FIGCAPTION[
+[418] RFC 2068・2616 (HTTP/1.1) 10.1.1 100 Continue
+]FIGCAPTION]
+
+> The client [DEL[may]] [INS[SHOULD]] continue with its request. This interim response is
+used to inform the client that the initial part of the request has
+been received and has not yet been rejected by the server. The client
+SHOULD continue by sending the remainder of the request or, if the
+request has already been completed, ignore this response. The server
+MUST send a final response after the request has been completed. [INS[See section 8.2.3 for detailed discussion of the use and handling of this status code.]]
+
+クライアントは、その要求を続行する'''べきです'''。
+この暫定応答は、要求の初期部分が受信され、まだサーバーが却下していないことをクライアントに通知するのに使います。
+クライアントは、要求の残りの部分を送信することで続行するか、
+又は要求が既に完了していればこの応答を無視するかする'''べきです'''。
+サーバーは、要求が完了する前に最終応答を送信しては'''なりません'''。
+この状態符号の使用と取扱いについての話題は 8.2.3 節を参照して下さい。
+]FIG]
+
+[3] これは RFC 2616 の規定ですが、相当する RFC 2068 の規定 (大分違う。) は[CODE(WikiPage)[[[持続接続]]]]をご覧下さい。
+
+[FIG(quote)[
+[FIGCAPTION[
+[419] RFC 2616 (HTTP/1.1) 8.2.3 Use of the 100 (Continue) Status
+]FIGCAPTION]
+
+> The purpose of the 100 (Continue) status (see section 10.1.1) is to
+allow a client that is sending a request message with a request body
+to determine if the origin server is willing to accept the request
+(based on the request headers) before the client sends the request
+body. In some cases, it might either be inappropriate or highly
+inefficient for the client to send the body if the server will reject
+the message without looking at the body.
+
+[CODE(HTTP)[100]] (継続) 状態の目的は、
+要求本体つきの要求メッセージを送信するクライアントが要求本体を送信する前に、
+起源サーバーは (要求頭に基づき) 要求を受け入れる意思があるのかを決定することを可能にすることにあります。
+場合によっては、サーバーが本体を読まずにメッセージを却下するならクライアントが本体を送信するのは不適切か非常に非効率であるかもしれません。
+
+> Requirements for HTTP/1.1 clients:
+- If a client will wait for a 100 (Continue) response before
+sending the request body, it MUST send an Expect request-header
+field (section 14.20) with the "100-continue" expectation.
+- A client MUST NOT send an Expect request-header field (section
+14.20) with the "100-continue" expectation if it does not intend
+to send a request body.
+
+HTTP/1.1 クライアントの要件:
+- クライアントが要求本体を送る前に [CODE(HTTP)[100]] (継続)
+応答を待つのであれば、 [CODE(HTTP)[[[Expect]]]] 要求頭欄に
+[CODE(HTTP)[[[100-continue]]]] 期待を入れて送らなければ'''なりません'''。
+- クライアントが要求本体を送る意図がないのであれば、
+[CODE(HTTP)[Expect]] 要求頭欄に [CODE(HTTP)[100-continue]]
+期待を入れて送っては'''なりません'''。
+
+> Because of the presence of older implementations, the protocol allows
+ambiguous situations in which a client may send "Expect: 100-continue" without receiving either a 417 (Expectation Failed) status
+or a 100 (Continue) status. Therefore, when a client sends this
+header field to an origin server (possibly via a proxy) from which it
+has never seen a 100 (Continue) status, the client SHOULD NOT wait
+for an indefinite period before sending the request body.
+
+古い実装が存在するために、このプロトコルではクライアントが
+[CODE(HTTP)[Expect: 100-continue]] を送信しても
+[CODE(HTTP)[[[417]]]] (期待失敗) 状態又は [CODE(HTTP)[100]] (継続)
+状態のいずれも受信しない曖昧な状態が存在します。
+従って、クライアントがこの頭欄を (串経由であれ) 起源サーバーに送信して一向に
+[CODE(HTTP)[100]] (継続) 状態がみられない場合は、
+クライアントは要求本体を送る前に無限の時間を待つ'''べきではありません'''。
+
+> Requirements for HTTP/1.1 origin servers:
+- Upon receiving a request which includes an Expect request-header
+field with the "100-continue" expectation, an origin server MUST
+either respond with 100 (Continue) status and continue to read
+from the input stream, or respond with a final status code. The
+origin server MUST NOT wait for the request body before sending
+the 100 (Continue) response. If it responds with a final status
+code, it MAY close the transport connection or it MAY continue
+to read and discard the rest of the request.  It MUST NOT
+perform the requested method if it returns a final status code.
+
+HTTP/1.1 起源サーバーの要件:
+- [CODE(HTTP)[Expect]] 要求頭欄に [CODE(HTTP)[100-continue]] 期待がついたものを含んだ要求を受け取ったときには、
+起源サーバーは [CODE(HTTP)[100]] (継続) 状態で応答して入力流れから読み込みを続行するか、
+又は最終状態符号で応答するかしなければ'''なりません'''。
+起源サーバーは、 [CODE(HTTP)[100]] (継続) 応答を送信する前に要求本体を待っては'''いけません'''。
+最終状態符号で応答した時は、その転送接続を閉じても'''構いません'''し、
+要求の残りを読み込んで捨てても'''構いません'''。
+最終状態符号を返すのであれば、要求された method を施しては'''なりません'''。
+
+>
+- An origin server SHOULD NOT send a 100 (Continue) response if
+the request message does not include an Expect request-header
+field with the "100-continue" expectation, and MUST NOT send a
+100 (Continue) response if such a request comes from an HTTP/1.0
+(or earlier) client. There is an exception to this rule: for
+compatibility with RFC 2068, a server MAY send a 100 (Continue)
+status in response to an HTTP/1.1 PUT or POST request that does
+not include an Expect request-header field with the "100-continue" expectation. This exception, the purpose of which is
+to minimize any client processing delays associated with an
+undeclared wait for 100 (Continue) status, applies only to
+HTTP/1.1 requests, and not to requests with any other HTTP-version value.
+
+起源サーバーは、要求メッセージが [CODE(HTTP)[Expect]] 要求頭欄で
+[CODE(HTTP)[100-continue]] 期待を持ったものを含んでいないときには
+[CODE(HTTP)[100]] (継続) 応答をする'''べきではなく'''、
+左様な要求が HTTP/1.0 (以前) のクライアントから来たものであれば
+[CODE(HTTP)[100]] (継続) 応答を送っては'''なりません'''。
+この規則には例外があります : RFC 2068 との互換性のため、
+サーバーは [CODE(HTTP)[Expect]] 要求頭欄で [CODE(HTTP)[100-continue]]
+期待を持ったものが含まれていなくても HTTP/1.1 の [CODE(HTTP)[[[PUT]]]]
+要求又は [CODE(HTTP)[[[POST]]]] 要求に対する応答であれば、サーバーは
+[CODE(HTTP)[100]] (継続) 状態の応答を送っても'''構いません'''。
+宣言していない [CODE(HTTP)[100]] (継続) 状態への待機に関するクライアントの処理の遅延を最小化するためのこの例外は
+HTTP/1.1 要求にのみ適用され、他の [CODE(ABNF)[HTTP-version]]
+値の要求には適用しません。
+
+>
+- An origin server MAY omit a 100 (Continue) response if it has
+already received some or all of the request body for the
+corresponding request.
+- An origin server that sends a 100 (Continue) response MUST
+ultimately send a final status code, once the request body is
+received and processed, unless it terminates the transport
+connection prematurely.
+
+- 起源サーバーは、対応する要求についての要求本体の一部又は全部を既に受信しているのであれば、
+[CODE(HTTP)[100]] (継続) 応答を省いても'''構いません'''。
+- [CODE(HTTP)[100]] (継続) 応答を送信した起源サーバーは、
+一度要求を受信して処理したら、転送接続が既に終端していない限り、
+最終状態符号を最後に送らなければ'''なりません'''。
+
+>
+- If an origin server receives a request that does not include an
+Expect request-header field with the "100-continue" expectation,
+the request includes a request body, and the server responds
+with a final status code before reading the entire request body
+from the transport connection, then the server SHOULD NOT close
+the transport connection until it has read the entire request,
+or until the client closes the connection. Otherwise, the client
+might not reliably receive the response message. However, this
+requirement is not be construed as preventing a server from
+defending itself against denial-of-service attacks, or from
+badly broken client implementations.
+
+起源サーバーが [CODE(HTTP)[100-continue]] 期待を持った
+[CODE(HTTP)[Expect]] 要求頭欄を含まない要求を受信し、
+そしてサーバーが転送接続から要求本体全体を読み込む前に最終状態符号で応答した場合は、
+サーバーは要求全体を読み込むか、又はクライアントが転送接続を閉じない限り、
+接続を閉じる'''べきではありません'''。そうしなければ、
+クライアントは確実に応答メッセージを受信できないかもしれません。
+しかし、この要件はサーバー自身をサービス拒否攻撃や壊れたクライアント実装から護るためとは解釈出来ません。
+
+> Requirements for HTTP/1.1 proxies:
+- If a proxy receives a request that includes an Expect request-header field with the "100-continue" expectation, and the proxy
+either knows that the next-hop server complies with HTTP/1.1 or
+higher, or does not know the HTTP version of the next-hop
+server, it MUST forward the request, including the Expect header field.
+- If the proxy knows that the version of the next-hop server is
+HTTP/1.0 or lower, it MUST NOT forward the request, and it MUST
+respond with a 417 (Expectation Failed) status.
+- Proxies SHOULD maintain a cache recording the HTTP version
+numbers received from recently-referenced next-hop servers.
+- A proxy MUST NOT forward a 100 (Continue) response if the
+request message was received from an HTTP/1.0 (or earlier)
+client and did not include an Expect request-header field with
+the "100-continue" expectation. This requirement overrides the
+general rule for forwarding of 1xx responses (see section 10.1).
+
+HTTP/1.1 串の要件:
+- 串が [CODE(HTTP)[Expect]] 要求頭欄で [CODE(HTTP)[100-continue]] 期待を持ったものを含んだ要求を受け取ったときで、
+串が次の hop のサーバーは HTTP/1.1 以上に従っていると知っているか又は次の hop
+のサーバーの HTTP の版を知らない時には、その要求を、 [CODE(HTTP)[Expect]]
+頭欄を含めて転送しなければ'''なりません'''。
+- 串が次の hop のサーバーの版が HTTP/1.0 以下であると知っている時には、
+その要求を転送しては'''ならず'''、 [CODE(HTTP)[417]] (期待失敗) 状態で応答しなければ'''なりません'''。
+- 串は、以前に参照した次の hop のサーバーから受取った HTTP の版を記録したキャッシュを維持する'''べきです'''。
+串は、要求メッセージが HTTP/1.0 (以前) のクライアントから受信したものであって、
+[CODE(HTTP)[Expect]] 要求頭欄で [CODE(HTTP)[100-continue]] 期待を持ったものを含んでいなければ、
+[CODE(HTTP)[100]] (継続) 応答を転送しては'''なりません'''。
+この要件は [CODE(HTTP)[1[VAR[xx]]]] 要求の転送についての一般規則を上書きします。
+]FIG]
+
+* 実装
+
+[REFS[
+- [423] [CITE[PUT Object - Amazon Simple Storage Service]]
+( ([TIME[2013-01-04 00:35:41 +09:00]] 版))
+<http://docs.aws.amazon.com/AmazonS3/2006-03-01/API/RESTObjectPUT.html>
+- [437] [CITE[chromium chromium/src/net/http/http_network_transaction.cc]]
+( ([TIME[2014-07-14 05:04:37 +09:00]] 版))
+<http://mxr.mozilla.org/chromium/source/src/net/http/http_network_transaction.cc#1036>
+]REFS]
+
+* 関連
+
+[442] [CODE(HTTP)[[[100]]]] と [CODE(HTTP)[[[101]]]] の順序については、
+[CODE(HTTP)@en[[[Upgrade:]]]] を参照してください。
+
+[449] [CITE@en[RFC 3507 - Internet Content Adaptation Protocol (ICAP)]]
+( ([TIME[2014-06-08 07:17:07 +09:00]] 版))
+<http://tools.ietf.org/html/rfc3507#section-4.3.3>
+
+[FIG(quote)[
+[FIGCAPTION[
+[4] [CITE@en[mod_proxy - Apache HTTP Server Version 2.4]]
+([TIME[2015-02-15 17:51:02 +09:00]] 版)
+<http://httpd.apache.org/docs/current/en/mod/mod_proxy.html#ProxyPass>
+]FIGCAPTION]
+
+> For HTTP, it causes mod_proxy_http to send a 100-Continue to the backend (only valid for HTTP/1.1 - for non HTTP/1.1 backends, this property has no effect). 
+
+]FIG]
+
+
+[FIG(quote)[
+[FIGCAPTION[
+[5] [CITE@en[HTTP Routing | Heroku Dev Center]]
+([TIME[2015-04-08 23:16:07 +09:00]] 版)
+<https://devcenter.heroku.com/articles/http-routing>
+]FIGCAPTION]
+
+> the Heroku HTTP routers will automatically insert a 100 Continue response on behalf of the application it routes to, and will later forward the data.
+
+]FIG]
+
+
+[7] [CITE@en[Provide opt-in for Expect = "100-continue" · Issue #41 · whatwg/fetch]]
+( ([TIME[2016-05-28 11:38:57 +09:00]]))
+<https://github.com/whatwg/fetch/issues/41>
+
+[FIG(quote)[
+[FIGCAPTION[
+[8] [CITE[cURL - How To Use]]
+( ([TIME[2016-05-31 06:05:05 +09:00]]))
+<https://curl.haxx.se/docs/manpage.html#--expect100-timeout>
+]FIGCAPTION]
+
+> --expect100-timeout <seconds>
+> (HTTP) Maximum time in seconds that you allow curl to wait for a 100-continue response when curl emits an Expects: 100-continue header in its request. By default curl will wait one second. This option accepts decimal values! When curl stops waiting, it will continue as if the response has been received.
+> (Added in 7.47.0)
+
+]FIG]
+
+
+[9] [CITE@en[RFC 8120 - Mutual Authentication Protocol for HTTP]]
+([TIME[2017-04-20 12:04:06 +09:00]])
+<https://tools.ietf.org/html/rfc8120#section-4.5>
+
+[11] [CITE[curl - How To Use]]
+([TIME[2020-09-21T09:01:13.000Z]], [TIME[2020-10-01T06:10:24.228Z]])
+<https://curl.haxx.se/docs/manpage.html#--expect100-timeout>
+
+[12] [CITE@en[FFmpeg Protocols Documentation]]
+([TIME[2020-09-30T16:24:18.000Z]], [TIME[2020-10-01T08:08:16.850Z]])
+<https://ffmpeg.org/ffmpeg-protocols.html#http>
