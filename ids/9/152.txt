@@ -1,9 +1,24 @@
 [14] かつての [[URL]] の仕様では [[reserved]] / [[unreserved]] の違いがありました。 [[unreserved]]
 は、[[パーセント符号化]]してもしなくても同じ意味である[[文字]]でした。
 
-;; [15] 現在の [[URL Standard]] には [[reserved]] / [[unreserved]] の区別はありません。
+;; [15] 現在の [CITE[URL Standard]] には [[reserved]] / [[unreserved]] の区別はありません。
 
-* 定義
+[21] この予約、非予約という概念は非常にわかりにくい上に、
+[[仕様書]]が改訂されるたびに大きく変更され続けていましたから、
+技術者コミュニティーでは十分よく理解されることがなく混乱の元になっていました。
+
+[22] 
+[[プログラミング言語]]の[[ライブラリー]]などはそうそう頻繁に作り直されるものではありませんから、
+今でも当時の古い概念を基に作られていることがあります。それは過去のどれかの仕様書に基づくものかもしれませんし、
+開発者の誤解に基づく仕様書とは異なるものであることもままあります。
+
+[23] 
+また、古い時代に書かれた解説はもちろんのこと、最近書かれたものであっても著者が不勉強な低品質な解説の類には、
+過去の仕様書に基づく予約、非予約やそれを曲解した誤った予約、非予約の説明がなされていることがあります。
+
+
+
+* RFC 1738 時代
 
 [1] [[RFC1738]], [[RFC1808]] では:
 - unreserved     = alpha | digit | safe | extra
@@ -14,7 +29,24 @@
 - [CODE(ABNF)[rfc1738.unreserved = <[A-Za-z0-9$_.+!*'(),-]>]]
 - rfc1808.unreserved = rfc1738.unreserved
 
-一方、 [[RFC2396]] では
+[3] 
+[[HTTP/1.1]]
+([[RFC2068]]) では:
+- unreserved     = ALPHA | DIGIT | safe | extra | national
+
+結局、
+- rfc2068.unreserved = [[OCTET]] - (%x00-20 / <"> / "#" / "%" / "<" / ">")
+
+随分おおざっぱな定義ですが、 [[pchar]>>3]
+参照。
+
+[2] [CODE(URI)[~]] が追加されたのは、 <http://foo.example/~user/> のような使用が非常に広く行われており、追認せざるを得なかったからです。本来はこの文字は national に分類されていたように存在しない[[符号化文字集合]]が多い (その最たる例は日本の[[シフトJIS]]。厳密にはシフト JIS で生チルダを含む URI は書けません。) ですし、容易に入力できない鍵盤・入力方式も少なくありませ。 (日本では [[WWW]] の普及後雑誌や[[掲示板]]などで [CODE(char)[~]] の入力方法についての記事や質問が激増しました。)
+
+
+* RFC 2396 時代
+
+[17] 
+[[RFC2396]] では
 - [CODE(ABNF)[rfc2396.unreserved = <[A-Za-z0-9_.!~*'()-]>]]
 
 で、 [CODE(URI)[[[$]]]],
@@ -26,7 +58,63 @@
 へ移動、追加されたものは
 [[national]] からの編入です。
 
-;; [CITE@en[Compare character sets "$rfc1738:unreserved" and "$rfc2396:unreserved"]] ([TIME[2013-10-28 09:59:58 +09:00]] 版) <http://chars.suikawiki.org/set/compare?expr1=%24rfc1738%3Aunreserved&expr2=%24rfc2396%3Aunreserved>
+[REFS[
+
+- [18] 比較:
+[CITE@en[Compare character sets "$rfc1738:unreserved" and "$rfc2396:unreserved"]] ([TIME[2013-10-28 09:59:58 +09:00]] 版) <http://chars.suikawiki.org/set/compare?expr1=%24rfc1738%3Aunreserved&expr2=%24rfc2396%3Aunreserved>
+
+]REFS]
+
+[FIG(quote)[ [19] [[RFC 2396]]
+
+>
+[BOX[
+
+* 2.3. Unreserved Characters
+
+Data characters that are allowed in a URI but do not have a reserved
+purpose are called unreserved.  These include upper and lower case
+letters, decimal digits, and a limited set of punctuation marks and
+symbols.
+
+URI で認められているが[[予約]]目的を持たないデータ文字を[DFN[[[非予約]]]]と呼びます。
+これには大文字と小文字, 10進数字,
+嗅ぎられた句読点印・記号の集合を含みます。
+
+- unreserved  = alphanum | mark
+- mark        = "-" | "_" | "." | "!" | "~" | "*" | "'" | "(" | ")"
+
+Unreserved characters can be escaped without changing the semantics
+of the URI, but this should not be done unless the URI is being used
+in a context that does not allow the unescaped character to appear.
+
+非予約文字は URI
+の意味を変えることなく [[escape]]
+することが出来ますが、
+このことは URI
+がその非予約文字の出現が許されない文脈で使われるのでない限りするべきではありません。
+
+]BOX]
+
+[20] G.2 (抜粋)
+
+> 
+[BOX[
+
+The tilde "~" character was added to those in the "unreserved" set,
+since it is extensively used on the Internet in spite of the
+difficulty to transcribe it with some keyboards.
+
+[[チルダ]] [CODE(URI)[[[~]]]]
+文字を「非予約」集合に加えました。
+この文字は転写し辛い鍵盤があるにもかかわらずインターネットで広く用いられているからです。
+
+]BOX]
+
+
+]FIG]
+
+* RFC 3986 時代
 
 [10] [[RFC 2396]] と [[RFC 3986]] と比べると5文字 [[sub-delims]] に移動しています。
 
@@ -35,18 +123,7 @@
 - [9] [CITE@en[Compare character sets "'''['''!'-*''']'''" and "$rfc3986:sub-delims"]] ([TIME[2013-10-28 10:01:46 +09:00]] 版) <http://chars.suikawiki.org/set/compare?expr1=%5B%21%27-%2A%5D&expr2=$rfc3986:sub-delims>
 ]REFS]
 
-* HTTP での定義
-
-[3] [[RFC2068]] では:
-- unreserved     = ALPHA | DIGIT | safe | extra | national
-
-結局、
-- rfc2068.unreserved = [[OCTET]] - (%x00-20 / <"> / "#" / "%" / "<" / ">")
-
-随分おおざっぱな定義ですが、 [[pchar]>>3]
-参照。
-
-* IRI
+** IRI
 
 [12] [[RFC 3986]] [CODE(ABNF)@en[[[reserved]]]] と [[RFC 3987]] [CODE(ABNF)@en[[[iunreserved]]]]
 の違いは [CODE(ABNF)@en[[[ucschar]]]] です。
@@ -55,7 +132,7 @@
 - [11] [CITE@en[Compare character sets "$rfc3986:unreserved" and "$rfc3987:iunreserved"]] ([TIME[2013-10-28 10:02:45 +09:00]] 版) <http://chars.suikawiki.org/set/compare?expr1=%24rfc3986%3Aunreserved&expr2=%24rfc3987%3Aiunreserved>
 ]REFS]
 
-* bidi 文字
+** bidi 文字
 
 [6] [[IRI]] ([[RFC 3987]]) では [[bidi]] の表示の制御に関わる[[文字]]
 [CODE(charname)@en[[[LRM]]]], [CODE(charname)@en[[[RLM]]]], [CODE(charname)@en[[[LRE]]]], 
@@ -75,51 +152,6 @@
 構文に合致するもの」のような引用の仕方のものがあり、その場合に >>6
 の制約が適用されるのか不明です。
 
-* 仕様書から
-
-
-** RFC 2396 
-
-
-*** 2.3. Unreserved Characters
-
-> Data characters that are allowed in a URI but do not have a reserved
-purpose are called unreserved.  These include upper and lower case
-letters, decimal digits, and a limited set of punctuation marks and
-symbols.
-
-URI で認められているが[[予約]]目的を持たないデータ文字を[DFN[[[非予約]]]]と呼びます。
-これには大文字と小文字, 10進数字,
-嗅ぎられた句読点印・記号の集合を含みます。
-
->
-- unreserved  = alphanum | mark
-- mark        = "-" | "_" | "." | "!" | "~" | "*" | "'" | "(" | ")"
-> Unreserved characters can be escaped without changing the semantics
-of the URI, but this should not be done unless the URI is being used
-in a context that does not allow the unescaped character to appear.
-
-非予約文字は URI
-の意味を変えることなく [[escape]]
-することが出来ますが、
-このことは URI
-がその非予約文字の出現が許されない文脈で使われるのでない限りするべきではありません。
-
-
-*** G.2 (抜粋)
-
-> The tilde "~" character was added to those in the "unreserved" set,
-since it is extensively used on the Internet in spite of the
-difficulty to transcribe it with some keyboards.
-
-[[チルダ]] [CODE(URI)[[[~]]]]
-文字を「非予約」集合に加えました。
-この文字は転写し辛い鍵盤があるにもかかわらずインターネットで広く用いられているからです。
-
-
-* RFC の部分の License
-
-[[RFCのライセンス]]
 
 * 関連
 
@@ -127,9 +159,16 @@ difficulty to transcribe it with some keyboards.
 - [[非安全文字]]
 - [[百分率符号化]]
 
+[24] 
+現在の [[URL]] の仕様書である [CITE[URL Standard]] には[[予約]]、[[非予約]]に相当する概念はありません。
+
+[25] 
+強いて言うなら[[パーセント符号化集合]]が近い位置にある概念ですが、
+混乱した[[予約]]、[[非予約]]の概念を解体したもので、
+用語として直接的機械的に置換できるものではありません。
+
 * メモ
 
-- [2] [CODE(URI)[~]] が追加されたのは、 <http://foo.example/~user/> のような使用が非常に広く行われており、追認せざるを得なかったからです。本来はこの文字は national に分類されていたように存在しない[[符号化文字集合]]が多い (その最たる例は日本の[[シフトJIS]]。厳密にはシフト JIS で生チルダを含む URI は書けません。) ですし、容易に入力できない鍵盤・入力方式も少なくありませ。 (日本では [[WWW]] の普及後雑誌や[[掲示板]]などで [CODE(char)[~]] の入力方法についての記事や質問が激増しました。)
 
 [4]
 [[RFC 3986]] まで一貫して [CODE(URI)[.]] は非予約文字に分類されてきました。

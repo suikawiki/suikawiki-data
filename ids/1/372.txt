@@ -386,6 +386,175 @@ charset は省略形のように見えます。元々はそうなのでしょう
 [180] [CITE[HTTP::Message - search.cpan.org]] ([TIME[2017-09-10 18:28:51 +09:00]]) <http://search.cpan.org/~oalders/HTTP-Message-6.13/lib/HTTP/Message.pm>
 は [CODE[charset]] の値 [CODE[none]] を無変換として解釈します。
 
+
+* HTTP における [CODE[charset]] 引数
+
+[213] 
+[[HTTP]] は [[MIME]] の charset
+の仕組みを流用していますが、細かい部分で色々と違いがあります。
+
+そしてなんといっても問題なのが、 MIME 以上に HTTP
+では charset の規定が無視されています。
+
+;; そのために更に HTTP 内外に屋上屋を架けまくって種々の規格とその相互関係が泥沼になっています。
+
+[214] 
+MIME との最も重要な差異は、
+[CODE(HTTP)[[[Content-Type]]]] 欄の [CODE(HTTP)[[[charset]]]] 引数が省略された時の既定値が、
+MIME の [CODE(charset)[US-ASCII]] ではなく
+[CODE(charset)[ISO-8859-1]] であることです。
+
+[WEAK[ただ、その規定の適用範囲が曖昧で困ります。 (すべての [CODE(MIME)[[[text/*]]]] に適用されるのか、 MIME の [CODE(MIME)[[[text/plain]]]] の定義と同じものに限るのか。 [CODE(MIME)[text/plain]] と同じ定義なら非 [CODE(MIME)[text]] にも適用するのか。) [WEAK[(そもそもこういう問題が生じるのは、欄の引数ではなく[[媒体型]]の引数であるはずの [CODE(HTTP)[charset]] の定義をプロトコルが変えてしまったためです。 [WEAK[(そしてその元凶は、 MIME が [CODE(MIME)[text/*]] や [CODE(MIME)[charset]] を特別扱いしているせいです。。。)]])]]]]
+
+[FIG(quote)[ RFC 1945 (HTTP/1.0); RFC 2068・2616 (HTTP/1.1) 3.4 Character Sets
+
+> HTTP uses the same definition of the term "character set" as that
+described for MIME:
+
+HTTP は、用語「[[文字集合]]」を、 [[MIME]]
+で説明されているのと同じ定義で使用します :
+
+>> The term "character set" is used in this document to refer to a
+method used with one or more tables to convert a sequence of octets
+into a sequence of characters. Note that unconditional conversion
+in the other direction is not required, in that not all characters
+may be available in a given character set and a character set may
+provide more than one sequence of octets to represent a particular
+character. This definition is intended to allow various kinds of
+character encodings, from simple single-table mappings such as US-ASCII
+to complex table switching methods such as those that use [DEL[ISO 2022's]] [INS[ISO-2022's [INS[{2616}]]]] techniques. However, the definition associated with a MIME character set name [DEL[[INS[{1945}]] must]] [INS[MUST]]
+fully specify the mapping to be performed from octets to characters. In particular, use of external profiling
+information to determine the exact mapping is not permitted.
+
+用語「文字集合」は、この文書では、オクテットの列を文字の列に変換する一つ以上の表とともに使用する方式を参照するために使います。
+逆方向への無条件の変換は必須ではなく、すべての文字が与えられた文字集合で利用可能ではないかもしれず、複数のオクテット列がある一つの特定の文字を示すかもしれないことに注意してください。
+この定義は、 [[US-ASCII]] のような単純な単一表写像から ISO 2022
+の技術を使った複雑な表切り替え方式まで種々の文字符号化を認めることを意図しています。
+しかし、 MIME 文字集合名と関連付けられる定義はオクテットから文字への写像を完全に規定していなければなりません。
+特に、正確な写像の決定のために必要な外部プロファイル情報の使用は認めていません。
+
+> Note: This use of the term "character set" is more commonly
+referred to as a "character encoding." However, since HTTP and MIME
+share the same registry, it is important that the terminology also
+be shared.
+
+注意 : 用語「文字集合」のこの用法は、より一般的には「文字符号化」
+と呼ばれます。しかし、 HTTP と MIME は同じ登録簿を共有していますから、
+用語も共有することが重要です。
+
+> HTTP character sets are identified by case-insensitive tokens. The
+complete set of tokens [DEL[[INS[{1945}]] are]] [INS[is]] defined by the IANA Character Set registry [DEL[[INS[{1945}]] [15] ][INS[ [19] ]]. [DEL[[INS[{1945}]] However, because that registry does not define a single, consistent token for each character set, we define here the preferred names for those character sets most likely to be used with HTTP entities. These character sets include those registered by RFC 1521 [5] -- the US-ASCII [17] and ISO-8859 [18] character sets -- and other names specifically recommended for use within MIME charset parameters.]]]]
+
+HTTP 文字集合は大文字・小文字を区別しない字句で識別します。
+字句の完全な集合は IANA 文字集合登録簿で定義します。[INS[しかし、この登録簿は各文字集合に単一の一貫した字句を定義してはいませんから、ここでそうした文字集合で HTTP 実体に使用するのに最も好ましい名前を定義します。この文字集合には、 [[RFC1521]] により登録された [[US-ASCII]] 文字集合や [[ISO8859]] 文字集合や、 MIME [CODE(MIME)[charset]] 引数で使用することが特に推奨される他の名前を含みます。]]
+
+[DEL[
+
+> [INS[{1945}]] 
+[PRE[
+     charset = "US-ASCII"
+             | "ISO-8859-1" | "ISO-8859-2" | "ISO-8859-3"
+             | "ISO-8859-4" | "ISO-8859-5" | "ISO-8859-6"
+             | "ISO-8859-7" | "ISO-8859-8" | "ISO-8859-9"
+             | "ISO-2022-JP" | "ISO-2022-JP-2" | "ISO-2022-KR"
+             | "UNICODE-1-1" | "UNICODE-1-1-UTF-7" | "UNICODE-1-1-UTF-8"
+             | token
+]PRE]
+]DEL]
+
+[INS[
+
+- [INS[{2068,2616}]]  charset = token
+]INS]
+
+> Although HTTP allows an arbitrary token to be used as a charset
+value, any token that has a predefined value within the IANA
+Character Set registry [DEL[[INS[{1945}]] [15] must]] [INS[MUST]]
+represent the character set defined by that registry.  Applications [DEL[[INS[{1945}]] should]] [INS[SHOULD]]
+limit their use of character sets to those defined by the IANA registry [INS[ [19] [INS[{2616}]]]].
+
+HTTP は [CODE(HTTP)[charset]] 値として任意の字句を使用することを認めていますが、
+IANA 文字集合長禄簿で定義されている値はその登録簿で定義されている文字集合を表現しなければ'''なりません'''。
+[[応用]]は、その使用する文字集合を IANA 登録簿で定義されたものに制限する'''べきです'''。
+
+[DEL[
+
+> [INS[{1945}]] The character set of an entity body should be labelled as the lowest
+common denominator of the character codes used within that body, with
+the exception that no label is preferred over the labels US-ASCII or
+ISO-8859-1.
+
+実体本体の文字集合はその実体で使用している文字符号の最小公倍数で札付けするべきです。
+但し札 [CODE(charset)[US-ASCII]] や札 [CODE(charset)[ISO-8859-1]]
+を他よりも優先します。
+]DEL]
+
+[INS[
+
+> [INS[{2616}]] Implementors should be aware of IETF character set requirements [38] [41].
+
+実装者は、 IETF 文字集合要件に注意されたい。
+]INS]
+
+[INS[
+
+> [INS[{errata}]]
+HTTP uses charset in two contexts: within an Accept-Charset request header (in which the charset value is an unquoted token) and as the value of a parameter in a Content-type header (within a request or response), in which case the parameter value of the charset parameter may be quoted.
+
+HTTP は [CODE(HTTP)[charset]] を2つの文脈で使用します。
+[CODE(HTTP)[[[Accept-Charset]]]] 要求頭中で ([CODE(HTTP)[charset]] 値は非引用字句。)
+および (要求または応答の中の) [CODE(HTTP)[[[Content-Type]]]] 頭の引数の値としてで、
+[CODE(HTTP)[charset]] 引数の引数値としての場合は引用しても構いません。
+]INS]
+
+* RFC 2616 3.4.1 Missing Charset
+
+> Some HTTP/1.0 software has interpreted a Content-Type header without
+charset parameter incorrectly to mean "recipient should guess."
+Senders wishing to defeat this behavior MAY include a charset
+parameter even when the charset is ISO-8859-1 and SHOULD do so when
+it is known that it will not confuse the recipient.
+
+HTTP/1.0 ソフトウェアの中には [CODE(HTTP)[charset]]
+引数なしの [CODE(HTTP)[Content-Type]] 頭を誤って
+「受信者は推測するべし」を意味すると解釈するものがあります。
+この動作を撃破したいと思う送信者は、 [CODE(HTTP)[charset]]
+が [CODE(charset)[[[ISO-8859-1]]]] であっても [CODE(HTTP)[charset]]
+引数を含めても'''構いません'''し、
+そうすることによって受信者を混乱させないだろうと分かっているのであれば、
+そうする'''べきです'''。
+
+> Unfortunately, some older HTTP/1.0 clients did not deal properly with
+an explicit charset parameter. HTTP/1.1 recipients MUST respect the
+charset label provided by the sender; and those user agents that have
+a provision to "guess" a charset MUST use the charset from the
+content-type field if they support that charset, rather than the
+recipient's preference, when initially displaying a document. See section 3.7.1.
+
+不幸にも、古い HTTP/1.0 クライアントの中には陽に示した [CODE(HTTP)[charset]]
+引数を適切に処理しないものがありました。 HTTP/1.1
+受信者は送信者が提供した [CODE(HTTP)[charset]] 
+札を尊重しなければ'''なりません'''。そして [CODE(HTTP)[charset]]
+を「推測」する用意のある[[利用者エージェント]]は、
+[CODE(HTTP)[content-type]] 欄の [CODE(HTTP)[charset]]
+に対応していれば、最初の文書を表示する時にはその受信者の設定でではなく、
+その [CODE(HTTP)[charset]] を使わなければ'''なりません'''。
+
+
+]FIG]
+
+
+[216] 
+[[WinIE 6.0]] は、たとえばある URI 参照 [VAR[u]] の頁を表示したときに、その [CODE(MIME)[charset]] が [CODE(charset)[iso-8859-1]] で、表示直後に[Q[アドレス]]欄で [KBD[Enter]] を押したら今度は [CODE(MIME)[charset]] が [CODE(charset)[iso-2022-jp]] になっていたとき、 [CODE(charset)[iso-8859-1]] として解釈しようとして化けます。
+
+[Q[再読込]]ボタンではこの症状は起きません。
+([[名無しさん]] [WEAK[2004-05-03 04:43:16 +00:00]])
+
+
+
+
+
+
 * CGI における [CODE(MIME)@en[charset]] 引数
 
 ** CGI 要求における既定値
