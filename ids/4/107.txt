@@ -240,6 +240,147 @@ mail-list などで Received: を X-Received: に置き換えることがある�
 
 * 歴史
 
+** RFC 821 / RFC 822 時代
+
+[FIG(quote)[ [43] [[RFC 821]] より抜粋
+
+            When the receiver-SMTP accepts a message either for relaying
+            or for final delivery it inserts at the beginning of the
+            mail data a time stamp line.  The time stamp line indicates
+            the identity of the host that sent the message, and the
+            identity of the host that received the message (and is
+            inserting this time stamp), and the date and time the
+            message was received.  Relayed messages will have multiple
+            time stamp lines.
+
+            Example of Return Path and Received Time Stamps
+
+      Return-Path: <@GHI.ARPA,@DEF.ARPA,@ABC.ARPA:JOE@ABC.ARPA>   
+      Received: from GHI.ARPA by JKL.ARPA ; 27 Oct 81 15:27:39 PST
+      Received: from DEF.ARPA by GHI.ARPA ; 27 Oct 81 15:15:13 PST
+      Received: from ABC.ARPA by DEF.ARPA ; 27 Oct 81 15:01:59 PST
+      Date: 27 Oct 81 15:01:01 PST                                
+      From: JOE@ABC.ARPA                                          
+      Subject: Improved Mailing System Installed                  
+      To: SAM@JKL.ARPA                                            
+                                    
+      This is to inform you that ...                              
+
+                               Example 8
+
+         The time stamp line and the return path line are formally
+         defined as follows:
+
+         <return-path-line> ::= "Return-Path:" <SP><reverse-path><CRLF>
+
+         <time-stamp-line> ::= "Received:" <SP> <stamp> <CRLF>
+
+            <stamp> ::= <from-domain> <by-domain> <opt-info> ";"
+                      <daytime>
+
+            <from-domain> ::= "FROM" <SP> <domain> <SP>
+
+            <by-domain> ::= "BY" <SP> <domain> <SP>
+
+            <opt-info> ::= [<via>] [<with>] [<id>] [<for>]
+
+            <via> ::= "VIA" <SP> <link> <SP>
+
+            <with> ::= "WITH" <SP> <protocol> <SP>
+
+            <id> ::= "ID" <SP> <string> <SP>
+
+            <for> ::= "FOR" <SP> <path> <SP>
+
+            <link> ::= The standard names for links are registered with
+                      the Network Information Center.
+
+            <protocol> ::= The standard names for protocols are
+                      registered with the Network Information Center.
+
+            <daytime> ::= <SP> <date> <SP> <time>
+
+            <date> ::= <dd> <SP> <mon> <SP> <yy>
+
+            <time> ::= <hh> ":" <mm> ":" <ss> <SP> <zone>
+
+            <dd> ::= the one or two decimal integer day of the month in
+                      the range 1 to 31.
+
+            <mon> ::= "JAN" | "FEB" | "MAR" | "APR" | "MAY" | "JUN" |
+                      "JUL" | "AUG" | "SEP" | "OCT" | "NOV" | "DEC"
+
+            <yy> ::= the two decimal integer year of the century in the
+                      range 00 to 99.
+
+            <hh> ::= the two decimal integer hour of the day in the
+                      range 00 to 24.
+
+            <mm> ::= the two decimal integer minute of the hour in the
+                      range 00 to 59.
+
+            <ss> ::= the two decimal integer second of the minute in the
+                      range 00 to 59.
+
+            <zone> ::= "UT" for Universal Time (the default) or other
+                      time zone designator (as in [2]).
+
+                        Time Stamp Line Example
+
+      Received: FROM ABC.ARPA BY XYZ.ARPA ; 22 OCT 81 09:23:59 PDT
+
+         Received: from ABC.ARPA by XYZ.ARPA via TELENET with X25
+                   id M12345 for Smith@PDQ.ARPA ; 22 OCT 81 09:23:59 PDT
+
+                               Example 10
+]FIG]
+
+
+[FIG(quote)[ [44] [[RFC 822]] の [[BNF]]
+
+     received    =  "Received"    ":"            ; one per relay
+                       ["from" domain]           ; sending host
+                       ["by"   domain]           ; receiving host
+                       ["via"  atom]             ; physical path
+                      *("with" atom)             ; link/mail protocol
+                       ["id"   msg-id]           ; receiver msg id
+                       ["for"  addr-spec]        ; initial form
+                        ";"    date-time         ; time received
+]FIG]
+
+
+[FIG(quote)[ [45] [[RFC 822]] 4.3.2.  RECEIVED
+
+        A copy of this field is added by each transport  service  that
+        relays the message.  The information in the field can be quite
+        useful for tracing transport problems.
+
+        The names of the sending  and  receiving  hosts  and  time-of-
+        receipt may be specified.  The "via" parameter may be used, to
+        indicate what physical mechanism the message  was  sent  over,
+        such  as  Arpanet or Phonenet, and the "with" parameter may be
+        used to indicate the mail-,  or  connection-,  level  protocol
+        that  was  used, such as the SMTP mail protocol, or X.25 tran-
+        sport protocol.
+
+        Note:  Several "with" parameters may  be  included,  to  fully
+               specify the set of protocols that were used.
+
+        Some transport services queue mail; the internal message iden-
+        tifier that is assigned to the message may be noted, using the
+        "id" parameter.  When the  sending  host  uses  a  destination
+        address specification that the receiving host reinterprets, by
+        expansion or transformation, the receiving host  may  wish  to
+        record  the original specification, using the "for" parameter.
+        For example, when a copy of mail is sent to the  member  of  a
+        distribution  list,  this  parameter may be used to record the
+        original address that was used to specify the list.
+
+]FIG]
+
+
+
+
 ** USENET ニュースメッセージ
 
 [3] かつて Received: は記事を受け取った時間を表す領域として
@@ -251,7 +392,178 @@ USENET で使われていた。領域本体の値は USENET 形式の日付。
 は現在の版でも [CODE[Received:]] 欄を持つメッセージの投稿は拒否します。
 ([CODE[Received:]] 欄のあるメッセージを中継する時は中継元で落としてから中継先に送っていた。)
 
-** RFC 2822
+** RFC 2821 / RFC 2822 時代
+
+
+[FIG(quote)[ [46] [[RFC 2821]] 4.4 Trace Information 跡情報
+
+When an SMTP server receives a message for delivery or further
+processing, it MUST insert trace ("time stamp" or "Received")
+information at the beginning of the message content, as discussed in
+section 4.1.1.4.
+
+SMTP サーバーがメッセイジを配送あるいは更なる処理のために
+受け取った時には、跡 (「時間印」あるいは「受信した」) 情報を
+メッセイジ内容のはじめに、第4.1.1.4節で説明したように
+挿入''しなければなりません''。
+
+This line MUST be structured as follows:
+
+この行は次のように構成''しなければなりません''。
+
+-The FROM field, which MUST be supplied in an SMTP environment, SHOULD contain both (1) the name of the source host as presented in the EHLO command and (2) an address literal containing the IP address of the source, determined from the TCP connection.
+-FROM 領域。これは SMTP 環境ではつけ''なければならず''、(1) EHLO 命令で知らされた原ホストの名前 (2) 原ホストの IP アドレスを含むアドレス・リテラルの両者を含める''べき''です。
+-The ID field MAY contain an "@" as suggested in RFC 822, but this is not required.
+-ID 領域は RFC 822 で提案されているように「@」から成っていても''よい''ですが、惟は必要ではありません。
+-The FOR field MAY contain a list of <path> entries when multiple RCPT commands have been given.  This may raise some security issues and is usually not desirable; see section 7.2.
+-FOR 領域は複数の RCPT 命令が与えられている時に <path> 項目の表から成っていても''よい''です。これは保安問題を起こしかねないし通常望ましくありません。第7.2節を参照。
+
+An Internet mail program MUST NOT change a Received: line that was
+previously added to the message header.  SMTP servers MUST prepend
+Received lines to messages; they MUST NOT change the order of
+existing lines or insert Received lines in any other location.
+
+Internet メイル・プログラムは前にメッセイジ・ヘッダーに追加された Received: 行
+を変更しては''いけません''。 SMTP サーバーは Received 行を
+メッセイジのはじめに加え''なければなりません''。
+既存の行の順番を変えたり Received 行を他の場所に入れたりしては''いけません''。
+
+As the Internet grows, comparability of Received fields is important
+for detecting problems, especially slow relays.  SMTP servers that
+create Received fields SHOULD use explicit offsets in the dates
+(e.g., -0800), rather than time zone names of any type.  Local time
+(with an offset) is preferred to UT when feasible.  This formulation
+allows slightly more information about local circumstances to be
+specified.  If UT is needed, the receiver need merely do some simple
+arithmetic to convert the values.  Use of UT loses information about
+the time zone-location of the server.  If it is desired to supply a
+time zone name, it SHOULD be included in a comment.
+
+Internet の成長に従って、 Received 領域の比較は問題、特に
+配送遅延の特定に重要となりました。 Received 領域を作る SMTP サーバーは
+いかなる種の時間帯名よりも日付の明示的な差 (例えば -0800) を使う''べき''です。
+(差つき)現地時間は UT (協定世界時) より利用価値があります。
+この方法なら指定される地域事情について幾分多くの情報を伝えられます。
+UT が必要なら、受信者が単に値を直す計算をすればいいだけです。
+UT を使うとサーバーの時間帯位置についての情報が失われます。
+時間帯名を示すことが必要なら、注釈に入れる''べき''です。
+
+(中(Return-Path:関連)略)
+
+The time stamp line and the return path line are formally defined as
+follows:
+
+時間印行及び復帰経路行は正式には次のように定義します。
+
+  Return-path-line = "Return-Path:" FWS Reverse-path <CRLF>
+
+  Time-stamp-line = "Received:" FWS Stamp <CRLF>
+
+  Stamp = From-domain By-domain Opt-info ";"  FWS date-time
+
+      ; where "date-time" is as defined in [32]
+      ; but the "obs-" forms, especially two-digit
+      ; years, are prohibited in SMTP and MUST NOT be used.
+
+; 「date-time」は[[RFC2822の日付形式]]で定義されたものですが、
+「obs-」形式、特に2桁年は SMTP では禁止し、使用しては''なりません''。
+
+  From-domain = "FROM" FWS Extended-Domain CFWS
+
+  By-domain = "BY" FWS Extended-Domain CFWS
+
+  Extended-Domain = Domain /
+           ( Domain FWS "(" TCP-info ")" ) /
+           ( Address-literal FWS "(" TCP-info ")" )
+
+  TCP-info = Address-literal / ( Domain FWS Address-literal )
+      ; Information derived by server from TCP connection
+      ; not client EHLO.
+
+; サーバーが、クライアントの EHLO ではなく TCP 接続から得た情報
+
+  Opt-info = [Via] [With] [ID] [For]
+
+  Via = "VIA" FWS Link CFWS
+
+  With = "WITH" FWS Protocol CFWS
+
+  ID = "ID" FWS String / msg-id CFWS
+
+  For = "FOR" FWS 1*( Path / Mailbox ) CFWS
+
+  Link = "TCP" / Addtl-Link
+  Addtl-Link = Atom
+      ; Additional standard names for links are registered with the
+         ; Internet Assigned Numbers Authority (IANA).  "Via" is
+         ; primarily of value with non-Internet transports.  SMTP
+         ; servers SHOULD NOT use unregistered names.
+
+; 追加のリンクの標準名称は Internet 登録番号事務局 (IANA) で登録
+されます。「Via」は主として非 Internet 配送路の値です。
+SMTP サーバーは非登録名を使用''すべきでありません''。
+
+訳注: 2002年3月現在、「UUCP」が登録されています。
+
+  Protocol = "ESMTP" / "SMTP" / Attdl-Protocol
+  Attdl-Protocol = Atom
+      ; Additional standard names for protocols are registered with the
+         ; Internet Assigned Numbers Authority (IANA).  SMTP servers
+         ; SHOULD NOT use unregistered names.
+
+; 追加のプロトコルの標準名は Internet 登録番号事務局 (IANA) で登録
+されます。 SMTP サーバーは非登録名を使用''すべきでありません''。
+
+訳注: 2002年3月現在、追加の登録はありません。
+
+]FIG]
+
+
+[FIG(quote)[ [47] [[RFC 2821]] のそのほかの部分にある BNF
+
+      address-literal = "[" IPv4-address-literal /
+                            IPv6-address-literal /
+                            General-address-literal "]"
+            ; See section 4.1.3
+
+      Atom = 1*atext
+
+      String = Atom / Quoted-string
+
+      IPv4-address-literal = Snum 3("." Snum)
+      IPv6-address-literal = "IPv6:" IPv6-addr
+      General-address-literal = Standardized-tag ":" 1*dcontent
+      Standardized-tag = Ldh-str
+            ; MUST be specified in a standards-track RFC
+            ; and registered with IANA
+
+      Snum = 1*3DIGIT  ; representing a decimal integer
+            ; value in the range 0 through 255
+      Let-dig = ALPHA / DIGIT
+      Ldh-str = *( ALPHA / DIGIT / "-" ) Let-dig
+
+      IPv6-addr = IPv6-full / IPv6-comp / IPv6v4-full / IPv6v4-comp
+      IPv6-hex  = 1*4HEXDIG
+      IPv6-full = IPv6-hex 7(":" IPv6-hex)
+      IPv6-comp = [IPv6-hex *5(":" IPv6-hex)] "::" [IPv6-hex *5(":"
+                 IPv6-hex)]
+            ; The "::" represents at least 2 16-bit groups of zeros
+            ; No more than 6 groups in addition to the "::" may be
+            ; present
+      IPv6v4-full = IPv6-hex 5(":" IPv6-hex) ":" IPv4-address-literal
+      IPv6v4-comp = [IPv6-hex *3(":" IPv6-hex)] "::"
+                   [IPv6-hex *3(":" IPv6-hex) ":"] IPv4-address-literal
+            ; The "::" represents at least 2 16-bit groups of zeros
+            ; No more than 4 groups in addition to the "::" and
+            ; IPv4-address-literal may be present
+
+      Path = "<" [ A-d-l ":" ] Mailbox ">"
+      Mailbox = Local-part "@" Domain
+
+
+]FIG]
+
+
 
 [FIG(quote)[ [39] [[RFC 2822]] 3.6.7. Trace fields 追跡欄
 

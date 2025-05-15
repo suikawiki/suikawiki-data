@@ -25,6 +25,8 @@
 
 * 歴史
 
+** RFC 1036 時代
+
 [FIG(quote)[ [4] [[RFC 1036]] 2.1.6.  Path
 
 >
@@ -134,7 +136,167 @@ maintained when possible.
 維持するべきです。
 ]FIG]
 
-[5] [[son-of-RFC1036のPath:領域]]
+** son-of-RFC 1036 時代
+
+
+[FIG(quote)[ [[son-of-RFC 1036]] 5.6. Path
+
+          The Path header's content indicates which relayers the arti-
+          cle has  already  visited,  so  that  unnecessary  redundant
+          transmission can be avoided:
+
+               Path-content    = [ path-list path-delimiter ] local-part
+               path-list       = relayer-name *( path-delimiter relayer-name )
+               relayer-name    = 1*rn-char
+               rn-char         = letter / digit / "." / "-" / "_"
+               path-delimiter  = "!"
+
+          The  Path  content  is a list of relayer names, separated by
+          path delimiters, followed (after a final delimiter)  by  the
+          local  part of a mailing address.  Each relayer MUST prepend
+          its name, and a delimiter, to the Path content in all  arti-
+          cles  it processes.  A relayer MUST not pass an article to a
+          neighboring relayer whose name is already  mentioned  in  an
+          article's  path list, unless this is explicitly requested by
+          the neighbor  in  some  way.   The  Path  content  is  case-
+          sensitive.
+
+               NOTE:  The Path header supplied by a posting agent
+               should normally contain only the local part.   The
+               relayer  that the posting agent passes the article
+               to for posting will prepend its  relayer  name  to
+               get the path list started.
+
+               NOTE:  Observe that the trailing local part is NOT
+               part of the path list.  This Path header:
+
+                    Path: fee!fie!foe!fum
+
+               contains three relayer names:  "fee",  "fie",  and
+               "foe".  A relayer named "fum" is still eligible to
+               be sent this article.
+
+               NOTE: This syntax has the disadvantage of contain-
+               ing  no  white space, making it impossible to con-
+               tinue a Path header across several lines.   Imple-
+               mentors  of relayers and reading agents are warned
+               that it is intended that  the  successor  to  this
+               Draft will change the definition of path delimiter
+               to:
+
+                    path-delimiter = "!" [ space ]
+
+               and are urged to  fix  their  software  to  handle
+               (i.e.,  ignore) white space following the exclama-
+               tion points.  They are urged to hurry;  some  ill-
+               behaved  systems  reportedly  already feel free to
+               add such white space.
+
+               NOTE: RFC 1036 allows considerably more  flexibil-
+               ity  in  choice  of delimiter, in theory, but this
+               flexibility has never  been  used  and  most  news
+               software  does  not  implement  it  properly.  The
+               grammar reflects the current  reality.   Note,  in
+               particular,  that  RFC 1036 treats "_" as a delim-
+               iter, but in fact it is known to appear in relayer
+               names occasionally.
+
+          Because  an  article will not propagate to a relayer already
+          mentioned in its path list, the path list MUST  not  contain
+          any  names  other  than  those  of  relayers the article has
+          passed through AS NEWS.  This is trivially obvious for  nor-
+          mal  news  articles, but requires attention from the modera-
+          tors of moderated newsgroups and the implementors and  main-
+          tainers of gateways.
+
+               NOTE:  For  the  same  reason,  a  relayer and its
+               neighbors need to agree on the choice  of  relayer
+               name,  and  names  should  not  be changed without
+               notifying neighbors.
+
+          Relayer names need to be unique  among  all  relayers  which
+          will  ever  see  the articles using them.  A relayer name is
+          normally either an "official" name for the host the  relayer
+          runs  on,  or  some  other "official" name controlled by the
+          same organization.  Except in cooperating subnets that agree
+          to  some  other  convention, and don't let articles using it
+          escape beyond the subnet, a relayer name MUST  be  either  a
+          UUCP  name  registered  in the UUCP maps (without any domain
+          suffix such as ".UUCP"), or a complete Internet domain name.
+          Use  of a (registered) UUCP name is recommended, where prac-
+          tical, to keep the length of the path list down.
+
+          The use of Internet domain names in the path  list  presents
+          one problem: domain names are case-insensitive, but the path
+          list is case-sensitive.   Relayers  using  domain  names  as
+          their  relayer names MUST pick a standard form for the name,
+          and use that form consistently to the exclusion of all  oth-
+          ers.   The  preferred  form for this purpose, which relayers
+          SHOULD use, is the all-lowercase form.
+
+               NOTE: It is arguably  unfortunate  that  the  path
+               list is case-sensitive, but it is much too late to
+               change this.   Most  Internet  sites  do,  in  any
+               event,  use  one  standardized  form of their name
+               almost everywhere.
+
+          In the ordinary case, where the poster is the author of  the
+          article,  the  local  part following the path list SHOULD be
+          the local part of the poster's full Internet domain  mailing
+          address.
+
+               NOTE:  It  should  be just the local part, not the
+               full address.  The character "@" does  not  appear
+               in a Path header.
+
+          The  Path content somewhat resembles a mailing address, par-
+          ticularly in the UUCP world with its manual routing and  "!"
+          address  syntax.   Historically, this resemblance was impor-
+          tant, and the  Path  content  was  often  used  as  a  reply
+          address.  This practice has always been somewhat unreliable,
+          since news paths are not always mail paths and news  relayer
+          names  are  not  always recognized by mail handlers, and its
+          reliability has generally worsened  in  recent  times.   The
+          widespread   use  of  and  recognition  of  Internet  domain
+          addresses, even outside the  actual  Internet,  has  largely
+          eliminated  the  problem.   Readers  SHOULD not use the Path
+          content as a reply address.   On  the  other  hand,  relayer
+          administrators  are  urged  not  to break this usage without
+          good reason; where practical, paths followed by news  SHOULD
+          be  traversable  by mail, and mail handlers SHOULD recognize
+          relayer names as host names.
+
+          It will typically be difficult or impractical  for  gateways
+          and  moderators to supply a Path content that is useful as a
+          reply address for the author, bearing in mind that the  path
+          list they supply will normally be empty.  (To reiterate: the
+          path list MUST not contain any names  other  than  those  of
+          relayers  the  article  has  passed  through AS NEWS.)  They
+          SHOULD supply a local part that will result in replies to  a
+          Path-derived  address  being  returned  to the sender with a
+          brief explanation.   Software  permitting,  the  local  part
+          "not-for-mail" is recommended.
+
+               NOTE:  A  moderator  or  gateway administrator who
+               supplies a local part that delivers such  mail  to
+               an  administrative  mailbox  will quickly discover
+               why it should be  bounced  automatically!   It  is
+               best, however, for the returned message to include
+               an explanation  of  what  has  probably  happened,
+               rather than just a mysterious "undeliverable mail"
+               complaint, since the sender may not be aware  that
+               his/her  software  is unwisely using the Path con-
+               tent as a reply  address.   Reply  software  might
+               wish  to  question  attempts  to  reply to a Path-
+               derived address ending in "not-for-mail" (which is
+               why a specific name is being recommended here).
+
+]FIG]
+
+
+
+
+** usefor-article 時代
 
 [FIG(quote)[ [6] [[draft-usefor-article]] 6 から抜粋
 
