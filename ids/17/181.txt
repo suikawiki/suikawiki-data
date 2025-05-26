@@ -689,12 +689,6 @@ ZipArchive Library Extra Field ([N[0x5A4C]])
 
 ]FIG]
 
-[68] 
-同じ [[UTF-8]] でも [[Windows]] などでは [[NFC]] 系の[[正規化]]に近い状態が一般的で
-(ただし必ずしも[[正規化]]されるわけではない)、
-[[Mac]] では [[NFD]] 系の[[正規化]]が適用されている状態
-([SEE[ [[HFS+のNFD]] ]])
-が標準的です。
 
 **** ZIPのファイル名のコードページ
 
@@ -901,19 +895,34 @@ Info-ZIP Unicode Path Extra Field (0x7075)
 
 [REFS[
 
-- [78] 
-[CITE@ja[Develop/UnzipTestcase - Ubuntu Japanese Wiki]], [TIME[2025-05-16T09:43:54.000Z]] <https://wiki.ubuntulinux.jp/Develop/UnzipTestcase>
 - [140] [CITE@en[GitHub - tats-u/zifu: ZIPファイルのファイル名のエンコーディングをUTF-8に直すツール / Tool that fixes file names in ZIP archives (make them UTF-8)]], [TIME[2025-05-24T13:54:26.000Z]] <https://github.com/tats-u/zifu>
 
 ]REFS]
 
 
 
-*** 自動判定
+*** ファイル名文字コードの自動判定
+
+[269] 
+[[ZIPファイル]]の[[ファイル名]]の[[文字コードの判定]]は、
+一般の[[文字コードの判定]]問題に加えて [[ZIPファイル]]特有の事情にも配慮が必要です (>>239)。
+
+[270] 
+一般の[[文字コードの判定]]問題も完全に正確に回答を得ることは不可能で、
+各種実装をみてもどれも一長一短で完璧なものはありません。 [SEE[ [[文字コードの判定]] ]]
+[[ファイル名]]は短い文字列なので、
+難度は更に高まります。
+
+[271] 
+従って[[URL]]や[[ロケール]]などの補助的情報があれば、それを組み合わせて候補を絞り込むことが重要になってきます。
+
+[272] 
+誤判定を予期して、実行時オプション等の形で手動で上書きする仕組みを併用することも重要です。
+
 
 
 [76] 
-実装関連:
+実装事例等:
 
 [REFS[
 
@@ -930,6 +939,8 @@ Info-ZIP Unicode Path Extra Field (0x7075)
 [CITE@en[GitHub - vlm/zip-fix-filename-encoding: Fix cyrillic character encoding of filenames inside zip archives]], [TIME[2025-05-16T10:03:38.000Z]] <https://github.com/vlm/zip-fix-filename-encoding>
 -- [144] 
 [CITE@en[zip-fix-filename-encoding/src/runzip.c at master · vlm/zip-fix-filename-encoding · GitHub]], [TIME[2025-05-24T14:05:58.000Z]] <https://github.com/vlm/zip-fix-filename-encoding/blob/master/src/runzip.c>
+- [78] 
+[CITE@ja[Develop/UnzipTestcase - Ubuntu Japanese Wiki]], [TIME[2025-05-16T09:43:54.000Z]] <https://wiki.ubuntulinux.jp/Develop/UnzipTestcase>
 
 
 ]REFS]
@@ -1103,6 +1114,71 @@ Info-ZIP Unicode Path Extra Field (0x7075)
 <https://www.sio.gov.sa/assets/files/guide_files/Arabic.zip>
 
 ]REFS]
+
+*** 文字表現の制約
+
+[68] 
+同じ [[UTF-8]] でも [[Windows]] などでは [[NFC]] 系の[[正規化]]に近い状態が一般的で
+(ただし必ずしも[[正規化]]されるわけではない)、
+[[Mac]] では [[NFD]] 系の[[正規化]]が適用されている状態
+([SEE[ [[HFS+のNFD]] ]])
+が標準的です。
+これは[[ZIPファイル]]の[[ファイル名]]に限ったものではなく、
+[[ファイル名]]の扱い全般に関する[[プラットフォーム]]の挙動の差異なのですが、
+どの[[プラットフォーム]]で[[ZIPファイル]]を作成するかによって[[プラットフォーム]]の違いが
+[[ZIPファイル]]にそのまま持ち込まれることになります。
+
+;; [274] [[ZIPファイル]]の仕様としてはどうするのが良いとは特に決まっていません。
+つまり、どの挙動が正しい、間違いといえるものではありません。
+
+
+[273] 
+[[ZIPファイル]]の[[文字コード]]を扱う実装や解説などの中には、
+[[Mac]] の挙動を [[UTF-8-MAC]] などと称するものがあります ([[ZIPファイル]]に限らず、
+この話題でしばしば使われる通称です)。
+
+[HISTORY[
+
+[275] 
+中には [[Mac]] の挙動が不適切であるかのように扱うものもあります
+[SRC[>>140]] が、 [[Mac]] がおかしなことをしているわけではありません。
+現実に不都合が生じるかもしれませんが、それは [[Mac]] が悪いのではなく、
+[[Unicode]] と [[ZIP]] の仕様に由来する不便です。
+
+]HISTORY]
+
+[276] 
+[[ZIPファイル]]から取り出した[[ファイル]]の[[プラットフォーム]]の[[ファイルシステム]]上の[[ファイル名]]をどのように決めるかは、
+[[ZIPファイル]]内の[[ファイル名]]と[[ファイルシステム]]の制約を勘案しつつ決めなければなりません。
+[[ファイルシステム]]の必須の制約を満たすことは不可避の条件となりますが、
+必須条件でない[[プラットフォーム]]の慣習と[[ZIPファイル]]の格納値の折り合いをどうつけるかは、
+設計方針の問題となります。
+
+[EG[
+
+[277] 
+例えば[[文字]] [VAR[C]] を使えない[[ファイルシステム]]に[[ファイル]]を保存するときは、
+エラーにするか、
+他の[[文字]]に置き換えるか、
+[[利用者]]に尋ねるか、といった何らかの操作が必要になります。
+
+]EG]
+
+[EG[
+
+[278] 
+例えば[[文字]] [VAR[C]] を保存できる[[ファイルシステム]]で、
+[[プラットフォーム]]の慣習上 [VAR[C]] は [VAR[D]] と表現するのが適切な
+([[利用者]]が新規で作成したとするなら [VAR[D]] と表現される)
+環境で[[ファイル]]を保存するときは、
+[VAR[C]] のままにするか、
+[VAR[D]] に置き換えるか決めることになります。
+
+[279] 
+[VAR[D]] の方が[[利用者]]が扱いやすいかもしれませんが、
+[VAR[C]] のままにしておかなければ[[ファイル名]]による[[相互参照]]が崩れるリスクがあります。
+
+]EG]
 
 
 
