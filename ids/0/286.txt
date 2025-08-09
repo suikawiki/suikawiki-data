@@ -278,8 +278,13 @@ Message-ID を書き換える必要が出てきます。
 
 [20] 
 
+
+-RFC 822 <urn:ietf:rfc:822>
+-RFC 1036 <urn:ietf:rfc:1036>
+-[[son-of-RFC1036]]
+-RFC 2822 <urn:ietf:rfc:2822>
+-[[記事の識別子]]
 -識別子の定義
---[[Message-ID:領域]]
 --[[Content-ID:領域]]
 --See also [[Received:領域]]
 -識別子の参照 (See also [[記事の返信]])
@@ -288,16 +293,490 @@ Message-ID を書き換える必要が出てきます。
 --[[See-Also:領域]]
 --[[Supersedes:領域]]
 --[[Control:領域]] (See also [[Subject:領域]])
-
 -[[Article-I.D.:領域]]
 -[[X-UIDL:領域]]
 -[[XRef:領域]]
+-[[メッセージの返信]]
+
+
 
 [11] [[MMS]] には [CODE(822)@en[[[Message-ID:]]]] の他に [CODE(822)@en[[[X-Mms-Message-Id:]]]]
 もあります。
 
 
 * 歴史
+
+** インターネットメール
+
+***RFC 724 
+
+[FIG(quote)[ [35] 2. a. Message-Id:
+
+This field contains a  unique  identifier  (the  <phrase>)  to
+refer  to this version of this message.  The uniqueness of the
+message  identifier  is  guaranteed  by   each   host.    This
+identifier  is  intended  to  be  machine  readable,  and  not
+necessarily meaningful to humans.  A  message-id  pertains  to
+exactly  one instantiation of a particular message; subsequent
+revisions to the message should receive new message-id's.
+
+]FIG]
+
+[FIG(quote)[ [36] [[BNF]]
+
+         <extension-field> ::=   "In-Reply-To" ":" <reference-list>
+                               | "Keywords"    ":" <phrase-list>
+                               | "Message-Id"  ":" <mach-host-phrase>
+                               |...
+         <mach-host-phrase>::=   "<" <host-phrase> ">"
+         <host-phrase>     ::=   <phrase> <host-indicator>
+         <host-indicator>  ::=   <at-indicator> <host-name>
+         <at-indicator>    ::=   "at" | "@"
+         <host-name>       ::=   <atom>
+                               | <decimal host address>
+
+]FIG]
+
+[37] 要素間には comment や linear-white-space を挿入可能。
+
+[FIG(quote)[ [38] 例
+
+-Message-id:  some string at SHOST
+-4231.629.XYzi-What at Other-Host
+
+]FIG]
+
+***RFC 733 
+
+[FIG(quote)[ [39] B. 1.  Message-ID
+
+>
+This field contains a unique identifier (the phrase) which refers
+to  THIS  version of THIS message.  The uniqueness of the message
+identifier is guaranteed by the host which  generates  it.   This
+identifier is intended to be machine readable and not necessarily
+meaningful to humans.  A message identifier pertains  to  exactly
+one  instantiation  of a particular message; subsequent revisions
+to the message should each receive a new message identifier.
+
+]FIG]
+
+[FIG(quote)[ [40] [[BNF]]
+
+  node        =  word / 1*DIGIT
+  host-indicator =  1*( ("at" / "@") node )
+  host-phrase =  phrase  host-indicator
+  mach-id     =  "<" host-phrase ">"
+  optional-field  =
+                 ...
+               /  "Message-ID" ":" mach-id
+               /...
+  phrase      =  1*word
+  word        =  atom / quoted-string
+  atom        =  1*<any CHAR except specials and CTLs>
+  specials    =  "(" / ")" / "<" / ">" / "@"/ "," / ";" / ":"
+              /  "\" / <">
+
+]FIG]
+
+[41] 要素間には comment や linear-white-space を挿入可能。
+
+[FIG(quote)[ [42] 例
+
+-Message-ID:  <some string at SHOST>
+-Message-ID: <4231.629.XYzi-What at Other-Host>
+]FIG]
+
+***RFC 822 
+
+[FIG(quote)[ [43] 4.6.1.  MESSAGE-ID / RESENT-MESSAGE-ID
+
+>
+This field contains a unique identifier  (the  local-part
+address  unit)  which  refers to THIS version of THIS message.
+The uniqueness of the message identifier is guaranteed by  the
+host  which  generates  it.  This identifier is intended to be
+machine readable and not necessarily meaningful to humans.   A
+message  identifier pertains to exactly one instantiation of a
+particular message; subsequent revisions to the message should
+each receive new message identifiers.
+
+この領域は、''この''版の''この''メッセイジを参照する
+固有識別子 (local-part アドレス・ユニット) から成ります。
+メッセイジ識別子の固有性はこれを生成するホストが保証します。
+識別子は機械可読なものを意図しており、必ずしも
+人にとって意味がある必要はありません。メッセイジ識別子は
+とあるメッセイジのとある実物に対してのものであるので、
+メッセイジの後の改訂版は新しいメッセイジ識別子を
+各々持つべきです。
+]FIG]
+
+[FIG(quote)[ [44] [[BNF]]
+
+     msg-id      =  "<" addr-spec ">"            ; Unique message id
+     optional-field =
+                 /  "Message-ID"        ":"   msg-id
+                 /  "Resent-Message-ID" ":"   msg-id
+                 /...
+]FIG]
+
+[45] 要素間には comment や linear-white-space を挿入可能。
+
+*** RFC 2822
+
+[FIG(quote)[ 
+
+>
+  Field           Min number      Max number      Notes
+  resent-msg-id   0               unlimited*      One per block - see
+                                                  3.6.6
+  message-id      0*              1               SHOULD be present - see
+                                                  3.6.4
+  in-reply-to     0*              1               SHOULD occur in some
+                                                  replies - see 3.6.4
+  references      0*              1               SHOULD occur in some
+                                                  replies - see 3.6.4
+]FIG]
+
+[46] 
+See [[RFC2822の3.6.4]]
+
+>
+  msg-id          =       [CFWS] "<" id-left "@" id-right ">" [CFWS]
+  id-left         =       dot-atom-text / no-fold-quote / obs-id-left
+  id-right        =       dot-atom-text / no-fold-literal / obs-id-right
+  no-fold-quote   =       DQUOTE *(qtext / quoted-pair) DQUOTE
+  no-fold-literal =       "[" *(dtext / quoted-pair) "]"
+  obs-id-left     =       local-part
+  obs-id-right    =       domain
+
+
+
+** USENETニュース
+
+***RFC 850 
+
+[FIG(quote)[ [47] 2.1.7  Message-ID  
+
+>The Message-ID line gives the article a
+unique  identifier.  The same message ID may not be reused
+during the lifetime of any article with the  same  message
+ID.   (It  is recommended that no message ID be reused for
+at least two years.) Message ID's have the syntax
+
+[[Message-ID]] 行は記事の固有識別子を与えます。同じメッセイジ ID は
+同じメッセイジ ID の記事が生きている間は再利用してはいけません。
+(最低2年間はメッセイジ ID を再利用しないことを推奨します。)
+メッセイジ ID は次のような構文です。
+
+     "<" "string not containing blank or >" ">"
+
+In order to conform to RFC 822, the Message-ID  must  have
+the format
+
+RFC 822 に適合するため、 Message-ID は次の書式でなければなりません。
+
+     "<" "unique" "@" "full domain name" ">"
+
+     「<」「固有」「@」「完全なドメイン名」「>」
+
+where  "full domain name"  is the full name of the host at
+which  the article entered the network, including a domain
+that host is in, and unique  is  any  string  of  printing
+ASCII  characters,  not  including  "<", ">", or "@".  For
+example,  the  "unique"   part   could   be   an   integer
+representing  a  sequence number for articles submitted to
+the network, or a short string derived from the  date  and
+time  the article was created.  For example, valid message
+ID for an article submitted from  site  ucbvax  in  domain
+Berkeley.ARPA   would   be  "<4123@ucbvax.Berkeley.ARPA>".
+Programmers are urged not to make  assumptions  about  the
+content  of  message  ID  fields  from other hosts, but to
+treat them as unknown character strings.  It is not  safe,
+for  example, to assume that a message ID will be under 14
+characters,  nor  that  it  is  unique  in  the  first  14
+characters.
+
+ここで「完全なドメイン名」は記事がネットワークに注入された
+ホストの完全な名前でホストが含まれるドメインを含み、
+固有は「<」、「>」、「@」以外の印字可能な ASCII 文字の列です。
+例えば、「固有」部分はネットワークに送信された記事の連番
+を表す整数でもいいですし、記事が作成された日時の文字列でも構いません。
+例として、ドメイン Berkeley.ARPA のサイト ucbvax から送信された
+記事の妥当なメッセイジ ID 「<4123@ucbvax.Berkeley.ARPA>」が
+挙げられます。プログラマーは他のホストのメッセイジ ID 領域の
+内容を仮定しないで、未知の文字列として扱うのがよいでしょう。
+例として、メッセイジ ID が14文字以下であるとか最初の14文字は
+固有であるとか仮定することは安全ではありません。
+
+The angle brackets are considered part of the message  ID.
+Thus,  in  references  to  the  message  ID,  such  as the
+ihave/sendme  and  cancel  control  messages,  the   angle
+brackets  are  included.   White  space  characters (e.g.,
+blank and tab) are not  allowed  in  a  message  ID.   All
+characters  between  the  angle  brackets must be printing
+ASCII characters.
+
+角括弧はメッセイジ ID の一部であると考えられます。
+ですからメッセイジ ID の参照、例えば ihave/sendme や
+取消し制御メッセイジでは角括弧を含めます。空白間隔文字
+(空白やタブ) はメッセイジ ID 中には認められません。
+角括弧中の文字は全て印字可能な ASCII 文字でなければなりません。
+]FIG]
+
+[FIG(quote)[ [48] 例
+
+-Message-ID: <176@sask.UUCP>
+-Message-ID: <642@eagle.UUCP>
+
+]FIG]
+
+***RFC 1036 
+
+[FIG(quote)[ [49] 2.1.5.  Message-ID
+
+>
+The "Message-ID" line gives the message a unique identifier.  The
+Message-ID may not be reused during the lifetime of any previous
+message with the same Message-ID.  (It is recommended that no
+Message-ID be reused for at least two years.)  Message-ID's have the
+syntax:
+
+Message-ID 行は記事の固有識別子を与えます。同じ Message-ID は
+前の同じ Message-ID の記事が生きている間は再利用してはいけません。
+(最低2年間は Message-ID を再利用しないことを推奨します。)
+Message-ID は次のような構文です。
+
+                     <string not containing blank or ">">
+
+In order to conform to RFC-822, the Message-ID must have the format:
+
+RFC 822 に適合するため、 Message-ID は次の書式でなければなりません。
+
+                          <unique@full_domain_name>
+
+where full_domain_name is the full name of the host at which the
+message entered the network, including a domain that host is in, and
+unique is any string of printing ASCII characters, not including "<"
+(left angle bracket), ">" (right angle bracket), or "@" (at sign).
+
+ここで full_domain_name は記事がネットワークに注入された
+ホストの完全な名前でホストが含まれるドメインを含み、
+unique は「<」(左角括弧)、「>」(右角括弧)、「@」(アット記号)以外の印字可能な 
+ASCII 文字の列です。
+
+For example, the unique part could be an integer representing a
+sequence number for messages submitted to the network, or a short
+string derived from the date and time the message was created.  For
+example, a valid Message-ID for a message submitted from host ucbvax
+in domain "Berkeley.EDU" would be "<4123@ucbvax.Berkeley.EDU>".
+Programmers are urged not to make assumptions about the content of
+Message-ID fields from other hosts, but to treat them as unknown
+character strings.  It is not safe, for example, to assume that a
+Message-ID will be under 14 characters, that it is unique in the
+first 14 characters, nor that is does not contain a "/".
+
+例えば、 unique 部分はネットワークに送信された記事の連番
+を表す整数でもいいですし、記事が作成された日時の文字列でも構いません。
+例として、ドメイン Berkeley.EDU のサイト ucbvax から送信された
+記事の妥当な Message-ID 「<4123@ucbvax.Berkeley.EDU>」が
+挙げられます。プログラマーは他のホストの Message-ID 領域の
+内容を仮定しないで、未知の文字列として扱うのがよいでしょう。
+例として、 Message-ID が14文字以下であるとか最初の14文字は
+固有であるとか、「/」を含まないとか仮定することは安全ではありません。
+
+The angle brackets are considered part of the Message-ID.  Thus, in
+references to the Message-ID, such as the ihave/sendme and cancel
+control messages, the angle brackets are included.  White space
+characters (e.g., blank and tab) are not allowed in a Message-ID.
+Slashes ("/") are strongly discouraged.  All characters between the
+angle brackets must be printing ASCII characters.
+
+角括弧は Message-ID の一部であると考えられます。
+ですから Message-ID の参照、例えば ihave/sendme や
+取消し制御メッセイジでは角括弧を含めます。空白間隔文字
+(空白やタブ) は Message-ID 中には認められません。
+斜線 (「/」) は使わないことを強く推奨します。
+角括弧中の文字は全て印字可能な ASCII 文字でなければなりません。
+]FIG]
+
+[FIG(quote)[ [50] 例
+
+-Message-ID: <642@eagle.ATT.COM>
+-Message-ID: <5658@decwrl.DEC.COM>
+
+]FIG]
+
+
+***son-of-RFC1036 
+
+[FIG(quote)[ [51] 2.3 定義抜粋
+
+>
+A "message ID" is a unique identifier for an  article,  usually 
+supplied by the posting agent which posted it.  It distinguishes 
+the article from every other article ever  posted
+anywhere (in theory).  Articles with the same message ID are
+treated as identical copies of the same article even if they
+are not in fact identical.
+
+「メッセイジ ID」は記事の固有識別子で、通常記事を投稿する
+投稿代理者によりつけられます。これは記事を他のいつどこで投稿された
+記事とも(理論上は)区別します。同じメッセイジ ID を持つ記事は
+たとえ実際は同等でなかったとしても同じ記事の同等の複製として扱います。
+]FIG]
+
+[FIG(quote)[ [52] 5.3. Message-ID
+
+The  Message-ID  header contains the article's message ID, a
+unique identifier  distinguishing  the  article  from  every
+other article:
+
+Message-ID ヘッダーは記事のメッセイジ ID、
+すなわち記事を他の記事から区別する固有識別子から成ります。
+
+               Message-ID-content  = message-id
+               message-id          = "<" local-part "@" domain ">"
+
+As  with  From addresses, a message ID's local part is case-
+sensitive and its domain is case-insensitive.  The  "<"  and
+">"  are  parts  of the message ID, not peculiarities of the
+Message-ID header.
+
+From アドレスと同じように、メッセイジ ID の地方部分 local part
+は大文字・小文字の区別があり、ドメインは区別がありません。
+「<」と「>」はメッセイジ ID の一部であり、 Message-ID ヘッダーの
+ものではありません。
+
+NOTE: News message IDs are a restricted subset  of
+MAIL message IDs.  In particular, no existing news
+software copes properly with MAIL quoting  conventions  
+within  the local part, so they are forbidden.  
+This is unfortunate, particularly for  X.400
+gateways  that  often  wish  to include characters
+which are not legal in unquoted message  IDs,  but
+it  is  impossible to fix net-wide.  See the notes
+on gatewaying in section 10.
+
+参考: ニュースのメッセイジ ID は MAIL メッセイジ ID の制限された
+部分集合です。特に、現在のニュース・ソフトウェアは MAIL での
+地域部分で引用符に囲む書き方を正しく処理できませんので、これを禁止します。
+残念なことに、特に X.400 関門はよく引用符で囲まれていない
+メッセイジ ID では不当な文字を含めたいところですが、
+ネットワーク範囲で直すのは不可能です。関門についての第10章の注記を
+参照してください。
+
+The domain in the message ID SHOULD  be  the  full  Internet
+domain name of the posting agent's host.  Use of the ".uucp"
+pseudo-domain (for hosts registered in the UUCP maps) or the
+".bitnet"  pseudo-domain  (for Bitnet hosts) is permissible,
+but SHOULD be avoided.
+
+メッセイジ ID の domain は投稿代理者のホストの完全な Internet ドメイン名
+である''べき''です。「.uucp」擬似ドメイン (UUCP 地図に登録されたホスト用)
+や「.bitnet」擬似ドメイン (Bitnet ホスト用) は認められますが、
+さける''べき''です。
+
+Posters and posting agents MUST generate the local part of a
+message ID using an algorithm which obeys the specified syntax 
+(words separated by ".",  with  certain  characters  not
+permitted)  (see  section  5.2  for  details),  and will not
+repeat itself (ever).  The  algorithm  SHOULD  not  generate
+message  IDs which differ only in case of letters.  Note the
+specification in section 6.5 of a recommended convention for
+indicating  subject  changes.  Otherwise the algorithm is up
+to the implementor.
+
+投稿者と投稿代理者はメッセイジ ID の地域部分を指定された形式
+(「.」で区切られた言葉, 但し幾つかの文字を除く) (詳しくは第5.2節を参照) 
+に従った算法で生成し''なければならず''、
+それを (常に) 繰り返しては成りません。算法は大文字・小文字が
+違うだけのメッセイジ ID を生成する''べきではありません''。
+なお、第6.5節の主題変更を示すための推奨協定の詳説に注意して下さい。
+これ以外の点では算法は実装者の判断に委ねられます。
+
+NOTE: The crucial use of message IDs is to distinguish  circulating  
+articles  from  each other and from articles circulated recently.  
+They are  also potentially  useful  as  permanent  indexing keys,
+hence the requirement for permanent  uniqueness... but   indexers  
+cannot  absolutely  rely  on  this because the earlier RFCs  urged  
+it  but  did  not demand  it.  All major implementations have always
+generated  permanently-unique   message   IDs   by design,  
+but  in  some  cases this is sensitive to proper administration,  
+and  duplicates  may  have occurred by accident.
+
+参考: メッセイジ ID の大きな目的は流布している記事を相互に、
+あるいは最近流された記事と区別することです。また潜在的には不変の
+索引鍵としても便利ですから、普遍の固有性が必要なのですが・・・
+しかし索引付け者はこれを完全に信用できません。早期の RFC は
+これを推奨していましたが要求はしていませんでした。全ての有名実装は
+常に永久固有メッセイジ ID を生成するように設計されていますが、
+これは適切な管理に依存しますし、重複が偶然生じる可能性もあります。
+
+NOTE:  The most popular method of generating local
+parts is to use the date and time, plus  some  way
+of distinguishing between simultaneous postings on
+the same host (e.g. a process number), and  encode
+them  in a suitably-restricted alphabet.  An older
+but now  less-popular  alternative  is  to  use  a
+sequence  number,  incremented  each time the host
+generates a new message ID; this is workable,  but
+requires  careful  design  to  cope  properly with
+simultaneous  posting  attempts,  and  is  not  as
+robust  in  the presence of crashes and other malfunctions.
+
+参考: 地域部分を生成する最も良くある方法は日時を使い、
+同じホストでの同時投稿を区別する方法 (例えばプロセス番号)
+を加えて適切な制限字母で符号化するというものです。
+古くからあるが今ではあまり使われない方法として、ホストが新しい
+メッセイジ ID を生成する度に増える連番を使うというものがあります。
+これは運用可能ですが、同時投稿攻撃に適切に対処するよう
+慎重に設計する必要があり、クラッシュなどの不調を考えると
+有利な方法ではありません。
+
+NOTE: Some buggy news software  considers  message
+IDs  completely case-insensitive, hence the advice
+to  avoid  relying  on  case  distinctions.    The
+restrictions  placed  on  the  "alphabet" of local
+parts and domains in section 5.2 have  the  useful
+side effect of making it unnecessary to parse message IDs
+in complex ways to break them into  case-sensitive 
+and case-insensitive portions.
+
+参考: 幾つかの間違ったニュース・ソフトウェアはメッセイジ ID が
+完全に大文字・小文字の区別をしないと考えていますので、
+大文字・小文字の区別に依存するのは避けることをお勧めします。
+第5.2節での地域部分とドメインの「alphabet」の制限は
+複雑な方法で大文字・小文字を区別する部分としない部分に
+メッセイジ ID を分解する必要が無くなるという便利な面があります。
+
+>The  local  part of a message ID MUST not be "postmaster" or
+any other string that would compare equal to "postmaster" in
+a  case-insensitive  comparison.   Message  IDs  MUST  be no
+longer than 250 octets, including the "<" and ">".
+
+メッセイジ ID の地域部分は「postmaster」または大文字・小文字を区別しない
+比較で「postmaster」に等しくなる他の文字列であっては''なりません''。
+メッセイジ ID は「<」と「>」を含めて250オクテットより長くては''いけません''。
+
+>'''NOTE''': "Postmaster"  is  an  irksome  exception  to
+case-sensitivity  in  local  parts, inherited from
+MAIL, and simply avoiding it is the  best  way  to
+deal  with it (not that it's likely, but the issue
+needs to be dealt  with).   The  length  limit  is
+undesirable,  but is present in widely-used existing software.  
+The limit is actually  255,  but  a
+small safety margin is wise.
+
+'''注意''': 「Postmaster」は MAIL から継承している地域部分の大文字・小文字
+を区別することのくだらない例外で、単にこれを避けることは一番の対処法
+でしょう (これは適当ではないですが、対処する必要のある問題です)。
+長さ制限は望ましくありませんが、広く用いられている実際のソフトウェア
+には存在します。制限は実際は 255 ですが、安全に余分に少なく
+しておくのがよろしいでしょう。
+
+]FIG]
+
 
 ** HTTP
 
