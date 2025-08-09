@@ -207,6 +207,440 @@ MIMEr としては彼らの目指す美しき将来を描いていたのでし�
 
 * 歴史
 
+** RFC 2045
+
+[FIG(quote)[ [69] 6.  Content-Transfer-Encoding Header Field
+
+   Many media types which could be usefully transported via email are
+   represented, in their "natural" format, as 8bit character or binary
+   data.  Such data cannot be transmitted over some transfer protocols.
+   For example, RFC 821 (SMTP) restricts mail messages to 7bit US-ASCII
+   data with lines no longer than 1000 characters including any trailing
+   CRLF line separator.
+
+電子メイルで有益に転送し得る多くの媒体型は、その「普通の」形式で、
+8ビット文字やバイナリ・データで表現されます。このようなデータは
+転送できない転送プロトコルがあります。例えば、 RFC 821 (SMTP)
+はメイル・メッセージを7ビット US-ASDCII データで尾っぽの CRLF
+行区切りを含めて1000文字以内のものに制限しています。
+
+   It is necessary, therefore, to define a standard mechanism for
+   encoding such data into a 7bit short line format.  Proper labelling
+   of unencoded material in less restrictive formats for direct use over
+   less restrictive transports is also desireable.  This document
+   specifies that such encodings will be indicated by a new "Content-
+   Transfer-Encoding" header field.  This field has not been defined by
+   any previous standard. 
+
+ですから、このようなデータを8ビットの短い行の形式に符号化する
+標準的な方式を定義する必要があります。比較的制限の少ない形式の
+符号化されていないものにも、より制限的な転送で直接使うために、
+適切に札付けするのが望ましいです。この文書は、新しい
+「Content-Transfer-Encoding」頭欄で示すこの様な符号化を規定します。
+この欄はいかなる以前の標準でも定義されていません。 
+
+訳注: RFC 1341 でならともかく、 RFC 2045 で「新しい」も
+「いかなる以前の標準」もあったもんじゃないと思うのですが。
+typo: desireable → desirable
+
+*6.1.  Content-Transfer-Encoding Syntax
+
+The Content-Transfer-Encoding field's value is a single token
+specifying the type of encoding, as enumerated below.  Formally:
+
+Content-Transfer-Encoding 欄の値は単一の字句で、
+次に列挙する通り符号化の型を指定します。
+
+     encoding := "Content-Transfer-Encoding" ":" mechanism
+
+     mechanism := "7bit" / "8bit" / "binary" /
+                  "quoted-printable" / "base64" /
+                  ietf-token / x-token
+
+These values are not case sensitive -- Base64 and BASE64 and bAsE64
+are all equivalent.  An encoding type of 7BIT requires that the body
+is already in a 7bit mail-ready representation.  This is the default
+value -- that is, "Content-Transfer-Encoding: 7BIT" is assumed if the
+Content-Transfer-Encoding header field is not present.
+
+これらの値は大文字・小文字を区別しません。 Base64 と BASE64
+と bAsE64 は全て同等です。符号化型 7BIT は本文が既に8ビットで郵送準備万端表現
+である必要があります。これは既定値です。つまり、 Content-Transfer-Encoding
+頭欄が無い場合は "Content-Transfer-Encoding: 7BIT" と仮定します。
+
+*6.2.  Content-Transfer-Encodings Semantics
+
+   This single Content-Transfer-Encoding token actually provides two
+   pieces of information.  It specifies what sort of encoding
+   transformation the body was subjected to and hence what decoding
+   operation must be used to restore it to its original form, and it
+   specifies what the domain of the result is.
+
+この単一の Content-Transfer-Encoding 字句は実際には2片の情報を提供します。
+どんな種類の符号化変形が本文に対して成されたか, それゆえどんな
+復号処理を元の形式に戻すためにしなければならないか、
+と、結果の範囲を指定します。
+
+   The transformation part of any Content-Transfer-Encodings specifies,
+   either explicitly or implicitly, a single, well-defined decoding
+   algorithm, which for any sequence of encoded octets either transforms
+   it to the original sequence of octets which was encoded, or shows
+   that it is illegal as an encoded sequence.  
+  Content-Transfer-Encodings transformations never depend on any
+ additional external
+   profile information for proper operation. Note that while decoders
+   must produce a single, well-defined output for a valid encoding no
+   such restrictions exist for encoders: Encoding a given sequence of
+   octets to different, equivalent encoded sequences is perfectly legal.
+
+Content-Transfer-Encoding 変形部分は、
+明示的または暗示的に、
+符号化オクテットのどんな列をも符号化されている元のオクテットの列
+に変形するか符号化列として不正であると示すための、
+単一のはっきりした復号解法を指定します。 Content-Transfer-Encoding 変形は
+適切な処理にいかなる追加の外部プロファイル情報をも必要としません。
+なお、復号者は妥当な符号化に対して単一のはっきりとした出力をしなければ
+なりませんが、符号化者にはこのような制限は存在しません。
+与えたオクテット列を違って符号化しても、同等の符号化列は完全に妥当です。
+
+Three transformations are currently defined: identity, the 
+"quoted-printable" encoding, and the "base64" encoding.  The domains are
+"binary", "8bit" and "7bit".
+
+現在3つの変形が定義されています。 "quoted-printable" 符号化と
+"base64" 符号化です。範囲は "binary" と "8bit" と "7bit" です。
+
+訳注: 3つもあるか?
+
+   The Content-Transfer-Encoding values "7bit", "8bit", and "binary" all
+   mean that the identity (i.e. NO) encoding transformation has been
+   performed.  As such, they serve simply as indicators of the domain of
+   the body data, and provide useful information about the sort of
+   encoding that might be needed for transmission in a given transport
+   system.  The terms "7bit data", "8bit data", and "binary data" are
+   all defined in Section 2.
+
+Content-Transfer-Encoding 値 "7bit", "8bit", "binary" は全て
+同一 (つまり無) 符号化変形が施されていることを意味します。
+で、単に本文データの範囲を示して、当該転送系で必要になるかもしれない
+変形の符号化の種類についての優位な情報を提供します。
+用語「7ビット・データ 7bit data」, 「8ビット・データ 8bit data」,
+「バイナリ・データ binary data」はすべて第2章で定義しました。
+
+   The quoted-printable and base64 encodings transform their input from
+   an arbitrary domain into material in the "7bit" range, thus making it
+   safe to carry over restricted transports.  The specific definition of
+   the transformations are given below.
+
+quoted-printable, base64 両符号化は入力形式を "7bit" の範囲に収まるように
+変形します。これによって制限された転送で運ぶのに安全になります。
+変形の定義規定は後に示します。
+
+   The proper Content-Transfer-Encoding label must always be used.
+   Labelling unencoded data containing 8bit characters as "7bit" is not
+   allowed, nor is labelling unencoded non-line-oriented data as
+   anything other than "binary" allowed.
+
+適切な Content-Transfer-Encoding 札を常に使わなければ成りません。
+符号化さていない8ビット文字を含むデータに "7bit" の札をつけるのは
+認められませんし、符号化されていない非行指向データを
+"binary" 以外に札付けするのも認められません。
+
+   Unlike media subtypes, a proliferation of Content-Transfer-Encoding
+   values is both undesirable and unnecessary.  However, establishing
+   only a single transformation into the "7bit" domain does not seem
+   possible.  There is a tradeoff between the desire for a compact and
+   efficient encoding of largely- binary data and the desire for a
+   somewhat readable encoding of data that is mostly, but not entirely,
+   7bit.  For this reason, at least two encoding mechanisms are
+   necessary: a more or less readable encoding (quoted-printable) and a
+   "dense" or "uniform" encoding (base64).
+
+媒体亜型とは違って、 Content-Transfer-Encoding 値の増加は
+好ましくなく、必要でもありません。しかし、 "7bit" 範囲への単一変形だけを
+確立するのは可能で無さそうです。大きなバイナリ・データの小さくまとまって能率的な
+符号化への望みと、ほとんど7ビット, だけど全て7ビットではないデータの
+幾分可読な符号化への望みの妥協点です。この理由から、最低2つの符号化機構が
+必要です。多少可読な符号化 (quoted-printable) と「濃」く「一様」な
+符号化 (base64) です。
+
+   Mail transport for unencoded 8bit data is defined in RFC 1652.  As of
+   the initial publication of this document, there are no standardized
+   Internet mail transports for which it is legitimate to include
+   unencoded binary data in mail bodies.  Thus there are no
+   circumstances in which the "binary" Content-Transfer-Encoding is
+   actually valid in Internet mail.  However, in the event that binary
+   mail transport becomes a reality in Internet mail, or when MIME is
+   used in conjunction with any other binary-capable mail transport
+   mechanism, binary bodies must be labelled as such using this
+   mechanism.
+
+符号化されていない8ビット・データのメイル転送は RFC 1652 で定義されています。
+この文書の最初の出版時点では、符号化されていないバイナリ・データを
+メイルの本文中に合法的に含められる標準化された Internet メイル転送は
+ありません。ですから Internet メイルで実際 "binary"
+Content-Transfer-Encoding が妥当な場面はありません。しかし、
+バイナリ・メイル転送が Internet メイルで現実味を帯びた暁には、
+あるいは MIME が他のバイナリ可能メイル転送機構と併せて使う時には、
+バイナリ本文にはこの機構を使って札付けしなければなりません。
+
+   NOTE: The five values defined for the Content-Transfer-Encoding field
+   imply nothing about the media type other than the algorithm by which
+   it was encoded or the transport system requirements if unencoded.
+
+参考: Content-Transfer-Encoding 欄用に定義された5つの値は、
+その符号化されている算法または符号化されていない場合は転送系の要件以外に、
+媒体型について何らの暗示をもするものではありません。
+
+*6.3.  New Content-Transfer-Encodings
+
+   Implementors may, if necessary, define private Content-Transfer-
+   Encoding values, but must use an x-token, which is a name prefixed by
+   "X-", to indicate its non-standard status, e.g., 
+ "Content-Transfer-Encoding: x-my-new-encoding".  Additional standardized 
+ Content-Transfer-Encoding values must be specified by a standards-track RFC.
+   The requirements such specifications must meet are given in RFC 2048.
+   As such, all content-transfer-encoding namespace except that
+   beginning with "X-" is explicitly reserved to the IETF for future
+   use.
+
+実装者は必要ならば、私的な Content-Transfer-Encoding 
+値を定義しても構いませんが、 x-token を使って名前を "x-" で始めて
+"Content-Transfer-Encoding: x-my-new-encoding" のようにして非標準であることを
+示さなければなりません。追加の標準化された Content-Transfer-Encoding
+値は標準化過程 RFC で規定しなければなりません。その仕様の要件は
+RFC 2048 に合致するもので無ければなりません。というわけで、 "x-"
+で始まるものを除くすべての content-transfer-encoding 名前空間は
+IETF により将来の仕様のために明白に予約されています。
+
+Unlike media types and subtypes, the creation of new 
+Content-Transfer-Encoding values is STRONGLY discouraged, as it seems likely
+to hinder interoperability with little potential benefit
+
+媒体型・亜型とは異なり、新しい Content-Transfer-Encoding 値の作成は
+'''強く'''非推奨します。得られるものが少なく相互通信性の妨げとなると
+思われるからです。
+
+訳注: 句点で終わってない。欠落?
+
+*6.4.  Interpretation and Use 解釈と使用
+
+   If a Content-Transfer-Encoding header field appears as part of a
+   message header, it applies to the entire body of that message.  If a
+   Content-Transfer-Encoding header field appears as part of an entity's
+   headers, it applies only to the body of that entity.  If an entity is
+   of type "multipart" the Content-Transfer-Encoding is not permitted to
+   have any value other than "7bit", "8bit" or "binary".  Even more
+   severe restrictions apply to some subtypes of the "message" type.
+
+Content-Transfer-Encoding 頭欄がメッセージ頭の一部として
+出現した場合、これはそのメッセージの実体本文に適用されます。
+Content-Transfer-Encoding 頭欄が実体の頭の一部として
+出現した場合、その実体の本文にのみ適用されます。
+実体が "multipart" 型である場合は、 Content-Transfer-Encoding
+は "7bit", "8bit", "binary" 以外の値を取ってはいけません。
+より厳しい制限が "message" 型の幾つかの亜型には適用されます。
+
+   It should be noted that most media types are defined in terms of
+   octets rather than bits, so that the mechanisms described here are
+   mechanisms for encoding arbitrary octet streams, not bit streams.  If
+   a bit stream is to be encoded via one of these mechanisms, it must
+   first be converted to an 8bit byte stream using the network standard
+   bit order ("big-endian"), in which the earlier bits in a stream
+   become the higher-order bits in a 8bit byte.  A bit stream not ending
+   at an 8bit boundary must be padded with zeroes. RFC 2046 provides a
+   mechanism for noting the addition of such padding in the case of the
+   application/octet-stream media type, which has a "padding" parameter.
+
+ほとんどの媒体型はビットよりもオクテットで定義されているので、
+ここに示す気候は任意のオクテット列を符号化する機構であって
+ビット列に対するものでないことに注意して下さい。ビット列が
+これらの機構のうちの一つで符号化される場合、まず最初に
+ネットワーク標準バイト順 (「大エンディアン big-endian」) の8ビット・バイト列
+を使って, 
+すなわち列の始めのビットが8ビット・バイト中の高位のビットになるように
+変換しなければなりません。8ビット境界で終わらないビット列は
+0埋めしなければなりません。 RFC 2046 は、 application/octet-stream
+媒体型 ("padding" パラメーターがある。) 
+の場合にこのような埋めの追加を注記する機構を提供しています。
+
+The encoding mechanisms defined here explicitly encode all data in
+US-ASCII.  Thus, for example, suppose an entity has header fields such as:
+
+ここに定義する符号化機構は明白に、全てのデータを US-ASCII で符号化します。
+ですから、実体は例えば、次のような頭欄を持っているとします。
+
+     Content-Type: text/plain; charset=ISO-8859-1
+     Content-transfer-encoding: base64
+
+This must be interpreted to mean that the body is a base64 US-ASCII
+encoding of data that was originally in ISO-8859-1, and will be in
+that character set again after decoding.
+
+これは本文は base64 の US-ASCII 符号化データで、このデータは元は
+ISO-8859-1 で、復号の後で再びこの文字集合になることを意味すると
+解釈しなければなりません。
+
+   Certain Content-Transfer-Encoding values may only be used on certain
+   media types.  In particular, it is EXPRESSLY FORBIDDEN to use any
+   encodings other than "7bit", "8bit", or "binary" with any composite
+   media type, i.e. one that recursively includes other Content-Type
+   fields.  Currently the only composite media types are "multipart" and
+   "message".  All encodings that are desired for bodies of type
+   multipart or message must be done at the innermost level, by encoding
+   the actual body that needs to be encoded.
+
+ある Content-Transfer-Encoding 値はある媒体型にのみ使わなければなりません。
+特に、 "7bit", "8bit", "binary" 以外の符号化を合成媒体型、
+つまり他の Content-Type を再帰的に含むものに使うことは
+'''明確に禁止'''します。現在合成媒体型は "multipart" と "message" のみです。
+多部分やメッセージの型の本文で必要である全ての符号化は、
+最も奥の段階で、実際の符号化が必要な本文を符号化することで
+なされなければなりません。
+
+   It should also be noted that, by definition, if a composite entity
+   has a transfer-encoding value such as "7bit", but one of the enclosed
+   entities has a less restrictive value such as "8bit", then either the
+   outer "7bit" labelling is in error, because 8bit data are included,
+   or the inner "8bit" labelling placed an unnecessarily high demand on
+   the transport system because the actual included data were actually
+   7bit-safe.
+
+定義上、合成実体は "7bit" のような転送符号化値を持つとして、
+包まれた実態のどれかがより制限の少ない "8bit" のような値を持っている場合、
+8ビット・データを含むので外側の "7bit" 札が間違いであるか、
+実際は7ビット安全であるデータを、転送系に必要も無く高い要求をしている
+内側の "8bit" 札付けがあるかのどちらかです。
+
+   NOTE ON ENCODING RESTRICTIONS:  Though the prohibition against using
+   content-transfer-encodings on composite body data may seem overly
+   restrictive, it is necessary to prevent nested encodings, in which
+   data are passed through an encoding algorithm multiple times, and
+   must be decoded multiple times in order to be properly viewed.
+   Nested encodings add considerable complexity to user agents:  Aside
+   from the obvious efficiency problems with such multiple encodings,
+   they can obscure the basic structure of a message.  In particular,
+   they can imply that several decoding operations are necessary simply
+   to find out what types of bodies a message contains.  Banning nested
+   encodings may complicate the job of certain mail gateways, but this
+   seems less of a problem than the effect of nested encodings on user
+   agents.
+
+符号化制限についての参考: 内容転送符号化の制限は過度の制限に
+思えるかもしれませんが、データが何度も符号化算法を通らなければならず、
+適切な表示のために何度も復号しなければならないような
+入れ子の符号化を防ぐことが必要なのです。入れ子の符号化で
+利用者代理者はかなり複雑になります。この複数度符号化の明白な能率問題を
+置いておくとしても、メッセージの構造は覆い隠されてしまいます。
+特に、単にメッセージにどんな型の本文が含まれているか見るのにも
+幾度の復号作業が必要になります。入れ子符号化の禁止はある種のメイル関門の
+仕事を複雑化させますが、入れ子符号化が利用者代理者に及ぼす影響に比べれば
+たいした問題ではありません。
+
+Any entity with an unrecognized Content-Transfer-Encoding must be
+treated as if it has a Content-Type of "application/octet-stream",
+regardless of what the Content-Type header field actually says.
+
+認識出来ない Content-Transfer-Encoding の実体は、
+Content-Type 頭欄が実際に何と言っていようと、
+Content-Type が "application/octet-stream" であるとして扱わなければなりません。
+
+   NOTE ON THE RELATIONSHIP BETWEEN CONTENT-TYPE AND 
+ CONTENT-TRANSFER-ENCODING: It may seem that the Content-Transfer-Encoding 
+ could be
+   inferred from the characteristics of the media that is to be encoded,
+   or, at the very least, that certain Content-Transfer-Encodings could
+   be mandated for use with specific media types.  There are several
+   reasons why this is not the case. First, given the varying types of
+   transports used for mail, some encodings may be appropriate for some
+   combinations of media types and transports but not for others.  (For
+   example, in an 8bit transport, no encoding would be required for text
+   in certain character sets, while such encodings are clearly required
+   for 7bit SMTP.)
+
+Content-Type と Content-Transfer-Encoding の関係についての参考:
+Content-Transfer-Encoding は符号化されている媒体の特徴から推論できるか、
+最低でも、ある Content-Transfer-Encoding が特定媒体型と使う
+のに固定することが出来たと思われるかもしれません。
+これが当たらないという理由が幾つかあります。まず、異なる型の転送が
+メイルに使われており、ある符号化がある媒体型と転送の組合せには
+適切であっても、他には適切でないこともあります。
+(例えば、8ビット転送ではある文字集合の文には符号化は必要ありませんが、
+8ビット SMTP では明らかに符号化が必要です。)
+
+   Second, certain media types may require different types of transfer
+   encoding under different circumstances.  For example, many PostScript
+   bodies might consist entirely of short lines of 7bit data and hence
+   require no encoding at all.  Other PostScript bodies (especially
+   those using Level 2 PostScript's binary encoding mechanism) may only
+   be reasonably represented using a binary transport encoding.
+   Finally, since the Content-Type field is intended to be an open-ended
+   specification mechanism, strict specification of an association
+   between media types and encodings effectively couples the
+   specification of an application protocol with a specific lower-level
+   transport.  This is not desirable since the developers of a media
+   type should not have to be aware of all the transports in use and
+   what their limitations are.
+
+第二に、ある媒体型に違った場面で違った種類の転送符号化が必要になるかも
+しれません。例えば、多くの PostScript 本文は完全に7ビット・データの
+短い行から構成されており、符号化は全く必要ありません。他の
+PostScript 本文 (特に第2水準 PostScript のバイナリ符号化機構)
+はバイナリ転送符号化を使って表現するのだけが理性的かもしれません。
+最後に、 Content-Type 欄は無制限仕様機構であり、
+媒体型と符号化の関連の厳密な指定が応用プロトコルの仕様と
+特定低水準転送とを効果的に組み合わせることになります。
+これは媒体型の開発者がその媒体型の使われる全ての転送と
+その制限について注意しなければならないべきではないので望ましくありません。
+
+*6.5.  Translating Encodings
+
+   The quoted-printable and base64 encodings are designed so that
+   conversion between them is possible.  The only issue that arises in
+   such a conversion is the handling of hard line breaks in
+ quoted-printable encoding output. When converting from quoted-printable to
+   base64 a hard line break in the quoted-printable form represents a
+   CRLF sequence in the canonical form of the data. It must therefore be
+   converted to a corresponding encoded CRLF in the base64 form of the
+   data.  Similarly, a CRLF sequence in the canonical form of the data
+   obtained after base64 decoding must be converted to a
+ quoted-printable hard line break, but ONLY when converting text data.
+
+quoted-printable, base64 両符号化は両者間で変換可能に設計されています。
+この変換で起こる問題は、 quoted-printable 符号化出力の
+硬改行の取り扱いだけです。 quoted-printable から base64 に変換する時に、
+quoted-printable 形式の硬改行はデータの正規形の CRLF 列で表現します。
+ですからデータの base64 形式で対応する符号化 CRLF に変換しなければなりません。
+同様に、 base64 復号後のデータの正規形中の CRLF 列は quoted-printable
+の硬改行に変換しなければなりません。但し文 (text) データ変換時'''のみ'''です。
+
+*6.6.  Canonical Encoding Model 正統符号化モデル
+
+   There was some confusion, in the previous versions of this RFC,
+   regarding the model for when email data was to be converted to
+   canonical form and encoded, and in particular how this process would
+   affect the treatment of CRLFs, given that the representation of
+   newlines varies greatly from system to system, and the relationship
+   between content-transfer-encodings and character sets.  A canonical
+   model for encoding is presented in RFC 2049 for this reason.
+
+電子メイル・データが正規形・符号化に変換される時のモデル、とりわけこの処理が
+CRLF の扱いにどう影響するかについて (処理系間で新行の表現に多大な
+違いがあるので)、また CTE と文字集合の関係について、この RFC
+の以前の版では混乱がありました。この理由から符号化正統モデルを
+RFC 2049 に示しました。
+
+*6.7.  Quoted-Printable Content-Transfer-Encoding
+
+[SEE[ [[Quoted-Printable]] ]]
+
+*6.8.  Base64 Content-Transfer-Encoding
+
+[SEE[ [[Base64]] ]]
+
+]FIG]
+
+
 ** HTTP における CTE
 
 [39] [[HTTP]] には[[転送符号化]] ([CODE(HTTP)@en[[[Transfer-Encoding:]]]])
