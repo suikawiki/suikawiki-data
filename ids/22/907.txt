@@ -63,14 +63,77 @@
 
 ;; [12] [[OWS]] を挿入できるのかは不明です。仕様書上の例では構文上明示された箇所以外で[[空白]]を使っていません。
 
-* 処理モデル
+* 処理
 
 [10] [CODE(HTTP)@en[[[features]]]] [[異体属性]]の[[q値]]を計算する際には、
-指定された各要素の値を乗じたものと[[利用者エージェント]]はする[['''べき''']]ですし。
+指定された各要素の値を乗じたものと[[利用者エージェント]]はする[SHOULD[べき]]ですし、
 [[遠隔異体選択アルゴリズム]]はし[['''なければなりません''']] [SRC[>>1]]。
 
-;; [11] この計算結果は 1 を超えることもあります [SRC[>>1]]。
+;; [11] この計算結果は [N[1]] を超えることもあります [SRC[>>1]]。
 
 [13] 各要素の値は、[[特徴述語]]が[[真]]の場合 (複数指定されている場合には最低1つが[[真]]の場合)
 には [CODE[true-improvement]]、それ以外の場合には [CODE[false-degradation]]
 となります [SRC[>>1]]。
+
+* 歴史
+
+[FIG(quote)[ [14] [[RFC 2295]] (HTTP 透過内容折衝) 5.5 Features
+
+> The features attribute specifies how the presence or absence of
+particular feature tags in the user agent affects the overall quality
+of the variant.  This attribute is covered in section 6.4.
+
+*RFC 2295 (HTTP 透過内容折衝) 6.4 Features attribute
+> The features attribute, for which section 5.1 defines the syntax
+
+-[CODE(ABNF)[ "{" "features" feature-list "}" ]]
+
+> is used in a variant description to specify how the presence or
+absence of particular feature tags in the user agent affects the
+overall quality of the variant.
+
+>
+- [CODE(ABNF)[feature-list = 1%feature-list-element]]
+-
+[PRE[
+       feature-list-element = ( [[fpred]] | [[fpred-bag]] )
+                              [ ";" [ "+" true-improvement  ]
+                                    [ "-" false-degradation ]
+                              ]
+]PRE]
+-[CODE(ABNF)[ fpred-bag = "[" 1%fpred "]" ]]
+-[CODE(ABNF)[true-improvement   =  [[short-float]]]]
+-[CODE(ABNF)[false-degradation  =  short-float]]
+
+> Features attributes are used in variant descriptions (section 5).
+Variant descriptions can be transmitted in Alternates headers (section 8.3).
+
+> Examples are:
+-[SAMP(conneg)[ {features !textonly [blebber !wolx] colordepth=3;+0.7} ]]
+-[SAMP(conneg)[ {features !blink;-0.5 background;+1.5 [blebber !wolx];+1.4-0.8} ]]
+
+> The default value for the true-improvement is 1.  The default value
+for the false-degradation is 0, or 1 if a true-improvement value is given.
+
+> A user agent SHOULD, and a remote variant selection algorithm MUST
+compute the quality degradation factor associated with the features
+attribute by multiplying all quality degradation factors of the
+elements of the feature-list.  Note that the result can be a factor greater than 1.
+
+[CODE(ABNF)[feature-list]] の要素の品質減衰因子すべてを掛け合わせることによる
+[CODE(conneg)[features]] 属性に関連付けられた品質減衰因子の計算を利用者エージェントは行う'''べきです'''し、
+[[遠隔変種選択算法]]は計算しなければ'''なりません'''。
+
+> A feature list element yields its true-improvement factor if the
+corresponding feature predicate is true, or if at least one element
+of the corresponding fpred-bag is true. The element yields its
+false-degradation factor otherwise.
+
+特徴目録要素は、対応する[[特徴述語]]が真であるか、
+対応する [CODE(ABNF)[fpred-bag]] の少なくても1つが真である場合には
+[CODE(ABNF)[true-improvement]] 因子を与えます。
+それ以外の時には要素は [CODE(ABNF)[false-degradation]]
+因子を与えます。
+]FIG]
+
+* メモ
