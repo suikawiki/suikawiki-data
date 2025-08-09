@@ -383,6 +383,26 @@ mail-list などで Received: を X-Received: に置き換えることがある�
 
 ** USENET ニュースメッセージ
 
+[51] 
+[[USENET]] メッセージは [[RFC 822]] を基にしていますが、違いもいろいろあります。
+[CODE[Received:]] 相当の機能も複数に分かれていろいろなものがありました。
+
+--[[日付形式]]
+---[[RFC850の日付形式]]
+---[[asctime形式]]
+--[[Date:領域]]
+-[[電子ニュース]]
+--[[RFC850]]
+--[[RFC1036]]
+--[[son-ofRFC1036]]
+--[[draft-usefor-article]]
+--[[NNTP]]
+
+
+
+
+*** [CODE[Received:]]
+
 [3] かつて Received: は記事を受け取った時間を表す領域として
 USENET で使われていた。領域本体の値は USENET 形式の日付。
 (See [[日付形式]]) RFC 850 ではすでに旧式とされ [[Date-Received:領域]] を使う
@@ -391,6 +411,117 @@ USENET で使われていた。領域本体の値は USENET 形式の日付。
 [4] 今ではもう使用されることはないでしょう。ただ、 [[INN]]
 は現在の版でも [CODE[Received:]] 欄を持つメッセージの投稿は拒否します。
 ([CODE[Received:]] 欄のあるメッセージを中継する時は中継元で落としてから中継先に送っていた。)
+
+*** [CODE[Date-Received:]]
+
+[FIG(quote)[ [48] [[RFC 850]] 2.2.4  Date-Received  
+
+>
+This line (formerly  "Received")  is
+in  a  legal  USENET date format.  It records the date and
+time that the article was  first  received  on  the  local
+system.   If  this  line  is  present  in an article being
+transmitted from one host to another, the  receiving  host
+should  ignore  it  and  replace it with the current date.
+Since this field is intended for local use only,  no  site
+is  required  to support it.  However, no site should pass
+this field on to another site unchanged.
+
+この行 (元は「Received」(受信)) は妥当な USENET 日付形式です。
+記事が最初に局地系統で受信した日時を記録します。
+この行があるホストから他のホストに転送される記事に
+ある時は、受信したホストはこれを無視し、現在時刻で置き換えます。
+この領域は局地的に使うことだけを意図しているので、
+どのサイトもこれに対応する必要はありません。しかし、
+どのサイトもこの領域を他のサイトに変更せずに渡すべきではありません。
+]FIG]
+
+
+*** [CODE[Relay-Version:]]
+
+[FIG(quote)[ [49] [[RFC 850]] 2.1.1  Relay-Version  
+
+This header line shows  the  version
+of  the  program  responsible for the transmission of this
+article over the immediate link, that is, the program that
+is  relaying the article from the next site.  For example,
+suppose site A sends an article to  site  B,  and  site  B
+forwards  the  article  to  site  C.   The  message  being
+transmitted from A to B would have a Relay-Version  header
+identifying  the  program  running  on  A, and the message
+transmitted from B to C would identify the program running
+on  B.  This header can be used to interpret older headers
+in an upward compatible way.  Relay-Version must always be
+the  first  in  a message; thus, all articles meeting this
+standard will begin with an upper case   "R".    No  other
+restrictions are placed on the order of header lines.
+
+この頭行は直接リンクでこの記事を転送する責任のあるプログラム、
+すなわち記事を隣のサイトに中継するプログラムの版を示します。
+例えば、サイト A が記事をサイト B に送り、サイト B が
+記事をサイト C に転送するとします。 A から B に転送されたメッセージは
+A で動いているプログラムを識別する Relay-Version 頭を
+持っていて、 B から C に転送されたメッセージは
+B で動いているプログラムを識別する頭を持っています。
+この頭は上位互換のために古い頭を解釈するのに使うことが出来ます。
+Relay-Version は常にメッセージの最初に無ければなりません。
+ですから、この規格に合致する記事は全て大文字の「R」から
+始まります。頭行の順序に関してこれ以外の制限はありません。
+
+The line contains two  fields,  separated  by  semicolons.
+The fields are the version and the full domain name of the
+site.  The version should identify the system program used
+(e.g.,   "B")   as  well  as  a version number and version
+date.  For example, the header line might contain
+
+行は2つの領域から成り、セミコロンで区切られます。領域は
+版とサイトの完全ドメイン名です。版は系統プログラム (例えば「B」)
+と版番号と版日付で識別するべきです。例えば、次の頭行を御覧下さい。
+
+   Relay-Version: version B 2.10 2/13/83; site cbosgd.UUCP
+
+This header should not be passed on to  additional  sites.
+A  relay  program,  when  passing  an  article  on, should
+include only its own Relay-Version, not the  Relay-Version
+of  some other site.  (For upward compatibility with older
+software, if a Relay-Version is found in a header which is
+not the first line, it should be assumed to be moved by an
+older version of news and deleted.)
+
+この頭は次のサイトには渡すべきではありません。中継プログラムは
+記事を中継するとき、自分の Relay-Version だけを含め、
+他のサイトの Relay-Version は含めません。 (古いソフトウェアとの
+上位互換性のため、 Relay-Version は頭の最初の行以外に
+現れるかもしれませんが、古い版のニュースが移動したと考えて
+削除するべきです。)
+]FIG]
+
+*** [CODE[Posting-Version:]]
+
+[FIG(quote)[ [50] [[RFC 850]] 2.1.2  Posting-Version    
+
+>
+This   header   identifies   the
+software  responsible  for  entering this message into the
+network.  It has the same  format  as  Relay-Version.   It
+will  normally  identify  the same site as the Message-ID,
+unless the posting site is serving  as  a  gateway  for  a
+message  that  already  contains a message ID generated by
+mail.  (While it is permissible for a gateway  to  use  an
+externally  generated message ID, the message ID should be
+checked to ensure it conforms to this standard and to  RFC
+822.)
+
+この頭はネットワークに当該メッセージを注入した元のソフトウェア
+を識別するものです。書式は Relay-Version と同じです。
+これは通常 Message-ID のと同じサイトを識別します。
+但し投稿サイトが関門でありメイルにより既に生成されたメッセージ ID を
+持ったメッセージである場合を除きます。 (関門が外部で生成された
+メッセージ ID を使っても構いませんが、メッセージ ID が
+この規格と RFC 822 に適合するかは確認しておくべきです。)
+
+]FIG]
+
 
 ** RFC 2821 / RFC 2822 時代
 
