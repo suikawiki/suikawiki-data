@@ -336,4 +336,207 @@ system  is  to be mailed back to the author of the article
 
 
 
+** RFC 1036
+
+
+[FIG(quote)[ [5] 3.  Control Messages
+
+    This section lists the control messages currently defined.  The body
+    of the "Control" header line is the control message.  Messages are a
+    sequence of zero or more words, separated by white space (blanks or
+    tabs).  The first word is the name of the control message, remaining
+    words are parameters to the message.  The remainder of the header
+    and the body of the message are also potential parameters; for
+    example, the "From" line might suggest an address to which a
+    response is to be mailed.
+
+    Implementors and administrators may choose to allow control messages
+    to be carried out automatically, or to queue them for annual
+    processing.  However, manually processed messages should be dealt
+    with promptly.
+
+    Failed control messages should NOT be mailed to the originator of
+    the message, but to the local "usenet" account.
+
+*3.1.  Cancel (取消し)
+
+                     cancel <Message-ID>
+
+If a message with the given Message-ID is present on the local
+system, the message is cancelled.  This mechanism allows a user to
+cancel a message after the message has been distributed over the
+network.
+
+指定された Message-ID のメッセージが局地系統にある時、
+メッセージは取り消されます。この機構により利用者は
+メッセージがネットワークに配布された後から取り消すことが出来るようになります。
+
+If the system is unable to cancel the message as requested, it
+should not forward the cancellation request to its neighbor systems.
+
+系統が要求されたメッセージを取り消すのが不可能な時、
+取消し要求を隣の系統に転送するべきではありません。
+
+Only the author of the message or the local news administrator is
+allowed to send this message.  The verified sender of a message is
+the "Sender" line, or if no "Sender" line is present, the "From"
+line.  The verified sender of the cancel message must be the same as
+either the "Sender" or "From" field of the original message.  A
+verified sender in the cancel message is allowed to match an
+unverified "From" in the original message.
+
+メッセージの著者または局地ニュース管理者だけが
+このメッセージを送ることが出来ます。メッセージの送信者の確認には
+「Sender」(送信者)行, 「Sender」行が無い場合は「From」(送信元)行を使います。
+確認する取消しメッセージの送信者は元のメッセージの
+「Sender」領域または「From」領域のどちらかと同じでなければなりません。
+確認される取消しメッセージの送信者は確認されない元のメッセージの「From」
+と一致しても構いません。
+
+*3.2.  Ihave/Sendme (持ってます/送ってちょ)
+
+                   ihave <Message-ID list> [<remotesys>]
+                   sendme <Message-ID list> [<remotesys>]
+
+This message is part of the ihave/sendme protocol, which allows one
+host (say A) to tell another host (B) that a particular message has
+been received on A.  Suppose that host A receives message
+"<1234@ucbvax.Berkeley.edu>", and wishes to transmit the message to
+host B.
+
+このメッセージは ihave/endme プロトコルの一部で、
+あるホスト (A とする) が他のホスト B に、あるメッセージを A が受信したと
+知らせることが出来ます。ホスト A がメッセージ 「<1234@ucbvax.Berkeley.edu>」
+を受信して、メッセージをホスト B に転送しようとすると仮定します。
+
+A sends the control message "ihave <1234@ucbvax.Berkeley.edu> A" to
+ host B (by posting it to newsgroup to.B).  B responds with the
+control message "sendme <1234@ucbvax.Berkeley.edu> B" (on newsgroup
+to.A), if it has not already received the message.  Upon receiving
+the sendme message, A sends the message to B.
+
+A は制御メッセージ「ihave <1234@ucbvax.Berkeley.edu> A」
+をホスト B に (新聞組 to.B に投稿することで) 送信します。
+B はメッセージを既に受け取っていない場合
+制御メッセージに「sendme <1234@ucbvax.Berkeley.edu> B」と
+(新聞組 to.A で) 反応します。 sendme メッセージを受け取ったら、
+A はメッセージを B に送ります。
+
+This protocol can be used to cut down on redundant traffic between
+hosts.  It is optional and should be used only if the particular
+situation makes it worthwhile.  Frequently, the outcome is that,
+since most original messages are short, and since there is a high
+overhead to start sending a new message with UUCP, it costs as much
+to send the ihave as it would cost to send the message itself.
+
+このプロトコルはホスト間混雑を減らすのに使うことが出来ます。
+これは使っても使わなくても構わなく、使うだけの価値がある場合に限って
+使うべきです。よく、ほとんどの元のメッセージは短くて、
+新しいメッセージを UUCP で送り始める一般諸経費(オーバーヘッド)
+が大きいので、メッセージ自身を送るのより多い経費がかかる
+結果になったりします。
+
+One possible solution to this overhead problem is to batch requests.
+Several Message-ID's may be announced or requested in one message.
+If no Message-ID's are listed in the control message, the body of
+the message should be scanned for Message-ID's, one per line.
+
+一般諸経費問題の一つの可能な解は要求を束にすることです。
+複数の Message-ID を一つのメッセージで知らせたり要求したりしても
+構いません。制御メッセージに Message-ID が一つも列せられていない時は、
+メッセージの本体を一行一個の Message-ID とします。
+
+*3.3.  Newgroup (新組)
+
+                      newgroup <groupname> [moderated]
+
+This control message creates a new newsgroup with the given name.
+Since no messages may be posted or forwarded until a newsgroup is
+created, this message is required before a newsgroup can be used.
+The body of the message is expected to be a short paragraph
+describing the intended use of the newsgroup.
+
+    If the second argument is present and it is the keyword moderated,
+    the group should be created moderated instead of the default of
+    unmoderated.  The newgroup message should be ignored unless there is
+    an "Approved" line in the same message header.
+
+**3.4.  Rmgroup (消組)
+
+                            rmgroup <groupname>
+
+    This message removes a newsgroup with the given name.  Since the
+    newsgroup is removed from every host on the network, this command
+    should be used carefully by a responsible administrator.  The
+    rmgroup message should be ignored unless there is an "Approved:"
+    line in the same message header.
+
+*3.5.  Sendsys (sys 送ってちょ)
+                           sendsys (no arguments) (引数なし)
+
+    The sys file, listing all neighbors and the newsgroups to be sent to
+    each neighbor, will be mailed to the author of the control message
+    ("Reply-To", if present, otherwise "From").  This information is
+    considered public information, and it is a requirement of membership
+    in USENET that this information be provided on request, either
+    automatically in response to this control message, or manually, by
+    mailing the requested information to the author of the message.
+    This information is used to keep the map of USENET up to date, and
+    to determine where netnews is sent.
+
+全ての隣人と各隣人に送られる新聞組のを一覧にした sys ファイル
+を制御メッセージの著者 (あれば「Reply-To」、なければ「From」)
+にメイルで送ります。この情報は公共の情報とみなされるもので、
+この情報を要求があれば制御メッセージへの自動応答,
+または手動のどちらかで、要求された情報をメッセージの著者にメイルで送る
+ことが USENET 会員の義務です。この情報は USENET 地図を更新し
+電子ニュースがどこに送られるのかを決めるのに使われます。
+
+    The format of the file mailed back to the author should be the same
+    as that of the sys file.  This format has one line per neighboring
+    host (plus one line for the local host), containing four colon
+    separated fields.  The first field has the host name of the
+    neighbor, the second field has a newsgroup pattern describing the
+    newsgroups sent to the neighbor.  The third and fourth fields are
+    not defined by this standard.  The sys file is not the same as the
+    UUCP L.sys file.  A sample response is:
+
+      From: cbosgd!mark  (Mark Horton)
+      Date: Sun, 27 Mar 83 20:39:37 -0500
+      Subject: response to your sendsys request
+      To: mark@cbosgd.ATT.COM
+
+      Responding-System: cbosgd.ATT.COM
+      cbosgd:osg,cb,btl,bell,world,comp,sci,rec,talk,misc,news,soc,to,
+            test
+      ucbvax:world,comp,to.ucbvax:L:
+      cbosg:world,comp,bell,btl,cb,osg,to.cbosg:F:/usr/spool/outnews
+            /cbosg
+      cbosgb:osg,to.cbosgb:F:/usr/spool/outnews/cbosgb
+      sescent:world,comp,bell,btl,cb,to.sescent:F:/usr/spool/outnews
+            /sescent
+      npois:world,comp,bell,btl,ug,to.npois:F:/usr/spool/outnews/npois
+      mhuxi:world,comp,bell,btl,ug,to.mhuxi:F:/usr/spool/outnews/mhuxi
+
+*3.6.  Version (版)
+
+                           version (no arguments) (引数なし)
+
+    The name and version of the software running on the local system is
+    to be mailed back to the author of the message ("Reply-to" if
+    present, otherwise "From").
+
+*3.7.  Checkgroups (組確認)
+
+    The message body is a list of "official" newsgroups and their
+    description, one group per line.  They are compared against the list
+    of active newsgroups on the current host.  The names of any obsolete
+    or new newsgroups are mailed to the user "usenet" and descriptions
+    of the new newsgroups are added to the help file used when posting
+    news.
+
+]FIG]
+
+
+
 * メモ
