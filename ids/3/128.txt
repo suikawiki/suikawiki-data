@@ -1,6 +1,146 @@
+[9] 
+[[RTSP]]
+の
+[DFN[[CODE[Proxy:]]]]
+[[ヘッダー]]や
+[DFN[[CODE[Proxy-Require:]]]]
+[[ヘッダー]]は、
+必要な機能を表します。
 
-[FIG[
-* RFC 2326 (RTSP) 3.8 Option Tags
+* [CODE[Require:]] ヘッダー (RTSP)
+
+[10] 
+[CODE(RTSP)[Require:]] [[頭欄]]は、
+ある必要な機能が実装されているかどうかを[[起源サーバー]]に[[問合せ]]るために使用します。
+
+[8] [[起点鯖]]ではなく[[串]]に問合せるための同様の[[頭欄]]として
+[CODE(RTSP)[[[Proxy-Require]]]] があります。
+
+** 構文
+
+[13] 値は [[option tag]] です。
+
+
+* [CODE[Proxy-Require:]] ヘッダー (RTSP)
+
+[16] 
+[CODE(RTSP)[Proxy-Require:]] [[頭欄]]は、
+ある必要な機能が実装されているかどうかを[[プロキシ]]に[[問合せ]]るために使用します。
+
+[17] [[串]]ではなく[[起源サーバー]]に問合せるための同様の[[頭欄]]として
+[CODE(RTSP)[[[Require]]]] があります。
+
+
+
+
+* option tag (RTSP)
+
+[14] 
+[DFN[[CODE[option-tag]]]]
+は、
+[CODE[Require:]]
+や
+[CODE[Proxy-Require:]]
+で使われる値です。
+
+* 関連
+
+[15] 
+未対応のときの返答には [CODE[Unsupported:]] を使います。
+
+[11] 
+[[HTTP]] で似たような[[頭欄]]として [CODE(HTTP)[Man:]]
+があります。
+
+
+* 歴史
+
+[FIG(quote)[ [7] [[RFC 2326]] (RTSP) 12.32 Require
+>The Require header is used by clients to query the server about
+options that it may or may not support. The server MUST respond to
+this header by using the Unsupported header to negatively acknowledge
+those options which are NOT supported.
+
+[1] Require 頭はクライアントがサーバーに、対応しているかもしれないしいないかもしれない選択肢について問い合わせるのに使います。
+サーバーは対応して'''いない'''選択肢について Unsupported
+頭を使って否定応答し'''なければなりません'''。
+
+>This is to make sure that the client-server interaction will
+proceed without delay when all options are understood by both
+sides, and only slow down if options are not understood (as in the
+case above). For a well-matched client-server pair, the interaction
+proceeds quickly, saving a round-trip often required by negotiation
+mechanisms. In addition, it also removes state ambiguity when the
+client requires features that the server does not understand.
+
+[2] これにより、全ての選択肢を両者が理解した場合は遅延なく,
+選択肢を理解出来なかった (上記の) 
+場合には遅めるだけで、クライアント‐サーバー対話を進めるよう取り計らえます。
+
+-[3]   Require =   "Require" ":"  1#option-tag
+
+[4]
+>   Example:
+     C->S:   SETUP rtsp://server.com/foo/bar/baz.rm RTSP/1.0
+             CSeq: 302
+             Require: funky-feature
+             Funky-Parameter: funkystuff
+
+     S->C:   RTSP/1.0 551 Option not supported
+             CSeq: 302
+             Unsupported: funky-feature
+
+     C->S:   SETUP rtsp://server.com/foo/bar/baz.rm RTSP/1.0
+             CSeq: 303
+
+     S->C:   RTSP/1.0 200 OK
+             CSeq: 303
+
+>In this example, "funky-feature" is the feature tag which indicates
+to the client that the fictional Funky-Parameter field is required.
+The relationship between "funky-feature" and Funky-Parameter is not
+communicated via the RTSP exchange, since that relationship is an
+immutable property of "funky-feature" and thus should not be
+transmitted with every exchange.
+
+[5] この例では、 [CODE(ABNF)["funky-feature"]]
+が架空の [CODE[Funky-Parameter]] 
+欄が必須であるとクライアントに示す機能札です。
+[CODE(ABNF)["funky-feature"]] と [CODE[Funky-Parameter]]
+の関係については RTSP 交換では伝達されません。
+なぜならこの関係は [CODE(ABNF)["funky-feature"]]
+の不変の属性であって毎度の交換で伝送しなくても良いからです。
+
+>Proxies and other intermediary devices SHOULD ignore features that
+are not understood in this field. If a particular extension requires
+that intermediate devices support it, the extension should be tagged
+in the Proxy-Require field instead (see Section 12.27).
+
+[6] 串及び他の中間機器はこの欄にある理解出来ない機能を無視する'''のが良いです'''。
+特定の拡張に中間機器が対応する必要がある時は、その拡張は代わりに
+Proxy-Require 欄に札付けするのがよいです。
+
+]FIG]
+
+
+[FIG(quote)[ [18] [[RFC 2326]] 12.27 Proxy-Require
+>The Proxy-Require header is used to indicate proxy-sensitive features
+that MUST be supported by the proxy. Any Proxy-Require header
+features that are not supported by the proxy MUST be negatively
+acknowledged by the proxy to the client if not supported. Servers
+should treat this field identically to the Require field.
+
+[19] Proxy-Require 
+頭は、串が対応してい'''なければならない'''串敏感機能を示すのに使います。
+串が対応していないどの Proxy-Require 頭機能についても、串はクライアントに否定応答し'''なければなりません'''。
+サーバーはこの欄を Require 欄と等しいと扱うのが良いです。
+
+>See Section 12.32 for more details on the mechanics of this message
+and a usage example.
+]FIG]
+
+
+[FIG(quote)[ [12] [[RFC 2326]] (RTSP) 3.8 Option Tags
 
 > Option tags are unique identifiers used to designate new options in
 RTSP. These tags are used in Require (Section 12.32) and 
@@ -24,8 +164,7 @@ register the new option with the Internet Assigned Numbers Authority
 で到達できる機能の名前は [CODE[com.foo.mynewfeature]])
 にするか、又は新しい選択肢を [[IANA]] に登録するべきです。
 
-
-** 3.8.1 Registering New Option Tags with IANA
+* 3.8.1 Registering New Option Tags with IANA
 
 > When registering a new RTSP option, the following information should
 be provided:
@@ -56,8 +195,6 @@ address);
 文書化されたソース・コードあるいは計算機取扱説明書。
 - 独占的な選択肢には、問合せ先 (郵便・電子メイルの宛先)。
 
-
-** RFC の部分の License
-
-[[RFCのライセンス]]
 ]FIG]
+
+* メモ
