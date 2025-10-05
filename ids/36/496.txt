@@ -275,14 +275,7 @@ This page was created on July21 2002.,
 
 
 
-* フォント依存の符号化機構
-
-[FIG(short  list)[ [1] [[プロトコル]]
-- [CODE[<font face>]]
-- [CODE[font-family]]
-- [CODE[x-user-defined]]
-
-]FIG]
+* 符号化機構
 
 ** 8ビット符号
 
@@ -393,6 +386,10 @@ This page was created on July21 2002.,
 
 *** Windows-1252 としての実装
 
+[17] 
+[[フォント依存符号化]]が [[Windows-1252]] 前提で実装されていることは、
+世界中でよくみられます。
+
 [127] 
 [[Windows-1252]] 
 を使った[[フォント依存符号化]]は、
@@ -435,13 +432,166 @@ This page was created on July21 2002.,
 ]REFS]
 
 
+*** OTF Windows NT compatibility mapping
 
-** シフトJISとの混在
 
+[79] 
+[CODE[platformID]] [DFN[[N[4]]]] (Custom)
+は、
+[CODE[encodingID]] [ [N[0]], [N[255]] ] が
+[DFN[OTF Windows NT compatibility mapping]]
+として使われます。
+[SRC[>>311]]
+
+
+[81] 
+[CODE[platformID]] [N[4]]
+は、
+[[Type 1]]
+[[フォント]]由来の [[OpenType]] [[フォント]]を通じて古い[[応用]]との互換性を維持するための[[遺物]]です。
+[CODE[cmap]] [CODE[platformID]] [N[4]]
+を使って、
+[[非Unicode]] [[応用]]に対して[[フォント]]を
+[[Windows ANSI符号化]]されているように見せかけられます。
+[SRC[>>311]]
+
+[82] 
+[[Windows ANSI符号化]]でない [[Type 1]] [[フォント]]、
+例えば[[キリル文字]]や[[中欧]]フォントは、
+過去 [[Adobe]] が出荷した際に
+[CODE[.PFM]] ファイルの [CODE[CharSet]] 欄を
+[N[0]] ([[Windows ANSI]])
+としていました。
+[[ATM for Windows 9x]]
+は
+[CODE[CharSet]] 
+を無視していました。
+[SRC[>>311]]
+
+[83] 
+[[Adobe]] は
+[[Encoding]] が [[StandardEncoding]] でない [[Type1]] [[フォント]]から変換された
+[[OpenType]] [[フォント]]において
+[CODE[cmap]] [CODE[platformID]] [N[4]] 
+を使います。
+[SRC[>>311]]
+
+[84] 
+[CODE[platformID]] [N[4]]
+の
+[F[[CODE[encodingID]]]]
+は、
+元の [[Type 1]] [[フォント]]の [CODE[.PFM]]
+ファイルの 
+[[Windows]] charset 値 [ [N[0]], [N[255]] ]
+に設定しなければ[RUBYB[なりません][must]]。
+[SRC[>>311]]
+
+[85] 
+[CODE[platformID]] [N[4]] [CODE[encodingID]] [ [N[0]], [N[255]] ]
+が
+[[CFF]] アウトラインの [[OpenType]] [[フォント]]で使われた場合、
+[[Windows NT]] の [[OTF]] フォントドライバーは、
+次のように動作します。
+[SRC[>>311]]
+
+- [86] [[文字コード]] [ [N[0]], [N[255]] ]
+に符号化されている[[グリフ]]を、
+[[Windows ANSI]] [[コードページ1252]]における [[Unicode符号点]]に対応付けます。
+- [87] [[Windows ANSI]] ([CODE[CharSet]] [N[0]]) を[[フォント]]が対応する
+[COD[CharSet]] の一覧に追加します。
+- [88] [CODE[encodingID]] を [[Windows]] [CODE[CharSet]] 値とみなし、
+[[フォント]]が対応する [CODE[CharSet]] の一覧に追加します。
+
+[90] 
+[CODE[cmap]] の[[符号化]]は、
+[[CFF]] の[[符号化]]と[RUBYB[同一][identical]]でなければ[RUBYB[なりません][must]]。
+[SRC[>>311]]
+
+
+[80] 
+[CODE[platformID]] [N[4]]
+は、現在広くは用いられていません。
+新しい[[フォント]]では使うべき[RUBYB[ではありません][should not]]。
+[SRC[>>311]]
+
+[89] 
+[CODE[cmap]] [[部分表]]の [F[[CODE[format]]]] は [N[0]], [N[6]] 
+でなければ[RUBYB[なりません][must]]。
+[SRC[>>311]]
+
+
+[REFS[
+
+-
+[311] [CITE@en-us[cmap - Character To Glyph Index Mapping Table ([[OpenType]] 1.9) - Typography | Microsoft Docs]]
+([[PeterCon]], [TIME[2022-08-16T01:57:58.000Z]])
+<https://docs.microsoft.com/en-us/typography/opentype/spec/cmap>
+
+]REFS]
+
+*** MacRoman としての実装
+
+[16] 
+[[フォント依存符号化]]が [[MacRoman]] 前提で実装されることは、
+[[Mac OS]]
+利用者の間でしばしば見られました。
+
+[18] 
+ただ、 [[Mac OS]] の[[利用者]]数がそこまで多くないことや [[Mac OS X]] への移行のため、
+実際に利用されたとみられる事例数はそこまで多くはありません。
+
+-*-*-
+
+[19] 
+[[TrueType]] [[フォント]]の [CODE[cmap]] ([[文字コード]]と[[グリフID]]の対応表)
+には複数の[[文字コード]]体系のデータを格納できます。
+現在は [[Unicode]] を用いる場合がほとんどすべてですが、
+[[フォント]]生成ソフトウェアは[[後方互換性]]のために [[MacRoman]] 
+(など [[Mac OS]] 用の[[文字符号化]]) 用の表を生成する場合が未だにあり、
+[[MacRoman]] (など) 用の表が入った [[TrueType]] / [[OpenType]]
+[[フォント]]をよく見かけます。
+
+[20] 
+そうした表は[[フォント]]生成ソフトウェアが [[Windows-1252]] や [[Unicode]]
+と [[MacRoman]] (など) の対応関係から自動的に生成しただけの場合が大部分と思われ、
+表示用の[[フォント]]として実利用されたことがどれだけあるかは大変疑わしいです。
+
+[21] 
+[[フォント依存符号化]]の[[フォント]]にもこの事情は当てはまるので、
+多くの[[フォント依存符号化]]は [[Windows-1252]] 版と [[MacRoman]]
+版が存在することになりますが、 [[MacRoman]] 版がどれだけ実用されたかは大いに疑問です。
+
+** 多バイト符号
+
+[22] シフトJISとの混在
 [SEE[ [[Symbolフォント]] ]]
+
+[70] [CITE[Making Home Pages in Korean - EHC]], [TIME[2021-12-31T02:07:47.000Z]], [TIME[2025-06-17T10:05:43.059Z]] <http://www.kmml.net/ehc/hhpage.html#_two>
+
+>対象となるブラウザやOSを限定するのであれば、<font face=>タグによるフォント指定を利用してハングルフォントと日本語フォントを使い分け、ハングルと日本語の混在したページを作ることも可能です(たとえばWindows NT上のNetscape 3.0x。ただし<meta>タグでcharsetを決め打ちするとうまく行きませんので、外しておかなければなりません)。
+> ただし、指定されたフォントがなければせっかくの<font face=>の指定内容は無視されます(とくに異機種、異OSや異言語環境に対する配慮は忘れられがちです)し、ブラウザのバージョンやOSの言語仕様によっても見え方が異なります。と、いうわけで、個人的にはあまりお勧めしません。絶対やるなとまでは言いませんが、やるなら各ブラウザ(できればできる限り複数のOS、複数の言語環境)で一通り表示テストを行い、正常に表示できる環境を明記しておきましょう。
+
+
+
+[71] 
+まじか! そんなことできたのか! [[シフトJIS]]と[[EUC-KR]]が混在していても適切に 
+[CODE[font]] で括っておけばそれぞれの[[フォント]] + [[ANSIコードページ]]でレンダリングされたってこと?
+
+
+
 
 
 * 事例
+
+
+[FIG(short  list)[ [1] [[プロトコル]]
+- [CODE[<font face>]]
+- [CODE[font-family]]
+- [CODE[x-user-defined]]
+
+]FIG]
+
 
 [FIG(short list)[ [2] [[フォント]]
 - [[Symbol]]
@@ -609,7 +759,7 @@ This page was created on July21 2002.,
 
 [68] [CITE@fr[<FONT FACE> réputé nuisible]], [TIME[2025-06-16T14:28:19.000Z]], [TIME[1999-02-21T11:01:55.673Z]] <https://web.archive.org/web/19990221105800/http://babel.alis.com:8080/web_ml/html/fontface.html>
 
-[69] >>67 [CODE[<font face>]] は有害、ちゃんとした文字を使えと。最初に例示されている[[ギリシャ文字]]なら確かにそう。
+[69] >>68 [CODE[<font face>]] は有害、ちゃんとした文字を使えと。最初に例示されている[[ギリシャ文字]]なら確かにそう。
 でも [[Unicode]] ですらまともに扱えなかった文字をこの時代に他にどうしろと?
 (なお平成11年は [[Unicode]] はかなり頑張れば[[アルファベット]]等は実用になるかな、くらいの時期。)
 
@@ -630,18 +780,6 @@ This page was created on July21 2002.,
 
 
 
-
-
-[70] [CITE[Making Home Pages in Korean - EHC]], [TIME[2021-12-31T02:07:47.000Z]], [TIME[2025-06-17T10:05:43.059Z]] <http://www.kmml.net/ehc/hhpage.html#_two>
-
->対象となるブラウザやOSを限定するのであれば、<font face=>タグによるフォント指定を利用してハングルフォントと日本語フォントを使い分け、ハングルと日本語の混在したページを作ることも可能です(たとえばWindows NT上のNetscape 3.0x。ただし<meta>タグでcharsetを決め打ちするとうまく行きませんので、外しておかなければなりません)。
-> ただし、指定されたフォントがなければせっかくの<font face=>の指定内容は無視されます(とくに異機種、異OSや異言語環境に対する配慮は忘れられがちです)し、ブラウザのバージョンやOSの言語仕様によっても見え方が異なります。と、いうわけで、個人的にはあまりお勧めしません。絶対やるなとまでは言いませんが、やるなら各ブラウザ(できればできる限り複数のOS、複数の言語環境)で一通り表示テストを行い、正常に表示できる環境を明記しておきましょう。
-
-
-
-[71] 
-まじか! そんなことできたのか! [[シフトJIS]]と[[EUC-KR]]が混在していても適切に 
-[CODE[font]] で括っておけばそれぞれの[[フォント]] + [[ANSIコードページ]]でレンダリングされたってこと?
 
 
 
@@ -666,7 +804,7 @@ This page was created on July21 2002.,
 多くの[[フォント依存符号化]]のデータは [[Windows-1252]] の文字を入れ替えた[[8ビット符号]]の形で存在していますが、
 その[[フォント]]は [[Windows-1252]] の文字に相当する [[Unicode]] フォントの形になっています。
 
-[79] 
+[3] 
 [[日本]]で使われる[[フォント依存符号化]]も[[シフトJIS]]の文字を入れ替えたものと説明されることが多いですが、
 実際には[[シフトJIS]]の文字に相当する [[Unicode]] フォントの形になっているのが普通です。
 
