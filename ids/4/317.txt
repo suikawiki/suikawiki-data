@@ -1692,3 +1692,245 @@ sponsor になる形で [[ISO-IR]] に登録され、公式[[終端バイト]]�
 >>195 データダウンロードページですが、公式サポートフォーラム化してます。
 
 
+[238] [CITE[Code Conversion Tools]], [TIME[2025-10-27T07:42:45.000Z]] <https://zsigri.tripod.com/fontboard/cjk/convert.html>
+
+[239] >>238 CHCODE の配布ファイルより
+
+>
+[PRE(aafig)[
+      Options to chcode must always precede file names.  The following
+      options are available for chcode:
+
+                   B   BIG5 code
+                   I   IBM 5550 code
+                   H   IBM HOST code
+                   N   NSC(National Standard Code) Internal code
+                   P   NSC with Protocol code
+                   E   EUC code
+                   T   TCA code
+                   L   TELegraph code
+
+<D> CODE STRUCTURE
+
+      The number of different Chinese internal code systems developed
+      by various orgamizations in Taiwan has grown too large to
+      facilitate data transfer between different systems ( especially
+      through net_works ). This program alleviates the above difficulty
+      by providing convertions among eight internal codes that are most
+      commonly used. Most of these Chinese internal codes consist of
+      2_byte ASCII codes except for EUC, which control code SI
+      (Shift In, 0f) and SO (Shift Out, 0e) to distinguish Chinese mode
+      from English mode. As for NSC (with protocal), ISO 2022 standard
+      is followed. In this program, the size of the data type of a
+      code, called 'CODE', is four bytes.
+
+      The placement of code is as follows:
+
+           +-------------------------------------------------+
+           |         typedef  union                          |
+           |                {                                |
+           |                 unsigned char Byte[4];          |
+           |                 long code;                      |
+           |               } CODE;                           |
+           +-------------------------------------------------+
+
+           2-byte code:
+           ( BIG5, IBM 5550, NSC Internal, TCA, TEL codes. )
+              Byte[0] ::= High Byte
+              Byte[1] ::= Low Byte
+
+           4-byte code:
+           ( EUC code. )
+              Byte[0] ::= 1'st Byte
+              Byte[1] ::= 2'nd Byte
+              Byte[2] ::= 3'rd Byte
+              Byte[3] ::= 4'th Byte
+
+           Protocol code:
+           ( IBM Host, NSC with Prltocol codes. )
+              CODE ::= [Control_Code] Internal_Code
+
+      Additionally, the greatest difference between codes lies in the
+      difference in code space. We illustrate as follows:
+
+         (1) BIG5 code range
+
+                      |  40H      7EH      A1H      FEH   (Lbyte)
+               -------+---+--------+--------+--------+----
+                      |   |        |        |        |
+                  A1H +---+--------+--------+--------+----
+                      |   |////////|        |////////|
+                      |   |////////|        |////////|
+                  C8H +---+--------+--------+--------+----
+                  C9H +---+--------+--------+--------+----
+                      |   |////////|        |////////|
+                      |   |////////|        |////////|
+                  FEH +---+--------+--------+--------+----
+               (Hbyte)|   |        |        |        |
+
+          1'st Plane: A140H -> C8FEH
+             Symbol Set ------------------- A140H -> A3E0H
+             Frequential Used Set --------- A440H -> C67EH
+          2'nd Plane: C940H -> FEFEH
+             Later Frequential Used Set --- C940H -> F9D5H
+
+         (2) IBM 5550 code range
+
+                      |  40H      7EH      A1H      FCH   (Lbyte)
+               -------+---+--------+--------+--------+----
+                      |   |        |        |        |
+                  81H +---+--------+--------+--------+----
+                      |   |////////|        |////////|
+                      |   |////////|        |////////|
+                  A8H +---+--------+--------+--------+----
+                  A9H +---+--------+--------+--------+----
+                      |   |////////|        |////////|
+                      |   |////////|        |////////|
+                  FCH +---+--------+--------+--------+----
+               (Hbyte)|   |        |        |        |
+
+          1'st Plane: 8140H -> A8FCH
+             Symbol Set -------------------- 8140H -> 8B61H
+             Frequential Used Set ---------- 8C40H -> A8C9H
+          2'nd Plane: A940H -> FCFCH
+             Less Frequential Used Set ----- A940H -> D1C4H
+
+         (3) NSC code range
+
+                      |  21H                        7EH   (Lbyte)
+               -------+---+--------------------------+----
+                      |   |                          |
+                  21H +---+--------------------------+----
+                      |   |//////////////////////////|
+                      |   |//////////////////////////|
+                      |   |//////////////////////////|
+                      |   |//////////////////////////|
+                      |   |//////////////////////////|
+                      |   |//////////////////////////|
+                  7EH +---+--------------------------+----
+               (Hbyte)|   |                          |
+
+          1'st Plane: 2121H -> 7E7EH
+             Symbol Set -------------------- 2121H -> 4241H
+             Frequential Used Set ---------- 4421H -> 7D4CH
+          2'nd Plane: 2121H -> 7E7EH
+             Less Frequential Used Set ----- 2121H -> 7244H
+             User Definition Set ----------- 2121H -> 6435H
+
+          . Designate / Transfer plane:
+
+            1>. NSC Internal code
+                1'st Plane: InCode = Code + 0x8080
+                2'nd Plane: InCode = Code + 0x8000
+
+            2>. NSC code with Protocols
+                ProCode = [ <Ctrl_code> ] Code
+                          <Ctrl_code> ::= <Designate_code> |
+                                          <Transfer_code>
+                a>. Designate plane:
+                    English mode --
+                      <Designate_code> ::= ESC <G_set> <F>
+                    Chinese mode --
+                      <Designate_code> ::= ESC 2/4 <G_set> <F>
+                               <G_set> ::= <G0> | <G1> | <G2> | <G3>
+                                  <G0> ::= 2/8
+                                  <G1> ::= 2/9
+                                  <G2> ::= 2/A
+                                  <G3> ::= 2/B
+                                   <F> ::= 3/0 | 3/1 | 3/2 | 3/3 |
+                                           3/4 | 3/5 | 3/6 | 3/7 |
+                                           3/8 | 3/9 | 3/A | 3/B |
+                                           3/C | 3/D | 3/E | 3/F
+                b>. Transfer plane:
+                    <transfer_code> ::= <SI> | <SO> |
+                                        <LS2> | <LS3> | <SS2> | <SS3>
+                               <SI> ::= 0/F
+                               <SO> ::= 0/E
+                              <LS2> ::= ESC 6/E
+                              <LS3> ::= ESC 6/F
+                              <SS2> ::= ESC 4/E
+                              <SS3> ::= ESC 4/F
+
+         (4) EUC code range
+
+          1'st Plane:
+                                   +----------+----------+
+                                   | A1 -- FE | A1 -- FE |
+                                   +----------+----------+
+          2'nd Plane:
+             +----------+----------+----------+----------+
+             |    8E    | A2 -- B0 | A1 -- FE | A1 -- FE |
+             +----------+----------+----------+----------+
+
+          1'st Plane: A1A1H -> FEFEH
+             Symbol Set -------------------- A1A1H -> C2C1H
+             Frequential Used Set ---------- C4A1H -> FDCBH
+          2'nd Plane: 8EA2A1A1H -> 8EA2FEFEH
+             Less Frequential Used Set ----- 8EA2A1A1H -> 8EA2F2C4H
+             Lest Frequential Used Set ----- 8EAEA1A1H -> 8EAEE4B5H
+
+         (5) TCA code range
+
+                      |  30H 39H  41H 5AH  61H 7AH  80H    FDH   (Lbyte)
+               -------+---+---+----+---+----+---+----+------+----
+                      |   |   |    |   |    |   |    |      |
+                  81H +---+---+----+---+----+---+----+------+----
+                      |   |///|    |///|    |///|    |//////|
+                      |   |///|    |///|    |///|    |//////|
+                  AFH +---+---+----+---+----+---+----+------+----
+                  B0H +---+---+----+---+----+---+----+------+----
+                      |   |///|    |///|    |///|    |//////|
+                      |   |///|    |///|    |///|    |//////|
+                  DEH +---+---+----+---+----+---+----+------+----
+                  DFH +---+---+----+---+----+---+----+------+----
+                      |   |///|    |///|    |///|    |//////|
+                      |   |///|    |///|    |///|    |//////|
+                  FDH +---+---+----+---+----+---+----+------+----
+               (Hbyte)|   |   |    |   |    |   |    |      |
+
+          1'st Plane: 8130H -> AFFDH
+             Symbol Set -------------------- A140H -> A3E0H
+             Frequential Used Set ---------- A440H -> C67EH
+          2'nd Plane: B030H -> DEFDH
+             Later Frequential Used Set ---- C940H -> F9D5H
+          User definition Plane: DF30H -> FCFDH
+          Code Extend Plane: FD30H -> FDFDH
+
+         (6) TELegraph code range
+
+                      |  21H      7EH      A1H      FEH   (Lbyte)
+               -------+---+--------+--------+--------+----
+                      |   |        |        |        |
+                  A1H +---+--------+--------+--------+----
+                      |   |////////|        |////////|
+                      |   |////////|        |////////|
+                      |   |////////|        |////////|
+                      |   |////////|        |////////|
+                  FEH +---+--------+--------+--------+----
+               (Hbyte)|   |        |        |        |
+
+          1'st Plane: A1A1H -> FEFEH
+             Frequential Used Set ---------- A1A1H -> F6D8H
+          2'nd Plane: A121H -> FE7EH
+             Less Frequential Used Set ----- A121H -> FB3EH
+
+         (7) IBM Host code range
+
+                      |  40H      7FH      81H      FDH   (Lbyte)
+               -------+---+--------+--------+--------+----
+                      |   |        |        |        |
+                  41H +---+--------+--------+--------+----
+                      |   |////////|        |////////|
+                      |   |////////|        |////////|
+                  46H +---+--------+--------+--------+----
+                  4CH +---+--------+--------+--------+----
+                      |   |////////|        |////////|
+                      |   |////////|        |////////|
+                  91H +---+--------+--------+--------+----
+               (Hbyte)|   |        |        |        |
+
+             Symbol Set -------------------- 4141H -> 46F9H & (4040H)
+             Frequential Used Set ---------- 4C41H -> 68CAH
+             Less Frequential Used Set ----- 6941H -> 91C5H
+]PRE]
+
