@@ -48,6 +48,401 @@
 - [CODE(charname)@en[NULL]]
 ]FIG]
 
+
+* バイト列から文字列への変換
+
+
+[72] [[復号][復号 (符号化)]]操作は、次の場面で使われています。
+
+[FIG(table)[ [73] [[バイト列]]を[[復号]]して[[文字列]]を得る場面
+
+:c: 場面
+:spec: [[仕様書]]上の操作
+:stream: ストリーム出力
+:legacy: 非 [[UTF-8]]
+:bom: [[BOM]]
+:user: 上書き指定
+:ctmeta: [[内容型メタデータ]]
+:sniffing: [[charset sniffing]]
+:default: 既定の[[符号化][文字符号化]]
+:change: [[符号化の変更]]
+:error: [[誤りモード]]
+
+:c: [CODE(DOMi)@en[TextDecoder]]
+:spec: [CODE(DOMi)@en[TextDecoder]]
+:stream: ○
+:legacy: ○
+:error: 指定可
+
+:c: [CODE(DOMi)@en[TextDecoder]] ([CODE[ignoreBOM]])
+:spec: [CODE(DOMi)@en[TextDecoder]]
+:stream: ○
+:legacy: ○
+:bom: 除去
+:error: 指定可
+
+:c: [[HTML構文解析器]]
+:spec: [[復号][復号 (符号化)]]
+:stream: ○
+:legacy: ○
+:bom: [[sniffing][BOM sniffing]]
+:ctmeta: ○
+:sniffing: [[HTML][HTML encoding sniffing]]
+:user: ○
+:default: 
+1. [[親閲覧文脈]]
+2. [[UA]]依存
+:change: ○
+:error: [CODE[replacement]]
+
+:c: [[XHR]] [[文書応答]] ([[HTML]])
+:spec: [[復号][復号 (符号化)]]
+:legacy: ○
+:ctmeta: ○
+:user: ○
+:bom: [[sniffing][BOM sniffing]]
+:sniffing: [[XHR]] [[HTML]]
+:default: [[UTF-8]]
+:error: [CODE[replacement]]
+
+# [[HTML Imports]]
+
+:c: [[XML構文解析器]]
+:stream: ○
+:legacy: ○
+:bom: [[sniffing][BOM sniffing]]
+:ctmeta: ○
+:sniffing: [[XML][XML encoding sniffing]]
+:default: [[UTF-8]]
+:user: ○
+:error: ([CODE[fatal][fatal (符号化)]])
+:#: navigate, XSLT, responseXML, document.load
+
+:c: [[CSS構文解析器]] ([[文書]]から)
+:spec: [[復号][復号 (符号化)]]
+:legacy: ○
+:bom: [[sniffing][BOM sniffing]]
+:ctmeta: ○
+:sniffing: [[CSS][CSS encoding sniffing]]
+:default:
+1. [CODE[charset][<link charset>]]
+2. [[文書][文書の文字符号化]]
+:error: [CODE[replacement]]
+
+:c: [[CSS構文解析器]] ([[CSS]] から)
+:spec: [[復号][復号 (符号化)]]
+:legacy: ○
+:bom: [[sniffing][BOM sniffing]]
+:ctmeta: ○
+:sniffing: [[CSS][CSS encoding sniffing]]
+:default:
+[[CSS]]
+:error: [CODE[replacement]]
+
+:c: [[CSS構文解析器]] ([CODE(HTTP)@en[Link:]] から)
+:spec: [[復号][復号 (符号化)]]
+:legacy: ○
+:bom: [[sniffing][BOM sniffing]]
+:ctmeta: ○
+:sniffing: [[CSS][CSS encoding sniffing]]
+:default: [[UTF-8]]
+:error: [CODE[replacement]]
+
+:c: [[テキストファイルのDOM構築]]
+:stream: ○
+:legacy: ○
+:bom: [[sniffing][BOM sniffing]]
+:ctmeta: ○
+:sniffing: [[MIME型]]依存
+:default: [[MIME型]]依存
+:user: ○
+:error: [CODE[replacement]]
+
+:c: [[XHR]] [[テキスト応答]] ([[XML]])
+:spec: [[復号][復号 (符号化)]]
+:stream: △
+:legacy: ○
+:bom: [[sniffing][BOM sniffing]]
+:ctmeta: ○
+:sniffing: [[XML][XML encoding sniffing]]
+:default: [[UTF-8]]
+:user: ○
+:error: [CODE[replacement]]
+
+:c: [[XHR]] [[テキスト応答]] (非 [[XML]])
+:spec: [[復号][復号 (符号化)]]
+:stream: △
+:legacy: ○
+:bom: [[sniffing][BOM sniffing]]
+:ctmeta: ○
+:default: [[UTF-8]]
+:sniffing: [[BOM][BOM sniffing]]
+:user: ○
+:error: [CODE[replacement]]
+
+:c: [[fetch]] [[package data]] [[テキスト][テキストファイル]]
+:spec: [[UTF-8復号]]
+:bom: 除去
+:error: [CODE[replacement]]
+
+:c: [CODE(URI)@en[view-source:]]
+:stream: ○
+:legacy: ○
+:bom: [[sniffing][BOM sniffing]]
+:ctmeta: ○
+:sniffing: [[MIME型]]依存
+:default: [[MIME型]]依存
+:user: ○
+:error: [CODE[replacement]]
+
+:c: [[クリップボード]]から[[貼り付け]]
+:legacy: [[MIME型]]と[[プラットフォーム]]依存
+:sniffing: [[MIME型]]と[[プラットフォーム]]依存
+:default: [[MIME型]]と[[プラットフォーム]]依存
+
+:c: [[古典スクリプトのfetch]]
+:spec: [[復号][復号 (符号化)]]
+:stream: △
+:legacy: ○
+:bom: [[sniffing][BOM sniffing]]
+:ctmeta: ○
+:sniffing: [[BOM][BOM sniffing]]
+:default:
+1. [CODE[<script charset>]]
+2. [[文書][文書の文字符号化]]
+:error: [CODE[replacement]]
+
+:c: [[スクリプトのfetch]] [WEAK[([[古典スクリプトのfetch]]以外)]]
+:spec: [[UTF-8復号]]
+:stream: △
+:bom: 除去
+:error: [CODE[replacement]]
+
+:c: [CODE(JS)@en[javascript:]]
+:spec: [[UTF-8復号]]
+:bom: 除去
+:error: [CODE[replacement]]
+
+:c: [[XHR]] [[JSON応答]]
+:spec: [[UTF-8復号]]
+[WEAK[([[バイト群からJSONを構文解析]])]]
+:bom: 除去
+:error: [CODE[replacement]]
+
+:c: [[fetch]] [[package data]] [[JSON]]
+:spec: [[UTF-8復号]]
+[WEAK[([[バイト群からJSONを構文解析]])]]
+:bom: 除去
+:error: [CODE[replacement]]
+
+:c: [CODE(MIME)@en[application/manifest+json]]
+:spec: [[UTF-8復号]]
+:bom: 除去
+:error: [CODE[replacement]]
+
+:c: [CODE[payment-method-manifest]]
+:spec: [[UTF-8復号]]
+:bom: 除去
+:error: [CODE[replacement]]
+
+:c: [CODE[PushMessageData][bytes (PushMessageData)]]
+:spec: [[UTF-8復号]]
+:bom: 除去
+:error: [CODE[replacement]]
+
+
+:c: [[WebDriver]] [[要求]] [[JSON]]
+
+:c: [[Source Map]]
+
+:c: [CODE(JS)@en[document.cookie]]
+:spec: [[BOMなしUTF-8復号]]
+:error: [CODE[replacement]]
+
+:c: [[challenge]] [CODE(HTTP)@en[realm]]
+
+:c: [CODE(HTTP)@en[Content-Disposition:]] [CODE(MIME)@en[filename]]
+
+:c: [[Closeフレーム]] [CODE(DOMa)@en[reason]]
+:spec: [[BOMなしUTF-8復号]]
+:error: [CODE[replacement]]
+
+:c: [CITE[Web Transport Processing]] [[WebSocket]] [[テキストフレーム]]
+:spec: [CODE(DOMi)@en[TextDecoder]]
+:stream: ○
+:bom: 除去
+:error: [CODE[replacement]]
+
+:c: [CODE(MIME)@en[text/event-stream]]
+:spec: [[UTF-8復号]]
+:stream: ○
+:bom: 除去
+:error: [CODE[replacement]]
+
+:c: [[ホスト構文解析器]]
+:spec: [[BOMなしUTF-8復号]]
+([[BOMなしUTF-8復号または失敗]])
+:error: [CODE[replacement]]
+([CODE[fatal][fatal (符号化)]])
+
+:c: [[パーセント復号]]
+:spec: [[BOMなしUTF-8復号]]
+:error: [CODE[replacement]]
+
+:c: [CODE(JS)@en[decodeURI]]
+:spec: [CODE[Decode()]]
+:error: [CODE(JS)@en[URIError]]
+
+:c: [CODE(JS)@en[decodeURIComponent]]
+:spec: [CODE[Decode()]]
+:error: [CODE(JS)@en[URIError]]
+
+:c: [[文書の示された部分]]決定
+:spec: [[BOMなしUTF-8復号]]
+:error: [CODE[replacement]]
+
+:c: [CODE(URI)@en[file:]] [[URL path]]
+
+:c: [CODE(MIME)@en[application/x-www-form-urlencoded]]
+:spec: [[BOMなしUTF-8復号]] [WEAK[(旧: [[復号][復号 (符号化)]])]]
+:legacy: △
+:error: [CODE[replacement]]
+
+:c: [[媒体素片]]
+:spec: [[UTF-8]] で[[復号]]
+:error: [CODE[fatal][fatal (符号化)]]
+
+:c: 
+[91] 
+[CODE(MIME)@en[multipart/form-data]]
+:spec: [[BOMなしUTF-8復号]]
+:stream: △
+:legacy: △
+:bom: 除去
+:error: [CODE[replacement]]
+
+:c: [[parse a manifest]]
+:spec: [[UTF-8復号]]
+:bom: 除去
+:error: [CODE[replacement]]
+
+:c: [CODE[m3u8]]
+
+:c: [[WebVTT構文解析器]]
+:spec: [[UTF-8復号]]
+:stream: △
+:bom: 除去
+:error: [CODE[replacement]]
+
+:c: [[文字列 (X.500)]]
+
+:c: [[MIME型をバイト列から構文解析]]
+:spec: [[同型復号]]
+
+:c: [[URL構文解析器]]
+:spec: [[同型復号]]
+
+:c: [[[CODE[data:]] URL処理器]]
+:spec: [[同型復号]]
+
+:c: [CODE[Refresh:]]
+:spec: [[同型復号]]
+
+:c: [[get, decode, and split]] ([CODE[Content-Type:]], [CODE[X-Content-Type-Options:]] など)
+:spec: [[同型復号]]
+
+:c: [CODE[atob]]
+:spec: [[同型復号]]
+
+:c: [CITE[Web Transport Processing]] [[環境変数]]の値
+:spec: [[復号][復号 (符号化)]]
+:legacy: △
+:bom: 除去
+:error: [CODE[replacement]]
+
+]FIG]
+
+[43] 
+[[復号][復号 (符号化)]]操作は、 [CITE[Encoding Standard]] の任意の[[文字符号化]]からの[[復号][復号 (符号化)]]のために使えます。
+これは[[後方互換性]]のため必要な場面に限られます。
+新しい文脈では [[UTF-8復号]]を用いるのが望ましいと考えられています [SRC[>>1]]。
+
+[81] [[UTF-8復号]]は、[[復号][復号 (符号化)]]操作を呼び出さず、
+直接[[復号器]]を呼び出しています。
+
+-*-*-
+
+[80] [[HTML]], [[XHR]] [[文書応答]] [[HTML]],
+[[XML]], [CODE(HTMLe)@en[script]] ([[古典スクリプト]]), [[CSS]],
+[[テキスト文書]], [[XHR]] [[テキスト応答]]の各場面での[[文字コード]]の判定方法をまとめると、
+次のようになります。
+
+[FIG(steps)[
+= [[BOM sniffing]] (certain)
+= 上書き指定
+=- [HTML, XML, テキスト文書] [[利用者]]の指示 (certain)
+=- [XHR 文書応答 HTML] [[override charset]] (certain)
+=- [XHR テキスト応答] [[override charset]]
+=- [HTML] [[符号化の変更]]の結果 (certain)
+=- ([HTML] [[a known definite encoding]] (certain) - [[XHR]] [[文書応答]]で使われる)
+= [[HTTP]] [CODE(MIME)@en[charset]] (certain)
+= [[prescan]]
+== [HTML] [[prescan]] (tentative)
+== [XHR 文書応答 HTML] [[XHR]] [[HTML]] prescan (certain)
+== [XML] [[XML]] prescan
+== [CSS] [[CSS]] prescan
+= [[環境符号化]] (明示的)
+== [script] [CODE(HTML)[<script charset>]]
+== [CSS] [CODE(HTML)[<link charset>]]
+== [CSS] [CODE(XML)[<?xml-stylesheet charset?>]]
+= [[環境符号化]] (暗示的)
+== [HTML] [[親閲覧文脈]] (tentative)
+== [HTML] [[履歴]] (tentative)
+== [CSS] 読み込み元[[スタイルシート]]の[[符号化][文字符号化]]
+== [CSS, script] [[文書の[F[文字符号化]]]]
+= [HTML, テキスト文書] [[UNIVCHARDET]] (tentative)
+= [HTML, テキスト文書] [[利用者]]の[[ロケール]] (tentative)
+= [[UTF-8]]
+== [HTML, テキスト文書] (tentative)
+== [XHR 文書応答 HTML] (certain)
+]FIG]
+
+[89] [[charset sniffing]] に使うデータの長さについては、[[資源ヘッダー]]を参照。
+
+-*-*-
+
+[82] [CITE[HTML Standard]] の [[HTML構文解析器]]は [[a known definite encoding]]
+を指定可能であり、 [[XHR]] の[[文書応答]]が [[HTML]] の場合にこれが使われます。
+[[文書応答]]は、 [[HTML構文解析器]]の標準の ([[navigate]] で使われる)
+[[encoding sniffing algorithm]] のかわりに、独自の簡略化されたアルゴリズムを使っています。
+
+- [85] [[XHR]] は先頭1024バイトから [[prescan]] することを求めており、
+[[HTML]] はより広い選択肢を提供しています。
+- [87] [[XHR]] は [[UTF-8]] を既定値としていますが、
+[[HTML]] は文脈からの推測、 [[UnivCharDet]] や[[ロケール]]依存の既定値を使います。
+- [88] [[HTML]] では[[符号化の変更]]が起こることがありますが、
+[[XHR]] では起こりません。
+- [86] [[XHR]] が [[a known definite encoding]] に指定する値である [[final charset]]
+は[[符号化ラベル]] (かもしれないしそうでないかもしれないもの) であって[[符号化][文字符号化]]ではないのですが、
+[[XHR]] 側でも [[HTML]] 側でもなぜかその検査もしていません。
+
+
+* 文字列からバイト列への変換
+
+
+[42] [符号化]]は、次の場面で用いられます。
+
+[FIG(list middle)[ [79] [[符号化]]が呼び出される場面
+- [[UTF-8符号化]]
+- [[URL構文解析器]]の [[query][URL query]]
+- [CODE(MIME)@en[application/x-www-form-urlencoded]] の[[符号化]]
+]FIG]
+
+
+
+
+
+
 * なかったことにされている Web 草創期の文字コード
 
 [3] 
@@ -82,6 +477,7 @@
 - [[TAM]]
 - [CODE[GEO8-GOV]]
 - [[Unicode 1.1]]
+- [[Zawgyi]]
 - [[UTF-7]]
 - [[UTF-32]]
 - [[EBCDIC]] 各種
