@@ -267,9 +267,7 @@
 [[HTML]] では[[頻度解析等の手法]]と呼ばれ、大まかな枠組みのみとはいえ規定があります。
 [SEE[ [[頻度解析等の手法]] ]]
 
-[129]
-[[UTF-8]] はかなり確実に判定できることが知られています。
-[SEE[ [[頻度解析等の手法]] ]]
+
 
 [130] 
 [[ASCII文字]]のみで構成される場合、[[復号]]のみを考慮するなら [[ASCII]]
@@ -783,7 +781,22 @@ To my knowledge, Chromium has never shipped a Japanese-specific sniffing configu
 [CH[©]]
 のような記号が除外されていて判定に使われず、[[文字化け]]してしまうことがあります。
 
-;; [270] [CITE[chardetng]] などがこれを [[Windows-1252]] と判定する条件に使っています。
+[270] [CITE[chardetng]] などがこれを [[Windows-1252]] と判定する条件に使っています。
+[SRC[>>289]]
+
+;; [290] ただし [CITE[chardetng]] はそれでも [[ISO-8859-2]] と誤認しがちです。
+[[ISO-8859-2]] との区別についてはわざわざ注釈で言及があります [SRC[>>289]]
+ので、意識して設計されているはずですが、それでも取り扱いが難しいということなのでしょう。
+
+[REFS[
+
+- [289] 
+[CITE@en[[[chardetng]]/src/lib.rs at main · hsivonen/chardetng · GitHub]], [TIME[2025-11-24T08:19:16.000Z]] <https://github.com/hsivonen/chardetng/blob/main/src/lib.rs#L58>
+- [295] 
+[CITE@en[[[chardetng]]/src/lib.rs at main · hsivonen/chardetng · GitHub]], [TIME[2025-11-24T08:34:54.000Z]] <https://github.com/hsivonen/chardetng/blob/main/src/lib.rs#L450>
+
+
+]REFS]
 
 -*-*-
 
@@ -826,9 +839,29 @@ To my knowledge, Chromium has never shipped a Japanese-specific sniffing configu
 [[gb18030]]
 と判定する有力な根拠として使うことができます。
 
+*** UTF-8
 
+[129]
+[[UTF-8]] はかなり確実に判定できることが知られています。
+[SEE[ [[頻度解析等の手法]] ]]
 
+[288] 
+[[UTF-8]] の2バイト以上の[[バイト列]]が含まれ、それ以外に[[非ASCII文字]]が含まれないなら、
+[[UTF-8]] と判定してほぼ間違いありません。
 
+[285] 
+ただし[[8ビット符号]]の領域を使っている以上誤判定の可能性が皆無ではありません。
+
+[287] 
+[CITE[ced]] は4種類の2バイト列を [[UTF-8]] ではなく [[windows-1252]]
+に荷重する例外条件を持っています。 [SRC[>>286]]
+
+[REFS[
+
+- [286] 
+[CITE@en[[[compact_enc_det]]/compact_enc_det/compact_enc_det.cc at master · google/compact_enc_det · GitHub]], [TIME[2025-11-24T08:13:14.000Z]] <https://github.com/google/compact_enc_det/blob/master/compact_enc_det/compact_enc_det.cc#L83>
+
+]REFS]
 
 ** 特に考慮するべき事項
 
@@ -905,7 +938,27 @@ To my knowledge, Chromium has never shipped a Japanese-specific sniffing configu
 
 ]EG]
 
-*** ギリシャ文字
+*** 大文字と小文字
+
+[294] 
+出現頻度による手法の多くは[[大文字と小文字]]を同一視して[[文字]]や [[n-gram]]
+の頻度を見ています。ほとんどはこの手法でうまく判定できます。
+
+[292] 
+[CITE[chardetng]] は[[大文字と小文字]]の使い分けが自然なものを加点し不自然なものを減点しています。
+[SRC[>>291]]
+
+[293] 
+[[ギリシャ文字]]ですべて[[大文字]]にした語は、[[キリル文字]]をすべて[[小文字]]にした
+[[KOI-8]] や[[ヘブライ文字]]と混同しやすいとされ、
+[CITE[ced]] や [CITE[chardetng]] が特殊処理を入れています。
+[SRC[>>291, >>284]]
+
+[REFS[
+
+- [291] 
+[CITE@en[chardetng/src/lib.rs at main · hsivonen/chardetng · GitHub]], [TIME[2025-11-24T08:24:04.000Z]] <https://github.com/hsivonen/chardetng/blob/main/src/lib.rs#L154>
+
 
 [FIG(quote)[
 [FIGCAPTION[
@@ -914,6 +967,8 @@ To my knowledge, Chromium has never shipped a Japanese-specific sniffing configu
 
 >        // Greek all-caps is confusable with KOI8x all-lower and Hebrew.
 ]FIG]
+
+]REFS]
 
 *** エスケープとの混合
 
