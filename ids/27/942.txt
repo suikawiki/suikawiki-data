@@ -940,6 +940,16 @@ Starting at M55, we removed all menus and all influence of system locale, and st
 To my knowledge, Chromium has never shipped a Japanese-specific sniffing configuration.
 
 
+** その他の試み
+
+- [68] [CITE@en-US[Encode::Detect::Upload - Attempt to guess user's locale encoding from IP, HTTP_ACCEPT_LANGUAGE and HTTP_USER_AGENT - metacpan.org]], [TIME[2025-06-16T10:29:46.000Z]] <https://metacpan.org/pod/Encode::Detect::Upload>
+
+[69] >>68 [CODE[Accept-Language:]], [CODE[User-Agent:]] ([[OS]]), 
+アクセス者の [[IPアドレス]]を使って[[文字符号化]]を推定する。
+平成25年。
+
+
+
 
 
 
@@ -1190,6 +1200,25 @@ To my knowledge, Chromium has never shipped a Japanese-specific sniffing configu
 [[バイナリー]]、あるいは「結果無し/不明」という回答を用意して、
 それが確定的になれば早々に処理を打ち切るという選択肢もあることでしょう。
 
+-*-*-
+
+
+[78] 
+対応している[[符号化]]を順番に試してエラーにならなかったものを採用するという''だけ''の実装を
+「文字コードの判定」だと称しているものがたまにあります。
+このような方法は[[符号構造]]がまったく違う[[符号]]の区別になら使えますが、
+多くの[[8ビット符号]]の区別が不可能です。
+
+[257] 
+このような原始的な手法では
+[[Shift_JIS]] と [[EUC-JP]] の区別すら完全にはできないことが[[日本]]では古くからよく知られています。
+
+;; [79] [[符号構造]]が限定される場合なら、その限定される特徴で判定したほうが高速かつ確実なことが多いので、
+この手法が役に立つことはほぼないといっていいでしょう。
+
+
+
+
 *** UTF-8
 
 [129]
@@ -1205,7 +1234,7 @@ To my knowledge, Chromium has never shipped a Japanese-specific sniffing configu
 
 [287] 
 [CITE[ced]] は4種類の2バイト列を [[UTF-8]] ではなく [[windows-1252]]
-に荷重する例外条件を持っています。 [SRC[>>286]]
+に加重する例外条件を持っています。 [SRC[>>286]]
 
 [REFS[
 
@@ -1319,6 +1348,23 @@ To my knowledge, Chromium has never shipped a Japanese-specific sniffing configu
 
 
 
+
+
+*** gb18030 の特徴的な符号列
+
+[275] 
+[[gb18030]] の4バイト符号は、第1バイトと第3バイトに[[右]]の[[バイト]]が使われ、
+第2バイトと第3バイトは [[ASCII数字]]の[[バイト]]が使われるというかなり独特の構造をしています。
+主要な[[多バイト符号]]で[[ASCII数字]]を第2バイトに使うのは [[gb18030]]
+だけです。
+各種の[[8ビット符号]]でこうした並びが出現することもあるでしょうが、
+特殊な用例に限られるのではないかと思われます。
+そこでこうした並びを数えて、
+[[gb18030]]
+と判定する有力な根拠として使うことができます。
+
+
+
 *** 判定条件からの逸脱の扱い
 
 [350] 
@@ -1350,6 +1396,8 @@ To my knowledge, Chromium has never shipped a Japanese-specific sniffing configu
 異常データもできればなるべく作成者の想定に近いものと判定できることが好ましいと考えられますが、
 具体的にどのような状態を良しとし、
 どのようにそれを実現するか、は判定器の適用分野と実装戦略次第になります。
+
+
 
 
 ** 典型的バイト列による推測
@@ -1550,18 +1598,6 @@ To my knowledge, Chromium has never shipped a Japanese-specific sniffing configu
 [274] 
 よってあまり優先度は高くありませんが、簡単に対応できるならしておいても良いかなという感じでしょうか。
 
-*** gb18030 の特徴的な符号列
-
-[275] 
-[[gb18030]] の4バイト符号は、第1バイトと第3バイトに[[右]]の[[バイト]]が使われ、
-第2バイトと第3バイトは [[ASCII数字]]の[[バイト]]が使われるというかなり独特の構造をしています。
-主要な[[多バイト符号]]で[[ASCII数字]]を第2バイトに使うのは [[gb18030]]
-だけです。
-各種の[[8ビット符号]]でこうした並びが出現することもあるでしょうが、
-特殊な用例に限られるのではないかと思われます。
-そこでこうした並びを数えて、
-[[gb18030]]
-と判定する有力な根拠として使うことができます。
 
 *** UTF-16 や UTF-32
 
@@ -1813,6 +1849,18 @@ To my knowledge, Chromium has never shipped a Japanese-specific sniffing configu
 [CITE[UnivCharDet]] は[[ヘブライ文字]]列の先頭や末尾の[[字形]]の個数や前後から見た [[bigram]]
 の評価によってどちらか判定しています。
 
+[253] 
+[CITE[chardetng]] は[[ヘブライ文字]]ではなくそれと併用される [[ASCII]] [[句読点]]の使われ方で判定しているようです。
+[SRC[>>252]]
+
+
+
+[REFS[
+
+- [252] 
+[CITE@en[[[chardetng]]: A More Compact Character Encoding Detector for the Legacy Web]], [[Henri Sivonen]], [TIME[2020-06-08T16:23:51.000Z]], [TIME[2025-12-03T05:01:28.298Z]] <https://hsivonen.fi/chardetng/>
+
+]REFS]
 
 ** 実装
 
@@ -2057,21 +2105,8 @@ iso-8859-8 windows-1255 windows-1252
 
 
 
-- [68] [CITE@en-US[Encode::Detect::Upload - Attempt to guess user's locale encoding from IP, HTTP_ACCEPT_LANGUAGE and HTTP_USER_AGENT - metacpan.org]], [TIME[2025-06-16T10:29:46.000Z]] <https://metacpan.org/pod/Encode::Detect::Upload>
-
-[69] >>68 [CODE[Accept-Language:]], [CODE[User-Agent:]] ([[OS]]), 
-アクセス者の [[IPアドレス]]を使って[[文字符号化]]を推定する。
-平成25年。
 
 
-
-[78] 
-対応している[[符号化]]を順番に試してエラーにならなかったものを採用するという実装を「文字コードの判定」だと称しているものがたまにあります。
-このような方法は[[符号構造]]がまったく違う[[符号]]の区別になら使えますが、
-多くの[[8ビット符号]]の区別が不可能です。
-
-;; [79] [[符号構造]]が限定される場合なら、その限定される特徴で判定したほうが高速かつ確実なことが多いので、
-この手法が役に立つことはほぼないといっていいでしょう。
 
 
 
