@@ -69,6 +69,7 @@
 - [16] last mod file date / last mod file time (date and time fields)
 -- [61] [[FATの日時形式]]
 -- [68] 各2バイト
+-- [114] 必須。
 -- [23] [[central directory]] が暗号化され [[general purpose bit flag 13]]
 が masking を表すとき、 [[local header]] の値は 0 となる
 - [17] 拡張 [N[0x000D]] : [[UNIX]] 用
@@ -77,14 +78,15 @@
 --- [67] [[Unix time]]
 --- [103] 
 [[符号無し整数]]の実装事例 [SRC[>>102]]
--- [18] ほとんど使われていないという。
+-- [18] ほとんど使われていないという。実例未発見。
 -- [96] 実装はあるにはあるらしい [SRC[>>95]]。 
 - [19] 拡張 [N[0x000A]] : [[NTFS]] 用
 -- [64] Mtime (File last modification time), Atime (File last access time), 
 Ctime (File creation time)
 -- [65] 各[[64ビット符号無し整数]] [[小エンディアン]]
 --- [66] [[NTFSの日時形式]]
--- [22] 主に [[Windows]] で使われる
+-- [22] 主に [[Windows]] で使われる。
+-- [119] それなりによく使われているがすごく多いともいえない。
 - [20] 拡張 [N[0x5455]] : [[Extended Timestamp Extra Field]] ([[Info-ZIP]])
 -- [75] [[central directory header]] / [[local header]] : 
 ModTime (time of last modification)
@@ -98,7 +100,8 @@ CrTime (time of original creation)
 [[符号無し整数]]の実装事例 [SRC[>>100, >>102]]
 --- [94] 
 [[符号付き整数]]とする実装がある [SRC[>>93, >>105]]
--- [21] 主に [[Unix]] で使われる
+-- [21] 主に [[Unix]] で使われる。
+-- [115] それなりによく使われているがすごく多いともいえない。
 -- [77] flags でどの時刻が含まれるかを指定できる。5個分、
 将来の拡張で時刻の追加ができるとされている。
 -- [80] flags は [[local header]] に含まれる時刻を表すとされ、
@@ -113,6 +116,7 @@ flags は [[local header]] と同じものを記述するとされる。
 --- [85] [[Unix time]]
 --- [104] 
 [[符号無し整数]]の実装事例 [SRC[>>102]]
+-- [116] たまに使われている。
 - [69] 拡張 [N[0x07C8]] : [[Info-ZIP Macintosh Extra Field]]
 -- [71] [[central directory header]] と [[local header]]
 にそれぞれ、 各[[32ビット整数]] [[大エンディアン]]
@@ -120,6 +124,7 @@ flags は [[local header]] と同じものを記述するとされる。
 --- [70] [[HFSの日時形式]]
 -- [72] [CODE[CrDat]] ([CODE[ioFlCrDat]]),
 [CODE[MdDat]] ([CODE[ioFlMdDat]])
+-- [117] 実例未見。
 - [38] 拡張 [N[0x334D]] : [[Info-ZIP Macintosh Extra Field (new)]]
 -- [86] [[local header]] の Attribs に
 FlCrDat (date and time of creation),
@@ -135,6 +140,7 @@ CrGMTOffs, MdGMTOffs, BkGMTOffs
 (difference "local [VAR[...]] time - UTC")
 --- [91] [[32ビット符号付き整数]] [[小エンディアン]]
 --- [92] Flags により含めるかどうかを指定できる。
+-- [118] 実例未見。
 
 ... を持っています。
 
@@ -146,6 +152,40 @@ CrGMTOffs, MdGMTOffs, BkGMTOffs
 どう書き込むか仕様上で定まっている場合もあれば曖昧な場合もあり、
 実データが仕様と一致していないこともよくあります。
 こうした性格は[[日時]]情報各種にも当てはまります。
+
+[120] 
+拡張の日付がどれも使われていない [[ZIPファイル]]は今でも非常に多いです。
+つまり[[地方時]]だけで[[時差]]の情報が皆無のことが多いです。
+これは、実装が[[時差]]を無視して指定された値を成り行きで使うか、
+何らかの方法で推定するかの選択を迫られることを意味します。 ほとんどの実装は前者
+([[プラットフォームの時間帯]]とみなす) のようです。
+
+[121] 
+拡張の日付が複数使われる場合もありますが、あまり多くありません。
+拡張の日付が使われる場合はほとんどが mtime を指定していますが、
+それ以外が指定される場合や、 mtime が 0 の場合もあります。
+拡張の mtime と last mod file date / time は[[時差]]を除けば一致すると思われる場合が多いですが、
+そうでない場合も散見されます。
+
+[122] 実装は複数の日付のうちどれを使うかの選択を迫られます。
+利用実態や精度を鑑みれば、
+
+= [123] [N[0x000A]] ([[NTFS]])
+= [124] [N[0x5455]]
+= [125] [N[0x5855]]
+= [126] [N[0x000D]] ([[Unix]])
+= [127] last mod file date / time
+
+... の優先順が良いと思われます。それぞれ [[central directory header]] → [[local header]]
+の順で、値が [N[0]] や無指定なら無視して次を参照します。
+
+[128] [[unsigned]] / [[signed]] について実装によって解釈の違いがあるものがあります。
+32ビット整数の [[Unix time]] を [[signed]] とすると、
+いわゆる[[2038年問題]]が発生します。
+[TIME[西暦1970年][1970]]以前の[[ファイルの時刻]]が必要とされる特殊な状況はそれほどないでしょうから、
+仕様や主要な実装の状況も踏まえればすべて [[unsigned]] と解釈するのが良いと思われます。
+
+
 
 
 [REFS[
@@ -185,9 +225,6 @@ CrGMTOffs, MdGMTOffs, BkGMTOffs
 
 [REFS[
 
-- [47] [TIME[2025-12-30T16:09:29.800Z]]
-<https://opendata.attica.gov.gr/content/genikh-dieythynsh-eswterikhs-leitoyrgias/d-nsh-dioikhtikwn-yphresiwn/155-diakhrykseis?fdl=WGNVMDZpUXBkL0VvczA4L0RHM1NMVWxCMkRQSUdMdWlDbjNFY1VGZTZSQXk2aEJoWGhoSkRGZWtSa0diR2c0MVltZ3ZNa3R1VTA1MlZUWnNSM0p6V21wWk5ERk5VVDA5>
--- [48] [[ディレクトリー]], 一般[[ファイル]]とも [[central directory]] に [[NTFS]] 時刻
 - [49] 
 [TIME[2025-12-31T02:15:50.500Z]]
 <https://statistique.quebec.ca/en/fichier/rda-startup-kit.zip>
@@ -204,6 +241,16 @@ CrGMTOffs, MdGMTOffs, BkGMTOffs
 -- [51] 一般[[ファイル]]は
 [[central directory]]
 に mtime (flag もこれに一致)
+- [110] 
+[TIME[2025-12-31T12:13:12.800Z]]
+<https://www.city.yokohama.lg.jp/kosodate-kyoiku/kyoiku/gakku-meibo/tsugakukuiki/bunnpuzu-gis.files/0019_20250910.zip>
+-- [111] 一般ファイルは [[central directory]] [N[0x5455]] に mtime,
+last mod file date / time と時差を除き同じ値
+- [112] 
+[TIME[2025-12-31T12:19:50.000Z]]
+<https://www.city.yokohama.lg.jp/business/bunyabetsu/kankyo-koen-gesui/kiseishido/kagaku/risukuhyoka.files/0043_20251201.zip>
+-- [113] 一般ファイルは [[central directory]] [N[0x5455]] に mtime,
+last mod file date / time と時差を除き同じ値
 - [54] 
 [TIME[2025-12-31T03:01:46.400Z]]
 <https://www.sio.gov.sa/assets/files/guide_files/Arabic.zip>
@@ -227,6 +274,9 @@ CrGMTOffs, MdGMTOffs, BkGMTOffs
 [[NTFS]] の mtime, ctime, atime
 --- [108] mtime, atime は [N[0]]
 --- [109] ctime と last mod file date / time が時差を除き同じ値
+- [47] [TIME[2025-12-30T16:09:29.800Z]]
+<https://opendata.attica.gov.gr/content/genikh-dieythynsh-eswterikhs-leitoyrgias/d-nsh-dioikhtikwn-yphresiwn/155-diakhrykseis?fdl=WGNVMDZpUXBkL0VvczA4L0RHM1NMVWxCMkRQSUdMdWlDbjNFY1VGZTZSQXk2aEJoWGhoSkRGZWtSa0diR2c0MVltZ3ZNa3R1VTA1MlZUWnNSM0p6V21wWk5ERk5VVDA5>
+-- [48] [[ディレクトリー]], 一般[[ファイル]]とも [[central directory]] に [[NTFS]] 時刻
 
 ]REFS]
 
