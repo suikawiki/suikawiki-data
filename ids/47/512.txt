@@ -67,26 +67,63 @@
 -- [23] [[central directory]] が暗号化され [[general purpose bit flag 13]]
 が masking を表すとき、 [[local header]] の値は 0 となる
 - [17] 拡張 [N[0x000D]] : [[UNIX]] 用
--- [67] [[Unix time]]
 -- [63] Atime (File last access time), Mtime (File last modification time)
--- [62] 各[[32ビット整数]] [[小エンディアン]]
--- [18] ほとんど使われていない
+-- [62] 各[[32ビット符号無し整数]] [[小エンディアン]]
+--- [67] [[Unix time]]
+-- [18] ほとんど使われていないという。
+-- [96] 実装はあるにはあるらしい [SRC[>>95]]。 
 - [19] 拡張 [N[0x000A]] : [[NTFS]] 用
 -- [64] Mtime (File last modification time), Atime (File last access time), 
 Ctime (File creation time)
--- [66] [[NTFSの日時形式]]
--- [65] 各[[64ビット整数]] [[小エンディアン]]
+-- [65] 各[[64ビット符号無し整数]] [[小エンディアン]]
+--- [66] [[NTFSの日時形式]]
 -- [22] 主に [[Windows]] で使われる
 - [20] 拡張 [N[0x5455]] : [[Extended Timestamp Extra Field]] ([[Info-ZIP]])
+-- [75] [[central directory header]] / [[local header]] : 
+ModTime (time of last modification)
+-- [76] [[central directory header]] :
+ModTime (time of last modification),
+AcTime (time of last access),
+CrTime (time of original creation)
+-- [74] 各[[32ビット符号無し整数]] [[小エンディアン]]
+--- [73] [[Unix time]]
+--- [94] 
+[[符号付き整数]]とする実装がある [SRC[>>93]]
 -- [21] 主に [[Unix]] で使われる
+-- [77] flags でどの時刻が含まれるかを指定できる。5個分、
+将来の拡張で時刻の追加ができるとされている。
+-- [80] flags は [[local header]] に含まれる時刻を表すとされ、
+[[central directory header]] は ModTime のみ含められ、
+flags は [[local header]] と同じものを記述するとされる。
+--- [81] 実際には [[local header]] と [[central directory header]]
+で flags が異なる[[ZIPファイル]]が流通している。
 - [37] 拡張 [N[0x5855]] : [[Info-ZIP Unix Extra Field]]
+-- [83] [[central directory header]] と [[local header]]
+にそれぞれ、 AcTime (time of last access), ModTime (time of last modification)
+-- [82] 各[[32ビット符号無し整数]] [[小エンディアン]]
+--- [85] [[Unix time]]
 - [69] 拡張 [N[0x07C8]] : [[Info-ZIP Macintosh Extra Field]]
--- [70] [[HFSの日時形式]]
--- [71] 各[[32ビット整数]] [[大エンディアン]]
+-- [71] [[central directory header]] と [[local header]]
+にそれぞれ、 各[[32ビット整数]] [[大エンディアン]]
+--- [84] おそらく[[符号無し整数]]
+--- [70] [[HFSの日時形式]]
 -- [72] [CODE[CrDat]] ([CODE[ioFlCrDat]]),
 [CODE[MdDat]] ([CODE[ioFlMdDat]])
 - [38] 拡張 [N[0x334D]] : [[Info-ZIP Macintosh Extra Field (new)]]
-
+-- [86] [[local header]] の Attribs に
+FlCrDat (date and time of creation),
+FlMdDat (date and time of last modification),
+FlBkDat (date and time of last backup)
+--- [87] [[Mac]] [[FileTime]] 値
+--- [88] [[地方時]]
+--- [89] [[32ビット符号無し整数]] [[小エンディアン]]
+Flags により64ビットに切り替えることができるとされる。
+ただし Currently は32ビットで future version may 64ビットに対応するとある。
+-- [90]  [[local header]] の Attribs に
+CrGMTOffs, MdGMTOffs, BkGMTOffs
+(difference "local [VAR[...]] time - UTC")
+--- [91] [[32ビット符号付き整数]] [[小エンディアン]]
+--- [92] Flags により含めるかどうかを指定できる。
 
 ... を持っています。
 
@@ -108,8 +145,23 @@ Ctime (File creation time)
 [CITE[null]], [TIME[2020-06-30T08:46:01.000Z]], [TIME[2025-12-30T15:47:33.052Z]] <https://libzip.org/specifications/extrafld.txt>
 - [13] [CITE@en[zip展開後のタイムスタンプがおかしい · Issue #31 · koron/netupvim]], [TIME[2025-12-30T14:50:21.000Z]] <https://github.com/koron/netupvim/issues/31>
 - [14] [CITE@en[archive/zip: handle mtime in NTFS/UNIX/ExtendedTS extra fields (18274) · Gerrit Code Review]], [TIME[2025-12-30T14:50:33.000Z]] <https://go-review.googlesource.com/c/go/+/18274>
+- [79] 
+[CITE@en[A non-scientific survey of ZIP Metadata]], [TIME[2025-12-31T09:27:51.000Z]] <https://publicobject.com/2024/02/26/zip-metadata/>
+- [93] 
+[CITE@en[X5455_ExtendedTimestamp (The Adobe Experience Manager SDK 2022.11.9850.20221116T162329Z-220900)]], [TIME[2025-11-06T10:59:11.000Z]], [TIME[2025-12-31T09:56:30.240Z]] <https://developer.adobe.com/experience-manager/reference-materials/cloud-service/javadoc/org/apache/commons/compress/archivers/zip/X5455_ExtendedTimestamp.html>
+- [95] 
+[CITE@en[7-Zip / Bugs / #1432 7ZFM can't recognize UNIX timestamps in .ZIP archive]], [TIME[2025-12-31T10:01:42.000Z]] <https://sourceforge.net/p/sevenzip/bugs/1432/>
+
 
 ]REFS]
+
+
+[78] 
+[CITE@en[GitHub - thejoshwolfe/yazl: yet another zip library for node]], [TIME[2025-12-31T09:25:14.000Z]] <https://github.com/thejoshwolfe/yazl>
+
+>When attempting to encode an [CODE[mtime]] outside the supported range for either format, such as the year 1970 in the DOS format or the year 2039 for the modern format, the time will clamped to the closest supported time.
+
+
 
 *** 利用例
 
@@ -145,6 +197,13 @@ Ctime (File creation time)
 -- [57] [[ファイル]]は [N[0x5855]] に
 [[central directory]] のみ modtime, actime の2つが別の値。
 --- [58] last mod file date / time と modtime が同じ値。
+- [97] 
+[TIME[2025-12-31T10:05:01.00Z]]
+<https://web.archive.org/web/20110706022639/http://www.youngcreativechevrolet.eu/app/webroot/uploads/fonts_ycc.zip>
+-- [98] [[ディレクトリー]]は [N[0x5855]] に
+[[central directory]], [[local header]] の modtime, actime の計4つの値。
+-- [99] [[ファイル]]は [N[0x5855]] に
+[[central directory]] のみ modtime, actime の2つの値。
 
 
 ]REFS]
