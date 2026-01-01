@@ -29,10 +29,165 @@
 
 
 
+[FIG(quote)[
+[FIGCAPTION[
+[12] [CITE[SMB::Time - search.cpan.org]]
+([TIME[2017-02-13 00:39:40 +09:00]])
+<http://search.cpan.org/dist/SMB/lib/SMB/Time.pm>
+]FIGCAPTION]
+
+> NT time is number of 100-nanoseconds since 1601-01-01 00:00:00 UTC.
+
+]FIG]
+
+
+[FIG(quote)[
+[FIGCAPTION[
+[13] [CITE[NTタイムエポック値 について]]
+([TIME[2017-05-06 20:02:14 +09:00]])
+<https://forest2forest.blogspot.jp/2016/02/nt.html>
+]FIGCAPTION]
+
+> 【LastLogonTimeStamp】属性にはNTタイムエポック値という値で記録される。
+> NTタイムエポック値とは、1601/01/01 00:00:00 から100ナノ秒単位のカウント値である。
+
+]FIG]
+
+
 
 * データ型と値域
 
 
+[24] 
+[[64ビット整数]]で表されます。
+
+[25] 
+[[符号無し整数]]と解説されることが多いようですが、
+[CITE[Windows]]
+の関係する [[API]]
+は[[符号付き整数]]としているものもあれば、
+[[符号無し整数]]としているものもあり、
+一貫していないところがあるようです。
+
+[26] 
+[CITE[Windows]] で実際に正常に取り扱えるのは、他の [[API]] や[[データ構造]]の関係もあり、
+更に限定された範囲になるようです。
+
+[27] 
+また、値 [N[0]] が特殊値として使われることがあるようです。
+
+-*-*-
+
+[28] 
+あまりに大きな数値のため、[[値域]]の両端の[[年月日]]を一般的な[[日時処理]]の実装では正確に扱えないことがあります。
+そのためもあるのか、両端の値を記述していない解説も多く、記載していても他の資料と微妙に違う値のこともあります。
+
+[29] 
+そこで [[ChatGPT]] に両端の[[日時]]を正確に計算するプログラムを作成させました。 [SRC[>>30]]
+これによって得られた結果は、
+次の通りです。すべて[[先発グレゴリオ暦]] / [[先発UTC]] / [[閏秒のないUTC]]の[[日時]]です。
+
+- [31] [[64ビット符号付き整数]]
+-- [32] 最小 : [[キリスト紀元]] -27627年 04月 19日 21時 11分 54秒 522ms 419μs 200ns
+-- [33] 最大 : [[キリスト紀元]] -30828年 09月 14日 02時 48分 05秒 477ms 580μs 700ns
+- [34] [[64ビット符号無し整数]]
+-- [35] 最小 : [[キリスト紀元]] +01601年 01月 01日 00時 00分 00秒 000ms 000μs 000ns
+-- [36] 最大 : [[キリスト紀元]] +60056年 05月 28日 05時 36分 10秒 955ms 161μs 500ns
+
+
+[REFS[
+
+[FIG(quote)[ [30] 
+[PRE[
+# 64-bit NTFS 時刻を正確に年・月・日・時・分・秒・ナノ秒に変換する(整数演算)
+
+def ntfs_to_human(ntfs_time):
+    """
+    NTFS 64bit 時刻 (100ns単位) -> 年, 月, 日, 時, 分, 秒, ナノ秒
+    """
+    # 基準日 1601-01-01
+    base_year = 1601
+
+    # 100ns -> 秒とナノ秒
+    total_seconds, remainder_100ns = divmod(ntfs_time, 10_000_000)
+    nano = remainder_100ns * 100
+
+    # 秒 -> 日 + 秒
+    days, seconds_of_day = divmod(total_seconds, 86400)
+    hours, rem = divmod(seconds_of_day, 3600)
+    minutes, sec = divmod(rem, 60)
+
+    # グレゴリオ暦400年周期
+    days_remaining = days
+    # 400年 = 146097日
+    n400, days_remaining = divmod(days_remaining, 146097)
+    year = base_year + n400 * 400
+
+    # 100年周期(ただし400年周期の最初の100年は閏年扱い注意)
+    n100, days_remaining = divmod(days_remaining, 36524)  # 100年 = 36524日 (100年周期のうるう年除外)
+    if n100 == 4:  # 400年ごとの最後の100年補正
+        n100 = 3
+        days_remaining += 36524
+    year += n100 * 100
+
+    # 4年周期
+    n4, days_remaining = divmod(days_remaining, 1461)  # 4年 = 1461日
+    year += n4 * 4
+
+    # 1年周期
+    n1, days_remaining = divmod(days_remaining, 365)
+    if n1 == 4:  # 4年周期の最後の年補正
+        n1 = 3
+        days_remaining += 365
+    year += n1
+
+    # 閏年判定
+    is_leap = (year % 4 == 0 and (year % 100 != 0 or year % 400 == 0))
+
+    # 月・日計算
+    month_days = [31, 29 if is_leap else 28, 31, 30, 31, 30,
+                  31, 31, 30, 31, 30, 31]
+    month = 1
+    for md in month_days:
+        if days_remaining < md:
+            day = days_remaining + 1
+            break
+        days_remaining -= md
+        month += 1
+
+    return year, month, day, hours, minutes, sec, nano
+
+# signed / unsigned 64-bit 最大・最小値
+signed_min = -2**63
+signed_max = 2**63 - 1
+unsigned_min = 0
+unsigned_max = 2**64 - 1
+
+# 計算
+smin_human = ntfs_to_human(signed_min)
+smax_human = ntfs_to_human(signed_max)
+umin_human = ntfs_to_human(unsigned_min)
+umax_human = ntfs_to_human(unsigned_max)
+
+smin_human, smax_human, umin_human, umax_human
+]PRE]
+]FIG]
+
+]REFS]
+
+
+
+[37] 
+[CITE@en-us['''['''MS-DTYP''']''': FILETIME | Microsoft Learn]], [TIME[2024-10-30T21:12:45.000Z]], [TIME[2026-01-01T09:38:18.876Z]] <https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-dtyp/2c57429b-fdd4-488f-b5fc-9e4cf020fcdf>
+
+>[B[dwLowDateTime:]] A 32-bit unsigned integer that contains the low-order bits of the file time.
+>
+[B[dwHighDateTime:]] A 32-bit unsigned integer that contains the high-order bits of the file time.
+
+
+
+[17] 
+[CITE@en-US[Interpretation of NTFS Timestamps - Forensic Focus]], [[Forensic Focus]], [TIME[2023-11-25T11:36:52.000Z]] <https://www.forensicfocus.com/articles/interpretation-of-ntfs-timestamps/>
 
 
 [18] 
@@ -57,6 +212,10 @@ However, if you put [CODE[0x7fffffffffffffff]] into [CODE[FileTimeToSystemTime()
 [CITE@ja[Windowsのファイル時刻を扱うためのライブラリを作成した話]], [TIME[2026-01-01T09:08:17.000Z]] <https://zenn.dev/sorairolake/articles/introduction-of-nt-time>
 
 >最大値は60056年5月28日5時36分10秒955161500 (UTC) ですが、WindowsのAPIでは最大値は64ビット符号付き整数の最大値に制限されます。
+
+>
+[CODE[FileTime::MAX]] - [CODE[FileTime]]が表すことのできる最大値 (+60056-05-28 05:36:10.955161500 UTC) を表します
+
 
 [FIG(quote)[
 [FIGCAPTION[
@@ -129,6 +288,30 @@ However, if you put [CODE[0x7fffffffffffffff]] into [CODE[FileTimeToSystemTime()
 ]FIG]
 
 
+[16] [CITE@en[Time formatting and storage bugs - Wikipedia]], [TIME[2023-11-24T03:13:21.000Z]], [TIME[2023-11-25T11:36:12.919Z]] <https://en.wikipedia.org/wiki/Time_formatting_and_storage_bugs#Year_30,828>
+
+>Beginning 14 September 30,828, Windows will not accept dates beyond this day and on startup, it will display an error regarding "invalid system time" in NTFS. This is because the FILETIME value in Windows, which is a 64-bit value corresponding to the number of 100-nanosecond intervals since 1 January 1601, 00:00:00.0000000 UTC, will overflow its maximum possible value on that day at 02:48:05.4775808 UTC.[SNIP[]]
+
+
+[23] 
+[CITE@en-us[Test Cases for the RTC Real-Time Functions Test | Microsoft Learn]], [TIME[2024-11-01T05:58:20.000Z]], [TIME[2026-01-01T09:16:24.873Z]] <https://learn.microsoft.com/en-us/previous-versions/windows/embedded/bb330911(v=winembedded.60)?redirectedfrom=MSDN>
+
+>[SNIP[]]The test looks for the range beginning with the minimum possible FILETIME (FILETIME 0 is the start of Jan 1st 1601) and end with maximum possible FILETIME (Max FILETIME is the maximum 64-bit value).
+
+* 文脈
+
+[21] [[ファイルの時刻]]
+
+
+* 関連
+
+
+[14] 
+[[DOSの日時形式]]はまた別のものでした。
+
+
+[22] 
+[[COBOL整数日付]]と[[元期]]が同じように見えて違うので注意。
 
 
 * メモ
@@ -159,43 +342,5 @@ However, if you put [CODE[0x7fffffffffffffff]] into [CODE[FileTimeToSystemTime()
 ]FIG]
 
 
-[FIG(quote)[
-[FIGCAPTION[
-[12] [CITE[SMB::Time - search.cpan.org]]
-([TIME[2017-02-13 00:39:40 +09:00]])
-<http://search.cpan.org/dist/SMB/lib/SMB/Time.pm>
-]FIGCAPTION]
-
-> NT time is number of 100-nanoseconds since 1601-01-01 00:00:00 UTC.
-
-]FIG]
 
 
-[FIG(quote)[
-[FIGCAPTION[
-[13] [CITE[NTタイムエポック値 について]]
-([TIME[2017-05-06 20:02:14 +09:00]])
-<https://forest2forest.blogspot.jp/2016/02/nt.html>
-]FIGCAPTION]
-
-> 【LastLogonTimeStamp】属性にはNTタイムエポック値という値で記録される。
-> NTタイムエポック値とは、1601/01/01 00:00:00 から100ナノ秒単位のカウント値である。
-
-]FIG]
-
-[17] 
-[CITE@en-US[Interpretation of NTFS Timestamps - Forensic Focus]], [[Forensic Focus]], [TIME[2023-11-25T11:36:52.000Z]] <https://www.forensicfocus.com/articles/interpretation-of-ntfs-timestamps/>
-
-
-[16] [CITE@en[Time formatting and storage bugs - Wikipedia]], [TIME[2023-11-24T03:13:21.000Z]], [TIME[2023-11-25T11:36:12.919Z]] <https://en.wikipedia.org/wiki/Time_formatting_and_storage_bugs#Year_30,828>
-
->Beginning 14 September 30,828, Windows will not accept dates beyond this day and on startup, it will display an error regarding "invalid system time" in NTFS. This is because the FILETIME value in Windows, which is a 64-bit value corresponding to the number of 100-nanosecond intervals since 1 January 1601, 00:00:00.0000000 UTC, will overflow its maximum possible value on that day at 02:48:05.4775808 UTC.[SNIP[]]
-
--*-*-
-
-[14] 
-[[DOSの日時形式]]はまた別のものでした。
-
-
-[22] 
-[[COBOL整数日付]]と[[元期]]が同じように見えて違うので注意。
