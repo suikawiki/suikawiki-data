@@ -89,24 +89,230 @@
 [165] [[整数型]]による主要な [[Unix time]] の利用形態の[[値域]]は次の通りです。
 
 - [155] [[32ビット符号付き整数]] [[秒]]単位
--- 最小値 : [TIME[1901-12-13T20:45:52Z]]
--- 最大値 : [TIME[2038-01-19T03:14:07Z]]
+-- 最小値 : [CODE[1901-12-13T20:45:52Z]] [TIME[1901-12-13T20:45:52Z]]
+-- 最大値 : [CODE[2038-01-19T03:14:07Z]] [TIME[2038-01-19T03:14:07Z]]
 - [156] [[32ビット符号無し整数]] [[秒]]単位
--- 最小値 : [TIME[1970-01-01T00:00:00Z]]
--- 最大値 : [TIME[2106-02-07T06:28:15Z]]
+-- 最小値 : [CODE[1970-01-01T00:00:00Z]] [TIME[1970-01-01T00:00:00Z]]
+-- 最大値 : [CODE[2106-02-07T06:28:15Z]] [TIME[2106-02-07T06:28:15Z]]
 - [158] [[64ビット符号付き整数]] [[秒]]単位
--- 最小値 : [TIME[−292277022657-01-27T08:29:52Z]]
--- 最大値 : [TIME[292277026596-12-04T15:30:07Z]]
+-- 最小値 : [CODE[−292277022657-01-27T08:29:52Z]] [TIME[−292277022657-01-27T08:29:52Z]]
+-- 最大値 : [CODE[+292277026596-12-04T15:30:07Z]] [TIME[292277026596-12-04T15:30:07Z]]
 - [162] [[64ビット符号無し整数]] [[秒]]単位
--- 最小値 : [TIME[1970-01-01T00:00:00Z]]
--- 最大値 : [TIME[584554051223-11-09T07:00:15]]
+-- 最小値 : [CODE[+000000001970-01-01T00:00:00Z]] [TIME[1970-01-01T00:00:00Z]]
+-- 最大値 : [CODE[+584554051223-11-09T07:00:15Z]] [TIME[584554051223-11-09T07:00:15Z]]
 - [163] [[64ビット符号付き整数]] [[ミリ秒]]単位
--- 最小値 : [TIME[-292275055-05-16T16:47:04.192Z]]
--- 最大値 : [TIME[292278994-08-17T07:12:55.807Z]]
+-- 最小値 : [CODE[-292275055-05-16T16:47:04.192Z]] [TIME[-292275055-05-16T16:47:04.192Z]]
+-- 最大値 : [CODE[+292278994-08-17T07:12:55.807Z]] [TIME[292278994-08-17T07:12:55.807Z]]
 - [164] [[64ビット符号付き整数]] [[ナノ秒]]単位
--- 最小値 : [TIME[1677-09-21 00:12:43.145224192Z]]
--- 最大値 : [TIME[2262-04-11 23:47:16.854775807Z]]
+-- 最小値 : [CODE[1677-09-21T00:12:43.145224192Z]] [TIME[1677-09-21T00:12:43.145224192Z]]
+-- 最大値 : [CODE[2262-04-11T23:47:16.854775807Z]] [TIME[2262-04-11T23:47:16.854775807Z]]
 
+
+[166] 
+[[Web]] 上の解説等はよくみると微妙に値が違っていることもあって注意が必要です。
+「何秒以後は桁溢れ (オーバーフロー) する」のような書き方だと最大値より1秒先になることにも要注意です。
+[[ナノ秒]]単位の境界値は特に乱れが多いようです。
+[[応用]]依存の独自の制約が加わっているらしいものもあれば、
+理由がわからずただの誤記らしきものも見られます。
+
+[169] 
+正確を期すため [[ChatGPT]] に[[ミリ秒]]単位と[[ナノ秒]]単位の[[64ビット符号付き整数]]の最大値と最小値を求めるプログラムを書かせましたので、
+ここに置いておきます。 [SRC[>>167, >>168]]
+
+[REFS[
+
+[FIG(quote)[ [167] 
+>
+[PRE[
+docker run --rm python:3 sh -c 'python3 - <<EOF
+def civil_from_days(z):
+    z += 719468
+    era = z // 146097
+    doe = z - era * 146097
+    yoe = (doe - doe//1460 + doe//36524 - doe//146096) // 365
+    y = yoe + era * 400
+    doy = doe - (365*yoe + yoe//4 - yoe//100)
+    mp = (5*doy + 2)//153
+    d = doy - (153*mp + 2)//5 + 1
+    m = mp + 3 if mp < 10 else mp - 9
+    y += 1 if m <= 2 else 0
+    return y, m, d
+
+def ns_to_datetime(ns):
+    sec = ns // 1_000_000_000
+    nsec = ns - sec * 1_000_000_000
+    if nsec < 0:
+        sec -= 1
+        nsec += 1_000_000_000
+    days = sec // 86400
+    sod = sec - days * 86400
+    if sod < 0:
+        days -= 1
+        sod += 86400
+    y,m,d = civil_from_days(days)
+    h = sod // 3600
+    m2 = (sod % 3600) // 60
+    s = sod % 60
+    return f"{y:+d}-{m:02d}-{d:02d} {h:02d}:{m2:02d}:{s:02d}.{nsec:09d} UTC"
+
+MIN = -(1<<63)
+MAX = (1<<63) - 1
+
+print("min:", ns_to_datetime(MIN))
+print("max:", ns_to_datetime(MAX))
+EOF'
+]PRE]
+]FIG]
+
+[FIG(quote)[ [168] 
+>
+[PRE[
+docker run --rm python:3 sh -c 'python3 - <<EOF
+def civil_from_days(z):
+    z += 719468
+    era = z // 146097
+    doe = z - era * 146097
+    yoe = (doe - doe//1460 + doe//36524 - doe//146096) // 365
+    y = yoe + era * 400
+    doy = doe - (365*yoe + yoe//4 - yoe//100)
+    mp = (5*doy + 2)//153
+    d = doy - (153*mp + 2)//5 + 1
+    m = mp + 3 if mp < 10 else mp - 9
+    y += 1 if m <= 2 else 0
+    return y, m, d
+
+def ms_to_datetime(ms):
+    sec = ms // 1000
+    msec = ms - sec * 1000
+    if msec < 0:
+        sec -= 1
+        msec += 1000
+    days = sec // 86400
+    sod = sec - days * 86400
+    if sod < 0:
+        days -= 1
+        sod += 86400
+    y,m,d = civil_from_days(days)
+    h = sod // 3600
+    mi = (sod % 3600) // 60
+    s = sod % 60
+    return f"{y:+d}-{m:02d}-{d:02d} {h:02d}:{mi:02d}:{s:02d}.{msec:03d} UTC"
+
+MIN = -(1<<63)
+MAX = (1<<63) - 1
+
+print("min:", ms_to_datetime(MIN))
+print("max:", ms_to_datetime(MAX))
+EOF'
+]PRE]
+]FIG]
+
+]REFS]
+
+[170] 
+[[浮動小数点数]]を使うと非常に広い範囲の[[時刻]]を扱えますが、
+[N[0]] から余りに離れすぎると[[数]]の刻みの粒度が広がり、
+[[秒]]の精度が正確に記述できなくなります。
+そこで[[秒]]や[[ミリ秒]]が正確に記述できる範囲を求めると、次のようになります。
+
+
+- [171] [[倍精度浮動小数点]] ([[double]] = 64ビット) [[秒]]単位で正確に表現
+-- [172] 最小値 : [CODE[-285424812-02-20T16:23:28Z]] [TIME[-285424812-02-20T16:23:28Z]]
+-- [173] 最大値 : [CODE[+285428751-11-12T07:36:32Z]] [TIME[+285428751-11-12T07:36:32Z]]
+- [174] [[倍精度浮動小数点]] ([[double]] = 64ビット) [[ミリ秒]]単位で正確に表現
+-- [175] 最小値 : [CODE[-283457-03-21T15:00:59.008Z]] [TIME[-283457-03-21T15:00:59.008Z]] 
+-- [176] 最大値 : [CODE[+287396-10-12T08:59:00.992Z]] [TIME[+287396-10-12T08:59:00.992Z]]
+
+
+[177] 
+正確を期すため [[ChatGPT]] にこれらを求めるプログラムを書かせましたので、
+ここに置いておきます。 [SRC[>>178, >>179]]
+
+
+[REFS[
+
+[FIG(quote)[ [178] 
+>
+[PRE[
+docker run --rm python:3 sh -c 'python3 - <<EOF
+def civil_from_days(z):
+    z += 719468
+    era = z // 146097
+    doe = z - era * 146097
+    yoe = (doe - doe//1460 + doe//36524 - doe//146096) // 365
+    y = yoe + era * 400
+    doy = doe - (365*yoe + yoe//4 - yoe//100)
+    mp = (5*doy + 2)//153
+    d = doy - (153*mp + 2)//5 + 1
+    m = mp + 3 if mp < 10 else mp - 9
+    y += 1 if m <= 2 else 0
+    return y,m,d
+
+def sec_to_dt(sec):
+    days = sec // 86400
+    sod = sec - days*86400
+    if sod < 0:
+        days -= 1
+        sod += 86400
+    y,m,d = civil_from_days(days)
+    h = sod//3600
+    mi = (sod%3600)//60
+    s = sod%60
+    return f"{y:+d}-{m:02d}-{d:02d} {h:02d}:{mi:02d}:{s:02d} UTC"
+
+MIN = -(1<<53)
+MAX = (1<<53)
+
+print("min:", sec_to_dt(MIN))
+print("max:", sec_to_dt(MAX))
+EOF'
+]PRE]
+]FIG]
+
+[FIG(quote)[ [179] 
+>
+[PRE[
+docker run --rm python:3 sh -c 'python3 - <<EOF
+def civil_from_days(z):
+    z += 719468
+    era = z // 146097
+    doe = z - era * 146097
+    yoe = (doe - doe//1460 + doe//36524 - doe//146096) // 365
+    y = yoe + era * 400
+    doy = doe - (365*yoe + yoe//4 - yoe//100)
+    mp = (5*doy + 2)//153
+    d = doy - (153*mp + 2)//5 + 1
+    m = mp + 3 if mp < 10 else mp - 9
+    y += 1 if m <= 2 else 0
+    return y,m,d
+
+def ms_to_dt(ms):
+    sec = ms // 1000
+    msec = ms - sec*1000
+    if msec < 0:
+        sec -= 1
+        msec += 1000
+    days = sec // 86400
+    sod = sec - days*86400
+    if sod < 0:
+        days -= 1
+        sod += 86400
+    y,m,d = civil_from_days(days)
+    h = sod//3600
+    mi = (sod%3600)//60
+    s = sod%60
+    return f"{y:+d}-{m:02d}-{d:02d} {h:02d}:{mi:02d}:{s:02d}.{msec:03d} UTC"
+
+MIN = -(1<<53)
+MAX = (1<<53)
+
+print("min:", ms_to_dt(MIN))
+print("max:", ms_to_dt(MAX))
+EOF'
+]PRE]
+]FIG]
+
+]REFS]
 
 
 ** 特殊値
