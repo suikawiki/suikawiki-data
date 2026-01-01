@@ -314,6 +314,59 @@ EOF'
 
 ]REFS]
 
+[180] 
+[[double]] は[[マイクロ秒]]単位まで耐えられますが、
+[[ナノ秒]]単位となるとまったく実用的ではなくなります。
+[[NTFSの日時形式]]と同等の 100ns 単位ですら、
+[TIME[西暦1941年][1941]]から[TIME[西暦1998年][1998]]までしか扱えません。
+[[ChatGPT]] にプログラムを書かせて検証したものを示します [SRC[>>181]]。
+
+[REFS[
+
+[FIG(quote)[ [181] 
+>
+[PRE[
+docker run --rm python:3 sh -c 'python3 - <<EOF
+def civil_from_days(z):
+    z += 719468
+    era = z // 146097
+    doe = z - era * 146097
+    yoe = (doe - doe//1460 + doe//36524 - doe//146096) // 365
+    y = yoe + era * 400
+    doy = doe - (365*yoe + yoe//4 - yoe//100)
+    mp = (5*doy + 2)//153
+    d = doy - (153*mp + 2)//5 + 1
+    m = mp + 3 if mp < 10 else mp - 9
+    y += 1 if m <= 2 else 0
+    return y,m,d
+
+def sec_to_dt(sec):
+    days = sec // 86400
+    sod = sec - days*86400
+    if sod < 0:
+        days -= 1
+        sod += 86400
+    y,m,d = civil_from_days(days)
+    h = sod//3600
+    mi = (sod%3600)//60
+    s = sod%60
+    return f"{y:+d}-{m:02d}-{d:02d} {h:02d}:{mi:02d}:{s:02d} UTC"
+
+MAX_SEC = (1<<53) / 1e7
+MIN_SEC = -MAX_SEC
+
+print("min:", sec_to_dt(int(MIN_SEC)))
+print("max:", sec_to_dt(int(MAX_SEC)))
+print("exact limit seconds:", MAX_SEC)
+EOF'
+min: +1941-06-17 00:01:15 UTC
+max: +1998-07-17 23:58:45 UTC
+exact limit seconds: 900719925.4740992
+]PRE]
+]FIG]
+
+]REFS]
+
 
 ** 特殊値
 
