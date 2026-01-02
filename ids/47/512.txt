@@ -42,7 +42,7 @@
 [[ファイルの時刻]]は >>11 で両方が共存しているという[[書庫形式]]もあります。
 
 
-* プロトコル
+* データ形式
 
 [FIG(short list)[ [8] [[ファイルの時刻]]に関係する[[プロトコル要素]]と機能
 
@@ -60,6 +60,86 @@
 - [[プロパティ (Windows)]]
 
 ]FIG]
+
+
+** 日時の換算
+
+[190] 
+[[ファイルの時刻]]の取り扱いで、意外と難関となるのが[[日時形式]] ([[日時データ型]])
+の[[換算][暦の換算]]の問題です。
+
+[191] 
+[[OS]], [[ファイルシステム]], [[プログラミング言語]], [[圧縮形式]]、[[ファイル]]を扱う各種[[プロトコル]]でそれぞれ採用[[日時データ型]]が違うことが多いので、
+処理の種類と過程に応じてどの[[データ型]]で[[日時]]を保持し、
+どこでどう[[換算][暦の換算]]するかを開発者は熟慮しなければなりません。
+
+[192] 
+個別具体的には各項を参照されたいのですが、概略して次のような事項に配慮が必要です。
+
+- [193] [[時間帯]]。古めのシステムは[[時差]]情報のない[[地方時]]を採用する傾向にあり、
+新しめのシステムは [[UTC]] を採用する傾向にあります。[[プロトコル]]や[[情報交換]]用[[データ形式]]は[[時差]]や[[時間帯]]の情報を保持できることもあります。
+-- [194] 特に課題となるのは、[[時差]]情報のない[[地方時]]をどう解釈するか、です。
+-- [204] プログラムの内部で[[時差]], [[時間帯]], [[地方時]]であるか否か、といった[[時差の記述]]をどうするか。
+- [195] [[値域]]。[[日時データ型]]次第で表現できる最小と最大の[[日時]]がまったく異なります。
+-- [196] 入力データに内部データ型で扱えない値が出現したときにどうするか。
+-- [197] 内部データ型に出力できない値が出現したときにどうするか。
+-- [199] [[符号付き整数]]か[[符号無し整数]]か、仕様が曖昧で実装が割れているときどうするか。
+-- [198] [N[0]] のような値が特殊な意味を持たないか。持つとしたらどうするか。
+- [200] [[精度]]。[[日時データ型]]次第で表現できる[[日時]]の最小の刻み幅が違うことがあります。
+-- [201] 入力データに内部データ型で扱えない値が出現したときにどうするか。
+-- [202] 内部データ型に出力できない値が出現したときにどうするか。
+-- [203] 作成 ≦ 修正のような関係が精度の限界によって成立しないときどうするか。
+- [205] 重複。[[書庫形式]]や[[プロトコル]]は歴史的経緯や[[ファイルシステム]]との互換性などの理由から、
+同じ意味の異なる[[日時]]データをいくつも持っていることがあります。
+-- [206] 入力データからどう取捨選択するか。
+-- [207] データごとに[[日時データ型]]が異なるとき、どう取り扱うか。
+- [208] 異なる種類の日時。作成、修正など複数の[[日時]]が扱えることがありますが、
+その意味は[[プラットフォーム]]ごとに少しずつ違い、
+[[ファイルシステム]]にどれを読み書きできるかも少しずつ違います。
+-- [209] [[データ形式]]や[[プロトコル]]と[[ファイルシステム]]との相互の行き来でどれとどれを対応付けるべきか。
+-- [212] 不足するデータを他のデータと同値にするべきか、放置して成り行きに任せるべきか。
+-- [210] 日時の大小が意味的に矛盾するときどうするべきか。
+-- [211] [[ファイル]]を説明する[[メタデータ]]と[[ファイル]]に付属する属性データが相違するとき、
+どちらを信用するべきか。
+
+
+** FAT
+
+[SEE[ [[FATの日時形式]] ]]
+
+
+*** 他の日時形式との換算
+
+[171] 
+[CITE['''['''PATCH V5 0/4''']''' fat: timestamp updates]], [TIME[2026-01-01T07:40:50.000Z]] <https://lore.kernel.org/all/2663d3083c4dd62f00b64612c8eaf5542bb05a4c.1538363961.git.sorenson@redhat.com/T/>
+
+[189] >>188
+
+**** 地方時の時刻の取り扱い
+
+[164] 
+[CITE[Re: '''['''PATCH''']''' fat: Allow out-of-range FAT modification timestamps]], [TIME[2021-09-02T13:09:07.000Z]], [TIME[2026-01-01T07:21:21.836Z]] <https://lists.gnu.org/archive/html/grub-devel/2021-09/msg00021.html>
+
+
+[165] 
+[CITE@en[timezone - VFAT, Linux: Invalid file timestamps shown after a reboot - Unix & Linux Stack Exchange]], [TIME[2026-01-01T07:28:02.000Z]] <https://unix.stackexchange.com/questions/640555/vfat-linux-invalid-file-timestamps-shown-after-a-reboot>
+
+[166] 
+[CITE@en[c# - How do I get the correct modified datetime of a FAT32 file, regardless of timezone in .NET? - Stack Overflow]], [TIME[2026-01-01T07:29:49.000Z]] <https://stackoverflow.com/questions/10068855/how-do-i-get-the-correct-modified-datetime-of-a-fat32-file-regardless-of-timezo>
+
+[167] 
+[CITE@ja-jp[ファイル時間 - Win32 apps | Microsoft Learn]], [[stevewhims]], [TIME[2025-04-15T10:36:31.000Z]], [TIME[2026-01-01T07:30:33.261Z]] <https://learn.microsoft.com/ja-jp/windows/win32/sysinfo/file-times?redirectedfrom=MSDN>
+
+
+[168] 
+[CITE@en[Handle daylight savings time changes with FAT filesystems · Issue #9227 · syncthing/syncthing]], [TIME[2026-01-01T07:35:47.000Z]] <https://github.com/syncthing/syncthing/issues/9227>
+
+[169] 
+[CITE@en[Unwanted full rescan&resync @ SD card @ Syncthing Android after timezone/daylight saving change - Support / Android - Syncthing Community Forum]], [TIME[2026-01-01T07:36:11.000Z]] <https://forum.syncthing.net/t/unwanted-full-rescan-resync-sd-card-syncthing-android-after-timezone-daylight-saving-change/21064>
+
+
+
+
 
 ** ZIP
 
@@ -480,32 +560,6 @@ atime, ctime, mtime
 
 [163] 
 [CITE@en-US[Filesystem Timestamps: What Makes Them Tick?]], [TIME[2026-01-01T07:18:02.000Z]] <https://www.sans.org/white-papers/36842>
-
-
-[164] 
-[CITE[Re: '''['''PATCH''']''' fat: Allow out-of-range FAT modification timestamps]], [TIME[2021-09-02T13:09:07.000Z]], [TIME[2026-01-01T07:21:21.836Z]] <https://lists.gnu.org/archive/html/grub-devel/2021-09/msg00021.html>
-
-
-[165] 
-[CITE@en[timezone - VFAT, Linux: Invalid file timestamps shown after a reboot - Unix & Linux Stack Exchange]], [TIME[2026-01-01T07:28:02.000Z]] <https://unix.stackexchange.com/questions/640555/vfat-linux-invalid-file-timestamps-shown-after-a-reboot>
-
-[166] 
-[CITE@en[c# - How do I get the correct modified datetime of a FAT32 file, regardless of timezone in .NET? - Stack Overflow]], [TIME[2026-01-01T07:29:49.000Z]] <https://stackoverflow.com/questions/10068855/how-do-i-get-the-correct-modified-datetime-of-a-fat32-file-regardless-of-timezo>
-
-[167] 
-[CITE@ja-jp[ファイル時間 - Win32 apps | Microsoft Learn]], [[stevewhims]], [TIME[2025-04-15T10:36:31.000Z]], [TIME[2026-01-01T07:30:33.261Z]] <https://learn.microsoft.com/ja-jp/windows/win32/sysinfo/file-times?redirectedfrom=MSDN>
-
-
-[168] 
-[CITE@en[Handle daylight savings time changes with FAT filesystems · Issue #9227 · syncthing/syncthing]], [TIME[2026-01-01T07:35:47.000Z]] <https://github.com/syncthing/syncthing/issues/9227>
-
-[169] 
-[CITE@en[Unwanted full rescan&resync @ SD card @ Syncthing Android after timezone/daylight saving change - Support / Android - Syncthing Community Forum]], [TIME[2026-01-01T07:36:11.000Z]] <https://forum.syncthing.net/t/unwanted-full-rescan-resync-sd-card-syncthing-android-after-timezone-daylight-saving-change/21064>
-
--*-*-
-
-[171] 
-[CITE['''['''PATCH V5 0/4''']''' fat: timestamp updates]], [TIME[2026-01-01T07:40:50.000Z]] <https://lore.kernel.org/all/2663d3083c4dd62f00b64612c8eaf5542bb05a4c.1538363961.git.sorenson@redhat.com/T/>
 
 
 * 関連
